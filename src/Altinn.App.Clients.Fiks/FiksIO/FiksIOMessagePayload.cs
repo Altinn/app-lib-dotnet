@@ -1,8 +1,10 @@
 using System.Text;
 using KS.Fiks.Arkiv.Forenklet.Arkivering.V1.Helpers;
-using KS.Fiks.IO.Arkiv.Client.ForenkletArkivering;
+using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;
+using KS.Fiks.Arkiv.Models.V1.Kodelister;
+using KS.Fiks.Arkiv.Models.V1.Metadatakatalog;
 using KS.Fiks.IO.Crypto.Models;
-using Kode = KS.Fiks.IO.Arkiv.Client.ForenkletArkivering.Kode;
+using Kode = KS.Fiks.Arkiv.Models.V1.Kodelister.Kode;
 
 namespace Altinn.App.Clients.Fiks.FiksIO;
 
@@ -37,16 +39,52 @@ public sealed record FiksIOMessagePayload
         return new PayloadWrapper(Filename, Data);
     }
 
-    internal ForenkletDokument ToForenkletDokument(KS.Fiks.Arkiv.Models.V1.Kodelister.Kode code)
+    internal Dokumentbeskrivelse ToDokumentbeskrivelse(Kode documentType, Guid fiksAccountId)
     {
-        return new ForenkletDokument
+        var associatedDocumentType =
+            documentType == DokumenttypeKoder.Dokument
+                ? TilknyttetRegistreringSomKoder.Hoveddokument
+                : TilknyttetRegistreringSomKoder.Vedlegg;
+
+        var dokumentBeskrivelse = new Dokumentbeskrivelse
         {
-            dokumenttype = new Kode { kodeverdi = code.Verdi, kodebeskrivelse = code.Beskrivelse },
-            filnavn = Filename,
-            tittel = Filename,
-            referanseDokumentFil = Filename,
-            systemID = "Altinn",
+            Dokumenttype = new Dokumenttype
+            {
+                KodeProperty = documentType.Verdi,
+                Beskrivelse = documentType.Beskrivelse,
+            },
+            Dokumentstatus = new Dokumentstatus
+            {
+                KodeProperty = DokumentstatusKoder.Ferdig.Verdi,
+                Beskrivelse = DokumentstatusKoder.Ferdig.Beskrivelse,
+            },
+            Tittel = Filename,
+            TilknyttetRegistreringSom = new TilknyttetRegistreringSom
+            {
+                KodeProperty = associatedDocumentType.Verdi,
+                Beskrivelse = associatedDocumentType.Beskrivelse,
+            },
+            OpprettetDato = DateTime.Now,
         };
+
+        var dotlessFileExtension = Path.GetExtension(Filename) is { Length: > 1 } ext ? ext[1..] : Filename;
+
+        dokumentBeskrivelse.Dokumentobjekt.Add(
+            new Dokumentobjekt
+            {
+                SystemID = new SystemID { Value = fiksAccountId.ToString(), Label = "Altinn" },
+                Filnavn = Filename,
+                ReferanseDokumentfil = Filename,
+                Format = new Format { KodeProperty = dotlessFileExtension.ToUpperInvariant() },
+                Variantformat = new Variantformat
+                {
+                    KodeProperty = VariantformatKoder.Produksjonsformat.Verdi,
+                    Beskrivelse = VariantformatKoder.Produksjonsformat.Beskrivelse,
+                },
+            }
+        );
+
+        return dokumentBeskrivelse;
     }
 
     private sealed record PayloadWrapper(string Filename, Stream Payload) : IPayload;

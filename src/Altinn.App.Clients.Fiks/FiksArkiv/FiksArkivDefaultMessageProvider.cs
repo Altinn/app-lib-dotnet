@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Xml.Serialization;
-using Altinn.App.Clients.Fiks.Extensions;
+// using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Auth;
@@ -13,14 +13,16 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using KS.Fiks.Arkiv.Forenklet.Arkivering.V1;
+// using KS.Fiks.Arkiv.Forenklet.Arkivering.V1;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;
 using KS.Fiks.Arkiv.Models.V1.Kodelister;
-using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
-using KS.Fiks.IO.Arkiv.Client.ForenkletArkivering;
+// using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
+using KS.Fiks.Arkiv.Models.V1.Metadatakatalog;
+// using KS.Fiks.IO.Arkiv.Client.ForenkletArkivering;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Kode = KS.Fiks.Arkiv.Models.V1.Kodelister.Kode;
+
+// using Kode = KS.Fiks.Arkiv.Models.V1.Kodelister.Kode;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
@@ -33,9 +35,11 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
     private IAltinnCdnClient? _altinnCdnClient;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly IAltinnPartyClient _altinnPartyClient;
+    private readonly FiksIOSettings _fiksIOSettings;
 
     public FiksArkivDefaultMessageProvider(
         IOptions<FiksArkivSettings> fiksArkivSettings,
+        IOptions<FiksIOSettings> fiksIoSettings,
         IAppMetadata appMetadata,
         IDataClient dataClient,
         IAuthenticationContext authenticationContext,
@@ -50,6 +54,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         _altinnPartyClient = altinnPartyClient;
         _authenticationContext = authenticationContext;
         _fiksArkivSettings = fiksArkivSettings.Value;
+        _fiksIOSettings = fiksIoSettings.Value;
         _logger = logger;
     }
 
@@ -58,7 +63,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         var recipient = await GetRecipient(instance);
         var documents = await GetDocuments(instance);
         var instanceId = new InstanceIdentifier(instance.Id);
-        var archiveMessage = await GenerateArchiveMessage(documents, instance);
+        var archiveMessage = await GenerateArchiveMessage(instance, documents, recipient);
 
         return new FiksIOMessageRequest(
             Recipient: recipient,
@@ -238,7 +243,23 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
     //     );
     // }
 
-    private async Task<KorrespondansepartForenklet> GetServiceOwnerDetails(
+    private static Korrespondansepart GetRecipientDetails(Instance instance, Guid recipient)
+    {
+        return new Korrespondansepart
+        {
+            KorrespondansepartID = recipient.ToString(),
+            Korrespondanseparttype = new Korrespondanseparttype
+            {
+                KodeProperty = KorrespondanseparttypeKoder.Mottaker.Verdi,
+                Beskrivelse = KorrespondanseparttypeKoder.Mottaker.Beskrivelse,
+            },
+            Organisasjonid = "MOTTAKERS-ORGNUMMER",
+            KorrespondansepartNavn = "MOTTAKERS-NAVN",
+            DeresReferanse = instance.Id,
+        };
+    }
+
+    private async Task<Korrespondansepart> GetServiceOwnerDetails(
         Instance instance,
         ApplicationMetadata appMetadata,
         string systemId
@@ -267,20 +288,23 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             }
         }
 
-        return new KorrespondansepartForenklet
+        return new Korrespondansepart
         {
-            systemID = systemId,
-            enhetsidentifikator = new Enhetsidentifikator
+            Korrespondanseparttype = new Korrespondanseparttype
             {
-                organisasjonsnummer = orgDetails?.Orgnr ?? appMetadata.Org,
-                landkode = "NO",
+                KodeProperty = KorrespondanseparttypeKoder.Avsender.Verdi,
+                Beskrivelse = KorrespondanseparttypeKoder.Avsender.Beskrivelse,
             },
-            navn = orgDetails?.Name?.Nb ?? orgDetails?.Name?.Nn ?? orgDetails?.Name?.En ?? appMetadata.Org,
-            deresReferanse = instance.Id,
+            Organisasjonid = orgDetails?.Orgnr ?? appMetadata.Org,
+            Land = "NO",
+            KorrespondansepartNavn =
+                orgDetails?.Name?.Nb ?? orgDetails?.Name?.Nn ?? orgDetails?.Name?.En ?? appMetadata.Org,
+            KorrespondansepartID = systemId,
+            DeresReferanse = instance.Id,
         };
     }
 
-    private async Task<KlasseForenklet> GetSenderDetails()
+    private async Task<Klassifikasjon> GetSenderDetails()
     {
         switch (_authenticationContext.Current)
         {
@@ -288,35 +312,35 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             {
                 UserProfile userProfile = await user.LookupProfile();
 
-                return new KlasseForenklet
+                return new Klassifikasjon
                 {
-                    klasseID = userProfile.Party.SSN.ToString(CultureInfo.InvariantCulture),
-                    klassifikasjonssystem = "Fødselsnummer",
-                    tittel = userProfile.Party.Name,
+                    KlasseID = userProfile.Party.SSN.ToString(CultureInfo.InvariantCulture),
+                    KlassifikasjonssystemID = "Fødselsnummer",
+                    Tittel = userProfile.Party.Name,
                 };
             }
             case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
-                return new KlasseForenklet
+                return new Klassifikasjon
                 {
-                    klasseID = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture),
-                    klassifikasjonssystem = "AltinnBrukerId",
-                    tittel = selfIdentifiedUser.Username,
+                    KlasseID = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture),
+                    KlassifikasjonssystemID = "AltinnBrukerId",
+                    Tittel = selfIdentifiedUser.Username,
                 };
             case Authenticated.SystemUser systemUser:
-                return new KlasseForenklet
+                return new Klassifikasjon
                 {
-                    klasseID = systemUser.SystemUserId[0].ToString(),
-                    klassifikasjonssystem = "SystembrukerId",
-                    tittel = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
+                    KlasseID = systemUser.SystemUserId[0].ToString(),
+                    KlassifikasjonssystemID = "SystembrukerId",
+                    Tittel = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
                 };
             case Authenticated.Org org:
-                return new KlasseForenklet { klasseID = org.OrgNo, klassifikasjonssystem = "Organisasjonsnummer" };
+                return new Klassifikasjon { KlasseID = org.OrgNo, KlassifikasjonssystemID = "Organisasjonsnummer" };
             default:
                 throw new Exception("Could not determine sender details");
         }
     }
 
-    private async Task<KorrespondansepartForenklet?> GetInstanceOwnerDetails(Instance instance, string systemId)
+    private async Task<Korrespondansepart?> GetInstanceOwnerDetails(Instance instance, string systemId)
     {
         try
         {
@@ -326,51 +350,39 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             if (party is null)
                 return null;
 
-            return party.Organization is not null
-                ? new KorrespondansepartForenklet
+            var correspondencePart = new Korrespondansepart
+            {
+                Korrespondanseparttype = new Korrespondanseparttype
                 {
-                    systemID = systemId,
-                    enhetsidentifikator = new Enhetsidentifikator
-                    {
-                        organisasjonsnummer = party.OrgNumber,
-                        landkode = "NO",
-                    },
-                    navn = party.Name,
-                    deresReferanse = instance.Id,
-                    postadresse = new EnkelAdresse
-                    {
-                        adresselinje1 = party.Organization.MailingAddress,
-                        postnr = party.Organization.MailingPostalCode,
-                        poststed = party.Organization.MailingPostalCity,
-                    },
-                    kontaktinformasjonForenklet = new KontaktinformasjonForenklet
-                    {
-                        mobiltelefon = party.Organization.MobileNumber,
-                        telefon = party.Organization.TelephoneNumber,
-                    },
-                }
-                : new KorrespondansepartForenklet
-                {
-                    systemID = systemId,
-                    personid = new Personidentifikator
-                    {
-                        personidentifikatorNr = party.SSN,
-                        personidentifikatorLandkode = "kode",
-                    },
-                    navn = party.Name,
-                    deresReferanse = instance.Id,
-                    postadresse = new EnkelAdresse
-                    {
-                        adresselinje1 = party.Person.MailingAddress,
-                        postnr = party.Person.MailingPostalCode,
-                        poststed = party.Person.MailingPostalCity,
-                    },
-                    kontaktinformasjonForenklet = new KontaktinformasjonForenklet
-                    {
-                        mobiltelefon = party.Person.MobileNumber,
-                        telefon = party.Person.TelephoneNumber,
-                    },
-                };
+                    KodeProperty = KorrespondanseparttypeKoder.Avsender.Verdi,
+                    Beskrivelse = KorrespondanseparttypeKoder.Avsender.Beskrivelse,
+                },
+                // Land = "NO",
+                KorrespondansepartNavn = party.Name,
+                KorrespondansepartID = systemId,
+                DeresReferanse = instance.Id,
+            };
+
+            if (party.Organization is not null)
+            {
+                correspondencePart.Organisasjonid = party.OrgNumber;
+                correspondencePart.Telefonnummer.Add(party.Organization.MobileNumber);
+                correspondencePart.Telefonnummer.Add(party.Organization.TelephoneNumber);
+                correspondencePart.Postadresse.Add(party.Organization.MailingAddress);
+                correspondencePart.Postnummer = party.Organization.MailingPostalCode;
+                correspondencePart.Poststed = party.Organization.MailingPostalCity;
+            }
+            else if (party.Person is not null)
+            {
+                correspondencePart.Personid = party.SSN;
+                correspondencePart.Telefonnummer.Add(party.Person.MobileNumber);
+                correspondencePart.Telefonnummer.Add(party.Person.TelephoneNumber);
+                correspondencePart.Postadresse.Add(party.Person.MailingAddress);
+                correspondencePart.Postnummer = party.Person.MailingPostalCode;
+                correspondencePart.Poststed = party.Person.MailingPostalCity;
+            }
+
+            return correspondencePart;
         }
         catch (Exception e)
         {
@@ -380,104 +392,124 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         return null;
     }
 
-    private async Task<FiksIOMessagePayload> GenerateArchiveMessage(ArchiveDocuments documents, Instance instance)
+    private async Task<FiksIOMessagePayload> GenerateArchiveMessage(
+        Instance instance,
+        ArchiveDocuments documents,
+        Guid recipient
+    )
     {
-        var factory = new ArkivmeldingFactory();
+        // var factory = new ArkivmeldingFactory();
         var appMetadata = await _appMetadata.GetApplicationMetadata();
         var documentTitle = appMetadata.Title[LanguageConst.Nb];
         var documentCreator = appMetadata.AppIdentifier.Org;
+        var recipientDetails = GetRecipientDetails(instance, recipient);
         var serviceOwnerDetails = await GetServiceOwnerDetails(instance, appMetadata, documentCreator);
         var instanceOwnerDetails = await GetInstanceOwnerDetails(instance, documentCreator);
         var senderDetails = await GetSenderDetails();
 
-        var caseFile = new SaksmappeForenklet
+        var caseFile = new Saksmappe()
         {
-            saksaar = DateTime.Now.Year,
-            // sakssekvensnummer = 0,
-            // mappetype = new Kode { kodeverdi = "saksmappe", kodebeskrivelse = "..." },
-            saksdato = DateTime.UtcNow,
-            tittel = documentTitle,
-            offentligTittel = documentTitle,
-            administrativEnhet = documentCreator,
-            // referanseAdministrativEnhet = "ref",
-            // saksansvarlig = "Ingen",
-            // referanseSaksansvarlig = "ref",
-            // saksstatus = "status",
-            // avsluttetAv = "avsluttet",
-            // skjermetTittel = false,
-            referanseEksternNoekkelForenklet = new EksternNoekkelForenklet
+            Tittel = documentTitle,
+            OffentligTittel = documentTitle,
+            AdministrativEnhet = new AdministrativEnhet { Navn = documentCreator },
+            Saksaar = DateTime.Now.Year,
+            Saksdato = DateTime.Now,
+            ReferanseEksternNoekkel = new EksternNoekkel
             {
-                fagsystem = "SaksOgArkivsystem", // TODO: What should this value really be?
-                noekkel = Guid.NewGuid().ToString(),
+                Fagsystem = "SaksOgArkivsystem", // TODO: What should this value really be?
+                Noekkel = Guid.NewGuid().ToString(),
             },
-            klasse = [senderDetails],
         };
 
-        List<KorrespondansepartForenklet> senders = [serviceOwnerDetails];
-        senders.AddIfNotNull(instanceOwnerDetails);
+        caseFile.Klassifikasjon.Add(senderDetails);
 
-        var tempTypeCodeDocument = new Kode("DOKUMENT", "Dokument"); // TODO: DokumenttypeKoder.Dokument
-        var tempTypeAttachment = new Kode("VEDLEGG", "Vedlegg"); // TODO: DokumenttypeKoder.Vedlegg
-
-        var journalEntry = new UtgaaendeJournalpost
+        var journalEntry = new Journalpost
         {
-            journalaar = DateTime.Now.Year,
-            // journalsekvensnummer = 0,
-            // journalpostnummer = 0,
-            dokumentetsDato = DateTime.Now,
-            sendtDato = DateTime.Now,
-            // hoveddokument = documents.FormDocument.ToForenkletDokument(tempTypeCodeDocument),
-            // skjermetTittel = false,
-            tittel = documentTitle,
-            offentligTittel = documentTitle,
-            // referanseEksternNoekkelForenklet = new EksternNoekkelForenklet
-            // {
-            //     fagsystem = "fagsystem",
-            //     noekkel = "noekkel",
-            // },
-            // vedlegg = documents.Attachments.Select(x => x.ToForenkletDokument(tempTypeAttachment)).ToList(),
-            mottaker =
-            [
-                new KorrespondansepartForenklet
-                {
-                    systemID = "FIKS-ARKIV-MOTTAKER-KONTO",
-                    enhetsidentifikator = new Enhetsidentifikator
-                    {
-                        organisasjonsnummer = "MOTTAKERS-ORGNUMMER",
-                        landkode = "NO",
-                    },
-                    navn = "MOTTAKERS-NAVN",
-                    deresReferanse = instance.Id,
-                },
-            ],
-            avsender = senders,
-            internAvsender =
-            [
-                new KorrespondansepartIntern
-                {
-                    administrativEnhet = "Altinn",
-                    // referanseAdministrativEnhet = "ref",
-                    // saksbehandler = "behandler",
-                    // referanseSaksbehandler = "ref",
-                },
-            ],
+            Journalaar = DateTime.Now.Year,
+            DokumentetsDato = DateTime.Now,
+            SendtDato = DateTime.Now,
+            Tittel = documentTitle,
+            OffentligTittel = documentTitle,
+            OpprettetAv = documentCreator,
+            ArkivertAv = documentCreator,
+            Journalstatus = new Journalstatus
+            {
+                KodeProperty = JournalstatusKoder.Journalfoert.Verdi,
+                Beskrivelse = JournalstatusKoder.Journalfoert.Beskrivelse,
+            },
+            Journalposttype = new Journalposttype
+            {
+                KodeProperty = JournalposttypeKoder.UtgaaendeDokument.Verdi,
+                Beskrivelse = JournalposttypeKoder.UtgaaendeDokument.Beskrivelse,
+            },
+            ReferanseForelderMappe = new ReferanseTilMappe()
+            {
+                ReferanseEksternNoekkel = caseFile.ReferanseEksternNoekkel,
+            },
         };
 
-        var message = factory.GetArkivmelding(
-            new ArkivmeldingForenkletUtgaaende
+        // Recipient
+        journalEntry.Korrespondansepart.Add(recipientDetails);
+
+        // Sender(s)
+        journalEntry.Korrespondansepart.Add(serviceOwnerDetails);
+        if (instanceOwnerDetails is not null)
+        {
+            journalEntry.Korrespondansepart.Add(instanceOwnerDetails);
+        }
+
+        // Internal sender
+        journalEntry.Korrespondansepart.Add(
+            new Korrespondansepart
             {
-                sluttbrukerIdentifikator = documentCreator,
-                referanseSaksmappeForenklet = caseFile,
-                nyUtgaaendeJournalpost = journalEntry,
+                Korrespondanseparttype = new Korrespondanseparttype
+                {
+                    KodeProperty = KorrespondanseparttypeKoder.InternAvsender.Verdi,
+                    Beskrivelse = KorrespondanseparttypeKoder.InternAvsender.Beskrivelse,
+                },
+                AdministrativEnhet = new AdministrativEnhet { Navn = "Altinn" },
+                Organisasjonid = "991825827",
+                DeresReferanse = instance.Id,
             }
         );
 
+        // Main form data file
+        journalEntry.Dokumentbeskrivelse.Add(
+            documents.FormDocument.ToDokumentbeskrivelse(DokumenttypeKoder.Dokument, _fiksIOSettings.AccountId)
+        );
+
+        // Attachments
+        foreach (var attachment in documents.Attachments)
+        {
+            journalEntry.Dokumentbeskrivelse.Add(
+                attachment.ToDokumentbeskrivelse(DokumenttypeKoder.Vedlegg, _fiksIOSettings.AccountId)
+            );
+        }
+
+        var archiveMessage = new Arkivmelding
+        {
+            Mappe = caseFile,
+            Registrering = journalEntry,
+            AntallFiler = journalEntry.Dokumentbeskrivelse.Count + 1,
+            System = "Altinn",
+        };
+
+        //
+        // var message = factory.GetArkivmelding(
+        //     new ArkivmeldingForenkletUtgaaende
+        //     {
+        //         sluttbrukerIdentifikator = documentCreator,
+        //         referanseSaksmappeForenklet = caseFile,
+        //         nyUtgaaendeJournalpost = journalEntry,
+        //     }
+        // );
+
         StringWriter logWriter = new();
         XmlSerializer logSerializer = new(typeof(Arkivmelding));
-        logSerializer.Serialize(logWriter, message);
+        logSerializer.Serialize(logWriter, archiveMessage);
         _logger.LogWarning(logWriter.ToString());
 
-        return new FiksIOMessagePayload("arkivmelding.xml", message);
+        return new FiksIOMessagePayload("arkivmelding.xml", archiveMessage);
     }
 
     private sealed record ArchiveDocuments(FiksIOMessagePayload FormDocument, List<FiksIOMessagePayload> Attachments);
