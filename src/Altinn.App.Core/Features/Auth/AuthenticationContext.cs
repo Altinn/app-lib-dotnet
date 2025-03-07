@@ -76,8 +76,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
                         _altinnPartyClient.GetParty,
                         (string orgNr) => _altinnPartyClient.LookupParty(new PartyLookup { OrgNo = orgNr }),
                         _authorizationClient.GetPartyList,
-                        _authorizationClient.ValidateSelectedParty,
-                        _authorizationClient.GetUserRoles
+                        _authorizationClient.ValidateSelectedParty
                     );
                 }
                 else
@@ -92,8 +91,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
                         _altinnPartyClient.GetParty,
                         (string orgNr) => _altinnPartyClient.LookupParty(new PartyLookup { OrgNo = orgNr }),
                         _authorizationClient.GetPartyList,
-                        _authorizationClient.ValidateSelectedParty,
-                        _authorizationClient.GetUserRoles
+                        _authorizationClient.ValidateSelectedParty
                     );
                 }
 

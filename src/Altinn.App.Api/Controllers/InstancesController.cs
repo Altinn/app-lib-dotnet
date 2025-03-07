@@ -61,8 +61,7 @@ public class InstancesController : ControllerBase
 
     private readonly IAppMetadata _appMetadata;
     private readonly IAppModel _appModel;
-    private readonly IInstantiationProcessor _instantiationProcessor;
-    private readonly IInstantiationValidator _instantiationValidator;
+    private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IPDP _pdp;
     private readonly IPrefill _prefillService;
     private readonly AppSettings _appSettings;
@@ -71,6 +70,7 @@ public class InstancesController : ControllerBase
     private readonly IHostEnvironment _env;
     private readonly ModelSerializationService _serializationService;
     private readonly InternalPatchService _patchService;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
@@ -84,8 +84,6 @@ public class InstancesController : ControllerBase
         IDataClient dataClient,
         IAppMetadata appMetadata,
         IAppModel appModel,
-        IInstantiationProcessor instantiationProcessor,
-        IInstantiationValidator instantiationValidator,
         IPDP pdp,
         IEventsClient eventsClient,
         IOptions<AppSettings> appSettings,
@@ -95,7 +93,8 @@ public class InstancesController : ControllerBase
         IOrganizationClient orgClient,
         IHostEnvironment env,
         ModelSerializationService serializationService,
-        InternalPatchService patchService
+        InternalPatchService patchService,
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
@@ -104,8 +103,7 @@ public class InstancesController : ControllerBase
         _appMetadata = appMetadata;
         _altinnPartyClientClient = altinnPartyClientClient;
         _appModel = appModel;
-        _instantiationProcessor = instantiationProcessor;
-        _instantiationValidator = instantiationValidator;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _pdp = pdp;
         _eventsClient = eventsClient;
         _appSettings = appSettings.Value;
@@ -116,6 +114,7 @@ public class InstancesController : ControllerBase
         _env = env;
         _serializationService = serializationService;
         _patchService = patchService;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <summary>
@@ -307,7 +306,8 @@ public class InstancesController : ControllerBase
         }
 
         // Run custom app logic to validate instantiation
-        InstantiationValidationResult? validationResult = await _instantiationValidator.Validate(instanceTemplate);
+        var instantiationValidator = _appImplementationFactory.GetRequired<IInstantiationValidator>();
+        InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
         if (validationResult != null && !validationResult.Valid)
         {
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
@@ -518,7 +518,8 @@ public class InstancesController : ControllerBase
         ConditionallySetReadStatus(instanceTemplate);
 
         // Run custom app logic to validate instantiation
-        InstantiationValidationResult? validationResult = await _instantiationValidator.Validate(instanceTemplate);
+        var instantiationValidator = _appImplementationFactory.GetRequired<IInstantiationValidator>();
+        InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
         if (validationResult != null && !validationResult.Valid)
         {
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
@@ -672,7 +673,8 @@ public class InstancesController : ControllerBase
             Status = new() { ReadStatus = ReadStatus.Read },
         };
 
-        InstantiationValidationResult? validationResult = await _instantiationValidator.Validate(targetInstance);
+        var instantiationValidator = _appImplementationFactory.GetRequired<IInstantiationValidator>();
+        InstantiationValidationResult? validationResult = await instantiationValidator.Validate(targetInstance);
         if (validationResult != null && !validationResult.Valid)
         {
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
@@ -981,7 +983,8 @@ public class InstancesController : ControllerBase
                     data
                 );
 
-                await _instantiationProcessor.DataCreation(targetInstance, data, null);
+                var instantiationProcessor = _appImplementationFactory.GetRequired<IInstantiationProcessor>();
+                await instantiationProcessor.DataCreation(targetInstance, data, null);
 
                 ObjectUtils.InitializeAltinnRowId(data);
 
@@ -1130,13 +1133,7 @@ public class InstancesController : ControllerBase
         string? language
     )
     {
-        var dataMutator = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            appInfo,
-            _serializationService
-        );
+        var dataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId: null, language);
 
         for (int partIndex = 0; partIndex < parts.Count; partIndex++)
         {
@@ -1178,7 +1175,9 @@ public class InstancesController : ControllerBase
                 var data = deserializationResult.Ok;
 
                 await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, part.Name, data);
-                await _instantiationProcessor.DataCreation(instance, data, null);
+
+                var instantiationProcessor = _appImplementationFactory.GetRequired<IInstantiationProcessor>();
+                await instantiationProcessor.DataCreation(instance, data, null);
 
                 dataMutator.AddFormDataElement(dataType.Id, data);
             }

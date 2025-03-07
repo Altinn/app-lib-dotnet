@@ -4,8 +4,6 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.Serialization;
-using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
@@ -41,9 +39,7 @@ public class ProcessController : ControllerBase
     private readonly IAuthorizationService _authorization;
     private readonly IProcessEngine _processEngine;
     private readonly IProcessReader _processReader;
-    private readonly IDataClient _dataClient;
-    private readonly IAppMetadata _appMetadata;
-    private readonly ModelSerializationService _modelSerialization;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -56,9 +52,7 @@ public class ProcessController : ControllerBase
         IAuthorizationService authorization,
         IProcessReader processReader,
         IProcessEngine processEngine,
-        IDataClient dataClient,
-        IAppMetadata appMetadata,
-        ModelSerializationService modelSerialization
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
@@ -68,9 +62,7 @@ public class ProcessController : ControllerBase
         _authorization = authorization;
         _processReader = processReader;
         _processEngine = processEngine;
-        _dataClient = dataClient;
-        _appMetadata = appMetadata;
-        _modelSerialization = modelSerialization;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <summary>
@@ -249,13 +241,8 @@ public class ProcessController : ControllerBase
         string? language
     )
     {
-        var dataAccessor = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            await _appMetadata.GetApplicationMetadata(),
-            _modelSerialization
-        );
+        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, currentTaskId, language);
+
         var validationIssues = await _validationService.ValidateInstanceAtTask(
             dataAccessor,
             currentTaskId, // run full validation
@@ -309,7 +296,7 @@ public class ProcessController : ControllerBase
         {
             Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
-            var currentTaskId = instance.Process.CurrentTask?.ElementId;
+            string? currentTaskId = instance.Process.CurrentTask?.ElementId;
 
             if (currentTaskId is null)
             {
@@ -342,7 +329,8 @@ public class ProcessController : ControllerBase
                 );
             }
 
-            string? checkedAction = EnsureActionNotTaskType(processNext?.Action ?? altinnTaskType);
+            string checkedAction = EnsureActionNotTaskType(processNext?.Action ?? altinnTaskType);
+
             bool authorized = await AuthorizeAction(
                 checkedAction,
                 org,
@@ -366,6 +354,7 @@ public class ProcessController : ControllerBase
             }
 
             _logger.LogDebug("User is authorized to perform action {Action}", checkedAction);
+
             var request = new ProcessNextRequest()
             {
                 Instance = instance,
@@ -373,13 +362,29 @@ public class ProcessController : ControllerBase
                 Action = checkedAction,
                 Language = language,
             };
-            var validationProblem = await GetValidationProblemDetails(instance, currentTaskId, language);
-            if (validationProblem is not null)
+
+            // If the action is 'reject' the task is being abandoned, and we should skip validation, but only if reject has been allowed for the task in bpmn.
+            if (checkedAction == "reject" && _processReader.IsActionAllowedForTask(currentTaskId, checkedAction))
             {
-                return Conflict(validationProblem);
+                _logger.LogInformation(
+                    "Skipping validation during process next because the action is 'reject' and the task is being abandoned."
+                );
+            }
+            else
+            {
+                ProblemDetails? validationProblem = await GetValidationProblemDetails(
+                    instance,
+                    currentTaskId,
+                    language
+                );
+                if (validationProblem is not null)
+                {
+                    return Conflict(validationProblem);
+                }
             }
 
-            var result = await _processEngine.Next(request);
+            ProcessChangeResult result = await _processEngine.Next(request);
+
             if (!result.Success)
             {
                 return GetResultForError(result);

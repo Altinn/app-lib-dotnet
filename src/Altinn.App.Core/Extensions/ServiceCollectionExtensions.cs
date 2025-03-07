@@ -116,6 +116,7 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
         services.TryAddTransient<IApplicationLanguage, Internal.Language.ApplicationLanguage>();
         services.TryAddTransient<IAuthorizationService, AuthorizationService>();
+        services.AddTransient<InstanceDataUnitOfWorkInitializer>();
 
         services.AddAuthenticationContext();
     }
@@ -154,6 +155,9 @@ public static class ServiceCollectionExtensions
         IWebHostEnvironment env
     )
     {
+        services.AddAppImplementationFactory();
+
+        // Services for Altinn App
         services.TryAddTransient<IPDP, PDPAppSI>();
         services.TryAddTransient<IPrefill, PrefillSI>();
         services.TryAddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
