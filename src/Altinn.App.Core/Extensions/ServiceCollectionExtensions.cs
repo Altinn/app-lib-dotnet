@@ -169,7 +169,6 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IPageOrder, DefaultPageOrder>();
 #pragma warning restore CS0618, CS0612 // Type or member is obsolete
         services.TryAddTransient<IInstantiationProcessor, NullInstantiationProcessor>();
-        services.TryAddTransient<IValidateQueryParamPrefill, NullQueryParamPrefillValidator>();
         services.TryAddTransient<IInstantiationValidator, NullInstantiationValidator>();
         services.TryAddTransient<IAppModel, DefaultAppModel>();
         services.TryAddTransient<DataListsFactory>();

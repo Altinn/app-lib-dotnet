@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Web;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
@@ -7,7 +8,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json.Linq;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -109,13 +109,25 @@ public class HomeController : Controller
     }
 
     /// <summary>
-    /// Sets query parameters in frontend session storage
+    ///
     /// </summary>
-    /// <param name="org"></param>
-    /// <param name="app"></param>
-    /// <returns>An HTML file with a small javascript that will set session variables in frontend and redirect to the app.</returns>
+    /// <param name="DataModelName"></param>
+    /// <param name="AppId"></param>
+    /// <param name="PrefillFields"></param>
+    public record QueryParamInit(
+        [property: JsonPropertyName("dataModelName")] string DataModelName,
+        [property: JsonPropertyName("appId")] string AppId,
+        [property: JsonPropertyName("prefillFields")] Dictionary<string, string> PrefillFields
+    );
+
+    /// <summary>
+    /// Sets query parameters in frontend session storage for later use in prefill of stateless apps
+    /// </summary>
+    /// <remarks>
+    /// Only parameters specified in [dataTypeId].prefill.json will be accepted.
+    /// Returns an HTML document with a small javascript that will set session variables in frontend and redirect to the app.
+    /// </remarks>
     [HttpGet]
-    [ApiExplorerSettings(IgnoreApi = true)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [Route("{org}/{app}/set-query-params")]
     public async Task<IActionResult> SetQueryParams(string org, string app)
@@ -126,100 +138,57 @@ public class HomeController : Controller
             return BadRequest("You can only use query params with a stateless task.");
         }
 
-        var queryParams = HttpContext.Request.Query;
+        var prefillData = new List<QueryParamInit>();
 
-        List<string> dataTypes = application.DataTypes.Select(type => type.Id).ToList();
+        foreach (var dataType in application.DataTypes)
+        {
+            var prefillJson = _appResources.GetPrefillJson(dataType.Id);
+            if (prefillJson is null)
+                continue;
+            using var jsonDoc = JsonDocument.Parse(prefillJson);
+            if (!jsonDoc.RootElement.TryGetProperty("QueryParameters", out var allowedQueryParams))
+                continue;
+            if (allowedQueryParams.ValueKind != JsonValueKind.Object)
+                throw new Exception($"Invalid {dataType.Id}.prefill.json, \"QueryParameters\" must be an object.");
 
-        // Build the modelPrefill dictionary
-        var modelPrefill = dataTypes
-            .Select(item =>
+            var prefillForType = allowedQueryParams
+                .EnumerateObject()
+                .Where(param => Request.Query.ContainsKey(param.Name))
+                .ToDictionary(param => param.Value.ToString(), param => Request.Query[param.Name].ToString());
+
+            if (prefillForType.Count > 0)
             {
-                var prefillJson = _appResources.GetPrefillJson(item);
+                prefillData.Add(new QueryParamInit(dataType.Id, application.Id, prefillForType));
+            }
+        }
 
-                if (string.IsNullOrEmpty(prefillJson))
-                {
-                    return null;
-                }
-
-                return new { DataModelName = item, PrefillConfiguration = JObject.Parse(prefillJson) };
-            })
-            .Where(item => item != null)
-            .ToList();
-
-        var result = modelPrefill
-            .Select(entry =>
-            {
-                if (entry == null || entry.PrefillConfiguration == null)
-                {
-                    return null;
-                }
-
-                var prefillConfig = entry.PrefillConfiguration;
-
-                if (prefillConfig == null)
-                {
-                    return null;
-                }
-
-                var queryParamsConfig = prefillConfig["QueryParameters"];
-                if (queryParamsConfig == null || queryParamsConfig.Type != JTokenType.Object)
-                {
-                    return null;
-                }
-
-                // Filter allowed query parameters. We only allow query params that are configured in
-                // <datamodel_name>.prefill.json
-                var allowedQueryParams = ((JObject)queryParamsConfig)
-                    .Properties()
-                    .Where(prop => queryParams.ContainsKey(prop.Name))
-                    .Select(prop => new Dictionary<string, string>
-                    {
-                        { prop.Value.ToString(), queryParams[prop.Name].ToString() },
-                    })
-                    .ToList();
-
-                return new
-                {
-                    dataModelName = entry.DataModelName,
-                    appId = application.Id,
-                    prefillFields = allowedQueryParams,
-                };
-            })
-            .Where(entry => entry != null && entry.prefillFields != null && entry.prefillFields.Count > 0)
-            .ToList();
-
-        if (result.Count < 1)
+        if (prefillData.Count == 0)
         {
             return BadRequest("Found no valid query params.");
         }
 
-        var safeResultJson = System.Text.Json.JsonSerializer.Serialize(result);
-        var encodedAppId = Uri.EscapeDataString(application.Id);
-
         string nonce = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
 
-        var htmlContent =
-            $@"
-        <!DOCTYPE html>
-        <html lang='en'>
-        <head>
-            <meta charset='UTF-8'>
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <title>Set Query Params</title>
-        </head>
-        <body>
-            <script nonce='{nonce}'>
-
-              const prefillData = {safeResultJson}.map(entry => ({{
-                        ...entry,
-                        created: new Date().toISOString()
-                    }}));
-                sessionStorage.setItem('queryParams', JSON.stringify(prefillData));
-                const appOrg = decodeURIComponent('{encodedAppId}');
-                window.location.href = `${{window.location.origin}}/${{appOrg}}`;
-            </script>
-        </body>
-        </html>";
+        var htmlContent = $$"""
+            <!DOCTYPE html>
+            <html lang='en'>
+            <head>
+                <meta charset='UTF-8'>
+                <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                <title>Set Query Params</title>
+            </head>
+            <body>
+                <script nonce='{{nonce}}'>
+                  const prefillData = {{JsonSerializer.Serialize(prefillData)}}.map(entry => ({
+                            ...entry,
+                            created: new Date().toISOString()
+                        }));
+                    sessionStorage.setItem('queryParams', JSON.stringify(prefillData));
+                    window.location.href = `${window.location.origin}/{{application.AppIdentifier.Org}}/{{application.AppIdentifier.App}}`;
+                </script>
+            </body>
+            </html>
+            """;
 
         Response.Headers["Content-Security-Policy"] = $"default-src 'self'; script-src 'nonce-{nonce}';";
 
