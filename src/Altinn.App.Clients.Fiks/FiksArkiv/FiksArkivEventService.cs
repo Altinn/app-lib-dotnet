@@ -1,6 +1,8 @@
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
+using KS.Fiks.ASiC_E;
+using KS.Fiks.IO.Client.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -68,6 +70,8 @@ internal sealed class FiksArkivEventService : BackgroundService
                 receivedMessage.Message.InReplyToMessage
             );
 
+            var decryptedMessages = await GetDecryptedPayloads(receivedMessage);
+
             if (string.IsNullOrWhiteSpace(messageType) || FiksArkivMeldingtype.IsFeilmelding(messageType))
             {
                 _logger.LogError(
@@ -94,5 +98,32 @@ internal sealed class FiksArkivEventService : BackgroundService
             _logger.LogError(e, "FiksArkiv MessageReceivedHandler failed with error: {Error}", e.Message);
             // receivedMessage.Responder.NackWithRequeue();
         }
+    }
+
+    private async Task<IEnumerable<string>> GetDecryptedPayloads(FiksIOReceivedMessageArgs receivedMessageArgs)
+    {
+        List<string> payloads = [];
+        AsiceReader asiceReader = new();
+        using var asiceReadModel = asiceReader.Read(await receivedMessageArgs.Message.DecryptedStream);
+
+        foreach (var asiceVerifyReadEntry in asiceReadModel.Entries)
+        {
+            await using (var entryStream = asiceVerifyReadEntry.OpenStream())
+            {
+                _logger.LogInformation($"GetDecryptedPayloadTxt - {asiceVerifyReadEntry.FileName}");
+                // await using var fileStream = new FileStream(
+                //     $"received-{asiceVerifyReadEntry.FileName}",
+                //     FileMode.Create,
+                //     FileAccess.Write
+                // );
+                // await entryStream.CopyToAsync(fileStream);
+
+                using var reader = new StreamReader(entryStream);
+                string text = await reader.ReadToEndAsync();
+                payloads.Add(text);
+            }
+        }
+
+        return payloads;
     }
 }

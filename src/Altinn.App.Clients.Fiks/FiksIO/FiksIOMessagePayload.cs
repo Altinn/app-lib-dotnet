@@ -6,7 +6,7 @@ using Kode = KS.Fiks.IO.Arkiv.Client.ForenkletArkivering.Kode;
 
 namespace Altinn.App.Clients.Fiks.FiksIO;
 
-public record FiksIOMessagePayload
+public sealed record FiksIOMessagePayload
 {
     public Stream Data { get; init; }
     public string Filename { get; init; }
@@ -49,5 +49,5 @@ public record FiksIOMessagePayload
         };
     }
 
-    private record PayloadWrapper(string Filename, Stream Payload) : IPayload;
+    private sealed record PayloadWrapper(string Filename, Stream Payload) : IPayload;
 }
