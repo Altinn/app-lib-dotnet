@@ -166,12 +166,12 @@ public class HomeControllerTest_SetQueryParams : ApiTestBase, IClassFixture<WebA
     public class MyDataType
     {
         [JsonPropertyName("some")]
-        public SomeClass Some { get; set; }
+        public SomeClass? Some { get; set; }
 
         public class SomeClass
         {
             [JsonPropertyName("field")]
-            public string Field { get; set; }
+            public string? Field { get; set; }
         }
     }
 
