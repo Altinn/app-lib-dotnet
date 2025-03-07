@@ -1,10 +1,11 @@
 using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Altinn.App;
+namespace Altinn.App.Clients.Fiks.Extensions;
 
 public static class ServiceCollectionExtensions
 {
@@ -28,7 +29,8 @@ public static class ServiceCollectionExtensions
         services.AddFiksIOClient();
         services.AddTransient<IFiksArkivErrorHandler, FiksArkivDefaultErrorHandler>();
         services.AddTransient<IFiksArkivMessageProvider, FiksArkivDefaultMessageProvider>();
-        services.AddTransient<IFiksArkivServiceTask, FiksArkivServiceTask>();
+        services.AddTransient<IServiceTask, FiksArkivServiceTask>();
+        services.AddTransient<IFiksArkivServiceTask, FiksArkivServiceTask>(); // TODO: Rewrite the injection that depends on this
         services.AddHostedService<FiksArkivConfigValidationService>();
         services.AddHostedService<FiksArkivEventService>();
 

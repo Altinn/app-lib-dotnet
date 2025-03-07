@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
@@ -39,6 +40,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     public async Task Execute(IProcessTask processTask, string taskId, Instance instance)
     {
         var serviceTasks = _appImplementationFactory.GetAll<IServiceTask>().ToList();
+        var instanceClient = _appImplementationFactory.GetRequired<IInstanceClient>();
         var pdfServiceTask =
             serviceTasks.FirstOrDefault(x => x is IPdfServiceTask)
             ?? throw new InvalidOperationException("PdfServiceTask not found in serviceTasks");
@@ -81,6 +83,8 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         {
             try
             {
+                // TODO: It's stupid that we have to re-fetch the instance here to have access to the PDF
+                instance = await instanceClient.GetInstance(instance);
                 await fiksArkivServiceTask.Execute(taskId, instance);
             }
             catch (Exception e)

@@ -2,7 +2,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
-internal class FiksArkivConfigValidationService : IHostedService
+internal sealed class FiksArkivConfigValidationService : IHostedService
 {
     private readonly IFiksArkivErrorHandler _fiksArkivErrorHandler;
     private readonly IFiksArkivMessageProvider _fiksArkivMessageProvider;

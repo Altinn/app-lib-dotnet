@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
-internal class FiksArkivServiceTask : IFiksArkivServiceTask
+internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask
 {
     private readonly FiksArkivSettings _fiksArkivSettings;
     private readonly IFiksArkivMessageProvider _fiksArkivMessageProvider;
@@ -43,5 +43,12 @@ internal class FiksArkivServiceTask : IFiksArkivServiceTask
 
     private bool IsEnabledForTask(string taskId) => _fiksArkivSettings.AutoSend?.AfterTaskId == taskId;
 
-    public void ValidateConfiguration() { }
+    public void ValidateConfiguration()
+    {
+        if (_fiksArkivSettings.AutoSend is null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend?.AfterTaskId))
+            throw new Exception("Fiks Arkiv error: AfterTaskId configuration is required for auto-send.");
+    }
 }

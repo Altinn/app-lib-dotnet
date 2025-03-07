@@ -1,5 +1,6 @@
 namespace Altinn.App.Clients.Fiks.FiksIO;
 
+// TODO: Replace with Polly
 public sealed class RetryStrategy
 {
     public IReadOnlyList<TimeSpan> Intervals { get; }

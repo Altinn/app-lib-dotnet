@@ -1,9 +1,10 @@
-using Ks.Fiks.Maskinporten.Client;
+using FiksMaskinportenToken = Ks.Fiks.Maskinporten.Client.MaskinportenToken;
 using IAltinnMaskinportenClient = Altinn.App.Core.Features.Maskinporten.IMaskinportenClient;
+using IFiksMaskinportenClient = Ks.Fiks.Maskinporten.Client.IMaskinportenClient;
 
 namespace Altinn.App.Clients.Fiks.FiksIO;
 
-public class FiksIOMaskinportenClient : IMaskinportenClient
+internal sealed class FiksIOMaskinportenClient : IFiksMaskinportenClient
 {
     private readonly IAltinnMaskinportenClient _altinnMaskinportenClient;
 
@@ -12,35 +13,35 @@ public class FiksIOMaskinportenClient : IMaskinportenClient
         _altinnMaskinportenClient = altinnMaskinportenClient;
     }
 
-    public async Task<MaskinportenToken> GetAccessToken(IEnumerable<string> scopes)
+    public async Task<FiksMaskinportenToken> GetAccessToken(IEnumerable<string> scopes)
     {
         var token = await _altinnMaskinportenClient.GetAccessToken(scopes);
         var expiresIn = token.ExpiresAt - DateTimeOffset.UtcNow;
 
-        return new MaskinportenToken(token.Value, (int)expiresIn.TotalSeconds);
+        return new FiksMaskinportenToken(token.Value, (int)expiresIn.TotalSeconds);
     }
 
-    public Task<MaskinportenToken> GetAccessToken(string scopes)
+    public Task<FiksMaskinportenToken> GetAccessToken(string scopes)
     {
         return GetAccessToken([scopes]);
     }
 
-    public Task<MaskinportenToken> GetDelegatedAccessToken(string consumerOrg, IEnumerable<string> scopes)
+    public Task<FiksMaskinportenToken> GetDelegatedAccessToken(string consumerOrg, IEnumerable<string> scopes)
     {
         throw new NotImplementedException();
     }
 
-    public Task<MaskinportenToken> GetDelegatedAccessToken(string consumerOrg, string scopes)
+    public Task<FiksMaskinportenToken> GetDelegatedAccessToken(string consumerOrg, string scopes)
     {
         throw new NotImplementedException();
     }
 
-    public Task<MaskinportenToken> GetOnBehalfOfAccessToken(string consumerOrg, IEnumerable<string> scopes)
+    public Task<FiksMaskinportenToken> GetOnBehalfOfAccessToken(string consumerOrg, IEnumerable<string> scopes)
     {
         throw new NotImplementedException();
     }
 
-    public Task<MaskinportenToken> GetOnBehalfOfAccessToken(string consumerOrg, string scopes)
+    public Task<FiksMaskinportenToken> GetOnBehalfOfAccessToken(string consumerOrg, string scopes)
     {
         throw new NotImplementedException();
     }
