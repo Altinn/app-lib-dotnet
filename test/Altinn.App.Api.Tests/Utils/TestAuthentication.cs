@@ -18,11 +18,11 @@ namespace Altinn.App.Api.Tests.Utils;
 
 public enum AuthenticationTypes
 {
-    User,
-    SelfIdentifiedUser,
-    Org,
-    SystemUser,
-    ServiceOwner,
+    User = 1,
+    SelfIdentifiedUser = 2,
+    Org = 3,
+    SystemUser = 4,
+    ServiceOwner = 5,
 }
 
 public sealed class TestJwtToken : IXunitSerializable
@@ -38,14 +38,14 @@ public sealed class TestJwtToken : IXunitSerializable
         {
             if (_auth is not null)
                 return _auth;
-            // csharpier-ignore
+
             _auth = Type switch
             {
-                AuthenticationTypes.User => TestAuthentication.GetUserAuthentication(userPartyId: PartyId),
-                AuthenticationTypes.SelfIdentifiedUser => TestAuthentication.GetSelfIdentifiedUserAuthentication(partyId: PartyId),
+                AuthenticationTypes.User => TestAuthentication.GetUserAuthentication(),
+                AuthenticationTypes.SelfIdentifiedUser => TestAuthentication.GetSelfIdentifiedUserAuthentication(),
                 // AuthenticationTypes.Org => TestAuthentication.GetOrgAuthentication(),
-                AuthenticationTypes.ServiceOwner => TestAuthentication.GetServiceOwnerAuthentication(partyId: PartyId),
-                AuthenticationTypes.SystemUser => TestAuthentication.GetSystemUserAuthentication(partyId: PartyId),
+                AuthenticationTypes.ServiceOwner => TestAuthentication.GetServiceOwnerAuthentication(),
+                AuthenticationTypes.SystemUser => TestAuthentication.GetSystemUserAuthentication(),
                 _ => throw new Exception(),
             };
             return _auth;
