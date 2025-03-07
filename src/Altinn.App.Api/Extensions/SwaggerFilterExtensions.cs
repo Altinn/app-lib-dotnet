@@ -23,22 +23,10 @@ internal class DocumentFilter : IDocumentFilter
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
         // Remove path from swagger that is used only for backwards compatibility.
-        if (!swaggerDoc.Paths.Remove("/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataType}"))
-        {
-            throw new InvalidOperationException(
-                "Path /{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataType} not found in swagger document."
-            );
-        }
+        swaggerDoc.Paths.Remove("/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataType}");
 
-        if (
-            !swaggerDoc.Paths.Remove(
-                "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/{dataType}"
-            )
-        )
-        {
-            throw new InvalidOperationException(
-                "Path /{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/{dataType} not found in swagger document."
-            );
-        }
+        swaggerDoc.Paths.Remove(
+            "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/{dataType}"
+        );
     }
 }

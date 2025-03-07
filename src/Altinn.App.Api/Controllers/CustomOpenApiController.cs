@@ -1,6 +1,3 @@
-using Altinn.App.Core.Internal.Process;
-using Microsoft.Extensions.Primitives;
-
 namespace Altinn.App.Api.Controllers;
 
 using System.Collections.Generic;
@@ -12,6 +9,7 @@ using System.Threading.Tasks;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -71,7 +69,7 @@ public class CustomOpenApiController : Controller
                     + (
                         appMetadata.Title.TryGetValue("en", out var englishTitle) ? englishTitle
                         : appMetadata.Title.TryGetValue("nb", out var norwegianTitle) ? norwegianTitle
-                        : "Unknown"
+                        : appMetadata.Id
                     ),
                 Contact = new()
                 {

@@ -32,6 +32,7 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace Altinn.App.Api.Extensions;
 
@@ -126,6 +127,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
         services.AddSwaggerFilter();
+
+        // Add swagger endpoint for end user system api documentation
+        var appId = StartupHelper.GetApplicationId();
+        services.Configure<SwaggerUIOptions>(c =>
+        {
+            c.SwaggerEndpoint($"/{appId}/v1/customOpenapi.json", $"End user app API for {appId}");
+        });
     }
 
     /// <summary>

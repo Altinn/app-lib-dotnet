@@ -778,7 +778,6 @@ public class DataController : ControllerBase
     /// <returns>The updated data element.</returns>
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
     [HttpDelete("{dataGuid:guid}")]
-    [HttpDelete("{dataGuid:guid}/type/{dataType}")]
     public async Task<ActionResult<DataPostResponse>> Delete(
         [FromRoute] string org,
         [FromRoute] string app,
