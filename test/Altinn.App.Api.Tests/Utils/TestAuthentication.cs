@@ -123,7 +123,18 @@ public static class TestAuthentication
 
     public static None GetNoneAuthentication()
     {
-        return new None(TokenIssuer.None, false, Scopes.None, "None");
+        var auth = Authenticated.From(
+            "",
+            false,
+            NewApplicationMetadata(),
+            () => null,
+            _ => Task.FromResult<UserProfile?>(null),
+            _ => Task.FromResult<Party?>(null),
+            _ => Task.FromResult<Party>(null!),
+            _ => Task.FromResult<List<Party>?>(null),
+            (_, _) => Task.FromResult<bool?>(null)
+        );
+        return Assert.IsType<None>(auth);
     }
 
     public static string GetUserToken(
@@ -169,6 +180,7 @@ public static class TestAuthentication
         ProfileSettingPreference? profileSettingPreference = null
     )
     {
+        var token = GetUserToken(userId: userId, partyId: userPartyId, authenticationLevel: authenticationLevel);
         var party = new Party()
         {
             PartyId = userPartyId,
@@ -177,17 +189,11 @@ public static class TestAuthentication
             SSN = ssn ?? "12345678901",
             Name = "Test Testesen",
         };
-        return new User(
-            userId,
-            userPartyId,
-            authenticationLevel,
-            "idporten",
-            userPartyId,
-            inAltinnPortal: true,
-            tokenIssuer: TokenIssuer.Altinn,
-            tokenIsExchanged: false,
-            new Scopes("altinn:portal/enduser"),
-            token: "",
+        var auth = Authenticated.From(
+            token,
+            true,
+            NewApplicationMetadata(),
+            getSelectedParty: () => $"{userPartyId}",
             getUserProfile: uid =>
             {
                 Assert.Equal(userId, uid);
@@ -202,11 +208,12 @@ public static class TestAuthentication
                     }
                 );
             },
-            lookupParty: partyId =>
+            lookupUserParty: partyId =>
             {
                 Assert.Equal(userPartyId, partyId);
                 return Task.FromResult<Party?>(party);
             },
+            lookupOrgParty: _ => throw new NotImplementedException(),
             getPartyList: uid =>
             {
                 Assert.Equal(userId, uid);
@@ -217,9 +224,9 @@ public static class TestAuthentication
                 Assert.Equal(userId, uid);
                 Assert.Equal(userPartyId, pid);
                 return Task.FromResult<bool?>(true);
-            },
-            appMetadata: NewApplicationMetadata()
+            }
         );
+        return Assert.IsType<User>(auth);
     }
 
     public static string GetSelfIdentifiedUserToken(
@@ -266,6 +273,7 @@ public static class TestAuthentication
         ProfileSettingPreference? profileSettingPreference = null
     )
     {
+        var token = GetSelfIdentifiedUserToken(username: username, userId: userId, partyId: partyId);
         var party = new Party()
         {
             PartyId = partyId,
@@ -273,15 +281,11 @@ public static class TestAuthentication
             OrgNumber = null,
             Name = "Test Testesen",
         };
-        return new SelfIdentifiedUser(
-            username,
-            userId,
-            partyId,
-            "idporten",
-            tokenIssuer: TokenIssuer.Altinn,
-            tokenIsExchanged: false,
-            new Scopes("altinn:portal/enduser"),
-            token: "",
+        var auth = Authenticated.From(
+            token,
+            true,
+            NewApplicationMetadata(),
+            getSelectedParty: () => $"{partyId}",
             getUserProfile: uid =>
             {
                 Assert.Equal(userId, uid);
@@ -297,8 +301,16 @@ public static class TestAuthentication
                     }
                 );
             },
-            appMetadata: NewApplicationMetadata()
+            lookupUserParty: partyId =>
+            {
+                Assert.Equal(partyId, partyId);
+                return Task.FromResult<Party?>(party);
+            },
+            lookupOrgParty: _ => throw new NotImplementedException(),
+            getPartyList: _ => throw new NotImplementedException(),
+            validateSelectedParty: (_, __) => throw new NotImplementedException()
         );
+        return Assert.IsType<SelfIdentifiedUser>(auth);
     }
 
     public static ClaimsPrincipal GetOrgPrincipal(string orgNumber = DefaultOrgNumber, string scope = DefaultOrgScope)
@@ -347,9 +359,10 @@ public static class TestAuthentication
     public static Org GetOrgAuthentication(
         string orgNumber = DefaultOrgNumber,
         int partyId = DefaultOrgPartyId,
-        int authenticationLevel = DefaultUserAuthenticationLevel
+        string scope = DefaultOrgScope
     )
     {
+        var token = GetOrgToken(orgNumber: orgNumber, scope: scope);
         var party = new Party()
         {
             PartyId = partyId,
@@ -357,21 +370,22 @@ public static class TestAuthentication
             OrgNumber = orgNumber,
             Name = "Test AS",
         };
-        return new Org(
-            orgNumber,
-            authenticationLevel,
-            "maskinporten",
-            tokenIssuer: TokenIssuer.Maskinporten,
-            tokenIsExchanged: true,
-            new Scopes("altinn:instances.read altinn:instances.write"),
-            token: "",
-            lookupParty: orgNo =>
+        var auth = Authenticated.From(
+            token,
+            true,
+            NewApplicationMetadata(),
+            getSelectedParty: () => throw new NotImplementedException(),
+            getUserProfile: _ => throw new NotImplementedException(),
+            lookupUserParty: _ => throw new NotImplementedException(),
+            lookupOrgParty: orgNo =>
             {
                 Assert.Equal(orgNumber, orgNo);
-                return Task.FromResult(party);
+                return Task.FromResult<Party>(party);
             },
-            appMetadata: NewApplicationMetadata()
+            getPartyList: _ => throw new NotImplementedException(),
+            validateSelectedParty: (_, __) => throw new NotImplementedException()
         );
+        return Assert.IsType<Org>(auth);
     }
 
     public static ClaimsPrincipal GetServiceOwnerPrincipal(
@@ -425,11 +439,12 @@ public static class TestAuthentication
 
     public static ServiceOwner GetServiceOwnerAuthentication(
         string orgNumber = DefaultOrgNumber,
+        string scope = DefaultServiceOwnerScope,
         string org = DefaultOrg,
-        int partyId = DefaultOrgPartyId,
-        int authenticationLevel = DefaultUserAuthenticationLevel
+        int partyId = DefaultOrgPartyId
     )
     {
+        var token = GetServiceOwnerToken(orgNumber: orgNumber, scope: scope, org: org);
         var party = new Party()
         {
             PartyId = partyId,
@@ -437,21 +452,22 @@ public static class TestAuthentication
             OrgNumber = orgNumber,
             Name = "Test AS",
         };
-        return new ServiceOwner(
-            org,
-            orgNumber,
-            authenticationLevel,
-            "maskinporten",
-            tokenIssuer: TokenIssuer.Maskinporten,
-            tokenIsExchanged: true,
-            new Scopes("altinn:serviceowner/instances.read altinn:serviceowner/instances.write"),
-            token: "",
-            lookupParty: orgNo =>
+        var auth = Authenticated.From(
+            token,
+            true,
+            NewApplicationMetadata(org: org),
+            getSelectedParty: () => throw new NotImplementedException(),
+            getUserProfile: _ => throw new NotImplementedException(),
+            lookupUserParty: _ => throw new NotImplementedException(),
+            lookupOrgParty: orgNo =>
             {
                 Assert.Equal(orgNumber, orgNo);
-                return Task.FromResult(party);
-            }
+                return Task.FromResult<Party>(party);
+            },
+            getPartyList: _ => throw new NotImplementedException(),
+            validateSelectedParty: (_, __) => throw new NotImplementedException()
         );
+        return Assert.IsType<ServiceOwner>(auth);
     }
 
     public static JwtPayload GetSystemUserPayload(
@@ -526,10 +542,17 @@ public static class TestAuthentication
         string systemUserId = DefaultSystemUserId,
         string systemUserOrgNumber = DefaultSystemUserOrgNumber,
         string supplierOrgNumber = DefaultSystemUserSupplierOrgNumber,
-        int partyId = DefaultOrgPartyId,
-        bool exchanged = true
+        string scope = DefaultOrgScope,
+        int partyId = DefaultOrgPartyId
     )
     {
+        var token = GetSystemUserToken(
+            systemId: systemId,
+            systemUserId: systemUserId,
+            systemUserOrgNumber: systemUserOrgNumber,
+            supplierOrgNumber: supplierOrgNumber,
+            scope: scope
+        );
         var party = new Party()
         {
             PartyId = partyId,
@@ -537,24 +560,22 @@ public static class TestAuthentication
             OrgNumber = systemUserOrgNumber,
             Name = "Test AS",
         };
-        return new SystemUser(
-            [Guid.Parse(systemUserId)],
-            OrganisationNumber.Parse(systemUserOrgNumber),
-            OrganisationNumber.Parse(supplierOrgNumber),
-            systemId,
-            3,
-            "maskinporten",
-            tokenIssuer: TokenIssuer.Maskinporten,
-            tokenIsExchanged: exchanged,
-            new Scopes("altinn:instances.read altinn:instances.write"),
-            token: "",
-            lookupParty: orgNo =>
+        var auth = Authenticated.From(
+            token,
+            true,
+            NewApplicationMetadata(),
+            getSelectedParty: () => throw new NotImplementedException(),
+            getUserProfile: _ => throw new NotImplementedException(),
+            lookupUserParty: _ => throw new NotImplementedException(),
+            lookupOrgParty: orgNo =>
             {
                 Assert.Equal(systemUserOrgNumber, orgNo);
-                return Task.FromResult(party);
+                return Task.FromResult<Party>(party);
             },
-            appMetadata: NewApplicationMetadata()
+            getPartyList: _ => throw new NotImplementedException(),
+            validateSelectedParty: (_, __) => throw new NotImplementedException()
         );
+        return Assert.IsType<SystemUser>(auth);
     }
 
     public static ApplicationMetadata NewApplicationMetadata(string org = "ttd")
