@@ -121,12 +121,12 @@ public static class TestAuthentication
         }
     }
 
-    public static None GetNoneAuthentication()
+    public static None GetNoneAuthentication(ApplicationMetadata? applicationMetadata = null)
     {
         var auth = Authenticated.From(
             "",
             false,
-            NewApplicationMetadata(),
+            applicationMetadata ?? NewApplicationMetadata(),
             () => null,
             _ => Task.FromResult<UserProfile?>(null),
             _ => Task.FromResult<Party?>(null),
@@ -177,7 +177,8 @@ public static class TestAuthentication
         int authenticationLevel = DefaultUserAuthenticationLevel,
         string? email = null,
         string? ssn = null,
-        ProfileSettingPreference? profileSettingPreference = null
+        ProfileSettingPreference? profileSettingPreference = null,
+        ApplicationMetadata? applicationMetadata = null
     )
     {
         var token = GetUserToken(userId: userId, partyId: userPartyId, authenticationLevel: authenticationLevel);
@@ -192,7 +193,7 @@ public static class TestAuthentication
         var auth = Authenticated.From(
             token,
             true,
-            NewApplicationMetadata(),
+            applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => $"{userPartyId}",
             getUserProfile: uid =>
             {
@@ -270,7 +271,8 @@ public static class TestAuthentication
         int userId = DefaultUserId,
         int partyId = DefaultUserPartyId,
         string? email = null,
-        ProfileSettingPreference? profileSettingPreference = null
+        ProfileSettingPreference? profileSettingPreference = null,
+        ApplicationMetadata? applicationMetadata = null
     )
     {
         var token = GetSelfIdentifiedUserToken(username: username, userId: userId, partyId: partyId);
@@ -284,7 +286,7 @@ public static class TestAuthentication
         var auth = Authenticated.From(
             token,
             true,
-            NewApplicationMetadata(),
+            applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => $"{partyId}",
             getUserProfile: uid =>
             {
@@ -359,7 +361,8 @@ public static class TestAuthentication
     public static Org GetOrgAuthentication(
         string orgNumber = DefaultOrgNumber,
         int partyId = DefaultOrgPartyId,
-        string scope = DefaultOrgScope
+        string scope = DefaultOrgScope,
+        ApplicationMetadata? applicationMetadata = null
     )
     {
         var token = GetOrgToken(orgNumber: orgNumber, scope: scope);
@@ -373,7 +376,7 @@ public static class TestAuthentication
         var auth = Authenticated.From(
             token,
             true,
-            NewApplicationMetadata(),
+            applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => throw new NotImplementedException(),
             getUserProfile: _ => throw new NotImplementedException(),
             lookupUserParty: _ => throw new NotImplementedException(),
@@ -441,7 +444,8 @@ public static class TestAuthentication
         string orgNumber = DefaultOrgNumber,
         string scope = DefaultServiceOwnerScope,
         string org = DefaultOrg,
-        int partyId = DefaultOrgPartyId
+        int partyId = DefaultOrgPartyId,
+        ApplicationMetadata? applicationMetadata = null
     )
     {
         var token = GetServiceOwnerToken(orgNumber: orgNumber, scope: scope, org: org);
@@ -455,7 +459,7 @@ public static class TestAuthentication
         var auth = Authenticated.From(
             token,
             true,
-            NewApplicationMetadata(org: org),
+            applicationMetadata ?? NewApplicationMetadata(org: org),
             getSelectedParty: () => throw new NotImplementedException(),
             getUserProfile: _ => throw new NotImplementedException(),
             lookupUserParty: _ => throw new NotImplementedException(),
@@ -543,7 +547,8 @@ public static class TestAuthentication
         string systemUserOrgNumber = DefaultSystemUserOrgNumber,
         string supplierOrgNumber = DefaultSystemUserSupplierOrgNumber,
         string scope = DefaultOrgScope,
-        int partyId = DefaultOrgPartyId
+        int partyId = DefaultOrgPartyId,
+        ApplicationMetadata? applicationMetadata = null
     )
     {
         var token = GetSystemUserToken(
@@ -563,7 +568,7 @@ public static class TestAuthentication
         var auth = Authenticated.From(
             token,
             true,
-            NewApplicationMetadata(),
+            applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => throw new NotImplementedException(),
             getUserProfile: _ => throw new NotImplementedException(),
             lookupUserParty: _ => throw new NotImplementedException(),
