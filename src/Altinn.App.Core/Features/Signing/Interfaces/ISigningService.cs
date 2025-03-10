@@ -1,7 +1,5 @@
 ﻿using Altinn.App.Core.Features.Signing.Models;
-using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Models.UserAction;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 
@@ -38,11 +36,6 @@ public interface ISigningService
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration
     );
-
-    /// <summary>
-    /// Signs the current task.
-    /// </summary>
-    Task Sign(UserActionContext userActionContext, ProcessTask currentTask);
 
     /// <summary>
     /// Aborts runtime delegated signing. Deletes all signing data and revokes delegated access.

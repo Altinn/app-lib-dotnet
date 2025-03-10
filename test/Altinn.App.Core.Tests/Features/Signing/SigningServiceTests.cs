@@ -7,7 +7,6 @@ using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
-using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -31,9 +30,7 @@ public sealed class SigningServiceTests : IDisposable
     private readonly Mock<ISigneeProvider> _signeeProvider = new(MockBehavior.Strict);
     private readonly Mock<ILogger<SigningService>> _logger = new();
     private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
-    private readonly Mock<ISignClient> _signClient = new(MockBehavior.Strict);
     private readonly Mock<ISigningCallToActionService> _signingCallToActionService = new(MockBehavior.Strict);
-    private readonly Mock<ISigningReceiptService> _signingReceiptService = new(MockBehavior.Strict);
 
     public void Dispose() => _serviceProvider.Dispose();
 
@@ -49,8 +46,6 @@ public sealed class SigningServiceTests : IDisposable
             _signingDelegationService.Object,
             _serviceProvider.GetRequiredService<AppImplementationFactory>(),
             _appMetadata.Object,
-            _signClient.Object,
-            _signingReceiptService.Object,
             _signingCallToActionService.Object,
             _logger.Object
         );

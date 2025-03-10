@@ -16,7 +16,7 @@ public interface ISigningReceiptService
     /// </summary>
     public Task<SendCorrespondenceResponse?> SendSignatureReceipt(
         InstanceIdentifier instanceIdentifier,
-        Internal.Sign.Signee signee,
+        Signee signee,
         IEnumerable<DataElementSignature> dataElementSignatures,
         UserActionContext context,
         List<AltinnEnvironmentConfig>? correspondenceResources
