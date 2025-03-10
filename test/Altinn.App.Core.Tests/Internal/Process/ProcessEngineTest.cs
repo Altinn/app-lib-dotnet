@@ -14,7 +14,8 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
-using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -389,7 +390,7 @@ public sealed class ProcessEngineTest
     }
 
     [Fact]
-    public async Task Next_returns_unsuccessful_when_process_null()
+    public async Task Next_throws_unsuccessful_when_process_null()
     {
         using var fixture = Fixture.Create();
         ProcessEngine processEngine = fixture.ProcessEngine;
@@ -406,10 +407,7 @@ public sealed class ProcessEngineTest
             User = null!,
             Language = null,
         };
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Be("Instance does not have current task information!");
-        result.ErrorType.Should().Be(ProcessErrorType.Conflict);
+        await Assert.ThrowsAsync<ProcessException>(async () => await processEngine.Next(processNextRequest));
     }
 
     [Fact]
@@ -1168,6 +1166,11 @@ public sealed class ProcessEngineTest
             Mock<IAppResources> appResourcesMock = new(MockBehavior.Strict);
             appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
 
+            Mock<IPdfServiceTask> pdfServiceTaskMock = new();
+            pdfServiceTaskMock.Setup(p => p.Type).Returns("pdf");
+            Mock<IEFormidlingServiceTask> eFormidlingServiceTaskMock = new();
+            eFormidlingServiceTaskMock.Setup(p => p.Type).Returns("eFormidling");
+
             authenticationContextMock
                 .Setup(a => a.Current)
                 .Returns(
@@ -1232,6 +1235,8 @@ public sealed class ProcessEngineTest
             services.TryAddTransient<IAppMetadata>(_ => appMetadataMock.Object);
             services.TryAddTransient<IAppResources>(_ => appResourcesMock.Object);
             services.TryAddTransient<InstanceDataUnitOfWorkInitializer>();
+            services.TryAddTransient<IPdfServiceTask>(_ => pdfServiceTaskMock.Object);
+            services.TryAddTransient<IEFormidlingServiceTask>(_ => eFormidlingServiceTaskMock.Object);
 
             if (registerProcessEnd)
                 services.AddSingleton<IProcessEnd>(_ => new Mock<IProcessEnd>().Object);

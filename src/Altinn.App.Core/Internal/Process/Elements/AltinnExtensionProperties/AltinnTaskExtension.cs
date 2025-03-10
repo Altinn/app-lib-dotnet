@@ -32,4 +32,10 @@ public class AltinnTaskExtension
     /// </summary>
     [XmlElement("paymentConfig", Namespace = "http://altinn.no/process")]
     public AltinnPaymentConfiguration? PaymentConfiguration { get; set; } = new AltinnPaymentConfiguration();
+
+    /// <summary>
+    /// Gets or sets the configuration for PDF
+    /// </summary>
+    [XmlElement("pdfConfig", Namespace = "http://altinn.no/process")]
+    public AltinnPdfConfiguration? PdfConfiguration { get; set; } = new AltinnPdfConfiguration();
 }
