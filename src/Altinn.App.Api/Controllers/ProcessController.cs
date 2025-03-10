@@ -40,6 +40,7 @@ public class ProcessController : ControllerBase
     private readonly IProcessEngine _processEngine;
     private readonly IProcessReader _processReader;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -52,7 +53,8 @@ public class ProcessController : ControllerBase
         IAuthorizationService authorization,
         IProcessReader processReader,
         IProcessEngine processEngine,
-        IServiceProvider serviceProvider
+        IServiceProvider serviceProvider,
+        IProcessEngineAuthorizer processEngineAuthorizer
     )
     {
         _logger = logger;
@@ -63,6 +65,7 @@ public class ProcessController : ControllerBase
         _processReader = processReader;
         _processEngine = processEngine;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _processEngineAuthorizer = processEngineAuthorizer;
     }
 
     /// <summary>
@@ -329,16 +332,7 @@ public class ProcessController : ControllerBase
                 );
             }
 
-            string checkedAction = EnsureActionNotTaskType(processNext?.Action ?? altinnTaskType);
-
-            bool authorized = await AuthorizeAction(
-                checkedAction,
-                org,
-                app,
-                instanceOwnerPartyId,
-                instanceGuid,
-                currentTaskId
-            );
+            bool authorized = await _processEngineAuthorizer.AuthorizeProcessNext(instance, processNext?.Action);
 
             if (!authorized)
             {
@@ -347,13 +341,18 @@ public class ProcessController : ControllerBase
                     new ProblemDetails()
                     {
                         Status = StatusCodes.Status403Forbidden,
-                        Detail = $"User is not authorized to perform action {checkedAction} on task {currentTaskId}",
+                        Detail =
+                            $"User is not authorized to perform process next with action '{processNext?.Action}' on task {currentTaskId} with task type {altinnTaskType}.",
                         Title = "Unauthorized",
                     }
                 );
             }
 
-            _logger.LogDebug("User is authorized to perform action {Action}", checkedAction);
+            _logger.LogDebug(
+                $"User successfully authorized to perform process next with action '{processNext?.Action}' on task {currentTaskId} with task type {altinnTaskType}."
+            );
+
+            string checkedAction = processNext?.Action ?? ConvertTaskTypeToAction(altinnTaskType);
 
             var request = new ProcessNextRequest()
             {
@@ -521,17 +520,9 @@ public class ProcessController : ControllerBase
             && counter++ < MaxIterationsAllowed
         )
         {
-            string altinnTaskType = EnsureActionNotTaskType(instance.Process.CurrentTask.AltinnTaskType);
+            bool authorizeProcessNext = await _processEngineAuthorizer.AuthorizeProcessNext(instance);
 
-            bool authorized = await AuthorizeAction(
-                altinnTaskType,
-                org,
-                app,
-                instanceOwnerPartyId,
-                instanceGuid,
-                instance.Process.CurrentTask.ElementId
-            );
-            if (!authorized)
+            if (!authorizeProcessNext)
             {
                 return Forbid();
             }
@@ -552,7 +543,7 @@ public class ProcessController : ControllerBase
                 {
                     Instance = instance,
                     User = User,
-                    Action = altinnTaskType,
+                    Action = ConvertTaskTypeToAction(instance.Process.CurrentTask.AltinnTaskType),
                     Language = language,
                 };
                 var result = await _processEngine.Next(request);
@@ -727,7 +718,7 @@ public class ProcessController : ControllerBase
         return await _authorization.AuthorizeActions(instance, HttpContext.User, actions);
     }
 
-    private static string EnsureActionNotTaskType(string actionOrTaskType)
+    private static string ConvertTaskTypeToAction(string actionOrTaskType)
     {
         switch (actionOrTaskType)
         {
