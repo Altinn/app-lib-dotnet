@@ -50,11 +50,17 @@ public static class ServiceCollectionExtensions
         services.AddAppConfigurationCache();
 
         // Add API controllers from Altinn.App.Api
-        IMvcBuilder mvcBuilder = services.AddControllersWithViews(options =>
-        {
-            options.Filters.Add<TelemetryEnrichingResultFilter>();
-            options.Conventions.Add(new AltinnControllerConventions());
-        });
+        IMvcBuilder mvcBuilder = services
+            .AddControllersWithViews(options =>
+            {
+                options.Filters.Add<TelemetryEnrichingResultFilter>();
+                options.Conventions.Add(new AltinnControllerConventions());
+            })
+            .ConfigureApplicationPartManager(manager =>
+            {
+                manager.FeatureProviders.Add(new InternalControllerFeatureProvider());
+            });
+
         mvcBuilder
             .AddApplicationPart(typeof(InstancesController).Assembly)
             .AddXmlSerializerFormatters()
