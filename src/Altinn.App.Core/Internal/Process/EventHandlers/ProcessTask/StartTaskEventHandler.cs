@@ -2,6 +2,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 
@@ -12,7 +13,7 @@ public class StartTaskEventHandler : IStartTaskEventHandler
 {
     private readonly IProcessTaskDataLocker _processTaskDataLocker;
     private readonly IProcessTaskInitializer _processTaskInitializer;
-    private readonly IEnumerable<IProcessTaskStart> _processTaskStarts;
+    private readonly AppImplementationFactory _appImplementationFactory;
 
     /// <summary>
     /// This event handler is responsible for handling the start event for a process task.
@@ -20,12 +21,12 @@ public class StartTaskEventHandler : IStartTaskEventHandler
     public StartTaskEventHandler(
         IProcessTaskDataLocker processTaskDataLocker,
         IProcessTaskInitializer processTaskInitializer,
-        IEnumerable<IProcessTaskStart> processTaskStarts
+        IServiceProvider serviceProvider
     )
     {
         _processTaskDataLocker = processTaskDataLocker;
         _processTaskInitializer = processTaskInitializer;
-        _processTaskStarts = processTaskStarts;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <summary>
@@ -53,7 +54,8 @@ public class StartTaskEventHandler : IStartTaskEventHandler
         Dictionary<string, string>? prefill
     )
     {
-        foreach (IProcessTaskStart processTaskStarts in _processTaskStarts)
+        var handlers = _appImplementationFactory.GetAll<IProcessTaskStart>();
+        foreach (IProcessTaskStart processTaskStarts in handlers)
         {
             await processTaskStarts.Start(taskId, instance, prefill ?? []);
         }

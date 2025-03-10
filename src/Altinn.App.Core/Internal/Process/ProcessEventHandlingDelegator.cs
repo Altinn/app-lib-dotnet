@@ -1,9 +1,10 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.EventHandlers;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
-using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process;
@@ -18,8 +19,7 @@ public class ProcessEventHandlingDelegator : IProcessEventHandlerDelegator
     private readonly IEndTaskEventHandler _endTaskEventHandler;
     private readonly IAbandonTaskEventHandler _abandonTaskEventHandler;
     private readonly IEndEventEventHandler _endEventHandler;
-    private readonly IEnumerable<IProcessTask> _processTasks;
-    private readonly IEnumerable<IServiceTask> _serviceTasks;
+    private readonly AppImplementationFactory _appImplementationFactory;
 
     /// <summary>
     /// This class is responsible for delegating process events to the correct event handler.
@@ -30,8 +30,7 @@ public class ProcessEventHandlingDelegator : IProcessEventHandlerDelegator
         IEndTaskEventHandler endTaskEventHandler,
         IAbandonTaskEventHandler abandonTaskEventHandler,
         IEndEventEventHandler endEventHandler,
-        IEnumerable<IProcessTask> processTasks,
-        IEnumerable<IServiceTask> serviceTasks
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
@@ -39,8 +38,7 @@ public class ProcessEventHandlingDelegator : IProcessEventHandlerDelegator
         _endTaskEventHandler = endTaskEventHandler;
         _abandonTaskEventHandler = abandonTaskEventHandler;
         _endEventHandler = endEventHandler;
-        _processTasks = processTasks;
-        _serviceTasks = serviceTasks;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <summary>
@@ -115,13 +113,8 @@ public class ProcessEventHandlingDelegator : IProcessEventHandlerDelegator
             altinnTaskType = "NullType";
         }
 
-        IServiceTask? serviceTask = _serviceTasks.FirstOrDefault(st => st.Type == altinnTaskType);
-        if (serviceTask != null)
-        {
-            return serviceTask;
-        }
-
-        IProcessTask? processTask = _processTasks.FirstOrDefault(pt => pt.Type == altinnTaskType);
+        var tasks = _appImplementationFactory.GetAll<IProcessTask>();
+        IProcessTask? processTask = tasks.FirstOrDefault(pt => pt.Type == altinnTaskType);
 
         if (processTask == null)
         {

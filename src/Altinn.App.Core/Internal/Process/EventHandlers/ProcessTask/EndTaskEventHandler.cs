@@ -3,6 +3,7 @@ using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
@@ -14,9 +15,9 @@ public class EndTaskEventHandler : IEndTaskEventHandler
 {
     private readonly IProcessTaskDataLocker _processTaskDataLocker;
     private readonly IProcessTaskFinalizer _processTaskFinisher;
+    private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IPdfServiceTaskLegacy _pdfServiceTaskLegacy;
     private readonly IEFormidlingServiceTaskLegacy _eformidlingServiceTaskLegacy;
-    private readonly IEnumerable<IProcessTaskEnd> _processTaskEnds;
     private readonly ILogger<EndTaskEventHandler> _logger;
 
     /// <summary>
@@ -25,17 +26,15 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     public EndTaskEventHandler(
         IProcessTaskDataLocker processTaskDataLocker,
         IProcessTaskFinalizer processTaskFinisher,
-        IEnumerable<IProcessTaskEnd> processTaskEnds,
-        ILogger<EndTaskEventHandler> logger,
-        IPdfServiceTaskLegacy pdfServiceTaskLegacy,
-        IEFormidlingServiceTaskLegacy eformidlingServiceTaskLegacy
+        IServiceProvider serviceProvider,
+        ILogger<EndTaskEventHandler> logger
     )
     {
         _processTaskDataLocker = processTaskDataLocker;
         _processTaskFinisher = processTaskFinisher;
-        _pdfServiceTaskLegacy = pdfServiceTaskLegacy;
-        _eformidlingServiceTaskLegacy = eformidlingServiceTaskLegacy;
-        _processTaskEnds = processTaskEnds;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
+        _pdfServiceTaskLegacy = serviceProvider.GetRequiredService<IPdfServiceTaskLegacy>();
+        _eformidlingServiceTaskLegacy = serviceProvider.GetRequiredService<IEFormidlingServiceTaskLegacy>();
         _logger = logger;
     }
 
@@ -78,7 +77,8 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     /// </summary>
     private async Task RunAppDefinedProcessTaskEndHandlers(string endEvent, Instance instance)
     {
-        foreach (IProcessTaskEnd taskEnd in _processTaskEnds)
+        var handlers = _appImplementationFactory.GetAll<IProcessTaskEnd>();
+        foreach (IProcessTaskEnd taskEnd in handlers)
         {
             await taskEnd.End(endEvent, instance);
         }

@@ -10,6 +10,7 @@ using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.FileAnalysis;
 using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Helpers;
@@ -44,9 +45,7 @@ public class DataController : ControllerBase
 {
     private readonly ILogger<DataController> _logger;
     private readonly IDataClient _dataClient;
-    private readonly IEnumerable<IDataProcessor> _dataProcessors;
     private readonly IInstanceClient _instanceClient;
-    private readonly IInstantiationProcessor _instantiationProcessor;
     private readonly IAppModel _appModel;
     private readonly IAppMetadata _appMetadata;
     private readonly IPrefill _prefillService;
@@ -55,31 +54,19 @@ public class DataController : ControllerBase
     private readonly IFeatureManager _featureManager;
     private readonly InternalPatchService _patchService;
     private readonly ModelSerializationService _modelDeserializer;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly IAuthenticationContext _authenticationContext;
+    private readonly AppImplementationFactory _appImplementationFactory;
 
     private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
     /// <summary>
     /// The data controller is responsible for adding business logic to the data elements.
     /// </summary>
-    /// <param name="logger">logger</param>
-    /// <param name="instanceClient">instance service to store instances</param>
-    /// <param name="instantiationProcessor">Instantiation processor</param>
-    /// <param name="dataClient">A service with access to data storage.</param>
-    /// <param name="dataProcessors">Services implementing logic during data read/write</param>
-    /// <param name="appModel">Service for generating app model</param>
-    /// <param name="appMetadata">The app metadata service</param>
-    /// <param name="featureManager">The feature manager controlling enabled features.</param>
-    /// <param name="prefillService">A service with prefill related logic.</param>
-    /// <param name="fileAnalyserService">Service used to analyse files uploaded.</param>
-    /// <param name="fileValidationService">Service used to validate files uploaded.</param>
-    /// <param name="patchService">Service for applying a json patch to a json serializable object</param>
-    /// <param name="modelDeserializer">Service for serializing and deserializing models</param>
     public DataController(
         ILogger<DataController> logger,
         IInstanceClient instanceClient,
-        IInstantiationProcessor instantiationProcessor,
         IDataClient dataClient,
-        IEnumerable<IDataProcessor> dataProcessors,
         IAppModel appModel,
         IPrefill prefillService,
         IFileAnalysisService fileAnalyserService,
@@ -87,15 +74,15 @@ public class DataController : ControllerBase
         IAppMetadata appMetadata,
         IFeatureManager featureManager,
         InternalPatchService patchService,
-        ModelSerializationService modelDeserializer
+        ModelSerializationService modelDeserializer,
+        IAuthenticationContext authenticationContext,
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
 
         _instanceClient = instanceClient;
-        _instantiationProcessor = instantiationProcessor;
         _dataClient = dataClient;
-        _dataProcessors = dataProcessors;
         _appModel = appModel;
         _appMetadata = appMetadata;
         _prefillService = prefillService;
@@ -104,6 +91,9 @@ public class DataController : ControllerBase
         _featureManager = featureManager;
         _patchService = patchService;
         _modelDeserializer = modelDeserializer;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _authenticationContext = authenticationContext;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <summary>
@@ -153,7 +143,7 @@ public class DataController : ControllerBase
         {
             return BadRequest(await GetErrorDetails(fileValidationError.UploadValidationIssues));
         }
-        if (response.Error.Status == (int)HttpStatusCode.BadRequest)
+        if (response.Error.Status == StatusCodes.Status400BadRequest)
         {
             // Old clients will expect BadRequest to have a list of issues or a string
             // not problem details.
@@ -190,10 +180,10 @@ public class DataController : ControllerBase
     [HttpPost("{dataType}")]
     [DisableFormValueModelBinding]
     [RequestSizeLimit(REQUEST_SIZE_LIMIT)]
-    [ProducesResponseType(typeof(DataPostResponse), (int)HttpStatusCode.Created)]
-    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Conflict)]
-    [ProducesResponseType(typeof(DataPostErrorResponse), (int)HttpStatusCode.BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(DataPostResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(DataPostErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DataPostResponse>> Post(
         [FromRoute] string org,
         [FromRoute] string app,
@@ -245,20 +235,27 @@ public class DataController : ControllerBase
                 return instanceResult.Error;
             }
 
-            var (instance, dataType, applicationMetadata) = instanceResult.Ok;
+            var (instance, dataType, _) = instanceResult.Ok;
 
-            if (DataElementAccessChecker.GetCreateProblem(instance, dataType, User) is { } accessProblem)
+            if (
+                DataElementAccessChecker.GetCreateProblem(instance, dataType, _authenticationContext.Current) is
+                { } accessProblem
+            )
             {
                 return accessProblem;
             }
 
-            var dataMutator = new InstanceDataUnitOfWork(
-                instance,
-                _dataClient,
-                _instanceClient,
-                applicationMetadata,
-                _modelDeserializer
-            );
+            var taskId = instance.Process?.CurrentTask?.ElementId;
+            if (taskId is null)
+            {
+                return new ProblemDetails()
+                {
+                    Title = "No current task",
+                    Detail = "Cannot create data element without a current task",
+                    Status = StatusCodes.Status409Conflict,
+                };
+            }
+            var dataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
 
             // Save data elements with form data
             if (dataType.AppLogic?.ClassRef is { } classRef)
@@ -291,7 +288,8 @@ public class DataController : ControllerBase
                     dataType.Id,
                     appModel
                 );
-                await _instantiationProcessor.DataCreation(dataMutator.Instance, appModel, null);
+                var instantiationProcessor = _appImplementationFactory.GetRequired<IInstantiationProcessor>();
+                await instantiationProcessor.DataCreation(dataMutator.Instance, appModel, null);
 
                 // Just stage the element to be created. We don't get the element id before we call UpdateInstanceData
                 dataMutator.AddFormDataElement(dataType.Id, appModel);
@@ -315,7 +313,7 @@ public class DataController : ControllerBase
                     {
                         Title = "Missing content type",
                         Detail = "The request is missing a content type header.",
-                        Status = (int)HttpStatusCode.BadRequest,
+                        Status = StatusCodes.Status400BadRequest,
                     };
                 }
 
@@ -327,7 +325,7 @@ public class DataController : ControllerBase
                         Title = "Request too large",
                         Detail =
                             $"The request body is too large. The content length is {actualLength} bytes, which exceeds the limit of {dataType.MaxSize} MB",
-                        Status = (int)HttpStatusCode.RequestEntityTooLarge,
+                        Status = StatusCodes.Status413RequestEntityTooLarge,
                     };
                 }
 
@@ -337,7 +335,7 @@ public class DataController : ControllerBase
                     {
                         Title = "Invalid data",
                         Detail = "Invalid data provided. Error: The file is zero bytes.",
-                        Status = (int)HttpStatusCode.BadRequest,
+                        Status = StatusCodes.Status400BadRequest,
                     };
                 }
 
@@ -360,12 +358,7 @@ public class DataController : ControllerBase
                 throw new InvalidOperationException("Expected exactly one change in initialChanges");
             }
 
-            await _patchService.RunDataProcessors(
-                dataMutator,
-                initialChanges,
-                instance.Process.CurrentTask.ElementId,
-                language
-            );
+            await _patchService.RunDataProcessors(dataMutator, initialChanges, taskId, language);
 
             if (dataMutator.GetAbandonResponse() is { } abandonResponse)
             {
@@ -384,7 +377,7 @@ public class DataController : ControllerBase
                     .ToList();
                 validationIssues = await _patchService.RunIncrementalValidation(
                     dataMutator,
-                    instance.Process.CurrentTask.ElementId,
+                    taskId,
                     finalChanges,
                     ignoredValidators,
                     language
@@ -522,7 +515,10 @@ public class DataController : ControllerBase
             }
             var (instance, dataType, dataElement) = instanceResult.Ok;
 
-            if (DataElementAccessChecker.GetReaderProblem(instance, dataType, User) is { } accessProblem)
+            if (
+                DataElementAccessChecker.GetReaderProblem(instance, dataType, _authenticationContext.Current) is
+                { } accessProblem
+            )
             {
                 return Problem(accessProblem);
             }
@@ -588,7 +584,10 @@ public class DataController : ControllerBase
             }
             var (instance, dataType, dataElement) = instanceResult.Ok;
 
-            if (DataElementAccessChecker.GetUpdateProblem(instance, dataType, User) is { } accessProblem)
+            if (
+                DataElementAccessChecker.GetUpdateProblem(instance, dataType, _authenticationContext.Current) is
+                { } accessProblem
+            )
             {
                 return Problem(accessProblem);
             }
@@ -622,9 +621,9 @@ public class DataController : ControllerBase
     /// <returns>A response object with the new full model and validation issues from all the groups that run</returns>
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
     [HttpPatch("{dataGuid:guid}")]
-    [ProducesResponseType(typeof(DataPatchResponse), 200)]
-    [ProducesResponseType(typeof(ProblemDetails), 409)]
-    [ProducesResponseType(typeof(ProblemDetails), 422)]
+    [ProducesResponseType(typeof(DataPatchResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [Obsolete("Use PatchFormDataMultiple instead")]
     public async Task<ActionResult<DataPatchResponse>> PatchFormData(
         [FromRoute] string org,
@@ -705,7 +704,10 @@ public class DataController : ControllerBase
             // Verify that the data elements isn't restricted for the user
             foreach (var dataType in dataTypes)
             {
-                if (DataElementAccessChecker.GetUpdateProblem(instance, dataType, User) is { } accessProblem)
+                if (
+                    DataElementAccessChecker.GetUpdateProblem(instance, dataType, _authenticationContext.Current) is
+                    { } accessProblem
+                )
                 {
                     return Problem(accessProblem);
                 }
@@ -773,7 +775,15 @@ public class DataController : ControllerBase
             }
             var (instance, dataType, dataElement) = instanceResult.Ok;
 
-            if (DataElementAccessChecker.GetDeleteProblem(instance, dataType, dataGuid, User) is { } accessProblem)
+            if (
+                DataElementAccessChecker.GetDeleteProblem(
+                    instance,
+                    dataType,
+                    dataGuid,
+                    _authenticationContext.Current
+                ) is
+                { } accessProblem
+            )
             {
                 return Problem(accessProblem);
             }
@@ -782,13 +792,7 @@ public class DataController : ControllerBase
                 instance.Process?.CurrentTask?.ElementId
                 ?? throw new InvalidOperationException("Instance have no process");
 
-            var dataMutator = new InstanceDataUnitOfWork(
-                instance,
-                _dataClient,
-                _instanceClient,
-                await _appMetadata.GetApplicationMetadata(),
-                _modelDeserializer
-            );
+            var dataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
 
             dataMutator.RemoveDataElement(dataElement);
 
@@ -850,7 +854,7 @@ public class DataController : ControllerBase
             return StatusCode((int)se.StatusCode, se.Message);
         }
 
-        return StatusCode((int)HttpStatusCode.InternalServerError, $"{message}");
+        return StatusCode(StatusCodes.Status500InternalServerError, $"{message}");
     }
 
     /// <summary>
@@ -925,7 +929,8 @@ public class DataController : ControllerBase
         // we need to save a copy to detect changes if dataProcessRead changes the model
         byte[] beforeProcessDataRead = JsonSerializer.SerializeToUtf8Bytes(appModel);
 
-        foreach (var dataProcessor in _dataProcessors)
+        var dataProcessors = _appImplementationFactory.GetAll<IDataProcessor>();
+        foreach (var dataProcessor in dataProcessors)
         {
             _logger.LogInformation(
                 "ProcessDataRead for {ModelType} using {DataProcessor}",
@@ -1060,13 +1065,21 @@ public class DataController : ControllerBase
 
         var serviceModel = deserializationResult.Ok;
 
-        var dataMutator = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            await _appMetadata.GetApplicationMetadata(),
-            _modelDeserializer
-        );
+        var taskId = instance.Process?.CurrentTask?.ElementId;
+        if (taskId is null)
+        {
+            return Problem(
+                new ProblemDetails()
+                {
+                    Title = "No current task",
+                    Detail = "Cannot update data element without a current task",
+                    Status = StatusCodes.Status409Conflict,
+                }
+            );
+        }
+
+        var dataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
+
         // Get the previous service model for dataProcessing to work
         var oldServiceModel = await dataMutator.GetFormData(dataElement);
         // Set the new service model so that dataAccessors see the new state
@@ -1086,12 +1099,7 @@ public class DataController : ControllerBase
 
         // Run data processors keeping track of changes for diff return
         var jsonBeforeDataProcessors = JsonSerializer.Serialize(serviceModel);
-        await _patchService.RunDataProcessors(
-            dataMutator,
-            new DataElementChanges([requestedChange]),
-            instance.Process.CurrentTask.ElementId,
-            language
-        );
+        await _patchService.RunDataProcessors(dataMutator, new DataElementChanges([requestedChange]), taskId, language);
         var jsonAfterDataProcessors = JsonSerializer.Serialize(serviceModel);
 
         if (dataMutator.GetAbandonResponse() is { } abandonResponse)
@@ -1137,7 +1145,7 @@ public class DataController : ControllerBase
 
     private ObjectResult Problem(ProblemDetails error)
     {
-        return StatusCode(error.Status ?? (int)HttpStatusCode.InternalServerError, error);
+        return StatusCode(error.Status ?? StatusCodes.Status500InternalServerError, error);
     }
 
     private async Task<
@@ -1153,7 +1161,7 @@ public class DataController : ControllerBase
                 {
                     Title = "Instance Not Found",
                     Detail = $"Did not find instance {instanceOwnerPartyId}/{instanceGuid}",
-                    Status = (int)HttpStatusCode.NotFound,
+                    Status = StatusCodes.Status404NotFound,
                 };
             }
 
@@ -1168,7 +1176,7 @@ public class DataController : ControllerBase
                     Title = "Data Element Not Found",
                     Detail =
                         $"Did not find data element {dataElementGuid} on instance {instanceOwnerPartyId}/{instanceGuid}",
-                    Status = (int)HttpStatusCode.BadRequest,
+                    Status = StatusCodes.Status404NotFound,
                 };
             }
 
@@ -1180,7 +1188,7 @@ public class DataController : ControllerBase
                     Title = "Data Type Not Found",
                     Detail =
                         $"""Could not find the specified data type: "{dataElement.DataType}" in applicationmetadata.json""",
-                    Status = (int)HttpStatusCode.BadRequest,
+                    Status = StatusCodes.Status400BadRequest,
                 };
             }
 
@@ -1215,7 +1223,7 @@ public class DataController : ControllerBase
                 {
                     Title = "Instance Not Found",
                     Detail = $"Did not find instance {instanceOwnerPartyId}/{instanceGuid}",
-                    Status = (int)HttpStatusCode.NotFound,
+                    Status = StatusCodes.Status404NotFound,
                 };
             }
 
@@ -1234,7 +1242,7 @@ public class DataController : ControllerBase
                         Title = "Data Element Not Found",
                         Detail =
                             $"Did not find data element {dataElementGuid} on instance {instanceOwnerPartyId}/{instanceGuid}",
-                        Status = (int)HttpStatusCode.NotFound,
+                        Status = StatusCodes.Status404NotFound,
                     };
                 }
 
@@ -1246,7 +1254,7 @@ public class DataController : ControllerBase
                         Title = "Data Type Not Found",
                         Detail =
                             $"""Data element {dataElement.Id} requires data type "{dataElement.DataType}", but it was not found in applicationmetadata.json""",
-                        Status = (int)HttpStatusCode.InternalServerError,
+                        Status = StatusCodes.Status500InternalServerError,
                     };
                 }
 
@@ -1279,7 +1287,7 @@ public class DataController : ControllerBase
                 {
                     Title = "Instance Not Found",
                     Detail = $"Did not find instance {instanceOwnerPartyId}/{instanceGuid}",
-                    Status = (int)HttpStatusCode.NotFound,
+                    Status = StatusCodes.Status404NotFound,
                 };
             }
 
@@ -1292,7 +1300,7 @@ public class DataController : ControllerBase
                 {
                     Title = "Data Type Not Found",
                     Detail = $"""Could not find the specified data type: "{dataTypeId}" in applicationmetadata.json""",
-                    Status = (int)HttpStatusCode.BadRequest,
+                    Status = StatusCodes.Status400BadRequest,
                 };
             }
 

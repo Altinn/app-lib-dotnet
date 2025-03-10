@@ -98,17 +98,30 @@ public class ApiTestBase
         }
     }
 
-    public HttpClient GetRootedClient(
+    public HttpClient GetRootedUserClient(
         string org,
         string app,
-        int userId,
-        int? partyId,
-        int authenticationLevel = 2,
-        string? serviceOwnerOrg = null
+        int userId = TestAuthentication.DefaultUserId,
+        int partyId = TestAuthentication.DefaultUserPartyId,
+        int authenticationLevel = TestAuthentication.DefaultUserAuthenticationLevel
     )
     {
         var client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(userId, partyId, authenticationLevel, org: serviceOwnerOrg);
+        string token = TestAuthentication.GetUserToken(userId, partyId, authenticationLevel);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
+    public HttpClient GetRootedOrgClient(
+        string org,
+        string app,
+        string orgNumber = TestAuthentication.DefaultOrgNumber,
+        string scope = TestAuthentication.DefaultServiceOwnerScope,
+        string serviceOwnerOrg = TestAuthentication.DefaultOrg
+    )
+    {
+        var client = GetRootedClient(org, app);
+        string token = TestAuthentication.GetServiceOwnerToken(orgNumber, org: serviceOwnerOrg, scope: scope);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }
@@ -231,10 +244,10 @@ public class ApiTestBase
             var clientFactoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
             clientFactoryMock
                 .Setup(f => f.CreateClient(It.IsAny<string>()))
-                .Returns(sp.GetRequiredService<HttpClient>());
+                .Returns(() => sp.GetRequiredService<HttpClient>());
             return clientFactoryMock.Object;
         });
-        services.AddSingleton<HttpClient>(sp => new HttpClient(
+        services.AddTransient<HttpClient>(sp => new HttpClient(
             new MockHttpMessageHandler(SendAsync, sp.GetRequiredService<ILogger<MockHttpMessageHandler>>())
         ));
     }
