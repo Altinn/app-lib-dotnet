@@ -1,28 +1,20 @@
 using System.Diagnostics;
-using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Exceptions;
-using Altinn.App.Core.Features.Auth;
-using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
-using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Models.UserAction;
-using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
-using InternalSignee = Altinn.App.Core.Internal.Sign.Signee;
 using JsonException = Newtonsoft.Json.JsonException;
 using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganisationSignee;
 using PersonSignee = Altinn.App.Core.Features.Signing.Models.Signee.PersonSignee;
@@ -34,8 +26,6 @@ internal sealed class SigningService(
     ISigningDelegationService signingDelegationService,
     AppImplementationFactory appImplementationFactory,
     IAppMetadata appMetadata,
-    ISignClient signClient,
-    ISigningReceiptService signingReceiptService,
     ISigningCallToActionService signingCallToActionService,
     ILogger<SigningService> logger,
     Telemetry? telemetry = null
@@ -53,8 +43,6 @@ internal sealed class SigningService(
     );
     private readonly ILogger<SigningService> _logger = logger;
     private readonly IAppMetadata _appMetadata = appMetadata;
-    private readonly ISignClient _signClient = signClient;
-    private readonly ISigningReceiptService _signingReceiptService = signingReceiptService;
     private readonly ISigningCallToActionService _signingCallToActionService = signingCallToActionService;
     private readonly AppImplementationFactory _appImplementationFactory = appImplementationFactory;
     private const string ApplicationJsonContentType = "application/json";
@@ -208,72 +196,6 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
-    public async Task Sign(UserActionContext userActionContext, ProcessTask currentTask)
-    {
-        using Activity? activity = telemetry?.StartSignActivity();
-
-        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        AltinnSignatureConfiguration? signatureConfiguration = currentTask
-            .ExtensionElements
-            ?.TaskExtension
-            ?.SignatureConfiguration;
-
-        List<string> dataTypeIds = signatureConfiguration?.DataTypesToSign ?? [];
-
-        List<DataType>? dataTypesToSign = appMetadata
-            .DataTypes?.Where(d => dataTypeIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase))
-            .ToList();
-        List<DataElementSignature> dataElementSignatures = GetDataElementSignatures(
-            userActionContext.Instance.Data,
-            dataTypesToSign
-        );
-
-        string signatureDataType =
-            GetDataTypeForSignature(currentTask, userActionContext.Instance.Data, dataTypesToSign)
-            ?? throw new ApplicationConfigException(
-                "Missing configuration for signing. Check that the task has a signature configuration and that the data types to sign are defined."
-            );
-
-        SignatureContext signatureContext = new(
-            new InstanceIdentifier(userActionContext.Instance),
-            currentTask.Id,
-            signatureDataType,
-            await GetSignee(userActionContext),
-            dataElementSignatures
-        );
-
-        await _signClient.SignDataElements(signatureContext);
-
-        try
-        {
-            SendCorrespondenceResponse? result = await _signingReceiptService.SendSignatureReceipt(
-                signatureContext.InstanceIdentifier,
-                signatureContext.Signee,
-                dataElementSignatures,
-                userActionContext,
-                signatureConfiguration?.CorrespondenceResources
-            );
-
-            if (result is not null)
-            {
-                _logger.LogInformation(
-                    "Correspondence successfully sent to {Recipients}",
-                    string.Join(", ", result.Correspondences.Select(x => x.Recipient))
-                );
-            }
-        }
-        catch (ConfigurationException e)
-        {
-            // TODO: What do we do here? Probably nothing.
-            _logger.LogWarning(e, "Correspondence configuration error: {Exception}", e.Message);
-        }
-        catch (Exception e)
-        {
-            // TODO: What do we do here? This failure is pretty silent... but throwing would cause havoc
-            _logger.LogError(e, "Correspondence send failed: {Exception}", e.Message);
-        }
-    }
-
     public async Task AbortRuntimeDelegatedSigning(
         string taskId,
         IInstanceDataMutator instanceDataMutator,
@@ -345,82 +267,6 @@ internal sealed class SigningService(
 
         SigneesResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
         return signeesResult;
-    }
-
-    private static List<DataElementSignature> GetDataElementSignatures(
-        IEnumerable<DataElement> dataElements,
-        IEnumerable<DataType>? dataTypesToSign
-    )
-    {
-        List<DataElementSignature> connectedDataElements = [];
-        if (dataTypesToSign.IsNullOrEmpty())
-        {
-            return connectedDataElements;
-        }
-
-        foreach (DataType dataType in dataTypesToSign)
-        {
-            connectedDataElements.AddRange(
-                dataElements
-                    .Where(d => d.DataType.Equals(dataType.Id, StringComparison.OrdinalIgnoreCase))
-                    .Select(d => new DataElementSignature(d.Id))
-            );
-        }
-
-        return connectedDataElements;
-    }
-
-    private static string? GetDataTypeForSignature(
-        ProcessTask currentTask,
-        IEnumerable<DataElement> dataElements,
-        IEnumerable<DataType>? dataTypesToSign
-    )
-    {
-        string? signatureDataType = currentTask
-            .ExtensionElements
-            ?.TaskExtension
-            ?.SignatureConfiguration
-            ?.SignatureDataType;
-
-        if (dataTypesToSign.IsNullOrEmpty())
-        {
-            return null;
-        }
-
-        var dataElementMatchExists = dataElements.Any(de =>
-            dataTypesToSign.Any(dt => string.Equals(dt.Id, de.DataType, StringComparison.OrdinalIgnoreCase))
-        );
-        var allDataTypesAreOptional = dataTypesToSign.All(d => d.MinCount == 0);
-        return dataElementMatchExists || allDataTypesAreOptional ? signatureDataType : null;
-    }
-
-    private static async Task<InternalSignee> GetSignee(UserActionContext context)
-    {
-        switch (context.Authentication)
-        {
-            case Authenticated.User user:
-            {
-                UserProfile userProfile = await user.LookupProfile();
-                Party orgProfile = await user.LookupSelectedParty();
-
-                return new InternalSignee
-                {
-                    UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
-                    PersonNumber = userProfile.Party.SSN,
-                    OrganisationNumber = orgProfile.OrgNumber,
-                };
-            }
-            case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
-                return new InternalSignee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
-            case Authenticated.SystemUser systemUser:
-                return new InternalSignee
-                {
-                    SystemUserId = systemUser.SystemUserId[0],
-                    OrganisationNumber = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
-                };
-            default:
-                throw new SigningException("Could not get signee");
-        }
     }
 
     private async Task<SigneeContext> GenerateSigneeContext(
