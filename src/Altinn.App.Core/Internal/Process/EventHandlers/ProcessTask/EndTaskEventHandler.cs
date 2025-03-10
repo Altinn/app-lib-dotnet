@@ -33,8 +33,8 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         _processTaskDataLocker = processTaskDataLocker;
         _processTaskFinisher = processTaskFinisher;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
-        _pdfServiceTaskLegacy = serviceProvider.GetRequiredService<IPdfServiceTaskLegacy>();
-        _eformidlingServiceTaskLegacy = serviceProvider.GetRequiredService<IEFormidlingServiceTaskLegacy>();
+        _pdfServiceTaskLegacy = _appImplementationFactory.GetRequired<IPdfServiceTaskLegacy>();
+        _eformidlingServiceTaskLegacy = _appImplementationFactory.GetRequired<IEFormidlingServiceTaskLegacy>();
         _logger = logger;
     }
 

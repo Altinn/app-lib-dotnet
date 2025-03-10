@@ -28,7 +28,6 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
     private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly UserActionService _userActionService;
-    private readonly IEnumerable<IServiceTask> _serviceTasks;
     private readonly Telemetry? _telemetry;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
@@ -47,7 +46,6 @@ public class ProcessEngine : IProcessEngine
         UserActionService userActionService,
         IAuthenticationContext authenticationContext,
         IServiceProvider serviceProvider,
-        IEnumerable<IServiceTask> serviceTasks,
         Telemetry? telemetry = null
     )
     {
@@ -57,7 +55,6 @@ public class ProcessEngine : IProcessEngine
         _processEventDispatcher = processEventDispatcher;
         _processTaskCleaner = processTaskCleaner;
         _userActionService = userActionService;
-        _serviceTasks = serviceTasks;
         _telemetry = telemetry;
         _authenticationContext = authenticationContext;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
@@ -174,7 +171,8 @@ public class ProcessEngine : IProcessEngine
         // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
         if (action is not "reject")
         {
-            IServiceTask? serviceTask = _serviceTasks.FirstOrDefault(t =>
+            IEnumerable<IServiceTask> serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
+            IServiceTask? serviceTask = serviceTasks.FirstOrDefault(t =>
                 t.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase)
             );
 

@@ -29,7 +29,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
     [Fact]
     public async Task Can_Set_PdfServiceTask_As_CurrentTask()
     {
-        using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next
         using HttpResponseMessage nextResponse = await client.PutAsync(
@@ -46,7 +46,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
     [Fact]
     public async Task Can_Reject_PdfServiceTask_When_Reject_Configured()
     {
-        using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next to enter PDF task
         using HttpResponseMessage nextResponse = await client.PutAsync(
@@ -100,7 +100,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
             );
         };
 
-        using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next
         using HttpResponseMessage firstNextResponse = await client.PutAsync(
@@ -140,7 +140,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
         };
 
-        using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next
         using HttpResponseMessage firstNextResponse = await client.PutAsync(

@@ -55,7 +55,7 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
             throw new Exception($"Not mocked http request: {message.RequestUri!.PathAndQuery}");
         };
 
-        using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next
         using HttpResponseMessage nextResponse = await client.PutAsync(
@@ -88,7 +88,7 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
             throw new Exception($"Not mocked http request: {message.RequestUri!.PathAndQuery}");
         };
 
-        using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next to move from PdfServiceTask to EFormidlingServiceTask
         using HttpResponseMessage firstNextResponse = await client.PutAsync(
@@ -131,7 +131,7 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
         };
 
-        using HttpClient client = GetRootedClient(Org, App, 1337, InstanceOwnerPartyId);
+        using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next to move from PdfServiceTask to EFormidlingServiceTask
         using HttpResponseMessage firstNextResponse = await client.PutAsync(
