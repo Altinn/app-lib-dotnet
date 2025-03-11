@@ -6,12 +6,12 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal sealed class FiksArkivSetupBuilder(IServiceCollection serviceCollection) : IFiksArkivSetupBuilder
 {
-    public IFiksArkivSetupBuilder WithErrorHandler<TErrorHandler>()
-        where TErrorHandler : IFiksArkivErrorHandler
-    {
-        serviceCollection.AddTransient(typeof(IFiksArkivErrorHandler), typeof(TErrorHandler));
-        return this;
-    }
+    // public IFiksArkivSetupBuilder WithErrorHandler<TErrorHandler>()
+    //     where TErrorHandler : IFiksArkivErrorHandler
+    // {
+    //     serviceCollection.AddTransient(typeof(IFiksArkivErrorHandler), typeof(TErrorHandler));
+    //     return this;
+    // }
 
     public IFiksArkivSetupBuilder WithFiksIOConfig(Action<FiksIOSettings> configureOptions)
     {

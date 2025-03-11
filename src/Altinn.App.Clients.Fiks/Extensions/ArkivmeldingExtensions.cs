@@ -9,7 +9,7 @@ namespace Altinn.App.Clients.Fiks.Extensions;
 
 internal static class ArkivmeldingExtensions
 {
-    public static ReadOnlyMemory<byte> SerializeXmlBytes(this Arkivmelding archiveRecord)
+    public static ReadOnlyMemory<byte> SerializeXmlBytes(this Arkivmelding archiveRecord, bool indent = false)
     {
         var serializer = new XmlSerializer(typeof(Arkivmelding));
 
@@ -17,7 +17,7 @@ internal static class ArkivmeldingExtensions
         var settings = new XmlWriterSettings
         {
             Encoding = new UTF8Encoding(false),
-            Indent = false,
+            Indent = indent,
             OmitXmlDeclaration = false,
         };
 
