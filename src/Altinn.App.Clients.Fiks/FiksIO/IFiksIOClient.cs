@@ -2,8 +2,7 @@ namespace Altinn.App.Clients.Fiks.FiksIO;
 
 public interface IFiksIOClient : IDisposable
 {
-    Guid AccountId { get; }
-    Guid IntegrationId { get; }
+    IFiksIOAccountSettings AccountSettings { get; }
     RetryStrategy RetryStrategy { get; set; }
     bool IsHealthy();
     Task Reconnect();

@@ -14,7 +14,7 @@ public static class ServiceCollectionExtensions
         if (services.IsConfigured<FiksIOSettings>() is false)
             services.ConfigureFiksIOClient("FiksIOSettings");
 
-        services.TryAddTransient<IFiksIOClient, FiksIOClient>();
+        services.AddTransient<IFiksIOClient, FiksIOClient>();
 
         return new FiksIOSetupBuilder(services);
     }
@@ -27,10 +27,10 @@ public static class ServiceCollectionExtensions
         }
 
         services.AddFiksIOClient();
-        services.AddTransient<IFiksArkivErrorHandler, FiksArkivDefaultErrorHandler>();
+        // services.AddTransient<IFiksArkivErrorHandler, FiksArkivDefaultErrorHandler>();
         services.AddTransient<IFiksArkivMessageProvider, FiksArkivDefaultMessageProvider>();
-        services.AddTransient<IServiceTask, FiksArkivServiceTask>();
-        services.AddTransient<IFiksArkivServiceTask, FiksArkivServiceTask>(); // TODO: Rewrite the injection that depends on this
+        services.AddTransient<IFiksArkivServiceTask, FiksArkivServiceTask>();
+        services.AddTransient<IServiceTask>(x => x.GetRequiredService<IFiksArkivServiceTask>());
         services.AddHostedService<FiksArkivConfigValidationService>();
         services.AddHostedService<FiksArkivEventService>();
 
@@ -43,14 +43,12 @@ public static class ServiceCollectionExtensions
     )
     {
         services.AddOptions<FiksIOSettings>().Configure(configureOptions).ValidateDataAnnotations();
-
         return services;
     }
 
     public static IServiceCollection ConfigureFiksIOClient(this IServiceCollection services, string configSectionPath)
     {
         services.AddOptions<FiksIOSettings>().BindConfiguration(configSectionPath).ValidateDataAnnotations();
-
         return services;
     }
 
@@ -60,14 +58,12 @@ public static class ServiceCollectionExtensions
     )
     {
         services.AddOptions<FiksArkivSettings>().Configure(configureOptions);
-
         return services;
     }
 
     public static IServiceCollection ConfigureFiksArkiv(this IServiceCollection services, string configSectionPath)
     {
         services.AddOptions<FiksArkivSettings>().BindConfiguration(configSectionPath);
-
         return services;
     }
 }

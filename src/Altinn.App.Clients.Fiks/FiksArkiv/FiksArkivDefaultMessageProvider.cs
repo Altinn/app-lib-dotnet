@@ -1,5 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Text;
+using System.Xml;
 using System.Xml.Serialization;
+using Altinn.App.Clients.Fiks.Extensions;
 // using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Core.Extensions;
@@ -16,30 +20,32 @@ using Altinn.Platform.Storage.Interface.Models;
 // using KS.Fiks.Arkiv.Forenklet.Arkivering.V1;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;
 using KS.Fiks.Arkiv.Models.V1.Kodelister;
+using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 // using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using KS.Fiks.Arkiv.Models.V1.Metadatakatalog;
 // using KS.Fiks.IO.Arkiv.Client.ForenkletArkivering;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-
-// using Kode = KS.Fiks.Arkiv.Models.V1.Kodelister.Kode;
+using Kode = KS.Fiks.Arkiv.Models.V1.Kodelister.Kode;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvider
 {
     private readonly FiksArkivSettings _fiksArkivSettings;
+    private readonly FiksIOSettings _fiksIOSettings;
     private readonly IAppMetadata _appMetadata;
     private readonly IDataClient _dataClient;
     private readonly ILogger<FiksArkivDefaultMessageProvider> _logger;
-    private IAltinnCdnClient? _altinnCdnClient;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly IAltinnPartyClient _altinnPartyClient;
-    private readonly FiksIOSettings _fiksIOSettings;
+
+    private IAltinnCdnClient? _altinnCdnClient;
+    private ApplicationMetadata? _applicationMetadataCache;
 
     public FiksArkivDefaultMessageProvider(
         IOptions<FiksArkivSettings> fiksArkivSettings,
-        IOptions<FiksIOSettings> fiksIoSettings,
+        IOptions<FiksIOSettings> fiksIOSettings,
         IAppMetadata appMetadata,
         IDataClient dataClient,
         IAuthenticationContext authenticationContext,
@@ -54,25 +60,26 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         _altinnPartyClient = altinnPartyClient;
         _authenticationContext = authenticationContext;
         _fiksArkivSettings = fiksArkivSettings.Value;
-        _fiksIOSettings = fiksIoSettings.Value;
+        _fiksIOSettings = fiksIOSettings.Value;
         _logger = logger;
     }
 
     public async Task<FiksIOMessageRequest> CreateMessageRequest(string taskId, Instance instance)
     {
+        if (IsEnabledForTask(taskId) is false)
+            throw new Exception($"Fiks Arkiv error: Auto-send is not enabled for this task: {taskId}");
+
         var recipient = await GetRecipient(instance);
-        var documents = await GetDocuments(instance);
         var instanceId = new InstanceIdentifier(instance.Id);
-        var archiveMessage = await GenerateArchiveMessage(instance, documents, recipient);
+        var messagePayloads = await GenerateMessagePayloads(instance, recipient);
 
         return new FiksIOMessageRequest(
             Recipient: recipient,
-            // MessageType: FiksArkivMeldingtype.ArkivmeldingOpprett,
-            MessageType: "no.ks.fiks.arkiv.v1.arkivering.arkivmelding.opprett",
+            MessageType: FiksArkivMeldingtype.ArkivmeldingOpprett,
             SendersReference: instanceId.InstanceGuid,
-            MessageLifetime: TimeSpan.FromDays(14),
-            // Payload: [archiveMessage, documents.FormDocument, .. documents.Attachments]
-            Payload: [archiveMessage]
+            MessageLifetime: TimeSpan.FromDays(2),
+            // Payload: messagePayloads
+            Payload: messagePayloads.Take(1) // TEMP: No attachments for now
         );
     }
 
@@ -103,30 +110,152 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             throw new Exception("Fiks Arkiv error: Attachments must have DataType set for all entries.");
     }
 
+    private bool IsEnabledForTask(string taskId) => _fiksArkivSettings.AutoSend?.AfterTaskId == taskId;
+
+    private async Task<ApplicationMetadata> GetApplicationMetadata()
+    {
+        _applicationMetadataCache ??= await _appMetadata.GetApplicationMetadata();
+        return _applicationMetadataCache;
+    }
+
+    private static T VerifiedNotNull<T>(T? value)
+    {
+        if (value is null)
+            throw new Exception($"Value of type {typeof(T).Name} is unexpectedly null.");
+
+        return value;
+    }
+
+    private async Task<IEnumerable<FiksIOMessagePayload>> GenerateMessagePayloads(Instance instance, Guid recipient)
+    {
+        var appMetadata = await GetApplicationMetadata();
+        var documentTitle = appMetadata.Title[LanguageConst.Nb];
+        var documentCreator = appMetadata.AppIdentifier.Org;
+        var recipientDetails = GetRecipientDetails(instance, recipient);
+        var serviceOwnerDetails = await GetServiceOwnerDetails(instance, documentCreator);
+        var instanceOwnerDetails = await GetInstanceOwnerDetails(instance, documentCreator);
+        var senderDetails = await GetSenderDetails();
+        var documents = await GetDocuments(instance);
+
+        var caseFile = new Saksmappe
+        {
+            Tittel = documentTitle,
+            OffentligTittel = documentTitle,
+            AdministrativEnhet = new AdministrativEnhet { Navn = documentCreator },
+            Saksaar = DateTime.Now.Year,
+            Saksdato = DateTime.Now,
+            ReferanseEksternNoekkel = new EksternNoekkel
+            {
+                Fagsystem = "SaksOgArkivsystem", // TODO: What should this value really be?
+                Noekkel = Guid.NewGuid().ToString(),
+            },
+        };
+
+        caseFile.Klassifikasjon.Add(senderDetails);
+
+        var journalEntry = new Journalpost
+        {
+            Journalaar = DateTime.Now.Year,
+            DokumentetsDato = DateTime.Now,
+            SendtDato = DateTime.Now,
+            Tittel = documentTitle,
+            OffentligTittel = documentTitle,
+            OpprettetAv = documentCreator,
+            ArkivertAv = documentCreator,
+            Journalstatus = new Journalstatus
+            {
+                KodeProperty = JournalstatusKoder.Journalfoert.Verdi,
+                Beskrivelse = JournalstatusKoder.Journalfoert.Beskrivelse,
+            },
+            Journalposttype = new Journalposttype
+            {
+                KodeProperty = JournalposttypeKoder.UtgaaendeDokument.Verdi,
+                Beskrivelse = JournalposttypeKoder.UtgaaendeDokument.Beskrivelse,
+            },
+            ReferanseForelderMappe = new ReferanseTilMappe()
+            {
+                ReferanseEksternNoekkel = caseFile.ReferanseEksternNoekkel,
+            },
+        };
+
+        // Recipient
+        journalEntry.Korrespondansepart.Add(recipientDetails);
+
+        // Sender(s)
+        journalEntry.Korrespondansepart.Add(serviceOwnerDetails);
+        if (instanceOwnerDetails is not null)
+        {
+            journalEntry.Korrespondansepart.Add(instanceOwnerDetails);
+        }
+
+        // Internal sender
+        journalEntry.Korrespondansepart.Add(
+            new Korrespondansepart
+            {
+                Korrespondanseparttype = new Korrespondanseparttype
+                {
+                    KodeProperty = KorrespondanseparttypeKoder.InternAvsender.Verdi,
+                    Beskrivelse = KorrespondanseparttypeKoder.InternAvsender.Beskrivelse,
+                },
+                AdministrativEnhet = FiksArkivConstants.AdministrativEnhet,
+                Organisasjonid = FiksArkivConstants.AltinnOrgNo,
+                DeresReferanse = instance.Id,
+            }
+        );
+
+        // Main form data file
+        journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(documents.FormDocument));
+
+        // Attachments
+        foreach (var attachment in documents.Attachments)
+        {
+            journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(attachment));
+        }
+
+        // Archive record
+        var archiveRecord = new Arkivmelding
+        {
+            Mappe = caseFile,
+            Registrering = journalEntry,
+            AntallFiler = journalEntry.Dokumentbeskrivelse.Count + 1,
+            System = FiksArkivConstants.AltinnSystemLabel,
+        };
+
+        // TEMP log
+        StringWriter logWriter = new();
+        XmlSerializer logSerializer = new(typeof(Arkivmelding));
+        logSerializer.Serialize(logWriter, archiveRecord);
+        _logger.LogWarning(logWriter.ToString());
+
+        return
+        [
+            archiveRecord.ToPayload(),
+            documents.FormDocument.Payload,
+            .. documents.Attachments.Select(x => x.Payload),
+        ];
+    }
+
     private async Task<ArchiveDocuments> GetDocuments(Instance instance)
     {
-        var instanceId = new InstanceIdentifier(instance.Id);
-        var appMetadata = await _appMetadata.GetApplicationMetadata();
-        var formDocumentSettings = _fiksArkivSettings.AutoSend?.FormDocument;
+        InstanceIdentifier instanceId = new(instance.Id);
+        var formDocumentSettings = VerifiedNotNull(_fiksArkivSettings.AutoSend?.FormDocument);
         var attachmentSettings = _fiksArkivSettings.AutoSend?.Attachments ?? [];
 
-        // This should already have been validated by ValidateConfiguration
-        if (string.IsNullOrWhiteSpace(formDocumentSettings?.DataType))
-            throw new Exception($"Fiks Arkiv error: Invalid FormDocument configuration");
-
         var formElement = instance.Data.First(x => x.DataType == formDocumentSettings.DataType);
-        var formDocument = await GetPayload(formElement, formDocumentSettings, instanceId, appMetadata);
+        var formDocument = await GetPayload(
+            formElement,
+            formDocumentSettings.Filename,
+            DokumenttypeKoder.Dokument,
+            instanceId
+        );
 
-        List<FiksIOMessagePayload> attachments = [];
+        List<PayloadWrapper> attachments = [];
         foreach (var attachmentSetting in attachmentSettings)
         {
-            // This should already have been validated by ValidateConfiguration
-            if (string.IsNullOrWhiteSpace(attachmentSetting.DataType))
-                throw new Exception($"Fiks Arkiv error: Invalid Attachment configuration '{attachmentSetting}'");
-
             List<DataElement> dataElements = instance
                 .Data.Where(x => x.DataType == attachmentSetting.DataType)
                 .ToList();
+
             if (dataElements.Count == 0)
                 throw new Exception(
                     $"Fiks Arkiv error: No data elements found for Attachment.DataType '{attachmentSetting.DataType}'"
@@ -134,7 +263,9 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
 
             attachments.AddRange(
                 await Task.WhenAll(
-                    dataElements.Select(async x => await GetPayload(x, attachmentSetting, instanceId, appMetadata))
+                    dataElements.Select(async x =>
+                        await GetPayload(x, attachmentSetting.Filename, DokumenttypeKoder.Vedlegg, instanceId)
+                    )
                 )
             );
         }
@@ -145,39 +276,43 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         return new ArchiveDocuments(formDocument, attachments);
     }
 
-    private async Task<FiksIOMessagePayload> GetPayload(
+    private async Task<PayloadWrapper> GetPayload(
         DataElement dataElement,
-        FiksArkivPayloadSettings payloadSettings,
-        InstanceIdentifier instanceId,
-        ApplicationMetadata appMetadata
+        string? filename,
+        Kode fileTypeCode,
+        InstanceIdentifier instanceId
     )
     {
-        if (string.IsNullOrWhiteSpace(payloadSettings.Filename) is false)
+        ApplicationMetadata appMetadata = await GetApplicationMetadata();
+
+        if (string.IsNullOrWhiteSpace(filename) is false)
         {
-            dataElement.Filename = payloadSettings.Filename;
+            dataElement.Filename = filename;
         }
         else if (string.IsNullOrWhiteSpace(dataElement.Filename))
         {
-            var extension = GetExtensionForMimeType(dataElement.ContentType);
-            dataElement.Filename = $"{dataElement.DataType}{extension}";
+            dataElement.Filename = $"{dataElement.DataType}{dataElement.GetExtensionForMimeType()}";
         }
 
-        return new FiksIOMessagePayload(
-            dataElement.Filename,
-            await _dataClient.GetDataBytes(
-                appMetadata.AppIdentifier.Org,
-                appMetadata.AppIdentifier.App,
-                instanceId.InstanceOwnerPartyId,
-                instanceId.InstanceGuid,
-                Guid.Parse(dataElement.Id)
-            )
+        return new PayloadWrapper(
+            new FiksIOMessagePayload(
+                dataElement.Filename,
+                await _dataClient.GetDataBytes(
+                    appMetadata.AppIdentifier.Org,
+                    appMetadata.AppIdentifier.App,
+                    instanceId.InstanceOwnerPartyId,
+                    instanceId.InstanceGuid,
+                    Guid.Parse(dataElement.Id)
+                )
+            ),
+            fileTypeCode
         );
     }
 
-    private static void EnsureUniqueFilenames(List<FiksIOMessagePayload> attachments)
+    private static void EnsureUniqueFilenames(List<PayloadWrapper> attachments)
     {
         var hasDuplicateFilenames = attachments
-            .GroupBy(x => x.Filename.ToLowerInvariant())
+            .GroupBy(x => x.Payload.Filename.ToLowerInvariant())
             .Where(x => x.Count() > 1)
             .Select(x => x.ToList());
 
@@ -186,40 +321,25 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             for (int i = 0; i < duplicates.Count; i++)
             {
                 int uniqueId = i + 1;
-                string filename = Path.GetFileNameWithoutExtension(duplicates[i].Filename);
-                string extension = Path.GetExtension(duplicates[i].Filename);
+                string filename = Path.GetFileNameWithoutExtension(duplicates[i].Payload.Filename);
+                string extension = Path.GetExtension(duplicates[i].Payload.Filename);
 
-                duplicates[i] = duplicates[i] with { Filename = $"{filename}({uniqueId}){extension}" };
+                duplicates[i] = duplicates[i] with
+                {
+                    Payload = duplicates[i].Payload with { Filename = $"{filename}({uniqueId}){extension}" },
+                };
             }
         }
     }
 
     private Task<Guid> GetRecipient(Instance instance)
     {
-        // This should already have been validated by ValidateConfiguration
-        if (_fiksArkivSettings.AutoSend?.Recipient is null)
-            throw new Exception("Fiks Arkiv error: Recipient is missing from AutoSend settings.");
+        var configuredRecipient = VerifiedNotNull(_fiksArkivSettings.AutoSend?.Recipient);
 
         // TODO: dynamic dot-pick query with instance data here...?
-        var recipient = Guid.Parse(_fiksArkivSettings.AutoSend.Recipient);
+        var recipient = Guid.Parse(configuredRecipient);
 
         return Task.FromResult(recipient);
-    }
-
-    private static string? GetExtensionForMimeType(string? mimeType)
-    {
-        if (mimeType is null)
-            return null;
-
-        var mapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["application/xml"] = ".xml",
-            ["text/xml"] = ".xml",
-            ["application/pdf"] = ".pdf",
-            ["application/json"] = ".json",
-        };
-
-        return mapping.GetValueOrDefault(mimeType);
     }
 
     // private async Task Test()
@@ -259,15 +379,12 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         };
     }
 
-    private async Task<Korrespondansepart> GetServiceOwnerDetails(
-        Instance instance,
-        ApplicationMetadata appMetadata,
-        string systemId
-    )
+    private async Task<Korrespondansepart> GetServiceOwnerDetails(Instance instance, string systemId)
     {
         bool disposeClient = _altinnCdnClient is null;
         _altinnCdnClient ??= new AltinnCdnClient();
 
+        ApplicationMetadata appMetadata = await GetApplicationMetadata();
         AltinnCdnOrgDetails? orgDetails = null;
 
         try
@@ -357,7 +474,6 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
                     KodeProperty = KorrespondanseparttypeKoder.Avsender.Verdi,
                     Beskrivelse = KorrespondanseparttypeKoder.Avsender.Beskrivelse,
                 },
-                // Land = "NO",
                 KorrespondansepartNavn = party.Name,
                 KorrespondansepartID = systemId,
                 DeresReferanse = instance.Id,
@@ -392,125 +508,64 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         return null;
     }
 
-    private async Task<FiksIOMessagePayload> GenerateArchiveMessage(
-        Instance instance,
-        ArchiveDocuments documents,
-        Guid recipient
-    )
+    private Dokumentbeskrivelse GetDocumentMetadata(PayloadWrapper payloadWrapper)
     {
-        // var factory = new ArkivmeldingFactory();
-        var appMetadata = await _appMetadata.GetApplicationMetadata();
-        var documentTitle = appMetadata.Title[LanguageConst.Nb];
-        var documentCreator = appMetadata.AppIdentifier.Org;
-        var recipientDetails = GetRecipientDetails(instance, recipient);
-        var serviceOwnerDetails = await GetServiceOwnerDetails(instance, appMetadata, documentCreator);
-        var instanceOwnerDetails = await GetInstanceOwnerDetails(instance, documentCreator);
-        var senderDetails = await GetSenderDetails();
+        var documentClassification =
+            payloadWrapper.FileTypeCode == DokumenttypeKoder.Dokument
+                ? TilknyttetRegistreringSomKoder.Hoveddokument
+                : TilknyttetRegistreringSomKoder.Vedlegg;
 
-        var caseFile = new Saksmappe()
+        var metadata = new Dokumentbeskrivelse
         {
-            Tittel = documentTitle,
-            OffentligTittel = documentTitle,
-            AdministrativEnhet = new AdministrativEnhet { Navn = documentCreator },
-            Saksaar = DateTime.Now.Year,
-            Saksdato = DateTime.Now,
-            ReferanseEksternNoekkel = new EksternNoekkel
+            Dokumenttype = new Dokumenttype
             {
-                Fagsystem = "SaksOgArkivsystem", // TODO: What should this value really be?
-                Noekkel = Guid.NewGuid().ToString(),
+                KodeProperty = payloadWrapper.FileTypeCode.Verdi,
+                Beskrivelse = payloadWrapper.FileTypeCode.Beskrivelse,
             },
+            Dokumentstatus = new Dokumentstatus
+            {
+                KodeProperty = DokumentstatusKoder.Ferdig.Verdi,
+                Beskrivelse = DokumentstatusKoder.Ferdig.Beskrivelse,
+            },
+            Tittel = payloadWrapper.Payload.Filename,
+            TilknyttetRegistreringSom = new TilknyttetRegistreringSom
+            {
+                KodeProperty = documentClassification.Verdi,
+                Beskrivelse = documentClassification.Beskrivelse,
+            },
+            OpprettetDato = DateTime.Now,
         };
 
-        caseFile.Klassifikasjon.Add(senderDetails);
-
-        var journalEntry = new Journalpost
-        {
-            Journalaar = DateTime.Now.Year,
-            DokumentetsDato = DateTime.Now,
-            SendtDato = DateTime.Now,
-            Tittel = documentTitle,
-            OffentligTittel = documentTitle,
-            OpprettetAv = documentCreator,
-            ArkivertAv = documentCreator,
-            Journalstatus = new Journalstatus
+        metadata.Dokumentobjekt.Add(
+            new Dokumentobjekt
             {
-                KodeProperty = JournalstatusKoder.Journalfoert.Verdi,
-                Beskrivelse = JournalstatusKoder.Journalfoert.Beskrivelse,
-            },
-            Journalposttype = new Journalposttype
-            {
-                KodeProperty = JournalposttypeKoder.UtgaaendeDokument.Verdi,
-                Beskrivelse = JournalposttypeKoder.UtgaaendeDokument.Beskrivelse,
-            },
-            ReferanseForelderMappe = new ReferanseTilMappe()
-            {
-                ReferanseEksternNoekkel = caseFile.ReferanseEksternNoekkel,
-            },
-        };
-
-        // Recipient
-        journalEntry.Korrespondansepart.Add(recipientDetails);
-
-        // Sender(s)
-        journalEntry.Korrespondansepart.Add(serviceOwnerDetails);
-        if (instanceOwnerDetails is not null)
-        {
-            journalEntry.Korrespondansepart.Add(instanceOwnerDetails);
-        }
-
-        // Internal sender
-        journalEntry.Korrespondansepart.Add(
-            new Korrespondansepart
-            {
-                Korrespondanseparttype = new Korrespondanseparttype
+                SystemID = new SystemID
                 {
-                    KodeProperty = KorrespondanseparttypeKoder.InternAvsender.Verdi,
-                    Beskrivelse = KorrespondanseparttypeKoder.InternAvsender.Beskrivelse,
+                    Value = _fiksIOSettings.AccountId.ToString(),
+                    Label = FiksArkivConstants.AltinnSystemLabel,
                 },
-                AdministrativEnhet = new AdministrativEnhet { Navn = "Altinn" },
-                Organisasjonid = "991825827",
-                DeresReferanse = instance.Id,
+                Filnavn = payloadWrapper.Payload.Filename,
+                ReferanseDokumentfil = payloadWrapper.Payload.Filename,
+                Format = new Format { KodeProperty = payloadWrapper.Payload.GetDotlessFileExtension() },
+                Variantformat = new Variantformat
+                {
+                    KodeProperty = VariantformatKoder.Produksjonsformat.Verdi,
+                    Beskrivelse = VariantformatKoder.Produksjonsformat.Beskrivelse,
+                },
             }
         );
 
-        // Main form data file
-        journalEntry.Dokumentbeskrivelse.Add(
-            documents.FormDocument.ToDokumentbeskrivelse(DokumenttypeKoder.Dokument, _fiksIOSettings.AccountId)
-        );
-
-        // Attachments
-        foreach (var attachment in documents.Attachments)
-        {
-            journalEntry.Dokumentbeskrivelse.Add(
-                attachment.ToDokumentbeskrivelse(DokumenttypeKoder.Vedlegg, _fiksIOSettings.AccountId)
-            );
-        }
-
-        var archiveMessage = new Arkivmelding
-        {
-            Mappe = caseFile,
-            Registrering = journalEntry,
-            AntallFiler = journalEntry.Dokumentbeskrivelse.Count + 1,
-            System = "Altinn",
-        };
-
-        //
-        // var message = factory.GetArkivmelding(
-        //     new ArkivmeldingForenkletUtgaaende
-        //     {
-        //         sluttbrukerIdentifikator = documentCreator,
-        //         referanseSaksmappeForenklet = caseFile,
-        //         nyUtgaaendeJournalpost = journalEntry,
-        //     }
-        // );
-
-        StringWriter logWriter = new();
-        XmlSerializer logSerializer = new(typeof(Arkivmelding));
-        logSerializer.Serialize(logWriter, archiveMessage);
-        _logger.LogWarning(logWriter.ToString());
-
-        return new FiksIOMessagePayload("arkivmelding.xml", archiveMessage);
+        return metadata;
     }
 
-    private sealed record ArchiveDocuments(FiksIOMessagePayload FormDocument, List<FiksIOMessagePayload> Attachments);
+    private sealed record ArchiveDocuments(PayloadWrapper FormDocument, List<PayloadWrapper> Attachments);
+
+    private sealed record PayloadWrapper(FiksIOMessagePayload Payload, Kode FileTypeCode);
+
+    private sealed record ValidatedAutoSendSettings(
+        string Recipient,
+        string AfterTaskId,
+        FiksArkivPayloadSettings FormDocument,
+        IReadOnlyList<FiksArkivPayloadSettings> Attachments
+    );
 }

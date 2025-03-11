@@ -1,38 +1,36 @@
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 public sealed record FiksArkivSettings
 {
     [JsonPropertyName("errorNotificationEmailAddress")]
-    public string? ErrorNotificationEmailAddress { get; set; }
+    public string? ErrorNotificationEmailAddress { get; init; }
 
     [JsonPropertyName("autoSend")]
-    [ValidateObjectMembers]
-    public FiksArkivAutoSendSettings? AutoSend { get; set; }
+    public FiksArkivAutoSendSettings? AutoSend { get; init; }
 }
 
 public sealed record FiksArkivAutoSendSettings
 {
     [JsonPropertyName("afterTaskId")]
-    public required string AfterTaskId { get; set; }
+    public required string AfterTaskId { get; init; }
 
     [JsonPropertyName("recipient")]
-    public string? Recipient { get; set; }
+    public string? Recipient { get; init; }
 
     [JsonPropertyName("formDocument")]
-    public FiksArkivPayloadSettings? FormDocument { get; set; }
+    public FiksArkivPayloadSettings? FormDocument { get; init; }
 
     [JsonPropertyName("attachments")]
-    public IReadOnlyList<FiksArkivPayloadSettings>? Attachments { get; set; }
+    public IReadOnlyList<FiksArkivPayloadSettings>? Attachments { get; init; }
 }
 
 public sealed record FiksArkivPayloadSettings
 {
     [JsonPropertyName("dataType")]
-    public required string DataType { get; set; }
+    public required string DataType { get; init; }
 
     [JsonPropertyName("filename")]
-    public string? Filename { get; set; }
+    public string? Filename { get; init; }
 }
