@@ -1,5 +1,7 @@
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.Platform.Storage.Interface.Models;
+using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmeldingkvittering;
+using KS.Fiks.Arkiv.Models.V1.Feilmelding;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using KS.Fiks.ASiC_E;
 using KS.Fiks.IO.Client.Models;
@@ -13,17 +15,18 @@ internal sealed class FiksArkivEventService : BackgroundService
 {
     private readonly ILogger<FiksArkivEventService> _logger;
     private readonly IFiksIOClient _fiksIOClient;
-    private readonly IFiksArkivErrorHandler _errorHandler;
+
+    // private readonly IFiksArkivErrorHandler _errorHandler;
 
     public FiksArkivEventService(
         IFiksIOClient fiksIOClient,
-        IFiksArkivErrorHandler errorHandler,
+        // IFiksArkivErrorHandler errorHandler,
         ILogger<FiksArkivEventService> logger
     )
     {
         _logger = logger;
         _fiksIOClient = fiksIOClient;
-        _errorHandler = errorHandler;
+        // _errorHandler = errorHandler;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -71,6 +74,8 @@ internal sealed class FiksArkivEventService : BackgroundService
             );
 
             var decryptedMessages = await GetDecryptedPayloads(receivedMessage);
+            // Could be `MappeKvittering` og `FeilmeldingBase` ... or unknown
+            // TODO: Deserialize?
 
             if (string.IsNullOrWhiteSpace(messageType) || FiksArkivMeldingtype.IsFeilmelding(messageType))
             {
@@ -80,17 +85,17 @@ internal sealed class FiksArkivEventService : BackgroundService
                     messageId
                 );
 
-                // TODO: Retrieve instance!
-                var dummyInstance = new Instance
-                {
-                    Id = "501337/1b899c5b-2505-424e-be06-12cf36da7d1e",
-                    AppId = "ttd/fiks-arkiv-test",
-                };
-
-                await _errorHandler.HandleError(dummyInstance, receivedMessage);
+                // TODO: Retrieve instance and execute handler
+                // var dummyInstance = new Instance
+                // {
+                //     Id = "501337/1b899c5b-2505-424e-be06-12cf36da7d1e",
+                //     AppId = "ttd/fiks-arkiv-test",
+                // };
+                //
+                // await _errorHandler.HandleError(dummyInstance, receivedMessage);
             }
 
-            // TODO: Send /complete notification
+            // TODO: Send /complete notification?
             receivedMessage.Responder.Ack();
         }
         catch (Exception e)

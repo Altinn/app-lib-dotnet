@@ -1,10 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
-using System.Xml;
-using System.Xml.Serialization;
 using Altinn.App.Clients.Fiks.Extensions;
-// using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Auth;
@@ -17,13 +13,10 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-// using KS.Fiks.Arkiv.Forenklet.Arkivering.V1;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;
 using KS.Fiks.Arkiv.Models.V1.Kodelister;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
-// using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using KS.Fiks.Arkiv.Models.V1.Metadatakatalog;
-// using KS.Fiks.IO.Arkiv.Client.ForenkletArkivering;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Kode = KS.Fiks.Arkiv.Models.V1.Kodelister.Kode;
@@ -39,8 +32,8 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
     private readonly ILogger<FiksArkivDefaultMessageProvider> _logger;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly IAltinnPartyClient _altinnPartyClient;
+    private readonly IAltinnCdnClient _altinnCdnClient;
 
-    private IAltinnCdnClient? _altinnCdnClient;
     private ApplicationMetadata? _applicationMetadataCache;
 
     public FiksArkivDefaultMessageProvider(
@@ -51,7 +44,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         IAuthenticationContext authenticationContext,
         IAltinnPartyClient altinnPartyClient,
         ILogger<FiksArkivDefaultMessageProvider> logger,
-        IAltinnCdnClient? altinnCdnClient = null
+        IAltinnCdnClient altinnCdnClient
     )
     {
         _appMetadata = appMetadata;
@@ -131,10 +124,10 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         var appMetadata = await GetApplicationMetadata();
         var documentTitle = appMetadata.Title[LanguageConst.Nb];
         var documentCreator = appMetadata.AppIdentifier.Org;
-        var recipientDetails = GetRecipientDetails(instance, recipient);
-        var serviceOwnerDetails = await GetServiceOwnerDetails(instance, documentCreator);
-        var instanceOwnerDetails = await GetInstanceOwnerDetails(instance, documentCreator);
-        var senderDetails = await GetSenderDetails();
+        var recipientDetails = GetRecipientParty(instance, recipient);
+        var serviceOwnerDetails = await GetServiceOwnerParty();
+        var instanceOwnerDetails = await GetInstanceOwnerParty(instance);
+        var submitterDetails = await GetFormSubmitterClassification();
         var documents = await GetDocuments(instance);
 
         var caseFile = new Saksmappe
@@ -146,12 +139,12 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             Saksdato = DateTime.Now,
             ReferanseEksternNoekkel = new EksternNoekkel
             {
-                Fagsystem = "SaksOgArkivsystem", // TODO: What should this value really be?
-                Noekkel = Guid.NewGuid().ToString(),
+                Fagsystem = appMetadata.AppIdentifier.ToString(), // TODO: What should this value really be?
+                Noekkel = instance.Id,
             },
         };
 
-        caseFile.Klassifikasjon.Add(senderDetails);
+        caseFile.Klassifikasjon.Add(submitterDetails);
 
         var journalEntry = new Journalpost
         {
@@ -197,9 +190,8 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
                     KodeProperty = KorrespondanseparttypeKoder.InternAvsender.Verdi,
                     Beskrivelse = KorrespondanseparttypeKoder.InternAvsender.Beskrivelse,
                 },
-                AdministrativEnhet = FiksArkivConstants.AdministrativEnhet,
-                Organisasjonid = FiksArkivConstants.AltinnOrgNo,
-                DeresReferanse = instance.Id,
+                KorrespondansepartNavn = FiksArkivConstants.AltinnSystemLabel,
+                KorrespondansepartID = FiksArkivConstants.AltinnOrgNo,
             }
         );
 
@@ -222,10 +214,8 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         };
 
         // TEMP log
-        StringWriter logWriter = new();
-        XmlSerializer logSerializer = new(typeof(Arkivmelding));
-        logSerializer.Serialize(logWriter, archiveRecord);
-        _logger.LogWarning(logWriter.ToString());
+        string xmlResult = Encoding.UTF8.GetString(archiveRecord.SerializeXmlBytes(indent: true).Span);
+        _logger.LogWarning(xmlResult);
 
         return
         [
@@ -363,11 +353,11 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
     //     );
     // }
 
-    private static Korrespondansepart GetRecipientDetails(Instance instance, Guid recipient)
+    private static Korrespondansepart GetRecipientParty(Instance instance, Guid recipient)
     {
         return new Korrespondansepart
         {
-            KorrespondansepartID = recipient.ToString(),
+            KorrespondansepartID = recipient.ToString(), // TODO: Consider using `kommunenummer` or similar here
             Korrespondanseparttype = new Korrespondanseparttype
             {
                 KodeProperty = KorrespondanseparttypeKoder.Mottaker.Verdi,
@@ -379,11 +369,8 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         };
     }
 
-    private async Task<Korrespondansepart> GetServiceOwnerDetails(Instance instance, string systemId)
+    private async Task<Korrespondansepart> GetServiceOwnerParty()
     {
-        bool disposeClient = _altinnCdnClient is null;
-        _altinnCdnClient ??= new AltinnCdnClient();
-
         ApplicationMetadata appMetadata = await GetApplicationMetadata();
         AltinnCdnOrgDetails? orgDetails = null;
 
@@ -396,14 +383,6 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         {
             _logger.LogError(e, "Unable to get service owner details: {Exception}", e);
         }
-        finally
-        {
-            if (disposeClient)
-            {
-                _altinnCdnClient?.Dispose();
-                _altinnCdnClient = null;
-            }
-        }
 
         return new Korrespondansepart
         {
@@ -412,16 +391,13 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
                 KodeProperty = KorrespondanseparttypeKoder.Avsender.Verdi,
                 Beskrivelse = KorrespondanseparttypeKoder.Avsender.Beskrivelse,
             },
-            Organisasjonid = orgDetails?.Orgnr ?? appMetadata.Org,
-            Land = "NO",
             KorrespondansepartNavn =
                 orgDetails?.Name?.Nb ?? orgDetails?.Name?.Nn ?? orgDetails?.Name?.En ?? appMetadata.Org,
-            KorrespondansepartID = systemId,
-            DeresReferanse = instance.Id,
+            KorrespondansepartID = orgDetails?.Orgnr ?? appMetadata.Org,
         };
     }
 
-    private async Task<Klassifikasjon> GetSenderDetails()
+    private async Task<Klassifikasjon> GetFormSubmitterClassification()
     {
         switch (_authenticationContext.Current)
         {
@@ -457,7 +433,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         }
     }
 
-    private async Task<Korrespondansepart?> GetInstanceOwnerDetails(Instance instance, string systemId)
+    private async Task<Korrespondansepart?> GetInstanceOwnerParty(Instance instance)
     {
         try
         {
@@ -475,13 +451,12 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
                     Beskrivelse = KorrespondanseparttypeKoder.Avsender.Beskrivelse,
                 },
                 KorrespondansepartNavn = party.Name,
-                KorrespondansepartID = systemId,
-                DeresReferanse = instance.Id,
+                KorrespondansepartID =
+                    party.PartyUuid?.ToString() ?? party.PartyId.ToString(CultureInfo.InvariantCulture),
             };
 
             if (party.Organization is not null)
             {
-                correspondencePart.Organisasjonid = party.OrgNumber;
                 correspondencePart.Telefonnummer.Add(party.Organization.MobileNumber);
                 correspondencePart.Telefonnummer.Add(party.Organization.TelephoneNumber);
                 correspondencePart.Postadresse.Add(party.Organization.MailingAddress);
@@ -490,7 +465,6 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             }
             else if (party.Person is not null)
             {
-                correspondencePart.Personid = party.SSN;
                 correspondencePart.Telefonnummer.Add(party.Person.MobileNumber);
                 correspondencePart.Telefonnummer.Add(party.Person.TelephoneNumber);
                 correspondencePart.Postadresse.Add(party.Person.MailingAddress);
@@ -561,11 +535,4 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
     private sealed record ArchiveDocuments(PayloadWrapper FormDocument, List<PayloadWrapper> Attachments);
 
     private sealed record PayloadWrapper(FiksIOMessagePayload Payload, Kode FileTypeCode);
-
-    private sealed record ValidatedAutoSendSettings(
-        string Recipient,
-        string AfterTaskId,
-        FiksArkivPayloadSettings FormDocument,
-        IReadOnlyList<FiksArkivPayloadSettings> Attachments
-    );
 }

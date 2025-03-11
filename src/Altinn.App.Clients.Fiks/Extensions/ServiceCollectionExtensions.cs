@@ -1,6 +1,7 @@
 using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -28,6 +29,7 @@ public static class ServiceCollectionExtensions
 
         services.AddFiksIOClient();
         // services.AddTransient<IFiksArkivErrorHandler, FiksArkivDefaultErrorHandler>();
+        services.AddTransient<IAltinnCdnClient, AltinnCdnClient>();
         services.AddTransient<IFiksArkivMessageProvider, FiksArkivDefaultMessageProvider>();
         services.AddTransient<IFiksArkivServiceTask, FiksArkivServiceTask>();
         services.AddTransient<IServiceTask>(x => x.GetRequiredService<IFiksArkivServiceTask>());

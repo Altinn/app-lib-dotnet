@@ -5,8 +5,8 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 public interface IFiksArkivSetupBuilder
 {
-    IFiksArkivSetupBuilder WithErrorHandler<TErrorHandler>()
-        where TErrorHandler : IFiksArkivErrorHandler;
+    // IFiksArkivSetupBuilder WithErrorHandler<TErrorHandler>()
+    //     where TErrorHandler : IFiksArkivErrorHandler;
     IFiksArkivSetupBuilder WithFiksIOConfig(Action<FiksIOSettings> configureOptions);
     IFiksArkivSetupBuilder WithFiksIOConfig(string configSectionPath);
     IFiksArkivSetupBuilder WithFiksArkivConfig(Action<FiksArkivSettings> configureOptions);
