@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Controllers.Attributes;
 using Altinn.App.Api.Controllers.Conventions;
+using Altinn.App.Api.Controllers.Providers;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Infrastructure.Filters;
