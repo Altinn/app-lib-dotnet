@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
@@ -7,7 +6,6 @@ using KS.Fiks.IO.Client.Configuration;
 using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Crypto.Configuration;
 using KS.Fiks.IO.Send.Client.Configuration;
-using Ks.Fiks.Maskinporten.Client;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -19,7 +17,6 @@ namespace Altinn.App.Clients.Fiks.FiksIO;
 
 internal sealed class FiksIOClient : IFiksIOClient
 {
-    private readonly IOptionsMonitor<MaskinportenSettings> _maskinportenSettings;
     private readonly IOptionsMonitor<FiksIOSettings> _fiksIOSettings;
     private readonly IAppMetadata _appMetadata;
     private readonly IWebHostEnvironment _env;
@@ -29,12 +26,10 @@ internal sealed class FiksIOClient : IFiksIOClient
     private EventHandler<FiksIOReceivedMessageArgs>? _messageReceivedHandler;
     private readonly IMaskinportenClient _maskinportenClient;
 
-    public Guid AccountId => _fiksIOSettings.CurrentValue.AccountId;
-    public Guid IntegrationId => _fiksIOSettings.CurrentValue.IntegrationId;
+    public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
     public RetryStrategy RetryStrategy { get; set; } = RetryStrategy.Default;
 
     public FiksIOClient(
-        IOptionsMonitor<MaskinportenSettings> maskinportenSettings,
         IOptionsMonitor<FiksIOSettings> fiksIOSettings,
         IWebHostEnvironment env,
         IAppMetadata appMetadata,
@@ -42,7 +37,6 @@ internal sealed class FiksIOClient : IFiksIOClient
         ILoggerFactory loggerFactory
     )
     {
-        _maskinportenSettings = maskinportenSettings;
         _fiksIOSettings = fiksIOSettings;
         _appMetadata = appMetadata;
         _env = env;
@@ -50,18 +44,12 @@ internal sealed class FiksIOClient : IFiksIOClient
         _maskinportenClient = maskinportenClient;
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
 
-        // Force load of settings, which triggers validation
-        if (maskinportenSettings.CurrentValue is null)
-        {
-            throw new Exception("Maskinporten has not been configured");
-        }
         if (fiksIOSettings.CurrentValue is null)
         {
             throw new Exception("FiksIO has not been configured");
         }
 
         // Subscribe to settings changes
-        maskinportenSettings.OnChange(InitialiseFiksIOClient_NeverThrowsWrapper);
         fiksIOSettings.OnChange(InitialiseFiksIOClient_NeverThrowsWrapper);
     }
 
@@ -75,7 +63,7 @@ internal sealed class FiksIOClient : IFiksIOClient
             request.MessageType,
             request.SendersReference
         );
-        var externalRequest = request.ToMeldingRequest(AccountId);
+        var externalRequest = request.ToMeldingRequest(AccountSettings.AccountId);
         var externalAttachments = request.ToPayload();
 
         _logger.LogDebug("Message details: {Message}", externalRequest);
@@ -250,6 +238,6 @@ internal sealed class FiksIOClient : IFiksIOClient
         string FiksAmqpAppName
     )
     {
-        public string MaskinportenTokenEndpoint => $"{MaskinportenAuthority.TrimEnd('/')}/token";
+        // public string MaskinportenTokenEndpoint => $"{MaskinportenAuthority.TrimEnd('/')}/token";
     }
 }

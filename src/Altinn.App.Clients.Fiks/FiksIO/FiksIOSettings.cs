@@ -6,27 +6,33 @@ using System.Text.Json.Serialization;
 
 namespace Altinn.App.Clients.Fiks.FiksIO;
 
-public sealed record FiksIOSettings
+public interface IFiksIOAccountSettings
+{
+    Guid AccountId { get; }
+    Guid IntegrationId { get; }
+}
+
+public sealed record FiksIOSettings : IFiksIOAccountSettings
 {
     [Required]
     [JsonPropertyName("accountId")]
-    public required Guid AccountId { get; set; }
+    public required Guid AccountId { get; init; }
 
     [Required]
     [JsonPropertyName("integrationId")]
-    public required Guid IntegrationId { get; set; }
+    public required Guid IntegrationId { get; init; }
 
     [Required]
     [JsonPropertyName("integrationPassword")]
-    public required string IntegrationPassword { get; set; }
+    public required string IntegrationPassword { get; init; }
 
     [Required]
     [JsonPropertyName("accountPrivateKeyBase64")]
-    public required string AccountPrivateKeyBase64 { get; set; }
+    public required string AccountPrivateKeyBase64 { get; init; }
 
     [Required]
     [JsonPropertyName("asicePrivateKeyBase64")]
-    public required string AsicePrivateKeyBase64 { get; set; }
+    public required string AsicePrivateKeyBase64 { get; init; }
 
     internal string AccountPrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AccountPrivateKeyBase64));
     internal string AsicePrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AsicePrivateKeyBase64));
