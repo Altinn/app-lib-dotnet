@@ -1,5 +1,6 @@
 using Altinn.App.Clients.Fiks.Extensions;
-using Altinn.App.Clients.Fiks.FiksIO;
+using Altinn.App.Clients.Fiks.FiksArkiv.Models;
+using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;

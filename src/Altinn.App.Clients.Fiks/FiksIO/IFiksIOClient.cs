@@ -1,3 +1,5 @@
+using Altinn.App.Clients.Fiks.FiksIO.Models;
+
 namespace Altinn.App.Clients.Fiks.FiksIO;
 
 public interface IFiksIOClient : IDisposable

@@ -1,6 +1,6 @@
 using KS.Fiks.IO.Client.Models;
 
-namespace Altinn.App.Clients.Fiks.FiksIO;
+namespace Altinn.App.Clients.Fiks.FiksIO.Models;
 
 public sealed record FiksIOMessageResponse
 {

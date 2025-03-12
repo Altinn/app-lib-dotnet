@@ -1,0 +1,29 @@
+using Altinn.App.Clients.Fiks.FiksArkiv.Models;
+
+namespace Altinn.App.Clients.Fiks.Extensions;
+
+internal static class ListExtensions
+{
+    public static void EnsureUniqueFilenames(this IEnumerable<MessagePayloadWrapper> attachments)
+    {
+        var hasDuplicateFilenames = attachments
+            .GroupBy(x => x.Payload.Filename.ToLowerInvariant())
+            .Where(x => x.Count() > 1)
+            .Select(x => x.ToList());
+
+        foreach (var duplicates in hasDuplicateFilenames)
+        {
+            for (int i = 0; i < duplicates.Count; i++)
+            {
+                int uniqueId = i + 1;
+                string filename = Path.GetFileNameWithoutExtension(duplicates[i].Payload.Filename);
+                string extension = Path.GetExtension(duplicates[i].Payload.Filename);
+
+                duplicates[i] = duplicates[i] with
+                {
+                    Payload = duplicates[i].Payload with { Filename = $"{filename}({uniqueId}){extension}" },
+                };
+            }
+        }
+    }
+}

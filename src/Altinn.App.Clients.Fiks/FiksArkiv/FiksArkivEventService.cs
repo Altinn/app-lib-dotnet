@@ -1,13 +1,9 @@
 using Altinn.App.Clients.Fiks.FiksIO;
-using Altinn.Platform.Storage.Interface.Models;
-using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmeldingkvittering;
-using KS.Fiks.Arkiv.Models.V1.Feilmelding;
+using Altinn.App.Clients.Fiks.FiksIO.Models;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using KS.Fiks.ASiC_E;
-using KS.Fiks.IO.Client.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 

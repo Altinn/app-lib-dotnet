@@ -1,0 +1,7 @@
+Tests:
+- FiksArkivSettings.AutoSend.Recipient
+    1. Guid
+    2. Simple data path
+    3. Complex data path
+- IFiksArkivSetupBuilder
+- Unique filenames for attachments
