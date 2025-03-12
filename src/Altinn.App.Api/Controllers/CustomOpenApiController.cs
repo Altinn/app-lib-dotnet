@@ -53,8 +53,8 @@ public class CustomOpenApiController : Controller
         _schemaRepository = new SchemaRepository();
     }
 
-    public static readonly OpenApiSpecVersion SpecVersion = OpenApiSpecVersion.OpenApi3_0;
-    public static readonly OpenApiFormat SpecFormat = OpenApiFormat.Json;
+    internal static readonly OpenApiSpecVersion SpecVersion = OpenApiSpecVersion.OpenApi3_0;
+    internal static readonly OpenApiFormat SpecFormat = OpenApiFormat.Json;
 
     /// <summary>
     /// Generate the custom OpenAPI documentation for the app
