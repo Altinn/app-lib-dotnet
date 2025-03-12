@@ -114,20 +114,6 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
 
     private bool IsEnabledForTask(string taskId) => _fiksArkivSettings.AutoSend?.AfterTaskId == taskId;
 
-    private async Task<ApplicationMetadata> GetApplicationMetadata()
-    {
-        _applicationMetadataCache ??= await _appMetadata.GetApplicationMetadata();
-        return _applicationMetadataCache;
-    }
-
-    private static T VerifiedNotNull<T>(T? value)
-    {
-        if (value is null)
-            throw new Exception($"Value of type {typeof(T).Name} is unexpectedly null.");
-
-        return value;
-    }
-
     private async Task<IEnumerable<FiksIOMessagePayload>> GenerateMessagePayloads(Instance instance, Guid recipient)
     {
         var appMetadata = await GetApplicationMetadata();
@@ -137,7 +123,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         var serviceOwnerDetails = await GetServiceOwnerParty();
         var instanceOwnerDetails = await GetInstanceOwnerParty(instance);
         var submitterDetails = await GetFormSubmitterClassification();
-        var documents = await GetDocuments(instance);
+        var archiveDocuments = await GetArchiveDocuments(instance);
 
         var caseFile = new Saksmappe
         {
@@ -205,10 +191,10 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         );
 
         // Main form data file
-        journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(documents.FormDocument));
+        journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(archiveDocuments.FormDocument));
 
         // Attachments
-        foreach (var attachment in documents.Attachments)
+        foreach (var attachment in archiveDocuments.AttachmentDocuments)
         {
             journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(attachment));
         }
@@ -226,10 +212,10 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         string xmlResult = Encoding.UTF8.GetString(archiveRecord.SerializeXmlBytes(indent: true).Span);
         _logger.LogWarning(xmlResult);
 
-        return [archiveRecord.ToPayload(), .. documents.ToPayloads()];
+        return [archiveRecord.ToPayload(), .. archiveDocuments.ToPayloads()];
     }
 
-    private async Task<ArchiveDocumentsWrapper> GetDocuments(Instance instance)
+    private async Task<ArchiveDocumentsWrapper> GetArchiveDocuments(Instance instance)
     {
         InstanceIdentifier instanceId = new(instance.Id);
         var formDocumentSettings = VerifiedNotNull(_fiksArkivSettings.AutoSend?.FormDocument);
@@ -257,7 +243,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             );
         }
 
-        return new ArchiveDocumentsWrapper(formDocument, attachmentDocuments).EnsureUniqueFilenames();
+        return new ArchiveDocumentsWrapper(formDocument, attachmentDocuments);
     }
 
     private async Task<MessagePayloadWrapper> GetPayload(
@@ -502,5 +488,19 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         );
 
         return metadata;
+    }
+
+    private async Task<ApplicationMetadata> GetApplicationMetadata()
+    {
+        _applicationMetadataCache ??= await _appMetadata.GetApplicationMetadata();
+        return _applicationMetadataCache;
+    }
+
+    private static T VerifiedNotNull<T>(T? value)
+    {
+        if (value is null)
+            throw new Exception($"Value of type {typeof(T).Name} is unexpectedly null.");
+
+        return value;
     }
 }
