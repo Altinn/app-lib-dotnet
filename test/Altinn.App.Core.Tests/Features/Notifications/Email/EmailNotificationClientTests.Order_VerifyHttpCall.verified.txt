@@ -4,7 +4,7 @@
       ActivityName: Notifications.Order,
       Tags: [
         {
-          type: email
+          type: Email
         }
       ],
       IdFormat: W3C
@@ -16,8 +16,8 @@
         {
           Value: 1,
           Tags: {
-            result: success,
-            type: email
+            result: Success,
+            type: Email
           }
         }
       ]

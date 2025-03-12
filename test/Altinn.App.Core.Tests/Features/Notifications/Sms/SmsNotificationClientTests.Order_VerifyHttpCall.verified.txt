@@ -4,7 +4,7 @@
       ActivityName: Notifications.Order,
       Tags: [
         {
-          type: sms
+          type: Sms
         }
       ],
       IdFormat: W3C
@@ -16,8 +16,8 @@
         {
           Value: 1,
           Tags: {
-            result: success,
-            type: sms
+            result: Success,
+            type: Sms
           }
         }
       ]
