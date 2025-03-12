@@ -1,4 +1,5 @@
-using Altinn.App.Clients.Fiks.FiksIO;
+using Altinn.App.Clients.Fiks.FiksArkiv.Models;
+using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.Platform.Storage.Interface.Models;

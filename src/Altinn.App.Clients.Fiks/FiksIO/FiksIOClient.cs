@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using Altinn.App.Core.Features.Maskinporten.Models;
+using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using KS.Fiks.IO.Client.Configuration;

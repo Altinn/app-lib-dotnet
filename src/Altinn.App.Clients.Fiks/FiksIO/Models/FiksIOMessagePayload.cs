@@ -1,6 +1,6 @@
 using KS.Fiks.IO.Crypto.Models;
 
-namespace Altinn.App.Clients.Fiks.FiksIO;
+namespace Altinn.App.Clients.Fiks.FiksIO.Models;
 
 public sealed record FiksIOMessagePayload
 {

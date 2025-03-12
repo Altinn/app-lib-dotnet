@@ -4,13 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Clients.Fiks.FiksIO;
-
-public interface IFiksIOAccountSettings
-{
-    Guid AccountId { get; }
-    Guid IntegrationId { get; }
-}
+namespace Altinn.App.Clients.Fiks.FiksIO.Models;
 
 public sealed record FiksIOSettings : IFiksIOAccountSettings
 {

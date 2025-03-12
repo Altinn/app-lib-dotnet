@@ -1,15 +1,18 @@
 using System.Globalization;
 using System.Text;
 using Altinn.App.Clients.Fiks.Extensions;
-using Altinn.App.Clients.Fiks.FiksIO;
+using Altinn.App.Clients.Fiks.FiksArkiv.Models;
+using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -33,6 +36,8 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
     private readonly IAuthenticationContext _authenticationContext;
     private readonly IAltinnPartyClient _altinnPartyClient;
     private readonly IAltinnCdnClient _altinnCdnClient;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly ILayoutEvaluatorStateInitializer _layoutStateInitializer;
 
     private ApplicationMetadata? _applicationMetadataCache;
 
@@ -44,7 +49,9 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         IAuthenticationContext authenticationContext,
         IAltinnPartyClient altinnPartyClient,
         ILogger<FiksArkivDefaultMessageProvider> logger,
-        IAltinnCdnClient altinnCdnClient
+        IAltinnCdnClient altinnCdnClient,
+        InstanceDataUnitOfWorkInitializer instanceDataUnitOfWorkInitializer,
+        ILayoutEvaluatorStateInitializer layoutStateInitializer
     )
     {
         _appMetadata = appMetadata;
@@ -55,6 +62,8 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         _fiksArkivSettings = fiksArkivSettings.Value;
         _fiksIOSettings = fiksIOSettings.Value;
         _logger = logger;
+        _instanceDataUnitOfWorkInitializer = instanceDataUnitOfWorkInitializer;
+        _layoutStateInitializer = layoutStateInitializer;
     }
 
     public async Task<FiksIOMessageRequest> CreateMessageRequest(string taskId, Instance instance)
@@ -71,8 +80,8 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             MessageType: FiksArkivMeldingtype.ArkivmeldingOpprett,
             SendersReference: instanceId.InstanceGuid,
             MessageLifetime: TimeSpan.FromDays(2),
-            // Payload: messagePayloads
-            Payload: messagePayloads.Take(1) // TEMP: No attachments for now
+            Payload: messagePayloads
+        // Payload: messagePayloads.Take(1) // TEMP: No attachments for now
         );
     }
 
@@ -139,7 +148,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             Saksdato = DateTime.Now,
             ReferanseEksternNoekkel = new EksternNoekkel
             {
-                Fagsystem = appMetadata.AppIdentifier.ToString(), // TODO: What should this value really be?
+                Fagsystem = appMetadata.AppIdentifier.ToString(),
                 Noekkel = instance.Id,
             },
         };
@@ -217,21 +226,16 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         string xmlResult = Encoding.UTF8.GetString(archiveRecord.SerializeXmlBytes(indent: true).Span);
         _logger.LogWarning(xmlResult);
 
-        return
-        [
-            archiveRecord.ToPayload(),
-            documents.FormDocument.Payload,
-            .. documents.Attachments.Select(x => x.Payload),
-        ];
+        return [archiveRecord.ToPayload(), .. documents.ToPayloads()];
     }
 
-    private async Task<ArchiveDocuments> GetDocuments(Instance instance)
+    private async Task<ArchiveDocumentsWrapper> GetDocuments(Instance instance)
     {
         InstanceIdentifier instanceId = new(instance.Id);
         var formDocumentSettings = VerifiedNotNull(_fiksArkivSettings.AutoSend?.FormDocument);
         var attachmentSettings = _fiksArkivSettings.AutoSend?.Attachments ?? [];
 
-        var formElement = instance.Data.First(x => x.DataType == formDocumentSettings.DataType);
+        var formElement = instance.GetRequiredDataElement(formDocumentSettings.DataType);
         var formDocument = await GetPayload(
             formElement,
             formDocumentSettings.Filename,
@@ -239,19 +243,12 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             instanceId
         );
 
-        List<PayloadWrapper> attachments = [];
+        List<MessagePayloadWrapper> attachmentDocuments = [];
         foreach (var attachmentSetting in attachmentSettings)
         {
-            List<DataElement> dataElements = instance
-                .Data.Where(x => x.DataType == attachmentSetting.DataType)
-                .ToList();
+            IEnumerable<DataElement> dataElements = instance.GetRequiredDataElements(attachmentSetting.DataType);
 
-            if (dataElements.Count == 0)
-                throw new Exception(
-                    $"Fiks Arkiv error: No data elements found for Attachment.DataType '{attachmentSetting.DataType}'"
-                );
-
-            attachments.AddRange(
+            attachmentDocuments.AddRange(
                 await Task.WhenAll(
                     dataElements.Select(async x =>
                         await GetPayload(x, attachmentSetting.Filename, DokumenttypeKoder.Vedlegg, instanceId)
@@ -260,13 +257,10 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             );
         }
 
-        // TODO: This specifically requires testing
-        EnsureUniqueFilenames([formDocument, .. attachments]);
-
-        return new ArchiveDocuments(formDocument, attachments);
+        return new ArchiveDocumentsWrapper(formDocument, attachmentDocuments).EnsureUniqueFilenames();
     }
 
-    private async Task<PayloadWrapper> GetPayload(
+    private async Task<MessagePayloadWrapper> GetPayload(
         DataElement dataElement,
         string? filename,
         Kode fileTypeCode,
@@ -284,7 +278,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             dataElement.Filename = $"{dataElement.DataType}{dataElement.GetExtensionForMimeType()}";
         }
 
-        return new PayloadWrapper(
+        return new MessagePayloadWrapper(
             new FiksIOMessagePayload(
                 dataElement.Filename,
                 await _dataClient.GetDataBytes(
@@ -299,59 +293,37 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         );
     }
 
-    private static void EnsureUniqueFilenames(List<PayloadWrapper> attachments)
+    private async Task<Guid> GetRecipient(Instance instance)
     {
-        var hasDuplicateFilenames = attachments
-            .GroupBy(x => x.Payload.Filename.ToLowerInvariant())
-            .Where(x => x.Count() > 1)
-            .Select(x => x.ToList());
-
-        foreach (var duplicates in hasDuplicateFilenames)
+        try
         {
-            for (int i = 0; i < duplicates.Count; i++)
-            {
-                int uniqueId = i + 1;
-                string filename = Path.GetFileNameWithoutExtension(duplicates[i].Payload.Filename);
-                string extension = Path.GetExtension(duplicates[i].Payload.Filename);
+            var configuredRecipient = VerifiedNotNull(_fiksArkivSettings.AutoSend?.Recipient);
+            if (Guid.TryParse(configuredRecipient, out var recipient))
+                return recipient;
 
-                duplicates[i] = duplicates[i] with
-                {
-                    Payload = duplicates[i].Payload with { Filename = $"{filename}({uniqueId}){extension}" },
-                };
-            }
+            var recipientPathParts = configuredRecipient.Split('.');
+            var dataType = recipientPathParts[0];
+            var field = string.Join('.', recipientPathParts.Skip(1));
+            var dataElement = instance.Data.First(x => x.DataType == dataType);
+
+            var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(instance, null, null);
+            var layoutState = await _layoutStateInitializer.Init(unitOfWork, null);
+            var data = await layoutState.GetModelData(
+                new ModelBinding { Field = field, DataType = dataType },
+                new DataElementIdentifier(dataElement.Id),
+                null
+            );
+
+            return Guid.TryParse(data as string, out recipient)
+                ? recipient
+                : throw new Exception($"Could not parse recipient from model query `{configuredRecipient}`");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Fiks Arkiv error: {Error}", e.Message);
+            throw;
         }
     }
-
-    private Task<Guid> GetRecipient(Instance instance)
-    {
-        var configuredRecipient = VerifiedNotNull(_fiksArkivSettings.AutoSend?.Recipient);
-
-        // TODO: dynamic dot-pick query with instance data here...?
-        var recipient = Guid.Parse(configuredRecipient);
-
-        return Task.FromResult(recipient);
-    }
-
-    // private async Task Test()
-    // {
-    //     ILayoutEvaluatorStateInitializer _layoutStateInit;
-    //     IInstanceClient _instanceClient;
-    //     Instance instance;
-    //     ModelSerializationService _modelSerialization;
-    //
-    //     IInstanceDataAccessor dataAccessor = new InstanceDataUnitOfWork(
-    //         instance,
-    //         _dataClient,
-    //         _instanceClient,
-    //         await _appMetadata.GetApplicationMetadata(),
-    //         _modelSerialization
-    //     );
-    //
-    //     LayoutEvaluatorState state = await _layoutStateInit.Init(
-    //         dataAccessor,
-    //         taskId: null // don't load layout for task
-    //     );
-    // }
 
     private static Korrespondansepart GetRecipientParty(Instance instance, Guid recipient)
     {
@@ -482,7 +454,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         return null;
     }
 
-    private Dokumentbeskrivelse GetDocumentMetadata(PayloadWrapper payloadWrapper)
+    private Dokumentbeskrivelse GetDocumentMetadata(MessagePayloadWrapper payloadWrapper)
     {
         var documentClassification =
             payloadWrapper.FileTypeCode == DokumenttypeKoder.Dokument
@@ -531,8 +503,4 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
 
         return metadata;
     }
-
-    private sealed record ArchiveDocuments(PayloadWrapper FormDocument, List<PayloadWrapper> Attachments);
-
-    private sealed record PayloadWrapper(FiksIOMessagePayload Payload, Kode FileTypeCode);
 }
