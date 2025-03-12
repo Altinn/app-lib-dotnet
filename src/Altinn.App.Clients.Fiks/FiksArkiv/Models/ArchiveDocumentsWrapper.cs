@@ -3,18 +3,23 @@ using Altinn.App.Clients.Fiks.FiksIO.Models;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv.Models;
 
-internal sealed record ArchiveDocumentsWrapper(
-    MessagePayloadWrapper FormDocument,
-    List<MessagePayloadWrapper> Attachments
-)
+internal sealed record ArchiveDocumentsWrapper
 {
-    private IEnumerable<MessagePayloadWrapper> GetAllDocuments() => [FormDocument, .. Attachments];
+    public MessagePayloadWrapper FormDocument { get; }
+    public IEnumerable<MessagePayloadWrapper> AttachmentDocuments { get; }
+    private List<MessagePayloadWrapper> _allDocuments { get; }
 
-    public IEnumerable<FiksIOMessagePayload> ToPayloads() => GetAllDocuments().Select(x => x.Payload);
-
-    public ArchiveDocumentsWrapper EnsureUniqueFilenames()
+    public ArchiveDocumentsWrapper(
+        MessagePayloadWrapper formDocument,
+        IEnumerable<MessagePayloadWrapper> attachmentDocuments
+    )
     {
-        GetAllDocuments().EnsureUniqueFilenames();
-        return this;
+        FormDocument = formDocument;
+        AttachmentDocuments = attachmentDocuments;
+        _allDocuments = [FormDocument, .. AttachmentDocuments];
+
+        _allDocuments.EnsureUniqueFilenames();
     }
+
+    public IEnumerable<FiksIOMessagePayload> ToPayloads() => _allDocuments.Select(x => x.Payload);
 }
