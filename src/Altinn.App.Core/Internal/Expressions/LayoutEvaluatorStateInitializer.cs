@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
@@ -42,7 +43,7 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
     {
         private readonly DataElement _dataElement;
         private readonly ApplicationMetadata _applicationMetadata;
-        private readonly object _data;
+        private readonly IFormDataWrapper _data;
 
         public SingleDataElementAccessor(
             Instance instance,
@@ -54,16 +55,21 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
             Instance = instance;
             _dataElement = dataElement;
             _applicationMetadata = applicationMetadata;
-            _data = data;
+            _data = FormDataWrapperFactory.Create(data);
         }
 
         public Instance Instance { get; }
 
-        public Task<object> GetFormData(DataElementIdentifier dataElementIdentifier)
+        public async Task<object> GetFormData(DataElementIdentifier dataElementId)
+        {
+            return (await GetFormDataWrapper(dataElementId)).BackingData<object>();
+        }
+
+        public Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier)
         {
             if (dataElementIdentifier != _dataElement)
             {
-                return Task.FromException<object>(
+                return Task.FromException<IFormDataWrapper>(
                     new InvalidOperationException(
                         "Use the new ILayoutEvaluatorStateInitializer interface to support multiple data models and subforms"
                     )
