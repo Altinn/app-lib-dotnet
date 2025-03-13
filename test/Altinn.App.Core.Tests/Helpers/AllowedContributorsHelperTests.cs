@@ -29,8 +29,8 @@ public class AllowedContributorsHelperTests
     [InlineData("orgno:370194483", null, 556750777, true, false)] // Non-matching orgNr (as systemuser)
     [InlineData("org:altinn", null, 370194483, true, false)] // Org (as systemuser)
     [InlineData("app:owned", null, null, false, false)] // App owned, no matching
-    [InlineData("app:owned", "org:altinn", 12345678, false, false)] // App owned, matching both
-    [InlineData("app:owned", null, 12345678, false, false)] // App owned, matching orgNr
+    [InlineData("app:owned", "org:altinn", 370194483, false, false)] // App owned, matching both
+    [InlineData("app:owned", null, 370194483, false, false)] // App owned, matching orgNr
     public void IsValidContributor_ShouldReturnExpectedResult(
         string? allowedContributors,
         string? org,
@@ -48,8 +48,8 @@ public class AllowedContributorsHelperTests
         {
             (null, null, _) => TestAuthentication.GetNoneAuthentication(),
             (string orgName, int orgNo, _) => TestAuthentication.GetServiceOwnerAuthentication(
-                orgNo.ToString(CultureInfo.InvariantCulture),
-                orgName
+                orgNumber: orgNo.ToString(CultureInfo.InvariantCulture),
+                org: orgName
             ),
             (null, int orgNumber, bool systemUser) when !systemUser => TestAuthentication.GetOrgAuthentication(
                 orgNumber.ToString(CultureInfo.InvariantCulture)

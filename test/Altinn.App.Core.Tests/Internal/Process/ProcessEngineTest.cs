@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Security.Claims;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Common.Tests;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
@@ -25,7 +24,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Moq;
 using Newtonsoft.Json;
 using Xunit.Abstractions;
@@ -1158,7 +1156,8 @@ public sealed class ProcessEngineTest
             Mock<IAppModel> appModelMock = new(MockBehavior.Strict);
             Mock<IAppMetadata> appMetadataMock = new(MockBehavior.Strict);
             Mock<IAppResources> appResourcesMock = new(MockBehavior.Strict);
-            appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
+            var appMetadata = new ApplicationMetadata("org/app");
+            appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(appMetadata);
 
             authenticationContextMock
                 .Setup(a => a.Current)
@@ -1167,7 +1166,8 @@ public sealed class ProcessEngineTest
                         ?? TestAuthentication.GetUserAuthentication(
                             userId: 1337,
                             email: "test@example.com",
-                            ssn: "22927774937"
+                            ssn: "22927774937",
+                            applicationMetadata: appMetadata
                         )
                 );
             processNavigatorMock

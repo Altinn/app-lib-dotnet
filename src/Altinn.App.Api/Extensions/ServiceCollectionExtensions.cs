@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Controllers.Attributes;
 using Altinn.App.Api.Controllers.Conventions;
+using Altinn.App.Api.Controllers.Providers;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Infrastructure.Filters;
@@ -33,6 +34,7 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace Altinn.App.Api.Extensions;
 
@@ -51,11 +53,17 @@ public static class ServiceCollectionExtensions
         services.AddAppConfigurationCache();
 
         // Add API controllers from Altinn.App.Api
-        IMvcBuilder mvcBuilder = services.AddControllersWithViews(options =>
-        {
-            options.Filters.Add<TelemetryEnrichingResultFilter>();
-            options.Conventions.Add(new AltinnControllerConventions());
-        });
+        IMvcBuilder mvcBuilder = services
+            .AddControllersWithViews(options =>
+            {
+                options.Filters.Add<TelemetryEnrichingResultFilter>();
+                options.Conventions.Add(new AltinnControllerConventions());
+            })
+            .ConfigureApplicationPartManager(manager =>
+            {
+                manager.FeatureProviders.Add(new InternalControllerFeatureProvider());
+            });
+
         mvcBuilder
             .AddApplicationPart(typeof(InstancesController).Assembly)
             .AddXmlSerializerFormatters()
@@ -126,6 +134,15 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<AuthorizationApiClient>();
 
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+        services.AddSwaggerFilter();
+
+        // Add swagger endpoint for end user system api documentation
+        var appId = StartupHelper.GetApplicationId();
+        services.Configure<SwaggerUIOptions>(c =>
+        {
+            c.SwaggerEndpoint($"/{appId}/v1/customOpenapi.json", $"End user app API for {appId}");
+        });
     }
 
     /// <summary>
@@ -206,6 +223,7 @@ public static class ServiceCollectionExtensions
     {
         var appId = StartupHelper.GetApplicationId().Split("/")[1];
         var appVersion = config.GetSection("AppSettings").GetValue<string>("AppVersion");
+        var isTest = config.GetSection("GeneralSettings").GetValue<bool>("IsTest");
         if (string.IsNullOrWhiteSpace(appVersion))
         {
             appVersion = "Local";
@@ -241,6 +259,9 @@ public static class ServiceCollectionExtensions
                         opts.RecordException = true;
                     });
 
+                if (isTest)
+                    return;
+
                 if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
                 {
                     builder = builder.AddAzureMonitorTraceExporter(options =>
@@ -261,6 +282,9 @@ public static class ServiceCollectionExtensions
                     .AddHttpClientInstrumentation()
                     .AddAspNetCoreInstrumentation();
 
+                if (isTest)
+                    return;
+
                 if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
                 {
                     builder = builder.AddAzureMonitorMetricExporter(options =>
@@ -279,6 +303,9 @@ public static class ServiceCollectionExtensions
             logging.AddOpenTelemetry(options =>
             {
                 options.IncludeFormattedMessage = true;
+
+                if (isTest)
+                    return;
 
                 if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
                 {
