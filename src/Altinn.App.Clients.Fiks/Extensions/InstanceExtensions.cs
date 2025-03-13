@@ -13,12 +13,13 @@ internal static class InstanceExtensions
             : throw new Exception($"Fiks Arkiv error: No data elements found for DataType '{dataType}'");
     }
 
+    public static IEnumerable<DataElement> GetOptionalDataElements(this Instance instance, string dataType)
+    {
+        return instance.Data.Where(x => x.DataType.Equals(dataType, StringComparison.OrdinalIgnoreCase));
+    }
+
     public static DataElement GetRequiredDataElement(this Instance instance, string dataType)
     {
-        var dataElement = instance.Data.SingleOrDefault(x =>
-            x.DataType.Equals(dataType, StringComparison.OrdinalIgnoreCase)
-        );
-
-        return dataElement ?? throw new Exception($"Fiks Arkiv error: No data element found for DataType '{dataType}'");
+        return instance.GetRequiredDataElements(dataType).First();
     }
 }

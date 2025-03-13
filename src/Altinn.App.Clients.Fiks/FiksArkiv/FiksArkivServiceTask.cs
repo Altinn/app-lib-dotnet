@@ -45,12 +45,14 @@ internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask
 
     private bool IsEnabledForTask(string taskId) => _fiksArkivSettings.AutoSend?.AfterTaskId == taskId;
 
-    public void ValidateConfiguration()
+    public Task ValidateConfiguration()
     {
         if (_fiksArkivSettings.AutoSend is null)
-            return;
+            return Task.CompletedTask;
 
         if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend?.AfterTaskId))
             throw new Exception("Fiks Arkiv error: AfterTaskId configuration is required for auto-send.");
+
+        return Task.CompletedTask;
     }
 }

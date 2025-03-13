@@ -1,7 +1,20 @@
-Tests:
+[General]
+- Replace RetryStrategy with Polly
+
+[Fiks Arkiv]
+Tests to write:
 - FiksArkivSettings.AutoSend.Recipient
     1. Guid
     2. Simple data path
     3. Complex data path
+- IFiksArkivSettings in general
+    - Specifically DataType props
+    - Required vs optional formdoc/attachments
 - IFiksArkivSetupBuilder
 - Unique filenames for attachments
+
+[FiksIO]
+Tests to write:
+- FiksIOSettings
+- FiksIOSetupBuilder
+- FiksIOMaskinportenClient
