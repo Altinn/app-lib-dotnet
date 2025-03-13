@@ -9,12 +9,12 @@ namespace Altinn.App.Core.Features.Signing.Interfaces;
 /// <summary>
 /// Interface for sending correspondence receipt for a signing user action.
 /// </summary>
-public interface ISigningReceiptService
+internal interface ISigningReceiptService
 {
     /// <summary>
     /// Sends correspondence to a signee after signing action has been completed.
     /// </summary>
-    public Task<SendCorrespondenceResponse?> SendSignatureReceipt(
+    Task<SendCorrespondenceResponse?> SendSignatureReceipt(
         InstanceIdentifier instanceIdentifier,
         Signee signee,
         IEnumerable<DataElementSignature> dataElementSignatures,

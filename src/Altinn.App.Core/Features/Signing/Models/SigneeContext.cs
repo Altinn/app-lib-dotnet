@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Features.Signing.Models;
 /// <summary>
 ///  Represents the context of a signee.
 /// </summary>
-public sealed class SigneeContext
+internal sealed class SigneeContext
 {
     /// <summary>The task associated with the signee state.</summary>
     [JsonPropertyName("taskId")]
@@ -43,7 +43,7 @@ public sealed class SigneeContext
 [JsonDerivedType(typeof(OrganisationSignee), typeDiscriminator: "organisation")]
 [JsonDerivedType(typeof(PersonOnBehalfOfOrgSignee), typeDiscriminator: "personOnBehalfOfOrg")]
 [JsonDerivedType(typeof(SystemSignee), typeDiscriminator: "system")]
-public abstract class Signee
+internal abstract class Signee
 {
     internal Party GetParty()
     {

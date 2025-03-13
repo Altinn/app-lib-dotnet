@@ -3,10 +3,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 
-/// <summary>
-/// Interface for the signing service.
-/// </summary>
-public interface ISigningService
+internal interface ISigningService
 {
     /// <summary>
     /// Creates the signee contexts for the current task.
