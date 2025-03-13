@@ -85,7 +85,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         );
     }
 
-    public void ValidateConfiguration()
+    public async Task ValidateConfiguration()
     {
         if (_fiksArkivSettings.AutoSend is null)
             return;
@@ -108,8 +108,14 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         )
             throw new Exception("Fiks Arkiv error: FormDocument configuration is required for auto-send.");
 
-        if (_fiksArkivSettings.AutoSend.Attachments?.Any(x => string.IsNullOrWhiteSpace(x.DataType)) is true)
-            throw new Exception("Fiks Arkiv error: Attachments must have DataType set for all entries.");
+        ApplicationMetadata appMetadata = await GetApplicationMetadata();
+        HashSet<string> dataTypes = appMetadata.DataTypes.Select(x => x.Id).ToHashSet();
+
+        if (dataTypes.Contains(_fiksArkivSettings.AutoSend.FormDocument.DataType) is false)
+            throw new Exception("Fiks Arkiv error: FormDocument->DataType mismatch with application data types.");
+
+        if (_fiksArkivSettings.AutoSend.Attachments?.All(x => dataTypes.Contains(x.DataType)) is not true)
+            throw new Exception("Fiks Arkiv error: Attachments->DataType mismatch with application data types.");
     }
 
     private bool IsEnabledForTask(string taskId) => _fiksArkivSettings.AutoSend?.AfterTaskId == taskId;
@@ -232,7 +238,9 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         List<MessagePayloadWrapper> attachmentDocuments = [];
         foreach (var attachmentSetting in attachmentSettings)
         {
-            IEnumerable<DataElement> dataElements = instance.GetRequiredDataElements(attachmentSetting.DataType);
+            IEnumerable<DataElement> dataElements = instance.GetOptionalDataElements(attachmentSetting.DataType);
+            if (dataElements.Any() is false)
+                continue;
 
             attachmentDocuments.AddRange(
                 await Task.WhenAll(

@@ -19,18 +19,11 @@ internal sealed class FiksArkivConfigValidationService : IHostedService
         _fiksArkivServiceTask = fiksArkivServiceTask;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        // if (_fiksArkivErrorHandler is FiksArkivDefaultErrorHandler defaultErrorHandler)
-        //     defaultErrorHandler.ValidateConfiguration();
-
-        if (_fiksArkivMessageProvider is FiksArkivDefaultMessageProvider defaultMessageProvider)
-            defaultMessageProvider.ValidateConfiguration();
-
-        if (_fiksArkivServiceTask is FiksArkivServiceTask serviceTask)
-            serviceTask.ValidateConfiguration();
-
-        return Task.CompletedTask;
+        // await _fiksArkivErrorHandler.ValidateConfiguration();
+        await _fiksArkivMessageProvider.ValidateConfiguration();
+        await _fiksArkivServiceTask.ValidateConfiguration();
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
