@@ -85,6 +85,7 @@ public class DataModelWrapper
         {
             if (index == keys.Length - 1)
             {
+                // Return the full list if the last key is missing index
                 return childModelList;
             }
 
@@ -219,7 +220,7 @@ public class DataModelWrapper
     }
 
     private static readonly Regex _keyPartRegex = new(
-        @"^([^\s\[\]\.]+)\[(\d+)\]?$",
+        @"^([^\s\[\]\.]+)\[(\d*)\]?$",
         RegexOptions.Compiled,
         TimeSpan.FromMicroseconds(10)
     );
@@ -235,14 +236,25 @@ public class DataModelWrapper
             return (keyPart, null);
         }
         var match = _keyPartRegex.Match(keyPart);
-        return (match.Groups[1].Value, int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture));
+        if (!match.Success)
+        {
+            throw new DataModelException($"Invalid key part {keyPart}");
+        }
+
+        var indexString = match.Groups[2].Value;
+
+        if (indexString.Length == 0)
+        {
+            return (match.Groups[1].Value, null);
+        }
+        return (match.Groups[1].Value, int.Parse(indexString, CultureInfo.InvariantCulture));
     }
 
     private static void AddIndexesRecursive(
         List<string> ret,
         Type currentModelType,
         ReadOnlySpan<string> keys,
-        ReadOnlySpan<int> indexes
+        ReadOnlySpan<int> rowIndexes
     )
     {
         if (keys.Length == 0)
@@ -253,35 +265,38 @@ public class DataModelWrapper
         var prop = Array.Find(currentModelType.GetProperties(), p => IsPropertyWithJsonName(p, key));
         if (prop is null)
         {
-            throw new DataModelException($"Unknown model property {key} in {string.Join(".", ret)}.{key}");
+            // Looking up something that does not exist is currently not an error, but should return null
+            ret.Clear();
+            return;
         }
 
-        var currentIndex = groupIndex ?? (indexes.Length > 0 ? indexes[0] : null);
-
         var childType = prop.PropertyType;
-        // Strings are enumerable in C#
-        // Other enumerable types is treated as an collection
-        if (
-            childType != typeof(string)
-            && childType.IsAssignableTo(typeof(System.Collections.IEnumerable))
-            && currentIndex is not null
-        )
+
+        // Everything that is an System.Collections.ICollection<> can be mapped to a repeating group
+        // Other types are treated as a single value (no index[])
+        var childTypeEnumerableParameter = childType.GetInterface("ICollection`1")?.GenericTypeArguments[0];
+        if (childTypeEnumerableParameter is not null)
         {
-            // Hope the first generic argument is tied to the IEnumerable implementation
-            var childTypeEnumerableParameter = childType.GetGenericArguments().FirstOrDefault();
-
-            if (childTypeEnumerableParameter is null)
+            if (groupIndex is null)
             {
-                throw new DataModelException("DataModels must have generic IEnumerable<> implementation for list");
+                if (rowIndexes.Length != 0)
+                {
+                    ret.Add($"{key}[{rowIndexes[0]}]");
+                    rowIndexes = rowIndexes.Slice(1);
+                }
+                else
+                {
+                    // Add empty index to indicate that this is a repeating group where we don't know the row
+                    ret.Add($"{key}[]");
+                }
+            }
+            else
+            {
+                rowIndexes = default; //when you use a literal index, the context indecies are not to be used later.
+                ret.Add($"{key}[{groupIndex}]");
             }
 
-            ret.Add($"{key}[{currentIndex}]");
-            if (indexes.Length > 0)
-            {
-                indexes = indexes.Slice(1);
-            }
-
-            AddIndexesRecursive(ret, childTypeEnumerableParameter, keys.Slice(1), indexes);
+            AddIndexesRecursive(ret, childTypeEnumerableParameter, keys.Slice(1), rowIndexes);
         }
         else
         {
@@ -291,12 +306,12 @@ public class DataModelWrapper
             }
 
             ret.Add(key);
-            AddIndexesRecursive(ret, childType, keys.Slice(1), indexes);
+            AddIndexesRecursive(ret, childType, keys.Slice(1), rowIndexes);
         }
     }
 
     /// <summary>
-    /// Return a full dataModelBiding from a context aware binding by adding indicies
+    /// Return a full dataModelBiding from a context aware binding by adding indexes
     /// </summary>
     /// <example>
     /// key = "bedrift.ansatte.navn"

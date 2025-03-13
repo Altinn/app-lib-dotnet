@@ -21,6 +21,13 @@ public interface IInstanceDataAccessor
     Task<object> GetFormData(DataElementIdentifier dataElementIdentifier);
 
     /// <summary>
+    /// Get the actual data represented in the data element wrapped in an <see cref="IFormDataWrapper"/>.
+    /// </summary>
+    /// <returns>The deserialized data model for this data element</returns>
+    /// <exception cref="InvalidOperationException">when identifier does not exist in instance.Data with an applogic data type</exception>
+    Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier);
+
+    /// <summary>
     /// Gets the raw binary data from a DataElement.
     /// </summary>
     /// <remarks>Form data elements (with appLogic) will get json serialized UTF-8</remarks>
@@ -77,12 +84,8 @@ public static class IInstanceDataAccessorExtensions
     )
         where T : class
     {
-        object data = await accessor.GetFormData(dataElementIdentifier);
-        if (data is T t)
-        {
-            return t;
-        }
-        throw new InvalidOperationException($"Data element {dataElementIdentifier} is not of type {typeof(T)}");
+        IFormDataWrapper data = await accessor.GetFormDataWrapper(dataElementIdentifier);
+        return data.BackingData<T>();
     }
 
     /// <summary>
