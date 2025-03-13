@@ -166,7 +166,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
                 KodeProperty = JournalposttypeKoder.UtgaaendeDokument.Verdi,
                 Beskrivelse = JournalposttypeKoder.UtgaaendeDokument.Beskrivelse,
             },
-            ReferanseForelderMappe = new ReferanseTilMappe()
+            ReferanseForelderMappe = new ReferanseTilMappe
             {
                 ReferanseEksternNoekkel = caseFile.ReferanseEksternNoekkel,
             },
