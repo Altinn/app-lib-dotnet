@@ -333,35 +333,13 @@ public class TestDataModel
         modelHelper.GetModelData("friends[0]").Should().BeOfType<Friend>().Which.Name?.Value.Should().Be("Ole");
         modelHelper.GetModelData("friends[3]").Should().BeNull();
 
-        modelHelper
-            .Invoking(m => m.AddIndicies("tull.sd", [2]))
-            .Should()
-            .Throw<DataModelException>()
-            .WithMessage("Unknown model property tull in*");
+        modelHelper.AddIndicies("tull.sd", [2]).Should().Be("");
 
         modelHelper
             .Invoking(m => m.AddIndicies("id[4]", [6]))
             .Should()
             .Throw<DataModelException>()
             .WithMessage("Index on non indexable property");
-    }
-
-    [Fact]
-    public void TestEdgeCaseWithNonGenericEnumerableForCoverage()
-    {
-        // Test with erroneous model with non-generic IEnumerable (special error for code coverage)
-        var modelHelper = new DataModelWrapper(
-            new
-            {
-                // ArrayList is not supported as a data model
-                friends = new ArrayList { 1, 2, 3 },
-            }
-        );
-        modelHelper
-            .Invoking(m => m.AddIndicies("friends", [0]))
-            .Should()
-            .Throw<DataModelException>()
-            .WithMessage("DataModels must have generic IEnumerable<> implementation for list");
     }
 
     [Fact]
@@ -376,16 +354,22 @@ public class TestDataModel
         );
 
         // Plain add indicies
-        modelHelper.AddIndicies("friends.friends", [0, 1]).Should().Be("friends[0].friends[1]");
+        modelHelper.AddIndicies("friends.friends.name", [0, 1]).Should().Be("friends[0].friends[1].name");
 
         // Ignore extra indicies
         modelHelper.AddIndicies("friends.friends", [0, 1, 4, 6]).Should().Be("friends[0].friends[1]");
 
+        // Add empty when too few indexes
+        modelHelper.AddIndicies("friends.friends.friends", [0]).Should().Be("friends[0].friends[].friends[]");
+
         // Don't add indicies if they are specified in input
         modelHelper.AddIndicies("friends[3]", [0]).Should().Be("friends[3]");
 
-        // First index is ignored if it is explicit
-        modelHelper.AddIndicies("friends[0].friends", [2, 3]).Should().Be("friends[0].friends[3]");
+        // First index (and remaining) is ignored if first is explicit
+        modelHelper.AddIndicies("friends[0].friends.friends", [2, 3]).Should().Be("friends[0].friends[].friends[]");
+
+        // After we have used one index from context, we still respect explicit indexes
+        modelHelper.AddIndicies("friends.friends[4].name", [10, 10]).Should().Be("friends[10].friends[4].name");
     }
 
     [Fact]
