@@ -1,3 +1,4 @@
+using Altinn.App.Core.Helpers;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -28,5 +29,12 @@ internal class DocumentFilter : IDocumentFilter
         swaggerDoc.Paths.Remove(
             "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/type/{dataType}"
         );
+
+        // Remove the dataType parameter from the route where it does not apply.
+        // The previous lines removed the paths that used the dataType parameter.
+        swaggerDoc
+            .Paths["/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}"]
+            .Operations.Values.ToList()
+            .ForEach(o => o.Parameters.RemoveAll(p => p.Name == "dataType" && p.In == ParameterLocation.Path));
     }
 }

@@ -1,10 +1,5 @@
-using System.Globalization;
-using Altinn.App.Api.Controllers;
 using Argon;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.OpenApi;
-using Microsoft.OpenApi.Extensions;
-using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Xunit.Abstractions;
 
@@ -21,7 +16,10 @@ public class OpenApiSpecChangeDetection : ApiTestBase, IClassFixture<WebApplicat
         using HttpClient client = GetRootedClient("tdd", "contributer-restriction");
         // The test project exposes swagger.json at /swagger/v1/swagger.json not /{org}/{app}/swagger/v1/swagger.json
         using HttpResponseMessage response = await client.GetAsync("/swagger/v1/swagger.json");
-        await Snapshot(response);
+        var openApi = await response.Content.ReadAsStringAsync();
+
+        ValidateOpenApiSpec(openApi);
+        await VerifyOpenApiSpec(openApi);
     }
 
     [Fact]
@@ -32,33 +30,26 @@ public class OpenApiSpecChangeDetection : ApiTestBase, IClassFixture<WebApplicat
         using HttpClient client = GetRootedClient(org, app);
         // The test project exposes swagger.json at /swagger/v1/swagger.json not /{org}/{app}/swagger/v1/swagger.json
         using HttpResponseMessage response = await client.GetAsync($"/{org}/{app}/v1/customOpenapi.json");
-        await Snapshot(response);
+
+        var openApi = await response.Content.ReadAsStringAsync();
+        ValidateOpenApiSpec(openApi);
+        await VerifyOpenApiSpec(openApi);
     }
 
-    private static async Task Snapshot(HttpResponseMessage response)
+    private static void ValidateOpenApiSpec(string openApi)
     {
-        response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync();
-        var reader = new OpenApiStreamReader();
-        OpenApiDocument document = reader.Read(stream, out OpenApiDiagnostic diagnostic);
-        // Assert.Empty(diagnostic.Errors);
-        document.Info.Version = "";
-        await VerifyJson(
-            document.Serialize(CustomOpenApiController.SpecVersion, CustomOpenApiController.SpecFormat),
-            _verifySettings
-        );
+        var reader = new OpenApiStringReader();
+        reader.Read(openApi, out OpenApiDiagnostic diagnostic);
+        Assert.Empty(diagnostic.Errors);
     }
 
-    private static VerifySettings _verifySettings
+    private static async Task VerifyOpenApiSpec(string openApi)
     {
-        get
-        {
-            VerifySettings settings = new();
-            settings.UseStrictJson();
-            settings.DontScrubGuids();
-            settings.DontIgnoreEmptyCollections();
-            settings.AddExtraSettings(settings => settings.MetadataPropertyHandling = MetadataPropertyHandling.Ignore);
-            return settings;
-        }
+        await VerifyJson(openApi)
+            .ScrubMember("version")
+            .UseStrictJson()
+            .DontScrubGuids()
+            .DontIgnoreEmptyCollections()
+            .AddExtraSettings(s => s.MetadataPropertyHandling = MetadataPropertyHandling.Ignore);
     }
 }
