@@ -204,7 +204,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         {
             Mappe = caseFile,
             Registrering = journalEntry,
-            AntallFiler = journalEntry.Dokumentbeskrivelse.Count + 1,
+            AntallFiler = journalEntry.Dokumentbeskrivelse.Count,
             System = FiksArkivConstants.AltinnSystemLabel,
         };
 
