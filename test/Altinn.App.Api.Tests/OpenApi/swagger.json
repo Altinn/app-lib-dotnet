@@ -4038,6 +4038,71 @@
         }
       }
     },
+    "/{org}/{app}/api/layouts/all-settings/{id}": {
+      "get": {
+        "tags": [
+          "Resource"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "org",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllLayoutSettingsDTO"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllLayoutSettingsDTO"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllLayoutSettingsDTO"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllLayoutSettingsDTO"
+                }
+              },
+              "text/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllLayoutSettingsDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/{org}/{app}/api/jsonschema/{id}": {
       "get": {
         "tags": [
@@ -5213,6 +5278,24 @@
             "nullable": true
           },
           "country": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AllLayoutSettingsDTO": {
+        "type": "object",
+        "properties": {
+          "layouts": {
+            "type": "string",
+            "nullable": true
+          },
+          "schema": {
+            "type": "string",
+            "nullable": true
+          },
+          "settings": {
             "type": "string",
             "nullable": true
           }
