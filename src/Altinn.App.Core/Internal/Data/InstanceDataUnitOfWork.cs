@@ -7,8 +7,10 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
@@ -31,6 +33,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     private readonly IInstanceClient _instanceClient;
     private readonly ApplicationMetadata _appMetadata;
     private readonly ModelSerializationService _modelSerializationService;
+    private readonly IAppResources _appResources;
+    private readonly IOptions<FrontEndSettings> _frontEndSettings;
+    private readonly string? _taskId;
+    private readonly string? _language;
 
     // Cache for the most up-to-date form data (can be mutated or replaced with SetFormData(dataElementId, data))
     private readonly DataElementCache<IFormDataWrapper> _formDataCache = new();
@@ -67,6 +73,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _modelSerializationService = modelSerializationService;
+        _taskId = taskId;
+        _language = language;
+        _frontEndSettings = frontEndSettings;
+        _appResources = appResources;
         _instanceClient = instanceClient;
     }
 
@@ -95,6 +105,32 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 );
             }
         );
+    }
+
+    /// <inheritdoc />
+    public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull) =>
+        GetCleanAccessorInternal(rowRemovalOption);
+
+    /// <summary>
+    /// Same as <see cref="GetCleanAccessor"/>, but with the internal type returned for extra access
+    /// </summary>
+    internal CleanInstanceDataAccessor GetCleanAccessorInternal(RowRemovalOption rowRemovalOption)
+    {
+        var state = GetLayoutEvaluatorState();
+        return new CleanInstanceDataAccessor(this, state, rowRemovalOption);
+    }
+
+    private LayoutEvaluatorState GetLayoutEvaluatorState()
+    {
+        LayoutModel? layouts = _taskId is not null ? _appResources.GetLayoutModelForTask(_taskId) : null;
+        var state = new LayoutEvaluatorState(
+            dataAccessor: this,
+            layouts,
+            _frontEndSettings.Value,
+            gatewayAction: null,
+            _language
+        );
+        return state;
     }
 
     /// <inheritdoc />
