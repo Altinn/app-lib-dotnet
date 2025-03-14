@@ -146,7 +146,7 @@ public class HomeController : Controller
             var prefillJson = _appResources.GetPrefillJson(dataType.Id);
             if (prefillJson is null)
                 continue;
-            using var jsonDoc = JsonDocument.Parse(prefillJson);
+            var jsonDoc = JsonDocument.Parse(prefillJson);
             if (!jsonDoc.RootElement.TryGetProperty("QueryParameters", out var allowedQueryParams))
                 continue;
             if (allowedQueryParams.ValueKind != JsonValueKind.Object)
