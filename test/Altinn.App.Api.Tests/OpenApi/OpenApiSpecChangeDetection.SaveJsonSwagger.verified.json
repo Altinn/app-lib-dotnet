@@ -2195,7 +2195,7 @@
           "Home"
         ],
         "summary": "Sets query parameters in frontend session storage for later use in prefill of stateless apps",
-        "description": "Only parameters specified in [dataTypeId].prefill.json will be accepted.\r\nReturns an HTML document with a small javascript that will set session variables in frontend and redirect to the app.",
+        "description": "Only parameters specified in [dataTypeId].prefill.json will be accepted.\nReturns an HTML document with a small javascript that will set session variables in frontend and redirect to the app.",
         "parameters": [
           {
             "name": "org",
