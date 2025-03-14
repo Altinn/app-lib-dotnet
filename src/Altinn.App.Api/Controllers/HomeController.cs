@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Web;
+using System.Xml.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
