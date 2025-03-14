@@ -99,8 +99,12 @@ internal sealed class SigningTaskValidator : IValidator
             return [];
         }
 
-        var allHaveSigned = signeeContextsResult.Ok.All(signeeContext => signeeContext.SignDocument is not null);
-        if (allHaveSigned)
+        bool atLeastOneSignature = signeeContextsResult.Ok.Any(signeeContext => signeeContext.SignDocument is not null);
+        bool allSigneesHaveSigned = signeeContextsResult.Ok.All(signeeContext =>
+            signeeContext.SignDocument is not null
+        );
+
+        if (atLeastOneSignature && allSigneesHaveSigned)
         {
             return [];
         }
