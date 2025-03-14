@@ -71,7 +71,6 @@ public class CorrespondenceClientTests
                 .WithSender(OrganisationNumber.Parse("991825827"))
                 .WithSendersReference("senders-ref")
                 .WithRecipient(OrganisationOrPersonIdentifier.Parse("213872702"))
-                .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
                 .WithContent(
                     CorrespondenceContentBuilder
                         .Create()
