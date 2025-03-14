@@ -1,8 +1,8 @@
-{
-  "openapi": "3.0.1",
+﻿{
+  "openapi": "3.0.4",
   "info": {
     "title": "Altinn App Api",
-    "version": "v1"
+    "version": ""
   },
   "paths": {
     "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/actions": {
@@ -223,7 +223,7 @@
         "tags": [
           "ApplicationMetadata"
         ],
-        "summary": "Get the application metadata https://altinncdn.no/schemas/json/application/application-metadata.schema.v1.json\r\n            \r\nIf org and app does not match, this returns a 409 Conflict response",
+        "summary": "Get the application metadata https://altinncdn.no/schemas/json/application/application-metadata.schema.v1.json\n            \nIf org and app does not match, this returns a 409 Conflict response",
         "parameters": [
           {
             "name": "org",
@@ -282,7 +282,7 @@
         "tags": [
           "ApplicationMetadata"
         ],
-        "summary": "Get the application XACML policy file\r\n            \r\nIf org and app does not match, this returns a 409 Conflict response",
+        "summary": "Get the application XACML policy file\n            \nIf org and app does not match, this returns a 409 Conflict response",
         "parameters": [
           {
             "name": "org",
@@ -342,7 +342,7 @@
         "tags": [
           "ApplicationMetadata"
         ],
-        "summary": "Get the application BPMN process file\r\n            \r\nIf org and app does not match, this returns a 409 Conflict response",
+        "summary": "Get the application BPMN process file\n            \nIf org and app does not match, this returns a 409 Conflict response",
         "parameters": [
           {
             "name": "org",
@@ -834,7 +834,7 @@
         }
       }
     },
-    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataType}": {
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/type/{dataType}": {
       "post": {
         "tags": [
           "Data"
@@ -1065,6 +1065,15 @@
             }
           },
           {
+            "name": "dataType",
+            "in": "path",
+            "description": "Optional parameter, verified if pressent. Used to have different schemas for different data types in openApi spec",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "includeRowId",
             "in": "query",
             "description": "Whether to initialize or remove AltinnRowId fields in the model",
@@ -1140,6 +1149,15 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "dataType",
+            "in": "path",
+            "description": "Optional parameter, verified if pressent. Used to have different schemas for different data types in openApi spec,",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -1423,6 +1441,15 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "dataType",
+            "in": "path",
+            "description": "Optional parameter, verified if pressent. Used to have different schemas for different data types in openApi spec,",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -2360,7 +2387,7 @@
         "tags": [
           "Instances"
         ],
-        "summary": "Creates a new instance of an application in platform storage. Clients can send an instance as json or send a\r\nmultipart form-data with the instance in the first part named \"instance\" and the prefill data in the next parts, with\r\nnames that correspond to the element types defined in the application metadata.\r\nThe data elements are stored. Currently calculate and validate is not implemented.",
+        "summary": "Creates a new instance of an application in platform storage. Clients can send an instance as json or send a\nmultipart form-data with the instance in the first part named \"instance\" and the prefill data in the next parts, with\nnames that correspond to the element types defined in the application metadata.\nThe data elements are stored. Currently calculate and validate is not implemented.",
         "parameters": [
           {
             "name": "org",
@@ -2498,7 +2525,7 @@
           "Instances"
         ],
         "summary": "Add complete confirmation.",
-        "description": "Add to an instance that a given stakeholder considers the instance as no longer needed by them. The stakeholder has\r\ncollected all the data and information they needed from the instance and expect no additional data to be added to it.\r\nThe body of the request isn't used for anything despite this being a POST operation.",
+        "description": "Add to an instance that a given stakeholder considers the instance as no longer needed by them. The stakeholder has\ncollected all the data and information they needed from the instance and expect no additional data to be added to it.\nThe body of the request isn't used for anything despite this being a POST operation.",
         "parameters": [
           {
             "name": "instanceOwnerPartyId",
@@ -3090,22 +3117,22 @@
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { }
+              "schema": {}
             },
             "text/json": {
-              "schema": { }
+              "schema": {}
             },
             "application/*+json": {
-              "schema": { }
+              "schema": {}
             },
             "application/xml": {
-              "schema": { }
+              "schema": {}
             },
             "text/xml": {
-              "schema": { }
+              "schema": {}
             },
             "application/*+xml": {
-              "schema": { }
+              "schema": {}
             }
           }
         },
@@ -3821,7 +3848,7 @@
         "tags": [
           "Process"
         ],
-        "summary": "Gets a list of the next process elements that can be reached from the current process element.\r\nIf process is not started it returns the possible start events.",
+        "summary": "Gets a list of the next process elements that can be reached from the current process element.\nIf process is not started it returns the possible start events.",
         "parameters": [
           {
             "name": "org",
@@ -4126,7 +4153,7 @@
         "tags": [
           "Process"
         ],
-        "summary": "Attemts to end the process by running next until an end event is reached.\r\nNotice that process must have been started.",
+        "summary": "Attemts to end the process by running next until an end event is reached.\nNotice that process must have been started.",
         "parameters": [
           {
             "name": "org",
@@ -4508,7 +4535,7 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get the form layout\r\n<param name=\"org\">Unique identifier of the organisation responsible for the app.</param><param name=\"app\">Application identifier which is unique within an organisation.</param><returns>A collection of FormLayout objects in JSON format.</returns>",
+        "summary": "Get the form layout\n<param name=\"org\">Unique identifier of the organisation responsible for the app.</param><param name=\"app\">Application identifier which is unique within an organisation.</param><returns>A collection of FormLayout objects in JSON format.</returns>",
         "parameters": [
           {
             "name": "org",
@@ -4689,7 +4716,7 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Get the rule settings\r\n<param name=\"org\">Unique identifier of the organisation responsible for the app.</param><param name=\"app\">Application identifier which is unique within an organisation.</param><param name=\"id\">The layoutset id</param><returns>A collection of FormLayout objects in JSON format.</returns>",
+        "summary": "Get the rule settings\n<param name=\"org\">Unique identifier of the organisation responsible for the app.</param><param name=\"app\">Application identifier which is unique within an organisation.</param><param name=\"id\">The layoutset id</param><returns>A collection of FormLayout objects in JSON format.</returns>",
         "parameters": [
           {
             "name": "org",
@@ -5238,22 +5265,22 @@
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { }
+              "schema": {}
             },
             "text/json": {
-              "schema": { }
+              "schema": {}
             },
             "application/*+json": {
-              "schema": { }
+              "schema": {}
             },
             "application/xml": {
-              "schema": { }
+              "schema": {}
             },
             "text/xml": {
-              "schema": { }
+              "schema": {}
             },
             "application/*+xml": {
-              "schema": { }
+              "schema": {}
             }
           }
         },
@@ -5529,7 +5556,7 @@
         "tags": [
           "Validate"
         ],
-        "summary": "Validate an app instance. This will validate all individual data elements, both the binary elements and the elements bound\r\nto a model, and then finally the state of the instance.",
+        "summary": "Validate an app instance. This will validate all individual data elements, both the binary elements and the elements bound\nto a model, and then finally the state of the instance.",
         "parameters": [
           {
             "name": "org",
@@ -6041,7 +6068,7 @@
             "nullable": true
           }
         },
-        "additionalProperties": { }
+        "additionalProperties": {}
       },
       "CalculationResult": {
         "type": "object",
@@ -6180,7 +6207,7 @@
           },
           "metadata": {
             "type": "object",
-            "additionalProperties": { },
+            "additionalProperties": {},
             "nullable": true
           }
         },
@@ -6267,7 +6294,7 @@
           },
           "parameters": {
             "type": "array",
-            "items": { },
+            "items": {},
             "nullable": true,
             "readOnly": true
           }
@@ -6458,7 +6485,6 @@
       },
       "DataPatchRequest": {
         "required": [
-          "ignoredValidators",
           "patch"
         ],
         "type": "object",
@@ -6471,7 +6497,7 @@
             "items": {
               "type": "string"
             },
-            "description": "List of validators to ignore during the patch operation.\r\nIssues from these validators will not be run during the save operation, but the validator will run on process/next",
+            "description": "List of validators to ignore during the patch operation.\nIssues from these validators will not be run during the save operation, but the validator will run on process/next",
             "nullable": true
           }
         },
@@ -6480,7 +6506,6 @@
       },
       "DataPatchRequestMultiple": {
         "required": [
-          "ignoredValidators",
           "patches"
         ],
         "type": "object",
@@ -6490,20 +6515,19 @@
             "items": {
               "$ref": "#/components/schemas/PatchListItem"
             },
-            "description": "The Patch operations to perform.",
-            "nullable": true
+            "description": "The Patch operations to perform."
           },
           "ignoredValidators": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "List of validators to ignore during the patch operation.\r\nIssues from these validators will not be run during the save operation, but the validator will run on process/next",
+            "description": "List of validators to ignore during the patch operation.\nIssues from these validators will not be run during the save operation, but the validator will run on process/next",
             "nullable": true
           }
         },
         "additionalProperties": false,
-        "description": "Represents the request to patch data on the Altinn.App.Api.Controllers.DataController in the\r\nversion that supports multiple data models in the same request."
+        "description": "Represents the request to patch data on the Altinn.App.Api.Controllers.DataController in the\nversion that supports multiple data models in the same request."
       },
       "DataPatchResponse": {
         "required": [
@@ -6600,7 +6624,7 @@
             "readOnly": true
           }
         },
-        "additionalProperties": { },
+        "additionalProperties": {},
         "description": "Extension of ProblemDetails to include Validation issues from the file upload."
       },
       "DataPostResponse": {
@@ -7644,7 +7668,7 @@
             "nullable": true
           }
         },
-        "additionalProperties": { }
+        "additionalProperties": {}
       },
       "ProcessElementInfo": {
         "type": "object",
@@ -8030,7 +8054,7 @@
           },
           "updatedDataModels": {
             "type": "object",
-            "additionalProperties": { },
+            "additionalProperties": {},
             "description": "Data models that have been updated",
             "nullable": true
           },
@@ -8045,7 +8069,7 @@
                 }
               }
             },
-            "description": "Gets a dictionary of updated validation issues. The first key is the data model id, the second key is the validator id\r\nValidators that are not listed in the dictionary are assumed to have not been executed",
+            "description": "Gets a dictionary of updated validation issues. The first key is the data model id, the second key is the validator id\nValidators that are not listed in the dictionary are assumed to have not been executed",
             "nullable": true
           },
           "clientActions": {
