@@ -349,7 +349,10 @@ public class ProcessController : ControllerBase
             }
 
             _logger.LogDebug(
-                $"User successfully authorized to perform process next with action '{processNext?.Action}' on task {currentTaskId} with task type {altinnTaskType}."
+                "User successfully authorized to perform process next with action '{Action}' on task {CurrentTaskId} with task type {AltinnTaskType}.",
+                LogSanitizer.Sanitize(processNext?.Action),
+                currentTaskId,
+                altinnTaskType
             );
 
             string checkedAction = processNext?.Action ?? ConvertTaskTypeToAction(altinnTaskType);
