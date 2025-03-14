@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
+using Polly.Registry;
 using RabbitMQ.Client.Events;
 using IMaskinportenClient = Altinn.App.Core.Features.Maskinporten.IMaskinportenClient;
 
@@ -22,18 +24,19 @@ internal sealed class FiksIOClient : IFiksIOClient
     private readonly IWebHostEnvironment _env;
     private readonly ILogger<FiksIOClient> _logger;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly IMaskinportenClient _maskinportenClient;
+    private readonly ResiliencePipeline<FiksIOMessageResponse> _resiliencePipeline;
     private KS.Fiks.IO.Client.FiksIOClient? _fiksIoClient;
     private EventHandler<FiksIOReceivedMessageArgs>? _messageReceivedHandler;
-    private readonly IMaskinportenClient _maskinportenClient;
 
     public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
-    public RetryStrategy RetryStrategy { get; set; } = RetryStrategy.Default;
 
     public FiksIOClient(
         IOptionsMonitor<FiksIOSettings> fiksIOSettings,
         IWebHostEnvironment env,
         IAppMetadata appMetadata,
         IMaskinportenClient maskinportenClient,
+        ResiliencePipelineProvider<string> resiliencePipelineProvider,
         ILoggerFactory loggerFactory
     )
     {
@@ -43,11 +46,12 @@ internal sealed class FiksIOClient : IFiksIOClient
         _loggerFactory = loggerFactory;
         _maskinportenClient = maskinportenClient;
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
+        _resiliencePipeline = resiliencePipelineProvider.GetPipeline<FiksIOMessageResponse>(
+            FiksIOConstants.FiksIOResiliencePipelineId
+        );
 
         if (fiksIOSettings.CurrentValue is null)
-        {
             throw new Exception("FiksIO has not been configured");
-        }
 
         // Subscribe to settings changes
         fiksIOSettings.OnChange(InitialiseFiksIOClient_NeverThrowsWrapper);
@@ -65,39 +69,40 @@ internal sealed class FiksIOClient : IFiksIOClient
         );
         var externalRequest = request.ToMeldingRequest(AccountSettings.AccountId);
         var externalAttachments = request.ToPayload();
+        var numAttempts = 0;
 
         _logger.LogDebug("Message details: {Message}", externalRequest);
 
         try
         {
-            return await RetryStrategy.Execute(
-                async () =>
+            ResilienceContext context = ResilienceContextPool.Shared.Get(cancellationToken);
+            context.Properties.Set(
+                new ResiliencePropertyKey<FiksIOMessageRequest>(FiksIOConstants.FiksIOMessageRequestPropertyKey),
+                request
+            );
+
+            return await _resiliencePipeline.ExecuteAsync(
+                async context =>
                 {
                     if (_fiksIoClient is null || _fiksIoClient.IsOpen() is false)
                         await InitialiseFiksIOClient();
 
+                    numAttempts += 1;
+                    // TODO: Pass context.CancellationToken onwards
                     return new FiksIOMessageResponse(await _fiksIoClient.Send(externalRequest, externalAttachments));
                 },
-                (error, delay) =>
-                {
-                    _logger.LogWarning(
-                        error,
-                        "Failed to send FiksIO message {MessageType}:{ClientMessageId}. Retrying in {RetryDelay}",
-                        request.MessageType,
-                        request.SendersReference,
-                        delay
-                    );
-                }
+                context
             );
         }
         catch (Exception e)
         {
             _logger.LogError(
                 e,
-                "Failed to send message {MessageType}:{ClientMessageId} after {NumRetries}",
+                "Failed to send message {MessageType}:{ClientMessageId} after {NumRetries} attempts: {Exception}",
                 request.MessageType,
                 request.SendersReference,
-                RetryStrategy.Intervals.Count
+                numAttempts,
+                e.Message
             );
             throw;
         }

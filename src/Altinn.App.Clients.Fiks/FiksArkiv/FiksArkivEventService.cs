@@ -69,8 +69,17 @@ internal sealed class FiksArkivEventService : BackgroundService
                 receivedMessage.Message.InReplyToMessage
             );
 
-            var decryptedMessages = await GetDecryptedPayloads(receivedMessage);
-            // Could be `MappeKvittering` og `FeilmeldingBase` ... or unknown
+            IEnumerable<string> decryptedMessages;
+            try
+            {
+                decryptedMessages = await GetDecryptedPayloads(receivedMessage);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error decrypting message content: {Exception}", ex.Message);
+            }
+
+            // `decryptedMessages` Could be `MappeKvittering` og `FeilmeldingBase` ... or unknown
             // TODO: Deserialize?
 
             if (string.IsNullOrWhiteSpace(messageType) || FiksArkivMeldingtype.IsFeilmelding(messageType))

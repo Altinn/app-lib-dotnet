@@ -3,9 +3,14 @@ using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
+using KS.Fiks.IO.Send.Client.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Polly;
+using Polly.Retry;
 
 namespace Altinn.App.Clients.Fiks.Extensions;
 
@@ -17,6 +22,7 @@ public static class ServiceCollectionExtensions
             services.ConfigureFiksIOClient("FiksIOSettings");
 
         services.AddTransient<IFiksIOClient, FiksIOClient>();
+        services.AddDefaultFiksIOResiliencePipeline();
 
         return new FiksIOSetupBuilder(services);
     }
@@ -68,5 +74,72 @@ public static class ServiceCollectionExtensions
     {
         services.AddOptions<FiksArkivSettings>().BindConfiguration(configSectionPath);
         return services;
+    }
+
+    internal static IServiceCollection AddDefaultFiksIOResiliencePipeline(this IServiceCollection services)
+    {
+        services.AddResiliencePipeline<string, FiksIOMessageResponse>(
+            FiksIOConstants.FiksIOResiliencePipelineId,
+            (builder, context) =>
+            {
+                var logger = context.ServiceProvider.GetRequiredService<ILogger<FiksIOClient>>();
+
+                builder
+                    .AddRetry(
+                        new RetryStrategyOptions<FiksIOMessageResponse>
+                        {
+                            MaxRetryAttempts = 3,
+                            Delay = TimeSpan.FromSeconds(1),
+                            BackoffType = DelayBackoffType.Exponential,
+                            ShouldHandle = new PredicateBuilder<FiksIOMessageResponse>().Handle<Exception>(ex =>
+                            {
+                                var shouldHandle = ErrorShouldBeHandled(ex);
+                                if (shouldHandle is false)
+                                    logger.LogInformation(
+                                        ex,
+                                        "Error is unrecoverable and will not be retried: {Exception}",
+                                        ex.Message
+                                    );
+
+                                return shouldHandle;
+                            }),
+                            OnRetry = args =>
+                            {
+                                args.Context.Properties.TryGetValue(
+                                    new ResiliencePropertyKey<FiksIOMessageRequest>(
+                                        FiksIOConstants.FiksIOMessageRequestPropertyKey
+                                    ),
+                                    out var messageRequest
+                                );
+                                logger.LogWarning(
+                                    args.Outcome.Exception,
+                                    "Failed to send FiksIO message {MessageType}:{ClientMessageId}. Retrying in {RetryDelay}",
+                                    messageRequest?.MessageType,
+                                    messageRequest?.SendersReference,
+                                    args.RetryDelay
+                                );
+                                return ValueTask.CompletedTask;
+                            },
+                        }
+                    )
+                    .AddTimeout(TimeSpan.FromSeconds(5));
+            }
+        );
+
+        return services;
+    }
+
+    private static bool ErrorShouldBeHandled(Exception ex)
+    {
+        if (ex is FiksIOSendUnauthorizedException or MaskinportenException)
+            return false;
+
+        if (
+            ex is FiksIOSendUnexpectedResponseException unexpectedResponse
+            && unexpectedResponse.Message.Contains("status code notfound", StringComparison.OrdinalIgnoreCase)
+        )
+            return false;
+
+        return true;
     }
 }
