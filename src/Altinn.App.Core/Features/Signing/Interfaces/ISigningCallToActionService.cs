@@ -9,12 +9,12 @@ namespace Altinn.App.Core.Features.Signing.Interfaces;
 /// <summary>
 /// Interface for sending correspondence to alert a signee of a signing call to action.
 /// </summary>
-public interface ISigningCallToActionService
+internal interface ISigningCallToActionService
 {
     /// <summary>
     /// Sends correspondence to a signee to notify them of a signing call to action.
     /// </summary>
-    public Task<SendCorrespondenceResponse?> SendSignCallToAction(
+    Task<SendCorrespondenceResponse?> SendSignCallToAction(
         Notification? notification,
         AppIdentifier appIdentifier,
         InstanceIdentifier instanceIdentifier,

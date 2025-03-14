@@ -132,8 +132,7 @@ public class ProfileClient : IProfileClient
         string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
-        var requestBody = new { ssn };
-        StringContent content = new(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+        StringContent content = new(JsonSerializer.Serialize(ssn), Encoding.UTF8, "application/json");
         HttpResponseMessage response = await _client.PostAsync(
             token,
             endpointUrl,
