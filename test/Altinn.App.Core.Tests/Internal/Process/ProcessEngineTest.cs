@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Security.Claims;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Common.Tests;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
@@ -14,7 +13,6 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
-using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -26,7 +24,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Moq;
 using Newtonsoft.Json;
 using Xunit.Abstractions;
@@ -571,12 +568,6 @@ public sealed class ProcessEngineTest
         fixture.Mock<IProcessReader>().Verify(r => r.IsEndEvent("Task_2"), Times.Once);
         fixture.Mock<IProcessReader>().Verify(r => r.IsProcessTask("Task_2"), Times.Once);
         fixture.Mock<IProcessNavigator>().Verify(n => n.GetNextTask(It.IsAny<Instance>(), "Task_1", null), Times.Once);
-        fixture
-            .Mock<IProcessTaskCleaner>()
-            .Verify(
-                x => x.RemoveAllDataElementsGeneratedFromTask(It.IsAny<Instance>(), It.IsAny<string>()),
-                Times.Once
-            );
 
         var expectedInstanceEvents = new List<InstanceEvent>()
         {
@@ -1160,7 +1151,6 @@ public sealed class ProcessEngineTest
             Mock<IProcessNavigator> processNavigatorMock = new(MockBehavior.Strict);
             Mock<IProcessEventHandlerDelegator> processEventHandlingDelegatorMock = new();
             Mock<IProcessEventDispatcher> processEventDispatcherMock = new();
-            Mock<IProcessTaskCleaner> processTaskCleanerMock = new();
             Mock<IDataClient> dataClientMock = new(MockBehavior.Strict);
             Mock<IInstanceClient> instanceClientMock = new(MockBehavior.Strict);
             Mock<IAppModel> appModelMock = new(MockBehavior.Strict);
@@ -1227,7 +1217,6 @@ public sealed class ProcessEngineTest
             services.TryAddTransient<IProcessNavigator>(_ => processNavigatorMock.Object);
             services.TryAddTransient<IProcessEventHandlerDelegator>(_ => processEventHandlingDelegatorMock.Object);
             services.TryAddTransient<IProcessEventDispatcher>(_ => processEventDispatcherMock.Object);
-            services.TryAddTransient<IProcessTaskCleaner>(_ => processTaskCleanerMock.Object);
             services.TryAddTransient<IDataClient>(_ => dataClientMock.Object);
             services.TryAddTransient<IInstanceClient>(_ => instanceClientMock.Object);
             services.TryAddTransient<IAppModel>(_ => appModelMock.Object);
