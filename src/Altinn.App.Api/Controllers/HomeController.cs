@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Web;
-using System.Xml.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
@@ -146,7 +145,7 @@ public class HomeController : Controller
             var prefillJson = _appResources.GetPrefillJson(dataType.Id);
             if (prefillJson is null)
                 continue;
-            var jsonDoc = JsonDocument.Parse(prefillJson);
+            using var jsonDoc = JsonDocument.Parse(prefillJson);
             if (!jsonDoc.RootElement.TryGetProperty("QueryParameters", out var allowedQueryParams))
                 continue;
             if (allowedQueryParams.ValueKind != JsonValueKind.Object)
