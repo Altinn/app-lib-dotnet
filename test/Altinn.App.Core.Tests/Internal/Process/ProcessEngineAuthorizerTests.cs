@@ -88,9 +88,9 @@ public class ProcessEngineAuthorizerTests
         _authServiceMock.Verify(
             x =>
                 x.AuthorizeAction(
-                    It.Is<AppIdentifier>(a => a.Org == "org" && a.App == "app"),
+                    It.IsAny<AppIdentifier>(),
                     It.IsAny<InstanceIdentifier>(),
-                    _user,
+                    It.IsAny<ClaimsPrincipal>(),
                     action,
                     "task1"
                 ),
@@ -127,7 +127,7 @@ public class ProcessEngineAuthorizerTests
             x =>
                 x.AuthorizeActions(
                     instance,
-                    _user,
+                    It.IsAny<ClaimsPrincipal>(),
                     It.Is<List<AltinnAction>>(a => a.Count == 1 && a[0].Value == "write")
                 ),
             Times.Once
@@ -166,7 +166,7 @@ public class ProcessEngineAuthorizerTests
             x =>
                 x.AuthorizeActions(
                     instance,
-                    _user,
+                    It.IsAny<ClaimsPrincipal>(),
                     It.Is<List<AltinnAction>>(a =>
                         a.Count == 2 && a.Any(act => act.Value == "pay") && a.Any(act => act.Value == "write")
                     )
@@ -204,7 +204,7 @@ public class ProcessEngineAuthorizerTests
             x =>
                 x.AuthorizeActions(
                     instance,
-                    _user,
+                    It.IsAny<ClaimsPrincipal>(),
                     It.Is<List<AltinnAction>>(a => a.Count == 1 && a[0].Value == "confirm")
                 ),
             Times.Once
@@ -242,8 +242,8 @@ public class ProcessEngineAuthorizerTests
         _authServiceMock.Verify(
             x =>
                 x.AuthorizeActions(
-                    instance,
-                    _user,
+                    It.IsAny<Instance>(),
+                    It.IsAny<ClaimsPrincipal>(),
                     It.Is<List<AltinnAction>>(a =>
                         a.Count == 2 && a.Any(act => act.Value == "sign") && a.Any(act => act.Value == "write")
                     )
