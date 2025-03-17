@@ -4,7 +4,9 @@ using System.Web;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -32,6 +34,9 @@ public class HomeController : Controller
     private readonly IAppMetadata _appMetadata;
     private readonly List<string> _onEntryWithInstance = new List<string> { "new-instance", "select-instance" };
     private readonly IProfileClient _profileClient;
+    private readonly FrontEndSettings _frontEndSettings;
+    private readonly UserHelper _userHelper;
+    private readonly IAuthorizationClient _authorizationClient;
 
     /// <summary>
     /// Initialize a new instance of the <see cref="HomeController"/> class.
@@ -50,6 +55,10 @@ public class HomeController : Controller
         IAppResources appResources,
         IAppMetadata appMetadata,
         IProfileClient profileClient,
+        IOptions<FrontEndSettings> frontEndSettings,
+        IAuthorizationClient authorizationClient,
+        IAltinnPartyClient altinnPartyClientClient,
+        IOptions<GeneralSettings> settings
     )
     {
         _antiforgery = antiforgery;
@@ -59,6 +68,9 @@ public class HomeController : Controller
         _appResources = appResources;
         _appMetadata = appMetadata;
         _profileClient = profileClient;
+        _frontEndSettings = frontEndSettings.Value;
+        _authorizationClient = authorizationClient;
+        _userHelper = new UserHelper(profileClient, altinnPartyClientClient, settings);
     }
 
     /// <summary>
