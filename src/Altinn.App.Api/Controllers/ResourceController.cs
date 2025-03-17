@@ -27,6 +27,32 @@ public class ResourceController : ControllerBase
     /// <param name="id">Unique identifier of the model to fetch json schema for.</param>
     /// <returns>The model json schema.</returns>
     [HttpGet]
+    [Route("{org}/{app}/api/layouts/all-settings/{id}")]
+    public ActionResult<AllLayoutSettingsDTO> GetAll([FromRoute] string id)
+    {
+        var response = new AllLayoutSettingsDTO();
+        string layouts = _appResourceService.GetLayoutsForSet(id);
+
+        response.Layouts = layouts;
+
+        string? settings = _appResourceService.GetLayoutSettingsStringForSet(id);
+
+        response.Settings = settings;
+
+        // string? settings = _appResourceService.GetLayoutSettingsString();
+        //
+        // response.Settings = settings;
+        // JsonConvert.DeserializeObject(response)
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Get the json schema for the model
+    /// </summary>
+    /// <param name="id">Unique identifier of the model to fetch json schema for.</param>
+    /// <returns>The model json schema.</returns>
+    [HttpGet]
     [Route("{org}/{app}/api/jsonschema/{id}")]
     public ActionResult GetModelJsonSchema([FromRoute] string id)
     {
