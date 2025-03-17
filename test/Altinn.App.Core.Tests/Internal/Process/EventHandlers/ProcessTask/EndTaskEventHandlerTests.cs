@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
@@ -32,6 +33,7 @@ public class EndTaskEventHandlerTests
             services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
             services.AddAppImplementationFactory();
 
+            services.AddSingleton(new Mock<IInstanceClient>().Object);
             services.AddSingleton(new Mock<IProcessTaskDataLocker>().Object);
             services.AddSingleton(new Mock<IProcessTaskFinalizer>().Object);
 
@@ -70,7 +72,9 @@ public class EndTaskEventHandlerTests
         await eteh.Execute(mockProcessTask.Object, "Task_1", instance);
         fixture.Mock<IProcessTaskDataLocker>().Verify(p => p.Lock("Task_1", instance));
         fixture.Mock<IProcessTaskFinalizer>().Verify(p => p.Finalize("Task_1", instance));
+        fixture.Mock<IPdfServiceTask>().Verify(p => p.Id);
         fixture.Mock<IPdfServiceTask>().Verify(p => p.Execute("Task_1", instance));
+        fixture.Mock<IEformidlingServiceTask>().Verify(p => p.Id);
         fixture.Mock<IEformidlingServiceTask>().Verify(p => p.Execute("Task_1", instance));
         mockProcessTask.Verify(p => p.End("Task_1", instance));
 
@@ -96,7 +100,9 @@ public class EndTaskEventHandlerTests
         endTwo.Verify(a => a.End("Task_1", instance));
         fixture.Mock<IProcessTaskDataLocker>().Verify(p => p.Lock("Task_1", instance));
         fixture.Mock<IProcessTaskFinalizer>().Verify(p => p.Finalize("Task_1", instance));
+        fixture.Mock<IPdfServiceTask>().Verify(p => p.Id);
         fixture.Mock<IPdfServiceTask>().Verify(p => p.Execute("Task_1", instance));
+        fixture.Mock<IEformidlingServiceTask>().Verify(p => p.Id);
         fixture.Mock<IEformidlingServiceTask>().Verify(p => p.Execute("Task_1", instance));
         mockProcessTask.Verify(p => p.End("Task_1", instance));
 

@@ -81,7 +81,6 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             SendersReference: instanceId.InstanceGuid,
             MessageLifetime: TimeSpan.FromDays(2),
             Payload: messagePayloads
-        // Payload: messagePayloads.Take(1) // TEMP: No attachments for now
         );
     }
 
