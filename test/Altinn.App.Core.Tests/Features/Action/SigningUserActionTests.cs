@@ -1,11 +1,16 @@
-#nullable disable
 using System.Globalization;
+using System.Text.Json;
 using Altinn.App.Api.Tests.Utils;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Features.Correspondence.Models;
+using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
@@ -21,33 +26,189 @@ namespace Altinn.App.Core.Tests.Features.Action;
 
 public class SigningUserActionTests
 {
-    private readonly ApplicationMetadata _defaultAppMetadata = new("org/id")
+    private static readonly ApplicationMetadata _defaultAppMetadata = new("org/id")
     {
         DataTypes = [new DataType { Id = "model" }],
     };
+
+    private static readonly Instance _defaultInstance = new()
+    {
+        Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
+        InstanceOwner = new InstanceOwner { PartyId = "5000" },
+        Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task2" } },
+        Data = [new DataElement { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" }],
+    };
+
+    private sealed record Fixture(
+        IProcessReader ProcessReader,
+        Instance Instance,
+        Mock<ISigningReceiptService> SigningReceiptService,
+        Mock<IAppMetadata> AppMetadata,
+        Mock<ISignClient> SignClient,
+        Mock<IInstanceDataMutator> InstanceDataMutatorMock,
+        SigningUserAction SigningUserAction
+    )
+    {
+        public static Fixture Create(
+            IProcessReader? processReader = null,
+            Instance? instance = null,
+            string testBpmnFilename = "signing-task-process.bpmn"
+        )
+        {
+            IProcessReader _processReader =
+                processReader
+                ?? ProcessTestUtils.SetupProcessReader(
+                    testBpmnFilename,
+                    Path.Combine("Features", "Action", "TestData")
+                );
+            Instance _instance = instance ?? _defaultInstance;
+
+            var signingReceiptService = new Mock<ISigningReceiptService>();
+            var appMetadata = new Mock<IAppMetadata>();
+            var signClient = new Mock<ISignClient>();
+            var instanceDataMutatorMock = new Mock<IInstanceDataMutator>();
+
+            appMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(_defaultAppMetadata);
+            instanceDataMutatorMock.Setup(x => x.Instance).Returns(_instance);
+            signingReceiptService
+                .Setup(x =>
+                    x.SendSignatureReceipt(
+                        It.IsAny<InstanceIdentifier>(),
+                        It.IsAny<Signee>(),
+                        It.IsAny<IEnumerable<DataElementSignature>>(),
+                        It.IsAny<UserActionContext>(),
+                        It.IsAny<List<AltinnEnvironmentConfig>>()
+                    )
+                )
+                .Returns(
+                    Task.FromResult<SendCorrespondenceResponse?>(
+                        new SendCorrespondenceResponse { Correspondences = [] }
+                    )
+                );
+
+            return new Fixture(
+                _processReader,
+                _instance,
+                signingReceiptService,
+                appMetadata,
+                signClient,
+                instanceDataMutatorMock,
+                new SigningUserAction(
+                    _processReader,
+                    signClient.Object,
+                    appMetadata.Object,
+                    signingReceiptService.Object,
+                    new NullLogger<SigningUserAction>()
+                )
+            );
+        }
+    }
+
+    [Fact]
+    public async Task HandleAction_returns_failure_when_UserActionContext_UserId_is_null()
+    {
+        // Arrange
+        var fixture = Fixture.Create();
+
+        // Act
+        var result = await fixture.SigningUserAction.HandleAction(
+            new UserActionContext(fixture.InstanceDataMutatorMock.Object, null)
+        );
+
+        // Assert
+        var expected = UserActionResult.FailureResult(
+            error: new ActionError { Code = "NoUserId", Message = "User id is missing in token" },
+            errorType: ProcessErrorType.Unauthorized
+        );
+
+        Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(result));
+    }
+
+    [Fact]
+    public async Task HandleAction_returns_failure_when_processReader_GetFlowElement_is_null()
+    {
+        // Arrange
+        var processReaderMock = new Mock<IProcessReader>();
+        processReaderMock.Setup(x => x.GetFlowElement(It.IsAny<string>())).Returns(null as ProcessTask);
+
+        var fixture = Fixture.Create(processReaderMock.Object);
+        fixture.InstanceDataMutatorMock.Setup(x => x.Instance).Returns(fixture.Instance);
+
+        // Act
+        var result = await fixture.SigningUserAction.HandleAction(
+            new UserActionContext(
+                fixture.InstanceDataMutatorMock.Object,
+                1337,
+                authentication: TestAuthentication.GetUserAuthentication(1337)
+            )
+        );
+
+        // Assert
+        var expected = UserActionResult.FailureResult(
+            new ActionError { Code = "NoProcessTask", Message = "Current task is not a process task." }
+        );
+
+        Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(result));
+    }
+
+    [Fact]
+    public async Task HandleAction_returns_ok_if_SigningService_Sign_does_not_throw()
+    {
+        // Arrange
+        var fixture = Fixture.Create();
+
+        var userActionContext = new UserActionContext(
+            fixture.InstanceDataMutatorMock.Object,
+            1337,
+            authentication: TestAuthentication.GetUserAuthentication(1337)
+        );
+
+        // Act
+        var result = await fixture.SigningUserAction.HandleAction(userActionContext);
+
+        // Assert
+        Assert.Equal(JsonSerializer.Serialize(UserActionResult.SuccessResult()), JsonSerializer.Serialize(result));
+    }
+
+    [Fact]
+    public async Task HandleAction_throws_when_SignClient_SignDataElements_throws()
+    {
+        // Arrange
+        var fixture = Fixture.Create();
+        fixture
+            .SignClient.Setup(x => x.SignDataElements(It.IsAny<SignatureContext>()))
+            .ThrowsAsync(new PlatformHttpException(new HttpResponseMessage(), "Failed to sign dataelements"));
+
+        var userActionContext = new UserActionContext(
+            fixture.InstanceDataMutatorMock.Object,
+            1337,
+            authentication: TestAuthentication.GetUserAuthentication(1337)
+        );
+
+        // Act
+        var result = await fixture.SigningUserAction.HandleAction(userActionContext);
+        var expected = UserActionResult.FailureResult(
+            error: new ActionError() { Code = "SignDataElementsFailed", Message = "Failed to sign data elements." },
+            errorType: ProcessErrorType.Internal
+        );
+        Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(result));
+        fixture.SignClient.Verify(x => x.SignDataElements(It.IsAny<SignatureContext>()), Times.Once);
+    }
 
     [Theory]
     [ClassData(typeof(TestAuthentication.AllTokens))]
     public async Task HandleAction_returns_ok_if_user_is_valid(TestJwtToken token)
     {
         // Arrange
-        (var userAction, var signClientMock) = CreateSigningUserAction(
-            applicationMetadataToReturn: _defaultAppMetadata
-        );
-        var instance = new Instance()
-        {
-            Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
-            InstanceOwner = new() { PartyId = token.PartyId.ToString(CultureInfo.InvariantCulture) },
-            Process = new() { CurrentTask = new() { ElementId = "Task2" } },
-            Data = new()
-            {
-                new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
-            },
-        };
-        var userActionContext = new UserActionContext(instance, null, authentication: token.Auth);
+        var fixture = Fixture.Create();
+
+        var instance = fixture.Instance;
+        var signClient = fixture.SignClient;
 
         // Act
-        var result = await userAction.HandleAction(userActionContext);
+        var result = await fixture.SigningUserAction.HandleAction(
+            new UserActionContext(fixture.InstanceDataMutatorMock.Object, 1337, authentication: token.Auth)
+        );
 
         // Assert
         switch (token.Auth)
@@ -55,7 +216,7 @@ public class SigningUserActionTests
             case Authenticated.User user:
                 {
                     var details = await user.LoadDetails();
-                    SignatureContext expected = new SignatureContext(
+                    SignatureContext expected = new(
                         new InstanceIdentifier(instance),
                         instance.Process.CurrentTask.ElementId,
                         "signature",
@@ -66,7 +227,7 @@ public class SigningUserActionTests
                         },
                         new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada")
                     );
-                    signClientMock.Verify(
+                    signClient.Verify(
                         s =>
                             s.SignDataElements(
                                 It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))
@@ -74,12 +235,12 @@ public class SigningUserActionTests
                         Times.Once
                     );
                     result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
-                    signClientMock.VerifyNoOtherCalls();
+                    signClient.VerifyNoOtherCalls();
                 }
                 break;
             case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
                 {
-                    SignatureContext expected = new SignatureContext(
+                    SignatureContext expected = new(
                         new InstanceIdentifier(instance),
                         instance.Process.CurrentTask.ElementId,
                         "signature",
@@ -90,7 +251,7 @@ public class SigningUserActionTests
                         },
                         new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada")
                     );
-                    signClientMock.Verify(
+                    signClient.Verify(
                         s =>
                             s.SignDataElements(
                                 It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))
@@ -98,7 +259,7 @@ public class SigningUserActionTests
                         Times.Once
                     );
                     result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
-                    signClientMock.VerifyNoOtherCalls();
+                    signClient.VerifyNoOtherCalls();
                 }
                 break;
             case Authenticated.SystemUser systemUser:
@@ -114,7 +275,7 @@ public class SigningUserActionTests
                         },
                         new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada")
                     );
-                    signClientMock.Verify(
+                    signClient.Verify(
                         s =>
                             s.SignDataElements(
                                 It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))
@@ -122,7 +283,7 @@ public class SigningUserActionTests
                         Times.Once
                     );
                     result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
-                    signClientMock.VerifyNoOtherCalls();
+                    signClient.VerifyNoOtherCalls();
                 }
                 break;
             default:
@@ -140,28 +301,21 @@ public class SigningUserActionTests
             // Optional because MinCount == 0
             DataTypes = [new DataType { Id = "model", MinCount = 0 }],
         };
-        (var userAction, var signClientMock) = CreateSigningUserAction(applicationMetadataToReturn: appMetadata);
-        var instance = new Instance()
-        {
-            Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
-            InstanceOwner = new() { PartyId = "5000" },
-            Process = new() { CurrentTask = new() { ElementId = "Task2" } },
-            Data = new()
-            {
-                new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
-            },
-        };
-        var userActionContext = new UserActionContext(
-            instance,
-            1337,
-            authentication: TestAuthentication.GetUserAuthentication(userId: 1337, applicationMetadata: appMetadata)
-        );
+
+        var fixture = Fixture.Create();
+
+        fixture.AppMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(appMetadata);
+
+        var instance = fixture.Instance;
+        var signClientMock = fixture.SignClient;
 
         // Act
-        var result = await userAction.HandleAction(userActionContext);
+        var result = await fixture.SigningUserAction.HandleAction(
+            new UserActionContext(instance, 1337, authentication: TestAuthentication.GetUserAuthentication(1337))
+        );
 
         // Assert
-        SignatureContext expected = new SignatureContext(
+        SignatureContext expected = new(
             new InstanceIdentifier(instance),
             instance.Process.CurrentTask.ElementId,
             "signature",
@@ -173,35 +327,6 @@ public class SigningUserActionTests
             Times.Once
         );
         result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
-        signClientMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task HandleAction_returns_error_when_UserId_not_set_in_context()
-    {
-        // Arrange
-        (var userAction, var signClientMock) = CreateSigningUserAction(_defaultAppMetadata);
-        var instance = new Instance()
-        {
-            Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
-            InstanceOwner = new() { PartyId = "5000" },
-            Process = new() { CurrentTask = new() { ElementId = "Task2" } },
-            Data = new()
-            {
-                new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
-            },
-        };
-        var userActionContext = new UserActionContext(instance, null);
-
-        // Act
-        var result = await userAction.HandleAction(userActionContext);
-
-        // Assert
-        var fail = UserActionResult.FailureResult(
-            error: new ActionError() { Code = "NoUserId", Message = "User id is missing in token" },
-            errorType: ProcessErrorType.Unauthorized
-        );
-        result.Should().BeEquivalentTo(fail);
         signClientMock.VerifyNoOtherCalls();
     }
 
@@ -218,17 +343,11 @@ public class SigningUserActionTests
                 new DataType { Id = "not_match_2", MinCount = 1 },
             ],
         };
-        (var userAction, var signClientMock) = CreateSigningUserAction(applicationMetadataToReturn: appMetadata);
-        var instance = new Instance()
-        {
-            Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
-            InstanceOwner = new() { PartyId = "5000" },
-            Process = new() { CurrentTask = new() { ElementId = "Task2" } },
-            Data = new()
-            {
-                new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
-            },
-        };
+        var fixture = Fixture.Create();
+        fixture.AppMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(appMetadata);
+
+        var instance = fixture.Instance;
+
         var userActionContext = new UserActionContext(
             instance,
             1337,
@@ -237,29 +356,40 @@ public class SigningUserActionTests
 
         // Act
         await Assert.ThrowsAsync<ApplicationConfigException>(
-            async () => await userAction.HandleAction(userActionContext)
+            async () => await fixture.SigningUserAction.HandleAction(userActionContext)
+        );
+        fixture.SignClient.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task HandleAction_throws_ApplicationConfigException_if_SignatureDataType_is_missing_from_bpmn_config()
+    {
+        // Arrange
+        var fixture = Fixture.Create(testBpmnFilename: "signing-task-process-missing-config.bpmn");
+        var instance = fixture.Instance;
+        var signClientMock = fixture.SignClient;
+
+        var userActionContext = new UserActionContext(
+            instance,
+            1337,
+            authentication: TestAuthentication.GetUserAuthentication(1337)
+        );
+
+        // Act
+        await Assert.ThrowsAsync<ApplicationConfigException>(
+            async () => await fixture.SigningUserAction.HandleAction(userActionContext)
         );
         signClientMock.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task HandleAction_throws_ApplicationConfigException_If_SignatureDataType_is_null()
+    public async Task HandleAction_throws_ApplicationConfigException_if_empty_DataTypesToSign_in_bpmn_config()
     {
         // Arrange
-        (var userAction, var signClientMock) = CreateSigningUserAction(
-            applicationMetadataToReturn: _defaultAppMetadata,
-            testBpmnfilename: "signing-task-process-missing-config.bpmn"
-        );
-        var instance = new Instance()
-        {
-            Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
-            InstanceOwner = new() { PartyId = "5000" },
-            Process = new() { CurrentTask = new() { ElementId = "Task2" } },
-            Data = new()
-            {
-                new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
-            },
-        };
+        var fixture = Fixture.Create(testBpmnFilename: "signing-task-process-empty-datatypes-to-sign.bpmn");
+        var instance = fixture.Instance;
+        var signClientMock = fixture.SignClient;
+
         var userActionContext = new UserActionContext(
             instance,
             1337,
@@ -268,73 +398,9 @@ public class SigningUserActionTests
 
         // Act
         await Assert.ThrowsAsync<ApplicationConfigException>(
-            async () => await userAction.HandleAction(userActionContext)
+            async () => await fixture.SigningUserAction.HandleAction(userActionContext)
         );
         signClientMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task HandleAction_throws_ApplicationConfigException_If_Empty_DataTypesToSign()
-    {
-        // Arrange
-        var appMetadata = new ApplicationMetadata("org/id") { DataTypes = [] };
-        (var userAction, var signClientMock) = CreateSigningUserAction(
-            applicationMetadataToReturn: appMetadata,
-            testBpmnfilename: "signing-task-process-empty-datatypes-to-sign.bpmn"
-        );
-        var instance = new Instance()
-        {
-            Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
-            InstanceOwner = new() { PartyId = "5000" },
-            Process = new() { CurrentTask = new() { ElementId = "Task2" } },
-            Data = new()
-            {
-                new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
-            },
-        };
-        var userActionContext = new UserActionContext(
-            instance,
-            1337,
-            authentication: TestAuthentication.GetUserAuthentication(1337, applicationMetadata: appMetadata)
-        );
-
-        // Act
-        await Assert.ThrowsAsync<ApplicationConfigException>(
-            async () => await userAction.HandleAction(userActionContext)
-        );
-        signClientMock.VerifyNoOtherCalls();
-    }
-
-    private static (SigningUserAction SigningUserAction, Mock<ISignClient> SignClientMock) CreateSigningUserAction(
-        ApplicationMetadata applicationMetadataToReturn,
-        PlatformHttpException platformHttpExceptionToThrow = null,
-        string testBpmnfilename = "signing-task-process.bpmn"
-    )
-    {
-        IProcessReader processReader = ProcessTestUtils.SetupProcessReader(
-            testBpmnfilename,
-            Path.Combine("Features", "Action", "TestData")
-        );
-
-        var signingClientMock = new Mock<ISignClient>();
-        var appMetadataMock = new Mock<IAppMetadata>();
-        appMetadataMock.Setup(m => m.GetApplicationMetadata()).ReturnsAsync(applicationMetadataToReturn);
-        if (platformHttpExceptionToThrow != null)
-        {
-            signingClientMock
-                .Setup(p => p.SignDataElements(It.IsAny<SignatureContext>()))
-                .ThrowsAsync(platformHttpExceptionToThrow);
-        }
-
-        return (
-            new SigningUserAction(
-                processReader,
-                new NullLogger<SigningUserAction>(),
-                signingClientMock.Object,
-                appMetadataMock.Object
-            ),
-            signingClientMock
-        );
     }
 
     private bool AssertSigningContextAsExpected(SignatureContext s1, SignatureContext s2)
