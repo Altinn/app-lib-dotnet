@@ -2,8 +2,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Web;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +31,7 @@ public class HomeController : Controller
     private readonly IAppResources _appResources;
     private readonly IAppMetadata _appMetadata;
     private readonly List<string> _onEntryWithInstance = new List<string> { "new-instance", "select-instance" };
+    private readonly IProfileClient _profileClient;
 
     /// <summary>
     /// Initialize a new instance of the <see cref="HomeController"/> class.
@@ -44,7 +48,8 @@ public class HomeController : Controller
         IWebHostEnvironment env,
         IOptions<AppSettings> appSettings,
         IAppResources appResources,
-        IAppMetadata appMetadata
+        IAppMetadata appMetadata,
+        IProfileClient profileClient,
     )
     {
         _antiforgery = antiforgery;
@@ -53,6 +58,7 @@ public class HomeController : Controller
         _appSettings = appSettings.Value;
         _appResources = appResources;
         _appMetadata = appMetadata;
+        _profileClient = profileClient;
     }
 
     /// <summary>
@@ -85,6 +91,58 @@ public class HomeController : Controller
 
         if (await ShouldShowAppView())
         {
+            ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
+
+            string wantedAppId = $"{org}/{app}";
+
+            var initialState = new InitialState(application);
+
+            //Adding key from _appSettings to be backwards compatible.
+            if (
+                !_frontEndSettings.ContainsKey(nameof(_appSettings.AppOidcProvider))
+                && !string.IsNullOrEmpty(_appSettings.AppOidcProvider)
+            )
+            {
+                _frontEndSettings.Add(nameof(_appSettings.AppOidcProvider), _appSettings.AppOidcProvider);
+            }
+
+            //return new JsonResult(frontEndSettings, _jsonSerializerOptions);
+            initialState.FrontEndSettings = _frontEndSettings; // JsonSerializer.Serialize(initialState, _jsonSerializerOptions); //new JsonResult(_frontEndSettings, _jsonSerializerOptions);
+
+            int userId = AuthenticationHelper.GetUserId(HttpContext);
+            if (userId == 0)
+            {
+                return BadRequest("The userId is not provided in the context.");
+            }
+
+            try
+            {
+                var user = await _profileClient.GetUserProfile(userId);
+
+                if (user == null)
+                {
+                    return NotFound();
+                }
+
+                initialState.User = user;
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+
+            UserContext userContext = await _userHelper.GetUserContext(HttpContext);
+            List<Party>? partyList = await _authorizationClient.GetPartyList(userContext.UserId);
+
+            List<Party> validParties = InstantiationHelper.FilterPartiesByAllowedPartyTypes(
+                partyList,
+                application.PartyTypesAllowed
+            );
+
+            initialState.ValidParties = validParties;
+
+            ViewBag.InitialState = JsonSerializer.Serialize(initialState, _jsonSerializerOptions);
+
             ViewBag.org = org;
             ViewBag.app = app;
             return PartialView("Index");
@@ -107,6 +165,59 @@ public class HomeController : Controller
 
         return Redirect(redirectUrl);
     }
+
+    // /// <summary>
+    // /// Returns the index view with references to the React app.
+    // /// </summary>
+    // /// <param name="org">The application owner short name.</param>
+    // /// <param name="app">The name of the app</param>
+    // /// <param name="dontChooseReportee">Parameter to indicate disabling of reportee selection in Altinn Portal.</param>
+    // [HttpGet]
+    // [Route("{org}/{app}/")]
+    // public async Task<IActionResult> Index(
+    //     [FromRoute] string org,
+    //     [FromRoute] string app,
+    //     [FromQuery] bool dontChooseReportee
+    // )
+    // {
+    //     // See comments in the configuration of Antiforgery in MvcConfiguration.cs.
+    //     var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
+    //     if (tokens.RequestToken != null)
+    //     {
+    //         HttpContext.Response.Cookies.Append(
+    //             "XSRF-TOKEN",
+    //             tokens.RequestToken,
+    //             new CookieOptions
+    //             {
+    //                 HttpOnly = false, // Make this cookie readable by Javascript.
+    //             }
+    //         );
+    //     }
+    //
+    //     if (await ShouldShowAppView())
+    //     {
+    //         ViewBag.org = org;
+    //         ViewBag.app = app;
+    //         return PartialView("Index");
+    //     }
+    //
+    //     string scheme = _env.IsDevelopment() ? "http" : "https";
+    //     string goToUrl = HttpUtility.UrlEncode($"{scheme}://{Request.Host}/{org}/{app}");
+    //
+    //     string redirectUrl = $"{_platformSettings.ApiAuthenticationEndpoint}authentication?goto={goToUrl}";
+    //
+    //     if (!string.IsNullOrEmpty(_appSettings.AppOidcProvider))
+    //     {
+    //         redirectUrl += "&iss=" + _appSettings.AppOidcProvider;
+    //     }
+    //
+    //     if (dontChooseReportee)
+    //     {
+    //         redirectUrl += "&DontChooseReportee=true";
+    //     }
+    //
+    //     return Redirect(redirectUrl);
+    // }
 
     /// <summary>
     ///
