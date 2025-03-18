@@ -14,8 +14,16 @@ using Polly.Retry;
 
 namespace Altinn.App.Clients.Fiks.Extensions;
 
+/// <summary>
+/// Extension methods for setting up Fiks IO and Fiks Arkiv services.
+/// </summary>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Adds a Fiks IO client to the service collection.
+    /// </summary>
+    /// <param name="services">The target <see cref="IServiceCollection"/>.</param>
+    /// <returns>A <see cref="FiksIOSetupBuilder"/> instance that can be used to configure the Fiks IO client.</returns>
     public static IFiksIOSetupBuilder AddFiksIOClient(this IServiceCollection services)
     {
         if (services.IsConfigured<FiksIOSettings>() is false)
@@ -27,6 +35,11 @@ public static class ServiceCollectionExtensions
         return new FiksIOSetupBuilder(services);
     }
 
+    /// <summary>
+    /// Adds a Fiks Arkiv client and all relevant dependencies to the service collection.
+    /// </summary>
+    /// <param name="services">The target <see cref="IServiceCollection"/>.</param>
+    /// <returns>A <see cref="FiksArkivSetupBuilder"/> instance that can be used to configure the Fiks Arkiv client.</returns>
     public static IFiksArkivSetupBuilder AddFiksArkiv(this IServiceCollection services)
     {
         if (services.IsConfigured<FiksArkivSettings>() is false)
@@ -45,6 +58,11 @@ public static class ServiceCollectionExtensions
         return new FiksArkivSetupBuilder(services);
     }
 
+    /// <summary>
+    /// Configures the Fiks IO client with the provided options.
+    /// </summary>
+    /// <param name="services">The target <see cref="IServiceCollection"/>.</param>
+    /// <param name="configureOptions">Configuration delegate.</param>
     public static IServiceCollection ConfigureFiksIOClient(
         this IServiceCollection services,
         Action<FiksIOSettings> configureOptions
@@ -54,12 +72,22 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Configures the Fiks IO client with the options from the specified configuration section.
+    /// </summary>
+    /// <param name="services">The target <see cref="IServiceCollection"/>.</param>
+    /// <param name="configSectionPath">Configuration section path.</param>
     public static IServiceCollection ConfigureFiksIOClient(this IServiceCollection services, string configSectionPath)
     {
         services.AddOptions<FiksIOSettings>().BindConfiguration(configSectionPath).ValidateDataAnnotations();
         return services;
     }
 
+    /// <summary>
+    /// Configures the Fiks Arkiv client with the provided options.
+    /// </summary>
+    /// <param name="services">The target <see cref="IServiceCollection"/>.</param>
+    /// <param name="configureOptions">Configuration delegate.</param>
     public static IServiceCollection ConfigureFiksArkiv(
         this IServiceCollection services,
         Action<FiksArkivSettings> configureOptions
@@ -69,13 +97,18 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Configures the Fiks Arkiv client with the options from the specified configuration section.
+    /// </summary>
+    /// <param name="services">The target <see cref="IServiceCollection"/>.</param>
+    /// <param name="configSectionPath">Configuration section path.</param>
     public static IServiceCollection ConfigureFiksArkiv(this IServiceCollection services, string configSectionPath)
     {
         services.AddOptions<FiksArkivSettings>().BindConfiguration(configSectionPath);
         return services;
     }
 
-    internal static IServiceCollection AddDefaultFiksIOResiliencePipeline(this IServiceCollection services)
+    private static IServiceCollection AddDefaultFiksIOResiliencePipeline(this IServiceCollection services)
     {
         services.AddResiliencePipeline<string, FiksIOMessageResponse>(
             FiksIOConstants.ResiliencePipelineId,

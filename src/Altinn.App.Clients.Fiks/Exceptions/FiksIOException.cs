@@ -2,6 +2,9 @@ using Altinn.App.Core.Exceptions;
 
 namespace Altinn.App.Clients.Fiks.Exceptions;
 
+/// <summary>
+/// An error occurred and it was related to Fiks IO.
+/// </summary>
 public class FiksIOException : AltinnException
 {
     /// <inheritdoc/>
