@@ -1,5 +1,8 @@
 namespace Altinn.App.Clients.Fiks.Exceptions;
 
+/// <summary>
+/// Indicates an error with the Fiks IO configuration.
+/// </summary>
 public class FiksIOConfigurationException : FiksIOException
 {
     /// <inheritdoc/>
