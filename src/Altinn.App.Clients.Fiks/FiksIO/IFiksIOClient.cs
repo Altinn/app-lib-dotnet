@@ -7,7 +7,7 @@ public interface IFiksIOClient : IDisposable
     IFiksIOAccountSettings AccountSettings { get; }
     bool IsHealthy();
     Task Reconnect();
-    Task OnMessageReceived(EventHandler<FiksIOReceivedMessageArgs> listener);
+    Task OnMessageReceived(EventHandler<FiksIOReceivedMessage> listener);
     Task<FiksIOMessageResponse> SendMessage(
         FiksIOMessageRequest request,
         CancellationToken cancellationToken = default

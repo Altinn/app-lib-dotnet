@@ -4,19 +4,22 @@ using KS.Fiks.IO.Crypto.Models;
 
 namespace Altinn.App.Clients.Fiks.FiksIO.Models;
 
-public sealed record FiksIOReceivedMessageArgs
+public sealed record FiksIOReceivedMessage
 {
-    public FiksIOReceivedMessage Message { get; init; }
+    public FiksIOReceivedMessageContent Message { get; init; }
     public FiksIOMessageResponder Responder { get; init; }
 
-    internal FiksIOReceivedMessageArgs(MottattMeldingArgs mottattMeldingArgs)
+    public bool IsErrorResponse =>
+        string.IsNullOrWhiteSpace(Message.MessageType) || Message.MessageType.Contains(FiksIOConstants.ErrorStub);
+
+    internal FiksIOReceivedMessage(MottattMeldingArgs mottattMeldingArgs)
     {
-        Message = new FiksIOReceivedMessage(mottattMeldingArgs.Melding);
+        Message = new FiksIOReceivedMessageContent(mottattMeldingArgs.Melding);
         Responder = new FiksIOMessageResponder(mottattMeldingArgs.SvarSender);
     }
 }
 
-public sealed record FiksIOReceivedMessage
+public sealed record FiksIOReceivedMessageContent
 {
     public bool HasPayload => _mottattMelding.HasPayload;
     public Guid? InReplyToMessage => _mottattMelding.SvarPaMelding;
@@ -39,7 +42,7 @@ public sealed record FiksIOReceivedMessage
 
     private IMottattMelding _mottattMelding { get; init; }
 
-    internal FiksIOReceivedMessage(IMottattMelding mottattMelding)
+    internal FiksIOReceivedMessageContent(IMottattMelding mottattMelding)
     {
         _mottattMelding = mottattMelding;
     }

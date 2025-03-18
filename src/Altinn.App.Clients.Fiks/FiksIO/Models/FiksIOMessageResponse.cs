@@ -14,7 +14,7 @@ public sealed record FiksIOMessageResponse
     public Guid? InReplyToMessage => _sendtMelding.SvarPaMelding;
     public bool Resendt => _sendtMelding.Resendt;
 
-    private SendtMelding _sendtMelding { get; init; }
+    private SendtMelding _sendtMelding { get; }
 
     internal FiksIOMessageResponse(SendtMelding sendtMelding)
     {

@@ -1,16 +1,12 @@
 using System.Globalization;
 using System.Text;
+using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
-using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.AltinnCdn;
-using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Language;
-using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Profile.Models;
@@ -18,111 +14,20 @@ using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;
 using KS.Fiks.Arkiv.Models.V1.Kodelister;
-using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using KS.Fiks.Arkiv.Models.V1.Metadatakatalog;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Kode = KS.Fiks.Arkiv.Models.V1.Kodelister.Kode;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
-internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvider
+internal sealed partial class FiksArkivDefaultMessageHandler
 {
-    private readonly FiksArkivSettings _fiksArkivSettings;
-    private readonly FiksIOSettings _fiksIOSettings;
-    private readonly IAppMetadata _appMetadata;
-    private readonly IDataClient _dataClient;
-    private readonly ILogger<FiksArkivDefaultMessageProvider> _logger;
-    private readonly IAuthenticationContext _authenticationContext;
-    private readonly IAltinnPartyClient _altinnPartyClient;
-    private readonly IAltinnCdnClient _altinnCdnClient;
-    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
-    private readonly ILayoutEvaluatorStateInitializer _layoutStateInitializer;
-
-    private ApplicationMetadata? _applicationMetadataCache;
-
-    public FiksArkivDefaultMessageProvider(
-        IOptions<FiksArkivSettings> fiksArkivSettings,
-        IOptions<FiksIOSettings> fiksIOSettings,
-        IAppMetadata appMetadata,
-        IDataClient dataClient,
-        IAuthenticationContext authenticationContext,
-        IAltinnPartyClient altinnPartyClient,
-        ILogger<FiksArkivDefaultMessageProvider> logger,
-        IAltinnCdnClient altinnCdnClient,
-        InstanceDataUnitOfWorkInitializer instanceDataUnitOfWorkInitializer,
-        ILayoutEvaluatorStateInitializer layoutStateInitializer
-    )
-    {
-        _appMetadata = appMetadata;
-        _dataClient = dataClient;
-        _altinnCdnClient = altinnCdnClient;
-        _altinnPartyClient = altinnPartyClient;
-        _authenticationContext = authenticationContext;
-        _fiksArkivSettings = fiksArkivSettings.Value;
-        _fiksIOSettings = fiksIOSettings.Value;
-        _logger = logger;
-        _instanceDataUnitOfWorkInitializer = instanceDataUnitOfWorkInitializer;
-        _layoutStateInitializer = layoutStateInitializer;
-    }
-
-    public async Task<FiksIOMessageRequest> CreateMessageRequest(string taskId, Instance instance)
-    {
-        if (IsEnabledForTask(taskId) is false)
-            throw new Exception($"Fiks Arkiv error: Auto-send is not enabled for this task: {taskId}");
-
-        var recipient = await GetRecipient(instance);
-        var instanceId = new InstanceIdentifier(instance.Id);
-        var messagePayloads = await GenerateMessagePayloads(instance, recipient);
-
-        return new FiksIOMessageRequest(
-            Recipient: recipient,
-            MessageType: FiksArkivMeldingtype.ArkivmeldingOpprett,
-            SendersReference: instanceId.InstanceGuid,
-            MessageLifetime: TimeSpan.FromDays(2),
-            Payload: messagePayloads
-        );
-    }
-
-    public async Task ValidateConfiguration()
-    {
-        if (_fiksArkivSettings.AutoSend is null)
-            return;
-
-        if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.Recipient))
-            throw new Exception("Fiks Arkiv error: Recipient configuration is required for auto-send.");
-
-        if (
-            _fiksArkivSettings.AutoSend.Recipient.DoesNotContain('-')
-            && _fiksArkivSettings.AutoSend.Recipient.DoesNotContain('.')
-        )
-            throw new Exception("Fiks Arkiv error: Recipient must be a valid Guid or a data model path.");
-
-        if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.AfterTaskId))
-            throw new Exception("Fiks Arkiv error: AfterTaskId configuration is required for auto-send.");
-
-        if (
-            _fiksArkivSettings.AutoSend.FormDocument is null
-            || string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.FormDocument.DataType)
-        )
-            throw new Exception("Fiks Arkiv error: FormDocument configuration is required for auto-send.");
-
-        ApplicationMetadata appMetadata = await GetApplicationMetadata();
-        HashSet<string> dataTypes = appMetadata.DataTypes.Select(x => x.Id).ToHashSet();
-
-        if (dataTypes.Contains(_fiksArkivSettings.AutoSend.FormDocument.DataType) is false)
-            throw new Exception("Fiks Arkiv error: FormDocument->DataType mismatch with application data types.");
-
-        if (_fiksArkivSettings.AutoSend.Attachments?.All(x => dataTypes.Contains(x.DataType)) is not true)
-            throw new Exception("Fiks Arkiv error: Attachments->DataType mismatch with application data types.");
-    }
-
-    private bool IsEnabledForTask(string taskId) => _fiksArkivSettings.AutoSend?.AfterTaskId == taskId;
-
     private async Task<IEnumerable<FiksIOMessagePayload>> GenerateMessagePayloads(Instance instance, Guid recipient)
     {
         var appMetadata = await GetApplicationMetadata();
-        var documentTitle = appMetadata.Title[LanguageConst.Nb];
+        var appTitle = appMetadata.Title.GetValueOrDefault(LanguageConst.Nb, appMetadata.AppIdentifier.App);
+        var documentTitle = $"{appTitle}: {Guid.NewGuid()}"; // TODO: Remove GUID padding here
+
         var documentCreator = appMetadata.AppIdentifier.Org;
         var recipientDetails = GetRecipientParty(instance, recipient);
         var serviceOwnerDetails = await GetServiceOwnerParty();
@@ -169,6 +74,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             {
                 ReferanseEksternNoekkel = caseFile.ReferanseEksternNoekkel,
             },
+            ReferanseEksternNoekkel = caseFile.ReferanseEksternNoekkel,
         };
 
         // Recipient
@@ -196,7 +102,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         );
 
         // Main form data file
-        journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(archiveDocuments.FormDocument));
+        // journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(archiveDocuments.FormDocument)); // TODO: Re-enable
 
         // Attachments
         foreach (var attachment in archiveDocuments.AttachmentDocuments)
@@ -213,7 +119,8 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             System = FiksArkivConstants.AltinnSystemLabel,
         };
 
-        // TEMP log
+        // TODO: Remove logging here
+        // TEMP log output
         string xmlResult = Encoding.UTF8.GetString(archiveRecord.SerializeXmlBytes(indent: true).Span);
         _logger.LogWarning(xmlResult);
 
@@ -237,7 +144,10 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         List<MessagePayloadWrapper> attachmentDocuments = [];
         foreach (var attachmentSetting in attachmentSettings)
         {
-            IEnumerable<DataElement> dataElements = instance.GetOptionalDataElements(attachmentSetting.DataType);
+            IEnumerable<DataElement> dataElements = instance
+                .GetOptionalDataElements(attachmentSetting.DataType)
+                .ToList();
+
             if (dataElements.Any() is false)
                 continue;
 
@@ -263,13 +173,9 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         ApplicationMetadata appMetadata = await GetApplicationMetadata();
 
         if (string.IsNullOrWhiteSpace(filename) is false)
-        {
             dataElement.Filename = filename;
-        }
         else if (string.IsNullOrWhiteSpace(dataElement.Filename))
-        {
             dataElement.Filename = $"{dataElement.DataType}{dataElement.GetExtensionForMimeType()}";
-        }
 
         return new MessagePayloadWrapper(
             new FiksIOMessagePayload(
@@ -309,7 +215,7 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
 
             return Guid.TryParse(data as string, out recipient)
                 ? recipient
-                : throw new Exception($"Could not parse recipient from model query `{configuredRecipient}`");
+                : throw new FiksArkivException($"Could not parse recipient from model query `{configuredRecipient}`");
         }
         catch (Exception e)
         {
@@ -394,7 +300,9 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
             case Authenticated.Org org:
                 return new Klassifikasjon { KlasseID = org.OrgNo, KlassifikasjonssystemID = "Organisasjonsnummer" };
             default:
-                throw new Exception("Could not determine sender details");
+                throw new FiksArkivException(
+                    $"Could not determine sender details from authentication context: {_authenticationContext.Current}"
+                );
         }
     }
 
@@ -495,19 +403,5 @@ internal sealed class FiksArkivDefaultMessageProvider : IFiksArkivMessageProvide
         );
 
         return metadata;
-    }
-
-    private async Task<ApplicationMetadata> GetApplicationMetadata()
-    {
-        _applicationMetadataCache ??= await _appMetadata.GetApplicationMetadata();
-        return _applicationMetadataCache;
-    }
-
-    private static T VerifiedNotNull<T>(T? value)
-    {
-        if (value is null)
-            throw new Exception($"Value of type {typeof(T).Name} is unexpectedly null.");
-
-        return value;
     }
 }
