@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Internal.App;
@@ -84,7 +83,7 @@ internal sealed class FiksIOClient : IFiksIOClient
                 async context =>
                 {
                     if (_fiksIoClient is null || _fiksIoClient.IsOpen() is false)
-                        await InitialiseFiksIOClient();
+                        _fiksIoClient = await InitialiseFiksIOClient();
 
                     numAttempts += 1;
 
@@ -140,8 +139,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         await InitialiseFiksIOClient();
     }
 
-    [MemberNotNull(nameof(_fiksIoClient))]
-    private async Task InitialiseFiksIOClient()
+    private async Task<KS.Fiks.IO.Client.FiksIOClient> InitialiseFiksIOClient()
     {
         var fiksIOSettings = _fiksIOSettings.CurrentValue;
         var appMeta = await _appMetadata.GetApplicationMetadata();
@@ -171,6 +169,8 @@ internal sealed class FiksIOClient : IFiksIOClient
 
         if (_messageReceivedHandler is not null)
             SubscribeToEvents();
+
+        return _fiksIoClient;
     }
 
     private async void InitialiseFiksIOClient_NeverThrowsWrapper(object? x = null)
