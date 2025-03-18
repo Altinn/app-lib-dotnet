@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
@@ -27,7 +28,7 @@ internal sealed class FiksIOClient : IFiksIOClient
     private readonly IMaskinportenClient _maskinportenClient;
     private readonly ResiliencePipeline<FiksIOMessageResponse> _resiliencePipeline;
     private KS.Fiks.IO.Client.FiksIOClient? _fiksIoClient;
-    private EventHandler<FiksIOReceivedMessageArgs>? _messageReceivedHandler;
+    private EventHandler<FiksIOReceivedMessage>? _messageReceivedHandler;
 
     public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
 
@@ -47,11 +48,11 @@ internal sealed class FiksIOClient : IFiksIOClient
         _maskinportenClient = maskinportenClient;
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
         _resiliencePipeline = resiliencePipelineProvider.GetPipeline<FiksIOMessageResponse>(
-            FiksIOConstants.FiksIOResiliencePipelineId
+            FiksIOConstants.ResiliencePipelineId
         );
 
         if (fiksIOSettings.CurrentValue is null)
-            throw new Exception("FiksIO has not been configured");
+            throw new FiksIOConfigurationException("Fiks IO has not been configured");
 
         // Subscribe to settings changes
         fiksIOSettings.OnChange(InitialiseFiksIOClient_NeverThrowsWrapper);
@@ -63,7 +64,7 @@ internal sealed class FiksIOClient : IFiksIOClient
     )
     {
         _logger.LogInformation(
-            "Sending FiksIO message {MessageType}:{ClientMessageId}",
+            "Sending Fiks IO message {MessageType}:{ClientMessageId}",
             request.MessageType,
             request.SendersReference
         );
@@ -71,13 +72,11 @@ internal sealed class FiksIOClient : IFiksIOClient
         var externalAttachments = request.ToPayload();
         var numAttempts = 0;
 
-        _logger.LogDebug("Message details: {Message}", externalRequest);
-
         try
         {
             ResilienceContext context = ResilienceContextPool.Shared.Get(cancellationToken);
             context.Properties.Set(
-                new ResiliencePropertyKey<FiksIOMessageRequest>(FiksIOConstants.FiksIOMessageRequestPropertyKey),
+                new ResiliencePropertyKey<FiksIOMessageRequest>(FiksIOConstants.MessageRequestPropertyKey),
                 request
             );
 
@@ -88,8 +87,12 @@ internal sealed class FiksIOClient : IFiksIOClient
                         await InitialiseFiksIOClient();
 
                     numAttempts += 1;
+
                     // TODO: Pass context.CancellationToken onwards
-                    return new FiksIOMessageResponse(await _fiksIoClient.Send(externalRequest, externalAttachments));
+                    FiksIOMessageResponse result = new(await _fiksIoClient.Send(externalRequest, externalAttachments));
+                    _logger.LogInformation("FiksIO message sent successfully: {MessageDetails}", result);
+
+                    return result;
                 },
                 context
             );
@@ -108,7 +111,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         }
     }
 
-    public async Task OnMessageReceived(EventHandler<FiksIOReceivedMessageArgs> listener)
+    public async Task OnMessageReceived(EventHandler<FiksIOReceivedMessage> listener)
     {
         bool alreadySubscribed = _messageReceivedHandler is not null;
         _messageReceivedHandler = listener; // Always update the handler
@@ -140,13 +143,7 @@ internal sealed class FiksIOClient : IFiksIOClient
     [MemberNotNull(nameof(_fiksIoClient))]
     private async Task InitialiseFiksIOClient()
     {
-        // var maskinportenSettings = _maskinportenSettings.CurrentValue;
         var fiksIOSettings = _fiksIOSettings.CurrentValue;
-
-        // var maskinportenJwk = maskinportenSettings.GetJsonWebKey();
-        // var maskinportenClientId = maskinportenSettings.ClientId;
-        // var (maskinportenPublicKey, maskinportenPrivateKey) = maskinportenJwk.ConvertJwkToRsa();
-
         var appMeta = await _appMetadata.GetApplicationMetadata();
         var environmentConfig = GetConfiguration(appMeta.AppIdentifier);
 
@@ -163,15 +160,6 @@ internal sealed class FiksIOClient : IFiksIOClient
                 fiksIOSettings.IntegrationPassword
             ),
             kontoConfiguration: new KontoConfiguration(fiksIOSettings.AccountId, fiksIOSettings.AccountPrivateKey)
-        // maskinportenConfiguration: new MaskinportenClientConfiguration(
-        //     audience: environmentConfig.MaskinportenAuthority,
-        //     tokenEndpoint: environmentConfig.MaskinportenTokenEndpoint,
-        //     issuer: maskinportenClientId,
-        //     numberOfSecondsLeftBeforeExpire: 10,
-        //     publicKey: maskinportenPublicKey,
-        //     privateKey: maskinportenPrivateKey,
-        //     keyIdentifier: maskinportenJwk.Kid
-        // )
         );
 
         _fiksIoClient?.Dispose();
@@ -193,7 +181,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed to initialise FiksIO client: {ErrorMessage}", e.Message);
+            _logger.LogError(e, "Failed to initialise Fiks IO client: {ErrorMessage}", e.Message);
         }
     }
 
@@ -202,12 +190,12 @@ internal sealed class FiksIOClient : IFiksIOClient
         _fiksIoClient?.NewSubscription(MessageReceivedHandler, SubscriptionCancelledHandler);
     }
 
-    private void MessageReceivedHandler(object? sender, MottattMeldingArgs e)
+    private void MessageReceivedHandler(object? sender, MottattMeldingArgs eventArgs)
     {
-        _messageReceivedHandler?.Invoke(sender, new FiksIOReceivedMessageArgs(e));
+        _messageReceivedHandler?.Invoke(sender, new FiksIOReceivedMessage(eventArgs));
     }
 
-    private void SubscriptionCancelledHandler(object? sender, ConsumerEventArgs e)
+    private void SubscriptionCancelledHandler(object? sender, ConsumerEventArgs eventArgs)
     {
         InitialiseFiksIOClient_NeverThrowsWrapper();
     }
@@ -219,13 +207,11 @@ internal sealed class FiksIOClient : IFiksIOClient
         return _env.IsProduction()
             ? new EnvironmentConfiguration(
                 ApiConfiguration.CreateProdConfiguration(),
-                FiksIOConfiguration.maskinportenProdAudience,
                 AmqpConfiguration.ProdHost,
                 ampqAppName
             )
             : new EnvironmentConfiguration(
                 ApiConfiguration.CreateTestConfiguration(),
-                FiksIOConfiguration.maskinportenTestAudience,
                 AmqpConfiguration.TestHost,
                 ampqAppName
             );
@@ -238,11 +224,7 @@ internal sealed class FiksIOClient : IFiksIOClient
 
     private readonly record struct EnvironmentConfiguration(
         ApiConfiguration FiksApiConfiguration,
-        string MaskinportenAuthority,
         string FiksAmqpHost,
         string FiksAmqpAppName
-    )
-    {
-        // public string MaskinportenTokenEndpoint => $"{MaskinportenAuthority.TrimEnd('/')}/token";
-    }
+    );
 }

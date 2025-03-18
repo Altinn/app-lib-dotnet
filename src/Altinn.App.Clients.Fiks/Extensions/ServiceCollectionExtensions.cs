@@ -35,9 +35,8 @@ public static class ServiceCollectionExtensions
         }
 
         services.AddFiksIOClient();
-        // services.AddTransient<IFiksArkivErrorHandler, FiksArkivDefaultErrorHandler>();
         services.AddTransient<IAltinnCdnClient, AltinnCdnClient>();
-        services.AddTransient<IFiksArkivMessageProvider, FiksArkivDefaultMessageProvider>();
+        services.AddTransient<IFiksArkivMessageHandler, FiksArkivDefaultMessageHandler>();
         services.AddTransient<IFiksArkivServiceTask, FiksArkivServiceTask>();
         services.AddTransient<IServiceTask>(x => x.GetRequiredService<IFiksArkivServiceTask>());
         services.AddHostedService<FiksArkivConfigValidationService>();
@@ -79,7 +78,7 @@ public static class ServiceCollectionExtensions
     internal static IServiceCollection AddDefaultFiksIOResiliencePipeline(this IServiceCollection services)
     {
         services.AddResiliencePipeline<string, FiksIOMessageResponse>(
-            FiksIOConstants.FiksIOResiliencePipelineId,
+            FiksIOConstants.ResiliencePipelineId,
             (builder, context) =>
             {
                 var logger = context.ServiceProvider.GetRequiredService<ILogger<FiksIOClient>>();
@@ -107,7 +106,7 @@ public static class ServiceCollectionExtensions
                             {
                                 args.Context.Properties.TryGetValue(
                                     new ResiliencePropertyKey<FiksIOMessageRequest>(
-                                        FiksIOConstants.FiksIOMessageRequestPropertyKey
+                                        FiksIOConstants.MessageRequestPropertyKey
                                     ),
                                     out var messageRequest
                                 );

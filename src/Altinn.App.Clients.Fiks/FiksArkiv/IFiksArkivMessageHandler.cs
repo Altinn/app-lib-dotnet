@@ -5,7 +5,8 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 [ImplementableByApps]
-public interface IFiksArkivMessageProvider : IFiksArkivConfigValidation
+public interface IFiksArkivMessageHandler : IFiksArkivConfigValidation
 {
     Task<FiksIOMessageRequest> CreateMessageRequest(string taskId, Instance instance);
+    Task HandleReceivedMessage(Instance instance, FiksIOReceivedMessage receivedMessage);
 }

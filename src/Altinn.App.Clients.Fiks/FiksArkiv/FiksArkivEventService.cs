@@ -1,7 +1,5 @@
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
-using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
-using KS.Fiks.ASiC_E;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -11,18 +9,17 @@ internal sealed class FiksArkivEventService : BackgroundService
 {
     private readonly ILogger<FiksArkivEventService> _logger;
     private readonly IFiksIOClient _fiksIOClient;
-
-    // private readonly IFiksArkivErrorHandler _errorHandler;
+    private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
 
     public FiksArkivEventService(
         IFiksIOClient fiksIOClient,
-        // IFiksArkivErrorHandler errorHandler,
+        IFiksArkivMessageHandler fiksArkivMessageHandler,
         ILogger<FiksArkivEventService> logger
     )
     {
         _logger = logger;
         _fiksIOClient = fiksIOClient;
-        // _errorHandler = errorHandler;
+        _fiksArkivMessageHandler = fiksArkivMessageHandler;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -56,84 +53,23 @@ internal sealed class FiksArkivEventService : BackgroundService
         _fiksIOClient.Dispose();
     }
 
-    private async void MessageReceivedHandler(object? sender, FiksIOReceivedMessageArgs receivedMessage)
+    private async void MessageReceivedHandler(object? sender, FiksIOReceivedMessage receivedMessage)
     {
         try
         {
-            Guid messageId = receivedMessage.Message.MessageId;
-            string messageType = receivedMessage.Message.MessageType;
             _logger.LogInformation(
                 "Received message {MessageType}:{MessageId} in reply to {MessageReplyFor}",
-                messageType,
-                messageId,
+                receivedMessage.Message.MessageType,
+                receivedMessage.Message.MessageId,
                 receivedMessage.Message.InReplyToMessage
             );
 
-            IEnumerable<string> decryptedMessages;
-            try
-            {
-                decryptedMessages = await GetDecryptedPayloads(receivedMessage);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error decrypting message content: {Exception}", ex.Message);
-            }
-
-            // `decryptedMessages` Could be `MappeKvittering` og `FeilmeldingBase` ... or unknown
-            // TODO: Deserialize?
-
-            if (string.IsNullOrWhiteSpace(messageType) || FiksArkivMeldingtype.IsFeilmelding(messageType))
-            {
-                _logger.LogError(
-                    "Message {MessageType}:{MessageId} is an error reply. Executing error handler",
-                    messageType,
-                    messageId
-                );
-
-                // TODO: Retrieve instance and execute handler
-                // var dummyInstance = new Instance
-                // {
-                //     Id = "501337/1b899c5b-2505-424e-be06-12cf36da7d1e",
-                //     AppId = "ttd/fiks-arkiv-test",
-                // };
-                //
-                // await _errorHandler.HandleError(dummyInstance, receivedMessage);
-            }
-
-            // TODO: Send /complete notification?
+            await _fiksArkivMessageHandler.HandleReceivedMessage(null, receivedMessage);
             receivedMessage.Responder.Ack();
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "FiksArkiv MessageReceivedHandler failed with error: {Error}", e.Message);
-            // receivedMessage.Responder.NackWithRequeue();
+            _logger.LogError(e, "Fiks Arkiv MessageReceivedHandler failed with error: {Error}", e.Message);
         }
-    }
-
-    private async Task<IEnumerable<string>> GetDecryptedPayloads(FiksIOReceivedMessageArgs receivedMessageArgs)
-    {
-        List<string> payloads = [];
-        AsiceReader asiceReader = new();
-        using var asiceReadModel = asiceReader.Read(await receivedMessageArgs.Message.DecryptedStream);
-
-        foreach (var asiceVerifyReadEntry in asiceReadModel.Entries)
-        {
-            await using (var entryStream = asiceVerifyReadEntry.OpenStream())
-            {
-                _logger.LogInformation($"GetDecryptedPayloadTxt - {asiceVerifyReadEntry.FileName}");
-                // await using var fileStream = new FileStream(
-                //     $"received-{asiceVerifyReadEntry.FileName}",
-                //     FileMode.Create,
-                //     FileAccess.Write
-                // );
-                // await entryStream.CopyToAsync(fileStream);
-
-                using var reader = new StreamReader(entryStream);
-                string text = await reader.ReadToEndAsync();
-                payloads.Add(text);
-            }
-        }
-
-        return payloads;
     }
 }

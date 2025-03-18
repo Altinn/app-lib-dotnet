@@ -4,25 +4,21 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal sealed class FiksArkivConfigValidationService : IHostedService
 {
-    // private readonly IFiksArkivErrorHandler _fiksArkivErrorHandler;
-    private readonly IFiksArkivMessageProvider _fiksArkivMessageProvider;
+    private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
     private readonly IFiksArkivServiceTask _fiksArkivServiceTask;
 
     public FiksArkivConfigValidationService(
-        // IFiksArkivErrorHandler fiksArkivErrorHandler,
-        IFiksArkivMessageProvider fiksArkivMessageProvider,
+        IFiksArkivMessageHandler fiksArkivMessageHandler,
         IFiksArkivServiceTask fiksArkivServiceTask
     )
     {
-        // _fiksArkivErrorHandler = fiksArkivErrorHandler;
-        _fiksArkivMessageProvider = fiksArkivMessageProvider;
+        _fiksArkivMessageHandler = fiksArkivMessageHandler;
         _fiksArkivServiceTask = fiksArkivServiceTask;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        // await _fiksArkivErrorHandler.ValidateConfiguration();
-        await _fiksArkivMessageProvider.ValidateConfiguration();
+        await _fiksArkivMessageHandler.ValidateConfiguration();
         await _fiksArkivServiceTask.ValidateConfiguration();
     }
 

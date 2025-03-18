@@ -21,5 +21,6 @@ internal sealed record ArchiveDocumentsWrapper
         _allDocuments.EnsureUniqueFilenames();
     }
 
-    public IEnumerable<FiksIOMessagePayload> ToPayloads() => _allDocuments.Select(x => x.Payload);
+    // public IEnumerable<FiksIOMessagePayload> ToPayloads() => _allDocuments.Select(x => x.Payload); // TODO: Re-enable
+    public IEnumerable<FiksIOMessagePayload> ToPayloads() => AttachmentDocuments.Select(x => x.Payload);
 }

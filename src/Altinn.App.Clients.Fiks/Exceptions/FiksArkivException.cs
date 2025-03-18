@@ -2,16 +2,16 @@ using Altinn.App.Core.Exceptions;
 
 namespace Altinn.App.Clients.Fiks.Exceptions;
 
-public class FiksIOException : AltinnException
+public class FiksArkivException : AltinnException
 {
     /// <inheritdoc/>
-    internal FiksIOException() { }
+    internal FiksArkivException() { }
 
     /// <inheritdoc/>
-    internal FiksIOException(string? message)
+    internal FiksArkivException(string? message)
         : base(message) { }
 
     /// <inheritdoc/>
-    internal FiksIOException(string? message, Exception? innerException)
+    internal FiksArkivException(string? message, Exception? innerException)
         : base(message, innerException) { }
 }
