@@ -1,5 +1,6 @@
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
+using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Helpers;
@@ -10,6 +11,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
+using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganisationSignee;
 using Signee = Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Api.Controllers;
@@ -25,6 +27,7 @@ internal class SigningController : ControllerBase
 {
     private readonly IInstanceClient _instanceClient;
     private readonly IProcessReader _processReader;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<SigningController> _logger;
     private readonly ISigningService _signingService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
@@ -36,11 +39,13 @@ internal class SigningController : ControllerBase
         IServiceProvider serviceProvider,
         IInstanceClient instanceClient,
         IProcessReader processReader,
+        IHttpContextAccessor httpContextAccessor,
         ILogger<SigningController> logger
     )
     {
         _instanceClient = instanceClient;
         _processReader = processReader;
+        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
         _signingService = serviceProvider.GetRequiredService<ISigningService>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
@@ -141,6 +146,47 @@ internal class SigningController : ControllerBase
         };
 
         return Ok(response);
+    }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(List<OrganisationSignee>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetAuthorizedOrganisations(
+        [FromRoute] string org,
+        [FromRoute] string app,
+        [FromRoute] int instanceOwnerPartyId,
+        [FromRoute] Guid instanceGuid,
+        [FromQuery] string? language = null
+    )
+    {
+        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+
+        var taskId = instance.Process.CurrentTask.ElementId;
+        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
+
+        if (instance.Process.CurrentTask.AltinnTaskType != "signing")
+        {
+            return NotSigningTask();
+        }
+
+        AltinnSignatureConfiguration signingConfiguration =
+            (_processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.SignatureConfiguration)
+            ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
+
+        int? userId = _httpContextAccessor.HttpContext?.User.GetUserIdAsInt();
+
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        List<OrganisationSignee> result = await _signingService.GetAuthorizedOrganisations(
+            cachedDataMutator,
+            signingConfiguration,
+            userId.Value
+        );
+        return Ok(result);
     }
 
     /// <summary>

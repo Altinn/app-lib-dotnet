@@ -185,7 +185,7 @@ public class AuthorizationClient : IAuthorizationClient
     }
 
     /// <inheritdoc />
-    public async Task<List<Role>?> GetRoles(int userId, int partyId)
+    public async Task<List<Role>> GetRoles(int userId, int partyId)
     {
         // TODO: telemetry
         string apiUrl = "roles";
@@ -196,7 +196,7 @@ public class AuthorizationClient : IAuthorizationClient
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
             string responseData = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<List<Role>>(responseData);
+            return JsonConvert.DeserializeObject<List<Role>>(responseData) ?? [];
         }
         else
         {
@@ -207,7 +207,7 @@ public class AuthorizationClient : IAuthorizationClient
                 response.StatusCode
             );
 
-            return null;
+            return [];
         }
     }
 }

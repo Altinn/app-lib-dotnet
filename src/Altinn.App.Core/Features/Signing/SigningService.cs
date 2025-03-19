@@ -8,11 +8,13 @@ using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Authorization.Platform.Authorization.Models;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
 using JsonException = Newtonsoft.Json.JsonException;
@@ -28,6 +30,7 @@ internal sealed class SigningService(
     IAppMetadata appMetadata,
     ISigningCallToActionService signingCallToActionService,
     ILogger<SigningService> logger,
+    IAuthorizationClient authorizationClient,
     Telemetry? telemetry = null
 ) : ISigningService
 {
@@ -47,6 +50,7 @@ internal sealed class SigningService(
     private readonly AppImplementationFactory _appImplementationFactory = appImplementationFactory;
     private const string ApplicationJsonContentType = "application/json";
 
+    // <inheritdoc />
     public async Task<List<SigneeContext>> GenerateSigneeContexts(
         IInstanceDataMutator instanceDataMutator,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -84,6 +88,7 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
+    // <inheritdoc />
     public async Task<List<SigneeContext>> InitialiseSignees(
         string taskId,
         IInstanceDataMutator instanceDataMutator,
@@ -175,6 +180,7 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
+    // <inheritdoc />
     public async Task<List<SigneeContext>> GetSigneeContexts(
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration
@@ -196,6 +202,33 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
+    // <inheritdoc />
+    public async Task<List<OrganisationSignee>> GetAuthorizedOrganisations(
+        IInstanceDataAccessor instanceDataAccessor,
+        AltinnSignatureConfiguration signatureConfiguration,
+        int userId
+    )
+    {
+        // If no SigneeStatesDataTypeId is set, delegated signing is not enabled and there is nothing to download.
+        List<SigneeContext> signeeContexts = !string.IsNullOrEmpty(signatureConfiguration.SigneeStatesDataTypeId)
+            ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)
+            : [];
+
+        List<OrganisationSignee> authorizedParties = [];
+        List<OrganisationSignee> orgSignees = [.. signeeContexts.Select(x => x.Signee).OfType<OrganisationSignee>()];
+
+        foreach (OrganisationSignee organisationSignee in orgSignees)
+        {
+            List<Role> roles = await authorizationClient.GetRoles(userId, organisationSignee.OrgParty.PartyId);
+            if (roles.Count != 0)
+            {
+                authorizedParties.Add(organisationSignee);
+            }
+        }
+        return authorizedParties;
+    }
+
+    // <inheritdoc />
     public async Task AbortRuntimeDelegatedSigning(
         string taskId,
         IInstanceDataMutator instanceDataMutator,

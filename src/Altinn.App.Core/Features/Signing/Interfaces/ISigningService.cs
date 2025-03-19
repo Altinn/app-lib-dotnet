@@ -1,5 +1,6 @@
 ﻿using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganisationSignee;
 
 namespace Altinn.App.Core.Features.Signing.Interfaces;
 
@@ -32,6 +33,15 @@ internal interface ISigningService
     Task<List<SigneeContext>> GetSigneeContexts(
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration
+    );
+
+    /// <summary>
+    /// Gets the organisation signees the current user is authorized to sign on behalf of.
+    /// </summary>
+    Task<List<OrganisationSignee>> GetAuthorizedOrganisations(
+        IInstanceDataAccessor instanceDataAccessor,
+        AltinnSignatureConfiguration signatureConfiguration,
+        int userId
     );
 
     /// <summary>
