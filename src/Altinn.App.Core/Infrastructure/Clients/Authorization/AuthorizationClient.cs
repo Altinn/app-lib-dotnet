@@ -187,7 +187,7 @@ public class AuthorizationClient : IAuthorizationClient
     /// <inheritdoc />
     public async Task<List<Role>> GetRoles(int userId, int partyId)
     {
-        // TODO: telemetry
+        using var activity = _telemetry?.StartClientGetRolesActivity(userId);
         string apiUrl = "roles";
         string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
