@@ -187,11 +187,7 @@ internal sealed class SigningService(
     )
     {
         using Activity? activity = telemetry?.StartReadSigneesActivity();
-
-        // If no SigneeStatesDataTypeId is set, delegated signing is not enabled and there is nothing to download.
-        List<SigneeContext> signeeContexts = !string.IsNullOrEmpty(signatureConfiguration.SigneeStatesDataTypeId)
-            ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)
-            : [];
+        List<SigneeContext> signeeContexts = await TryDownLoadSigneeContexts(instanceDataAccessor, signatureConfiguration);
 
         var taskId = instanceDataAccessor.Instance.Process.CurrentTask.ElementId;
 
@@ -202,6 +198,7 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
+
     // <inheritdoc />
     public async Task<List<OrganisationSignee>> GetAuthorizedOrganisations(
         IInstanceDataAccessor instanceDataAccessor,
@@ -209,12 +206,9 @@ internal sealed class SigningService(
         int userId
     )
     {
-        // If no SigneeStatesDataTypeId is set, delegated signing is not enabled and there is nothing to download.
-        List<SigneeContext> signeeContexts = !string.IsNullOrEmpty(signatureConfiguration.SigneeStatesDataTypeId)
-            ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)
-            : [];
+        List<SigneeContext> signeeContexts = await TryDownLoadSigneeContexts(instanceDataAccessor, signatureConfiguration);
 
-        List<OrganisationSignee> authorizedParties = [];
+        List<OrganisationSignee> authorizedOrganisations = [];
         List<OrganisationSignee> orgSignees = [.. signeeContexts.Select(x => x.Signee).OfType<OrganisationSignee>()];
 
         foreach (OrganisationSignee organisationSignee in orgSignees)
@@ -222,10 +216,10 @@ internal sealed class SigningService(
             List<Role> roles = await authorizationClient.GetRoles(userId, organisationSignee.OrgParty.PartyId);
             if (roles.Count != 0)
             {
-                authorizedParties.Add(organisationSignee);
+                authorizedOrganisations.Add(organisationSignee);
             }
         }
-        return authorizedParties;
+        return authorizedOrganisations;
     }
 
     // <inheritdoc />
@@ -276,6 +270,14 @@ internal sealed class SigningService(
             signeeContextsWithDelegation,
             ct
         );
+    }
+
+    private async Task<List<SigneeContext>> TryDownLoadSigneeContexts(IInstanceDataAccessor instanceDataAccessor, AltinnSignatureConfiguration signatureConfiguration)
+    {
+        // If no SigneeStatesDataTypeId is set, delegated signing is not enabled and there is nothing to download.
+        return !string.IsNullOrEmpty(signatureConfiguration.SigneeStatesDataTypeId)
+            ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)
+            : [];
     }
 
     /// <summary>
