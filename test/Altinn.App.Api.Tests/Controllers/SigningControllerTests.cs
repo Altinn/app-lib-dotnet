@@ -12,6 +12,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -34,6 +35,8 @@ public class SigningControllerTests
     private readonly Mock<IAppModel> _appModelMock = new();
     private readonly Mock<IAppResources> _appResourcesMock = new();
     private readonly ServiceCollection _serviceCollection = new();
+    private readonly Mock<IHttpContextAccessor> _httpContextAccessor = new();
+
     private readonly AltinnTaskExtension _altinnTaskExtension = new()
     {
         SignatureConfiguration = new AltinnSignatureConfiguration
@@ -61,6 +64,7 @@ public class SigningControllerTests
         _serviceCollection.AddSingleton(_applicationMetadataMock.Object);
         _serviceCollection.AddSingleton(_appResourcesMock.Object);
         _serviceCollection.AddSingleton(_processReaderMock.Object);
+        _serviceCollection.AddSingleton(_httpContextAccessor.Object);
         _serviceCollection.AddSingleton(_loggerMock.Object);
 
         _instanceClientMock
