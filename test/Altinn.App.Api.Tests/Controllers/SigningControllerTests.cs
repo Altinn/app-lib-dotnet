@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using System.Text.Json;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -12,6 +14,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using AltinnCore.Authentication.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,7 +38,7 @@ public class SigningControllerTests
     private readonly Mock<IAppModel> _appModelMock = new();
     private readonly Mock<IAppResources> _appResourcesMock = new();
     private readonly ServiceCollection _serviceCollection = new();
-    private readonly Mock<IHttpContextAccessor> _httpContextAccessor = new();
+    private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new();
 
     private readonly AltinnTaskExtension _altinnTaskExtension = new()
     {
@@ -64,7 +67,7 @@ public class SigningControllerTests
         _serviceCollection.AddSingleton(_applicationMetadataMock.Object);
         _serviceCollection.AddSingleton(_appResourcesMock.Object);
         _serviceCollection.AddSingleton(_processReaderMock.Object);
-        _serviceCollection.AddSingleton(_httpContextAccessor.Object);
+        _serviceCollection.AddSingleton(_httpContextAccessorMock.Object);
         _serviceCollection.AddSingleton(_loggerMock.Object);
 
         _instanceClientMock
@@ -484,5 +487,135 @@ public class SigningControllerTests
         };
 
         Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(signingStateResponse));
+    }
+
+    [Fact]
+    public async Task GetAuthorizedOrganisations_Returns_Expected_Organisations()
+    {
+        // Arrange
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
+        List<OrganisationSignee> organisationSignees =
+        [
+            new OrganisationSignee
+            {
+                OrgName = "org1",
+                OrgNumber = "123456789",
+                OrgParty = new Party { PartyId = 1 },
+            },
+            new OrganisationSignee
+            {
+                OrgName = "org2",
+                OrgNumber = "987654321",
+                OrgParty = new Party { PartyId = 2 },
+            },
+        ];
+
+        _signingServiceMock
+            .Setup(s =>
+                s.GetAuthorizedOrganisations(
+                    It.IsAny<InstanceDataUnitOfWork>(),
+                    _altinnTaskExtension.SignatureConfiguration!,
+                    1337
+                )
+            )
+            .ReturnsAsync(organisationSignees);
+
+        MockHttpContextAccessor("1337");
+
+        // Act
+        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+
+        var okResult = actionResult as OkObjectResult;
+        Assert.NotNull(okResult);
+
+        var signingAuthorizedOrganisationsResponse = okResult.Value as SigningAuthorizedOrganisationsResponse;
+
+        // Assert
+        var expected = new SigningAuthorizedOrganisationsResponse
+        {
+            Organisations =
+            [
+                new AuthorisedOrganisationDetails
+                {
+                    OrgName = "org1",
+                    OrgNumber = "123456789",
+                    PartyId = 1,
+                },
+                new AuthorisedOrganisationDetails
+                {
+                    OrgName = "org2",
+                    OrgNumber = "987654321",
+                    PartyId = 2,
+                },
+            ],
+        };
+
+        Assert.Equal(
+            JsonSerializer.Serialize(expected),
+            JsonSerializer.Serialize(signingAuthorizedOrganisationsResponse)
+        );
+    }
+
+    [Fact]
+    public async Task GetAuthorizedOrganisations_TaskTypeIsNotSigning_Returns_BadRequest()
+    {
+        // Arrange
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
+        _instanceClientMock
+            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ReturnsAsync(
+                new Instance
+                {
+                    InstanceOwner = new InstanceOwner { PartyId = "1337" },
+                    Process = new ProcessState
+                    {
+                        CurrentTask = new ProcessElementInfo { ElementId = "task1", AltinnTaskType = "not-signing" },
+                    },
+                }
+            );
+
+        // Act
+        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(actionResult);
+    }
+
+    [Fact]
+    public async Task GetAuthorizedOrganisations_UserIdIsNull_Returns_Unathorized()
+    {
+        // Arrange
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
+        MockHttpContextAccessor(null!);
+
+        // Act
+        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+
+        // Assert
+        Assert.IsType<UnauthorizedResult>(actionResult);
+    }
+
+    private void MockHttpContextAccessor(string? userId)
+    {
+        var claims = new List<Claim>
+        {
+            userId is not null
+                ? new(AltinnCoreClaimTypes.UserId, userId)
+                : new(AltinnCoreClaimTypes.OrgNumber, "user-id-not-set-here"),
+        };
+
+        var identity = new ClaimsIdentity(claims);
+        var principal = new ClaimsPrincipal(identity);
+
+        var httpContextMock = new Mock<HttpContext>();
+        httpContextMock.Setup(ctx => ctx.User).Returns(principal);
+
+        _httpContextAccessorMock.Setup(s => s.HttpContext).Returns(httpContextMock.Object);
     }
 }
