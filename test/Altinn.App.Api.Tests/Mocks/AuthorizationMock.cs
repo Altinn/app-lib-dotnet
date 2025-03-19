@@ -78,6 +78,11 @@ public class AuthorizationMock : IAuthorizationClient
             return Task.FromResult<List<Role>>([]);
         }
 
-        return Task.FromResult(new List<Role> { new() { Type = "roleType", Value = "roleValue" } });
+        return Task.FromResult(
+            new List<Role>
+            {
+                new() { Type = "roleType", Value = "roleValue" },
+            }
+        );
     }
 }

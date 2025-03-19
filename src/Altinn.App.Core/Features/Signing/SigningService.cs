@@ -187,7 +187,10 @@ internal sealed class SigningService(
     )
     {
         using Activity? activity = telemetry?.StartReadSigneesActivity();
-        List<SigneeContext> signeeContexts = await TryDownLoadSigneeContexts(instanceDataAccessor, signatureConfiguration);
+        List<SigneeContext> signeeContexts = await TryDownLoadSigneeContexts(
+            instanceDataAccessor,
+            signatureConfiguration
+        );
 
         var taskId = instanceDataAccessor.Instance.Process.CurrentTask.ElementId;
 
@@ -198,7 +201,6 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
-
     // <inheritdoc />
     public async Task<List<OrganisationSignee>> GetAuthorizedOrganisations(
         IInstanceDataAccessor instanceDataAccessor,
@@ -206,7 +208,10 @@ internal sealed class SigningService(
         int userId
     )
     {
-        List<SigneeContext> signeeContexts = await TryDownLoadSigneeContexts(instanceDataAccessor, signatureConfiguration);
+        List<SigneeContext> signeeContexts = await TryDownLoadSigneeContexts(
+            instanceDataAccessor,
+            signatureConfiguration
+        );
 
         List<OrganisationSignee> authorizedOrganisations = [];
         List<OrganisationSignee> orgSignees = [.. signeeContexts.Select(x => x.Signee).OfType<OrganisationSignee>()];
@@ -272,7 +277,10 @@ internal sealed class SigningService(
         );
     }
 
-    private async Task<List<SigneeContext>> TryDownLoadSigneeContexts(IInstanceDataAccessor instanceDataAccessor, AltinnSignatureConfiguration signatureConfiguration)
+    private async Task<List<SigneeContext>> TryDownLoadSigneeContexts(
+        IInstanceDataAccessor instanceDataAccessor,
+        AltinnSignatureConfiguration signatureConfiguration
+    )
     {
         // If no SigneeStatesDataTypeId is set, delegated signing is not enabled and there is nothing to download.
         return !string.IsNullOrEmpty(signatureConfiguration.SigneeStatesDataTypeId)
