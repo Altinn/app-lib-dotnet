@@ -27,7 +27,6 @@ internal sealed partial class FiksArkivDefaultMessageHandler
     {
         var appMetadata = await GetApplicationMetadata();
         var documentTitle = appMetadata.Title.GetValueOrDefault(LanguageConst.Nb, appMetadata.AppIdentifier.App);
-
         var documentCreator = appMetadata.AppIdentifier.Org;
         var recipientDetails = GetRecipientParty(instance, recipient);
         var serviceOwnerDetails = await GetServiceOwnerParty();

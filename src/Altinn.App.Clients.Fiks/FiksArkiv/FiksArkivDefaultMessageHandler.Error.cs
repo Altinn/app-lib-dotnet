@@ -24,14 +24,25 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         if (instance is null)
             return;
 
-        string recipientEmailAddress = VerifiedNotNull(_fiksArkivSettings.ErrorNotificationEmailAddress);
+        if (_fiksArkivSettings.ErrorHandling?.SendEmailNotifications is not true)
+        {
+            _logger.LogInformation("Error handling is disabled, skipping email notification.");
+            return;
+        }
+
+        IReadOnlyList<EmailRecipient> recipientEmailAddresses = VerifiedNotNull(
+                _fiksArkivSettings.ErrorHandling.EmailNotificationRecipients
+            )
+            .Select(x => new EmailRecipient(x))
+            .ToList();
+
         EmailOrderResponse result = await _emailNotificationClient.Order(
             new EmailNotification
             {
                 Subject = $"Altinn: Fiks Arkiv feil i {instance.AppId}",
                 Body =
                     $"Det har oppstått en feil ved sending av melding til Fiks Arkiv for Altinn app instans {instance.Id}.\n\nVidere undersøkelser må gjøres manuelt. Se logg for ytterligere detaljer.",
-                Recipients = [new EmailRecipient(recipientEmailAddress)],
+                Recipients = recipientEmailAddresses,
                 SendersReference = instance.Id,
                 RequestedSendTime = DateTime.UtcNow,
             },

@@ -103,10 +103,16 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         if (_fiksArkivSettings.AutoSend is null)
             return;
 
-        if (string.IsNullOrWhiteSpace(_fiksArkivSettings.ErrorNotificationEmailAddress))
+        if (
+            _fiksArkivSettings.ErrorHandling?.SendEmailNotifications is true
+            && _fiksArkivSettings.ErrorHandling.EmailNotificationRecipients?.Any() is false
+        )
             throw new FiksArkivConfigurationException(
-                "ErrorNotificationEmailAddress is required, but has not been configured."
+                "Email notifications are enabled, but no recipients have been configured."
             );
+
+        if (_fiksArkivSettings.ErrorHandling?.EmailNotificationRecipients?.Any(string.IsNullOrWhiteSpace) is true)
+            throw new FiksArkivConfigurationException("List of email recipients contain empty entries.");
 
         if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.Recipient))
             throw new FiksArkivConfigurationException("Recipient configuration is required for auto-send.");

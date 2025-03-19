@@ -9,16 +9,31 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv.Models;
 public sealed record FiksArkivSettings
 {
     /// <summary>
-    /// The email address to send error notifications to.
+    /// Settings related to error handling.
     /// </summary>
-    [JsonPropertyName("errorNotificationEmailAddress")]
-    public string? ErrorNotificationEmailAddress { get; init; }
+    [JsonPropertyName("errorHandling")]
+    public FiksArkivErrorHandlingSettings? ErrorHandling { get; init; }
 
     /// <summary>
-    /// The settings for auto-submissions to Fiks Arkiv.
+    /// Settings related to auto-submission to Fiks Arkiv.
     /// </summary>
     [JsonPropertyName("autoSend")]
     public FiksArkivAutoSendSettings? AutoSend { get; init; }
+}
+
+public sealed record FiksArkivErrorHandlingSettings
+{
+    /// <summary>
+    /// Should we send email notifications?
+    /// </summary>
+    [JsonPropertyName("sendEmailNotifications")]
+    public bool? SendEmailNotifications { get; init; }
+
+    /// <summary>
+    /// The email addresses to send error notifications to.
+    /// </summary>
+    [JsonPropertyName("emailNotificationRecipients")]
+    public IEnumerable<string>? EmailNotificationRecipients { get; init; }
 }
 
 /// <summary>
