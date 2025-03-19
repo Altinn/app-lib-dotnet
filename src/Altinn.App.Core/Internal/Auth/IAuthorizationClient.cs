@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Authorization.Platform.Authorization.Models;
 
 namespace Altinn.App.Core.Internal.Auth;
 
@@ -41,6 +42,14 @@ public interface IAuthorizationClient
         string action,
         string? taskId = null
     );
+
+    /// <summary>
+    /// Get the decision point roles for the loggedin user for a selected party
+    /// </summary>
+    /// <param name="userId">The user id</param>
+    /// <param name="partyId">The partyid of the person/org the logged in user is representing</param>
+    /// <returns>List of roles</returns>
+    Task<List<Role>?> GetRoles(int userId, int partyId);
 
     /// <summary>
     /// Check if the user is authorized to perform the given actions on the given instance.

@@ -13,6 +13,7 @@ using Altinn.Common.PEP.Interfaces;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Utils;
+using Authorization.Platform.Authorization.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -89,7 +90,7 @@ public class AuthorizationClient : IAuthorizationClient
         }
         catch (Exception e)
         {
-            _logger.LogError($"Unable to retrieve party list. An error occured {e.Message}");
+            _logger.LogError("Unable to retrieve party list. An error occurred {ErrorMessage}", e.Message);
         }
 
         return partyList;
@@ -113,7 +114,10 @@ public class AuthorizationClient : IAuthorizationClient
         else
         {
             _logger.LogError(
-                $"Validating selected party {partyId} for user {userId} failed with statuscode {response.StatusCode}"
+                "Validating selected party {PartyId} for user {UserId} failed with statuscode {StatusCode}",
+                partyId,
+                userId,
+                response.StatusCode
             );
             result = null;
         }
@@ -178,5 +182,32 @@ public class AuthorizationClient : IAuthorizationClient
             actionsResult.Add(action, false);
         }
         return MultiDecisionHelper.ValidatePdpMultiDecision(actionsResult, response.Response, user);
+    }
+
+    /// <inheritdoc />
+    public async Task<List<Role>?> GetRoles(int userId, int partyId)
+    {
+        // TODO: telemetry
+        string apiUrl = "roles";
+        string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
+
+        using HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<List<Role>>(responseData);
+        }
+        else
+        {
+            _logger.LogError(
+                "Getting roles for user {UserId} and party {PartyId} failed with statuscode {StatusCode}",
+                userId,
+                partyId,
+                response.StatusCode
+            );
+
+            return null;
+        }
     }
 }
