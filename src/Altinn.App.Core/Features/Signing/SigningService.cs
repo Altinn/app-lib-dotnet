@@ -29,8 +29,8 @@ internal sealed class SigningService(
     AppImplementationFactory appImplementationFactory,
     IAppMetadata appMetadata,
     ISigningCallToActionService signingCallToActionService,
-    ILogger<SigningService> logger,
     IAuthorizationClient authorizationClient,
+    ILogger<SigningService> logger,
     Telemetry? telemetry = null
 ) : ISigningService
 {

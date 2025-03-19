@@ -148,8 +148,8 @@ internal class SigningController : ControllerBase
         return Ok(response);
     }
 
-    [HttpGet]
-    [ProducesResponseType(typeof(List<OrganisationSignee>), StatusCodes.Status200OK)]
+    [HttpGet("organisations")]
+    [ProducesResponseType(typeof(SigningAuthorizedOrganisationsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetAuthorizedOrganisations(
@@ -181,12 +181,29 @@ internal class SigningController : ControllerBase
             return Unauthorized();
         }
 
-        List<OrganisationSignee> result = await _signingService.GetAuthorizedOrganisations(
+        List<OrganisationSignee> authorizedOrganisations = await _signingService.GetAuthorizedOrganisations(
             cachedDataMutator,
             signingConfiguration,
             userId.Value
         );
-        return Ok(result);
+
+        SigningAuthorizedOrganisationsResponse response = new()
+        {
+            Organisations =
+            [
+                .. authorizedOrganisations.Select(x =>
+                {
+                    return new AuthorisedOrganisationDetails
+                    {
+                        OrgName = x.OrgName,
+                        OrgNumber = x.OrgNumber,
+                        PartyId = x.OrgParty.PartyId,
+                    };
+                }),
+            ],
+        };
+
+        return Ok(response);
     }
 
     /// <summary>
