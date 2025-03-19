@@ -41,11 +41,12 @@ public sealed record FiksArkivAutoSendSettings
     public string? Recipient { get; init; }
 
     /// <summary>
-    /// The settings for the form document payload. This is the main data model for the form data,
+    /// The settings for the primary document payload.
+    /// This is usually the main data model for the form data, or the PDF representation of this data,
     /// which will eventually be sent as a "Hoveddokument" to Fiks Arkiv.
     /// </summary>
-    [JsonPropertyName("formDocument")]
-    public FiksArkivPayloadSettings? FormDocument { get; init; }
+    [JsonPropertyName("primaryDocument")]
+    public FiksArkivPayloadSettings? PrimaryDocument { get; init; }
 
     /// <summary>
     /// Optional settings for attachments. These are additional documents that will be sent as "Vedlegg" to Fiks Arkiv.
