@@ -11,6 +11,7 @@ using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Authorization.Platform.Authorization.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -973,6 +974,68 @@ public sealed class SigningServiceTests : IDisposable
 
         cachedInstanceMutator.Verify(x => x.Instance);
         cachedInstanceMutator.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task GetAuthorizedOrganisations_Returns_Organisations_With_Authorization()
+    {
+        // Arrange
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = "signeeStates",
+            SignatureDataType = "signature",
+        };
+
+        var instance = new Instance
+        {
+            Id = new InstanceIdentifier(123, Guid.NewGuid()).ToString(),
+            AppId = "ttd/app1",
+            InstanceOwner = new InstanceOwner { PartyId = Guid.NewGuid().ToString(), OrganisationNumber = "ttd" },
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "taskId" } },
+            Data = [new() { Id = Guid.NewGuid().ToString(), DataType = "signeeStates" }],
+        };
+
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        var signeeContexts = new List<SigneeContext>()
+        {
+            new()
+            {
+                TaskId = "taskId",
+                Signee = new OrganisationSignee
+                {
+                    OrgNumber = "123456789",
+                    OrgName = "An org",
+                    OrgParty = new Party { OrgNumber = "123456789", Name = "An org" },
+                },
+                SigneeState = new SigneeState { IsAccessDelegated = true },
+            },
+        };
+
+        cachedInstanceMutator
+            .Setup(x => x.GetBinaryData(It.IsAny<DataElementIdentifier>()))
+            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signeeContexts)));
+
+        var role1 = new Role { Value = "role1" };
+        var role2 = new Role { Value = "role2" };
+
+        List<Role> roles = [role1, role2];
+
+        _authorizationClient.Setup(x => x.GetRoles(123, It.IsAny<int>())).ReturnsAsync(roles);
+
+        // Act
+        var result = await _signingService.GetAuthorizedOrganisations(
+            cachedInstanceMutator.Object,
+            signatureConfiguration,
+            123
+        );
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("123456789", result[0].OrgNumber);
+        Assert.Equal("An org", result[0].OrgName);
     }
 
     private static byte[] ToBytes<T>(T obj)
