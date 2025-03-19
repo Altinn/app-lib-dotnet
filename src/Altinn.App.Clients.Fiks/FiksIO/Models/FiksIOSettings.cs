@@ -6,24 +6,38 @@ using System.Text.Json.Serialization;
 
 namespace Altinn.App.Clients.Fiks.FiksIO.Models;
 
+/// <summary>
+/// Represents the settings for a FIKS IO account.
+/// </summary>
 public sealed record FiksIOSettings : IFiksIOAccountSettings
 {
+    /// <inheritdoc />
     [Required]
     [JsonPropertyName("accountId")]
     public required Guid AccountId { get; init; }
 
+    /// <inheritdoc />
     [Required]
     [JsonPropertyName("integrationId")]
     public required Guid IntegrationId { get; init; }
 
+    /// <summary>
+    /// The integration password.
+    /// </summary>
     [Required]
     [JsonPropertyName("integrationPassword")]
     public required string IntegrationPassword { get; init; }
 
+    /// <summary>
+    /// The account private key, base64 encoded.
+    /// </summary>
     [Required]
     [JsonPropertyName("accountPrivateKeyBase64")]
     public required string AccountPrivateKeyBase64 { get; init; }
 
+    /// <summary>
+    /// The ASiC-E private key, base64 encoded.
+    /// </summary>
     [Required]
     [JsonPropertyName("asicePrivateKeyBase64")]
     public required string AsicePrivateKeyBase64 { get; init; }
