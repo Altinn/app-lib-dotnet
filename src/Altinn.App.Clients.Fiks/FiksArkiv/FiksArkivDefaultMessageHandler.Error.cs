@@ -13,6 +13,10 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         IReadOnlyList<DeserializationResult>? deserializedContent
     )
     {
+        // TODO: TEMP -- remove this
+        if (instance is null)
+            return;
+
         _logger.LogError(
             "Received message {MessageType}:{MessageId} is an error response: {MessageContent}",
             receivedMessage.Message.MessageType,

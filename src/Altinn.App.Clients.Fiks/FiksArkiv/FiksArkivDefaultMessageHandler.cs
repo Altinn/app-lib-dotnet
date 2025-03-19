@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -197,10 +198,20 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
                         payload.DeserializeXml<ArkivmeldingKvittering>(),
                         null
                     ),
-                    _ when FiksArkivMeldingtype.IsFeilmelding(messageType) => new DeserializationResult(
+                    FiksArkivMeldingtype.Ikkefunnet => new DeserializationResult(
                         payload,
                         null,
-                        payload.DeserializeXml<FeilmeldingBase>()
+                        payload.DeserializeXml<Ikkefunnet>()
+                    ),
+                    FiksArkivMeldingtype.Serverfeil => new DeserializationResult(
+                        payload,
+                        null,
+                        payload.DeserializeXml<Serverfeil>()
+                    ),
+                    FiksArkivMeldingtype.Ugyldigforespørsel => new DeserializationResult(
+                        payload,
+                        null,
+                        payload.DeserializeXml<Ugyldigforespoersel>()
                     ),
                     _ => null,
                 };

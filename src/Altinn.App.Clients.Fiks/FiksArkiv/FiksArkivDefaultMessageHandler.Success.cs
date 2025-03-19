@@ -9,12 +9,14 @@ internal sealed partial class FiksArkivDefaultMessageHandler
 {
     private const string ReceiptMessageType = FiksArkivMeldingtype.ArkivmeldingOpprettKvittering;
 
-    private Task HandleSuccess(
+    private async Task HandleSuccess(
         Instance instance,
         FiksIOReceivedMessage receivedMessage,
         IReadOnlyList<DeserializationResult>? deserializedContent
     )
     {
+        await Task.CompletedTask;
+
         _logger.LogInformation(
             "Received message {MessageType}:{MessageId} is a successful response: {MessageContent}",
             receivedMessage.Message.MessageType,
@@ -29,6 +31,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
                 ReceiptMessageType,
                 receivedMessage.Message.MessageType
             );
+            return;
         }
 
         if (deserializedContent?.Count > 1)
@@ -44,6 +47,6 @@ internal sealed partial class FiksArkivDefaultMessageHandler
 
         // TODO: Send /complete notification?
 
-        return Task.CompletedTask;
+        return;
     }
 }
