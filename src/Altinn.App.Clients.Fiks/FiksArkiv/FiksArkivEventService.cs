@@ -58,13 +58,21 @@ internal sealed class FiksArkivEventService : BackgroundService
         try
         {
             _logger.LogInformation(
-                "Received message {MessageType}:{MessageId} in reply to {MessageReplyFor}",
+                "Received message {MessageType}:{MessageId} from {MessageSender}, in reply to {MessageReplyFor} with senders reference {SendersReference}",
                 receivedMessage.Message.MessageType,
                 receivedMessage.Message.MessageId,
-                receivedMessage.Message.InReplyToMessage
+                receivedMessage.Message.Sender,
+                receivedMessage.Message.InReplyToMessage,
+                receivedMessage.Message.SendersReference
             );
 
+            // TODO: Must resolve Instance here! Waiting on Fiks IO protocol changes.
             await _fiksArkivMessageHandler.HandleReceivedMessage(null, receivedMessage);
+
+            _logger.LogInformation(
+                "Sending acknowledge receipt for message {MessageId}",
+                receivedMessage.Message.MessageId
+            );
             receivedMessage.Responder.Ack();
         }
         catch (Exception e)

@@ -10,7 +10,7 @@ public sealed record FiksIOReceivedMessage
     public FiksIOMessageResponder Responder { get; init; }
 
     public bool IsErrorResponse =>
-        string.IsNullOrWhiteSpace(Message.MessageType) || Message.MessageType.Contains(FiksIOConstants.ErrorStub);
+        string.IsNullOrWhiteSpace(Message.MessageType) || FiksIOConstants.IsErrorType(Message.MessageType);
 
     internal FiksIOReceivedMessage(MottattMeldingArgs mottattMeldingArgs)
     {

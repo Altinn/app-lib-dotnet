@@ -9,7 +9,6 @@ using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
-using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -17,6 +16,7 @@ using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmeldingkvittering;
 using KS.Fiks.Arkiv.Models.V1.Feilmelding;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using KS.Fiks.ASiC_E;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -37,6 +37,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
     private readonly IEmailNotificationClient _emailNotificationClient;
 
     private ApplicationMetadata? _applicationMetadataCache;
+    private readonly IHostEnvironment _hostEnvironment;
 
     public FiksArkivDefaultMessageHandler(
         IOptions<FiksArkivSettings> fiksArkivSettings,
@@ -49,7 +50,8 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         IAltinnCdnClient altinnCdnClient,
         InstanceDataUnitOfWorkInitializer instanceDataUnitOfWorkInitializer,
         ILayoutEvaluatorStateInitializer layoutStateInitializer,
-        IEmailNotificationClient emailNotificationClient
+        IEmailNotificationClient emailNotificationClient,
+        IHostEnvironment hostEnvironment
     )
     {
         _appMetadata = appMetadata;
@@ -63,6 +65,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         _instanceDataUnitOfWorkInitializer = instanceDataUnitOfWorkInitializer;
         _layoutStateInitializer = layoutStateInitializer;
         _emailNotificationClient = emailNotificationClient;
+        _hostEnvironment = hostEnvironment;
     }
 
     public async Task<FiksIOMessageRequest> CreateMessageRequest(string taskId, Instance instance)
@@ -118,15 +121,15 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
             throw new FiksArkivConfigurationException("AfterTaskId configuration is required for auto-send.");
 
         if (
-            _fiksArkivSettings.AutoSend.FormDocument is null
-            || string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.FormDocument.DataType)
+            _fiksArkivSettings.AutoSend.PrimaryDocument is null
+            || string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.PrimaryDocument.DataType)
         )
             throw new FiksArkivConfigurationException("FormDocument configuration is required for auto-send.");
 
         ApplicationMetadata appMetadata = await GetApplicationMetadata();
         HashSet<string> dataTypes = appMetadata.DataTypes.Select(x => x.Id).ToHashSet();
 
-        if (dataTypes.Contains(_fiksArkivSettings.AutoSend.FormDocument.DataType) is false)
+        if (dataTypes.Contains(_fiksArkivSettings.AutoSend.PrimaryDocument.DataType) is false)
             throw new FiksArkivConfigurationException("FormDocument->DataType mismatch with application data types.");
 
         if (_fiksArkivSettings.AutoSend.Attachments?.All(x => dataTypes.Contains(x.DataType)) is not true)

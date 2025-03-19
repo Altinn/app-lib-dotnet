@@ -15,6 +15,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;
 using KS.Fiks.Arkiv.Models.V1.Kodelister;
 using KS.Fiks.Arkiv.Models.V1.Metadatakatalog;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Kode = KS.Fiks.Arkiv.Models.V1.Kodelister.Kode;
 
@@ -25,8 +26,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
     private async Task<IEnumerable<FiksIOMessagePayload>> GenerateMessagePayloads(Instance instance, Guid recipient)
     {
         var appMetadata = await GetApplicationMetadata();
-        var appTitle = appMetadata.Title.GetValueOrDefault(LanguageConst.Nb, appMetadata.AppIdentifier.App);
-        var documentTitle = $"{appTitle}: {Guid.NewGuid()}"; // TODO: Remove GUID padding here
+        var documentTitle = appMetadata.Title.GetValueOrDefault(LanguageConst.Nb, appMetadata.AppIdentifier.App);
 
         var documentCreator = appMetadata.AppIdentifier.Org;
         var recipientDetails = GetRecipientParty(instance, recipient);
@@ -102,7 +102,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         );
 
         // Main form data file
-        // journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(archiveDocuments.FormDocument)); // TODO: Re-enable
+        journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(archiveDocuments.FormDocument));
 
         // Attachments
         foreach (var attachment in archiveDocuments.AttachmentDocuments)
@@ -119,10 +119,11 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             System = FiksArkivConstants.AltinnSystemLabel,
         };
 
-        // TODO: Remove logging here
-        // TEMP log output
-        string xmlResult = Encoding.UTF8.GetString(archiveRecord.SerializeXmlBytes(indent: true).Span);
-        _logger.LogWarning(xmlResult);
+        if (_hostEnvironment.IsDevelopment())
+        {
+            string xmlResult = Encoding.UTF8.GetString(archiveRecord.SerializeXmlBytes(indent: true).Span);
+            _logger.LogInformation(xmlResult);
+        }
 
         return [archiveRecord.ToPayload(), .. archiveDocuments.ToPayloads()];
     }
@@ -130,13 +131,13 @@ internal sealed partial class FiksArkivDefaultMessageHandler
     private async Task<ArchiveDocumentsWrapper> GetArchiveDocuments(Instance instance)
     {
         InstanceIdentifier instanceId = new(instance.Id);
-        var formDocumentSettings = VerifiedNotNull(_fiksArkivSettings.AutoSend?.FormDocument);
+        var primaryDocumentSettings = VerifiedNotNull(_fiksArkivSettings.AutoSend?.PrimaryDocument);
         var attachmentSettings = _fiksArkivSettings.AutoSend?.Attachments ?? [];
 
-        var formElement = instance.GetRequiredDataElement(formDocumentSettings.DataType);
-        var formDocument = await GetPayload(
-            formElement,
-            formDocumentSettings.Filename,
+        var primaryDataElement = instance.GetRequiredDataElement(primaryDocumentSettings.DataType);
+        var primaryDocument = await GetPayload(
+            primaryDataElement,
+            primaryDocumentSettings.Filename,
             DokumenttypeKoder.Dokument,
             instanceId
         );
@@ -144,7 +145,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         List<MessagePayloadWrapper> attachmentDocuments = [];
         foreach (var attachmentSetting in attachmentSettings)
         {
-            IEnumerable<DataElement> dataElements = instance
+            IReadOnlyList<DataElement> dataElements = instance
                 .GetOptionalDataElements(attachmentSetting.DataType)
                 .ToList();
 
@@ -160,7 +161,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             );
         }
 
-        return new ArchiveDocumentsWrapper(formDocument, attachmentDocuments);
+        return new ArchiveDocumentsWrapper(primaryDocument, attachmentDocuments);
     }
 
     private async Task<MessagePayloadWrapper> GetPayload(
@@ -234,6 +235,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
                 KodeProperty = KorrespondanseparttypeKoder.Mottaker.Verdi,
                 Beskrivelse = KorrespondanseparttypeKoder.Mottaker.Beskrivelse,
             },
+            // TODO: We need the correct recipient details here
             Organisasjonid = "MOTTAKERS-ORGNUMMER",
             KorrespondansepartNavn = "MOTTAKERS-NAVN",
             DeresReferanse = instance.Id,
