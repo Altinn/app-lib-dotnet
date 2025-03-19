@@ -4,7 +4,7 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Clients.Fiks.FiksArkiv.Models;
 
 /// <summary>
-/// Represents the settings for the Fiks Arkiv client.
+/// Represents the Fiks Arkiv settings.
 /// </summary>
 public sealed record FiksArkivSettings
 {
@@ -21,6 +21,9 @@ public sealed record FiksArkivSettings
     public FiksArkivAutoSendSettings? AutoSend { get; init; }
 }
 
+/// <summary>
+/// Represents the settings for error handling.
+/// </summary>
 public sealed record FiksArkivErrorHandlingSettings
 {
     /// <summary>
@@ -37,7 +40,7 @@ public sealed record FiksArkivErrorHandlingSettings
 }
 
 /// <summary>
-/// Represents the settings for auto-sending a message to Fiks Arkiv.
+/// Represents the settings for auto-sending a message.
 /// </summary>
 public sealed record FiksArkivAutoSendSettings
 {
