@@ -11,7 +11,6 @@ using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Register.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
