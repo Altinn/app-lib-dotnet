@@ -1,3 +1,4 @@
+using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Microsoft.Extensions.DependencyInjection;

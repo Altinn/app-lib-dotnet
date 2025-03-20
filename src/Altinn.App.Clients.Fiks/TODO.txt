@@ -1,5 +1,5 @@
 [General]
-- Replace RetryStrategy with Polly
+- Telemetry
 
 [Fiks Arkiv]
 Tests to write:

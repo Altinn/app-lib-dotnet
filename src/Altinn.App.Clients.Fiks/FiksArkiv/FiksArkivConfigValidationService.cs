@@ -1,3 +1,4 @@
+using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Microsoft.Extensions.Hosting;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
@@ -19,7 +20,9 @@ internal sealed class FiksArkivConfigValidationService : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await _fiksArkivMessageHandler.ValidateConfiguration();
-        await _fiksArkivServiceTask.ValidateConfiguration();
+
+        if (_fiksArkivServiceTask is IFiksArkivConfigValidation fiksArkivConfigValidation)
+            await fiksArkivConfigValidation.ValidateConfiguration();
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

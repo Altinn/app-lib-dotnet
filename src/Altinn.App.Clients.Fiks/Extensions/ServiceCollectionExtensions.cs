@@ -1,3 +1,4 @@
+using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
@@ -51,7 +52,6 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IAltinnCdnClient, AltinnCdnClient>();
         services.AddTransient<IFiksArkivMessageHandler, FiksArkivDefaultMessageHandler>();
         services.AddTransient<IFiksArkivServiceTask, FiksArkivServiceTask>();
-        services.AddTransient<IServiceTask>(x => x.GetRequiredService<IFiksArkivServiceTask>());
         services.AddHostedService<FiksArkivConfigValidationService>();
         services.AddHostedService<FiksArkivEventService>();
 
@@ -159,19 +159,19 @@ public static class ServiceCollectionExtensions
         );
 
         return services;
-    }
 
-    private static bool ErrorShouldBeHandled(Exception ex)
-    {
-        if (ex is FiksIOSendUnauthorizedException or MaskinportenException)
-            return false;
+        static bool ErrorShouldBeHandled(Exception ex)
+        {
+            if (ex is FiksIOSendUnauthorizedException or MaskinportenException)
+                return false;
 
-        if (
-            ex is FiksIOSendUnexpectedResponseException unexpectedResponse
-            && unexpectedResponse.Message.Contains("status code notfound", StringComparison.OrdinalIgnoreCase)
-        )
-            return false;
+            if (
+                ex is FiksIOSendUnexpectedResponseException unexpectedResponse
+                && unexpectedResponse.Message.Contains("status code notfound", StringComparison.OrdinalIgnoreCase)
+            )
+                return false;
 
-        return true;
+            return true;
+        }
     }
 }

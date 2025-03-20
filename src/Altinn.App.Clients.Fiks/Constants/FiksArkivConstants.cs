@@ -1,4 +1,4 @@
-namespace Altinn.App.Clients.Fiks.FiksArkiv;
+namespace Altinn.App.Clients.Fiks.Constants;
 
 internal static class FiksArkivConstants
 {

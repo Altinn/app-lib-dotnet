@@ -1,4 +1,4 @@
-namespace Altinn.App.Clients.Fiks.FiksIO;
+namespace Altinn.App.Clients.Fiks.Constants;
 
 /// <summary>
 /// Constants related to the configuration and operation of the Fiks IO client.
