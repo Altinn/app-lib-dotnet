@@ -1,3 +1,4 @@
+using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features.Maskinporten;

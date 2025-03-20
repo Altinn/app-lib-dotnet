@@ -41,14 +41,14 @@ public class EndTaskEventHandlerTests
             {
                 Mock<IPdfServiceTask> pdfServiceTask = new();
                 services.AddTransient(_ => pdfServiceTask.Object);
-                services.AddTransient<IServiceTask>(_ => pdfServiceTask.Object);
+                services.AddTransient<IPdfServiceTask>(_ => pdfServiceTask.Object);
             }
 
             if (addEformidlingServiceTask)
             {
                 Mock<IEformidlingServiceTask> eformidlingServiceTask = new();
                 services.AddTransient(_ => eformidlingServiceTask.Object);
-                services.AddTransient<IServiceTask>(_ => eformidlingServiceTask.Object);
+                services.AddTransient<IEformidlingServiceTask>(_ => eformidlingServiceTask.Object);
             }
 
             services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
@@ -72,9 +72,7 @@ public class EndTaskEventHandlerTests
         await eteh.Execute(mockProcessTask.Object, "Task_1", instance);
         fixture.Mock<IProcessTaskDataLocker>().Verify(p => p.Lock("Task_1", instance));
         fixture.Mock<IProcessTaskFinalizer>().Verify(p => p.Finalize("Task_1", instance));
-        fixture.Mock<IPdfServiceTask>().Verify(p => p.Id);
         fixture.Mock<IPdfServiceTask>().Verify(p => p.Execute("Task_1", instance));
-        fixture.Mock<IEformidlingServiceTask>().Verify(p => p.Id);
         fixture.Mock<IEformidlingServiceTask>().Verify(p => p.Execute("Task_1", instance));
         mockProcessTask.Verify(p => p.End("Task_1", instance));
 
@@ -100,9 +98,7 @@ public class EndTaskEventHandlerTests
         endTwo.Verify(a => a.End("Task_1", instance));
         fixture.Mock<IProcessTaskDataLocker>().Verify(p => p.Lock("Task_1", instance));
         fixture.Mock<IProcessTaskFinalizer>().Verify(p => p.Finalize("Task_1", instance));
-        fixture.Mock<IPdfServiceTask>().Verify(p => p.Id);
         fixture.Mock<IPdfServiceTask>().Verify(p => p.Execute("Task_1", instance));
-        fixture.Mock<IEformidlingServiceTask>().Verify(p => p.Id);
         fixture.Mock<IEformidlingServiceTask>().Verify(p => p.Execute("Task_1", instance));
         mockProcessTask.Verify(p => p.End("Task_1", instance));
 

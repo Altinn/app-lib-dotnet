@@ -39,17 +39,10 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     /// </summary>
     public async Task Execute(IProcessTask processTask, string taskId, Instance instance)
     {
-        var serviceTasks = _appImplementationFactory.GetAll<IServiceTask>().ToList();
         var instanceClient = _appImplementationFactory.GetRequired<IInstanceClient>();
-        var pdfServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IPdfServiceTask)
-            ?? throw new InvalidOperationException("PdfServiceTask not found in serviceTasks");
-        var eformidlingServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IEformidlingServiceTask)
-            ?? throw new InvalidOperationException("EformidlingServiceTask not found in serviceTasks");
-        var fiksArkivServiceTask = serviceTasks.FirstOrDefault(x =>
-            x is INamedServiceTask { Id: ServiceTaskIdentifiers.FiksArkiv }
-        );
+        var pdfServiceTask = _appImplementationFactory.GetRequired<IPdfServiceTask>();
+        var eformidlingServiceTask = _appImplementationFactory.GetRequired<IEformidlingServiceTask>();
+        var fiksArkivServiceTask = _appImplementationFactory.Get<IFiksArkivServiceTask>();
 
         await processTask.End(taskId, instance);
         await _processTaskFinisher.Finalize(taskId, instance);

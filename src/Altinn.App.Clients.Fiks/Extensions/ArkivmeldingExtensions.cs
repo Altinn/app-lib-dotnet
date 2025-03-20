@@ -1,6 +1,7 @@
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
+using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;

@@ -9,11 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Process.ServiceTasks;
 
-internal interface IEformidlingServiceTask : INamedServiceTask { }
-
-/// <summary>
-/// Service task that sends eFormidling shipment, if EFormidling is enabled in config and EFormidling.SendAfterTaskId matches the current task.
-/// </summary>
+/// <inheritdoc />
 public class EformidlingServiceTask : IEformidlingServiceTask
 {
     private readonly ILogger<EformidlingServiceTask> _logger;
@@ -21,9 +17,6 @@ public class EformidlingServiceTask : IEformidlingServiceTask
     private readonly IInstanceClient _instanceClient;
     private readonly IEFormidlingService? _eFormidlingService;
     private readonly IOptions<AppSettings>? _appSettings;
-
-    /// <inheritdoc />
-    public string Id => ServiceTaskIdentifiers.Eformidling;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EformidlingServiceTask"/> class.

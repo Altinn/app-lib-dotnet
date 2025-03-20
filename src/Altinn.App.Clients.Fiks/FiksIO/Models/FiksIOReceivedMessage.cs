@@ -1,3 +1,4 @@
+using Altinn.App.Clients.Fiks.Constants;
 using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Client.Send;
 
