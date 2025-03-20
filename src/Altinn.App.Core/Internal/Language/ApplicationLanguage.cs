@@ -22,7 +22,6 @@ public class ApplicationLanguage : IApplicationLanguage
         TimeSpan.FromMilliseconds(10)
     );
 
-
     private readonly AppSettings _settings;
     private readonly Telemetry? _telemetry;
 
