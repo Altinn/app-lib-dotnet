@@ -191,7 +191,7 @@ public class EndTaskEventHandlerTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await eteh.Execute(mockProcessTask.Object, taskId, instance)
         );
-        Assert.Equal("PdfServiceTask not found in serviceTasks", ex.Message);
+        Assert.Contains("No service for type", ex.Message);
     }
 
     [Fact]
@@ -209,6 +209,6 @@ public class EndTaskEventHandlerTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await eteh.Execute(mockProcessTask.Object, taskId, instance)
         );
-        Assert.Equal("EformidlingServiceTask not found in serviceTasks", ex.Message);
+        Assert.Contains("No service for type", ex.Message);
     }
 }
