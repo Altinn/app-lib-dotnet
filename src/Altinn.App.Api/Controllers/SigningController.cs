@@ -1,6 +1,6 @@
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
-using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Helpers;
@@ -27,7 +27,7 @@ internal class SigningController : ControllerBase
 {
     private readonly IInstanceClient _instanceClient;
     private readonly IProcessReader _processReader;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IAuthenticationContext _authenticationContext;
     private readonly ILogger<SigningController> _logger;
     private readonly ISigningService _signingService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
@@ -39,13 +39,13 @@ internal class SigningController : ControllerBase
         IServiceProvider serviceProvider,
         IInstanceClient instanceClient,
         IProcessReader processReader,
-        IHttpContextAccessor httpContextAccessor,
+        IAuthenticationContext authenticationContext,
         ILogger<SigningController> logger
     )
     {
         _instanceClient = instanceClient;
         _processReader = processReader;
-        _httpContextAccessor = httpContextAccessor;
+        _authenticationContext = authenticationContext;
         _logger = logger;
         _signingService = serviceProvider.GetRequiredService<ISigningService>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
@@ -174,7 +174,14 @@ internal class SigningController : ControllerBase
             (_processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.SignatureConfiguration)
             ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
-        int? userId = _httpContextAccessor.HttpContext?.User.GetUserIdAsInt();
+        var currentAuth = _authenticationContext.Current;
+
+        int? userId = currentAuth switch
+        {
+            Authenticated.User user => user.UserId,
+            Authenticated.SelfIdentifiedUser selfIdentifiedUser => selfIdentifiedUser.UserId,
+            _ => null,
+        };
 
         if (userId is null)
         {

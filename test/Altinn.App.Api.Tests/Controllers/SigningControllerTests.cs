@@ -4,6 +4,7 @@ using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -91,7 +92,7 @@ public class SigningControllerTests
     {
         // Arrange
         var signedTime = DateTime.Now;
-
+        SetupAuthenticationContextMock();
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
@@ -278,6 +279,7 @@ public class SigningControllerTests
     public async Task GetSigneesState_WhenSigneeContextIsPerson_Returns_Expected_Signees()
     {
         // Arrange
+        SetupAuthenticationContextMock();
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
@@ -342,6 +344,7 @@ public class SigningControllerTests
     {
         // Arrange
         var signedTime = DateTime.Now;
+        SetupAuthenticationContextMock();
 
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
@@ -419,7 +422,7 @@ public class SigningControllerTests
     {
         // Arrange
         var signedTime = DateTime.Now;
-
+        SetupAuthenticationContextMock();
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
@@ -493,6 +496,7 @@ public class SigningControllerTests
     public async Task GetAuthorizedOrganisations_Returns_Expected_Organisations()
     {
         // Arrange
+        SetupAuthenticationContextMock(authenticated: CreateAuthenticatedUser());
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
@@ -517,12 +521,10 @@ public class SigningControllerTests
                 s.GetAuthorizedOrganisationSignees(
                     It.IsAny<InstanceDataUnitOfWork>(),
                     _altinnTaskExtension.SignatureConfiguration!,
-                    1337
+                    It.IsAny<int>()
                 )
             )
             .ReturnsAsync(organisationSignees);
-
-        MockHttpContextAccessor("1337");
 
         // Act
         var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
@@ -562,6 +564,7 @@ public class SigningControllerTests
     public async Task GetAuthorizedOrganisations_TaskTypeIsNotSigning_Returns_BadRequest()
     {
         // Arrange
+        SetupAuthenticationContextMock();
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
@@ -589,10 +592,9 @@ public class SigningControllerTests
     public async Task GetAuthorizedOrganisations_UserIdIsNull_Returns_Unathorized()
     {
         // Arrange
+        SetupAuthenticationContextMock(authenticated: CreateAuthenticatedNone());
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
-
-        MockHttpContextAccessor(null!);
 
         // Act
         var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
@@ -601,21 +603,31 @@ public class SigningControllerTests
         Assert.IsType<UnauthorizedResult>(actionResult);
     }
 
-    private void MockHttpContextAccessor(string? userId)
+    private void SetupAuthenticationContextMock(Authenticated? authenticated = null)
     {
-        var claims = new List<Claim>
-        {
-            userId is not null
-                ? new(AltinnCoreClaimTypes.UserId, userId)
-                : new(AltinnCoreClaimTypes.OrgNumber, "user-id-not-set-here"),
-        };
+        var authenticationContextMock = new Mock<IAuthenticationContext>();
 
-        var identity = new ClaimsIdentity(claims);
-        var principal = new ClaimsPrincipal(identity);
+        authenticationContextMock.Setup(ac => ac.Current).Returns(authenticated ?? CreateAuthenticatedNone());
 
-        var httpContextMock = new Mock<HttpContext>();
-        httpContextMock.Setup(ctx => ctx.User).Returns(principal);
+        _serviceCollection.AddTransient(_ => authenticationContextMock.Object);
+    }
 
-        _httpContextAccessorMock.Setup(s => s.HttpContext).Returns(httpContextMock.Object);
+    private Authenticated.None CreateAuthenticatedNone()
+    {
+        var parseContext = default(Authenticated.ParseContext);
+        return new Authenticated.None(ref parseContext);
+    }
+
+    private Authenticated.User CreateAuthenticatedUser(int userId = 1337)
+    {
+        var parseContext = default(Authenticated.ParseContext);
+        return new Authenticated.User(
+            userId: userId,
+            userPartyId: 12345,
+            authenticationLevel: 2,
+            authenticationMethod: "test",
+            selectedPartyId: 2,
+            context: ref parseContext
+        );
     }
 }
