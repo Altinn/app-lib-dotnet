@@ -537,13 +537,13 @@ public class SigningControllerTests
         {
             Organisations =
             [
-                new AuthorisedOrganisationDetails
+                new AuthorizedOrganisationDetails
                 {
                     OrgName = "org1",
                     OrgNumber = "123456789",
                     PartyId = 1,
                 },
-                new AuthorisedOrganisationDetails
+                new AuthorizedOrganisationDetails
                 {
                     OrgName = "org2",
                     OrgNumber = "987654321",

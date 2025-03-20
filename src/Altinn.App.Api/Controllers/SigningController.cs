@@ -193,7 +193,7 @@ internal class SigningController : ControllerBase
             [
                 .. authorizedOrganisations.Select(x =>
                 {
-                    return new AuthorisedOrganisationDetails
+                    return new AuthorizedOrganisationDetails
                     {
                         OrgName = x.OrgName,
                         OrgNumber = x.OrgNumber,

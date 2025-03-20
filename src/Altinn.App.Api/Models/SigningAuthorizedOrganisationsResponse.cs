@@ -6,15 +6,15 @@ namespace Altinn.App.Api.Models;
 public record SigningAuthorizedOrganisationsResponse
 {
     /// <summary>
-    /// The list of authorised organisations.
+    /// The list of authorized organisations.
     /// </summary>
-    public required List<AuthorisedOrganisationDetails> Organisations { get; init; }
+    public required List<AuthorizedOrganisationDetails> Organisations { get; init; }
 }
 
 /// <summary>
 /// Represents the details of an authorized organisation.
 /// </summary>
-public record AuthorisedOrganisationDetails
+public record AuthorizedOrganisationDetails
 {
     /// <summary>
     /// The organisation number.
