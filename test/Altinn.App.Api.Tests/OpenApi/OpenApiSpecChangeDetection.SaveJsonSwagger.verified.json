@@ -6356,7 +6356,7 @@
         },
         "additionalProperties": {}
       },
-      "AuthorisedOrganisationDetails": {
+      "AuthorizedOrganisationDetails": {
         "required": [
           "orgName",
           "orgNumber",
@@ -8230,9 +8230,9 @@
           "organisations": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AuthorisedOrganisationDetails"
+              "$ref": "#/components/schemas/AuthorizedOrganisationDetails"
             },
-            "description": "The list of authorised organisations.",
+            "description": "The list of authorized organisations.",
             "nullable": true
           }
         },
