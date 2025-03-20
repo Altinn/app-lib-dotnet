@@ -181,7 +181,7 @@ internal class SigningController : ControllerBase
             return Unauthorized();
         }
 
-        List<OrganisationSignee> authorizedOrganisations = await _signingService.GetAuthorizedOrganisations(
+        List<OrganisationSignee> authorizedOrganisations = await _signingService.GetAuthorizedOrganisationSignees(
             cachedDataMutator,
             signingConfiguration,
             userId.Value

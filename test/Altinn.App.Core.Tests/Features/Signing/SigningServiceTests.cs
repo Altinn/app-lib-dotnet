@@ -1025,7 +1025,7 @@ public sealed class SigningServiceTests : IDisposable
         _authorizationClient.Setup(x => x.GetRoles(123, It.IsAny<int>())).ReturnsAsync(roles);
 
         // Act
-        var result = await _signingService.GetAuthorizedOrganisations(
+        var result = await _signingService.GetAuthorizedOrganisationSignees(
             cachedInstanceMutator.Object,
             signatureConfiguration,
             123

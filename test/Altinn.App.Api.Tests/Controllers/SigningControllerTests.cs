@@ -514,7 +514,7 @@ public class SigningControllerTests
 
         _signingServiceMock
             .Setup(s =>
-                s.GetAuthorizedOrganisations(
+                s.GetAuthorizedOrganisationSignees(
                     It.IsAny<InstanceDataUnitOfWork>(),
                     _altinnTaskExtension.SignatureConfiguration!,
                     1337

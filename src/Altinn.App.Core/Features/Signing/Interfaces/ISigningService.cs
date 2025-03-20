@@ -38,7 +38,7 @@ internal interface ISigningService
     /// <summary>
     /// Gets the organisation signees the current user is authorized to sign on behalf of.
     /// </summary>
-    Task<List<OrganisationSignee>> GetAuthorizedOrganisations(
+    Task<List<OrganisationSignee>> GetAuthorizedOrganisationSignees(
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration,
         int userId

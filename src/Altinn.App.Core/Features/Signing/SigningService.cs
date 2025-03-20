@@ -202,7 +202,7 @@ internal sealed class SigningService(
     }
 
     // <inheritdoc />
-    public async Task<List<OrganisationSignee>> GetAuthorizedOrganisations(
+    public async Task<List<OrganisationSignee>> GetAuthorizedOrganisationSignees(
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration,
         int userId
