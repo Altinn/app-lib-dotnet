@@ -1,5 +1,6 @@
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using KS.Fiks.IO.Client.Configuration;
@@ -13,7 +14,7 @@ using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Registry;
 using RabbitMQ.Client.Events;
-using IMaskinportenClient = Altinn.App.Core.Features.Maskinporten.IMaskinportenClient;
+using IExternalFiksIOClient = KS.Fiks.IO.Client.IFiksIOClient;
 
 namespace Altinn.App.Clients.Fiks.FiksIO;
 
@@ -26,7 +27,8 @@ internal sealed class FiksIOClient : IFiksIOClient
     private readonly ILoggerFactory _loggerFactory;
     private readonly IMaskinportenClient _maskinportenClient;
     private readonly ResiliencePipeline<FiksIOMessageResponse> _resiliencePipeline;
-    private KS.Fiks.IO.Client.FiksIOClient? _fiksIoClient;
+    private readonly IExternalFiksIOClient? _fiksIoClientOverride;
+    private IExternalFiksIOClient? _fiksIoClient;
     private EventHandler<FiksIOReceivedMessage>? _messageReceivedHandler;
 
     public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
@@ -37,7 +39,8 @@ internal sealed class FiksIOClient : IFiksIOClient
         IAppMetadata appMetadata,
         IMaskinportenClient maskinportenClient,
         ResiliencePipelineProvider<string> resiliencePipelineProvider,
-        ILoggerFactory loggerFactory
+        ILoggerFactory loggerFactory,
+        KS.Fiks.IO.Client.IFiksIOClient? fiksIoClientOverride = null
     )
     {
         _fiksIOSettings = fiksIOSettings;
@@ -46,6 +49,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         _loggerFactory = loggerFactory;
         _maskinportenClient = maskinportenClient;
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
+        _fiksIoClientOverride = fiksIoClientOverride;
         _resiliencePipeline = resiliencePipelineProvider.GetPipeline<FiksIOMessageResponse>(
             FiksIOConstants.ResiliencePipelineId
         );
@@ -139,7 +143,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         await InitialiseFiksIOClient();
     }
 
-    private async Task<KS.Fiks.IO.Client.FiksIOClient> InitialiseFiksIOClient()
+    private async Task<IExternalFiksIOClient> InitialiseFiksIOClient()
     {
         var fiksIOSettings = _fiksIOSettings.CurrentValue;
         var appMeta = await _appMetadata.GetApplicationMetadata();
@@ -160,12 +164,19 @@ internal sealed class FiksIOClient : IFiksIOClient
             kontoConfiguration: new KontoConfiguration(fiksIOSettings.AccountId, fiksIOSettings.AccountPrivateKey)
         );
 
-        _fiksIoClient?.Dispose();
-        _fiksIoClient = await KS.Fiks.IO.Client.FiksIOClient.CreateAsync(
-            configuration: fiksConfiguration,
-            maskinportenClient: new FiksIOMaskinportenClient(_maskinportenClient),
-            loggerFactory: _loggerFactory
-        );
+        if (_fiksIoClientOverride is not null)
+        {
+            _fiksIoClient = _fiksIoClientOverride;
+        }
+        else
+        {
+            _fiksIoClient?.Dispose();
+            _fiksIoClient = await KS.Fiks.IO.Client.FiksIOClient.CreateAsync(
+                configuration: fiksConfiguration,
+                maskinportenClient: new FiksIOMaskinportenClient(_maskinportenClient),
+                loggerFactory: _loggerFactory
+            );
+        }
 
         if (_messageReceivedHandler is not null)
             SubscribeToEvents();
