@@ -13,4 +13,9 @@
     <PackageReference Include="KS.Fiks.IO.Client" Version="5.0.2"/>
     <PackageReference Include="Polly.Extensions" Version="8.5.2" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Altinn.App.Clients.Fiks.Tests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
 </Project>
