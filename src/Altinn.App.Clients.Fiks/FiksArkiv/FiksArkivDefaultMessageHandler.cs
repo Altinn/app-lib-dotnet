@@ -2,7 +2,6 @@ using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
-using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.AltinnCdn;
@@ -114,14 +113,24 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         if (_fiksArkivSettings.ErrorHandling?.EmailNotificationRecipients?.Any(string.IsNullOrWhiteSpace) is true)
             throw new FiksArkivConfigurationException("List of email recipients contain empty entries.");
 
-        if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.Recipient))
+        if (_fiksArkivSettings.AutoSend.Recipient is null)
             throw new FiksArkivConfigurationException("Recipient configuration is required for auto-send.");
 
         if (
-            _fiksArkivSettings.AutoSend.Recipient.DoesNotContain('-')
-            && _fiksArkivSettings.AutoSend.Recipient.DoesNotContain('.')
+            _fiksArkivSettings.AutoSend.Recipient.AccountId is null
+            && _fiksArkivSettings.AutoSend.Recipient.DataModelBinding is null
         )
-            throw new FiksArkivConfigurationException("Recipient must be a valid Guid or a data model path.");
+            throw new FiksArkivConfigurationException(
+                "Either an AccountId or a data model binding is required for the recipient configuration."
+            );
+
+        if (
+            _fiksArkivSettings.AutoSend.Recipient.AccountId is not null
+            && _fiksArkivSettings.AutoSend.Recipient.DataModelBinding is not null
+        )
+            throw new FiksArkivConfigurationException(
+                "Recipient must be configured with either an AccountId or a data model binding, not both."
+            );
 
         if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.AfterTaskId))
             throw new FiksArkivConfigurationException("AfterTaskId configuration is required for auto-send.");
@@ -137,6 +146,12 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
 
         if (dataTypes.Contains(_fiksArkivSettings.AutoSend.PrimaryDocument.DataType) is false)
             throw new FiksArkivConfigurationException("FormDocument->DataType mismatch with application data types.");
+
+        if (
+            _fiksArkivSettings.AutoSend.Recipient.DataModelBinding is not null
+            && dataTypes.Contains(_fiksArkivSettings.AutoSend.Recipient.DataModelBinding.DataType) is false
+        )
+            throw new FiksArkivConfigurationException("Recipient->DataType mismatch with application data types.");
 
         if (_fiksArkivSettings.AutoSend.Attachments?.All(x => dataTypes.Contains(x.DataType)) is not true)
             throw new FiksArkivConfigurationException("Attachments->DataType mismatch with application data types.");

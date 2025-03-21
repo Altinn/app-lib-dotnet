@@ -52,25 +52,59 @@ public sealed record FiksArkivAutoSendSettings
 
     /// <summary>
     /// The recipient of the message.
-    /// This is a Fiks IO account ID, which needs to be a GUID.
-    /// Either specified directly or a reference to the data model (dot notation).
     /// </summary>
     [JsonPropertyName("recipient")]
-    public string? Recipient { get; init; }
+    public FiksArkivRecipientSettings? Recipient { get; init; }
 
     /// <summary>
     /// The settings for the primary document payload.
     /// This is usually the main data model for the form data, or the PDF representation of this data,
-    /// which will eventually be sent as a "Hoveddokument" to Fiks Arkiv.
+    /// which will eventually be sent as a `Hoveddokument` to Fiks Arkiv.
     /// </summary>
     [JsonPropertyName("primaryDocument")]
     public FiksArkivPayloadSettings? PrimaryDocument { get; init; }
 
     /// <summary>
-    /// Optional settings for attachments. These are additional documents that will be sent as "Vedlegg" to Fiks Arkiv.
+    /// Optional settings for attachments. These are additional documents that will be sent as `Vedlegg` to Fiks Arkiv.
     /// </summary>
     [JsonPropertyName("attachments")]
     public IReadOnlyList<FiksArkivPayloadSettings>? Attachments { get; init; }
+}
+
+/// <summary>
+/// Represents the settings for a Fiks Arkiv recipient.
+/// </summary>
+public sealed class FiksArkivRecipientSettings
+{
+    /// <summary>
+    /// The account ID of the recipient.
+    /// </summary>
+    [JsonPropertyName("accountId")]
+    public Guid? AccountId { get; init; }
+
+    /// <summary>
+    /// A data model binding for the account ID of the recipient.
+    /// </summary>
+    [JsonPropertyName("dataModelBinding")]
+    public FiksArkivDataModelBindingSettings? DataModelBinding { get; init; }
+}
+
+/// <summary>
+/// Represents the settings for a Fiks Arkiv recipient data model binding.
+/// </summary>
+public sealed class FiksArkivDataModelBindingSettings
+{
+    /// <summary>
+    /// The data type of the binding (e.g. `Model`)
+    /// </summary>
+    [JsonPropertyName("dataType")]
+    public required string DataType { get; init; }
+
+    /// <summary>
+    /// The field that contains the account ID. Dot notation is supported.
+    /// </summary>
+    [JsonPropertyName("field")]
+    public required string Field { get; init; }
 }
 
 /// <summary>

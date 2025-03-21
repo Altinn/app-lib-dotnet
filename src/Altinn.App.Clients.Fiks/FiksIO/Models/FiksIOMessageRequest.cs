@@ -6,8 +6,8 @@ namespace Altinn.App.Clients.Fiks.FiksIO.Models;
 /// <summary>
 /// Represents a Fiks IO message request (outbound).
 /// </summary>
-/// <param name="Recipient">The intended recipient of the message.</param>
-/// <param name="MessageType">The message type. E.g. no.ks.fiks.arkiv.v1.arkivering.arkivmelding.opprett</param>
+/// <param name="Recipient">The intended recipient of the message (Fiks account ID).</param>
+/// <param name="MessageType">The message type (e.g. `no.ks.fiks.arkiv.v1.arkivering.arkivmelding.opprett`).</param>
 /// <param name="SendersReference">Your reference for this message.</param>
 /// <param name="Payload">The payload(s) for the message.</param>
 /// <param name="InReplyToMessage">Is this a reply? If so, the original message ID goes here.</param>
