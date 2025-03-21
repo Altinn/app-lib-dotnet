@@ -197,26 +197,24 @@ internal sealed partial class FiksArkivDefaultMessageHandler
     {
         try
         {
-            var configuredRecipient = VerifiedNotNull(_fiksArkivSettings.AutoSend?.Recipient);
-            if (Guid.TryParse(configuredRecipient, out var recipient))
-                return recipient;
+            var recipientConfiguration = VerifiedNotNull(_fiksArkivSettings.AutoSend?.Recipient);
 
-            var recipientPathParts = configuredRecipient.Split('.');
-            var dataType = recipientPathParts[0];
-            var field = string.Join('.', recipientPathParts.Skip(1));
-            var dataElement = instance.Data.First(x => x.DataType == dataType);
+            if (recipientConfiguration.AccountId is not null)
+                return recipientConfiguration.AccountId.Value;
 
+            var recipientBinding = VerifiedNotNull(recipientConfiguration.DataModelBinding);
+            var dataElement = instance.Data.First(x => x.DataType == recipientBinding.DataType);
             var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(instance, null, null);
             var layoutState = await _layoutStateInitializer.Init(unitOfWork, null);
             var data = await layoutState.GetModelData(
-                new ModelBinding { Field = field, DataType = dataType },
+                new ModelBinding { Field = recipientBinding.Field, DataType = recipientBinding.DataType },
                 new DataElementIdentifier(dataElement.Id),
                 null
             );
 
-            return Guid.TryParse(data as string, out recipient)
+            return Guid.TryParse(data as string, out var recipient)
                 ? recipient
-                : throw new FiksArkivException($"Could not parse recipient from model query `{configuredRecipient}`");
+                : throw new FiksArkivException($"Could not parse recipient from data binding: {recipientBinding}");
         }
         catch (Exception e)
         {
