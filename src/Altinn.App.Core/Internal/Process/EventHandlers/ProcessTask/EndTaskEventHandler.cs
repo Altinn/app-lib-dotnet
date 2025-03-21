@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
@@ -38,13 +39,10 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     /// </summary>
     public async Task Execute(IProcessTask processTask, string taskId, Instance instance)
     {
-        var serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
-        var pdfServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IPdfServiceTask)
-            ?? throw new InvalidOperationException("PdfServiceTask not found in serviceTasks");
-        var eformidlingServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IEformidlingServiceTask)
-            ?? throw new InvalidOperationException("EformidlingServiceTask not found in serviceTasks");
+        var instanceClient = _appImplementationFactory.GetRequired<IInstanceClient>();
+        var pdfServiceTask = _appImplementationFactory.GetRequired<IPdfServiceTask>();
+        var eformidlingServiceTask = _appImplementationFactory.GetRequired<IEformidlingServiceTask>();
+        var fiksArkivServiceTask = _appImplementationFactory.Get<IFiksArkivServiceTask>();
 
         await processTask.End(taskId, instance);
         await _processTaskFinisher.Finalize(taskId, instance);
@@ -72,6 +70,22 @@ public class EndTaskEventHandler : IEndTaskEventHandler
             _logger.LogError(e, "Error executing eFormidling service task. Unlocking data again.");
             await _processTaskDataLocker.Unlock(taskId, instance);
             throw;
+        }
+
+        if (fiksArkivServiceTask is not null)
+        {
+            try
+            {
+                // TODO: It's stupid that we have to re-fetch the instance here to have access to the PDF
+                instance = await instanceClient.GetInstance(instance);
+                await fiksArkivServiceTask.Execute(taskId, instance);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error executing Fiks Arkiv service task. Unlocking data again.");
+                await _processTaskDataLocker.Unlock(taskId, instance);
+                throw;
+            }
         }
     }
 
