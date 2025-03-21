@@ -50,7 +50,14 @@ public static class LayoutEvaluator
             if (context.Component.DataModelBindings.TryGetValue("group", out var groupBinding))
             {
                 var indexedBinding = await state.AddInidicies(groupBinding, context);
-                (isHidden ? hiddenModelBindings : nonHiddenModelBindings).Add(indexedBinding);
+                if (isHidden)
+                {
+                    hiddenModelBindings.Add(indexedBinding);
+                }
+                else
+                {
+                    nonHiddenModelBindings.Add(indexedBinding);
+                }
             }
 
             if (isHidden)
