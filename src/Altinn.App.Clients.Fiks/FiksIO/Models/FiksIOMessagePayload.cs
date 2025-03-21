@@ -15,7 +15,7 @@ public sealed record FiksIOMessagePayload
     /// <summary>
     /// The filename
     /// </summary>
-    public string Filename { get; init; }
+    public string Filename { get; internal set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FiksIOMessagePayload"/> class.

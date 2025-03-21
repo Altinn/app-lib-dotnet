@@ -4,7 +4,7 @@ namespace Altinn.App.Clients.Fiks.Extensions;
 
 internal static class ListExtensions
 {
-    public static void EnsureUniqueFilenames(this IEnumerable<MessagePayloadWrapper> attachments)
+    public static void EnsureUniqueFilenames(this IReadOnlyList<MessagePayloadWrapper> attachments)
     {
         var hasDuplicateFilenames = attachments
             .GroupBy(x => x.Payload.Filename.ToLowerInvariant())
@@ -19,10 +19,7 @@ internal static class ListExtensions
                 string filename = Path.GetFileNameWithoutExtension(duplicates[i].Payload.Filename);
                 string extension = Path.GetExtension(duplicates[i].Payload.Filename);
 
-                duplicates[i] = duplicates[i] with
-                {
-                    Payload = duplicates[i].Payload with { Filename = $"{filename}({uniqueId}){extension}" },
-                };
+                duplicates[i].Payload.Filename = $"{filename}({uniqueId}){extension}";
             }
         }
     }
