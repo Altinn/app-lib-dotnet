@@ -61,6 +61,8 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
 
         public Instance Instance { get; }
 
+        public IReadOnlyCollection<DataType> DataTypes => _applicationMetadata.DataTypes;
+
         public async Task<object> GetFormData(DataElementIdentifier dataElementId)
         {
             return (await GetFormDataWrapper(dataElementId)).BackingData<object>();

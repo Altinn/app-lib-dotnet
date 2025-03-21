@@ -29,6 +29,8 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
 
     public Instance Instance => _dataMutator.Instance;
 
+    public IReadOnlyCollection<DataType> DataTypes => _dataMutator.DataTypes;
+
     public async Task<object> GetFormData(DataElementIdentifier dataElementId)
     {
         return (await GetFormDataWrapper(dataElementId)).BackingData<object>();
@@ -41,13 +43,7 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
             async () =>
             {
                 var data = await _dataMutator.GetFormDataWrapper(dataElementIdentifier);
-                // Shortcut without copying if there are no hidden fields
                 var hiddenFields = await _hiddenFieldsTask.Value;
-                if (hiddenFields.All(dr => dr.DataElementIdentifier.Guid != dataElementIdentifier.Guid))
-                {
-                    return data;
-                }
-
                 return CleanModel(data.Copy(), dataElementIdentifier, hiddenFields, _rowRemovalOption);
             }
         );
@@ -91,10 +87,5 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
     public DataElement GetDataElement(DataElementIdentifier dataElementIdentifier)
     {
         return _dataMutator.GetDataElement(dataElementIdentifier);
-    }
-
-    public DataType? GetDataType(string dataTypeId)
-    {
-        return _dataMutator.GetDataType(dataTypeId);
     }
 }

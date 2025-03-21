@@ -65,7 +65,11 @@ file class TestTypeFormDataWrapper : IFormDataWrapper<TestType>
                 return GetInternal(dataModel.Certificates, path, offset + 12);
         }
 
-        throw new ArgumentException($"""Path "{path}" not found in data model of type {typeof(TestType).FullName}""");
+        // if (throwIfInvalid)
+        //     throw new ArgumentException(
+        //         $"""Path "{path}" not found in data model of type {typeof(TestType).FullName}"""
+        //     );
+        return null;
     }
 
     private static object? GetInternal(List<Certificate?>? certificates, ReadOnlySpan<char> path, int offset)
@@ -140,6 +144,11 @@ file class TestTypeFormDataWrapper : IFormDataWrapper<TestType>
 
                 return;
         }
+
+        // if (throwIfInvalid)
+        //     throw new InvalidOperationException(
+        //         $"Path {path} not found in data model of type {typeof(TestType).FullName}"
+        //     );
     }
 
     public bool TryAddIndexToPath(

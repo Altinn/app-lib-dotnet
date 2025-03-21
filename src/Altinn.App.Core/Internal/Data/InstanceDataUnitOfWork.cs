@@ -70,6 +70,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         }
 
         Instance = instance;
+        DataTypes = appMetadata.DataTypes;
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _modelSerializationService = modelSerializationService;
@@ -81,6 +82,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     }
 
     public Instance Instance { get; }
+
+    public IReadOnlyCollection<DataType> DataTypes { get; }
 
     /// <inheritdoc />
     public async Task<object> GetFormData(DataElementIdentifier dataElementId)

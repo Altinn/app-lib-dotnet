@@ -38,17 +38,10 @@ public class DataModelWrapper
     /// </summary>
     public int? GetModelDataCount(string field, ReadOnlySpan<int> rowIndexes = default)
     {
-        if (
-            GetModelDataRecursive(field.Split('.'), 0, _dataModel, rowIndexes)
-            is System.Collections.IEnumerable childEnum
-        )
+        var group = GetModelDataRecursive(field.Split('.'), 0, _dataModel, rowIndexes);
+        if (group is System.Collections.ICollection childEnum)
         {
-            int retCount = 0;
-            foreach (var _ in childEnum)
-            {
-                retCount++;
-            }
-            return retCount;
+            return childEnum.Count;
         }
 
         return null;

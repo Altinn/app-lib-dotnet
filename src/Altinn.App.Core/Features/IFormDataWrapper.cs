@@ -34,8 +34,6 @@ public interface IFormDataWrapper
     /// Access the raw data model as an object
     /// </summary>
     /// <param name="path">The dotted path to use (including inline indexes)</param>
-    /// <example>
-    /// </example>
     object? GetRaw(ReadOnlySpan<char> path);
 
     // void Set(string path, object? value);
@@ -56,8 +54,8 @@ public interface IFormDataWrapper
     /// <param name="path">The current path (possibly with unset indexes on some collections)</param>
     /// <param name="rowIndexes">Extra rowIndexes that should be added (from context)</param>
     /// <param name="buffer">
-    /// A buffer that the method can work with, that is large enough to hold the full indexed path
-    /// (Typically we use path.Length + rowIndexes.Length * 12, as the indexes might be 10 characters long + "[]")
+    ///     A buffer that the method can work with, that is large enough to hold the full indexed path
+    ///     (Typically we use path.Length + rowIndexes.Length * 12, as the indexes might be 10 characters long + "[]")
     /// </param>
     /// <param name="indexedPath">Reference to the part of the buffer that contains the indexed path</param>
     /// <returns>Whether a valid path could be constructed</returns>
