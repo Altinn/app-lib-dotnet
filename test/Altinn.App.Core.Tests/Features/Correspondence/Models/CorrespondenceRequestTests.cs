@@ -41,17 +41,15 @@ public class CorrespondenceRequestTests
                     new CorrespondenceAttachment
                     {
                         Filename = "filename-1",
-                        Name = "name-1",
+                        DisplayName = "name-1",
                         SendersReference = "senders-reference-1",
-                        DataType = "application/pdf",
                         Data = "data"u8.ToArray(),
                     },
                     new CorrespondenceAttachment
                     {
                         Filename = "filename-2",
-                        Name = "name-2",
+                        DisplayName = "name-2",
                         SendersReference = "senders-reference-2",
-                        DataType = "plain/text",
                         Data = "data"u8.ToArray(),
                         DataLocationType = CorrespondenceDataLocationType.NewCorrespondenceAttachment,
                         IsEncrypted = true,
@@ -133,14 +131,12 @@ public class CorrespondenceRequestTests
             ["Correspondence.Content.MessageSummary"] = correspondence.Content.Summary,
             ["Correspondence.Content.MessageBody"] = correspondence.Content.Body,
             ["Correspondence.Content.Attachments[0].Filename"] = correspondence.Content.Attachments[0].Filename,
-            ["Correspondence.Content.Attachments[0].Name"] = correspondence.Content.Attachments[0].Name,
+            ["Correspondence.Content.Attachments[0].Name"] = correspondence.Content.Attachments[0].DisplayName,
             ["Correspondence.Content.Attachments[0].SendersReference"] = correspondence.Content.Attachments[0].SendersReference,
-            ["Correspondence.Content.Attachments[0].DataType"] = correspondence.Content.Attachments[0].DataType,
             ["Correspondence.Content.Attachments[1].Filename"] = correspondence.Content.Attachments[1].Filename,
-            ["Correspondence.Content.Attachments[1].Name"] = correspondence.Content.Attachments[1].Name,
+            ["Correspondence.Content.Attachments[1].Name"] = correspondence.Content.Attachments[1].DisplayName,
             ["Correspondence.Content.Attachments[1].IsEncrypted"] = correspondence.Content.Attachments[1].IsEncrypted!,
             ["Correspondence.Content.Attachments[1].SendersReference"] = correspondence.Content.Attachments[1].SendersReference,
-            ["Correspondence.Content.Attachments[1].DataType"] = correspondence.Content.Attachments[1].DataType,
             ["Correspondence.ExternalReferences[0].ReferenceType"] = correspondence.ExternalReferences[0].ReferenceType,
             ["Correspondence.ExternalReferences[0].ReferenceValue"] = correspondence.ExternalReferences[0].ReferenceValue!,
             ["Correspondence.ExternalReferences[1].ReferenceType"] = correspondence.ExternalReferences[1].ReferenceType,
@@ -204,17 +200,15 @@ public class CorrespondenceRequestTests
                     new CorrespondenceAttachment
                     {
                         Filename = clashingFilename,
-                        Name = "name-1",
+                        DisplayName = "name-1",
                         SendersReference = "senders-reference-1",
-                        DataType = "application/pdf",
                         Data = Encoding.UTF8.GetBytes("data-1"),
                     },
                     new CorrespondenceAttachment
                     {
                         Filename = clashingFilename,
-                        Name = "name-2",
+                        DisplayName = "name-2",
                         SendersReference = "senders-reference-2",
-                        DataType = "plain/text",
                         Data = Encoding.UTF8.GetBytes("data-2"),
                     },
                 ],
@@ -239,25 +233,22 @@ public class CorrespondenceRequestTests
             new CorrespondenceAttachment
             {
                 Filename = "filename",
-                Name = "name",
+                DisplayName = "name",
                 SendersReference = "senders-reference",
-                DataType = "plain/text",
                 Data = data,
             },
             new CorrespondenceAttachment
             {
                 Filename = "filename",
-                Name = "name",
+                DisplayName = "name",
                 SendersReference = "senders-reference",
-                DataType = "plain/text",
                 Data = data,
             },
             new CorrespondenceAttachment
             {
                 Filename = "filename",
-                Name = "name",
+                DisplayName = "name",
                 SendersReference = "senders-reference",
-                DataType = "plain/text",
                 Data = data,
             },
         ];
