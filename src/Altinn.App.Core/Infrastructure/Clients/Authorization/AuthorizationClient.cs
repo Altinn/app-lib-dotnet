@@ -229,12 +229,11 @@ public class AuthorizationClient : IAuthorizationClient
         List<string> organisations =
         [
             .. response
-                .Response
-                .Where(result => result.Decision == "Permit")
+                .Response.Where(result => result.Decision == "Permit")
                 .SelectMany(result => result.Category)
                 .SelectMany(category => category.Attribute)
                 .Where(attribute => orgNumbers.Contains(attribute.Value))
-                .Select(attribute => attribute.Value)
+                .Select(attribute => attribute.Value),
         ];
 
         return organisations;
