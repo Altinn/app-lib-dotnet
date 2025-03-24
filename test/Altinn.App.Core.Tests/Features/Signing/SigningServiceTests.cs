@@ -1017,12 +1017,11 @@ public sealed class SigningServiceTests : IDisposable
             .Setup(x => x.GetBinaryData(It.IsAny<DataElementIdentifier>()))
             .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signeeContexts)));
 
-        var role1 = new Role { Value = "role1" };
-        var role2 = new Role { Value = "role2" };
+        List<string> orgNrs = ["123456789", "555555555"];
 
-        List<Role> roles = [role1, role2];
-
-        _authorizationClient.Setup(x => x.GetRoles(123, It.IsAny<int>())).ReturnsAsync(roles);
+        _authorizationClient
+            .Setup(x => x.GetKeyRoleOrganisationParties(123, It.IsAny<List<string>>()))
+            .ReturnsAsync(orgNrs);
 
         // Act
         var result = await _signingService.GetAuthorizedOrganisationSignees(
