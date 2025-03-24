@@ -213,17 +213,15 @@ internal sealed class SigningService(
             signatureConfiguration
         );
 
-        List<OrganisationSignee> authorizedOrganisations = [];
         List<OrganisationSignee> orgSignees = [.. signeeContexts.Select(x => x.Signee).OfType<OrganisationSignee>()];
+        List<string> orgNumbers = [.. orgSignees.Select(x => x.OrgNumber)];
 
-        foreach (OrganisationSignee organisationSignee in orgSignees)
-        {
-            List<Role> roles = await authorizationClient.GetRoles(userId, organisationSignee.OrgParty.PartyId);
-            if (roles.Count != 0)
-            {
-                authorizedOrganisations.Add(organisationSignee);
-            }
-        }
+        List<string> keyRoleOrganizations = await authorizationClient.GetKeyRoleOrganisationParties(userId, orgNumbers);
+
+        List<OrganisationSignee> authorizedOrganisations = orgSignees
+            .Where(organisationSignee => keyRoleOrganizations.Contains(organisationSignee.OrgNumber))
+            .ToList();
+
         return authorizedOrganisations;
     }
 
