@@ -7,19 +7,19 @@ using Polly.DependencyInjection;
 
 namespace Altinn.App.Clients.Fiks.FiksIO;
 
-internal sealed class FiksIOSetupBuilder(IServiceCollection serviceCollection) : IFiksIOSetupBuilder
+internal sealed class FiksIOSetupBuilder(IServiceCollection services) : IFiksIOSetupBuilder
 {
     /// <inheritdoc />
     public IFiksIOSetupBuilder WithConfig(Action<FiksIOSettings> configureOptions)
     {
-        serviceCollection.ConfigureFiksIOClient(configureOptions);
+        services.ConfigureFiksIOClient(configureOptions);
         return this;
     }
 
     /// <inheritdoc />
     public IFiksIOSetupBuilder WithConfig(string configSectionPath)
     {
-        serviceCollection.ConfigureFiksIOClient(configSectionPath);
+        services.ConfigureFiksIOClient(configSectionPath);
         return this;
     }
 
@@ -28,10 +28,13 @@ internal sealed class FiksIOSetupBuilder(IServiceCollection serviceCollection) :
         Action<ResiliencePipelineBuilder<FiksIOMessageResponse>, AddResiliencePipelineContext<string>> configure
     )
     {
-        serviceCollection.AddResiliencePipeline<string, FiksIOMessageResponse>(
-            FiksIOConstants.ResiliencePipelineId,
-            configure
-        );
+        // var test = services.GetResiliencePipelinesDescriptors().ToList();
+        // foreach (var t in test)
+        // {
+        //     services.Remove(t);
+        // }
+
+        services.AddResiliencePipeline<string, FiksIOMessageResponse>(FiksIOConstants.ResiliencePipelineId, configure);
 
         return this;
     }
@@ -39,6 +42,6 @@ internal sealed class FiksIOSetupBuilder(IServiceCollection serviceCollection) :
     /// <inheritdoc />
     public IServiceCollection CompleteSetup()
     {
-        return serviceCollection;
+        return services;
     }
 }

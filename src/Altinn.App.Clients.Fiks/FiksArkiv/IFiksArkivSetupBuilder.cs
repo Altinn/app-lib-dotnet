@@ -1,6 +1,9 @@
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
+using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Polly;
+using Polly.DependencyInjection;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
@@ -45,6 +48,15 @@ public interface IFiksArkivSetupBuilder
     /// <returns>The <see cref="IFiksArkivSetupBuilder"/> builder instance.</returns>
     IFiksArkivSetupBuilder WithMessageHandler<TMessageHandler>()
         where TMessageHandler : IFiksArkivMessageHandler;
+
+    /// <summary>
+    /// Configures the resilience pipeline (retry behavior) for the Fiks IO client.
+    /// </summary>
+    /// <param name="configure">Configuration delegate.</param>
+    /// <returns>The <see cref="IFiksIOSetupBuilder"/> builder instance.</returns>
+    IFiksArkivSetupBuilder WithResiliencePipeline(
+        Action<ResiliencePipelineBuilder<FiksIOMessageResponse>, AddResiliencePipelineContext<string>> configure
+    );
 
     /// <summary>
     /// Completes the setup and returns the service collection.

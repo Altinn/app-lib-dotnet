@@ -14,33 +14,33 @@ public sealed record FiksIOSettings : IFiksIOAccountSettings
     /// <inheritdoc />
     [Required]
     [JsonPropertyName("accountId")]
-    public required Guid AccountId { get; init; }
+    public required Guid AccountId { get; set; }
 
     /// <inheritdoc />
     [Required]
     [JsonPropertyName("integrationId")]
-    public required Guid IntegrationId { get; init; }
+    public required Guid IntegrationId { get; set; }
 
     /// <summary>
     /// The integration password.
     /// </summary>
     [Required]
     [JsonPropertyName("integrationPassword")]
-    public required string IntegrationPassword { get; init; }
+    public required string IntegrationPassword { get; set; }
 
     /// <summary>
     /// The account private key, base64 encoded.
     /// </summary>
     [Required]
     [JsonPropertyName("accountPrivateKeyBase64")]
-    public required string AccountPrivateKeyBase64 { get; init; }
+    public required string AccountPrivateKeyBase64 { get; set; }
 
     /// <summary>
     /// The ASiC-E private key, base64 encoded.
     /// </summary>
     [Required]
     [JsonPropertyName("asicePrivateKeyBase64")]
-    public required string AsicePrivateKeyBase64 { get; init; }
+    public required string AsicePrivateKeyBase64 { get; set; }
 
     internal string AccountPrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AccountPrivateKeyBase64));
     internal string AsicePrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AsicePrivateKeyBase64));
