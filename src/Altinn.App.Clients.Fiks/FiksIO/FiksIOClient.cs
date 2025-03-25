@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
@@ -15,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
 using RabbitMQ.Client.Events;
+using FiksResult = Altinn.App.Core.Features.Telemetry.Fiks.FiksResult;
 using IExternalFiksIOClient = KS.Fiks.IO.Client.IFiksIOClient;
 
 namespace Altinn.App.Clients.Fiks.FiksIO;
@@ -31,6 +34,7 @@ internal sealed class FiksIOClient : IFiksIOClient
     private readonly IExternalFiksIOClient? _fiksIoClientOverride;
     private IExternalFiksIOClient? _fiksIoClient;
     private EventHandler<FiksIOReceivedMessage>? _messageReceivedHandler;
+    private readonly Telemetry? _telemetry;
 
     public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
 
@@ -42,7 +46,8 @@ internal sealed class FiksIOClient : IFiksIOClient
         IAppMetadata appMetadata,
         IMaskinportenClient maskinportenClient,
         ILoggerFactory loggerFactory,
-        IExternalFiksIOClient? fiksIoClientOverride = null
+        IExternalFiksIOClient? fiksIoClientOverride = null,
+        Telemetry? telemetry = null
     )
     {
         _fiksIOSettings = fiksIOSettings;
@@ -53,6 +58,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
         _fiksIoClientOverride = fiksIoClientOverride;
         _resiliencePipeline = resiliencePipeline;
+        _telemetry = telemetry;
 
         if (fiksIOSettings.CurrentValue is null)
             throw new FiksIOConfigurationException("Fiks IO has not been configured");
@@ -66,6 +72,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         CancellationToken cancellationToken = default
     )
     {
+        using Activity? activity = _telemetry?.StartSendFiksActivity();
         _logger.LogInformation(
             "Sending Fiks IO message {MessageType}:{ClientMessageId}",
             request.MessageType,
@@ -83,7 +90,7 @@ internal sealed class FiksIOClient : IFiksIOClient
                 request
             );
 
-            return await _resiliencePipeline.ExecuteAsync(
+            FiksIOMessageResponse result = await _resiliencePipeline.ExecuteAsync(
                 async context =>
                 {
                     if (_fiksIoClient is null || _fiksIoClient.IsOpen() is false)
@@ -92,13 +99,19 @@ internal sealed class FiksIOClient : IFiksIOClient
                     numAttempts += 1;
 
                     // TODO: Pass context.CancellationToken onwards
-                    FiksIOMessageResponse result = new(await _fiksIoClient.Send(externalRequest, externalAttachments));
+                    var externalResult = await _fiksIoClient.Send(externalRequest, externalAttachments);
+                    var result = new FiksIOMessageResponse(externalResult);
                     _logger.LogInformation("FiksIO message sent successfully: {MessageDetails}", result);
 
                     return result;
                 },
                 context
             );
+
+            activity?.AddTag(Telemetry.Labels.FiksMessageId, result.MessageId);
+            _telemetry?.RecordFiksMessageSent(FiksResult.Success);
+
+            return result;
         }
         catch (Exception e)
         {
@@ -110,6 +123,8 @@ internal sealed class FiksIOClient : IFiksIOClient
                 numAttempts,
                 e.Message
             );
+            _telemetry?.RecordFiksMessageSent(FiksResult.Error);
+            activity?.Errored(e);
             throw;
         }
     }
