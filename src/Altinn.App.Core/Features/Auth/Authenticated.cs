@@ -594,8 +594,21 @@ public abstract class Authenticated
     // TODO: app token?
     // public sealed record App(string Token) : Authenticated;
 
+    internal delegate Authenticated Parser(
+        string tokenStr,
+        bool isAuthenticated,
+        ApplicationMetadata appMetadata,
+        Func<string?> getSelectedParty,
+        Func<int, Task<UserProfile?>> getUserProfile,
+        Func<int, Task<Party?>> lookupUserParty,
+        Func<string, Task<Party>> lookupOrgParty,
+        Func<int, Task<List<Party>?>> getPartyList,
+        Func<int, int, Task<bool?>> validateSelectedParty
+    );
+
     internal static Authenticated FromLocalTest(
         string tokenStr,
+        bool isAuthenticated,
         ApplicationMetadata appMetadata,
         Func<string?> getSelectedParty,
         Func<int, Task<UserProfile?>> getUserProfile,
@@ -607,7 +620,7 @@ public abstract class Authenticated
     {
         var context = new ParseContext(
             tokenStr,
-            !string.IsNullOrWhiteSpace(tokenStr),
+            isAuthenticated,
             appMetadata,
             getSelectedParty,
             getUserProfile,
@@ -630,6 +643,7 @@ public abstract class Authenticated
         context.Scopes = context.ScopeClaim.IsValidString(out var scopeClaimValue)
             ? new Scopes(scopeClaimValue)
             : new Scopes(null);
+        context.IsInAltinnPortal = context.UserIdClaim.Exists;
 
         int? partyId = null;
         if (context.PartyIdClaim.Exists)
@@ -918,12 +932,13 @@ public abstract class Authenticated
     {
         if (!context.UserIdClaim.Exists)
             throw new AuthenticationContextException("Missing user ID claim for user token");
-        if (!context.UserIdClaim.IsValidString(out var userIdStr))
+
+        if (!context.UserIdClaim.IsValidInt(out var userId))
+        {
             throw new AuthenticationContextException(
                 $"Invalid user ID claim value for user token: {context.UserIdClaim.Value}"
             );
-        if (!int.TryParse(userIdStr, CultureInfo.InvariantCulture, out var userId))
-            throw new AuthenticationContextException($"Invalid user ID claim value for user token: {userIdStr}");
+        }
 
         if (!context.PartyIdClaim.Exists)
             throw new AuthenticationContextException("Missing party ID for user token");
@@ -941,7 +956,13 @@ public abstract class Authenticated
             if (!context.UsernameClaim.IsValidString(out var usernameClaimValue))
                 throw new AuthenticationContextException("Missing username claim for self-identified user token");
 
-            return new SelfIdentifiedUser(usernameClaimValue, userId, partyId.Value, authMethodClaimValue, ref context);
+            return new SelfIdentifiedUser(
+                usernameClaimValue,
+                userId.Value,
+                partyId.Value,
+                authMethodClaimValue,
+                ref context
+            );
         }
 
         int selectedPartyId = partyId.Value;
@@ -953,7 +974,7 @@ public abstract class Authenticated
             selectedPartyId = selectedParty;
         }
 
-        return new User(userId, partyId.Value, authLevel, authMethodClaimValue, selectedPartyId, ref context);
+        return new User(userId.Value, partyId.Value, authLevel, authMethodClaimValue, selectedPartyId, ref context);
     }
 
     static Org NewOrg(ref ParseContext context)
@@ -971,17 +992,7 @@ public abstract class Authenticated
     {
         if (!context.AuthorizationDetailsClaim.IsJson(out var json))
             throw new AuthenticationContextException($"Invalid authorization details claim value for token: {json}");
-        var authorizationDetails = json.Value.ValueKind switch
-        {
-            JsonValueKind.Object => JsonSerializer.Deserialize<AuthorizationDetailsClaim>(json.Value),
-            JsonValueKind.Array when json.Value.GetArrayLength() == 1 => JsonSerializer
-                .Deserialize<AuthorizationDetailsClaim[]>(json.Value)
-                ?[0],
-            _ => throw new AuthenticationContextException(
-                "Invalid authorization details claim value for systemuser token: "
-                    + context.AuthorizationDetailsClaim.Value
-            ),
-        };
+        var authorizationDetails = AuthorizationDetailsClaim.Parse(json.Value);
         if (authorizationDetails is null)
             throw new AuthenticationContextException("Invalid authorization details claim value for systemuser token");
         if (authorizationDetails is not SystemUserAuthorizationDetailsClaim systemUser)
@@ -1061,10 +1072,25 @@ public abstract class Authenticated
         {
             integer = null;
 
-            if (Type is not null && Value is int intValue)
+            if (Type is not null)
             {
-                integer = intValue;
-                return true;
+                if (Value is int intValue)
+                {
+                    integer = intValue;
+                    return true;
+                }
+                // We parse tokens from various different sources:
+                // * altinn-authentication
+                // * localtest
+                // * AltinnTesTools
+                // * TestAuthentication (this repo)
+                // All of them have slight differences in how values encoded in the JWT payload,
+                // so that's why we are flexible here...
+                if (Value is string strValue && int.TryParse(strValue, CultureInfo.InvariantCulture, out intValue))
+                {
+                    integer = intValue;
+                    return true;
+                }
             }
 
             return false;
@@ -1086,7 +1112,22 @@ public abstract class Authenticated
 
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(SystemUserAuthorizationDetailsClaim), typeDiscriminator: "urn:altinn:systemuser")]
-    internal record AuthorizationDetailsClaim();
+    internal record AuthorizationDetailsClaim()
+    {
+        public static AuthorizationDetailsClaim? Parse(JsonElement json)
+        {
+            return json.ValueKind switch
+            {
+                JsonValueKind.Object => JsonSerializer.Deserialize<AuthorizationDetailsClaim>(json),
+                JsonValueKind.Array when json.GetArrayLength() == 1 => JsonSerializer
+                    .Deserialize<AuthorizationDetailsClaim[]>(json)
+                    ?[0],
+                _ => throw new AuthenticationContextException(
+                    "Invalid authorization details claim value for systemuser token: " + json
+                ),
+            };
+        }
+    }
 
     internal sealed record SystemUserAuthorizationDetailsClaim(
         [property: JsonPropertyName("systemuser_id")] IReadOnlyList<Guid> SystemUserId,
