@@ -48,6 +48,11 @@ public sealed record FiksIOReceivedMessageContent
     public Guid? InReplyToMessage => _mottattMelding.SvarPaMelding;
 
     /// <summary>
+    /// The correlation ID for this message, if any.
+    /// </summary>
+    public string? CorrelationId => _mottattMelding.KlientKorrelasjonsId;
+
+    /// <summary>
     /// The encrypted stream.
     /// </summary>
     public Task<Stream> EncryptedStream => _mottattMelding.EncryptedStream;
@@ -141,14 +146,21 @@ public sealed record FiksIOMessageResponder
     /// <param name="messageType">The message type to send.</param>
     /// <param name="payload">The payload(s) to attach.</param>
     /// <param name="sendersReference">Your reference.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <returns></returns>
     public async Task<FiksIOMessageResponse> Respond(
         string messageType,
         IEnumerable<FiksIOMessagePayload> payload,
-        Guid? sendersReference = null
+        Guid? sendersReference = null,
+        CancellationToken cancellationToken = default
     )
     {
-        var response = await _svarSender.Svar(messageType, [.. payload.Select(x => x.ToPayload())], sendersReference);
+        var response = await _svarSender.Svar(
+            messageType,
+            [.. payload.Select(x => x.ToPayload())],
+            sendersReference,
+            cancellationToken
+        );
         return new FiksIOMessageResponse(response);
     }
 
@@ -157,27 +169,32 @@ public sealed record FiksIOMessageResponder
     /// </summary>
     /// <param name="meldingType">The message type to send.</param>
     /// <param name="sendersReference">Your reference.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <returns></returns>
-    public async Task<FiksIOMessageResponse> Respond(string meldingType, Guid? sendersReference = null)
+    public async Task<FiksIOMessageResponse> Respond(
+        string meldingType,
+        Guid? sendersReference = null,
+        CancellationToken cancellationToken = default
+    )
     {
-        var response = await _svarSender.Svar(meldingType, sendersReference);
+        var response = await _svarSender.Svar(meldingType, sendersReference, cancellationToken);
         return new FiksIOMessageResponse(response);
     }
 
     /// <summary>
     /// Acknowledge that the message has been consumed.
     /// </summary>
-    public void Ack() => _svarSender.Ack();
+    public async Task Ack() => await _svarSender.AckAsync();
 
     /// <summary>
     /// Acknowledge that the message could not be consumed.
     /// </summary>
-    public void Nack() => _svarSender.Nack();
+    public async Task Nack() => await _svarSender.NackAsync();
 
     /// <summary>
     /// Acknowledge that the message could not be consumed and request to put it back in the queue to be consumed again.
     /// </summary>
-    public void NackWithRequeue() => _svarSender.NackWithRequeue();
+    public async Task NackWithRequeue() => await _svarSender.NackWithRequeueAsync();
 
     private ISvarSender _svarSender { get; init; }
 

@@ -5,7 +5,7 @@ namespace Altinn.App.Clients.Fiks.FiksIO;
 /// <summary>
 /// Contains logic for interacting with Fiks IO to send and receive messages.
 /// </summary>
-public interface IFiksIOClient : IDisposable
+public interface IFiksIOClient : IAsyncDisposable
 {
     /// <summary>
     /// The non-sensitive settings for the account.
@@ -15,7 +15,7 @@ public interface IFiksIOClient : IDisposable
     /// <summary>
     /// Indicates whether the client is healthy or not.
     /// </summary>
-    bool IsHealthy();
+    Task<bool> IsHealthy();
 
     /// <summary>
     /// Forces a reconnection to Fiks IO.
@@ -26,7 +26,7 @@ public interface IFiksIOClient : IDisposable
     /// Registers a listener to invoke when a message is received.
     /// </summary>
     /// <param name="listener">The event handler to register.</param>
-    Task OnMessageReceived(EventHandler<FiksIOReceivedMessage> listener);
+    Task OnMessageReceived(Func<FiksIOReceivedMessage, Task> listener);
 
     /// <summary>
     /// Sends a Fiks IO message.
