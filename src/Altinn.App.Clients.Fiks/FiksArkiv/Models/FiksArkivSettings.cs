@@ -12,13 +12,13 @@ public sealed record FiksArkivSettings
     /// Settings related to error handling.
     /// </summary>
     [JsonPropertyName("errorHandling")]
-    public FiksArkivErrorHandlingSettings? ErrorHandling { get; init; }
+    public FiksArkivErrorHandlingSettings? ErrorHandling { get; set; }
 
     /// <summary>
     /// Settings related to auto-submission to Fiks Arkiv.
     /// </summary>
     [JsonPropertyName("autoSend")]
-    public FiksArkivAutoSendSettings? AutoSend { get; init; }
+    public FiksArkivAutoSendSettings? AutoSend { get; set; }
 }
 
 /// <summary>

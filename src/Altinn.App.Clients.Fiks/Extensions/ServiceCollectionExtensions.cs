@@ -154,7 +154,7 @@ public static class ServiceCollectionExtensions
                             },
                         }
                     )
-                    .AddTimeout(TimeSpan.FromSeconds(5));
+                    .AddTimeout(TimeSpan.FromSeconds(2));
             }
         );
 
@@ -173,5 +173,10 @@ public static class ServiceCollectionExtensions
 
             return true;
         }
+    }
+
+    internal static IEnumerable<ServiceDescriptor> GetResiliencePipelinesDescriptors(this IServiceCollection services)
+    {
+        return services.Where(d => d is { IsKeyedService: true, ServiceKey: FiksIOConstants.ResiliencePipelineId });
     }
 }

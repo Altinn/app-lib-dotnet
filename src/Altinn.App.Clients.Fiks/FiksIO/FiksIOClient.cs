@@ -9,11 +9,11 @@ using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Crypto.Configuration;
 using KS.Fiks.IO.Send.Client.Configuration;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
-using Polly.Registry;
 using RabbitMQ.Client.Events;
 using IExternalFiksIOClient = KS.Fiks.IO.Client.IFiksIOClient;
 
@@ -35,13 +35,14 @@ internal sealed class FiksIOClient : IFiksIOClient
     public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
 
     public FiksIOClient(
+        [FromKeyedServices(FiksIOConstants.ResiliencePipelineId)]
+            ResiliencePipeline<FiksIOMessageResponse> resiliencePipeline,
         IOptionsMonitor<FiksIOSettings> fiksIOSettings,
         IWebHostEnvironment env,
         IAppMetadata appMetadata,
         IMaskinportenClient maskinportenClient,
-        ResiliencePipelineProvider<string> resiliencePipelineProvider,
         ILoggerFactory loggerFactory,
-        KS.Fiks.IO.Client.IFiksIOClient? fiksIoClientOverride = null
+        IExternalFiksIOClient? fiksIoClientOverride = null
     )
     {
         _fiksIOSettings = fiksIOSettings;
@@ -51,9 +52,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         _maskinportenClient = maskinportenClient;
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
         _fiksIoClientOverride = fiksIoClientOverride;
-        _resiliencePipeline = resiliencePipelineProvider.GetPipeline<FiksIOMessageResponse>(
-            FiksIOConstants.ResiliencePipelineId
-        );
+        _resiliencePipeline = resiliencePipeline;
 
         if (fiksIOSettings.CurrentValue is null)
             throw new FiksIOConfigurationException("Fiks IO has not been configured");
