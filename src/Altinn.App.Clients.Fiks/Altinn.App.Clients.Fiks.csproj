@@ -10,7 +10,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="KS.Fiks.Arkiv.Models.V1" Version="1.0.4"/>
-    <PackageReference Include="KS.Fiks.IO.Client" Version="5.0.2"/>
+    <PackageReference Include="KS.Fiks.IO.Client" Version="6.0.0"/>
     <PackageReference Include="Polly.Extensions" Version="8.5.2" />
   </ItemGroup>
 

@@ -1,3 +1,4 @@
+using KS.Fiks.Maskinporten.Client;
 using FiksMaskinportenToken = Ks.Fiks.Maskinporten.Client.MaskinportenToken;
 using IAltinnMaskinportenClient = Altinn.App.Core.Features.Maskinporten.IMaskinportenClient;
 using IFiksMaskinportenClient = Ks.Fiks.Maskinporten.Client.IMaskinportenClient;
@@ -21,6 +22,11 @@ internal sealed class FiksIOMaskinportenClient : IFiksMaskinportenClient
         return new FiksMaskinportenToken(token.Value, (int)expiresIn.TotalSeconds);
     }
 
+    public Task<FiksMaskinportenToken> GetAccessToken(TokenRequest tokenRequest)
+    {
+        return GetAccessToken([tokenRequest.Scopes]);
+    }
+
     public Task<FiksMaskinportenToken> GetAccessToken(string scopes)
     {
         return GetAccessToken([scopes]);
@@ -32,6 +38,24 @@ internal sealed class FiksIOMaskinportenClient : IFiksMaskinportenClient
     }
 
     public Task<FiksMaskinportenToken> GetDelegatedAccessToken(string consumerOrg, string scopes)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<FiksMaskinportenToken> GetDelegatedAccessTokenForAudience(
+        string consumerOrg,
+        string audience,
+        IEnumerable<string> scopes
+    )
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<FiksMaskinportenToken> GetDelegatedAccessTokenForAudience(
+        string consumerOrg,
+        string audience,
+        string scopes
+    )
     {
         throw new NotImplementedException();
     }

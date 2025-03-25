@@ -47,7 +47,7 @@ internal sealed class FiksArkivEventService : BackgroundService
             if (counter >= healthCheckInterval)
             {
                 counter = TimeSpan.Zero;
-                if (_fiksIOClient.IsHealthy() is false)
+                if (await _fiksIOClient.IsHealthy() is false)
                 {
                     _logger.LogError("FiksIO Client is unhealthy, reconnecting.");
                     await _fiksIOClient.Reconnect();
@@ -56,10 +56,10 @@ internal sealed class FiksArkivEventService : BackgroundService
         }
 
         _logger.LogInformation("Fiks Arkiv Service stopping");
-        _fiksIOClient.Dispose();
+        await _fiksIOClient.DisposeAsync();
     }
 
-    private async void MessageReceivedHandler(object? sender, FiksIOReceivedMessage receivedMessage)
+    private async Task MessageReceivedHandler(FiksIOReceivedMessage receivedMessage)
     {
         using Activity? mainActivity = _telemetry?.StartReceiveFiksActivity(
             receivedMessage.Message.MessageId,
@@ -95,7 +95,7 @@ internal sealed class FiksArkivEventService : BackgroundService
                 receivedMessage.Message.MessageId
             );
 
-            receivedMessage.Responder.Ack();
+            await receivedMessage.Responder.Ack();
         }
         catch (Exception e)
         {

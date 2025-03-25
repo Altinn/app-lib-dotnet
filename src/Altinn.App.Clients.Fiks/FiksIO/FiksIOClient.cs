@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
 using RabbitMQ.Client.Events;
+using ExternalFiksIOClient = KS.Fiks.IO.Client.FiksIOClient;
 using FiksResult = Altinn.App.Core.Features.Telemetry.Fiks.FiksResult;
 using IExternalFiksIOClient = KS.Fiks.IO.Client.IFiksIOClient;
 
@@ -33,7 +34,7 @@ internal sealed class FiksIOClient : IFiksIOClient
     private readonly ResiliencePipeline<FiksIOMessageResponse> _resiliencePipeline;
     private readonly IExternalFiksIOClient? _fiksIoClientOverride;
     private IExternalFiksIOClient? _fiksIoClient;
-    private EventHandler<FiksIOReceivedMessage>? _messageReceivedHandler;
+    private event Func<FiksIOReceivedMessage, Task>? _messageReceivedHandler;
     private readonly Telemetry? _telemetry;
 
     public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
@@ -93,13 +94,16 @@ internal sealed class FiksIOClient : IFiksIOClient
             FiksIOMessageResponse result = await _resiliencePipeline.ExecuteAsync(
                 async context =>
                 {
-                    if (_fiksIoClient is null || _fiksIoClient.IsOpen() is false)
+                    if (_fiksIoClient is null || await _fiksIoClient.IsOpenAsync() is false)
                         _fiksIoClient = await InitialiseFiksIOClient();
 
                     numAttempts += 1;
 
-                    // TODO: Pass context.CancellationToken onwards
-                    var externalResult = await _fiksIoClient.Send(externalRequest, externalAttachments);
+                    var externalResult = await _fiksIoClient.Send(
+                        externalRequest,
+                        externalAttachments,
+                        cancellationToken
+                    );
                     var result = new FiksIOMessageResponse(externalResult);
                     _logger.LogInformation("FiksIO message sent successfully: {MessageDetails}", result);
 
@@ -129,7 +133,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         }
     }
 
-    public async Task OnMessageReceived(EventHandler<FiksIOReceivedMessage> listener)
+    public async Task OnMessageReceived(Func<FiksIOReceivedMessage, Task> listener)
     {
         bool alreadySubscribed = _messageReceivedHandler is not null;
         _messageReceivedHandler = listener; // Always update the handler
@@ -143,18 +147,20 @@ internal sealed class FiksIOClient : IFiksIOClient
         }
         else
         {
-            SubscribeToEvents();
+            await SubscribeToEvents();
         }
     }
 
-    public bool IsHealthy()
+    public async Task<bool> IsHealthy()
     {
-        return _fiksIoClient?.IsOpen() ?? false;
+        if (_fiksIoClient is null)
+            return false;
+
+        return await _fiksIoClient.IsOpenAsync();
     }
 
     public async Task Reconnect()
     {
-        _fiksIoClient?.Dispose();
         await InitialiseFiksIOClient();
     }
 
@@ -179,22 +185,19 @@ internal sealed class FiksIOClient : IFiksIOClient
             kontoConfiguration: new KontoConfiguration(fiksIOSettings.AccountId, fiksIOSettings.AccountPrivateKey)
         );
 
-        if (_fiksIoClientOverride is not null)
-        {
-            _fiksIoClient = _fiksIoClientOverride;
-        }
-        else
-        {
-            _fiksIoClient?.Dispose();
-            _fiksIoClient = await KS.Fiks.IO.Client.FiksIOClient.CreateAsync(
+        if (_fiksIoClient is not null)
+            await _fiksIoClient.DisposeAsync();
+
+        _fiksIoClient =
+            _fiksIoClientOverride
+            ?? await ExternalFiksIOClient.CreateAsync(
                 configuration: fiksConfiguration,
                 maskinportenClient: new FiksIOMaskinportenClient(_maskinportenClient),
                 loggerFactory: _loggerFactory
             );
-        }
 
         if (_messageReceivedHandler is not null)
-            SubscribeToEvents();
+            await SubscribeToEvents();
 
         return _fiksIoClient;
     }
@@ -211,19 +214,26 @@ internal sealed class FiksIOClient : IFiksIOClient
         }
     }
 
-    private void SubscribeToEvents()
+    private async Task SubscribeToEvents()
     {
-        _fiksIoClient?.NewSubscription(MessageReceivedHandler, SubscriptionCancelledHandler);
+        if (_fiksIoClient is null)
+            return;
+
+        await _fiksIoClient.NewSubscriptionAsync(MessageReceivedHandler, SubscriptionCancelledHandler);
     }
 
-    private void MessageReceivedHandler(object? sender, MottattMeldingArgs eventArgs)
+    private async Task MessageReceivedHandler(MottattMeldingArgs eventArgs)
     {
-        _messageReceivedHandler?.Invoke(sender, new FiksIOReceivedMessage(eventArgs));
+        if (_messageReceivedHandler is null)
+            return;
+
+        await _messageReceivedHandler.Invoke(new FiksIOReceivedMessage(eventArgs));
     }
 
-    private void SubscriptionCancelledHandler(object? sender, ConsumerEventArgs eventArgs)
+    private Task SubscriptionCancelledHandler(ConsumerEventArgs eventArgs)
     {
         InitialiseFiksIOClient_NeverThrowsWrapper();
+        return Task.CompletedTask;
     }
 
     private EnvironmentConfiguration GetConfiguration(AppIdentifier appIdentifier)
@@ -243,14 +253,22 @@ internal sealed class FiksIOClient : IFiksIOClient
             );
     }
 
-    public void Dispose()
-    {
-        _fiksIoClient?.Dispose();
-    }
-
     private readonly record struct EnvironmentConfiguration(
         ApiConfiguration FiksApiConfiguration,
         string FiksAmqpHost,
         string FiksAmqpAppName
     );
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_fiksIoClientOverride is not null)
+        {
+            await _fiksIoClientOverride.DisposeAsync();
+        }
+
+        if (_fiksIoClient is not null)
+        {
+            await _fiksIoClient.DisposeAsync();
+        }
+    }
 }

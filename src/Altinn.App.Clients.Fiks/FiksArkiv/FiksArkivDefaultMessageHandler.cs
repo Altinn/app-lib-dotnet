@@ -85,7 +85,8 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
             MessageType: FiksArkivMeldingtype.ArkivmeldingOpprett,
             SendersReference: instanceId.InstanceGuid,
             MessageLifetime: TimeSpan.FromDays(2),
-            Payload: messagePayloads
+            Payload: messagePayloads,
+            CorrelationId: instance.Id
         );
     }
 
