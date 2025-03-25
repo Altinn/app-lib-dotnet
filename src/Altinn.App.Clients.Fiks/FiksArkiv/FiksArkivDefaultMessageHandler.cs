@@ -18,6 +18,7 @@ using KS.Fiks.ASiC_E;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using FiksResult = Altinn.App.Core.Features.Telemetry.Fiks.FiksResult;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
@@ -37,6 +38,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
 
     private ApplicationMetadata? _applicationMetadataCache;
     private readonly IHostEnvironment _hostEnvironment;
+    private readonly Telemetry? _telemetry;
 
     public FiksArkivDefaultMessageHandler(
         IOptions<FiksArkivSettings> fiksArkivSettings,
@@ -50,7 +52,8 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         InstanceDataUnitOfWorkInitializer instanceDataUnitOfWorkInitializer,
         ILayoutEvaluatorStateInitializer layoutStateInitializer,
         IEmailNotificationClient emailNotificationClient,
-        IHostEnvironment hostEnvironment
+        IHostEnvironment hostEnvironment,
+        Telemetry? telemetry = null
     )
     {
         _appMetadata = appMetadata;
@@ -65,6 +68,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         _layoutStateInitializer = layoutStateInitializer;
         _emailNotificationClient = emailNotificationClient;
         _hostEnvironment = hostEnvironment;
+        _telemetry = telemetry;
     }
 
     public async Task<FiksIOMessageRequest> CreateMessageRequest(string taskId, Instance instance)
@@ -89,6 +93,8 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
     {
         IReadOnlyList<DeserializationResult>? deserializedContent = await DeserializeContent(receivedMessage);
         bool isError = receivedMessage.IsErrorResponse || deserializedContent?.Any(x => x.IsErrorResponse) is true;
+
+        _telemetry?.RecordFiksMessageReceived(isError ? FiksResult.Error : FiksResult.Success);
 
         await (
             isError

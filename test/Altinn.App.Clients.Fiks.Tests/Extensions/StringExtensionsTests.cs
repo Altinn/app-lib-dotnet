@@ -39,9 +39,9 @@ public class StringExtensionsTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
-    public void DeserializeXml_NullOrEmptyInput_ReturnsNull(string input)
+    public void DeserializeXml_NullOrEmptyInput_ReturnsNull(string? input)
     {
-        var result = input.DeserializeXml<Arkivmelding>();
+        var result = input!.DeserializeXml<Arkivmelding>();
         Assert.Null(result);
     }
 
