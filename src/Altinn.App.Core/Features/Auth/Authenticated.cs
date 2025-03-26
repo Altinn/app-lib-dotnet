@@ -635,11 +635,11 @@ public abstract class Authenticated
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(tokenStr);
 
-        context.TokenIssuer = TokenIssuer.Altinn;
-        context.IsExchanged = true;
-
         context.ReadClaims(token);
 
+        context.TokenIssuer = context.OrgNoClaim.Exists ? TokenIssuer.Maskinporten : TokenIssuer.Altinn;
+        context.IsExchanged =
+            context.TokenIssuer == TokenIssuer.Maskinporten || context.TokenIssuer == TokenIssuer.IDporten;
         context.Scopes = context.ScopeClaim.IsValidString(out var scopeClaimValue)
             ? new Scopes(scopeClaimValue)
             : new Scopes(null);
@@ -723,6 +723,7 @@ public abstract class Authenticated
     )
     {
         public TokenClaim IssuerClaim = default;
+        public TokenClaim ActualIssuerClaim = default;
         public TokenClaim AuthLevelClaim = default;
         public TokenClaim AuthMethodClaim = default;
         public TokenClaim ScopeClaim = default;
@@ -818,6 +819,7 @@ public abstract class Authenticated
             foreach (var claim in token.Payload)
             {
                 TryAssign(claim, JwtClaimTypes.Issuer, ref IssuerClaim);
+                TryAssign(claim, "actual_iss", ref ActualIssuerClaim);
                 TryAssign(claim, AltinnCoreClaimTypes.AuthenticationLevel, ref AuthLevelClaim);
                 TryAssign(claim, AltinnCoreClaimTypes.AuthenticateMethod, ref AuthMethodClaim);
                 TryAssign(claim, JwtClaimTypes.Scope, ref ScopeClaim);
@@ -881,7 +883,13 @@ public abstract class Authenticated
         context.Scopes = context.ScopeClaim.IsValidString(out var scopeClaimValue)
             ? new Scopes(scopeClaimValue)
             : new Scopes(null);
-        context.IsInAltinnPortal = context.Scopes.HasScope("altinn:portal/enduser");
+        context.IsInAltinnPortal =
+            context.Scopes.HasScope("altinn:portal/enduser")
+            || (
+                context.ActualIssuerClaim.IsValidString(out var actualIssuer)
+                && actualIssuer == "altinn-test-tools"
+                && context.UserIdClaim.Exists
+            );
 
         context.ResolveIssuer();
 
