@@ -10,32 +10,28 @@ namespace Altinn.App.Core.Tests.Helpers;
 public class AllowedContributorsHelperTests
 {
     [Theory]
-    [InlineData(null, null, null, false, true)] // No allowed contributors, should be true
-    [InlineData("org:altinn", "altinn", 370194483, false, true)] // Matching org
-    [InlineData("org:altinn", "Altinn", 370194483, false, true)] // Matching org, case insensitive
-    [InlineData("org:altinn", "notAltinn", 370194483, false, false)] // Non-matching org
-    [InlineData("orgno:370194483", "altinn", 370194483, false, true)] // Matching orgNr
-    [InlineData("orgno:370194483", "altinn", 556750777, false, false)] // Non-matching orgNr
-    [InlineData("orgno:370194483", null, 370194483, false, true)] // Matching orgNr (not serviceowner)
-    [InlineData("orgno:370194483", null, 556750777, false, false)] // Non-matching orgNr (not serviceowner)
-    [InlineData("orgno:370194483", null, null, false, false)] // orgNr is null
-    [InlineData("org:altinn,orgno:370194483", "altinn", 370194483, false, true)] // Matching both
-    [InlineData("org:altinn,orgno:370194483", "altinn", 556750777, false, true)] // Matching org only
-    [InlineData("org:altinn,orgno:370194483", "notAltinn", 370194483, false, true)] // Matching orgNr only
-    [InlineData("org:altinn,orgno:370194483", "notAltinn", 556750777, false, false)] // Non-matching both
-    [InlineData("org:altinn,orgno:556750777", null, 556750777, true, true)] // Matching second rule
-    [InlineData("org:altinn,orgno:556750777", null, 556750777, false, true)] // Matching second rule
-    [InlineData("orgno:370194483", null, 370194483, true, true)] // Matching orgNr (as systemuser)
-    [InlineData("orgno:370194483", null, 556750777, true, false)] // Non-matching orgNr (as systemuser)
-    [InlineData("org:altinn", null, 370194483, true, false)] // Org (as systemuser)
-    [InlineData("app:owned", null, null, false, false)] // App owned, no matching
-    [InlineData("app:owned", "org:altinn", 370194483, false, false)] // App owned, matching both
-    [InlineData("app:owned", null, 370194483, false, false)] // App owned, matching orgNr
+    [InlineData(null, null, null, true)] // No allowed contributors, should be true
+    [InlineData("org:altinn", "altinn", 370194483, true)] // Matching service owner
+    [InlineData("org:altinn", "Altinn", 370194483, true)] // Matching service owner, case insensitive
+    [InlineData("org:altinn", null, null, false)] // No match
+    [InlineData("org:altinn", "notAltinn", 370194483, false)] // Different service owner
+    [InlineData("orgno:370194483", "altinn", 370194483, true)] // Matching service owner orgNr
+    [InlineData("orgno:370194483", "altinn", 556750777, false)] // Non-matching service owner orgNr
+    [InlineData("orgno:370194483", null, 370194483, false)] // Matching orgNr (not serviceowner)
+    [InlineData("orgno:370194483", null, 556750777, false)] // Non-matching orgNr (not serviceowner)
+    [InlineData("orgno:370194483", null, null, false)] // No match
+    [InlineData("org:altinn,orgno:370194483", "altinn", 370194483, true)] // Matches service owner name
+    [InlineData("org:altinn,orgno:370194483", "altinn", 556750777, true)] // Matches service owner name (different org nr, will not actually happen)
+    [InlineData("org:altinn,orgno:370194483", "notAltinn", 370194483, true)] // Different service owner name, but matching service owner org nr (should not actually happen)
+    [InlineData("org:altinn,orgno:370194483", "notAltinn", 556750777, false)] // Different service owner
+    [InlineData("org:altinn,orgno:556750777", null, 556750777, false)] // Matching orgNr (not serviceowner)
+    [InlineData("app:owned", null, null, false)] // App owned, no matching
+    [InlineData("app:owned", "org:altinn", 370194483, false)] // App owned, matching both
+    [InlineData("app:owned", null, 370194483, false)] // App owned, matching orgNr
     public void IsValidContributor_ShouldReturnExpectedResult(
         string? allowedContributors,
         string? org,
         int? orgNr,
-        bool isSystemUser,
         bool expectedResult
     )
     {
@@ -44,18 +40,15 @@ public class AllowedContributorsHelperTests
         {
             AllowedContributers = allowedContributors?.Split(',')?.ToList() ?? new List<string>(),
         };
-        Authenticated auth = (org, orgNr, isSystemUser) switch
+        Authenticated auth = (org, orgNr) switch
         {
-            (null, null, _) => TestAuthentication.GetNoneAuthentication(),
-            (string orgName, int orgNo, _) => TestAuthentication.GetServiceOwnerAuthentication(
+            (null, null) => TestAuthentication.GetNoneAuthentication(),
+            (null, int orgNo) => TestAuthentication.GetOrgAuthentication(
+                orgNumber: orgNo.ToString(CultureInfo.InvariantCulture)
+            ),
+            (string orgName, int orgNo) => TestAuthentication.GetServiceOwnerAuthentication(
                 orgNumber: orgNo.ToString(CultureInfo.InvariantCulture),
                 org: orgName
-            ),
-            (null, int orgNumber, bool systemUser) when !systemUser => TestAuthentication.GetOrgAuthentication(
-                orgNumber.ToString(CultureInfo.InvariantCulture)
-            ),
-            (null, int orgNumber, bool systemUser) when systemUser => TestAuthentication.GetSystemUserAuthentication(
-                systemUserOrgNumber: orgNumber.ToString(CultureInfo.InvariantCulture)
             ),
             _ => throw new Exception("Unhandled case"),
         };
