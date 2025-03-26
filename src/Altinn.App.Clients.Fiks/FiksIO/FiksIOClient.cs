@@ -40,8 +40,7 @@ internal sealed class FiksIOClient : IFiksIOClient
     public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
 
     public FiksIOClient(
-        [FromKeyedServices(FiksIOConstants.ResiliencePipelineId)]
-            ResiliencePipeline<FiksIOMessageResponse> resiliencePipeline,
+        IServiceProvider serviceProvider,
         IOptionsMonitor<FiksIOSettings> fiksIOSettings,
         IWebHostEnvironment env,
         IAppMetadata appMetadata,
@@ -58,7 +57,13 @@ internal sealed class FiksIOClient : IFiksIOClient
         _maskinportenClient = maskinportenClient;
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
         _fiksIoClientOverride = fiksIoClientOverride;
-        _resiliencePipeline = resiliencePipeline;
+        _resiliencePipeline =
+            serviceProvider.GetKeyedService<ResiliencePipeline<FiksIOMessageResponse>>(
+                FiksIOConstants.ResiliencePipelineId
+            )
+            ?? serviceProvider.GetRequiredKeyedService<ResiliencePipeline<FiksIOMessageResponse>>(
+                FiksIOConstants.DefaultResiliencePipelineId
+            );
         _telemetry = telemetry;
 
         if (fiksIOSettings.CurrentValue is null)

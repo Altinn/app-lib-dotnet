@@ -74,7 +74,7 @@ public sealed record FiksArkivAutoSendSettings
 /// <summary>
 /// Represents the settings for a Fiks Arkiv recipient.
 /// </summary>
-public sealed class FiksArkivRecipientSettings
+public sealed record FiksArkivRecipientSettings
 {
     /// <summary>
     /// The account ID of the recipient.
@@ -92,7 +92,7 @@ public sealed class FiksArkivRecipientSettings
 /// <summary>
 /// Represents the settings for a Fiks Arkiv recipient data model binding.
 /// </summary>
-public sealed class FiksArkivDataModelBindingSettings
+public sealed record FiksArkivDataModelBindingSettings
 {
     /// <summary>
     /// The data type of the binding (e.g. `Model`)

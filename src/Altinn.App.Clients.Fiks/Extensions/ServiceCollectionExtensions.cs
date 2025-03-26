@@ -104,14 +104,21 @@ public static class ServiceCollectionExtensions
     /// <param name="configSectionPath">Configuration section path.</param>
     public static IServiceCollection ConfigureFiksArkiv(this IServiceCollection services, string configSectionPath)
     {
-        services.AddOptions<FiksArkivSettings>().BindConfiguration(configSectionPath);
+        services
+            .AddOptions<FiksArkivSettings>()
+            .Configure(options =>
+            {
+                options.AutoSend = null;
+                options.ErrorHandling = null;
+            })
+            .BindConfiguration(configSectionPath);
         return services;
     }
 
     private static IServiceCollection AddDefaultFiksIOResiliencePipeline(this IServiceCollection services)
     {
         services.AddResiliencePipeline<string, FiksIOMessageResponse>(
-            FiksIOConstants.ResiliencePipelineId,
+            FiksIOConstants.DefaultResiliencePipelineId,
             (builder, context) =>
             {
                 var logger = context.ServiceProvider.GetRequiredService<ILogger<FiksIOClient>>();
@@ -173,10 +180,5 @@ public static class ServiceCollectionExtensions
 
             return true;
         }
-    }
-
-    internal static IEnumerable<ServiceDescriptor> GetResiliencePipelinesDescriptors(this IServiceCollection services)
-    {
-        return services.Where(d => d is { IsKeyedService: true, ServiceKey: FiksIOConstants.ResiliencePipelineId });
     }
 }
