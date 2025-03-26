@@ -7645,10 +7645,6 @@
         "additionalProperties": false,
         "description": "Contains details about an organisation"
       },
-      "OrganisationNumber": {
-        "type": "object",
-        "additionalProperties": false
-      },
       "PartyTypesAllowed": {
         "type": "object",
         "properties": {
@@ -8091,7 +8087,9 @@
             "nullable": true
           },
           "actionOnBehalfOf": {
-            "$ref": "#/components/schemas/OrganisationNumber"
+            "type": "string",
+            "description": "The organisation number of the party the user is acting on behalf of",
+            "nullable": true
           }
         },
         "additionalProperties": false,
@@ -8461,7 +8459,9 @@
             "nullable": true
           },
           "onBehalfOf": {
-            "$ref": "#/components/schemas/OrganisationNumber"
+            "type": "string",
+            "description": "The organisation number of the party the user is acting on behalf of",
+            "nullable": true
           }
         },
         "additionalProperties": false,
