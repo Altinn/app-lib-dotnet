@@ -33,6 +33,8 @@ public sealed record MaskinportenSettings
     [JsonPropertyName("jwk")]
     public JwkWrapper? Jwk { get; set; }
 
+    public IDictionary<string, JwkWrapper> Test { get; }
+
     /// <summary>
     /// The private key used to authenticate with Maskinporten, in Base64 encoded JWK format.
     /// </summary>

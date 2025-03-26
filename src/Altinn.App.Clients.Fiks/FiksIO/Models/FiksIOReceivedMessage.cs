@@ -167,17 +167,17 @@ public sealed record FiksIOMessageResponder
     /// <summary>
     /// Respond to the message without a payload.
     /// </summary>
-    /// <param name="meldingType">The message type to send.</param>
+    /// <param name="messageType">The message type to send.</param>
     /// <param name="sendersReference">Your reference.</param>
     /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <returns></returns>
     public async Task<FiksIOMessageResponse> Respond(
-        string meldingType,
+        string messageType,
         Guid? sendersReference = null,
         CancellationToken cancellationToken = default
     )
     {
-        var response = await _svarSender.Svar(meldingType, sendersReference, cancellationToken);
+        var response = await _svarSender.Svar(messageType, sendersReference, cancellationToken);
         return new FiksIOMessageResponse(response);
     }
 
