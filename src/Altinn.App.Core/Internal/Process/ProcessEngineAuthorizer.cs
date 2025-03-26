@@ -1,8 +1,5 @@
-﻿using System.Text.Json;
-using Altinn.App.Core.Features.Auth;
+﻿using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.Auth;
-using Altinn.App.Core.Internal.Process.Elements;
-using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
@@ -61,23 +58,27 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
         // When no action is provided we check if the user is authorized for at least one of the actions that allow process next for the current task type.
         string[] actionsThatAllowProcessNextForTaskType = GetActionsThatAllowProcessNextForTaskType(altinnTaskType);
 
-        List<AltinnAction> altinnActions = actionsThatAllowProcessNextForTaskType
-            .Select(actionName => new AltinnAction { ActionType = ActionType.ProcessAction, Value = actionName })
-            .ToList();
+        var atLeastOneActionAuthorized = false;
+        foreach (string actionToBeChecked in actionsThatAllowProcessNextForTaskType)
+        {
+            bool actionIsAuthorized = await _authorizationService.AuthorizeAction(
+                new AppIdentifier(instance.Org, instance.AppId),
+                new InstanceIdentifier(instance),
+                _httpContext.User,
+                actionToBeChecked,
+                currentTaskId
+            );
 
-        List<UserAction> authorizeActionsResult = await _authorizationService.AuthorizeActions(
-            instance,
-            _httpContext.User,
-            altinnActions
-        );
+            if (actionIsAuthorized)
+            {
+                atLeastOneActionAuthorized = true;
+                break;
+            }
+        }
 
-        bool isProcessNextAllowed = authorizeActionsResult.Any(x => x.Authorized);
+        _logger.LogInformation($"Process next authorization check: {atLeastOneActionAuthorized}.");
 
-        _logger.LogInformation(
-            $"Process next authorization check: {isProcessNextAllowed}. Per action result: {JsonSerializer.Serialize(authorizeActionsResult)}"
-        );
-
-        return isProcessNextAllowed;
+        return atLeastOneActionAuthorized;
     }
 
     private HttpContext _httpContext =>
@@ -86,14 +87,16 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
     /// <summary>
     /// Get all actions that allow process next for the given task type. Meant to be used to authorize the process next when no action is provided.
     /// </summary>
+    /// <remarks>To allow process next for a custom action, user needs to have access to an action with the same name as the task type, or alternatively 'write', in the policy.</remarks>
     private static string[] GetActionsThatAllowProcessNextForTaskType(string taskType)
     {
         return taskType switch
         {
+            "data" or "feedback" => ["write"],
             "payment" => ["pay", "write"],
             "confirmation" => ["confirm"],
             "signing" => ["sign", "write"],
-            _ => ["write"],
+            _ => [taskType, "write"],
         };
     }
 }
