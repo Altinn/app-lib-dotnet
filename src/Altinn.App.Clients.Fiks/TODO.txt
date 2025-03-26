@@ -1,8 +1,15 @@
 [General]
-- Telemetry
 
 [Fiks Arkiv]
 Tests to write:
+- The client itself
+- Message handler
+    1. Generation of message
+    2. Parsing of incoming messages
+- Event service
+- Service task
+- Validation service??
+- ArchiveDocumentsWrapper logic
 - FiksArkivSettings.AutoSend.Recipient
     1. Guid
     2. Simple data path
@@ -10,11 +17,11 @@ Tests to write:
 - IFiksArkivSettings in general
     - Specifically DataType props
     - Required vs optional formdoc/attachments
-- IFiksArkivSetupBuilder
 - Unique filenames for attachments
 
 [FiksIO]
 Tests to write:
-- FiksIOSettings
-- FiksIOSetupBuilder
+- The client itself
+- Model wrappers/conversion logic
+- Model message responders
 - FiksIOMaskinportenClient
