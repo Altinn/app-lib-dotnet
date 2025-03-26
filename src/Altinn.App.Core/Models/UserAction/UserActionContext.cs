@@ -19,19 +19,22 @@ public class UserActionContext
     /// <param name="actionMetadata"></param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <param name="authentication">Information about the authenticated party</param>
+    /// <param name="onBehalfOf">The organisation number of the party the user is acting on behalf of</param>
     public UserActionContext(
         IInstanceDataMutator dataMutator,
         int? userId,
         string? buttonId = null,
         Dictionary<string, string>? actionMetadata = null,
         string? language = null,
-        Authenticated? authentication = null
+        Authenticated? authentication = null,
+        OrganisationNumber? onBehalfOf = null
     )
     {
         Instance = dataMutator.Instance;
         DataMutator = dataMutator;
         _userId = userId;
         Authentication = authentication;
+        OnBehalfOf = onBehalfOf;
         ButtonId = buttonId;
         ActionMetadata = actionMetadata ?? [];
         Language = language;
@@ -89,6 +92,11 @@ public class UserActionContext
             Authenticated.SelfIdentifiedUser selfIdentifiedUser => selfIdentifiedUser.UserId,
             _ => null,
         };
+
+    /// <summary>
+    /// The organisation number of the party the user is acting on behalf of
+    /// </summary>
+    public OrganisationNumber? OnBehalfOf { get; }
 
     /// <summary>
     /// Information about the authenticated party

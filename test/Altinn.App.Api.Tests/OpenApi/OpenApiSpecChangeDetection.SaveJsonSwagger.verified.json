@@ -7645,6 +7645,10 @@
         "additionalProperties": false,
         "description": "Contains details about an organisation"
       },
+      "OrganisationNumber": {
+        "type": "object",
+        "additionalProperties": false
+      },
       "PartyTypesAllowed": {
         "type": "object",
         "properties": {
@@ -8085,6 +8089,9 @@
             "type": "string",
             "description": "Action performed",
             "nullable": true
+          },
+          "actionOnBehalfOf": {
+            "$ref": "#/components/schemas/OrganisationNumber"
           }
         },
         "additionalProperties": false,
@@ -8452,6 +8459,9 @@
             },
             "description": "Ignored validators that should not be evauated as part of this action",
             "nullable": true
+          },
+          "onBehalfOf": {
+            "$ref": "#/components/schemas/OrganisationNumber"
           }
         },
         "additionalProperties": false,

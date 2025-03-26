@@ -2178,12 +2178,19 @@
         },
         "additionalProperties": {}
       },
+      "OrganisationNumber": {
+        "type": "object",
+        "additionalProperties": false
+      },
       "ProcessNext": {
         "type": "object",
         "properties": {
           "action": {
             "type": "string",
             "nullable": true
+          },
+          "actionOnBehalfOf": {
+            "$ref": "#/components/schemas/OrganisationNumber"
           }
         },
         "additionalProperties": false

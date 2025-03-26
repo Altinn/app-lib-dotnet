@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Models;
 
 namespace Altinn.App.Api.Models;
 
@@ -30,4 +31,10 @@ public class UserActionRequest
     /// </summary>
     [JsonPropertyName("ignoredValidators")]
     public List<string>? IgnoredValidators { get; set; }
+
+    /// <summary>
+    /// The organisation number of the party the user is acting on behalf of
+    /// </summary>
+    [JsonPropertyName("onBehalfOf")]
+    public OrganisationNumber? OnBehalfOf { get; set; }
 }

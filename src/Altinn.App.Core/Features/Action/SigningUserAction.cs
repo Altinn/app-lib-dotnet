@@ -15,7 +15,6 @@ using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.Result;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Profile.Models;
-using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
@@ -213,13 +212,12 @@ internal class SigningUserAction : IUserAction
             case Authenticated.User user:
             {
                 UserProfile userProfile = await user.LookupProfile();
-                Party orgProfile = await user.LookupSelectedParty();
 
                 return new Signee
                 {
                     UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
                     PersonNumber = userProfile.Party.SSN,
-                    OrganisationNumber = orgProfile.OrgNumber,
+                    OrganisationNumber = context.OnBehalfOf?.Get(OrganisationNumberFormat.Local),
                 };
             }
             case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
