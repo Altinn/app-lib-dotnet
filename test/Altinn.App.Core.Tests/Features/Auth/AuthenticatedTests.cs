@@ -1,6 +1,5 @@
 namespace Altinn.App.Core.Tests.Features.Auth;
 
-using System.Buffers.Text;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO.Hashing;
@@ -133,7 +132,7 @@ public class AuthenticatedTests
         var exp = jwtToken.Payload.Exp;
         Assert.NotNull(exp);
         var expiryDateTime = DateTimeOffset.FromUnixTimeSeconds(exp.Value);
-        // Assert.True(expiryDateTime < DateTimeOffset.UtcNow, "Tokens used for testing should be expired");
+        Assert.True(expiryDateTime < DateTimeOffset.UtcNow, "Tokens used for testing should be expired");
 
         if (!succeeds)
         {
@@ -181,7 +180,9 @@ public class AuthenticatedTests
                 new
                 {
                     Description = description,
+                    AuthType = auth.GetType().FullName,
                     Auth = auth,
+                    Jwt = (Dictionary<string, object>)jwtToken.Payload,
                     Details = details,
                 }
             )
