@@ -27,7 +27,7 @@ public class UserActionContext
         Dictionary<string, string>? actionMetadata = null,
         string? language = null,
         Authenticated? authentication = null,
-        OrganisationNumber? onBehalfOf = null
+        string? onBehalfOf = null
     )
     {
         Instance = dataMutator.Instance;
@@ -96,7 +96,7 @@ public class UserActionContext
     /// <summary>
     /// The organisation number of the party the user is acting on behalf of
     /// </summary>
-    public OrganisationNumber? OnBehalfOf { get; }
+    public string? OnBehalfOf { get; }
 
     /// <summary>
     /// Information about the authenticated party

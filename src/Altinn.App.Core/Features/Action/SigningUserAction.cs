@@ -217,7 +217,7 @@ internal class SigningUserAction : IUserAction
                 {
                     UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
                     PersonNumber = userProfile.Party.SSN,
-                    OrganisationNumber = context.OnBehalfOf?.Get(OrganisationNumberFormat.Local),
+                    OrganisationNumber = context.OnBehalfOf,
                 };
             }
             case Authenticated.SelfIdentifiedUser selfIdentifiedUser:

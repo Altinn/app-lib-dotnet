@@ -36,5 +36,5 @@ public class UserActionRequest
     /// The organisation number of the party the user is acting on behalf of
     /// </summary>
     [JsonPropertyName("onBehalfOf")]
-    public OrganisationNumber? OnBehalfOf { get; set; }
+    public string? OnBehalfOf { get; set; }
 }

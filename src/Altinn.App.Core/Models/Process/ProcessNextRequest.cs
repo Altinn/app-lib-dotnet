@@ -26,7 +26,7 @@ public class ProcessNextRequest
     /// <summary>
     /// The organisation number of the party the user is acting on behalf of
     /// </summary>
-    public OrganisationNumber? ActionOnBehalfOf { get; set; }
+    public string? ActionOnBehalfOf { get; set; }
 
     /// <summary>
     /// The language the user sent with process/next (not required)
