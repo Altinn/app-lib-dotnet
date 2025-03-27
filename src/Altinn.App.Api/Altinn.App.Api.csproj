@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Altinn.App.Core\Altinn.App.Core.csproj" />
+    <ProjectReference Include="../Altinn.App.Core/Altinn.App.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

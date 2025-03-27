@@ -27,21 +27,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Altinn.App.Api\Altinn.App.Api.csproj" />
+    <ProjectReference Include="../../src/Altinn.App.Api/Altinn.App.Api.csproj" />
 
-    <!-- <ProjectReference Include="..\..\src\Altinn.App.Api\Altinn.App.Api.csproj">
-      <CopyToOutputDirectory>lib\$(TargetFramework)\*.xml</CopyToOutputDirectory>
+    <!-- <ProjectReference Include="../../src/Altinn.App.Api/Altinn.App.Api.csproj">
+      <CopyToOutputDirectory>lib/$(TargetFramework)/*.xml</CopyToOutputDirectory>
     </ProjectReference> -->
-    <ProjectReference Include="..\Altinn.App.Common.Tests\Altinn.App.Common.Tests.csproj" />
+    <ProjectReference Include="../Altinn.App.Common.Tests/Altinn.App.Common.Tests.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="../Shared/*.cs" />
 
-    <None Include="../Shared/TestResources/**">
+    <Content Include="../Shared/TestResources/**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <LinkBase>/</LinkBase>
       <Link>/%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </None>
+    </Content>
   </ItemGroup>
 </Project>

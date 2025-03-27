@@ -22,8 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Altinn.App.Core\Altinn.App.Core.csproj" />
-    <ProjectReference Include="..\..\src\Altinn.App.Api\Altinn.App.Api.csproj" />
+    <ProjectReference Include="../../src/Altinn.App.Core/Altinn.App.Core.csproj" />
+    <ProjectReference Include="../../src/Altinn.App.Api/Altinn.App.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>
