@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Clients.Fiks.Constants;
+using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
@@ -61,10 +62,7 @@ internal sealed record TestFixture(
         App.Services.GetRequiredService<IFiksArkivMessageHandler>();
     public IFiksArkivServiceTask FiksArkivServiceTask => App.Services.GetRequiredService<IFiksArkivServiceTask>();
     public ResiliencePipeline<FiksIOMessageResponse> FiksIOResiliencePipeline =>
-        App.Services.GetKeyedService<ResiliencePipeline<FiksIOMessageResponse>>(FiksIOConstants.ResiliencePipelineId)
-        ?? App.Services.GetRequiredKeyedService<ResiliencePipeline<FiksIOMessageResponse>>(
-            FiksIOConstants.DefaultResiliencePipelineId
-        );
+        App.Services.ResolveResiliencePipeline();
 
     private static JsonSerializerOptions _jsonSerializerOptions =>
         new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };

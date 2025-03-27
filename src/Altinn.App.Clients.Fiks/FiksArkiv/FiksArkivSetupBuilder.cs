@@ -51,7 +51,10 @@ internal sealed class FiksArkivSetupBuilder(IServiceCollection services) : IFiks
         Action<ResiliencePipelineBuilder<FiksIOMessageResponse>, AddResiliencePipelineContext<string>> configure
     )
     {
-        services.AddResiliencePipeline<string, FiksIOMessageResponse>(FiksIOConstants.ResiliencePipelineId, configure);
+        services.AddResiliencePipeline<string, FiksIOMessageResponse>(
+            FiksIOConstants.UserDefinedResiliencePipelineId,
+            configure
+        );
 
         return this;
     }

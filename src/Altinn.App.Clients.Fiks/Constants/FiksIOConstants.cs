@@ -8,9 +8,9 @@ public static class FiksIOConstants
     /// <summary>
     /// The ID for the user-configurable resilience pipeline (retry strategy).
     /// </summary>
-    public const string ResiliencePipelineId = "FiksIOResiliencePipeline";
+    public const string UserDefinedResiliencePipelineId = "FiksIOResiliencePipeline";
 
-    internal const string DefaultResiliencePipelineId = "DefaultFiksIOResiliencePolicy";
+    internal const string DefaultResiliencePipelineId = "DefaultFiksIOResiliencePipeline";
     internal const string MessageRequestPropertyKey = "FiksIOMessageRequest";
 
     internal static class ErrorStubs

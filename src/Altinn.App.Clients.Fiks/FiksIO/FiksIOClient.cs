@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Exceptions;
+using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Maskinporten;
@@ -57,13 +58,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         _maskinportenClient = maskinportenClient;
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
         _fiksIoClientOverride = fiksIoClientOverride;
-        _resiliencePipeline =
-            serviceProvider.GetKeyedService<ResiliencePipeline<FiksIOMessageResponse>>(
-                FiksIOConstants.ResiliencePipelineId
-            )
-            ?? serviceProvider.GetRequiredKeyedService<ResiliencePipeline<FiksIOMessageResponse>>(
-                FiksIOConstants.DefaultResiliencePipelineId
-            );
+        _resiliencePipeline = serviceProvider.ResolveResiliencePipeline();
         _telemetry = telemetry;
 
         if (fiksIOSettings.CurrentValue is null)

@@ -28,7 +28,10 @@ internal sealed class FiksIOSetupBuilder(IServiceCollection services) : IFiksIOS
         Action<ResiliencePipelineBuilder<FiksIOMessageResponse>, AddResiliencePipelineContext<string>> configure
     )
     {
-        services.AddResiliencePipeline<string, FiksIOMessageResponse>(FiksIOConstants.ResiliencePipelineId, configure);
+        services.AddResiliencePipeline<string, FiksIOMessageResponse>(
+            FiksIOConstants.UserDefinedResiliencePipelineId,
+            configure
+        );
         return this;
     }
 
