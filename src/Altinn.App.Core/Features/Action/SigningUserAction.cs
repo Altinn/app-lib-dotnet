@@ -118,6 +118,14 @@ internal class SigningUserAction : IUserAction
             await GetSignee(context),
             dataElementSignatures
         );
+        _logger.LogInformation("--------------------------------------------------------------------");
+        _logger.LogInformation(
+            "Signing data elements for instance {Id} in task {TaskId} with data type {DataType} and signee orgnr {Orgnr}",
+            context.Instance.Id,
+            currentTask.Id,
+            signatureDataType,
+            signatureContext.Signee.OrganisationNumber
+        );
 
         try
         {
@@ -226,7 +234,7 @@ internal class SigningUserAction : IUserAction
                 return new Signee
                 {
                     SystemUserId = systemUser.SystemUserId[0],
-                    OrganisationNumber = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
+                    OrganisationNumber = context.OnBehalfOf,
                 };
             default:
                 throw new SigningException("Could not get signee");
