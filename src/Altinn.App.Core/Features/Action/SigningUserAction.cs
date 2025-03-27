@@ -120,11 +120,12 @@ internal class SigningUserAction : IUserAction
         );
         _logger.LogInformation("--------------------------------------------------------------------");
         _logger.LogInformation(
-            "Signing data elements for instance {Id} in task {TaskId} with data type {DataType} and signee orgnr {Orgnr}",
+            "Signing data elements for instance {Id} in task {TaskId} with data type {DataType} and signee orgnr {Orgnr}, with on behalf of {OnBehalfOf}",
             context.Instance.Id,
             currentTask.Id,
             signatureDataType,
-            signatureContext.Signee.OrganisationNumber
+            signatureContext.Signee.OrganisationNumber,
+            context.OnBehalfOf
         );
 
         try
@@ -213,14 +214,19 @@ internal class SigningUserAction : IUserAction
         return connectedDataElements;
     }
 
-    private static async Task<Signee> GetSignee(UserActionContext context)
+    private async Task<Signee> GetSignee(UserActionContext context)
     {
+        _logger.LogInformation("###########################################");
         switch (context.Authentication)
         {
             case Authenticated.User user:
             {
                 UserProfile userProfile = await user.LookupProfile();
-
+                _logger.LogInformation(
+                    "User profile retrieved for user {UserId} and on behalf of {OnBehalfOf}",
+                    userProfile.UserId,
+                    context.OnBehalfOf
+                );
                 return new Signee
                 {
                     UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
@@ -229,8 +235,18 @@ internal class SigningUserAction : IUserAction
                 };
             }
             case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
+                _logger.LogInformation(
+                    "Self identified user {UserId} with on behalf of {OnBehalfOf}",
+                    selfIdentifiedUser.UserId,
+                    context.OnBehalfOf
+                );
                 return new Signee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
             case Authenticated.SystemUser systemUser:
+                _logger.LogInformation(
+                    "System user {UserId} with on behalf of {OnBehalfOf}",
+                    systemUser.SystemUserId[0],
+                    context.OnBehalfOf
+                );
                 return new Signee
                 {
                     SystemUserId = systemUser.SystemUserId[0],
