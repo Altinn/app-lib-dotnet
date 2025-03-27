@@ -1,7 +1,10 @@
 using System.Diagnostics;
+using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -14,17 +17,20 @@ internal sealed class FiksArkivEventService : BackgroundService
     private readonly IFiksIOClient _fiksIOClient;
     private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
     private readonly Telemetry? _telemetry;
+    private readonly IInstanceClient _instanceClient;
 
     public FiksArkivEventService(
         IFiksIOClient fiksIOClient,
         IFiksArkivMessageHandler fiksArkivMessageHandler,
         ILogger<FiksArkivEventService> logger,
+        IInstanceClient instanceClient,
         Telemetry? telemetry = null
     )
     {
         _logger = logger;
         _fiksIOClient = fiksIOClient;
         _fiksArkivMessageHandler = fiksArkivMessageHandler;
+        _instanceClient = instanceClient;
         _telemetry = telemetry;
     }
 
@@ -77,11 +83,7 @@ internal sealed class FiksArkivEventService : BackgroundService
                 receivedMessage.Message.SendersReference
             );
 
-            // TODO: This is absolutely something that must be fixed, only disabling the warning for now, in order for CI pipe to run.
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-            // ! TODO: Must resolve Instance here! Waiting on Fiks IO protocol changes.
-            Instance instance = null!;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+            Instance instance = await ParseCorrelationId(receivedMessage);
 
             using Activity? innerActivity = _telemetry?.StartFiksMessageHandlerActivity(
                 instance,
@@ -101,6 +103,31 @@ internal sealed class FiksArkivEventService : BackgroundService
         {
             _logger.LogError(e, "Fiks Arkiv MessageReceivedHandler failed with error: {Error}", e.Message);
             mainActivity?.Errored(e);
+        }
+    }
+
+    private async Task<Instance> ParseCorrelationId(FiksIOReceivedMessage receivedMessage)
+    {
+        try
+        {
+            Debug.Assert(receivedMessage.Message.CorrelationId is not null); // This may or may not be true, but we're catching below
+
+            var appId = AppIdentifier.CreateFromUrl(receivedMessage.Message.CorrelationId);
+            var instanceId = InstanceIdentifier.CreateFromUrl(receivedMessage.Message.CorrelationId);
+
+            return await _instanceClient.GetInstance(
+                appId.App,
+                appId.Org,
+                instanceId.InstanceOwnerPartyId,
+                instanceId.InstanceGuid
+            );
+        }
+        catch (Exception e)
+        {
+            throw new FiksArkivException(
+                $"Error resolving Instance for received message. Correlation ID is most likely missing or malformed: {receivedMessage.Message.CorrelationId}",
+                e
+            );
         }
     }
 }

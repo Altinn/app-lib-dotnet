@@ -51,6 +51,11 @@ public sealed record FiksArkivAutoSendSettings
     public required string AfterTaskId { get; init; }
 
     /// <summary>
+    /// The data type of the receipt object.
+    /// </summary>
+    public required string ReceiptDataType { get; init; }
+
+    /// <summary>
     /// The recipient of the message.
     /// </summary>
     [JsonPropertyName("recipient")]

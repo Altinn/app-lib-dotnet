@@ -2,6 +2,7 @@ using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.AltinnCdn;
@@ -35,14 +36,16 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly ILayoutEvaluatorStateInitializer _layoutStateInitializer;
     private readonly IEmailNotificationClient _emailNotificationClient;
-
-    private ApplicationMetadata? _applicationMetadataCache;
     private readonly IHostEnvironment _hostEnvironment;
     private readonly Telemetry? _telemetry;
+    private readonly GeneralSettings _generalSettings;
+
+    private ApplicationMetadata? _applicationMetadataCache;
 
     public FiksArkivDefaultMessageHandler(
         IOptions<FiksArkivSettings> fiksArkivSettings,
         IOptions<FiksIOSettings> fiksIOSettings,
+        IOptions<GeneralSettings> generalSettings,
         IAppMetadata appMetadata,
         IDataClient dataClient,
         IAuthenticationContext authenticationContext,
@@ -63,6 +66,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         _authenticationContext = authenticationContext;
         _fiksArkivSettings = fiksArkivSettings.Value;
         _fiksIOSettings = fiksIOSettings.Value;
+        _generalSettings = generalSettings.Value;
         _logger = logger;
         _instanceDataUnitOfWorkInitializer = instanceDataUnitOfWorkInitializer;
         _layoutStateInitializer = layoutStateInitializer;
@@ -86,7 +90,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
             SendersReference: instanceId.InstanceGuid,
             MessageLifetime: TimeSpan.FromDays(2),
             Payload: messagePayloads,
-            CorrelationId: instance.Id
+            CorrelationId: GetCorrelationId(instance)
         );
     }
 
@@ -102,6 +106,12 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
                 ? HandleError(instance, receivedMessage, deserializedContent)
                 : HandleSuccess(instance, receivedMessage, deserializedContent)
         );
+    }
+
+    private string GetCorrelationId(Instance instance)
+    {
+        var baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
+        return $"{baseUrl}instances/{instance.Id}";
     }
 
     public async Task ValidateConfiguration()
@@ -141,6 +151,9 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
 
         if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.AfterTaskId))
             throw new FiksArkivConfigurationException("AfterTaskId configuration is required for auto-send.");
+
+        if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.ReceiptDataType))
+            throw new FiksArkivConfigurationException("ReceiptDataType configuration is required for auto-send.");
 
         if (
             _fiksArkivSettings.AutoSend.PrimaryDocument is null
@@ -296,5 +309,5 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
                 JournalEntryError = arkivmeldingKvittering.RegistreringFeilet;
             }
         }
-    };
+    }
 }

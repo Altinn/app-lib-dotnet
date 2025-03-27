@@ -12,7 +12,6 @@ using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Crypto.Configuration;
 using KS.Fiks.IO.Send.Client.Configuration;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

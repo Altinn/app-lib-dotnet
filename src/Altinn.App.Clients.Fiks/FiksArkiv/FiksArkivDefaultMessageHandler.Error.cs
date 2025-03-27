@@ -19,11 +19,6 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             receivedMessage.Message.MessageId,
             deserializedContent?.Select(x => x.StringResult) ?? ["Message contains no content."]
         );
-
-        // TODO: TEMP -- remove this
-        if (instance is null)
-            return;
-
         if (_fiksArkivSettings.ErrorHandling?.SendEmailNotifications is not true)
         {
             _logger.LogInformation("Error handling is disabled, skipping email notification.");
