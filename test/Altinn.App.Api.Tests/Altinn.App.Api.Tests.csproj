@@ -36,24 +36,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Altinn.App.Core.Tests" />
-  </ItemGroup>
+    <Compile Include="../Shared/*.cs" />
 
-  <ItemGroup>
-    <None Include="TestResources/**">
+    <None Include="../Shared/TestResources/**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <LinkBase>/</LinkBase>
       <Link>/%(RecursiveDir)%(Filename)%(Extension)</Link>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="jwtselfsignedcert.pfx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="JWTValidationCert.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="C:\dev\nugets\app-lib-dotnet\test\Altinn.App.Api.Tests\.editorconfig" />
   </ItemGroup>
 </Project>

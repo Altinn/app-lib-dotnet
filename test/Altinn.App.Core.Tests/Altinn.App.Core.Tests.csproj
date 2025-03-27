@@ -24,7 +24,6 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-4cv2-4hjh-77rx" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="Implementation\AppBaseTests.cs" />
     <Content Include="LayoutExpressions/**/*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
     <Watch Include="LayoutExpressions/**/*.json" />
     <Content Include="Features/Validators/**/*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
@@ -45,6 +44,16 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="secrets.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../Shared/*.cs" />
+
+    <None Include="../Shared/TestResources/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <LinkBase>/</LinkBase>
+      <Link>/%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -70,7 +79,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Altinn.App.Core\Altinn.App.Core.csproj" />
     <ProjectReference Include="..\Altinn.App.Common.Tests\Altinn.App.Common.Tests.csproj" />
-    <ProjectReference Include="..\Altinn.App.Api.Tests\Altinn.App.Api.Tests.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -95,12 +103,6 @@
     <Content Include="Implementation\TestData\**">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Watch Remove="Extensions\DictionaryExtensionsTests.cs" />
-    <Watch Remove="Internal\Pdf\PdfServiceTests.cs" />
-    <Watch Remove="Mocks\RequestInterceptor.cs" />
   </ItemGroup>
 
   <ItemGroup>
