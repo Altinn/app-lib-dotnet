@@ -36,7 +36,7 @@ public class ArkivmeldingExtensionsTests
             {
                 Journalaar = theDate.Year,
                 DokumentetsDato = theDate,
-                SendtDato = theDate,
+                // SendtDato = theDate,
                 Tittel = "journal-entry-title",
                 OffentligTittel = "journal-entry-public-title",
                 OpprettetAv = "journal-entry-creator",
