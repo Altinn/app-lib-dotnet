@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
@@ -65,32 +66,45 @@ internal sealed record TestFixture(
             FiksIOConstants.DefaultResiliencePipelineId
         );
 
+    private static JsonSerializerOptions _jsonSerializerOptions =>
+        new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
+
     public static TestFixture Create(
         Action<IServiceCollection> configureServices,
-        IDictionary<string, object>? configurationValues = null
+        IEnumerable<(string, object)>? configurationCollection = null,
+        bool useDefaultFiksIOSettings = true,
+        bool useDefaultFiksArkivSettings = true
     )
     {
         var builder = WebApplication.CreateBuilder();
         configureServices(builder.Services);
 
         // Default configuration values
-        Dictionary<string, object> config = new()
+        Dictionary<string, object> config = new();
+        if (useDefaultFiksIOSettings)
         {
-            ["FiksIOSettings"] = GetDefaultFiksIOSettings(),
-            ["FiksArkivSettings"] = GetDefaultFiksArkivSettings(),
-        };
+            config["FiksIOSettings"] = GetDefaultFiksIOSettings();
+        }
+        if (useDefaultFiksArkivSettings)
+        {
+            config["FiksArkivSettings"] = GetDefaultFiksArkivSettings();
+        }
 
         builder.Configuration.AddJsonStream(GetJsonStream(config));
 
         // User supplied configuration values
-        if (configurationValues is not null)
+        if (configurationCollection is not null)
         {
-            builder.Configuration.AddJsonStream(GetJsonStream(configurationValues));
+            foreach (var (configName, configValue) in configurationCollection)
+            {
+                builder.Configuration.AddJsonStream(
+                    GetJsonStream(new Dictionary<string, object> { [configName] = configValue })
+                );
+            }
         }
 
         // Mocks
         var webHostEnvironmentMock = new Mock<IWebHostEnvironment>();
-        // var hostEnvironmentMock = new Mock<IHostEnvironment>();
         var appMetadataMock = new Mock<IAppMetadata>();
         var maskinportenClientMock = new Mock<IMaskinportenClient>();
         var dataClientMock = new Mock<IDataClient>();
@@ -113,7 +127,6 @@ internal sealed record TestFixture(
         builder.Services.AddSingleton(partyClientMock.Object);
         builder.Services.AddSingleton(layoutStateInitializerMock.Object);
         builder.Services.AddSingleton(emailNotificationClientMock.Object);
-        // builder.Services.AddSingleton(hostEnvironmentMock.Object);
         builder.Services.AddSingleton(appResourcesMock.Object);
         builder.Services.AddSingleton(instanceClientMock.Object);
         builder.Services.AddSingleton(appModelMock.Object);
@@ -141,7 +154,7 @@ internal sealed record TestFixture(
 
     private static Stream GetJsonStream(IDictionary<string, object> data)
     {
-        var json = JsonSerializer.Serialize(data);
+        var json = JsonSerializer.Serialize(data, _jsonSerializerOptions);
         return new MemoryStream(Encoding.UTF8.GetBytes(json));
     }
 

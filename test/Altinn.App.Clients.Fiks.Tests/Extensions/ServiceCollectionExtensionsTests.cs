@@ -64,24 +64,29 @@ public class ServiceCollectionExtensionsTests
         Assert.Equal(1, retryOptions.MaxRetryAttempts);
     }
 
-    [Fact]
-    public void AddFiksIOClient_OverridesConfig_Delegate()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AddFiksIOClient_OverridesConfig_Delegate(bool provideDefaultSettings)
     {
         // Arrange
         var settingsOverride = TestFixture.GetRandomFiksIOSettings();
-        using var fixture = TestFixture.Create(services =>
-        {
-            services
-                .AddFiksIOClient()
-                .WithConfig(x =>
-                {
-                    x.AccountId = settingsOverride.AccountId;
-                    x.IntegrationId = settingsOverride.IntegrationId;
-                    x.IntegrationPassword = settingsOverride.IntegrationPassword;
-                    x.AccountPrivateKeyBase64 = settingsOverride.AccountPrivateKeyBase64;
-                    x.AsicePrivateKeyBase64 = settingsOverride.AsicePrivateKeyBase64;
-                });
-        });
+        using var fixture = TestFixture.Create(
+            services =>
+            {
+                services
+                    .AddFiksIOClient()
+                    .WithConfig(x =>
+                    {
+                        x.AccountId = settingsOverride.AccountId;
+                        x.IntegrationId = settingsOverride.IntegrationId;
+                        x.IntegrationPassword = settingsOverride.IntegrationPassword;
+                        x.AccountPrivateKeyBase64 = settingsOverride.AccountPrivateKeyBase64;
+                        x.AsicePrivateKeyBase64 = settingsOverride.AsicePrivateKeyBase64;
+                    });
+            },
+            useDefaultFiksIOSettings: provideDefaultSettings
+        );
 
         // Act
         var fiksIOSettings = fixture.FiksIOSettings;
@@ -91,8 +96,10 @@ public class ServiceCollectionExtensionsTests
         Assert.Equal(settingsOverride, fiksIOSettings);
     }
 
-    [Fact]
-    public void AddFiksIOClient_OverridesConfig_JsonPath()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AddFiksIOClient_OverridesConfig_JsonPath(bool provideDefaultSettings)
     {
         // Arrange
         var settingsOverride = TestFixture.GetRandomFiksIOSettings();
@@ -101,7 +108,8 @@ public class ServiceCollectionExtensionsTests
             {
                 services.AddFiksIOClient().WithConfig("SuperCustomFiksIOSettings");
             },
-            new Dictionary<string, object> { ["SuperCustomFiksIOSettings"] = settingsOverride }
+            [("SuperCustomFiksIOSettings", settingsOverride)],
+            useDefaultFiksIOSettings: provideDefaultSettings
         );
 
         // Act
@@ -176,43 +184,26 @@ public class ServiceCollectionExtensionsTests
         Assert.Equal(1, retryOptions.MaxRetryAttempts);
     }
 
-    [Fact]
-    public void AddFiksArkiv_OverridesFiksIOConfig_Delegate()
-    {
-        // Arrange
-        var settingsOverride = TestFixture.GetRandomFiksIOSettings();
-        using var fixture = TestFixture.Create(services =>
-            services
-                .AddFiksArkiv()
-                .WithFiksIOConfig(x =>
-                {
-                    x.AccountId = settingsOverride.AccountId;
-                    x.IntegrationId = settingsOverride.IntegrationId;
-                    x.IntegrationPassword = settingsOverride.IntegrationPassword;
-                    x.AccountPrivateKeyBase64 = settingsOverride.AccountPrivateKeyBase64;
-                    x.AsicePrivateKeyBase64 = settingsOverride.AsicePrivateKeyBase64;
-                })
-        );
-
-        // Act
-        var fiksIOSettings = fixture.FiksIOSettings;
-
-        // Assert
-        Assert.NotNull(fiksIOSettings);
-        Assert.Equal(settingsOverride, fiksIOSettings);
-    }
-
-    [Fact]
-    public void AddFiksArkiv_OverridesFiksIOConfig_JsonPath()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AddFiksArkiv_OverridesFiksIOConfig_Delegate(bool provideDefaultSettings)
     {
         // Arrange
         var settingsOverride = TestFixture.GetRandomFiksIOSettings();
         using var fixture = TestFixture.Create(
             services =>
-            {
-                services.AddFiksArkiv().WithFiksIOConfig("SuperCustomFiksIOSettings");
-            },
-            new Dictionary<string, object> { ["SuperCustomFiksIOSettings"] = settingsOverride }
+                services
+                    .AddFiksArkiv()
+                    .WithFiksIOConfig(x =>
+                    {
+                        x.AccountId = settingsOverride.AccountId;
+                        x.IntegrationId = settingsOverride.IntegrationId;
+                        x.IntegrationPassword = settingsOverride.IntegrationPassword;
+                        x.AccountPrivateKeyBase64 = settingsOverride.AccountPrivateKeyBase64;
+                        x.AsicePrivateKeyBase64 = settingsOverride.AsicePrivateKeyBase64;
+                    }),
+            useDefaultFiksIOSettings: provideDefaultSettings
         );
 
         // Act
@@ -223,19 +214,59 @@ public class ServiceCollectionExtensionsTests
         Assert.Equal(settingsOverride, fiksIOSettings);
     }
 
-    [Fact]
-    public void AddFiksArkiv_OverridesFiksArkivConfig_Delegate()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AddFiksArkiv_OverridesFiksIOConfig_JsonPath(bool provideDefaultSettings)
+    {
+        // Arrange
+        var settingsOverride1 = TestFixture.GetRandomFiksIOSettings();
+        settingsOverride1.AccountPrivateKeyBase64 = null!;
+        settingsOverride1.AsicePrivateKeyBase64 = null!;
+        settingsOverride1.IntegrationPassword = null!;
+
+        var settingsOverride2 = TestFixture.GetRandomFiksIOSettings();
+        settingsOverride2.IntegrationId = Guid.Empty;
+        settingsOverride2.AccountId = Guid.Empty;
+
+        using var fixture = TestFixture.Create(
+            services =>
+            {
+                services.AddFiksArkiv().WithFiksIOConfig("SuperCustomFiksIOSettings");
+            },
+            [("SuperCustomFiksIOSettings", settingsOverride1), ("SuperCustomFiksIOSettings", settingsOverride2)],
+            useDefaultFiksIOSettings: provideDefaultSettings
+        );
+
+        // Act
+        var fiksIOSettings = fixture.FiksIOSettings;
+
+        // Assert
+        Assert.NotNull(fiksIOSettings);
+        Assert.Equal(settingsOverride1.IntegrationId, fiksIOSettings.IntegrationId);
+        Assert.Equal(settingsOverride1.AccountId, fiksIOSettings.AccountId);
+        Assert.Equal(settingsOverride2.IntegrationPassword, fiksIOSettings.IntegrationPassword);
+        Assert.Equal(settingsOverride2.AccountPrivateKeyBase64, fiksIOSettings.AccountPrivateKeyBase64);
+        Assert.Equal(settingsOverride2.AsicePrivateKeyBase64, fiksIOSettings.AsicePrivateKeyBase64);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AddFiksArkiv_OverridesFiksArkivConfig_Delegate(bool provideDefaultSettings)
     {
         // Arrange
         var settingsOverride = TestFixture.GetRandomFiksArkivSettings();
-        using var fixture = TestFixture.Create(services =>
-            services
-                .AddFiksArkiv()
-                .WithFiksArkivConfig(x =>
-                {
-                    x.AutoSend = settingsOverride.AutoSend;
-                    x.ErrorHandling = settingsOverride.ErrorHandling;
-                })
+        using var fixture = TestFixture.Create(
+            services =>
+                services
+                    .AddFiksArkiv()
+                    .WithFiksArkivConfig(x =>
+                    {
+                        x.AutoSend = settingsOverride.AutoSend;
+                        x.ErrorHandling = settingsOverride.ErrorHandling;
+                    }),
+            useDefaultFiksArkivSettings: provideDefaultSettings
         );
 
         // Act
@@ -246,26 +277,46 @@ public class ServiceCollectionExtensionsTests
         Assert.Equal(settingsOverride, fiksArkivSettings);
     }
 
-    [Fact]
-    public void AddFiksArkiv_OverridesFiksArkivConfig_JsonPath()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AddFiksArkiv_OverridesFiksArkivConfig_JsonPath(bool provideDefaultSettings)
     {
         // Arrange
-        var settingsOverride = TestFixture.GetRandomFiksArkivSettings();
+        var errorHandlingOverride = TestFixture.GetRandomFiksArkivSettings();
+        errorHandlingOverride.AutoSend = null;
+        var autoSendOverride = TestFixture.GetRandomFiksArkivSettings();
+        autoSendOverride.ErrorHandling = null;
+
         using var fixture = TestFixture.Create(
             services => services.AddFiksArkiv().WithFiksArkivConfig("SuperCustomFiksArkivSettings"),
-            new Dictionary<string, object> { ["SuperCustomFiksArkivSettings"] = settingsOverride }
+            [
+                ("SuperCustomFiksArkivSettings", errorHandlingOverride),
+                ("SuperCustomFiksArkivSettings", autoSendOverride),
+            ],
+            useDefaultFiksArkivSettings: provideDefaultSettings
         );
 
         // Act
         var fiksArkivSettings = fixture.FiksArkivSettings;
 
         // Assert
-        Assert.NotNull(fiksArkivSettings);
-        Assert.NotNull(settingsOverride.AutoSend);
         Assert.NotNull(fiksArkivSettings.AutoSend);
-        Assert.Equivalent(settingsOverride.AutoSend.Attachments, fiksArkivSettings.AutoSend.Attachments);
-        Assert.Equal(settingsOverride.AutoSend.PrimaryDocument, fiksArkivSettings.AutoSend.PrimaryDocument);
-        Assert.Equal(settingsOverride.AutoSend.Recipient, fiksArkivSettings.AutoSend.Recipient);
+        Assert.NotNull(autoSendOverride.AutoSend);
+        Assert.Equivalent(autoSendOverride.AutoSend.Attachments, fiksArkivSettings.AutoSend.Attachments);
+        Assert.Equal(autoSendOverride.AutoSend.PrimaryDocument, fiksArkivSettings.AutoSend.PrimaryDocument);
+        Assert.Equal(autoSendOverride.AutoSend.Recipient, fiksArkivSettings.AutoSend.Recipient);
+
+        Assert.NotNull(fiksArkivSettings.ErrorHandling);
+        Assert.NotNull(errorHandlingOverride.ErrorHandling);
+        Assert.Equal(
+            errorHandlingOverride.ErrorHandling.SendEmailNotifications,
+            fiksArkivSettings.ErrorHandling.SendEmailNotifications
+        );
+        Assert.Equivalent(
+            errorHandlingOverride.ErrorHandling.EmailNotificationRecipients,
+            fiksArkivSettings.ErrorHandling.EmailNotificationRecipients
+        );
     }
 
     [Fact]
