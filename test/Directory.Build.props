@@ -17,8 +17,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Using Include="Altinn.App.Common.Tests" />
-    <Using Include="Altinn.App.Common.Tests.Auth" />
+    <Using Include="Altinn.App.Tests.Common" />
+    <Using Include="Altinn.App.Tests.Common.Auth" />
   </ItemGroup>
 
 </Project>

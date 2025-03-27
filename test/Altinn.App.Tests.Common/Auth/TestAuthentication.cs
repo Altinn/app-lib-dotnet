@@ -13,7 +13,7 @@ using AltinnCore.Authentication.Constants;
 using Xunit.Abstractions;
 using static Altinn.App.Core.Features.Auth.Authenticated;
 
-namespace Altinn.App.Common.Tests.Auth;
+namespace Altinn.App.Tests.Common.Auth;
 
 public enum AuthenticationTypes
 {

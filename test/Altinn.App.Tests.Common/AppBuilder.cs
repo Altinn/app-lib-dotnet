@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Altinn.App.Common.Tests;
+namespace Altinn.App.Tests.Common;
 
 public static class AppBuilder
 {

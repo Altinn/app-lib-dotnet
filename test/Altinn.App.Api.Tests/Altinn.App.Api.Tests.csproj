@@ -32,7 +32,7 @@
     <!-- <ProjectReference Include="../../src/Altinn.App.Api/Altinn.App.Api.csproj">
       <CopyToOutputDirectory>lib/$(TargetFramework)/*.xml</CopyToOutputDirectory>
     </ProjectReference> -->
-    <ProjectReference Include="../Altinn.App.Common.Tests/Altinn.App.Common.Tests.csproj" />
+    <ProjectReference Include="../Altinn.App.Tests.Common/Altinn.App.Tests.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

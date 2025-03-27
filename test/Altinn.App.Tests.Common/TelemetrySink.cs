@@ -9,9 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
-using static Altinn.App.Common.Tests.TelemetrySink;
+using static Altinn.App.Tests.Common.TelemetrySink;
 
-namespace Altinn.App.Common.Tests;
+namespace Altinn.App.Tests.Common;
 
 public static class TelemetrySinkDI
 {
