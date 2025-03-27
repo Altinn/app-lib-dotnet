@@ -46,13 +46,19 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
         // When an action is provided we only allow process next if that action is allowed.
         if (action is not null)
         {
-            return await _authorizationService.AuthorizeAction(
+            bool isPerformedActionAuthorized = await _authorizationService.AuthorizeAction(
                 new AppIdentifier(instance.Org, instance.AppId),
                 new InstanceIdentifier(instance),
                 _httpContext.User,
                 action,
                 currentTaskId
             );
+
+            _logger.LogInformation(
+                $"Process next was performed with action: {action}. Authorization result: {isPerformedActionAuthorized}."
+            );
+
+            return isPerformedActionAuthorized;
         }
 
         // When no action is provided we check if the user is authorized for at least one of the actions that allow process next for the current task type.
@@ -76,7 +82,9 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
             }
         }
 
-        _logger.LogInformation($"Process next authorization check: {isAnyActionAuthorized}.");
+        _logger.LogInformation(
+            $"Process next performed without an action. Authorizing based on task type. Result: {isAnyActionAuthorized}."
+        );
 
         return isAnyActionAuthorized;
     }
