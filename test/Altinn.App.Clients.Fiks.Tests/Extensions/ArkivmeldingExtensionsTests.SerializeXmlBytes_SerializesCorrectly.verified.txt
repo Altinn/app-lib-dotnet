@@ -41,6 +41,5 @@
       <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Journalført</beskrivelse>
     </journalstatus>
     <dokumentetsDato>2025-01-01</dokumentetsDato>
-    <sendtDato>2025-01-01T01:00:00+01:00</sendtDato>
   </registrering>
 </arkivmelding>
