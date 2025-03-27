@@ -18,6 +18,11 @@ public sealed record FiksIOMessageResponse
     public Guid? SendersReference => _sendtMelding.KlientMeldingId;
 
     /// <summary>
+    /// Correlation ID for the message.
+    /// </summary>
+    public string? CorrelationId => _sendtMelding.KlientKorrelasjonsId;
+
+    /// <summary>
     /// The message type (e.g. no.ks.fiks.arkiv.v1.arkivering.arkivmelding.opprett)
     /// </summary>
     public string MessageType => _sendtMelding.MeldingType;

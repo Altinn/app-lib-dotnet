@@ -1,3 +1,4 @@
+using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
@@ -39,12 +40,14 @@ internal sealed partial class FiksArkivDefaultMessageHandler
                 "Message contains multiple responses. This is unexpected and possibly warrants further investigation."
             );
 
-        // TODO: Persist receipt IDs in instance storage
-        // TODO: Present persisted data in custom receipt page?
         DeserializationResult? messageContent = deserializedContent?.FirstOrDefault();
         var caseFileReceipt = messageContent?.ReceiptResult?.CaseFileReceipt;
         var journalReceipt = messageContent?.ReceiptResult?.JournalEntryReceipt;
 
+        var receipt = FiksArkivReceipt.Create(caseFileReceipt, journalReceipt);
+        _logger.LogInformation("Receipt data received from Fiks message: {Receipt}", receipt);
+
+        // TODO: Store receipt data in storage
         // TODO: Send /complete notification?
 
         return;
