@@ -58,27 +58,27 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
         // When no action is provided we check if the user is authorized for at least one of the actions that allow process next for the current task type.
         string[] actionsThatAllowProcessNextForTaskType = GetActionsThatAllowProcessNextForTaskType(altinnTaskType);
 
-        var atLeastOneActionAuthorized = false;
-        foreach (string actionToBeChecked in actionsThatAllowProcessNextForTaskType)
+        var isAnyActionAuthorized = false;
+        foreach (string actionToAuthorize in actionsThatAllowProcessNextForTaskType)
         {
-            bool actionIsAuthorized = await _authorizationService.AuthorizeAction(
+            bool isActionAuthorized = await _authorizationService.AuthorizeAction(
                 new AppIdentifier(instance.Org, instance.AppId),
                 new InstanceIdentifier(instance),
                 _httpContext.User,
-                actionToBeChecked,
+                actionToAuthorize,
                 currentTaskId
             );
 
-            if (actionIsAuthorized)
+            if (isActionAuthorized)
             {
-                atLeastOneActionAuthorized = true;
+                isAnyActionAuthorized = true;
                 break;
             }
         }
 
-        _logger.LogInformation($"Process next authorization check: {atLeastOneActionAuthorized}.");
+        _logger.LogInformation($"Process next authorization check: {isAnyActionAuthorized}.");
 
-        return atLeastOneActionAuthorized;
+        return isAnyActionAuthorized;
     }
 
     private HttpContext _httpContext =>
