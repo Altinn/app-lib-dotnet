@@ -1,5 +1,4 @@
 using System.Globalization;
-using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.Platform.Storage.Interface.Models;
