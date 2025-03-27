@@ -16,6 +16,7 @@ using Altinn.App.Core.Models.Result;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
@@ -29,18 +30,21 @@ internal class SigningUserAction : IUserAction
     private readonly IProcessReader _processReader;
     private readonly IAppMetadata _appMetadata;
     private readonly ISigningReceiptService _signingReceiptService;
+    private readonly ISigningService _signingService;
     private readonly ILogger<SigningUserAction> _logger;
     private readonly ISignClient _signClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SigningUserAction"/> class
     /// </summary>
+    /// <param name="serviceProvider">The service provider</param>
     /// <param name="processReader">The process reader</param>
     /// <param name="signClient">The sign client</param>
     /// <param name="appMetadata">The application metadata</param>
     /// <param name="signingReceiptService">The signing receipt service</param>
     /// <param name="logger">The logger</param>
     public SigningUserAction(
+        IServiceProvider serviceProvider,
         IProcessReader processReader,
         ISignClient signClient,
         IAppMetadata appMetadata,
@@ -52,6 +56,7 @@ internal class SigningUserAction : IUserAction
         _signClient = signClient;
         _appMetadata = appMetadata;
         _signingReceiptService = signingReceiptService;
+        _signingService = serviceProvider.GetRequiredService<ISigningService>();
         _logger = logger;
     }
 
@@ -92,19 +97,22 @@ internal class SigningUserAction : IUserAction
         );
 
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        AltinnSignatureConfiguration? signatureConfiguration = currentTask
-            .ExtensionElements
-            ?.TaskExtension
-            ?.SignatureConfiguration;
-        List<string> dataTypeIds = signatureConfiguration?.DataTypesToSign ?? [];
-        List<DataType>? dataTypesToSign = appMetadata
-            .DataTypes?.Where(d => dataTypeIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase))
-            .ToList();
+        AltinnSignatureConfiguration signatureConfiguration =
+            currentTask.ExtensionElements?.TaskExtension?.SignatureConfiguration
+            ?? throw new ApplicationConfigException(
+                "Missing configuration for signing. Check that the task has a signature configuration and that the data types to sign are defined."
+            );
+        List<string> dataTypeIds = signatureConfiguration.DataTypesToSign ?? [];
+        List<DataType>? dataTypesToSign =
+            appMetadata.DataTypes?.Where(d => dataTypeIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase)).ToList()
+            ?? throw new ApplicationConfigException(
+                "Faulty configuration for signing task. Unable to data types to sign."
+            );
 
         string signatureDataType =
             GetDataTypeForSignature(currentTask, context.Instance.Data, dataTypesToSign)
             ?? throw new ApplicationConfigException(
-                "Missing configuration for signing. Check that the task has a signature configuration and that the data types to sign are defined."
+                "Faulty configuration for signing task. Unable to get data type for signature."
             );
 
         List<DataElementSignature>? dataElementSignatures = GetDataElementSignatures(
@@ -118,15 +126,22 @@ internal class SigningUserAction : IUserAction
             await GetSignee(context),
             dataElementSignatures
         );
-        _logger.LogInformation("--------------------------------------------------------------------");
-        _logger.LogInformation(
-            "Signing data elements for instance {Id} in task {TaskId} with data type {DataType} and signee orgnr {Orgnr}, with on behalf of {OnBehalfOf}",
-            context.Instance.Id,
-            currentTask.Id,
-            signatureDataType,
-            signatureContext.Signee.OrganisationNumber,
-            context.OnBehalfOf
-        );
+
+        if (!string.IsNullOrEmpty(context.OnBehalfOf))
+        {
+            var canSignOnbehalfOf = await HandleOnBehalfOf(context, signatureConfiguration);
+            if (!canSignOnbehalfOf)
+            {
+                return UserActionResult.FailureResult(
+                    error: new ActionError()
+                    {
+                        Code = "UnauthorizedOnBehalfOf",
+                        Message = "Unauthorized to sign on behalf of.",
+                    },
+                    errorType: ProcessErrorType.Unauthorized
+                );
+            }
+        }
 
         try
         {
@@ -175,6 +190,54 @@ internal class SigningUserAction : IUserAction
         return UserActionResult.SuccessResult();
     }
 
+    internal async Task<bool> HandleOnBehalfOf(
+        UserActionContext context,
+        AltinnSignatureConfiguration signatureConfiguration
+    )
+    {
+        if (context.OnBehalfOf == context.Instance.InstanceOwner.OrganisationNumber)
+        {
+            _logger.LogInformation("On behalf of the instance owner, no need to check for authorized organisations.");
+            return true;
+        }
+
+        int? userId = context.Authentication switch
+        {
+            Authenticated.User user => user.UserId,
+            Authenticated.SelfIdentifiedUser selfIdentifiedUser => selfIdentifiedUser.UserId,
+            _ => null,
+        };
+
+        if (userId is null)
+        {
+            _logger.LogWarning(
+                "Unsupported authentication type for signing on behalf of {OrganisationNumber}",
+                context.OnBehalfOf
+            );
+            return false;
+        }
+
+        // Fetch authorized organisation signees for the extracted user ID
+        var authorizedOrganisations = await _signingService.GetAuthorizedOrganisationSignees(
+            context.DataMutator,
+            signatureConfiguration,
+            userId.Value
+        );
+
+        bool isAuthorized = authorizedOrganisations.Any(o => o.OrgNumber == context.OnBehalfOf);
+
+        if (isAuthorized)
+        {
+            _logger.LogInformation("User is authorized to sign on behalf of {OrganisationNumber}", context.OnBehalfOf);
+        }
+        else
+        {
+            _logger.LogWarning("User is not authorized to sign on behalf of {OrganisationNumber}", context.OnBehalfOf);
+        }
+
+        return isAuthorized;
+    }
+
     private static string? GetDataTypeForSignature(
         ProcessTask currentTask,
         List<DataElement> dataElements,
@@ -196,7 +259,7 @@ internal class SigningUserAction : IUserAction
 
     private static List<DataElementSignature> GetDataElementSignatures(
         List<DataElement> dataElements,
-        List<DataType>? dataTypesToSign
+        List<DataType> dataTypesToSign
     )
     {
         var connectedDataElements = new List<DataElementSignature>();
