@@ -36,12 +36,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="../Shared/*.cs" />
-
-    <Content Include="../Shared/TestResources/**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <LinkBase>/</LinkBase>
-      <Link>/%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Content>
+    <Compile Include="../Altinn.App.Tests.Common/ModuleInitializer.cs" />
   </ItemGroup>
 </Project>
