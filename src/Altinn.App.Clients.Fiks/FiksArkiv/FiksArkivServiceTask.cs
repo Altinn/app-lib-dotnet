@@ -2,6 +2,7 @@ using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -44,14 +45,17 @@ internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask, IFiksArkivCo
 
     private bool IsEnabledForTask(string taskId) => _fiksArkivSettings.AutoSend?.AfterTaskId == taskId;
 
-    public Task ValidateConfiguration()
+    public async Task ValidateConfiguration(
+        IReadOnlyList<DataType> configuredDataTypes,
+        IReadOnlyList<ProcessTask> configuredProcessTasks
+    )
     {
-        if (_fiksArkivSettings.AutoSend is null)
-            return Task.CompletedTask;
+        await Task.CompletedTask;
 
-        if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend?.AfterTaskId))
-            throw new FiksArkivConfigurationException("AfterTaskId configuration is required for auto-send.");
+        // FiksArkivDefaultMessageHandler has already validated the settings
+        if (_fiksArkivMessageHandler is FiksArkivDefaultMessageHandler)
+            return;
 
-        return Task.CompletedTask;
+        _fiksArkivSettings.Validate(configuredDataTypes, configuredProcessTasks);
     }
 }

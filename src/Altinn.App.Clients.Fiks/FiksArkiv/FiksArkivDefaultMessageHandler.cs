@@ -9,6 +9,8 @@ using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -85,7 +87,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         var messagePayloads = await GenerateMessagePayloads(instance, recipient);
 
         return new FiksIOMessageRequest(
-            Recipient: recipient,
+            Recipient: recipient.AccountId,
             MessageType: FiksArkivMeldingtype.ArkivmeldingOpprett,
             SendersReference: instanceId.InstanceGuid,
             MessageLifetime: TimeSpan.FromDays(2),
@@ -114,67 +116,13 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         return $"{baseUrl}instances/{instance.Id}";
     }
 
-    public async Task ValidateConfiguration()
+    public Task ValidateConfiguration(
+        IReadOnlyList<DataType> configuredDataTypes,
+        IReadOnlyList<ProcessTask> configuredProcessTasks
+    )
     {
-        if (_fiksArkivSettings.AutoSend is null)
-            return;
-
-        if (
-            _fiksArkivSettings.ErrorHandling?.SendEmailNotifications is true
-            && _fiksArkivSettings.ErrorHandling.EmailNotificationRecipients?.Any() is false
-        )
-            throw new FiksArkivConfigurationException(
-                "Email notifications are enabled, but no recipients have been configured."
-            );
-
-        if (_fiksArkivSettings.ErrorHandling?.EmailNotificationRecipients?.Any(string.IsNullOrWhiteSpace) is true)
-            throw new FiksArkivConfigurationException("List of email recipients contain empty entries.");
-
-        if (_fiksArkivSettings.AutoSend.Recipient is null)
-            throw new FiksArkivConfigurationException("Recipient configuration is required for auto-send.");
-
-        if (
-            _fiksArkivSettings.AutoSend.Recipient.AccountId is null
-            && _fiksArkivSettings.AutoSend.Recipient.DataModelBinding is null
-        )
-            throw new FiksArkivConfigurationException(
-                "Either an AccountId or a data model binding is required for the recipient configuration."
-            );
-
-        if (
-            _fiksArkivSettings.AutoSend.Recipient.AccountId is not null
-            && _fiksArkivSettings.AutoSend.Recipient.DataModelBinding is not null
-        )
-            throw new FiksArkivConfigurationException(
-                "Recipient must be configured with either an AccountId or a data model binding, not both."
-            );
-
-        if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.AfterTaskId))
-            throw new FiksArkivConfigurationException("AfterTaskId configuration is required for auto-send.");
-
-        if (string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.ReceiptDataType))
-            throw new FiksArkivConfigurationException("ReceiptDataType configuration is required for auto-send.");
-
-        if (
-            _fiksArkivSettings.AutoSend.PrimaryDocument is null
-            || string.IsNullOrWhiteSpace(_fiksArkivSettings.AutoSend.PrimaryDocument.DataType)
-        )
-            throw new FiksArkivConfigurationException("FormDocument configuration is required for auto-send.");
-
-        ApplicationMetadata appMetadata = await GetApplicationMetadata();
-        HashSet<string> dataTypes = appMetadata.DataTypes.Select(x => x.Id).ToHashSet();
-
-        if (dataTypes.Contains(_fiksArkivSettings.AutoSend.PrimaryDocument.DataType) is false)
-            throw new FiksArkivConfigurationException("FormDocument->DataType mismatch with application data types.");
-
-        if (
-            _fiksArkivSettings.AutoSend.Recipient.DataModelBinding is not null
-            && dataTypes.Contains(_fiksArkivSettings.AutoSend.Recipient.DataModelBinding.DataType) is false
-        )
-            throw new FiksArkivConfigurationException("Recipient->DataType mismatch with application data types.");
-
-        if (_fiksArkivSettings.AutoSend.Attachments?.All(x => dataTypes.Contains(x.DataType)) is not true)
-            throw new FiksArkivConfigurationException("Attachments->DataType mismatch with application data types.");
+        _fiksArkivSettings.Validate(configuredDataTypes, configuredProcessTasks);
+        return Task.CompletedTask;
     }
 
     private bool IsEnabledForTask(string taskId) => _fiksArkivSettings.AutoSend?.AfterTaskId == taskId;
