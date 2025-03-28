@@ -30,7 +30,7 @@
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" Version="4.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NetEscapades.EnumGenerators" Version="1.0.0-beta11" PrivateAssets="all" ExcludeAssets="runtime" />
-    <PackageReference Include="OpenTelemetry.Api" Version="1.11.0" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.11.2" />
   </ItemGroup>
 
   <ItemGroup>
