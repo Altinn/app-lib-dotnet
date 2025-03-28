@@ -13,7 +13,6 @@ using Altinn.Common.PEP.Interfaces;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Utils;
-using Authorization.Platform.Authorization.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -182,33 +181,6 @@ public class AuthorizationClient : IAuthorizationClient
             actionsResult.Add(action, false);
         }
         return MultiDecisionHelper.ValidatePdpMultiDecision(actionsResult, response.Response, user);
-    }
-
-    /// <inheritdoc />
-    public async Task<List<Role>> GetRoles(int userId, int partyId)
-    {
-        using var activity = _telemetry?.StartClientGetRolesActivity(userId);
-        string apiUrl = "roles";
-        string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
-
-        using HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
-
-        if (response.StatusCode == System.Net.HttpStatusCode.OK)
-        {
-            string responseData = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<List<Role>>(responseData) ?? [];
-        }
-        else
-        {
-            _logger.LogError(
-                "Getting roles for user {UserId} and party {PartyId} failed with statuscode {StatusCode}",
-                userId,
-                partyId,
-                response.StatusCode
-            );
-
-            return [];
-        }
     }
 
     /// <inheritdoc />
