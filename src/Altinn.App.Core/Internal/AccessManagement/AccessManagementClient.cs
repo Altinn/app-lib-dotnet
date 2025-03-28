@@ -27,66 +27,6 @@ internal sealed class AccessManagementClient(
     Telemetry? telemetry = null
 ) : IAccessManagementClient
 {
-    public async Task<DelegationResponse> RevokeRights(DelegationRequest delegation, CancellationToken ct)
-    {
-        using var activity = telemetry?.StartAppInstanceRevokeActivity();
-
-        HttpResponseMessage? httpResponseMessage = null;
-        string? httpContent = null;
-
-        try
-        {
-            UrlHelper urlHelper = new(platformSettings.Value);
-            var application = await appMetadata.GetApplicationMetadata();
-
-            var uri = urlHelper.CreateInstanceRevokeUrl(delegation.ResourceId, delegation.InstanceId);
-            var body = JsonSerializer.Serialize(DelegationRequest.ConvertToDto(delegation));
-            logger.LogInformation($"Revoking rights from {delegation.To?.Value} for {delegation.ResourceId}");
-
-            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
-            {
-                Content = new StringContent(body, new MediaTypeHeaderValue("application/json")),
-            };
-            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            httpRequestMessage.Headers.Add(
-                "PlatformAccessToken",
-                accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
-            );
-
-            httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct);
-            httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
-            DelegationResponse? response;
-            if (!httpResponseMessage.IsSuccessStatusCode)
-            {
-                throw new HttpRequestException("Got error status code for access management request.");
-            }
-            response = JsonSerializer.Deserialize<DelegationResponse>(httpContent);
-            if (response is null)
-                throw new JsonException("Couldn't deserialize access management response.");
-            return response;
-        }
-        catch (Exception e)
-        {
-            var ex =
-                e is AccessManagementRequestException
-                    ? e
-                    : new AccessManagementRequestException(
-                        $"Something went wrong when processing the access management request.",
-                        null,
-                        httpResponseMessage?.StatusCode,
-                        httpContent,
-                        e
-                    );
-            logger.LogError(ex, "Error when processing access management request.");
-
-            throw ex;
-        }
-        finally
-        {
-            httpResponseMessage?.Dispose();
-        }
-    }
-
     public async Task<DelegationResponse> DelegateRights(DelegationRequest delegation, CancellationToken ct)
     {
         using var activity = telemetry?.StartAppInstanceDelegationActivity();
@@ -126,6 +66,67 @@ internal sealed class AccessManagementClient(
             {
                 throw new JsonException("Couldn't deserialize access management response.");
             }
+            return response;
+        }
+        catch (Exception e)
+        {
+            var ex =
+                e is AccessManagementRequestException
+                    ? e
+                    : new AccessManagementRequestException(
+                        $"Something went wrong when processing the access management request.",
+                        null,
+                        httpResponseMessage?.StatusCode,
+                        httpContent,
+                        e
+                    );
+            logger.LogError(ex, "Error when processing access management request.");
+
+            throw ex;
+        }
+        finally
+        {
+            httpResponseMessage?.Dispose();
+        }
+    }
+
+    public async Task<DelegationResponse> RevokeRights(DelegationRequest delegation, CancellationToken ct)
+    {
+        using var activity = telemetry?.StartAppInstanceRevokeActivity();
+
+        HttpResponseMessage? httpResponseMessage = null;
+        string? httpContent = null;
+
+        try
+        {
+            UrlHelper urlHelper = new(platformSettings.Value);
+            var application = await appMetadata.GetApplicationMetadata();
+
+            var uri = urlHelper.CreateInstanceRevokeUrl(delegation.ResourceId, delegation.InstanceId);
+            var body = JsonSerializer.Serialize(DelegationRequest.ConvertToDto(delegation));
+            logger.LogInformation($"Revoking rights from {delegation.To?.Value} for {delegation.ResourceId}");
+
+            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
+            {
+                Content = new StringContent(body, new MediaTypeHeaderValue("application/json")),
+            };
+            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            httpRequestMessage.Headers.Add(
+                "PlatformAccessToken",
+                accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
+            );
+
+            httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct);
+            httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
+            DelegationResponse? response;
+            if (!httpResponseMessage.IsSuccessStatusCode)
+            {
+                throw new HttpRequestException("Got error status code for access management request.");
+            }
+
+            response = JsonSerializer.Deserialize<DelegationResponse>(httpContent);
+            if (response is null)
+                throw new JsonException("Couldn't deserialize access management response.");
             return response;
         }
         catch (Exception e)

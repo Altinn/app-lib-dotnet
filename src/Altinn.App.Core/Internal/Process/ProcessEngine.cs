@@ -163,7 +163,8 @@ public class ProcessEngine : IProcessEngine
                     cachedDataMutator,
                     userId,
                     language: request.Language,
-                    authentication: currentAuth
+                    authentication: currentAuth,
+                    onBehalfOf: request.ActionOnBehalfOf
                 )
             );
 

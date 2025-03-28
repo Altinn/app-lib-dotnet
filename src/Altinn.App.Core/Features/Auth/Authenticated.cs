@@ -594,8 +594,21 @@ public abstract class Authenticated
     // TODO: app token?
     // public sealed record App(string Token) : Authenticated;
 
+    internal delegate Authenticated Parser(
+        string tokenStr,
+        bool isAuthenticated,
+        ApplicationMetadata appMetadata,
+        Func<string?> getSelectedParty,
+        Func<int, Task<UserProfile?>> getUserProfile,
+        Func<int, Task<Party?>> lookupUserParty,
+        Func<string, Task<Party>> lookupOrgParty,
+        Func<int, Task<List<Party>?>> getPartyList,
+        Func<int, int, Task<bool?>> validateSelectedParty
+    );
+
     internal static Authenticated FromLocalTest(
         string tokenStr,
+        bool isAuthenticated,
         ApplicationMetadata appMetadata,
         Func<string?> getSelectedParty,
         Func<int, Task<UserProfile?>> getUserProfile,
@@ -607,7 +620,7 @@ public abstract class Authenticated
     {
         var context = new ParseContext(
             tokenStr,
-            !string.IsNullOrWhiteSpace(tokenStr),
+            isAuthenticated,
             appMetadata,
             getSelectedParty,
             getUserProfile,
@@ -622,23 +635,15 @@ public abstract class Authenticated
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(tokenStr);
 
-        context.TokenIssuer = TokenIssuer.Altinn;
-        context.IsExchanged = true;
+        context.ReadClaims(token);
 
-        foreach (var claim in token.Payload)
-        {
-            TryAssign(claim, AltinnCoreClaimTypes.AuthenticationLevel, ref context.AuthLevelClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.Org, ref context.OrgClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.OrgNumber, ref context.OrgNoClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.PartyID, ref context.PartyIdClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.UserId, ref context.UserIdClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.UserName, ref context.UsernameClaim);
-            TryAssign(claim, JwtClaimTypes.Scope, ref context.ScopeClaim);
-        }
-
+        context.TokenIssuer = context.OrgNoClaim.Exists ? TokenIssuer.Maskinporten : TokenIssuer.Altinn;
+        context.IsExchanged =
+            context.TokenIssuer == TokenIssuer.Maskinporten || context.TokenIssuer == TokenIssuer.IDporten;
         context.Scopes = context.ScopeClaim.IsValidString(out var scopeClaimValue)
             ? new Scopes(scopeClaimValue)
             : new Scopes(null);
+        context.IsInAltinnPortal = context.UserIdClaim.Exists;
 
         int? partyId = null;
         if (context.PartyIdClaim.Exists)
@@ -651,7 +656,11 @@ public abstract class Authenticated
         }
 
         int authLevel;
-        if (context.OrgClaim.Exists)
+        if (context.AuthorizationDetailsClaim.Exists)
+        {
+            return NewSystemUser(ref context);
+        }
+        else if (context.OrgClaim.Exists)
         {
             if (!context.OrgClaim.IsValidString(out var orgClaimValue))
                 throw new AuthenticationContextException(
@@ -714,6 +723,7 @@ public abstract class Authenticated
     )
     {
         public TokenClaim IssuerClaim = default;
+        public TokenClaim ActualIssuerClaim = default;
         public TokenClaim AuthLevelClaim = default;
         public TokenClaim AuthMethodClaim = default;
         public TokenClaim ScopeClaim = default;
@@ -803,6 +813,40 @@ public abstract class Authenticated
 
             TokenIssuer = TokenIssuer.Unknown;
         }
+
+        public void ReadClaims(JwtSecurityToken token)
+        {
+            foreach (var claim in token.Payload)
+            {
+                TryAssign(claim, JwtClaimTypes.Issuer, ref IssuerClaim);
+                TryAssign(claim, "actual_iss", ref ActualIssuerClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.AuthenticationLevel, ref AuthLevelClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.AuthenticateMethod, ref AuthMethodClaim);
+                TryAssign(claim, JwtClaimTypes.Scope, ref ScopeClaim);
+                TryAssign(claim, "acr", ref AcrClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.Org, ref OrgClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.OrgNumber, ref OrgNoClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.PartyID, ref PartyIdClaim);
+                TryAssign(claim, "authorization_details", ref AuthorizationDetailsClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.UserId, ref UserIdClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.UserName, ref UsernameClaim);
+                if (
+                    TryAssign(claim, "consumer", ref ConsumerClaim)
+                    && ConsumerClaim.Value is JsonElement consumerJsonClaim
+                )
+                    ConsumerClaimValue = JsonSerializer.Deserialize<OrgClaim>(consumerJsonClaim);
+            }
+        }
+
+        private static bool TryAssign(KeyValuePair<string, object> claim, string name, ref TokenClaim dest)
+        {
+            if (claim.Key.Equals(name, StringComparison.OrdinalIgnoreCase))
+            {
+                dest = new TokenClaim(claim.Key, claim.Value);
+                return true;
+            }
+            return false;
+        }
     }
 
     internal static Authenticated From(
@@ -834,30 +878,18 @@ public abstract class Authenticated
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(tokenStr);
 
-        foreach (var claim in token.Payload)
-        {
-            TryAssign(claim, JwtClaimTypes.Issuer, ref context.IssuerClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.AuthenticationLevel, ref context.AuthLevelClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.AuthenticateMethod, ref context.AuthMethodClaim);
-            TryAssign(claim, JwtClaimTypes.Scope, ref context.ScopeClaim);
-            TryAssign(claim, "acr", ref context.AcrClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.Org, ref context.OrgClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.OrgNumber, ref context.OrgNoClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.PartyID, ref context.PartyIdClaim);
-            TryAssign(claim, "authorization_details", ref context.AuthorizationDetailsClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.UserId, ref context.UserIdClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.UserName, ref context.UsernameClaim);
-            if (
-                TryAssign(claim, "consumer", ref context.ConsumerClaim)
-                && context.ConsumerClaim.Value is JsonElement consumerJsonClaim
-            )
-                context.ConsumerClaimValue = JsonSerializer.Deserialize<OrgClaim>(consumerJsonClaim);
-        }
+        context.ReadClaims(token);
 
         context.Scopes = context.ScopeClaim.IsValidString(out var scopeClaimValue)
             ? new Scopes(scopeClaimValue)
             : new Scopes(null);
-        context.IsInAltinnPortal = context.Scopes.HasScope("altinn:portal/enduser");
+        context.IsInAltinnPortal =
+            context.Scopes.HasScope("altinn:portal/enduser")
+            || (
+                context.ActualIssuerClaim.IsValidString(out var actualIssuer)
+                && actualIssuer == "altinn-test-tools"
+                && context.UserIdClaim.Exists
+            );
 
         context.ResolveIssuer();
 
@@ -908,12 +940,13 @@ public abstract class Authenticated
     {
         if (!context.UserIdClaim.Exists)
             throw new AuthenticationContextException("Missing user ID claim for user token");
-        if (!context.UserIdClaim.IsValidString(out var userIdStr))
+
+        if (!context.UserIdClaim.IsValidInt(out var userId))
+        {
             throw new AuthenticationContextException(
                 $"Invalid user ID claim value for user token: {context.UserIdClaim.Value}"
             );
-        if (!int.TryParse(userIdStr, CultureInfo.InvariantCulture, out var userId))
-            throw new AuthenticationContextException($"Invalid user ID claim value for user token: {userIdStr}");
+        }
 
         if (!context.PartyIdClaim.Exists)
             throw new AuthenticationContextException("Missing party ID for user token");
@@ -931,7 +964,13 @@ public abstract class Authenticated
             if (!context.UsernameClaim.IsValidString(out var usernameClaimValue))
                 throw new AuthenticationContextException("Missing username claim for self-identified user token");
 
-            return new SelfIdentifiedUser(usernameClaimValue, userId, partyId.Value, authMethodClaimValue, ref context);
+            return new SelfIdentifiedUser(
+                usernameClaimValue,
+                userId.Value,
+                partyId.Value,
+                authMethodClaimValue,
+                ref context
+            );
         }
 
         int selectedPartyId = partyId.Value;
@@ -943,7 +982,7 @@ public abstract class Authenticated
             selectedPartyId = selectedParty;
         }
 
-        return new User(userId, partyId.Value, authLevel, authMethodClaimValue, selectedPartyId, ref context);
+        return new User(userId.Value, partyId.Value, authLevel, authMethodClaimValue, selectedPartyId, ref context);
     }
 
     static Org NewOrg(ref ParseContext context)
@@ -961,17 +1000,7 @@ public abstract class Authenticated
     {
         if (!context.AuthorizationDetailsClaim.IsJson(out var json))
             throw new AuthenticationContextException($"Invalid authorization details claim value for token: {json}");
-        var authorizationDetails = json.Value.ValueKind switch
-        {
-            JsonValueKind.Object => JsonSerializer.Deserialize<AuthorizationDetailsClaim>(json.Value),
-            JsonValueKind.Array when json.Value.GetArrayLength() == 1 => JsonSerializer
-                .Deserialize<AuthorizationDetailsClaim[]>(json.Value)
-                ?[0],
-            _ => throw new AuthenticationContextException(
-                "Invalid authorization details claim value for systemuser token: "
-                    + context.AuthorizationDetailsClaim.Value
-            ),
-        };
+        var authorizationDetails = AuthorizationDetailsClaim.Parse(json.Value);
         if (authorizationDetails is null)
             throw new AuthenticationContextException("Invalid authorization details claim value for systemuser token");
         if (authorizationDetails is not SystemUserAuthorizationDetailsClaim systemUser)
@@ -1051,10 +1080,25 @@ public abstract class Authenticated
         {
             integer = null;
 
-            if (Type is not null && Value is int intValue)
+            if (Type is not null)
             {
-                integer = intValue;
-                return true;
+                if (Value is int intValue)
+                {
+                    integer = intValue;
+                    return true;
+                }
+                // We parse tokens from various different sources:
+                // * altinn-authentication
+                // * localtest
+                // * AltinnTesTools
+                // * TestAuthentication (this repo)
+                // All of them have slight differences in how values encoded in the JWT payload,
+                // so that's why we are flexible here...
+                if (Value is string strValue && int.TryParse(strValue, CultureInfo.InvariantCulture, out intValue))
+                {
+                    integer = intValue;
+                    return true;
+                }
             }
 
             return false;
@@ -1074,19 +1118,24 @@ public abstract class Authenticated
         }
     }
 
-    private static bool TryAssign(KeyValuePair<string, object> claim, string name, ref TokenClaim dest)
-    {
-        if (claim.Key.Equals(name, StringComparison.OrdinalIgnoreCase))
-        {
-            dest = new TokenClaim(claim.Key, claim.Value);
-            return true;
-        }
-        return false;
-    }
-
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(SystemUserAuthorizationDetailsClaim), typeDiscriminator: "urn:altinn:systemuser")]
-    internal record AuthorizationDetailsClaim();
+    internal record AuthorizationDetailsClaim()
+    {
+        public static AuthorizationDetailsClaim? Parse(JsonElement json)
+        {
+            return json.ValueKind switch
+            {
+                JsonValueKind.Object => JsonSerializer.Deserialize<AuthorizationDetailsClaim>(json),
+                JsonValueKind.Array when json.GetArrayLength() == 1 => JsonSerializer
+                    .Deserialize<AuthorizationDetailsClaim[]>(json)
+                    ?[0],
+                _ => throw new AuthenticationContextException(
+                    "Invalid authorization details claim value for systemuser token: " + json
+                ),
+            };
+        }
+    }
 
     internal sealed record SystemUserAuthorizationDetailsClaim(
         [property: JsonPropertyName("systemuser_id")] IReadOnlyList<Guid> SystemUserId,

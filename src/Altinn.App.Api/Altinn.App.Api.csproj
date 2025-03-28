@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Altinn.App.Core\Altinn.App.Core.csproj" />
+    <ProjectReference Include="../Altinn.App.Core/Altinn.App.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,6 +40,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).Tests" />
+    <InternalsVisibleTo Include="Altinn.App.Tests.Common" />
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 </Project>

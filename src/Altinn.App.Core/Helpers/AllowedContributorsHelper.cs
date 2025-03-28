@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Helpers;
 
 internal static class AllowedContributorsHelper
 {
-    public static bool IsValidContributor(DataType dataType, Authenticated auth)
+    internal static bool IsValidContributor(DataType dataType, Authenticated auth)
     {
         if (dataType.AllowedContributers is null || dataType.AllowedContributers.Count == 0)
         {
@@ -16,9 +16,9 @@ internal static class AllowedContributorsHelper
 
         var (org, orgNr) = auth switch
         {
-            Authenticated.Org a => (null, a.OrgNo),
+            // System users also have 'orgno',  but this feature was originally intended
+            // to let a service owner "own" a specific data type, so we haven't extended this
             Authenticated.ServiceOwner a => (a.Name, a.OrgNo),
-            Authenticated.SystemUser a => (null, a.SystemUserOrgNr.Get(OrganisationNumberFormat.Local)),
             _ => (null, null),
         };
 

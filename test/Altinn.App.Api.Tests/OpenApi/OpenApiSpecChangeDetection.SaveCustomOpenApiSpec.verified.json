@@ -2184,6 +2184,10 @@
           "action": {
             "type": "string",
             "nullable": true
+          },
+          "actionOnBehalfOf": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

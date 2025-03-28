@@ -2,6 +2,7 @@ using System.Text.Json;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -12,6 +13,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -34,6 +36,8 @@ public class SigningControllerTests
     private readonly Mock<IAppModel> _appModelMock = new();
     private readonly Mock<IAppResources> _appResourcesMock = new();
     private readonly ServiceCollection _serviceCollection = new();
+    private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new();
+
     private readonly AltinnTaskExtension _altinnTaskExtension = new()
     {
         SignatureConfiguration = new AltinnSignatureConfiguration
@@ -61,6 +65,7 @@ public class SigningControllerTests
         _serviceCollection.AddSingleton(_applicationMetadataMock.Object);
         _serviceCollection.AddSingleton(_appResourcesMock.Object);
         _serviceCollection.AddSingleton(_processReaderMock.Object);
+        _serviceCollection.AddSingleton(_httpContextAccessorMock.Object);
         _serviceCollection.AddSingleton(_loggerMock.Object);
 
         _instanceClientMock
@@ -84,7 +89,7 @@ public class SigningControllerTests
     {
         // Arrange
         var signedTime = DateTime.Now;
-
+        SetupAuthenticationContextMock();
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
@@ -271,6 +276,7 @@ public class SigningControllerTests
     public async Task GetSigneesState_WhenSigneeContextIsPerson_Returns_Expected_Signees()
     {
         // Arrange
+        SetupAuthenticationContextMock();
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
@@ -335,6 +341,7 @@ public class SigningControllerTests
     {
         // Arrange
         var signedTime = DateTime.Now;
+        SetupAuthenticationContextMock();
 
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
@@ -412,7 +419,7 @@ public class SigningControllerTests
     {
         // Arrange
         var signedTime = DateTime.Now;
-
+        SetupAuthenticationContextMock();
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
@@ -480,5 +487,144 @@ public class SigningControllerTests
         };
 
         Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(signingStateResponse));
+    }
+
+    [Fact]
+    public async Task GetAuthorizedOrganisations_Returns_Expected_Organisations()
+    {
+        // Arrange
+        SetupAuthenticationContextMock(authenticated: CreateAuthenticatedUser());
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
+        List<OrganisationSignee> organisationSignees =
+        [
+            new OrganisationSignee
+            {
+                OrgName = "org1",
+                OrgNumber = "123456789",
+                OrgParty = new Party { PartyId = 1 },
+            },
+            new OrganisationSignee
+            {
+                OrgName = "org2",
+                OrgNumber = "987654321",
+                OrgParty = new Party { PartyId = 2 },
+            },
+        ];
+
+        _signingServiceMock
+            .Setup(s =>
+                s.GetAuthorizedOrganisationSignees(
+                    It.IsAny<InstanceDataUnitOfWork>(),
+                    _altinnTaskExtension.SignatureConfiguration!,
+                    It.IsAny<int>()
+                )
+            )
+            .ReturnsAsync(organisationSignees);
+
+        // Act
+        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+
+        var okResult = actionResult as OkObjectResult;
+        Assert.NotNull(okResult);
+
+        var signingAuthorizedOrganisationsResponse = okResult.Value as SigningAuthorizedOrganisationsResponse;
+
+        // Assert
+        var expected = new SigningAuthorizedOrganisationsResponse
+        {
+            Organisations =
+            [
+                new AuthorizedOrganisationDetails
+                {
+                    OrgName = "org1",
+                    OrgNumber = "123456789",
+                    PartyId = 1,
+                },
+                new AuthorizedOrganisationDetails
+                {
+                    OrgName = "org2",
+                    OrgNumber = "987654321",
+                    PartyId = 2,
+                },
+            ],
+        };
+
+        Assert.Equal(
+            JsonSerializer.Serialize(expected),
+            JsonSerializer.Serialize(signingAuthorizedOrganisationsResponse)
+        );
+    }
+
+    [Fact]
+    public async Task GetAuthorizedOrganisations_TaskTypeIsNotSigning_Returns_BadRequest()
+    {
+        // Arrange
+        SetupAuthenticationContextMock();
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
+        _instanceClientMock
+            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ReturnsAsync(
+                new Instance
+                {
+                    InstanceOwner = new InstanceOwner { PartyId = "1337" },
+                    Process = new ProcessState
+                    {
+                        CurrentTask = new ProcessElementInfo { ElementId = "task1", AltinnTaskType = "not-signing" },
+                    },
+                }
+            );
+
+        // Act
+        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(actionResult);
+    }
+
+    [Fact]
+    public async Task GetAuthorizedOrganisations_UserIdIsNull_Returns_Unathorized()
+    {
+        // Arrange
+        SetupAuthenticationContextMock(authenticated: CreateAuthenticatedNone());
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
+        // Act
+        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+
+        // Assert
+        Assert.IsType<UnauthorizedResult>(actionResult);
+    }
+
+    private void SetupAuthenticationContextMock(Authenticated? authenticated = null)
+    {
+        var authenticationContextMock = new Mock<IAuthenticationContext>();
+
+        authenticationContextMock.Setup(ac => ac.Current).Returns(authenticated ?? CreateAuthenticatedNone());
+
+        _serviceCollection.AddTransient(_ => authenticationContextMock.Object);
+    }
+
+    private Authenticated.None CreateAuthenticatedNone()
+    {
+        var parseContext = default(Authenticated.ParseContext);
+        return new Authenticated.None(ref parseContext);
+    }
+
+    private Authenticated.User CreateAuthenticatedUser(int userId = 1337)
+    {
+        var parseContext = default(Authenticated.ParseContext);
+        return new Authenticated.User(
+            userId: userId,
+            userPartyId: 12345,
+            authenticationLevel: 2,
+            authenticationMethod: "test",
+            selectedPartyId: 2,
+            context: ref parseContext
+        );
     }
 }

@@ -69,6 +69,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
                 {
                     authInfo = Authenticated.FromLocalTest(
                         tokenStr: token,
+                        isAuthenticated: !string.IsNullOrWhiteSpace(token),
                         _appConfigurationCache.ApplicationMetadata,
                         () => _httpContext.Request.Cookies[_generalSettings.CurrentValue.GetAltinnPartyCookieName],
                         _profileClient.GetUserProfile,
