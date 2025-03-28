@@ -24,9 +24,14 @@ public class ProcessEngineAuthorizerTests
     private readonly ProcessEngineAuthorizer _authorizer;
     private readonly ClaimsPrincipal _user;
 
+    private const string WriteAction = "write";
+    private const string ConfirmAction = "confirm";
+    private const string SignAction = "sign";
+    private const string PayAction = "pay";
+
     public ProcessEngineAuthorizerTests()
     {
-        _authServiceMock = new Mock<IAuthorizationService>();
+        _authServiceMock = new Mock<IAuthorizationService>(MockBehavior.Strict);
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
         var loggerMock = new Mock<ILogger<ProcessEngineAuthorizer>>();
 
@@ -66,7 +71,6 @@ public class ProcessEngineAuthorizerTests
     {
         // Arrange
         Instance instance = CreateInstance("task1", "data");
-        const string action = "write";
 
         _authServiceMock
             .Setup(x =>
@@ -74,28 +78,19 @@ public class ProcessEngineAuthorizerTests
                     It.IsAny<AppIdentifier>(),
                     It.IsAny<InstanceIdentifier>(),
                     It.IsAny<ClaimsPrincipal>(),
-                    action,
-                    "task1"
+                    WriteAction,
+                    instance.Process.CurrentTask.ElementId
                 )
             )
-            .ReturnsAsync(true);
+            .ReturnsAsync(true)
+            .Verifiable();
 
         // Act
-        bool result = await _authorizer.AuthorizeProcessNext(instance, action);
+        bool result = await _authorizer.AuthorizeProcessNext(instance, WriteAction);
 
         // Assert
         Assert.True(result);
-        _authServiceMock.Verify(
-            x =>
-                x.AuthorizeAction(
-                    It.IsAny<AppIdentifier>(),
-                    It.IsAny<InstanceIdentifier>(),
-                    It.IsAny<ClaimsPrincipal>(),
-                    action,
-                    "task1"
-                ),
-            Times.Once
-        );
+        _authServiceMock.Verify();
     }
 
     [Fact]
@@ -103,35 +98,26 @@ public class ProcessEngineAuthorizerTests
     {
         // Arrange
         Instance instance = CreateInstance("task1", "data");
-        var authorizeActionsResult = new List<UserAction>
-        {
-            new() { Id = "write", Authorized = true },
-        };
 
         _authServiceMock
             .Setup(x =>
-                x.AuthorizeActions(
-                    It.IsAny<Instance>(),
+                x.AuthorizeAction(
+                    It.IsAny<AppIdentifier>(),
+                    It.IsAny<InstanceIdentifier>(),
                     It.IsAny<ClaimsPrincipal>(),
-                    It.Is<List<AltinnAction>>(a => a.Any(action => action.Value == "write"))
+                    WriteAction,
+                    instance.Process.CurrentTask.ElementId
                 )
             )
-            .ReturnsAsync(authorizeActionsResult);
+            .ReturnsAsync(true)
+            .Verifiable();
 
         // Act
         bool result = await _authorizer.AuthorizeProcessNext(instance);
 
         // Assert
         Assert.True(result);
-        _authServiceMock.Verify(
-            x =>
-                x.AuthorizeActions(
-                    instance,
-                    It.IsAny<ClaimsPrincipal>(),
-                    It.Is<List<AltinnAction>>(a => a.Count == 1 && a[0].Value == "write")
-                ),
-            Times.Once
-        );
+        _authServiceMock.Verify();
     }
 
     [Fact]
@@ -139,40 +125,39 @@ public class ProcessEngineAuthorizerTests
     {
         // Arrange
         Instance instance = CreateInstance("task1", "payment");
-        var authorizeActionsResult = new List<UserAction>
-        {
-            new() { Id = "pay", Authorized = false },
-            new() { Id = "write", Authorized = true },
-        };
 
         _authServiceMock
             .Setup(x =>
-                x.AuthorizeActions(
-                    It.IsAny<Instance>(),
+                x.AuthorizeAction(
+                    It.IsAny<AppIdentifier>(),
+                    It.IsAny<InstanceIdentifier>(),
                     It.IsAny<ClaimsPrincipal>(),
-                    It.Is<List<AltinnAction>>(a =>
-                        a.Any(action => action.Value == "pay") && a.Any(action => action.Value == "write")
-                    )
+                    PayAction,
+                    instance.Process.CurrentTask.ElementId
                 )
             )
-            .ReturnsAsync(authorizeActionsResult);
+            .ReturnsAsync(false)
+            .Verifiable();
+
+        _authServiceMock
+            .Setup(x =>
+                x.AuthorizeAction(
+                    It.IsAny<AppIdentifier>(),
+                    It.IsAny<InstanceIdentifier>(),
+                    It.IsAny<ClaimsPrincipal>(),
+                    WriteAction,
+                    instance.Process.CurrentTask.ElementId
+                )
+            )
+            .ReturnsAsync(true)
+            .Verifiable();
 
         // Act
         bool result = await _authorizer.AuthorizeProcessNext(instance);
 
         // Assert
         Assert.True(result);
-        _authServiceMock.Verify(
-            x =>
-                x.AuthorizeActions(
-                    instance,
-                    It.IsAny<ClaimsPrincipal>(),
-                    It.Is<List<AltinnAction>>(a =>
-                        a.Count == 2 && a.Any(act => act.Value == "pay") && a.Any(act => act.Value == "write")
-                    )
-                ),
-            Times.Once
-        );
+        _authServiceMock.Verify();
     }
 
     [Fact]
@@ -180,35 +165,26 @@ public class ProcessEngineAuthorizerTests
     {
         // Arrange
         Instance instance = CreateInstance("task1", "confirmation");
-        var authorizeActionsResult = new List<UserAction>
-        {
-            new() { Id = "confirm", Authorized = true },
-        };
 
         _authServiceMock
             .Setup(x =>
-                x.AuthorizeActions(
-                    It.IsAny<Instance>(),
+                x.AuthorizeAction(
+                    It.IsAny<AppIdentifier>(),
+                    It.IsAny<InstanceIdentifier>(),
                     It.IsAny<ClaimsPrincipal>(),
-                    It.Is<List<AltinnAction>>(a => a.Any(action => action.Value == "confirm"))
+                    ConfirmAction,
+                    instance.Process.CurrentTask.ElementId
                 )
             )
-            .ReturnsAsync(authorizeActionsResult);
+            .ReturnsAsync(true)
+            .Verifiable();
 
         // Act
         bool result = await _authorizer.AuthorizeProcessNext(instance);
 
         // Assert
         Assert.True(result);
-        _authServiceMock.Verify(
-            x =>
-                x.AuthorizeActions(
-                    instance,
-                    It.IsAny<ClaimsPrincipal>(),
-                    It.Is<List<AltinnAction>>(a => a.Count == 1 && a[0].Value == "confirm")
-                ),
-            Times.Once
-        );
+        _authServiceMock.Verify();
     }
 
     [Fact]
@@ -216,40 +192,39 @@ public class ProcessEngineAuthorizerTests
     {
         // Arrange
         Instance instance = CreateInstance("task1", "signing");
-        var authorizeActionsResult = new List<UserAction>
-        {
-            new() { Id = "sign", Authorized = false },
-            new() { Id = "write", Authorized = true },
-        };
 
         _authServiceMock
             .Setup(x =>
-                x.AuthorizeActions(
-                    It.IsAny<Instance>(),
+                x.AuthorizeAction(
+                    It.IsAny<AppIdentifier>(),
+                    It.IsAny<InstanceIdentifier>(),
                     It.IsAny<ClaimsPrincipal>(),
-                    It.Is<List<AltinnAction>>(a =>
-                        a.Any(action => action.Value == "sign") && a.Any(action => action.Value == "write")
-                    )
+                    SignAction,
+                    instance.Process.CurrentTask.ElementId
                 )
             )
-            .ReturnsAsync(authorizeActionsResult);
+            .ReturnsAsync(false)
+            .Verifiable();
+
+        _authServiceMock
+            .Setup(x =>
+                x.AuthorizeAction(
+                    It.IsAny<AppIdentifier>(),
+                    It.IsAny<InstanceIdentifier>(),
+                    It.IsAny<ClaimsPrincipal>(),
+                    WriteAction,
+                    instance.Process.CurrentTask.ElementId
+                )
+            )
+            .ReturnsAsync(true)
+            .Verifiable();
 
         // Act
         bool result = await _authorizer.AuthorizeProcessNext(instance);
 
         // Assert
         Assert.True(result);
-        _authServiceMock.Verify(
-            x =>
-                x.AuthorizeActions(
-                    It.IsAny<Instance>(),
-                    It.IsAny<ClaimsPrincipal>(),
-                    It.Is<List<AltinnAction>>(a =>
-                        a.Count == 2 && a.Any(act => act.Value == "sign") && a.Any(act => act.Value == "write")
-                    )
-                ),
-            Times.Once
-        );
+        _authServiceMock.Verify();
     }
 
     [Fact]
@@ -257,16 +232,18 @@ public class ProcessEngineAuthorizerTests
     {
         // Arrange
         Instance instance = CreateInstance("task1", "data");
-        var authorizeActionsResult = new List<UserAction>
-        {
-            new() { Id = "write", Authorized = false },
-        };
 
         _authServiceMock
             .Setup(x =>
-                x.AuthorizeActions(It.IsAny<Instance>(), It.IsAny<ClaimsPrincipal>(), It.IsAny<List<AltinnAction>>())
+                x.AuthorizeAction(
+                    It.IsAny<AppIdentifier>(),
+                    It.IsAny<InstanceIdentifier>(),
+                    It.IsAny<ClaimsPrincipal>(),
+                    WriteAction,
+                    instance.Process.CurrentTask.ElementId
+                )
             )
-            .ReturnsAsync(authorizeActionsResult);
+            .ReturnsAsync(false);
 
         // Act
         bool result = await _authorizer.AuthorizeProcessNext(instance);
@@ -294,7 +271,7 @@ public class ProcessEngineAuthorizerTests
         {
             Id = "1337/12df57b6-cecf-4e7d-9415-857d93a817b3",
             InstanceOwner = new InstanceOwner { PartyId = "1337" },
-            AppId = "app",
+            AppId = "org/app",
             Org = "org",
             Process = new ProcessState(),
         };

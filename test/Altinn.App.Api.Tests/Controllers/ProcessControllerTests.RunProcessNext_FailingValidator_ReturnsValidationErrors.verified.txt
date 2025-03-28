@@ -73,30 +73,22 @@
       IdFormat: W3C
     },
     {
-      ActivityName: Authorization.Service.AuthorizeActions,
+      ActivityName: Authorization.Service.AuthorizeAction,
       Tags: [
         {
+          authorization.action: write
+        },
+        {
           instance.guid: Guid_1
+        },
+        {
+          instance.owner.party.id: 500600
+        },
+        {
+          task.id: Task_1
         }
       ],
-      IdFormat: W3C,
-      Events: [
-        {
-          Name: actions,
-          Timestamp: DateTimeOffset_1,
-          Tags: [
-            {
-              actions.count: 1
-            },
-            {
-              actions.0.value: write
-            },
-            {
-              actions.0.type: ProcessAction
-            }
-          ]
-        }
-      ]
+      IdFormat: W3C
     },
     {
       ActivityName: PUT {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next,
