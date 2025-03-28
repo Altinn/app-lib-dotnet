@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
@@ -32,6 +33,7 @@ public class EndTaskEventHandlerTests
             services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
             services.AddAppImplementationFactory();
 
+            services.AddSingleton(new Mock<IInstanceClient>().Object);
             services.AddSingleton(new Mock<IProcessTaskDataLocker>().Object);
             services.AddSingleton(new Mock<IProcessTaskFinalizer>().Object);
 
@@ -39,14 +41,14 @@ public class EndTaskEventHandlerTests
             {
                 Mock<IPdfServiceTask> pdfServiceTask = new();
                 services.AddTransient(_ => pdfServiceTask.Object);
-                services.AddTransient<IServiceTask>(_ => pdfServiceTask.Object);
+                services.AddTransient<IPdfServiceTask>(_ => pdfServiceTask.Object);
             }
 
             if (addEformidlingServiceTask)
             {
                 Mock<IEformidlingServiceTask> eformidlingServiceTask = new();
                 services.AddTransient(_ => eformidlingServiceTask.Object);
-                services.AddTransient<IServiceTask>(_ => eformidlingServiceTask.Object);
+                services.AddTransient<IEformidlingServiceTask>(_ => eformidlingServiceTask.Object);
             }
 
             services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
@@ -189,7 +191,7 @@ public class EndTaskEventHandlerTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await eteh.Execute(mockProcessTask.Object, taskId, instance)
         );
-        Assert.Equal("PdfServiceTask not found in serviceTasks", ex.Message);
+        Assert.Contains("No service for type", ex.Message);
     }
 
     [Fact]
@@ -207,6 +209,6 @@ public class EndTaskEventHandlerTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await eteh.Execute(mockProcessTask.Object, taskId, instance)
         );
-        Assert.Equal("EformidlingServiceTask not found in serviceTasks", ex.Message);
+        Assert.Contains("No service for type", ex.Message);
     }
 }
