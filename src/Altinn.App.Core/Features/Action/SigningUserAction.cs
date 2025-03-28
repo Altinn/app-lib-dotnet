@@ -277,7 +277,7 @@ internal class SigningUserAction : IUserAction
         return connectedDataElements;
     }
 
-    private async Task<Signee> GetSignee(UserActionContext context)
+    private static async Task<Signee> GetSignee(UserActionContext context)
     {
         switch (context.Authentication)
         {
