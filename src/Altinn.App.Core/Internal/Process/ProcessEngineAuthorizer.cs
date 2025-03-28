@@ -36,7 +36,8 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
         if (instance.Process.CurrentTask is null)
         {
             _logger.LogError(
-                $"Instance {instance.Id} has no current task. The process must be started before process next can be authorized."
+                "Instance {InstanceId} has no current task. The process must be started before process next can be authorized.",
+                instance.Id
             );
             return false;
         }
@@ -56,7 +57,9 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
             );
 
             _logger.LogInformation(
-                $"Process next was performed with action: {LogSanitizer.Sanitize(action)}. Authorization result: {isPerformedActionAuthorized}."
+                "Process next was performed with action: {SanitizedAction}. Authorization result: {IsPerformedActionAuthorized}.",
+                LogSanitizer.Sanitize(action),
+                isPerformedActionAuthorized
             );
 
             return isPerformedActionAuthorized;
@@ -84,7 +87,10 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
         }
 
         _logger.LogInformation(
-            $"Process next performed without an action. Authorizing based on task type {altinnTaskType}, which means using action(s) [{string.Join(",", actionsThatAllowProcessNextForTaskType)}]. Authorization result: {isAnyActionAuthorized}."
+            "Process next performed without an action. Authorizing based on task type {AltinnTaskType}, which means using action(s) [{Actions}]. Authorization result: {IsAnyActionAuthorized}.",
+            altinnTaskType,
+            string.Join(",", actionsThatAllowProcessNextForTaskType),
+            isAnyActionAuthorized
         );
 
         return isAnyActionAuthorized;
