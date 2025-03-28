@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Core.Internal.Process.Elements;
-using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
 
