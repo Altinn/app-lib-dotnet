@@ -28,8 +28,8 @@ public sealed record FiksArkivReceipt
     {
         return new FiksArkivReceipt
         {
-            CaseFileReceipt = FiksArkivCaseFileReceipt.FromSaksmappeKvittering(saksmappeKvittering),
-            JournalEntryReceipt = FiksArkivJournalEntryReceipt.FromJournalpostKvittering(journalpostKvittering),
+            CaseFileReceipt = FiksArkivCaseFileReceipt.Create(saksmappeKvittering),
+            JournalEntryReceipt = FiksArkivJournalEntryReceipt.Create(journalpostKvittering),
         };
     }
 };
@@ -81,13 +81,13 @@ public sealed record FiksArkivCaseFileReceipt
     [JsonPropertyName("createdBy")]
     public string? CreatedBy { get; init; }
 
-    internal static FiksArkivCaseFileReceipt? FromSaksmappeKvittering(SaksmappeKvittering? saksmappeKvittering)
+    internal static FiksArkivCaseFileReceipt? Create(SaksmappeKvittering? saksmappeKvittering)
     {
         return saksmappeKvittering is null
             ? null
             : new FiksArkivCaseFileReceipt
             {
-                SystemId = FiksArkivSystemDescription.TryParse(saksmappeKvittering.SystemID),
+                SystemId = FiksArkivSystemDescription.Create(saksmappeKvittering.SystemID),
                 FolderId = saksmappeKvittering.MappeID,
                 CreatedDate = saksmappeKvittering.OpprettetDato,
                 CaseFileYear = saksmappeKvittering.Saksaar,
@@ -163,23 +163,21 @@ public sealed record FiksArkivJournalEntryReceipt
     [JsonPropertyName("createdBy")]
     public string? CreatedBy { get; init; }
 
-    internal static FiksArkivJournalEntryReceipt? FromJournalpostKvittering(
-        JournalpostKvittering? journalpostKvittering
-    )
+    internal static FiksArkivJournalEntryReceipt? Create(JournalpostKvittering? journalpostKvittering)
     {
         return journalpostKvittering is null
             ? null
             : new FiksArkivJournalEntryReceipt
             {
-                SystemId = FiksArkivSystemDescription.TryParse(journalpostKvittering.SystemID),
+                SystemId = FiksArkivSystemDescription.Create(journalpostKvittering.SystemID),
                 RegistrationId = journalpostKvittering.RegistreringsID,
                 CreatedDate = journalpostKvittering.OpprettetDato,
                 JournalYear = journalpostKvittering.Journalaar,
                 JournalDate = journalpostKvittering.Journaldato,
                 JournalEntryNumber = journalpostKvittering.Journalpostnummer,
                 JournalSequenceNumber = journalpostKvittering.Journalsekvensnummer,
-                JournalEntryType = FiksArkivCodeDescription.FromKode(journalpostKvittering.Journalposttype),
-                JournalStatus = FiksArkivCodeDescription.FromKode(journalpostKvittering.Journalstatus),
+                JournalEntryType = FiksArkivCodeDescription.Create(journalpostKvittering.Journalposttype),
+                JournalStatus = FiksArkivCodeDescription.Create(journalpostKvittering.Journalstatus),
                 CreatedBy = journalpostKvittering.OpprettetAv,
             };
     }
@@ -202,7 +200,7 @@ public sealed record FiksArkivSystemDescription
     [JsonPropertyName("label")]
     public string? Label { get; init; }
 
-    internal static FiksArkivSystemDescription? TryParse(SystemID systemId)
+    internal static FiksArkivSystemDescription? Create(SystemID systemId)
     {
         try
         {
@@ -232,7 +230,7 @@ public sealed record FiksArkivCodeDescription
     [JsonPropertyName("description")]
     public string? Description { get; init; }
 
-    internal static FiksArkivCodeDescription? FromKode(Kode? kode)
+    internal static FiksArkivCodeDescription? Create(Kode? kode)
     {
         return kode is null
             ? null

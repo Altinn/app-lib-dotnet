@@ -48,8 +48,9 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         _logger.LogInformation("Receipt data received from Fiks message: {Receipt}", receipt);
 
         // TODO: Store receipt data in storage
-        // TODO: Send /complete notification?
+        // _fiksArkivSettings.AutoSend.ReceiptDataType
 
-        return;
+        // TODO: Send /complete notification?
+        // _fiksArkivSettings.AutoSend.AutoProgressToNextTask
     }
 }

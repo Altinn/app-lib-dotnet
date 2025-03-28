@@ -7,6 +7,7 @@ using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.AltinnCdn;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
@@ -24,7 +25,10 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal sealed partial class FiksArkivDefaultMessageHandler
 {
-    private async Task<IEnumerable<FiksIOMessagePayload>> GenerateMessagePayloads(Instance instance, Guid recipient)
+    private async Task<IEnumerable<FiksIOMessagePayload>> GenerateMessagePayloads(
+        Instance instance,
+        RecipientWrapper recipient
+    )
     {
         var appMetadata = await GetApplicationMetadata();
         var documentTitle = appMetadata.Title.GetValueOrDefault(LanguageConst.Nb, appMetadata.AppIdentifier.App);
@@ -193,50 +197,83 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         );
     }
 
-    private async Task<Guid> GetRecipient(Instance instance)
+    private async Task<RecipientWrapper> GetRecipient(Instance instance)
     {
         try
         {
-            var recipientConfiguration = VerifiedNotNull(_fiksArkivSettings.AutoSend?.Recipient);
-
-            if (recipientConfiguration.AccountId is not null)
-                return recipientConfiguration.AccountId.Value;
-
-            var recipientBinding = VerifiedNotNull(recipientConfiguration.DataModelBinding);
-            var dataElement = instance.Data.First(x => x.DataType == recipientBinding.DataType);
+            var recipientSettings = VerifiedNotNull(_fiksArkivSettings.AutoSend?.Recipient);
             var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(instance, null, null);
             var layoutState = await _layoutStateInitializer.Init(unitOfWork, null);
-            var data = await layoutState.GetModelData(
-                new ModelBinding { Field = recipientBinding.Field, DataType = recipientBinding.DataType },
-                new DataElementIdentifier(dataElement.Id),
-                null
-            );
 
-            return Guid.TryParse(data as string, out var recipient)
-                ? recipient
-                : throw new FiksArkivException($"Could not parse recipient from data binding: {recipientBinding}");
+            return new RecipientWrapper(
+                await GetRequiredAccount(layoutState, recipientSettings.FiksAccount),
+                await GetOptionalValue(layoutState, recipientSettings.Identifier),
+                await GetOptionalValue(layoutState, recipientSettings.OrganizationNumber),
+                await GetOptionalValue(layoutState, recipientSettings.Name)
+            );
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Fiks Arkiv error: {Error}", e.Message);
             throw;
         }
+
+        async Task<Guid> GetRequiredAccount(
+            LayoutEvaluatorState layoutState,
+            FiksArkivRecipientValue<Guid?> configValue
+        )
+        {
+            if (configValue.Id is not null)
+                return configValue.Id.Value;
+
+            var accountBinding = VerifiedNotNull(configValue.DataModelBinding);
+            var dataElement = instance.GetRequiredDataElement(accountBinding.DataType);
+            var data = await layoutState.GetModelData(accountBinding, dataElement, null);
+
+            return Guid.TryParse(data as string, out var recipient)
+                ? recipient
+                : throw new FiksArkivException(
+                    $"Could not parse recipient account from data binding: {accountBinding}"
+                );
+        }
+
+        async Task<string?> GetOptionalValue(
+            LayoutEvaluatorState layoutState,
+            FiksArkivRecipientValue<string>? configValue
+        )
+        {
+            if (configValue is null)
+                return null;
+
+            if (configValue.Id is not null)
+                return configValue.Id;
+
+            var recipientBinding = VerifiedNotNull(configValue.DataModelBinding);
+            var dataElement = instance.GetRequiredDataElement(recipientBinding.DataType);
+            var data = await layoutState.GetModelData(
+                new ModelBinding { Field = recipientBinding.Field, DataType = recipientBinding.DataType },
+                new DataElementIdentifier(dataElement.Id),
+                null
+            );
+
+            return data as string
+                ?? throw new FiksArkivException($"Could not parse recipient data binding: {recipientBinding}");
+        }
     }
 
-    private static Korrespondansepart GetRecipientParty(Instance instance, Guid recipient)
+    private Korrespondansepart GetRecipientParty(Instance instance, RecipientWrapper recipient)
     {
         return new Korrespondansepart
         {
-            KorrespondansepartID = recipient.ToString(), // TODO: Consider using `kommunenummer` or similar here
+            KorrespondansepartID = recipient.Identifier,
             Korrespondanseparttype = new Korrespondanseparttype
             {
                 KodeProperty = KorrespondanseparttypeKoder.Mottaker.Verdi,
                 Beskrivelse = KorrespondanseparttypeKoder.Mottaker.Beskrivelse,
             },
-            // TODO: We need the correct recipient details here
-            Organisasjonid = "MOTTAKERS-ORGNUMMER",
-            KorrespondansepartNavn = "MOTTAKERS-NAVN",
-            DeresReferanse = instance.Id,
+            Organisasjonid = recipient.OrgNumber,
+            KorrespondansepartNavn = recipient.Name,
+            DeresReferanse = GetCorrelationId(instance),
         };
     }
 
@@ -404,4 +441,6 @@ internal sealed partial class FiksArkivDefaultMessageHandler
 
         return metadata;
     }
+
+    private sealed record RecipientWrapper(Guid AccountId, string? Identifier, string? OrgNumber, string? Name);
 }

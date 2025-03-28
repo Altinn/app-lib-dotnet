@@ -18,6 +18,8 @@ using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Storage.Interface.Models;
@@ -47,7 +49,8 @@ internal sealed record TestFixture(
     Mock<IAuthenticationContext> AuthenticationContextMock,
     Mock<IAltinnPartyClient> PartyClientMock,
     Mock<ILayoutEvaluatorStateInitializer> LayoutStateInitializerMock,
-    Mock<IEmailNotificationClient> EmailNotificationClientMock
+    Mock<IEmailNotificationClient> EmailNotificationClientMock,
+    Mock<IProcessReader> ProcessReaderMock
 ) : IAsyncDisposable, IDisposable
 {
     public IFiksIOClient FiksIOClient => App.Services.GetRequiredService<IFiksIOClient>();
@@ -63,6 +66,7 @@ internal sealed record TestFixture(
     public IFiksArkivServiceTask FiksArkivServiceTask => App.Services.GetRequiredService<IFiksArkivServiceTask>();
     public ResiliencePipeline<FiksIOMessageResponse> FiksIOResiliencePipeline =>
         App.Services.ResolveResiliencePipeline();
+    public IProcessReader ProcessReader => App.Services.GetRequiredService<IProcessReader>();
 
     private static JsonSerializerOptions _jsonSerializerOptions =>
         new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
@@ -114,6 +118,7 @@ internal sealed record TestFixture(
         var layoutStateInitializerMock = new Mock<ILayoutEvaluatorStateInitializer>();
         var emailNotificationClientMock = new Mock<IEmailNotificationClient>();
         var loggerFactoryMock = new Mock<ILoggerFactory>();
+        var processReaderMock = new Mock<IProcessReader>();
         loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
 
         builder.Services.AddSingleton(webHostEnvironmentMock.Object);
@@ -128,6 +133,7 @@ internal sealed record TestFixture(
         builder.Services.AddSingleton(appResourcesMock.Object);
         builder.Services.AddSingleton(instanceClientMock.Object);
         builder.Services.AddSingleton(appModelMock.Object);
+        builder.Services.AddSingleton(processReaderMock.Object);
 
         // Non-mockable services
         builder.Services.AddTransient<InstanceDataUnitOfWorkInitializer>();
@@ -146,7 +152,8 @@ internal sealed record TestFixture(
             authenticationContextMock,
             partyClientMock,
             layoutStateInitializerMock,
-            emailNotificationClientMock
+            emailNotificationClientMock,
+            processReaderMock
         );
     }
 
@@ -190,7 +197,17 @@ internal sealed record TestFixture(
             AutoSend = new FiksArkivAutoSendSettings
             {
                 AfterTaskId = "Task_1",
-                Recipient = new FiksArkivRecipientSettings { AccountId = Guid.Empty },
+                ReceiptDataType = "fiks-receipt",
+                Recipient = new FiksArkivRecipientSettings
+                {
+                    FiksAccount = new FiksArkivRecipientValue<Guid?>
+                    {
+                        DataModelBinding = new FiksArkivDataModelBinding { DataType = "model", Field = "recipient" },
+                    },
+                    Identifier = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
+                    OrganizationNumber = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
+                    Name = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
+                },
                 PrimaryDocument = new FiksArkivPayloadSettings
                 {
                     DataType = "ref-data-as-pdf",
@@ -229,14 +246,20 @@ internal sealed record TestFixture(
             AutoSend = new FiksArkivAutoSendSettings
             {
                 AfterTaskId = Guid.NewGuid().ToString(),
+                ReceiptDataType = Guid.NewGuid().ToString(),
                 Recipient = new FiksArkivRecipientSettings
                 {
-                    AccountId = Guid.NewGuid(),
-                    DataModelBinding = new FiksArkivDataModelBindingSettings
+                    FiksAccount = new FiksArkivRecipientValue<Guid?>
                     {
-                        DataType = Guid.NewGuid().ToString(),
-                        Field = Guid.NewGuid().ToString(),
+                        DataModelBinding = new FiksArkivDataModelBinding
+                        {
+                            DataType = Guid.NewGuid().ToString(),
+                            Field = Guid.NewGuid().ToString(),
+                        },
                     },
+                    Identifier = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
+                    OrganizationNumber = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
+                    Name = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
                 },
                 PrimaryDocument = new FiksArkivPayloadSettings
                 {
@@ -267,17 +290,20 @@ internal sealed record TestFixture(
 
     public class CustomFiksArkivMessageHandler : IFiksArkivMessageHandler
     {
-        public Task ValidateConfiguration()
-        {
-            throw new NotImplementedException();
-        }
-
         public Task<FiksIOMessageRequest> CreateMessageRequest(string taskId, Instance instance)
         {
             throw new NotImplementedException();
         }
 
         public Task HandleReceivedMessage(Instance instance, FiksIOReceivedMessage receivedMessage)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ValidateConfiguration(
+            IReadOnlyList<DataType> configuredDataTypes,
+            IReadOnlyList<ProcessTask> configuredProcessTasks
+        )
         {
             throw new NotImplementedException();
         }
