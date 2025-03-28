@@ -33,9 +33,9 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
     /// <inheritdoc />
     public object? GetRaw(ReadOnlySpan<char> path)
     {
-        if (path == default)
+        if (path.IsEmpty)
         {
-            return _rawDataModel;
+            return null;
         }
         return _dataModel.GetModelData(path.ToString());
     }

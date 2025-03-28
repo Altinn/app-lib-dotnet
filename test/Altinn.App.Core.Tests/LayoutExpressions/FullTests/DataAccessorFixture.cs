@@ -113,7 +113,7 @@ public sealed class DataAccessorFixture
             layouts.Add(layoutSet);
         }
 
-        var layoutModel = new LayoutModel(layouts);
+        var layoutModel = new LayoutModel(layouts, null);
         AppResourcesMock.Setup(ar => ar.GetLayoutModelForTask(TaskId)).Returns(layoutModel);
     }
 
