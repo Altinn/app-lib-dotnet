@@ -357,8 +357,6 @@ public class ProcessController : ControllerBase
 
             string checkedAction = processNext?.Action ?? ConvertTaskTypeToAction(altinnTaskType);
 
-            // TODO: Verify that the user is allowed to perform action on behalf of the organisation
-
             var request = new ProcessNextRequest()
             {
                 Instance = instance,
