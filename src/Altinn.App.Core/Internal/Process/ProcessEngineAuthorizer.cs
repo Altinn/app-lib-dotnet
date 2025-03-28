@@ -47,7 +47,7 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
         if (action is not null)
         {
             bool isPerformedActionAuthorized = await _authorizationService.AuthorizeAction(
-                new AppIdentifier(instance.Org, instance.AppId),
+                new AppIdentifier(instance.AppId),
                 new InstanceIdentifier(instance),
                 _httpContext.User,
                 action,
@@ -68,7 +68,7 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
         foreach (string actionToAuthorize in actionsThatAllowProcessNextForTaskType)
         {
             bool isActionAuthorized = await _authorizationService.AuthorizeAction(
-                new AppIdentifier(instance.Org, instance.AppId),
+                new AppIdentifier(instance.AppId),
                 new InstanceIdentifier(instance),
                 _httpContext.User,
                 actionToAuthorize,
