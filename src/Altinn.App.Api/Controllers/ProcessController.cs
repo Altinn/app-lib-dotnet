@@ -342,17 +342,17 @@ public class ProcessController : ControllerBase
                     {
                         Status = StatusCodes.Status403Forbidden,
                         Detail =
-                            $"User is not authorized to perform process next with action '{processNext?.Action}' on task {currentTaskId} with task type {altinnTaskType}.",
+                            $"User is not authorized to perform process next. Task ID: {currentTaskId}. Task type: {altinnTaskType}. Action: {processNext?.Action ?? "none"}.",
                         Title = "Unauthorized",
                     }
                 );
             }
 
             _logger.LogDebug(
-                "User successfully authorized to perform process next with action '{Action}' on task {CurrentTaskId} with task type {AltinnTaskType}.",
-                LogSanitizer.Sanitize(processNext?.Action),
+                $"User successfully authorized to perform process next. Task ID: {currentTaskId}. Task type: {altinnTaskType}. Action: {processNext?.Action ?? "none"}.",
                 currentTaskId,
-                altinnTaskType
+                altinnTaskType,
+                LogSanitizer.Sanitize(processNext?.Action)
             );
 
             string checkedAction = processNext?.Action ?? ConvertTaskTypeToAction(altinnTaskType);

@@ -83,7 +83,7 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
         }
 
         _logger.LogInformation(
-            $"Process next performed without an action. Authorizing based on task type. Result: {isAnyActionAuthorized}."
+            $"Process next performed without an action. Authorizing based on task type {altinnTaskType}, which means using action(s) [{string.Join(",", actionsThatAllowProcessNextForTaskType)}]. Authorization result: {isAnyActionAuthorized}."
         );
 
         return isAnyActionAuthorized;

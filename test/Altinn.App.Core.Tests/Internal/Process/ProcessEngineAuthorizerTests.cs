@@ -271,7 +271,7 @@ public class ProcessEngineAuthorizerTests
         {
             Id = "1337/12df57b6-cecf-4e7d-9415-857d93a817b3",
             InstanceOwner = new InstanceOwner { PartyId = "1337" },
-            AppId = "app",
+            AppId = "org/app",
             Org = "org",
             Process = new ProcessState(),
         };
