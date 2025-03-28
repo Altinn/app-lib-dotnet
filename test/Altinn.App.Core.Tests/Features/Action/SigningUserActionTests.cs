@@ -17,8 +17,10 @@ using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Tests.Internal.Process.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Action;
@@ -85,6 +87,11 @@ public class SigningUserActionTests
                     )
                 );
 
+            var signingServiceMock = new Mock<ISigningService>();
+            var services = new ServiceCollection();
+            services.AddSingleton<ISigningService>(signingServiceMock.Object);
+            var serviceProvider = services.BuildServiceProvider();
+
             return new Fixture(
                 _processReader,
                 _instance,
@@ -93,6 +100,7 @@ public class SigningUserActionTests
                 signClient,
                 instanceDataMutatorMock,
                 new SigningUserAction(
+                    serviceProvider,
                     _processReader,
                     signClient.Object,
                     appMetadata.Object,
@@ -267,11 +275,7 @@ public class SigningUserActionTests
                         new InstanceIdentifier(instance),
                         instance.Process.CurrentTask.ElementId,
                         "signature",
-                        new Signee()
-                        {
-                            SystemUserId = systemUser.SystemUserId[0],
-                            OrganisationNumber = systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
-                        },
+                        new Signee() { SystemUserId = systemUser.SystemUserId[0], OrganisationNumber = null },
                         new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada")
                     );
                     signClient.Verify(
@@ -406,5 +410,212 @@ public class SigningUserActionTests
     {
         s1.Should().BeEquivalentTo(s2);
         return true;
+    }
+}
+
+public class SigningUserActionHandleOnBehalfOfTests
+{
+    // // Helper: Creates a dummy Instance with the provided instance owner organisation number.
+    private Instance CreateDummyInstance(string instanceOwnerOrg)
+    {
+        return new Instance
+        {
+            Id = "500000/12345678-1234-1234-1234-123456789012",
+            InstanceOwner = new InstanceOwner { PartyId = "5000", OrganisationNumber = instanceOwnerOrg },
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task1" } },
+        };
+    }
+
+    // // Helper: Creates a SigningUserAction with a mocked ISigningService.
+    private static SigningUserAction CreateSigningUserAction(out Mock<ISigningService> signingServiceMock)
+    {
+        signingServiceMock = new Mock<ISigningService>();
+        var services = new ServiceCollection();
+        services.AddSingleton<ISigningService>(signingServiceMock.Object);
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Other dependencies are dummies since HandleOnBehalfOf doesn't use them.
+        IProcessReader dummyProcessReader = Mock.Of<IProcessReader>();
+        ISignClient dummySignClient = Mock.Of<ISignClient>();
+        var dummyAppMetadata = Mock.Of<IAppMetadata>();
+        var dummySigningReceiptService = Mock.Of<ISigningReceiptService>();
+
+        return new SigningUserAction(
+            serviceProvider,
+            dummyProcessReader,
+            dummySignClient,
+            dummyAppMetadata,
+            dummySigningReceiptService,
+            new NullLogger<SigningUserAction>()
+        );
+    }
+
+    [Fact]
+    public async Task HandleOnBehalfOf_ReturnsTrue_When_OnBehalfOf_Equals_InstanceOwner()
+    {
+        // Arrange:
+        // If the context's OnBehalfOf equals the instance owner's organisation number,
+        // the method should return true immediately without calling the signing service.
+        string ownerOrg = "12345";
+        Instance instance = CreateDummyInstance(ownerOrg);
+
+        var userId = 1337;
+        var dataMutator = new Mock<IInstanceDataMutator>();
+        dataMutator.Setup(dm => dm.Instance).Returns(instance);
+        var context = new UserActionContext(
+            dataMutator.Object,
+            userId,
+            authentication: TestAuthentication.GetUserAuthentication(userId),
+            onBehalfOf: ownerOrg
+        );
+
+        var signatureConfig = new AltinnSignatureConfiguration();
+        var action = CreateSigningUserAction(out var signingServiceMock);
+
+        // Act:
+        bool result = await action.HandleOnBehalfOf(context, signatureConfig);
+
+        // Assert:
+        result.Should().BeTrue();
+        signingServiceMock.Verify(
+            s =>
+                s.GetAuthorizedOrganisationSignees(
+                    It.IsAny<IInstanceDataMutator>(),
+                    It.IsAny<AltinnSignatureConfiguration>(),
+                    It.IsAny<int>()
+                ),
+            Times.Never,
+            "the instance owner check should bypass any call to GetAuthorizedOrganisationSignees"
+        );
+    }
+
+    [Fact]
+    public async Task HandleOnBehalfOf_ReturnsFalse_When_Authentication_Is_Unsupported()
+    {
+        // Arrange:
+        // For an unsupported authentication type (e.g. Authenticated.SystemUser), the switch returns null.
+        string onBehalfOrg = "67890";
+        Instance instance = CreateDummyInstance("12345"); // instance owner is different
+        var auth = TestAuthentication.GetSystemUserAuthentication();
+        // Although userId is not used for unsupported types, we need to supply a dummy value.
+        var dummyUserId = 0;
+        var dataMutator = new Mock<IInstanceDataMutator>();
+        dataMutator.Setup(dm => dm.Instance).Returns(instance);
+        var context = new UserActionContext(
+            dataMutator.Object,
+            dummyUserId,
+            authentication: auth,
+            onBehalfOf: onBehalfOrg
+        );
+
+        var signatureConfig = new AltinnSignatureConfiguration();
+        var action = CreateSigningUserAction(out var signingServiceMock);
+
+        // Act:
+        bool result = await action.HandleOnBehalfOf(context, signatureConfig);
+
+        // Assert:
+        result.Should().BeFalse();
+        signingServiceMock.Verify(
+            s =>
+                s.GetAuthorizedOrganisationSignees(
+                    It.IsAny<IInstanceDataMutator>(),
+                    It.IsAny<AltinnSignatureConfiguration>(),
+                    It.IsAny<int>()
+                ),
+            Times.Never,
+            "unsupported authentication should return false without calling the signing service"
+        );
+    }
+
+    [Fact]
+    public async Task HandleOnBehalfOf_ReturnsFalse_When_User_Is_Not_Authorized()
+    {
+        // Arrange:
+        // For an Authenticated.User with a valid user id, but the signing service returns a list
+        // that does not include the provided OnBehalfOf value.
+        string onBehalfOrg = "67890";
+        Instance instance = CreateDummyInstance("12345"); // instance owner is different
+        var userId = 100;
+        var dataMutator = new Mock<IInstanceDataMutator>();
+        dataMutator.Setup(dm => dm.Instance).Returns(instance);
+        var context = new UserActionContext(
+            dataMutator.Object,
+            userId,
+            authentication: TestAuthentication.GetUserAuthentication(userId),
+            onBehalfOf: onBehalfOrg
+        );
+
+        var signatureConfig = new AltinnSignatureConfiguration();
+        var action = CreateSigningUserAction(out var signingServiceMock);
+
+        signingServiceMock
+            .Setup(s => s.GetAuthorizedOrganisationSignees(dataMutator.Object, signatureConfig, userId))
+            .ReturnsAsync(
+                new List<OrganisationSignee>
+                {
+                    new OrganisationSignee
+                    {
+                        OrgNumber = "111111111",
+                        OrgName = "TestOrg",
+                        OrgParty = new Platform.Register.Models.Party { PartyId = 123 },
+                    },
+                }
+            );
+
+        // Act:
+        bool result = await action.HandleOnBehalfOf(context, signatureConfig);
+
+        // Assert:
+        result.Should().BeFalse();
+        signingServiceMock.Verify(
+            s => s.GetAuthorizedOrganisationSignees(dataMutator.Object, signatureConfig, userId),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task HandleOnBehalfOf_ReturnsTrue_When_User_Is_Authorized()
+    {
+        // Arrange:
+        // For an Authenticated.User with a valid user id and the signing service returns a list
+        // that includes the provided OnBehalfOf value.
+        string onBehalfOrg = "67890";
+        Instance instance = CreateDummyInstance(instanceOwnerOrg: "12345"); // instance owner different
+        var userId = 200;
+        var dataMutator = new Mock<IInstanceDataMutator>();
+        dataMutator.Setup(d => d.Instance).Returns(instance);
+        var context = new UserActionContext(
+            dataMutator.Object,
+            userId,
+            authentication: TestAuthentication.GetUserAuthentication(userId),
+            onBehalfOf: onBehalfOrg
+        );
+
+        var signatureConfig = new AltinnSignatureConfiguration();
+        var action = CreateSigningUserAction(out var signingServiceMock);
+
+        signingServiceMock
+            .Setup(s => s.GetAuthorizedOrganisationSignees(dataMutator.Object, signatureConfig, 200))
+            .ReturnsAsync(
+                [
+                    new OrganisationSignee
+                    {
+                        OrgNumber = onBehalfOrg,
+                        OrgName = "TestOrg",
+                        OrgParty = new Platform.Register.Models.Party { PartyId = 123 },
+                    },
+                ]
+            );
+
+        // Act:
+        bool result = await action.HandleOnBehalfOf(context, signatureConfig);
+
+        // Assert:
+        result.Should().BeTrue();
+        signingServiceMock.Verify(
+            s => s.GetAuthorizedOrganisationSignees(dataMutator.Object, signatureConfig, 200),
+            Times.Once
+        );
     }
 }

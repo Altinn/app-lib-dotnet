@@ -8,6 +8,7 @@ using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
@@ -27,6 +28,7 @@ internal sealed class SigningService(
     AppImplementationFactory appImplementationFactory,
     IAppMetadata appMetadata,
     ISigningCallToActionService signingCallToActionService,
+    IAuthorizationClient authorizationClient,
     ILogger<SigningService> logger,
     Telemetry? telemetry = null
 ) : ISigningService
@@ -47,6 +49,7 @@ internal sealed class SigningService(
     private readonly AppImplementationFactory _appImplementationFactory = appImplementationFactory;
     private const string ApplicationJsonContentType = "application/json";
 
+    // <inheritdoc />
     public async Task<List<SigneeContext>> GenerateSigneeContexts(
         IInstanceDataMutator instanceDataMutator,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -84,6 +87,7 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
+    // <inheritdoc />
     public async Task<List<SigneeContext>> InitialiseSignees(
         string taskId,
         IInstanceDataMutator instanceDataMutator,
@@ -175,17 +179,17 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
+    // <inheritdoc />
     public async Task<List<SigneeContext>> GetSigneeContexts(
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration
     )
     {
         using Activity? activity = telemetry?.StartReadSigneesActivity();
-
-        // If no SigneeStatesDataTypeId is set, delegated signing is not enabled and there is nothing to download.
-        List<SigneeContext> signeeContexts = !string.IsNullOrEmpty(signatureConfiguration.SigneeStatesDataTypeId)
-            ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)
-            : [];
+        List<SigneeContext> signeeContexts = await TryDownLoadSigneeContexts(
+            instanceDataAccessor,
+            signatureConfiguration
+        );
 
         var taskId = instanceDataAccessor.Instance.Process.CurrentTask.ElementId;
 
@@ -196,6 +200,31 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
+    // <inheritdoc />
+    public async Task<List<OrganisationSignee>> GetAuthorizedOrganisationSignees(
+        IInstanceDataAccessor instanceDataAccessor,
+        AltinnSignatureConfiguration signatureConfiguration,
+        int userId
+    )
+    {
+        List<SigneeContext> signeeContexts = await TryDownLoadSigneeContexts(
+            instanceDataAccessor,
+            signatureConfiguration
+        );
+
+        List<OrganisationSignee> orgSignees = [.. signeeContexts.Select(x => x.Signee).OfType<OrganisationSignee>()];
+        List<string> orgNumbers = [.. orgSignees.Select(x => x.OrgNumber)];
+
+        List<string> keyRoleOrganizations = await authorizationClient.GetKeyRoleOrganisationParties(userId, orgNumbers);
+
+        List<OrganisationSignee> authorizedOrganisations = orgSignees
+            .Where(organisationSignee => keyRoleOrganizations.Contains(organisationSignee.OrgNumber))
+            .ToList();
+
+        return authorizedOrganisations;
+    }
+
+    // <inheritdoc />
     public async Task AbortRuntimeDelegatedSigning(
         string taskId,
         IInstanceDataMutator instanceDataMutator,
@@ -243,6 +272,17 @@ internal sealed class SigningService(
             signeeContextsWithDelegation,
             ct
         );
+    }
+
+    private async Task<List<SigneeContext>> TryDownLoadSigneeContexts(
+        IInstanceDataAccessor instanceDataAccessor,
+        AltinnSignatureConfiguration signatureConfiguration
+    )
+    {
+        // If no SigneeStatesDataTypeId is set, delegated signing is not enabled and there is nothing to download.
+        return !string.IsNullOrEmpty(signatureConfiguration.SigneeStatesDataTypeId)
+            ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)
+            : [];
     }
 
     /// <summary>

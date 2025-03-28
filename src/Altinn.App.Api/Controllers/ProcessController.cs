@@ -362,6 +362,7 @@ public class ProcessController : ControllerBase
                 Instance = instance,
                 User = User,
                 Action = checkedAction,
+                ActionOnBehalfOf = processNext?.ActionOnBehalfOf,
                 Language = language,
             };
 
