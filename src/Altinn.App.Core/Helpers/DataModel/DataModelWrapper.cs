@@ -30,6 +30,10 @@ public class DataModelWrapper
     /// </remarks>
     public object? GetModelData(string field, ReadOnlySpan<int> rowIndexes = default)
     {
+        if (string.IsNullOrEmpty(field))
+        {
+            throw new ArgumentException("Field cannot be empty");
+        }
         return GetModelDataRecursive(field.Split('.'), 0, _dataModel, rowIndexes);
     }
 

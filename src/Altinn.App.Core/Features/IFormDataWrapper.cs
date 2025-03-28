@@ -99,7 +99,7 @@ public interface IFormDataWrapper
 /// </summary>
 public static class FormDataWrapperExtensions
 {
-    internal static T? Get<T>(
+    public static T? Get<T>(
         this IFormDataWrapper formDataWrapper,
         ReadOnlySpan<char> path = default,
         ReadOnlySpan<int> rowIndexes = default
@@ -116,7 +116,7 @@ public static class FormDataWrapperExtensions
         };
     }
 
-    internal static object? Get(
+    public static object? Get(
         this IFormDataWrapper formDataWrapper,
         ReadOnlySpan<char> path,
         ReadOnlySpan<int> rowIndexes = default
@@ -131,7 +131,7 @@ public static class FormDataWrapperExtensions
         return null;
     }
 
-    internal static string? AddIndexToPath(
+    public static string? AddIndexToPath(
         this IFormDataWrapper formDataWrapper,
         ReadOnlySpan<char> path,
         ReadOnlySpan<int> rowIndexes
@@ -145,7 +145,7 @@ public static class FormDataWrapperExtensions
         return null;
     }
 
-    internal static int? GetRowCount(
+    public static int? GetRowCount(
         this IFormDataWrapper formDataWrapper,
         ReadOnlySpan<char> path,
         ReadOnlySpan<int> rowIndexes
@@ -162,7 +162,7 @@ public static class FormDataWrapperExtensions
         };
     }
 
-    internal static DataReference[] GetResolvedKeys(this IFormDataWrapper formDataWrapper, DataReference reference)
+    public static DataReference[] GetResolvedKeys(this IFormDataWrapper formDataWrapper, DataReference reference)
     {
         //TODO: write more efficient code that uses the formDataWrapper to resolve keys instead of reflection in DataModelWrapper
         var data = formDataWrapper.BackingData<object>();

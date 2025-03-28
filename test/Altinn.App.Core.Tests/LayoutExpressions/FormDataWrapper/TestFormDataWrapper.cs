@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
@@ -18,6 +19,9 @@ file class TestInfo
 
 file class Certificate
 {
+    [JsonPropertyName("altinnRowId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Guid AltinnRowId { get; set; }
     public string? Title { get; set; }
     public string? Issuer { get; set; }
 }
@@ -50,8 +54,9 @@ file class TestTypeFormDataWrapper : IFormDataWrapper<TestType>
             );
     }
 
-    private static object? GetInternal(TestType dataModel, ReadOnlySpan<char> path, int offset)
+    private static object? GetInternal(TestType dataModel, ReadOnlySpan<char> fullPath, int offset)
     {
+        ReadOnlySpan<char> path = NewMethod(fullPath, offset);
         switch (path.Slice(offset))
         {
             case "Info.Name":
@@ -59,7 +64,7 @@ file class TestTypeFormDataWrapper : IFormDataWrapper<TestType>
             case "Info.Age":
                 return dataModel.Info?.Age;
         }
-        switch (path.Slice(0, 11))
+        switch (path.Slice(offset, 11))
         {
             case "Certificates":
                 return GetInternal(dataModel.Certificates, path, offset + 12);
@@ -70,6 +75,24 @@ file class TestTypeFormDataWrapper : IFormDataWrapper<TestType>
         //         $"""Path "{path}" not found in data model of type {typeof(TestType).FullName}"""
         //     );
         return null;
+    }
+
+    private static ReadOnlySpan<char> NewMethod(ReadOnlySpan<char> fullPath, int offset)
+    {
+        var path = fullPath.Slice(offset);
+
+        var nextDot = path.IndexOf('.');
+        var nextIndex = path.IndexOf('[');
+        var nextSeparator =
+            nextDot < 0 ? nextIndex
+            : nextIndex < 0 ? nextDot
+            : Math.Min(nextDot, nextIndex);
+        if (nextSeparator > 0)
+        {
+            path = fullPath.Slice(offset, nextSeparator);
+        }
+
+        return path;
     }
 
     private static object? GetInternal(List<Certificate?>? certificates, ReadOnlySpan<char> path, int offset)
@@ -172,18 +195,37 @@ file class TestTypeFormDataWrapper : IFormDataWrapper<TestType>
         );
     }
 
-    public void RemoveAltinnRowIds()
-    {
-        throw new NotImplementedException();
-    }
-
     public void InitializeAltinnRowIds()
     {
-        throw new NotImplementedException();
+        if (_dataModel.Certificates?.Count > 0)
+        {
+            SetAltinnRowIds(_dataModel.Certificates, initialize: true);
+        }
+    }
+
+    public void RemoveAltinnRowIds()
+    {
+        if (_dataModel.Certificates?.Count > 0)
+        {
+            SetAltinnRowIds(_dataModel.Certificates, initialize: false);
+        }
+    }
+
+    private static void SetAltinnRowIds(List<Certificate?> certificates, bool initialize)
+    {
+        foreach (var certificate in certificates)
+        {
+            if (certificate != null)
+            {
+                certificate.AltinnRowId = initialize ? Guid.NewGuid() : Guid.Empty;
+            }
+
+            // Recurse into nested objects
+        }
     }
 
     public void PrepareModelForXmlStorage()
     {
-        throw new NotImplementedException();
+        ObjectUtils.PrepareModelForXmlStorage(_dataModel);
     }
 }
