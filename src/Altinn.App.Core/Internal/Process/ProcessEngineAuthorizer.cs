@@ -1,4 +1,5 @@
 ﻿using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -55,7 +56,7 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
             );
 
             _logger.LogInformation(
-                $"Process next was performed with action: {action}. Authorization result: {isPerformedActionAuthorized}."
+                $"Process next was performed with action: {LogSanitizer.Sanitize(action)}. Authorization result: {isPerformedActionAuthorized}."
             );
 
             return isPerformedActionAuthorized;
