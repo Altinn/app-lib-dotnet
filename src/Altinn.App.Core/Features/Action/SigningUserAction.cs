@@ -279,17 +279,11 @@ internal class SigningUserAction : IUserAction
 
     private async Task<Signee> GetSignee(UserActionContext context)
     {
-        _logger.LogInformation("###########################################");
         switch (context.Authentication)
         {
             case Authenticated.User user:
             {
                 UserProfile userProfile = await user.LookupProfile();
-                _logger.LogInformation(
-                    "User profile retrieved for user {UserId} and on behalf of {OnBehalfOf}",
-                    userProfile.UserId,
-                    context.OnBehalfOf
-                );
                 return new Signee
                 {
                     UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
@@ -298,18 +292,8 @@ internal class SigningUserAction : IUserAction
                 };
             }
             case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
-                _logger.LogInformation(
-                    "Self identified user {UserId} with on behalf of {OnBehalfOf}",
-                    selfIdentifiedUser.UserId,
-                    context.OnBehalfOf
-                );
                 return new Signee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
             case Authenticated.SystemUser systemUser:
-                _logger.LogInformation(
-                    "System user {UserId} with on behalf of {OnBehalfOf}",
-                    systemUser.SystemUserId[0],
-                    context.OnBehalfOf
-                );
                 return new Signee
                 {
                     SystemUserId = systemUser.SystemUserId[0],

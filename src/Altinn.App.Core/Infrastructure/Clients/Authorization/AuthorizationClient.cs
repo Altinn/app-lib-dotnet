@@ -191,17 +191,8 @@ public class AuthorizationClient : IAuthorizationClient
 
         if (response?.Response == null)
         {
-            _logger.LogInformation("----------------------------------------------------------");
-            _logger.LogWarning(
-                "Failed to get decision from pdp: {SerializeObject}",
-                JsonConvert.SerializeObject(request)
-            );
-            _logger.LogInformation("----------------------------------------------------------");
             return [];
         }
-
-        _logger.LogInformation("----------------------------------------------------------");
-        _logger.LogInformation("Decision from PDP: {SerializeObject}", JsonConvert.SerializeObject(response));
 
         List<string> organisations =
         [

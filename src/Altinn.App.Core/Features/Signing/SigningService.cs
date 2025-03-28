@@ -434,8 +434,7 @@ internal sealed class SigningService(
         List<SignDocument> signDocuments
     )
     {
-        _logger.LogInformation("------------------------------------------------------------------");
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Synchronizing signee contexts {SigneeContexts} with sign documents {SignDocuments} for task {TaskId}.",
             JsonSerializer.Serialize(signeeContexts, _jsonSerializerOptions),
             JsonSerializer.Serialize(signDocuments, _jsonSerializerOptions),
