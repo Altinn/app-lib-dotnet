@@ -2559,8 +2559,7 @@
             "nullable": true
           },
           "size": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -2632,6 +2631,11 @@
           "autoDeleteOnProcessEnd": {
             "type": "boolean"
           },
+          "preventInstanceDeletionForDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "presentationFields": {
             "type": "array",
             "items": {
@@ -2680,8 +2684,7 @@
             "$ref": "#/components/schemas/Logo"
           },
           "altinnNugetVersion": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "externalApiIds": {
             "type": "array",
