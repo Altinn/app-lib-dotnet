@@ -253,6 +253,18 @@ public static class ExpressionEvaluator
 
         if (targetContext is null)
         {
+            // Target context can be null for two reasons:
+            // 1. The componentId is not found in the layout
+            // 2. The component is in a group where the correct row indicies is missing (eg reference from outside the group)
+
+            // The shared tests ensures we only throw in the first case, but the second is an error too.
+            if (state.GetComponent(context.Component.PageId, componentId) is null)
+            {
+                throw new ArgumentException($"Unable to find component with identifier {componentId}");
+            }
+            // throw new ArgumentException(
+            //     $"Unable to find component with identifier {componentId}. Components in groups can only be referenced from within the group."
+            // );
             return ExpressionValue.Null;
         }
 
