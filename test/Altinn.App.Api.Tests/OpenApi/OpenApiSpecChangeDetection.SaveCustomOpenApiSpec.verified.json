@@ -2631,11 +2631,6 @@
           "autoDeleteOnProcessEnd": {
             "type": "boolean"
           },
-          "preventInstanceDeletionForDays": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
           "presentationFields": {
             "type": "array",
             "items": {
