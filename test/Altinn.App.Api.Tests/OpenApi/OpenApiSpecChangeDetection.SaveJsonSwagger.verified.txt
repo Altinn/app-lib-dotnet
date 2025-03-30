@@ -1,5 +1,5 @@
 {
-  openapi: 3.0.1,
+  openapi: 3.0.4,
   info: {
     title: Altinn App Api,
     version: v1
@@ -1598,6 +1598,7 @@ If org and app does not match, this returns a 409 Conflict response,
             name: queryParams,
             in: query,
             description: Query parameteres supplied,
+            style: deepObject,
             schema: {
               type: object,
               additionalProperties: {
@@ -1677,6 +1678,7 @@ If org and app does not match, this returns a 409 Conflict response,
             name: queryParams,
             in: query,
             description: Query parameters supplied,
+            style: deepObject,
             schema: {
               type: object,
               additionalProperties: {
@@ -2072,6 +2074,7 @@ If org and app does not match, this returns a 409 Conflict response,
             name: queryParams,
             in: query,
             description: The query parameters to pass to the external api endpoint,
+            style: deepObject,
             schema: {
               type: object,
               additionalProperties: {
@@ -2934,6 +2937,7 @@ The body of the request isn't used for anything despite this being a POST operat
             name: queryParams,
             in: query,
             description: Query parameters supplied,
+            style: deepObject,
             schema: {
               type: object,
               additionalProperties: {
@@ -3039,6 +3043,7 @@ The body of the request isn't used for anything despite this being a POST operat
             name: queryParams,
             in: query,
             description: Query parameteres supplied,
+            style: deepObject,
             schema: {
               type: object,
               additionalProperties: {
