@@ -6,7 +6,6 @@ using System.Text.Json;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.task_action.config.models;
-using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models.Process;
@@ -55,6 +54,10 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         TestData.DeleteInstanceAndData(org, app, 1337, guid);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Verify that [ResponseCache] attribute is being set by filter
+        Assert.NotNull(response.Headers.CacheControl);
+        Assert.Equal("no-store, no-cache", response.Headers.CacheControl.ToString());
     }
 
     [Fact]
