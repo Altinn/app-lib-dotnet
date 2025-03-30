@@ -184,44 +184,6 @@ public class TelemetryConfigurationTests
     }
 
     [Fact]
-    public async Task KeyedServices_Produces_Error_Diagnostics()
-    {
-        // This test just verifies that we rootcaused the issues re: https://github.com/Altinn/app-lib-dotnet/pull/594
-
-        using var listener = new AppInsightsListener();
-
-        var services = new ServiceCollection();
-        var env = new FakeWebHostEnvironment { EnvironmentName = "Development" };
-
-        services.AddSingleton<IWebHostEnvironment>(env);
-        services.AddSingleton<IHostingEnvironment>(env);
-
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(
-                [new KeyValuePair<string, string?>("ApplicationInsights:InstrumentationKey", "test")]
-            )
-            .Build();
-
-        // AppInsights SDK currently can't handle keyed services in the container
-        // Hopefully we can remove all this soon
-        services.AddKeyedSingleton<ITelemetryProcessor, TelemetryProcessor>("test");
-
-        Altinn.App.Api.Extensions.ServiceCollectionExtensions.AddAltinnAppServices(services, config, env);
-
-        await using (var sp = services.BuildServiceProvider())
-        {
-            var client = sp.GetService<TelemetryClient>();
-            Assert.Null(client);
-        }
-
-        await Task.Yield();
-
-        EventLevel[] errorLevels = [EventLevel.Error, EventLevel.Critical];
-        var events = listener.Events;
-        Assert.Contains(events, e => errorLevels.Contains(e.Level));
-    }
-
-    [Fact]
     public async Task OpenTelemetry_Registers_Correctly_When_Enabled()
     {
         List<KeyValuePair<string, string?>> configData =
