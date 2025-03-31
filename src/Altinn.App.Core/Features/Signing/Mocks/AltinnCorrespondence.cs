@@ -145,7 +145,7 @@ public class ExternalReferenceExt
     public required ReferenceTypeExt ReferenceType { get; set; }
 }
 
-public enum ReferenceTypeExt : int
+public enum ReferenceTypeExt
 {
     /// <summary>
     /// Specifies a generic reference
