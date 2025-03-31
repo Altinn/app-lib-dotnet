@@ -158,7 +158,7 @@ internal sealed class SigningReceiptService(
         {
             AppIdentifier appIdentifier = new(context.Instance);
 
-            textResource ??=
+            textResource =
                 await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, context.Language ?? defaultLanguage)
                 ?? throw new InvalidOperationException(
                     $"No text resource found for specified language ({context.Language}) nor the default language ({defaultLanguage})"

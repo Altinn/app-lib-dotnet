@@ -14,20 +14,20 @@ internal static class SigningCorrespondenceHelper
     {
         if (
             notification?.Email is not null
-            && notification?.Email.EmailAddress is not null
-            && notification?.Sms is not null
-            && notification?.Sms.MobileNumber is not null
+            && notification.Email.EmailAddress is not null
+            && notification.Sms is not null
+            && notification.Sms.MobileNumber is not null
         )
         {
             return NotificationChoice.SmsAndEmail;
         }
 
-        if (notification?.Email is not null && notification?.Email.EmailAddress is not null)
+        if (notification?.Email is not null && notification.Email.EmailAddress is not null)
         {
             return NotificationChoice.Email;
         }
 
-        if (notification?.Sms is not null && notification?.Sms.MobileNumber is not null)
+        if (notification?.Sms is not null && notification.Sms.MobileNumber is not null)
         {
             return NotificationChoice.Sms;
         }

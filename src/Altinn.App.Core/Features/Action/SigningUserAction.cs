@@ -161,7 +161,7 @@ internal class SigningUserAction : IUserAction
                 signatureContext.Signee,
                 dataElementSignatures,
                 context,
-                signatureConfiguration?.CorrespondenceResources
+                signatureConfiguration.CorrespondenceResources
             )
         );
 
