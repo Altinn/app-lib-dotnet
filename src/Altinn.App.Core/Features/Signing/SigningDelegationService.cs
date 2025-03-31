@@ -93,7 +93,7 @@ internal sealed class SigningDelegationService(
                             },
                         ],
                     };
-                    DelegationResponse? response = await accessManagementClient.DelegateRights(delegationRequest, ct);
+                    await accessManagementClient.DelegateRights(delegationRequest, ct);
                     state.IsAccessDelegated = true;
                     telemetry?.RecordDelegation(DelegationResult.Success);
                 }
@@ -174,7 +174,7 @@ internal sealed class SigningDelegationService(
                             },
                         ],
                     };
-                    DelegationResponse? response = await accessManagementClient.RevokeRights(delegationRequest, ct);
+                    await accessManagementClient.RevokeRights(delegationRequest, ct);
                     signeeContext.SigneeState.IsAccessDelegated = false;
                     telemetry?.RecordDelegationRevoke(DelegationResult.Success);
                 }
