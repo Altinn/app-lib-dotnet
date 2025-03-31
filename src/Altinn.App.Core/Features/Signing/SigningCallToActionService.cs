@@ -215,7 +215,6 @@ internal sealed class SigningCallToActionService(
         {
             throw new InvalidOperationException("Email address is required for email notifications.");
         }
-        // TODO: regex
 
         return notification.Email.EmailAddress;
     }
@@ -226,7 +225,6 @@ internal sealed class SigningCallToActionService(
         {
             throw new InvalidOperationException("Mobile number is required for sms notifications.");
         }
-        // TODO: regex
 
         return notification.Sms.MobileNumber;
     }
