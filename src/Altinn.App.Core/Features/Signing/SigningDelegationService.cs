@@ -54,7 +54,9 @@ internal sealed class SigningDelegationService(
                     Guid? partyUuid = signeeContext.Signee.GetParty().PartyUuid;
                     logger.LogInformation(
                         "Delegating signee rights to {PartyUuid} from {InstanceOwnerPartyUuid} for {AppResourceIdValue}",
-                        partyUuid, instanceOwnerPartyUuid, appResourceId.Value
+                        partyUuid,
+                        instanceOwnerPartyUuid,
+                        appResourceId.Value
                     );
                     DelegationRequest delegationRequest = new()
                     {
@@ -131,7 +133,9 @@ internal sealed class SigningDelegationService(
                 Guid? partyUuid = signeeContext.Signee.GetParty().PartyUuid;
                 logger.LogInformation(
                     "Revoking signee rights from {PartyUuid} to {AppResourceId} by {InstanceOwnerPartyUuid}",
-                    partyUuid, appResourceId.Value, instanceOwnerPartyUuid
+                    partyUuid,
+                    appResourceId.Value,
+                    instanceOwnerPartyUuid
                 );
                 try
                 {
