@@ -12,6 +12,11 @@ public class InstantiationValidationResult
     /// </summary>
     public bool Valid { get; set; }
 
+    /// <summary>
+    /// The custom text key to use for the localized text.
+    /// </summary>
+    public string? CustomTextKey { get; set; }
+
 #nullable disable
     /// <summary>
     /// Gets or sets a message

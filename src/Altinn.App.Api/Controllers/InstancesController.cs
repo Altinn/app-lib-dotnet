@@ -22,6 +22,7 @@ using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.Validation;
@@ -69,6 +70,7 @@ public class InstancesController : ControllerBase
     private readonly IHostEnvironment _env;
     private readonly ModelSerializationService _serializationService;
     private readonly InternalPatchService _patchService;
+    private readonly ITranslationService _translationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
@@ -93,6 +95,7 @@ public class InstancesController : ControllerBase
         IHostEnvironment env,
         ModelSerializationService serializationService,
         InternalPatchService patchService,
+        ITranslationService translationService,
         IServiceProvider serviceProvider
     )
     {
@@ -113,6 +116,7 @@ public class InstancesController : ControllerBase
         _env = env;
         _serializationService = serializationService;
         _patchService = patchService;
+        _translationService = translationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
@@ -309,7 +313,11 @@ public class InstancesController : ControllerBase
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
         if (validationResult != null && !validationResult.Valid)
         {
-            return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+            InstantiationValidationResult validationResultWithMessage = await ValidationResultWithMessage(
+                validationResult,
+                language
+            );
+            return StatusCode(StatusCodes.Status403Forbidden, validationResultWithMessage);
         }
 
         instanceTemplate.Org = application.Org;
@@ -413,6 +421,7 @@ public class InstancesController : ControllerBase
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instansiationInstance">instansiation information</param>
+    /// <param name="language">The currently active user language</param>
     /// <returns>The new instance</returns>
     [HttpPost("create")]
     [DisableFormValueModelBinding]
@@ -423,7 +432,8 @@ public class InstancesController : ControllerBase
     public async Task<ActionResult<Instance>> PostSimplified(
         [FromRoute] string org,
         [FromRoute] string app,
-        [FromBody] InstansiationInstance instansiationInstance
+        [FromBody] InstansiationInstance instansiationInstance,
+        [FromQuery] string? language = null
     )
     {
         if (string.IsNullOrEmpty(org))
@@ -521,7 +531,11 @@ public class InstancesController : ControllerBase
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
         if (validationResult != null && !validationResult.Valid)
         {
-            return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+            InstantiationValidationResult validationResultWithMessage = await ValidationResultWithMessage(
+                validationResult,
+                language
+            );
+            return StatusCode(StatusCodes.Status403Forbidden, validationResultWithMessage);
         }
 
         Instance instance;
@@ -603,6 +617,7 @@ public class InstancesController : ControllerBase
     /// <param name="app">Application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">Unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">Unique id to identify the instance</param>
+    /// <param name="language">The currently active user language</param>
     /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
     /// <remarks>
     /// The endpoint will return a redirect to the new instance if the copy operation was successful.
@@ -617,7 +632,8 @@ public class InstancesController : ControllerBase
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
-        [FromRoute] Guid instanceGuid
+        [FromRoute] Guid instanceGuid,
+        [FromQuery] string? language = null
     )
     {
         // This endpoint should be used exclusively by end users. Ideally from a browser as a request after clicking
@@ -676,7 +692,11 @@ public class InstancesController : ControllerBase
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(targetInstance);
         if (validationResult != null && !validationResult.Valid)
         {
-            return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+            InstantiationValidationResult validationResultWithMessage = await ValidationResultWithMessage(
+                validationResult,
+                language
+            );
+            return StatusCode(StatusCodes.Status403Forbidden, validationResultWithMessage);
         }
 
         ProcessStartRequest processStartRequest = new() { Instance = targetInstance, User = User };
@@ -1312,5 +1332,24 @@ public class InstancesController : ControllerBase
                 new DataValues { Values = updatedValues }
             );
         }
+    }
+
+    private async Task<InstantiationValidationResult> ValidationResultWithMessage(
+        InstantiationValidationResult validationResult,
+        string? language
+    )
+    {
+        if (String.IsNullOrEmpty(validationResult.CustomTextKey) || !String.IsNullOrEmpty(validationResult.Message))
+        {
+            return validationResult;
+        }
+
+        return new InstantiationValidationResult()
+        {
+            Valid = validationResult.Valid,
+            CustomTextKey = validationResult.CustomTextKey,
+            Message = await _translationService.TranslateTextKey(validationResult.CustomTextKey, language),
+            ValidParties = validationResult.ValidParties,
+        };
     }
 }
