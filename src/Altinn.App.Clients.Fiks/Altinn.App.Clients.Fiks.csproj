@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Altinn.App.Core\Altinn.App.Core.csproj"/>
+    <ProjectReference Include="../Altinn.App.Core/Altinn.App.Core.csproj"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="KS.Fiks.Arkiv.Models.V1" Version="1.0.4"/>
