@@ -318,7 +318,6 @@ public class InitializeCorrespondenceContentExt
     /// Gets or sets the correspondence message title. Subject.
     /// </summary>
     /// <remarks>
-    /// TODO: Length restriction?
     /// </remarks>
     [JsonPropertyName("messageTitle")]
     public required string MessageTitle { get; set; }
@@ -327,7 +326,6 @@ public class InitializeCorrespondenceContentExt
     /// Gets or sets a summary text of the correspondence.
     /// </summary>
     /// <remarks>
-    /// TODO: Length restriction?
     /// </remarks>
     [JsonPropertyName("messageSummary")]
     public required string MessageSummary { get; set; }
