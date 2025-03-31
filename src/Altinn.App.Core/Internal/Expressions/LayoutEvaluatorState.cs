@@ -85,9 +85,10 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Get component from componentModel
     /// </summary>
-    public BaseComponent? GetComponent(string? pageName, string componentId)
+    public BaseComponent GetComponent(string pageName, string componentId)
     {
-        return _componentModel?.GetComponent(pageName, componentId);
+        return _componentModel?.GetComponent(pageName, componentId)
+            ?? throw new InvalidOperationException("Component model not loaded");
     }
 
     /// <summary>

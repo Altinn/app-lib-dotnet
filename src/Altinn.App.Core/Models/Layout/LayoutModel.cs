@@ -32,18 +32,13 @@ public class LayoutModel
     /// <summary>
     /// Get a specific component on a specific page.
     /// </summary>
-    public BaseComponent? GetComponent(string? pageName, string componentId)
+    public BaseComponent GetComponent(string pageName, string componentId)
     {
-        if (string.IsNullOrEmpty(pageName))
-        {
-            return _defaultLayoutSet.GetComponent(componentId);
-        }
-
         var page = _defaultLayoutSet.GetPage(pageName);
 
         if (!page.ComponentLookup.TryGetValue(componentId, out var component))
         {
-            return null;
+            throw new ArgumentException($"Unknown component {componentId} on {pageName}");
         }
         return component;
     }

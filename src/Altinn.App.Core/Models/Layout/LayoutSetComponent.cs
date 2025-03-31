@@ -45,22 +45,6 @@ public record LayoutSetComponent
     }
 
     /// <summary>
-    /// Get the single component with the given ID
-    /// </summary>
-    public BaseComponent? GetComponent(string componentId)
-    {
-        foreach (var page in _pages)
-        {
-            if (page.ComponentLookup.TryGetValue(componentId, out var component))
-            {
-                return component;
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>
     /// Enumerate over all the pages in the layout
     /// </summary>
     public IEnumerable<PageComponent> Pages => _pages;
