@@ -195,13 +195,15 @@ internal sealed class SigningCallToActionService(
                         {
                             NotificationChoice.Email => GetEmailOrThrow(notification),
                             NotificationChoice.SmsAndEmail => notification.Email?.EmailAddress,
-                            NotificationChoice.Sms or _ => null,
+                            NotificationChoice.Sms => null,
+                            _ => null,
                         },
                         MobileNumber = notificationChoice switch
                         {
                             NotificationChoice.Sms => GetMobileNumberOrThrow(notification),
                             NotificationChoice.SmsAndEmail => notification.Sms?.MobileNumber,
-                            NotificationChoice.Email or _ => null,
+                            NotificationChoice.Email => null,
+                            _ => null,
                         },
                     },
                 ],
