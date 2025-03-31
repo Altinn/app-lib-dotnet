@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace Altinn.App.Core.Features.Signing.Mocks;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-public class CorrespondenceClientMock
+public static class CorrespondenceClientMock
 {
     public static async Task<InitializeCorrespondencesResponseMock> Initialize(
         InitializeCorrespondenceRequestMock requestMock
