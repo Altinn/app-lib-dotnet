@@ -30,7 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Altinn.App.Clients.Fiks\Altinn.App.Clients.Fiks.csproj" />
+    <ProjectReference Include="../../src/Altinn.App.Clients.Fiks/Altinn.App.Clients.Fiks.csproj" />
+    <ProjectReference Include="../Altinn.App.Tests.Common/Altinn.App.Tests.Common.csproj" />
   </ItemGroup>
 
 </Project>
