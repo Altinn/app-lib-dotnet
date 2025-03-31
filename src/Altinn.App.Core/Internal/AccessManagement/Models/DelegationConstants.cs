@@ -1,6 +1,6 @@
 namespace Altinn.App.Core.Internal.AccessManagement.Models;
 
-internal class DelegationConst
+internal static class DelegationConst
 {
     internal const string Resource = "urn:altinn:resource";
     internal const string App = "urn:altinn:app";
@@ -10,7 +10,7 @@ internal class DelegationConst
     internal const string Party = "urn:altinn:party:uuid";
 }
 
-internal class ActionType
+internal static class ActionType
 {
     internal const string Write = "write";
     internal const string Read = "read";

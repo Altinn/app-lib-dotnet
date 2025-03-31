@@ -56,9 +56,14 @@ internal sealed class SigningTaskValidator : IValidator
             return false;
         }
 
-        AltinnSignatureConfiguration? signingConfiguration = taskConfig?.SignatureConfiguration;
+        if (taskConfig is null)
+        {
+            return false;
+        }
 
-        return signingConfiguration?.RunDefaultValidator is true && taskConfig?.TaskType is "signing";
+        AltinnSignatureConfiguration? signingConfiguration = taskConfig.SignatureConfiguration;
+
+        return signingConfiguration?.RunDefaultValidator is true && taskConfig.TaskType is "signing";
     }
 
     public bool NoIncrementalValidation => true;

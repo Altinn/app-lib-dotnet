@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace Altinn.App.Core.Features.Signing.Mocks;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-public class CorrespondenceClientMock
+public static class CorrespondenceClientMock
 {
     public static async Task<InitializeCorrespondencesResponseMock> Initialize(
         InitializeCorrespondenceRequestMock requestMock
@@ -145,7 +145,7 @@ public class ExternalReferenceExt
     public required ReferenceTypeExt ReferenceType { get; set; }
 }
 
-public enum ReferenceTypeExt : int
+public enum ReferenceTypeExt
 {
     /// <summary>
     /// Specifies a generic reference
@@ -318,7 +318,6 @@ public class InitializeCorrespondenceContentExt
     /// Gets or sets the correspondence message title. Subject.
     /// </summary>
     /// <remarks>
-    /// TODO: Length restriction?
     /// </remarks>
     [JsonPropertyName("messageTitle")]
     public required string MessageTitle { get; set; }
@@ -327,7 +326,6 @@ public class InitializeCorrespondenceContentExt
     /// Gets or sets a summary text of the correspondence.
     /// </summary>
     /// <remarks>
-    /// TODO: Length restriction?
     /// </remarks>
     [JsonPropertyName("messageSummary")]
     public required string MessageSummary { get; set; }
