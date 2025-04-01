@@ -13,16 +13,19 @@ internal sealed class FiksArkivConfigValidationService : IHostedService
     private readonly IFiksArkivServiceTask _fiksArkivServiceTask;
     private readonly IProcessReader _processReader;
     private readonly IAppMetadata _appMetadata;
+    private readonly IFiksArkivAutoSendDecision _fiksArkivAutoSendDecision;
 
     public FiksArkivConfigValidationService(
         IFiksArkivMessageHandler fiksArkivMessageHandler,
         IFiksArkivServiceTask fiksArkivServiceTask,
+        IFiksArkivAutoSendDecision fiksArkivAutoSendDecision,
         IProcessReader processReader,
         IAppMetadata appMetadata
     )
     {
         _fiksArkivMessageHandler = fiksArkivMessageHandler;
         _fiksArkivServiceTask = fiksArkivServiceTask;
+        _fiksArkivAutoSendDecision = fiksArkivAutoSendDecision;
         _processReader = processReader;
         _appMetadata = appMetadata;
     }
@@ -36,6 +39,9 @@ internal sealed class FiksArkivConfigValidationService : IHostedService
 
         if (_fiksArkivServiceTask is IFiksArkivConfigValidation fiksArkivConfigValidation)
             await fiksArkivConfigValidation.ValidateConfiguration(appMetadata.DataTypes, processTasks);
+
+        if (_fiksArkivAutoSendDecision is IFiksArkivConfigValidation fiksArkivAutoSendConfigValidation)
+            await fiksArkivAutoSendConfigValidation.ValidateConfiguration(appMetadata.DataTypes, processTasks);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

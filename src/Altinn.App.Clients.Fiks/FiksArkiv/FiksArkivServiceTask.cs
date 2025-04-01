@@ -15,9 +15,11 @@ internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask, IFiksArkivCo
     private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
     private readonly IFiksIOClient _fiksIOClient;
     private readonly ILogger<FiksArkivServiceTask> _logger;
+    private readonly IFiksArkivAutoSendDecision _fiksArkivAutoSendDecision;
 
     public FiksArkivServiceTask(
         IFiksArkivMessageHandler fiksArkivMessageHandler,
+        IFiksArkivAutoSendDecision fiksArkivAutoSendDecision,
         IOptions<FiksArkivSettings> fiksArkivSettings,
         IFiksIOClient fiksIOClient,
         ILogger<FiksArkivServiceTask> logger
@@ -25,13 +27,15 @@ internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask, IFiksArkivCo
     {
         _fiksArkivSettings = fiksArkivSettings.Value;
         _fiksArkivMessageHandler = fiksArkivMessageHandler;
+        _fiksArkivAutoSendDecision = fiksArkivAutoSendDecision;
         _fiksIOClient = fiksIOClient;
         _logger = logger;
     }
 
     public async Task Execute(string taskId, Instance instance)
     {
-        if (IsEnabledForTask(taskId) is false)
+        var shouldSendDecision = await _fiksArkivAutoSendDecision.ShouldSend(taskId, instance);
+        if (shouldSendDecision is false)
             return;
 
         _logger.LogInformation("Sending Fiks Arkiv message for instance {InstanceId}", instance.Id);
@@ -41,8 +45,6 @@ internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask, IFiksArkivCo
 
         _logger.LogInformation("Fiks Arkiv responded with message ID {MessageId}", response.MessageId);
     }
-
-    private bool IsEnabledForTask(string taskId) => _fiksArkivSettings.AutoSend?.AfterTaskId == taskId;
 
     public async Task ValidateConfiguration(
         IReadOnlyList<DataType> configuredDataTypes,
