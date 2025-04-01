@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Internal.Texts;
 /// <summary>
 /// Translation service
 /// </summary>
-public class TranslationService : ITranslationService
+internal class TranslationService : ITranslationService
 {
     private readonly string _org;
     private readonly string _app;

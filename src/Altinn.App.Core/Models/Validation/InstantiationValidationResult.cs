@@ -13,7 +13,7 @@ public class InstantiationValidationResult
     public bool Valid { get; set; }
 
     /// <summary>
-    /// The custom text key to use for the localized text.
+    /// Text key to used for translation if Message is null, can be used by frontend directly
     /// </summary>
     public string? CustomTextKey { get; set; }
 

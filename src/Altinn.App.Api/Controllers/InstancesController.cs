@@ -313,11 +313,8 @@ public class InstancesController : ControllerBase
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
         if (validationResult != null && !validationResult.Valid)
         {
-            InstantiationValidationResult validationResultWithMessage = await ValidationResultWithMessage(
-                validationResult,
-                language
-            );
-            return StatusCode(StatusCodes.Status403Forbidden, validationResultWithMessage);
+            await TranslateValidationResult(validationResult, language);
+            return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
         instanceTemplate.Org = application.Org;
@@ -531,11 +528,8 @@ public class InstancesController : ControllerBase
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
         if (validationResult != null && !validationResult.Valid)
         {
-            InstantiationValidationResult validationResultWithMessage = await ValidationResultWithMessage(
-                validationResult,
-                language
-            );
-            return StatusCode(StatusCodes.Status403Forbidden, validationResultWithMessage);
+            await TranslateValidationResult(validationResult, language);
+            return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
         Instance instance;
@@ -692,11 +686,8 @@ public class InstancesController : ControllerBase
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(targetInstance);
         if (validationResult != null && !validationResult.Valid)
         {
-            InstantiationValidationResult validationResultWithMessage = await ValidationResultWithMessage(
-                validationResult,
-                language
-            );
-            return StatusCode(StatusCodes.Status403Forbidden, validationResultWithMessage);
+            await TranslateValidationResult(validationResult, language);
+            return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
         ProcessStartRequest processStartRequest = new() { Instance = targetInstance, User = User };
@@ -1334,22 +1325,14 @@ public class InstancesController : ControllerBase
         }
     }
 
-    private async Task<InstantiationValidationResult> ValidationResultWithMessage(
-        InstantiationValidationResult validationResult,
-        string? language
-    )
+    private async Task TranslateValidationResult(InstantiationValidationResult validationResult, string? language)
     {
-        if (String.IsNullOrEmpty(validationResult.CustomTextKey) || !String.IsNullOrEmpty(validationResult.Message))
+        if (String.IsNullOrEmpty(validationResult.Message) && !String.IsNullOrEmpty(validationResult.CustomTextKey))
         {
-            return validationResult;
+            validationResult.Message = await _translationService.TranslateTextKey(
+                validationResult.CustomTextKey,
+                language
+            );
         }
-
-        return new InstantiationValidationResult()
-        {
-            Valid = validationResult.Valid,
-            CustomTextKey = validationResult.CustomTextKey,
-            Message = await _translationService.TranslateTextKey(validationResult.CustomTextKey, language),
-            ValidParties = validationResult.ValidParties,
-        };
     }
 }

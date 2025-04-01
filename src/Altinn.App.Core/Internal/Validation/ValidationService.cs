@@ -66,7 +66,7 @@ public class ValidationService : IValidationService
             {
                 var issues = await v.Validate(dataAccessor, taskId, language);
                 validatorActivity?.SetTag(Telemetry.InternalLabels.ValidatorIssueCount, issues.Count);
-                issues = await ValidationIssuesWithDescription(issues, language);
+                await TranslateValidationIssues(issues, language);
                 return KeyValuePair.Create(
                     v.ValidationSource,
                     issues.Select(issue =>
@@ -131,7 +131,7 @@ public class ValidationService : IValidationService
                 {
                     var issues = await validator.Validate(dataAccessor, taskId, language);
                     validatorActivity?.SetTag(Telemetry.InternalLabels.ValidatorIssueCount, issues.Count);
-                    issues = await ValidationIssuesWithDescription(issues, language);
+                    await TranslateValidationIssues(issues, language);
                     var issuesWithSource = issues
                         .Select(i =>
                             ValidationIssueWithSource.FromIssue(
@@ -169,33 +169,15 @@ public class ValidationService : IValidationService
         return lists.OfType<ValidationSourcePair>().ToList();
     }
 
-    private async Task<List<ValidationIssue>> ValidationIssuesWithDescription(
-        IEnumerable<ValidationIssue> issues,
-        string? language
-    )
+    private async Task TranslateValidationIssues(IEnumerable<ValidationIssue> issues, string? language)
     {
-        if (!issues.Any(i => String.IsNullOrEmpty(i.Description) && !String.IsNullOrEmpty(i.CustomTextKey)))
+        foreach (var issue in issues)
         {
-            return issues.ToList();
-        }
-
-        var issuesWithDescription = await Task.WhenAll(
-            issues.Select(async issue => new ValidationIssue
+            if (String.IsNullOrEmpty(issue.Description) && !String.IsNullOrEmpty(issue.CustomTextKey))
             {
-                Severity = issue.Severity,
-                DataElementId = issue.DataElementId,
-                Field = issue.Field,
-                Code = issue.Code,
-                Description =
-                    String.IsNullOrEmpty(issue.Description) && !String.IsNullOrEmpty(issue.CustomTextKey)
-                        ? await _translationService.TranslateTextKey(issue.CustomTextKey, language)
-                        : issue.Description,
-                CustomTextKey = issue.CustomTextKey,
-                CustomTextParams = issue.CustomTextParams,
-            })
-        );
-
-        return issuesWithDescription.ToList();
+                issue.Description = await _translationService.TranslateTextKey(issue.CustomTextKey, language);
+            }
+        }
     }
 
     private static void ThrowIfDuplicateValidators(IValidator[] validators, string taskId)
