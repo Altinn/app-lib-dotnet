@@ -175,32 +175,32 @@ public sealed record FiksArkivRecipientSettings
 
 /// <summary>
 /// Represents the settings for a <see cref="FiksArkivRecipientSettings"/> property.
-/// Allows setting the <see cref="Id"/> directly, or via a <see cref="DataModelBinding"/> which is evaluated right before shipment.
+/// Allows setting the <see cref="Value"/> directly, or via a <see cref="DataModelBinding"/> which is evaluated right before shipment.
 /// </summary>
 public sealed record FiksArkivRecipientValue<T>
 {
     /// <summary>
-    /// The account ID of the recipient.
+    /// The value supplied directly.
     /// </summary>
-    [JsonPropertyName("id")]
-    public T? Id { get; init; }
+    [JsonPropertyName("value")]
+    public T? Value { get; init; }
 
     /// <summary>
-    /// A data model binding for the account ID of the recipient.
+    /// A data model binding to the property containing the desired value.
     /// </summary>
     [JsonPropertyName("dataModelBinding")]
     public FiksArkivDataModelBinding? DataModelBinding { get; init; }
 
     internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes)
     {
-        if (Id is null && DataModelBinding is null)
+        if (Value is null && DataModelBinding is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}: Either `{nameof(Id)}` or `{nameof(DataModelBinding)}` must be configured."
+                $"{propertyName}: Either `{nameof(Value)}` or `{nameof(DataModelBinding)}` must be configured."
             );
 
-        if (Id is not null && DataModelBinding is not null)
+        if (Value is not null && DataModelBinding is not null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}: Both `{nameof(Id)}` and `{nameof(DataModelBinding)}` cannot be set at the same time."
+                $"{propertyName}: Both `{nameof(Value)}` and `{nameof(DataModelBinding)}` cannot be set at the same time."
             );
 
         DataModelBinding?.Validate($"{propertyName}.{nameof(DataModelBinding)}", dataTypes);

@@ -25,7 +25,7 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal sealed partial class FiksArkivDefaultMessageHandler
 {
-    private async Task<IEnumerable<FiksIOMessagePayload>> GenerateMessagePayloads(
+    private async Task<IReadOnlyList<FiksIOMessagePayload>> GenerateMessagePayloads(
         Instance instance,
         RecipientWrapper recipient
     )
@@ -106,7 +106,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         );
 
         // Main form data file
-        journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(archiveDocuments.FormDocument));
+        journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(archiveDocuments.PrimaryDocument));
 
         // Attachments
         foreach (var attachment in archiveDocuments.AttachmentDocuments)
@@ -223,17 +223,20 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             FiksArkivRecipientValue<Guid?> configValue
         )
         {
-            if (configValue.Id is not null)
-                return configValue.Id.Value;
+            if (configValue.Value is not null)
+                return configValue.Value.Value;
 
             var accountBinding = VerifiedNotNull(configValue.DataModelBinding);
             var dataElement = instance.GetRequiredDataElement(accountBinding.DataType);
             var data = await layoutState.GetModelData(accountBinding, dataElement, null);
 
-            return Guid.TryParse(data as string, out var recipient)
+            if (data is Guid guid)
+                return guid;
+
+            return Guid.TryParse($"{data}", out var recipient)
                 ? recipient
                 : throw new FiksArkivException(
-                    $"Could not parse recipient account from data binding: {accountBinding}"
+                    $"Could not parse recipient account from data binding: {accountBinding}. Bound value resolved to `{data}` (of type `{data?.GetType()}`)"
                 );
         }
 
@@ -245,8 +248,8 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             if (configValue is null)
                 return null;
 
-            if (configValue.Id is not null)
-                return configValue.Id;
+            if (configValue.Value is not null)
+                return configValue.Value;
 
             var recipientBinding = VerifiedNotNull(configValue.DataModelBinding);
             var dataElement = instance.GetRequiredDataElement(recipientBinding.DataType);

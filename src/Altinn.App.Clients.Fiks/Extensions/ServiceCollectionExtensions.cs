@@ -58,6 +58,18 @@ public static class ServiceCollectionExtensions
         return new FiksArkivSetupBuilder(services);
     }
 
+    public static IServiceCollection TempAddFiksMessageHandlerOnly(this IServiceCollection services)
+    {
+        if (services.IsConfigured<FiksArkivSettings>() is false)
+        {
+            services.ConfigureFiksArkiv("FiksArkivSettings");
+        }
+
+        services.AddTransient<IFiksArkivMessageHandler, FiksArkivDefaultMessageHandler>();
+        services.AddTransient<IAltinnCdnClient, AltinnCdnClient>();
+        return services;
+    }
+
     /// <summary>
     /// Configures the Fiks IO client with the provided options.
     /// </summary>
