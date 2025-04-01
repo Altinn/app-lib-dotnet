@@ -47,6 +47,14 @@ internal sealed class FiksArkivSetupBuilder(IServiceCollection services) : IFiks
     }
 
     /// <inheritdoc />
+    public IFiksArkivSetupBuilder WithAutoSendDecision<TAutoSendDecision>()
+        where TAutoSendDecision : IFiksArkivAutoSendDecision
+    {
+        services.AddTransient(typeof(IFiksArkivAutoSendDecision), typeof(TAutoSendDecision));
+        return this;
+    }
+
+    /// <inheritdoc />
     public IFiksArkivSetupBuilder WithResiliencePipeline(
         Action<ResiliencePipelineBuilder<FiksIOMessageResponse>, AddResiliencePipelineContext<string>> configure
     )

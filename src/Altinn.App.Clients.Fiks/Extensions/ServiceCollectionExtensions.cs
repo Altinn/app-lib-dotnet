@@ -52,22 +52,11 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IAltinnCdnClient, AltinnCdnClient>();
         services.AddTransient<IFiksArkivMessageHandler, FiksArkivDefaultMessageHandler>();
         services.AddTransient<IFiksArkivServiceTask, FiksArkivServiceTask>();
+        services.AddTransient<IFiksArkivAutoSendDecision, FiksArkivDefaultAutoSendDecision>();
         services.AddHostedService<FiksArkivConfigValidationService>();
         services.AddHostedService<FiksArkivEventService>();
 
         return new FiksArkivSetupBuilder(services);
-    }
-
-    public static IServiceCollection TempAddFiksMessageHandlerOnly(this IServiceCollection services)
-    {
-        if (services.IsConfigured<FiksArkivSettings>() is false)
-        {
-            services.ConfigureFiksArkiv("FiksArkivSettings");
-        }
-
-        services.AddTransient<IFiksArkivMessageHandler, FiksArkivDefaultMessageHandler>();
-        services.AddTransient<IAltinnCdnClient, AltinnCdnClient>();
-        return services;
     }
 
     /// <summary>

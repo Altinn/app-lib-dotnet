@@ -21,6 +21,7 @@ public sealed record FiksArkivSettings
     /// Settings related to auto-submission to Fiks Arkiv.
     /// </summary>
     [JsonPropertyName("autoSend")]
+    // TODO: Restructure this -- many settings in the `AutoSend` relates to payload generation, not just auto-sending
     public FiksArkivAutoSendSettings? AutoSend { get; set; }
 
     internal void Validate(IReadOnlyList<DataType> dataTypes, IReadOnlyList<ProcessTask> processTasks)
@@ -69,10 +70,11 @@ public sealed record FiksArkivErrorHandlingSettings
 public sealed record FiksArkivAutoSendSettings
 {
     /// <summary>
-    /// The task ID to send the message after.
+    /// The task ID to send the message after. This is applicable for use with the <see cref="FiksArkivDefaultAutoSendDecision"/> handler,
+    /// and may or may not be used with other handlers.
     /// </summary>
     [JsonPropertyName("afterTaskId")]
-    public required string AfterTaskId { get; init; }
+    public string? AfterTaskId { get; init; }
 
     /// <summary>
     /// Should we automatically progress to the next task after successfully sending the message?
@@ -108,16 +110,6 @@ public sealed record FiksArkivAutoSendSettings
     internal void Validate(IReadOnlyList<DataType> dataTypes, IReadOnlyList<ProcessTask> processTasks)
     {
         const string propertyName = nameof(FiksArkivSettings.AutoSend);
-
-        if (string.IsNullOrWhiteSpace(AfterTaskId))
-            throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(AfterTaskId)} configuration is required for auto-send."
-            );
-
-        if (processTasks.FirstOrDefault(x => x.Id == AfterTaskId) is null)
-            throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(AfterTaskId)} mismatch with application process tasks: {AfterTaskId}"
-            );
 
         if (string.IsNullOrWhiteSpace(ReceiptDataType))
             throw new FiksArkivConfigurationException(

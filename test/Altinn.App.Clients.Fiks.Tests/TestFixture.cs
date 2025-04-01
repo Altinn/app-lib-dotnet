@@ -204,9 +204,9 @@ internal sealed record TestFixture(
                     {
                         DataModelBinding = new FiksArkivDataModelBinding { DataType = "model", Field = "recipient" },
                     },
-                    Identifier = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
-                    OrganizationNumber = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
-                    Name = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
+                    Identifier = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+                    OrganizationNumber = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+                    Name = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
                 },
                 PrimaryDocument = new FiksArkivPayloadSettings
                 {
@@ -257,9 +257,9 @@ internal sealed record TestFixture(
                             Field = Guid.NewGuid().ToString(),
                         },
                     },
-                    Identifier = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
-                    OrganizationNumber = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
-                    Name = new FiksArkivRecipientValue<string> { Id = Guid.NewGuid().ToString() },
+                    Identifier = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+                    OrganizationNumber = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+                    Name = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
                 },
                 PrimaryDocument = new FiksArkivPayloadSettings
                 {
