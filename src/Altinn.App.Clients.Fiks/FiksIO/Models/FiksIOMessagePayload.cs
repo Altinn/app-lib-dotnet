@@ -10,7 +10,7 @@ public sealed record FiksIOMessagePayload
     /// <summary>
     /// The data stream
     /// </summary>
-    public Stream Data { get; init; }
+    public Stream Data { get; }
 
     /// <summary>
     /// The filename

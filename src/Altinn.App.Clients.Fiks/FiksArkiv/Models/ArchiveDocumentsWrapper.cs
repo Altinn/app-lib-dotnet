@@ -5,18 +5,18 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv.Models;
 
 internal sealed record ArchiveDocumentsWrapper
 {
-    public MessagePayloadWrapper FormDocument { get; }
+    public MessagePayloadWrapper PrimaryDocument { get; }
     public IEnumerable<MessagePayloadWrapper> AttachmentDocuments { get; }
     private List<MessagePayloadWrapper> _allDocuments { get; }
 
     public ArchiveDocumentsWrapper(
-        MessagePayloadWrapper formDocument,
+        MessagePayloadWrapper primaryDocument,
         IEnumerable<MessagePayloadWrapper> attachmentDocuments
     )
     {
-        FormDocument = formDocument;
+        PrimaryDocument = primaryDocument;
         AttachmentDocuments = attachmentDocuments;
-        _allDocuments = [FormDocument, .. AttachmentDocuments];
+        _allDocuments = [PrimaryDocument, .. AttachmentDocuments];
 
         _allDocuments.EnsureUniqueFilenames();
     }

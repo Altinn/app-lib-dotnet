@@ -78,9 +78,6 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
 
     public async Task<FiksIOMessageRequest> CreateMessageRequest(string taskId, Instance instance)
     {
-        if (IsEnabledForTask(taskId) is false)
-            throw new FiksArkivException($"Fiks Arkiv error: Auto-send is not enabled for this task: {taskId}");
-
         var recipient = await GetRecipient(instance);
         var instanceId = new InstanceIdentifier(instance.Id);
         var messagePayloads = await GenerateMessagePayloads(instance, recipient);
@@ -123,8 +120,6 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         _fiksArkivSettings.Validate(configuredDataTypes, configuredProcessTasks);
         return Task.CompletedTask;
     }
-
-    private bool IsEnabledForTask(string taskId) => _fiksArkivSettings.AutoSend?.AfterTaskId == taskId;
 
     private async Task<ApplicationMetadata> GetApplicationMetadata()
     {
