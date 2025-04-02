@@ -51,11 +51,13 @@ internal static class ApplicationMetadataFileReader
             }
             else
             {
+#pragma warning disable RS1035 // Do not use APIs banned for analyzers
                 if (!File.Exists(file))
                     return new ApplicationMetadataResult.FileNotFound(file);
 
                 jsonText = File.ReadAllText(file, Encoding.UTF8);
                 sourceText = SourceText.From(jsonText, Encoding.UTF8);
+#pragma warning restore RS1035 // Do not use APIs banned for analyzers
             }
 
             if (cancellationToken.IsCancellationRequested)

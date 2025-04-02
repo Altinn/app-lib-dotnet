@@ -26,6 +26,7 @@ public class ModuleInitializer
             converters.Add(new DiagnosticJsonConverter());
         });
         Verifier.UseProjectRelativeDirectory("_snapshots");
+        VerifierSettings.AutoVerify(includeBuildServer: false);
     }
 
     private static DirectoryInfo GetTestProjectDirectory()

@@ -22,7 +22,8 @@
     <ItemGroup>
         <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
         <PackageReference Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.13.12" />
-        <PackageReference Include="Buildalyzer.Workspaces" Version="7.0.1" />
+        <PackageReference Include="Buildalyzer.Workspaces" Version="7.1.0" />
+        <PackageReference Include="System.Formats.Asn1" Version="8.0.2" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Altinn.App.Analyzers\Altinn.App.Analyzers.csproj" />

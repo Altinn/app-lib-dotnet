@@ -53,7 +53,7 @@ public sealed partial class AltinnTestAppFixture : IDisposable
             Assert.True(Directory.Exists(_projectDir));
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(Directory.GetCurrentDirectory(), "App", "App.csproj"));
-            _workspace = analyzer.GetWorkspace();
+            _workspace = analyzer.GetWorkspace(addProjectReferences: true);
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.AddDocument));
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.RemoveDocument));
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.ChangeDocument));
