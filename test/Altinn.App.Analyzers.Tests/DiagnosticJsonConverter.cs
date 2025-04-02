@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using VerifyTests;
 
 namespace Altinn.App.Analyzers.Tests;
 
