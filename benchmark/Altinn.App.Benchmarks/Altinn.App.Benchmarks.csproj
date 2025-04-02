@@ -26,8 +26,8 @@
         <PackageReference Include="System.Formats.Asn1" Version="8.0.2" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Altinn.App.Analyzers\Altinn.App.Analyzers.csproj" />
-        <ProjectReference Include="..\..\src\Altinn.App.Api\Altinn.App.Api.csproj" />
-        <ProjectReference Include="..\..\src\Altinn.App.Core\Altinn.App.Core.csproj" />
+        <ProjectReference Include="../../src/Altinn.App.Analyzers/Altinn.App.Analyzers.csproj" />
+        <ProjectReference Include="../../src/Altinn.App.Api/Altinn.App.Api.csproj" />
+        <ProjectReference Include="../../src/Altinn.App.Core/Altinn.App.Core.csproj" />
     </ItemGroup>
 </Project>

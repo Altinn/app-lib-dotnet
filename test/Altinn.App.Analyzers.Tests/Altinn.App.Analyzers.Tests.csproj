@@ -27,11 +27,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Altinn.App.Analyzers\Altinn.App.Analyzers.csproj" />
+    <ProjectReference Include="../../src/Altinn.App.Analyzers/Altinn.App.Analyzers.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="testapp\**" />
+    <Compile Remove="testapp/**" />
   </ItemGroup>
 
   <ItemGroup>

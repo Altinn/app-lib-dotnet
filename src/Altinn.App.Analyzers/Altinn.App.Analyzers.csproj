@@ -39,7 +39,7 @@
     <PackageReference Include="SvSoft.Analyzers.ClosedTypeHierarchyDiagnosticSuppression" Version="1.1.1"  PrivateAssets="All" />
 
     <PackageReference Include="Newtonsoft.Json" GeneratePathProperty="true" Version="13.0.3" />
-    <None Include="$(PKGNewtonsoft_Json)\lib\netstandard2.0\Newtonsoft.Json.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(PKGNewtonsoft_Json)/lib/netstandard2.0/Newtonsoft.Json.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -47,7 +47,7 @@
   </PropertyGroup>
   <Target Name="GetDependencyTargetPaths">
     <ItemGroup>
-      <TargetPathWithTargetPlatformMoniker Include="$(PKGNewtonsoft_Json)\lib\netstandard2.0\Newtonsoft.Json.dll" IncludeRuntimeDependency="false" />
+      <TargetPathWithTargetPlatformMoniker Include="$(PKGNewtonsoft_Json)/lib/netstandard2.0/Newtonsoft.Json.dll" IncludeRuntimeDependency="false" />
     </ItemGroup>
   </Target>
 </Project>
