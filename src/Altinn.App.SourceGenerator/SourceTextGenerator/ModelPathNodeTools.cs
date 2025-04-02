@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 
 namespace Altinn.App.SourceGenerator.SourceTextGenerator;
 
-public static class ModelPathNodeTools
+internal static class ModelPathNodeTools
 {
     public record Property(
         ImmutableArray<string> CSharp,
@@ -25,7 +25,7 @@ public static class ModelPathNodeTools
         List<Property> properties
     )
     {
-        foreach (var child in node.Children.Where(c => !c.Children.IsDefaultOrEmpty))
+        foreach (var child in node.Properties.Where(c => !c.Properties.IsDefaultOrEmpty))
         {
             if (child.ListType is null)
             {

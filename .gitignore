@@ -380,3 +380,4 @@ src/Altinn.Apps/AppTemplates/AspNet/App/Properties/launchSettings.json
 
 *.received.txt
 *.received.json
+*.received.cs

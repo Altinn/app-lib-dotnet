@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Altinn.App.SourceGenerator.SourceTextGenerator;
 
-public static class AltinnRowIdsGenerator
+internal static class AltinnRowIdsGenerator
 {
     public static void Generate(StringBuilder builder, ModelPathNode rootNode)
     {
@@ -66,7 +66,7 @@ public static class AltinnRowIdsGenerator
         );
 
         var groupIndex = -1;
-        var altinnRowId = node.Children.FirstOrDefault(IsAltinnRowId);
+        var altinnRowId = node.Properties.FirstOrDefault(IsAltinnRowId);
         if (altinnRowId is not null)
         {
             builder.Append(
@@ -77,7 +77,7 @@ public static class AltinnRowIdsGenerator
             );
         }
 
-        foreach (var property in listProperties.Where(p => p.Node.Children.Any(IsAltinnRowId)))
+        foreach (var property in listProperties.Where(p => p.Node.Properties.Any(IsAltinnRowId)))
         {
             groupIndex++;
             builder.Append(

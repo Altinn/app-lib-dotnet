@@ -1,9 +1,8 @@
-using System.Collections.Immutable;
 using System.Text;
 
 namespace Altinn.App.SourceGenerator.SourceTextGenerator;
 
-public static class AddIndexToPathGenerator
+internal static class AddIndexToPathGenerator
 {
     public static void Generate(StringBuilder builder, ModelPathNode rootNode)
     {
@@ -61,7 +60,7 @@ public static class AddIndexToPathGenerator
             """
         );
 
-        foreach (var child in node.Children.Where(IsRelevantForRecursion))
+        foreach (var child in node.Properties.Where(IsRelevantForRecursion))
         {
             builder.Append(
                 $$"""
@@ -119,7 +118,7 @@ public static class AddIndexToPathGenerator
             );
         }
 
-        foreach (var child in node.Children.Where(c => !IsRelevantForRecursion(c)))
+        foreach (var child in node.Properties.Where(c => !IsRelevantForRecursion(c)))
         {
             builder.Append(
                 $$"""
@@ -144,7 +143,7 @@ public static class AddIndexToPathGenerator
 
             """
         );
-        foreach (var child in node.Children)
+        foreach (var child in node.Properties)
         {
             if (IsRelevantForRecursion(child))
             {
@@ -155,6 +154,6 @@ public static class AddIndexToPathGenerator
 
     private static bool IsRelevantForRecursion(ModelPathNode node)
     {
-        return !node.Children.IsDefaultOrEmpty;
+        return !node.Properties.IsDefaultOrEmpty;
     }
 }

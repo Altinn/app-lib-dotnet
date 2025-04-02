@@ -2,14 +2,11 @@ using System.Text;
 
 namespace Altinn.App.SourceGenerator.SourceTextGenerator;
 
-/// <summary>
-/// Generate the implementation for the GetRaw method.
-/// </summary>
-public static class RemoveGenerator
+internal static class RemoveGenerator
 {
     public static void Generate(StringBuilder builder, ModelPathNode rootNode)
     {
-        if (rootNode.Children.IsDefaultOrEmpty)
+        if (rootNode.Properties.IsDefaultOrEmpty)
         {
             builder.Append(
                 """
@@ -47,7 +44,7 @@ public static class RemoveGenerator
         HashSet<string> generatedTypes
     )
     {
-        if (modelPathNode.Children.IsDefaultOrEmpty)
+        if (modelPathNode.Properties.IsDefaultOrEmpty)
         {
             // Do not generate for primitive types
             return;
@@ -116,14 +113,14 @@ public static class RemoveGenerator
             
             """
         );
-        foreach (var child in modelPathNode.Children)
+        foreach (var child in modelPathNode.Properties)
         {
             if (
                 child is
                 {
                     CSharpPath: "AltinnRowId",
                     Type: "System.Guid",
-                    Children.IsDefaultOrEmpty: true,
+                    Properties.IsDefaultOrEmpty: true,
                     JsonPath: "altinnRowId"
                 }
             )
@@ -140,7 +137,7 @@ public static class RemoveGenerator
                 
                 """
             );
-            if (!child.Children.IsDefaultOrEmpty)
+            if (!child.Properties.IsDefaultOrEmpty)
             {
                 builder.Append(
                     $"""
@@ -164,7 +161,7 @@ public static class RemoveGenerator
             """
         );
 
-        foreach (var child in modelPathNode.Children)
+        foreach (var child in modelPathNode.Properties)
         {
             GenerateRecursive(builder, child, generatedTypes);
         }

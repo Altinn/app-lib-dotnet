@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Altinn.App.SourceGenerator.SourceTextGenerator;
 
-public static class PrepareModelForXmlStorageGenerator
+internal static class PrepareModelForXmlStorageGenerator
 {
     public static void Generate(StringBuilder builder, ModelPathNode rootNode)
     {

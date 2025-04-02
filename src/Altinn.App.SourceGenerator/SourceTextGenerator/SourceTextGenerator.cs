@@ -2,8 +2,14 @@ using System.Text;
 
 namespace Altinn.App.SourceGenerator.SourceTextGenerator;
 
+/// <summary>
+/// Generates source text for the IFormDataWrapper implementations.
+/// </summary>
 public static class SourceTextGenerator
 {
+    /// <summary>
+    /// Generates the source text for the IFormDataWrapper implementation for the given root node.
+    /// </summary>
     public static string GenerateSourceText(ModelPathNode rootNode, string classModifier)
     {
         var builder = new StringBuilder();

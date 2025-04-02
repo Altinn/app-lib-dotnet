@@ -2,9 +2,9 @@ using System.Text;
 
 namespace Altinn.App.SourceGenerator.SourceTextGenerator;
 
-public static class CopyGenerator
+internal static class CopyGenerator
 {
-    public static void Generate(StringBuilder builder, ModelPathNode rootNode, string className)
+    public static void Generate(StringBuilder builder, ModelPathNode rootNode, string generatedWrapperClassName)
     {
         // TODO: Give real implementation that does not go through json
         builder.Append(
@@ -13,7 +13,7 @@ public static class CopyGenerator
                 /// <inheritdoc />
                 public IFormDataWrapper Copy()
                 {
-                    return new {{className}}(CopyRecursive(_dataModel));
+                    return new {{generatedWrapperClassName}}(CopyRecursive(_dataModel));
                 }
             
             """
@@ -49,17 +49,17 @@ public static class CopyGenerator
             
             """
         );
-        if (node.Children.IsDefaultOrEmpty)
+        if (node.Properties.IsDefaultOrEmpty)
         {
             builder.Append("        return new();\r\n    }\r\n");
         }
         else
         {
             builder.Append("        return new()\r\n        {\r\n");
-            foreach (var property in node.Children)
+            foreach (var property in node.Properties)
             {
                 builder.Append(
-                    property.Children.IsDefaultOrEmpty
+                    property.Properties.IsDefaultOrEmpty
                         ? $"            {property.CSharpPath} = data.{property.CSharpPath},\r\n"
                         : $"            {property.CSharpPath} = CopyRecursive(data.{property.CSharpPath}),\r\n"
                 );
@@ -68,7 +68,7 @@ public static class CopyGenerator
             builder.Append("        };\r\n    }\r\n");
         }
 
-        foreach (var recursiveChild in node.Children.Where(c => !c.Children.IsDefaultOrEmpty))
+        foreach (var recursiveChild in node.Properties.Where(c => !c.Properties.IsDefaultOrEmpty))
         {
             GenerateCopyRecursive(builder, recursiveChild, classNames);
         }

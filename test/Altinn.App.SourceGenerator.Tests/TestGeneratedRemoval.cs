@@ -70,7 +70,7 @@ public class TestGeneratedRemoval
         Assert.NotSame(data.Skjemainnhold, copy.Skjemainnhold);
 
         wrapper.RemoveField("skjemainnhold[0].navn", RowRemovalOption.Ignore);
-        Assert.Equal("Ola", copy.Skjemainnhold![0].Navn);
+        Assert.Equal("Ola", copy.Skjemainnhold?[0]?.Navn);
         Assert.Null(data.Skjemainnhold[0]!.Navn);
 
         Assert.Equal(3, data.Skjemainnhold!.Count);
@@ -79,7 +79,7 @@ public class TestGeneratedRemoval
         wrapper.RemoveField("skjemainnhold[1]", RowRemovalOption.DeleteRow);
         Assert.Equal(2, data.Skjemainnhold!.Count);
         Assert.Null(data.Skjemainnhold![0]);
-        Assert.Equal("Per", data.Skjemainnhold![1].Navn);
+        Assert.Equal("Per", data.Skjemainnhold?[1]?.Navn);
 
         wrapper.RemoveField("skjemainnhold", RowRemovalOption.Ignore);
         Assert.Null(data.Skjemainnhold);
