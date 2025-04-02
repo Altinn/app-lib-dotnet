@@ -24,7 +24,8 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_CopyInstanceNotDefined_ReturnsBadRequest()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: 343234);
+        using var fixture = InstancesControllerFixture.Create(auth);
         ApplicationMetadata application = new("ttd/copy-instance") { };
         fixture.Mock<IAppMetadata>().Setup(a => a.GetApplicationMetadata()).ReturnsAsync(application);
 
@@ -45,7 +46,8 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_CopyInstanceNotEnabled_ReturnsBadRequest()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: 343234);
+        using var fixture = InstancesControllerFixture.Create(auth);
         const string Org = "ttd";
         const string AppName = "copy-instance";
         fixture
@@ -70,7 +72,8 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_AsAppOwner_ReturnsForbidResult()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
+        var auth = TestAuthentication.GetServiceOwnerAuthentication(org: "ttd");
+        using var fixture = InstancesControllerFixture.Create(auth);
         fixture
             .Mock<HttpContext>()
             .Setup(httpContext => httpContext.User)
@@ -91,13 +94,14 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_AsUnauthorized_ReturnsForbidden()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
-        const string Org = "ttd";
-        const string AppName = "copy-instance";
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: 65434312);
+        using var fixture = InstancesControllerFixture.Create(auth);
         fixture
             .Mock<HttpContext>()
             .Setup(httpContext => httpContext.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337));
+            .Returns(TestAuthentication.GetUserPrincipal(65434312));
+        const string Org = "ttd";
+        const string AppName = "copy-instance";
         fixture
             .Mock<IAppMetadata>()
             .Setup(a => a.GetApplicationMetadata())
@@ -125,7 +129,6 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_InstanceNotArchived_ReturnsBadRequest()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
         const string Org = "ttd";
         const string AppName = "copy-instance";
         int instanceOwnerPartyId = 343234;
@@ -135,11 +138,13 @@ public class InstancesController_CopyInstanceTests
             Id = $"{instanceOwnerPartyId}/{instanceGuid}",
             Status = new InstanceStatus() { IsArchived = false },
         };
-
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
+        using var fixture = InstancesControllerFixture.Create(auth);
         fixture
             .Mock<HttpContext>()
             .Setup(httpContext => httpContext.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
+            .Returns(TestAuthentication.GetUserPrincipal(partyId: instanceOwnerPartyId));
+
         fixture
             .Mock<IAppMetadata>()
             .Setup(a => a.GetApplicationMetadata())
@@ -172,11 +177,12 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_InstanceDoesNotExists_ReturnsBadRequest()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
         const string Org = "ttd";
         const string AppName = "copy-instance";
         int instanceOwnerPartyId = 343234;
         Guid instanceGuid = Guid.NewGuid();
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
+        using var fixture = InstancesControllerFixture.Create(auth);
 
         // Storage returns Forbidden if the given instance id is wrong.
         PlatformHttpException platformHttpException = await PlatformHttpException.CreateAsync(
@@ -186,7 +192,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<HttpContext>()
             .Setup(httpContext => httpContext.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
+            .Returns(TestAuthentication.GetUserPrincipal(partyId: instanceOwnerPartyId));
         fixture
             .Mock<IAppMetadata>()
             .Setup(a => a.GetApplicationMetadata())
@@ -219,11 +225,12 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_PlatformReturnsError_ThrowsException()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
         const string Org = "ttd";
         const string AppName = "copy-instance";
         int instanceOwnerPartyId = 343234;
         Guid instanceGuid = Guid.NewGuid();
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
+        using var fixture = InstancesControllerFixture.Create(auth);
 
         // Simulate a BadGateway respons from Platform
         PlatformHttpException platformHttpException = await PlatformHttpException.CreateAsync(
@@ -233,7 +240,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<HttpContext>()
             .Setup(httpContext => httpContext.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
+            .Returns(TestAuthentication.GetUserPrincipal(partyId: instanceOwnerPartyId));
         fixture
             .Mock<IAppMetadata>()
             .Setup(a => a.GetApplicationMetadata())
@@ -247,22 +254,13 @@ public class InstancesController_CopyInstanceTests
             .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
             .ThrowsAsync(platformHttpException);
 
-        PlatformHttpException? actual = null;
-
         // Act
-        try
-        {
-            var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
-            await controller.CopyInstance("ttd", "copy-instance", instanceOwnerPartyId, instanceGuid);
-        }
-        catch (PlatformHttpException phe)
-        {
-            actual = phe;
-        }
+        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
+        var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () =>
+            await controller.CopyInstance("ttd", "copy-instance", instanceOwnerPartyId, instanceGuid)
+        );
 
         // Assert
-        Assert.NotNull(actual);
-
         fixture.Mock<IAppMetadata>().VerifyAll();
         fixture.Mock<IPDP>().VerifyAll();
         fixture.Mock<IInstanceClient>().VerifyAll();
@@ -273,7 +271,6 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_InstantiationValidationFails_ReturnsForbidden()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
         const string Org = "ttd";
         const string AppName = "copy-instance";
         int instanceOwnerPartyId = 343234;
@@ -284,11 +281,13 @@ public class InstancesController_CopyInstanceTests
             Status = new InstanceStatus() { IsArchived = true },
         };
         InstantiationValidationResult? instantiationValidationResult = new() { Valid = false };
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
+        using var fixture = InstancesControllerFixture.Create(auth);
 
         fixture
             .Mock<HttpContext>()
             .Setup(httpContext => httpContext.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
+            .Returns(TestAuthentication.GetUserPrincipal(partyId: instanceOwnerPartyId));
         fixture
             .Mock<IAppMetadata>()
             .Setup(a => a.GetApplicationMetadata())
@@ -327,18 +326,17 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_EverythingIsFine_ReturnsRedirect()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
         const string Org = "ttd";
         const string AppName = "copy-instance";
-        const int InstanceOwnerPartyId = 343234;
+        const int instanceOwnerPartyId = 343234;
         Guid instanceGuid = Guid.NewGuid();
         Guid dataGuid = Guid.NewGuid();
         const string dataTypeId = "data_type_1";
         Instance instance = new()
         {
-            Id = $"{InstanceOwnerPartyId}/{instanceGuid}",
+            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
             AppId = $"{Org}/{AppName}",
-            InstanceOwner = new InstanceOwner() { PartyId = InstanceOwnerPartyId.ToString() },
+            InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() },
             Status = new InstanceStatus() { IsArchived = true },
             Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
             Data = new List<DataElement>
@@ -347,11 +345,13 @@ public class InstancesController_CopyInstanceTests
             },
         };
         InstantiationValidationResult? instantiationValidationResult = new() { Valid = true };
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
+        using var fixture = InstancesControllerFixture.Create(auth);
 
         fixture
             .Mock<HttpContext>()
-            .Setup(hc => hc.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, InstanceOwnerPartyId));
+            .Setup(httpContext => httpContext.User)
+            .Returns(TestAuthentication.GetUserPrincipal(partyId: instanceOwnerPartyId));
         fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
         fixture
             .Mock<IAppMetadata>()
@@ -392,7 +392,7 @@ public class InstancesController_CopyInstanceTests
             );
         fixture
             .Mock<IDataClient>()
-            .Setup(p => p.GetFormData(instanceGuid, It.IsAny<Type?>()!, Org, AppName, InstanceOwnerPartyId, dataGuid))
+            .Setup(p => p.GetFormData(instanceGuid, It.IsAny<Type?>()!, Org, AppName, instanceOwnerPartyId, dataGuid))
             .ReturnsAsync(new { test = "test" });
         fixture
             .Mock<IDataClient>()
@@ -403,7 +403,7 @@ public class InstancesController_CopyInstanceTests
                     It.IsAny<Type?>()!,
                     Org,
                     AppName,
-                    InstanceOwnerPartyId,
+                    instanceOwnerPartyId,
                     dataTypeId
                 )
             )
@@ -411,12 +411,12 @@ public class InstancesController_CopyInstanceTests
 
         // Act
         var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
-        ActionResult actual = await controller.CopyInstance(Org, AppName, InstanceOwnerPartyId, instanceGuid);
+        ActionResult actual = await controller.CopyInstance(Org, AppName, instanceOwnerPartyId, instanceGuid);
 
         // Assert
         Assert.IsType<RedirectResult>(actual);
         RedirectResult objectResult = (RedirectResult)actual;
-        Assert.Contains($"/#/instance/{InstanceOwnerPartyId}/", objectResult.Url);
+        Assert.Contains($"/#/instance/{instanceOwnerPartyId}/", objectResult.Url);
 
         fixture.Mock<IAppMetadata>().VerifyAll();
         fixture.Mock<IPDP>().VerifyAll();
