@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Models.Layout;
@@ -55,16 +56,10 @@ public interface IFormDataWrapper
     /// <param name="rowIndexes">Extra rowIndexes that should be added (from context)</param>
     /// <param name="buffer">
     ///     A buffer that the method can work with, that is large enough to hold the full indexed path
-    ///     (Typically we use path.Length + rowIndexes.Length * 12, as the indexes might be 10 characters long + "[]")
+    ///     (Typically we use path.Length + rowIndexes.Length * 12, as int.MaxValue.ToString().Length = 10 + 2 characters for "[]")
     /// </param>
-    /// <param name="indexedPath">Reference to the part of the buffer that contains the indexed path</param>
     /// <returns>Whether a valid path could be constructed</returns>
-    bool TryAddIndexToPath(
-        ReadOnlySpan<char> path,
-        ReadOnlySpan<int> rowIndexes,
-        Span<char> buffer,
-        out ReadOnlySpan<char> indexedPath
-    );
+    ReadOnlySpan<char> AddIndexToPath(ReadOnlySpan<char> path, ReadOnlySpan<int> rowIndexes, Span<char> buffer);
 
     /// <summary>
     /// Make a deep copy of the form data
@@ -123,12 +118,8 @@ public static class FormDataWrapperExtensions
     )
     {
         Span<char> buffer = stackalloc char[GetMaxBufferLength(path, rowIndexes)];
-        if (formDataWrapper.TryAddIndexToPath(path, rowIndexes, buffer, out var indexedPath))
-        {
-            return formDataWrapper.GetRaw(indexedPath);
-        }
-
-        return null;
+        var indexedPath = formDataWrapper.AddIndexToPath(path, rowIndexes, buffer);
+        return indexedPath.IsEmpty ? null : formDataWrapper.GetRaw(indexedPath);
     }
 
     public static string? AddIndexToPath(
@@ -138,11 +129,9 @@ public static class FormDataWrapperExtensions
     )
     {
         Span<char> buffer = stackalloc char[GetMaxBufferLength(path, rowIndexes)];
-        if (formDataWrapper.TryAddIndexToPath(path, rowIndexes, buffer, out var indexedPath))
-        {
-            return indexedPath.ToString();
-        }
-        return null;
+        var indexedPath = formDataWrapper.AddIndexToPath(path, rowIndexes, buffer);
+
+        return indexedPath.IsEmpty ? null : indexedPath.ToString();
     }
 
     public static int? GetRowCount(
@@ -151,15 +140,57 @@ public static class FormDataWrapperExtensions
         ReadOnlySpan<int> rowIndexes
     )
     {
-        var data = formDataWrapper.Get(path, rowIndexes);
-        return data switch
+        object? data = formDataWrapper.Get(path, rowIndexes);
+        return data is null ? null : CollectionHelper.GetCount(data, path);
+    }
+
+    private static class CollectionHelper
+    {
+        private static readonly ConcurrentDictionary<Type, Func<object, int>?> _countGetters = new();
+
+        public static int? GetCount(object? data, ReadOnlySpan<char> path)
         {
-            null => null,
-            ICollection collection => collection.Count,
-            _ => throw new ArgumentException(
-                $"Path {path} does not point to a collection, but {data.GetType().FullName}"
-            ),
-        };
+            if (data == null)
+            {
+                return null;
+            }
+
+            var type = data.GetType();
+            var getter = _countGetters.GetOrAdd(type, CreateCountGetter);
+            if (getter == null)
+            {
+                // The type does not implement ICollection<T>, so we cannot get the count
+                //throw new InvalidOperationException($"Type {type.FullName} in path {path} does not implement ICollection<T>, so we can't get the count.");
+                return null;
+            }
+
+            return getter.Invoke(data);
+        }
+
+        private static Func<object, int>? CreateCountGetter(Type type)
+        {
+            // Check if the type implements any ICollection<T>
+            foreach (var @interface in type.GetInterfaces())
+            {
+                if (@interface.IsGenericType && @interface.GetGenericTypeDefinition() == typeof(ICollection<>))
+                {
+                    // Find the .Count property
+                    var countProperty = @interface.GetProperty(nameof(ICollection<int>.Count));
+                    if (countProperty != null && countProperty.PropertyType == typeof(int))
+                    {
+                        var getMethod = countProperty.GetGetMethod();
+                        if (getMethod != null)
+                        {
+                            // Create a delegate to access .Count
+                            return (object instance) => (int)getMethod.Invoke(instance, null)!;
+                        }
+                    }
+                }
+            }
+
+            // Return null if not found
+            return null;
+        }
     }
 
     public static DataReference[] GetResolvedKeys(this IFormDataWrapper formDataWrapper, DataReference reference)

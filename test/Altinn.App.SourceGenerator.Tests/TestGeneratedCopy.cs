@@ -43,6 +43,21 @@ public class TestGeneratedCopy
                         Postnummer = null,
                         Poststed = "Sted",
                     },
+                    TidligereAdresse =
+                    [
+                        new()
+                        {
+                            Gate = "TidligereGata",
+                            Postnummer = 1234,
+                            Poststed = "TidligereSted",
+                        },
+                        new()
+                        {
+                            Gate = "TidligereGata2",
+                            Postnummer = 1235,
+                            Poststed = "TidligereSted2",
+                        },
+                    ],
                 },
             ],
         };
@@ -63,6 +78,9 @@ public class TestGeneratedCopy
         Assert.Equal(1245, copyWrapper.GetRaw("skjemainnhold[0].adresse.postnummer"));
         Assert.Null(copy.Skjemainnhold?[1]?.Adresse?.Postnummer);
         Assert.Null(copyWrapper.GetRaw("skjemainnhold[1].adresse.postnummer"));
+        Assert.Equal("TidligereGata", copy.Skjemainnhold?[1]?.TidligereAdresse?[0]?.Gate);
+        Assert.Equal("TidligereGata", copyWrapper.GetRaw("skjemainnhold[1].tidligere-adresse[0].gate"));
+        Assert.Equal("TidligereGata2", copy.Skjemainnhold?[1]?.TidligereAdresse?[1]?.Gate);
 
         // Modifications to the copy should not affect the original
         copy.Skjemainnhold![1].Adresse.Postnummer = 9999;

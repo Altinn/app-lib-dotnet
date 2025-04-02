@@ -47,22 +47,16 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
     }
 
     /// <inheritdoc />
-    public bool TryAddIndexToPath(
-        ReadOnlySpan<char> path,
-        ReadOnlySpan<int> rowIndexes,
-        Span<char> buffer,
-        out ReadOnlySpan<char> indexedPath
-    )
+    public ReadOnlySpan<char> AddIndexToPath(ReadOnlySpan<char> path, ReadOnlySpan<int> rowIndexes, Span<char> buffer)
     {
         if (rowIndexes.Length == 0)
         {
-            indexedPath = path;
-            return true;
+            return path;
         }
+
         string tmp = _dataModel.AddIndicies(path.ToString(), rowIndexes);
         tmp.AsSpan().CopyTo(buffer);
-        indexedPath = buffer.Slice(0, tmp.Length);
-        return tmp.Length > 0;
+        return buffer.Slice(0, tmp.Length);
     }
 
     /// <inheritdoc />

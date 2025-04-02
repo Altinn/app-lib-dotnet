@@ -42,15 +42,20 @@ public static class AltinnRowIdsGenerator
             """
         );
 
-        GenerateSetAltinnRowIds(builder, rootNode, listProperties.ToImmutableArray());
+        GenerateSetAltinnRowIds(builder, rootNode, listProperties.ToImmutableArray(), []);
     }
 
     private static void GenerateSetAltinnRowIds(
         StringBuilder builder,
         ModelPathNode node,
-        ImmutableArray<ModelPathNodeTools.Property> listProperties
+        ImmutableArray<ModelPathNodeTools.Property> listProperties,
+        HashSet<string> classes
     )
     {
+        if (!classes.Add(node.Type))
+        {
+            return;
+        }
         builder.Append(
             $$"""
 
@@ -100,7 +105,7 @@ public static class AltinnRowIdsGenerator
 
         foreach (var property in listProperties)
         {
-            GenerateSetAltinnRowIds(builder, property.Node, property.Children);
+            GenerateSetAltinnRowIds(builder, property.Node, property.Children, classes);
         }
     }
 

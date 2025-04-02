@@ -5,8 +5,6 @@ namespace Altinn.App.SourceGenerator.Tests;
 
 public class TestGeneratedGetter
 {
-    private readonly TestAltinnRowIds _testAltinnRowIds = new TestAltinnRowIds();
-
     private readonly Skjema _skjema = new Skjema()
     {
         Skjemanummer = "1243",
@@ -24,6 +22,12 @@ public class TestGeneratedGetter
                 Navn = "navn2",
                 Alder = 43,
                 Deltar = false,
+                Adresse = new() { Gate = "gate", Postnummer = 1234 },
+                TidligereAdresse =
+                [
+                    new() { Gate = "gate1", Postnummer = 1235 },
+                    new() { Gate = "gate2", Postnummer = 1236 },
+                ],
             },
         ],
     };
@@ -39,6 +43,7 @@ public class TestGeneratedGetter
     [InlineData("skjemainnhold[1].navn", "navn2")]
     [InlineData("skjemainnhold[1].alder", 43)]
     [InlineData("skjemainnhold[1].deltar", false)]
+    [InlineData("skjemainnhold[1].tidligere-adresse[1].postnummer", 1236)]
     public void TestGetRaw(string path, object expected)
     {
         var dataWrapper = new Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper(_skjema);
@@ -71,9 +76,11 @@ public class TestGeneratedGetter
     [InlineData("skjemanummer[4].not-exists")]
     [InlineData("not-exists")]
     [InlineData("skjemainnhold[2]")]
+    [InlineData("skjemainnhold[4]")]
     [InlineData("skjemainnhold[2].navn")]
     [InlineData("skjemainnhold[0].not-exists")]
     [InlineData("skjemainnhold[0].navn.not-exists")]
+    [InlineData("skjemainnhold[0].adresse.gate")]
     public void TestGetRawErrorReturnNull(string? path)
     {
         // These might all throw exceptions when we have better validation of data model bindings at startup
