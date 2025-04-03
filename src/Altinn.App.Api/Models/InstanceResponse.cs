@@ -1,4 +1,5 @@
 #nullable disable
+using Altinn.Platform.Register.Enums;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Newtonsoft.Json;
@@ -112,7 +113,17 @@ public sealed class InstanceResponse
                 PersonNumber = instance.InstanceOwner.PersonNumber,
                 OrganisationNumber = instance.InstanceOwner.OrganisationNumber,
                 Username = instance.InstanceOwner.Username,
-                Party = instanceOwnerParty,
+                Party = new PartyResponse
+                {
+                    PartyId = instanceOwnerParty.PartyId,
+                    PartyUuid = instanceOwnerParty.PartyUuid,
+                    PartyTypeName = instanceOwnerParty.PartyTypeName,
+                    SSN = instanceOwnerParty.SSN,
+                    OrgNumber = instanceOwnerParty.OrgNumber,
+                    UnitType = instanceOwnerParty.UnitType,
+                    Name = instanceOwnerParty.Name,
+                    IsDeleted = instanceOwnerParty.IsDeleted,
+                },
             },
             AppId = instance.AppId,
             Org = instance.Org,
@@ -136,7 +147,7 @@ public sealed class InstanceResponse
 /// <summary>
 /// Represents information to identify the owner of an instance.
 /// </summary>
-public class InstanceOwnerResponse
+public sealed class InstanceOwnerResponse
 {
     /// <summary>
     /// Gets or sets the party id of the instance owner (also called instance owner party id).
@@ -161,5 +172,51 @@ public class InstanceOwnerResponse
     /// <summary>
     /// Party information for the instance owner.
     /// </summary>
-    public required Party Party { get; init; }
+    public required PartyResponse Party { get; init; }
+}
+
+/// <summary>
+/// Class representing a party
+/// </summary>
+public sealed class PartyResponse
+{
+    /// <summary>
+    /// Gets or sets the ID of the party
+    /// </summary>
+    public required int PartyId { get; init; }
+
+    /// <summary>
+    /// Gets or sets the UUID of the party
+    /// </summary>
+    public required Guid? PartyUuid { get; init; }
+
+    /// <summary>
+    /// Gets or sets the type of party
+    /// </summary>
+    public required PartyType PartyTypeName { get; init; }
+
+    /// <summary>
+    /// Gets the parties ssn
+    /// </summary>
+    public required string SSN { get; init; }
+
+    /// <summary>
+    /// Gets the parties org number
+    /// </summary>
+    public required string OrgNumber { get; init; }
+
+    /// <summary>
+    /// Gets or sets the UnitType
+    /// </summary>
+    public required string UnitType { get; init; }
+
+    /// <summary>
+    /// Gets or sets the Name
+    /// </summary>
+    public required string Name { get; init; }
+
+    /// <summary>
+    /// Gets or sets the IsDeleted
+    /// </summary>
+    public required bool IsDeleted { get; init; }
 }
