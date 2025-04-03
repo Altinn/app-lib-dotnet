@@ -39,7 +39,7 @@ public class InstancesController_GetTests : ApiTestBase, IClassFixture<WebApplic
         using var readResponse = await client.GetAsync($"{org}/{app}/instances/{createdInstance.Id}");
         Assert.Equal(HttpStatusCode.OK, readResponse.StatusCode);
         var readResponseContent = await readResponse.Content.ReadAsStringAsync();
-        var readInstance = JsonSerializer.Deserialize<InstanceDto>(
+        var readInstance = JsonSerializer.Deserialize<InstanceResponse>(
             readResponseContent,
             ApiTestBase.JsonSerializerOptions
         );
@@ -85,7 +85,7 @@ public class InstancesController_GetTests : ApiTestBase, IClassFixture<WebApplic
         using var readResponse = await client.GetAsync($"{org}/{app}/instances/{createdInstance.Id}");
         Assert.Equal(HttpStatusCode.OK, readResponse.StatusCode);
         var readResponseContent = await readResponse.Content.ReadAsStringAsync();
-        var readInstance = JsonSerializer.Deserialize<InstanceDto>(
+        var readInstance = JsonSerializer.Deserialize<InstanceResponse>(
             readResponseContent,
             ApiTestBase.JsonSerializerOptions
         );

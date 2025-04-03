@@ -34,7 +34,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
     public Mock<T> Mock<T>()
         where T : class => Moq.Mock.Get(ServiceProvider.GetRequiredService<T>());
 
-    public static async Task<(InstanceDto Instance, string Response)> CreateInstanceSimplified(
+    public static async Task<(InstanceResponse Instance, string Response)> CreateInstanceSimplified(
         string org,
         string app,
         int instanceOwnerPartyId,
@@ -63,7 +63,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created, createResponseContent);
 
-        var createResponseParsed = JsonSerializer.Deserialize<InstanceDto>(
+        var createResponseParsed = JsonSerializer.Deserialize<InstanceResponse>(
             createResponseContent,
             ApiTestBase.JsonSerializerOptions
         );

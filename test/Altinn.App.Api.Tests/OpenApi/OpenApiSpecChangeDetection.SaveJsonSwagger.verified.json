@@ -2303,7 +2303,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InstanceDto"
+                  "$ref": "#/components/schemas/InstanceResponse"
                 }
               }
             }
@@ -2434,7 +2434,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InstanceDto"
+                  "$ref": "#/components/schemas/InstanceResponse"
                 }
               }
             }
@@ -2504,7 +2504,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InstanceDto"
+                  "$ref": "#/components/schemas/InstanceResponse"
                 }
               }
             }
@@ -6930,7 +6930,91 @@
         },
         "additionalProperties": false
       },
-      "InstanceDto": {
+      "InstanceFileScanResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Instance id",
+            "nullable": true,
+            "readOnly": true
+          },
+          "fileScanResult": {
+            "$ref": "#/components/schemas/FileScanResult"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataElementFileScanResult"
+            },
+            "description": "File scan result for individual data elements.",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Light weight model representing an instance and it's file scan result status."
+      },
+      "InstanceOwner": {
+        "type": "object",
+        "properties": {
+          "partyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "personNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "organisationNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InstanceOwnerResponse": {
+        "required": [
+          "organisationNumber",
+          "party",
+          "partyId",
+          "personNumber",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "partyId": {
+            "type": "string",
+            "description": "Gets or sets the party id of the instance owner (also called instance owner party id).",
+            "nullable": true
+          },
+          "personNumber": {
+            "type": "string",
+            "description": "Gets or sets person number (national identification number) of the party. Null if the party is not a person.",
+            "nullable": true
+          },
+          "organisationNumber": {
+            "type": "string",
+            "description": "Gets or sets the organisation number of the party. Null if the party is not an organisation.",
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "description": "Gets or sets the username of the party. Null if the party is not self identified.",
+            "nullable": true
+          },
+          "party": {
+            "$ref": "#/components/schemas/Party"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Represents information to identify the owner of an instance."
+      },
+      "InstanceResponse": {
         "required": [
           "appId",
           "completeConfirmations",
@@ -6958,7 +7042,7 @@
             "nullable": true
           },
           "instanceOwner": {
-            "$ref": "#/components/schemas/InstanceOwnerDto"
+            "$ref": "#/components/schemas/InstanceOwnerResponse"
           },
           "appId": {
             "type": "string",
@@ -7050,90 +7134,6 @@
         },
         "additionalProperties": false,
         "description": "Represents the response from an API endpoint providing a list of key-value properties."
-      },
-      "InstanceFileScanResult": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Instance id",
-            "nullable": true,
-            "readOnly": true
-          },
-          "fileScanResult": {
-            "$ref": "#/components/schemas/FileScanResult"
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DataElementFileScanResult"
-            },
-            "description": "File scan result for individual data elements.",
-            "nullable": true,
-            "readOnly": true
-          }
-        },
-        "additionalProperties": false,
-        "description": "Light weight model representing an instance and it's file scan result status."
-      },
-      "InstanceOwner": {
-        "type": "object",
-        "properties": {
-          "partyId": {
-            "type": "string",
-            "nullable": true
-          },
-          "personNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "organisationNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "username": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "InstanceOwnerDto": {
-        "required": [
-          "organisationNumber",
-          "party",
-          "partyId",
-          "personNumber",
-          "username"
-        ],
-        "type": "object",
-        "properties": {
-          "partyId": {
-            "type": "string",
-            "description": "Gets or sets the party id of the instance owner (also called instance owner party id).",
-            "nullable": true
-          },
-          "personNumber": {
-            "type": "string",
-            "description": "Gets or sets person number (national identification number) of the party. Null if the party is not a person.",
-            "nullable": true
-          },
-          "organisationNumber": {
-            "type": "string",
-            "description": "Gets or sets the organisation number of the party. Null if the party is not an organisation.",
-            "nullable": true
-          },
-          "username": {
-            "type": "string",
-            "description": "Gets or sets the username of the party. Null if the party is not self identified.",
-            "nullable": true
-          },
-          "party": {
-            "$ref": "#/components/schemas/Party"
-          }
-        },
-        "additionalProperties": false,
-        "description": "Represents information to identify the owner of an instance."
       },
       "InstanceSelection": {
         "type": "object",
