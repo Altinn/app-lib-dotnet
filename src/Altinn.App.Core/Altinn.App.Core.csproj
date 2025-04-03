@@ -47,6 +47,7 @@
     <ProjectReference Include="../Altinn.App.Analyzers/Altinn.App.Analyzers.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="None" />
     <None Include="../Altinn.App.Analyzers/bin/$(Configuration)/netstandard2.0/Altinn.App.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" />
     <!-- <None Include="../Altinn.App.Analyzers/bin/$(Configuration)/netstandard2.0/System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" /> -->
+    <Content Include="packaging/Altinn.App.Core.props" Pack="true" PackagePath="build/" Visible="true" />
   </ItemGroup>
 
   <ItemGroup>

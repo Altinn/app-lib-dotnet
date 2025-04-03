@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <IsAltinnApp>true</IsAltinnApp>
+  </PropertyGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="config/**" />
+    <AdditionalFiles Include="ui/**/*.json" />
+  </ItemGroup>
+</Project>
