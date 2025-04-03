@@ -113,17 +113,7 @@ public sealed class InstanceResponse
                 PersonNumber = instance.InstanceOwner.PersonNumber,
                 OrganisationNumber = instance.InstanceOwner.OrganisationNumber,
                 Username = instance.InstanceOwner.Username,
-                Party = new PartyResponse
-                {
-                    PartyId = instanceOwnerParty.PartyId,
-                    PartyUuid = instanceOwnerParty.PartyUuid,
-                    PartyTypeName = instanceOwnerParty.PartyTypeName,
-                    SSN = instanceOwnerParty.SSN,
-                    OrgNumber = instanceOwnerParty.OrgNumber,
-                    UnitType = instanceOwnerParty.UnitType,
-                    Name = instanceOwnerParty.Name,
-                    IsDeleted = instanceOwnerParty.IsDeleted,
-                },
+                Party = PartyResponse.From(instanceOwnerParty),
             },
             AppId = instance.AppId,
             Org = instance.Org,
@@ -219,4 +209,25 @@ public sealed class PartyResponse
     /// Gets or sets the IsDeleted
     /// </summary>
     public required bool IsDeleted { get; init; }
+
+    /// <summary>
+    /// Returns a PartyResponse dto from a Party object.
+    /// </summary>
+    /// <param name="party">The party object to convert.</param>
+    /// <returns>A PartyResponse object.</returns>
+    /// <remarks>Normalizes strings to null if they are empty or null.</remarks>
+    internal static PartyResponse From(Party party)
+    {
+        return new PartyResponse
+        {
+            PartyId = party.PartyId,
+            PartyUuid = party.PartyUuid,
+            PartyTypeName = party.PartyTypeName,
+            SSN = string.IsNullOrEmpty(party.SSN) ? null : party.SSN,
+            OrgNumber = string.IsNullOrEmpty(party.OrgNumber) ? null : party.OrgNumber,
+            UnitType = string.IsNullOrEmpty(party.UnitType) ? null : party.UnitType,
+            Name = string.IsNullOrEmpty(party.Name) ? null : party.Name,
+            IsDeleted = party.IsDeleted,
+        };
+    }
 }
