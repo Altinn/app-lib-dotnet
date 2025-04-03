@@ -87,6 +87,16 @@ public static class Diagnostics
         );
     }
 
+    public static class CodeSmells
+    {
+        public static readonly DiagnosticDescriptor HttpContextAccessorUsage = Warning(
+            "ALTINN0500",
+            Category.CodeSmells,
+            "HttpContextAccessor dangerous usage",
+            "IHttpContextAccessor.HttpContext should not be accessed in a constructor, see guidance at: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/use-http-context?view=aspnetcore-8.0#httpcontext-isnt-thread-safe"
+        );
+    }
+
     public static readonly ImmutableArray<DiagnosticDescriptor> All;
 
     static Diagnostics()
@@ -121,5 +131,6 @@ public static class Diagnostics
     {
         public const string General = nameof(General);
         public const string Metadata = nameof(Metadata);
+        public const string CodeSmells = nameof(CodeSmells);
     }
 }

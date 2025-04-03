@@ -16,3 +16,4 @@ ALTINN0040 | Metadata | Warning | Layout-sets file not found
 ALTINN0041 | Metadata | Warning | Layout-sets file could not be read
 ALTINN0042 | Metadata | Warning | Layout-sets file parsing
 ALTINN0043 | Metadata | Warning | Layout-setse data type ref not resolved
+ALTINN0500 | CodeSmells | Warning | CodeSmells

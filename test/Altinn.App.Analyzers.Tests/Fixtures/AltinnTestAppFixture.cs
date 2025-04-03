@@ -90,6 +90,25 @@ public sealed partial class AltinnTestAppFixture : IDisposable
         return modification;
     }
 
+    public IDisposable WithInvalidHttpContextAccessorUse()
+    {
+        if (!_isInitialized)
+            throw new InvalidOperationException("Fixture not initialized");
+
+        var content = Content.InvalidHttpContextAccessorUse;
+
+        var modification = new ProjectModification(this);
+
+        var doc = _project.AddDocument(
+            content.FilePath,
+            SourceText.From(File.ReadAllText(content.FilePath, Encoding.UTF8), Encoding.UTF8)
+        );
+        _project = doc.Project;
+        Assert.True(_workspace.TryApplyChanges(_project.Solution));
+
+        return modification;
+    }
+
     public async Task<CompilationWithAnalyzers> GetCompilation(
         DiagnosticAnalyzer analyzer,
         bool includeAdditionalFiles,

@@ -20,6 +20,8 @@
   <ItemGroup>
     <Folder Include="wwwroot\css\" />
     <Folder Include="wwwroot\script\" />
+
+    <Compile Remove="additional/*.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Update="config\process\process.bpmn">
