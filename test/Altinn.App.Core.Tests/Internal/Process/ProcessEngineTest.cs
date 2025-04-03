@@ -432,7 +432,7 @@ public sealed class ProcessEngineTest
     }
 
     [Fact]
-    public async Task Next_returns_unsuccessful_unauthorized_when_action_handler_returns_errortype_Unauthorized()
+    public async Task HandleUserAction_returns_unsuccessful_unauthorized_when_action_handler_returns_errortype_Unauthorized()
     {
         var expectedInstance = new Instance()
         {
@@ -491,9 +491,8 @@ public sealed class ProcessEngineTest
             Action = "sign",
             Language = null,
         };
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
+        UserActionResult result = await processEngine.HandleUserAction(processNextRequest);
         result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Be($"Action handler for action sign failed!");
         result.ErrorType.Should().Be(ProcessErrorType.Unauthorized);
     }
 
