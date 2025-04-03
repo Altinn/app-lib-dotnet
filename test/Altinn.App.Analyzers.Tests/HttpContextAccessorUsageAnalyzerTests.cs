@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Altinn.App.Analyzers.Tests.Fixtures;
+using Microsoft.CodeAnalysis;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Analyzers.Tests;
@@ -44,5 +45,6 @@ public class HttpContextAccessorUsageAnalyzerTests
 
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal(Diagnostics.CodeSmells.HttpContextAccessorUsage.Id, diagnostic.Id);
+        await Verify(diagnostics);
     }
 }

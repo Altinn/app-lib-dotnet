@@ -30,12 +30,28 @@ public sealed class HttpContextAccessorUsageAnalyzer : DiagnosticAnalyzer
             var fullTypeName = memberAccessType?.ToString();
             if (fullTypeName == "Microsoft.AspNetCore.Http.IHttpContextAccessor.HttpContext")
             {
-                // Report a diagnostic
-                var diagnostic = Diagnostic.Create(
-                    Diagnostics.CodeSmells.HttpContextAccessorUsage,
-                    memberAccess.GetLocation()
-                );
-                context.ReportDiagnostic(diagnostic);
+                // Checks if we are referencing `HttpContext` in a constructor
+                var parent = memberAccess.Parent;
+                while (parent != null)
+                {
+                    if (parent is ConstructorDeclarationSyntax)
+                    {
+                        var diagnostic = Diagnostic.Create(
+                            Diagnostics.CodeSmells.HttpContextAccessorUsage,
+                            memberAccess.GetLocation()
+                        );
+                        context.ReportDiagnostic(diagnostic);
+                        break;
+                    }
+
+                    if (parent is MethodDeclarationSyntax or PropertyDeclarationSyntax or ClassDeclarationSyntax)
+                    {
+                        // We are not in a constructor, so we can stop checking
+                        break;
+                    }
+
+                    parent = parent.Parent;
+                }
             }
         }
     }
