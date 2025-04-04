@@ -54,21 +54,6 @@ public sealed record FiksIOReceivedMessageContent
     public string? CorrelationId => _mottattMelding.KlientKorrelasjonsId?.FromUrlSafeBase64();
 
     /// <summary>
-    /// The encrypted stream.
-    /// </summary>
-    public Task<Stream> EncryptedStream => _mottattMelding.EncryptedStream;
-
-    /// <summary>
-    /// The decrypted stream.
-    /// </summary>
-    public Task<Stream> DecryptedStream => _mottattMelding.DecryptedStream;
-
-    /// <summary>
-    /// The decrypted payloads.
-    /// </summary>
-    public Task<IEnumerable<FiksIOMessagePayload>> DecryptedPayloads => DecryptedPayloadsWrapper();
-
-    /// <summary>
     /// The message ID.
     /// </summary>
     public Guid MessageId => _mottattMelding.MeldingId;
@@ -122,18 +107,64 @@ public sealed record FiksIOReceivedMessageContent
     /// <returns></returns>
     public Task WriteDecryptedZip(string outPath) => _mottattMelding.WriteDecryptedZip(outPath);
 
+    /// <summary>
+    /// Gets the encrypted stream.
+    /// </summary>
+    public Task<Stream> GetEncryptedStream() => _mottattMelding.EncryptedStream;
+
+    /// <summary>
+    /// Gets the decrypted stream.
+    /// </summary>
+    public Task<Stream> GetDecryptedStream() => _mottattMelding.DecryptedStream;
+
+    /// <summary>
+    /// Gets the decrypted payloads.
+    /// </summary>
+    public async Task<IReadOnlyList<FiksIOMessagePayload>?> GetDecryptedPayloads()
+    {
+        if (_mottattMelding.HasPayload is false)
+            return null;
+
+        var decryptedPayloads = await _mottattMelding.DecryptedPayloads;
+        return decryptedPayloads.Select(x => new FiksIOMessagePayload(x.Filename, x.Payload)).ToList();
+    }
+
+    /// <summary>
+    /// Gets the decrypted payload content as strings.
+    /// </summary>
+    public async Task<IReadOnlyList<(string Filename, string Content)>?> GetDecryptedPayloadStrings()
+    {
+        if (_decrypedPayloadStrings is null && _mottattMelding.HasPayload)
+        {
+            var payloads = await GetDecryptedPayloads();
+            _decrypedPayloadStrings = payloads?.Select(x => (x.Filename, x.Data.ReadToString())).ToList();
+        }
+
+        return _decrypedPayloadStrings;
+    }
+
     private IMottattMelding _mottattMelding { get; }
+    private IReadOnlyList<(string, string)>? _decrypedPayloadStrings;
 
     internal FiksIOReceivedMessageContent(IMottattMelding mottattMelding)
     {
         _mottattMelding = mottattMelding;
     }
 
-    private async Task<IEnumerable<FiksIOMessagePayload>> DecryptedPayloadsWrapper()
-    {
-        var decryptedPayloads = await _mottattMelding.DecryptedPayloads;
-        return decryptedPayloads.Select(x => new FiksIOMessagePayload(x.Filename, x.Payload));
-    }
+    // private async Task<IReadOnlyList<FiksIOMessagePayload>?> GetDecryptedPayloads()
+    // {
+    //     if (_mottattMelding.HasPayload is false)
+    //         return null;
+    //
+    //     var decryptedPayloads = await _mottattMelding.DecryptedPayloads;
+    //     return decryptedPayloads.Select(x => new FiksIOMessagePayload(x.Filename, x.Payload)).ToList();
+    // }
+
+    // private async Task<IReadOnlyList<(string Filename, string Content)>?> GetDecryptedPayloadStrings()
+    // {
+    //     var payloads = await GetDecryptedPayloads();
+    //     return payloads?.Select(x => (x.Filename, x.Data.ReadToString())).ToList();
+    // }
 }
 
 /// <summary>

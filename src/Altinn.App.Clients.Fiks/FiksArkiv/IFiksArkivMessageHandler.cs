@@ -25,6 +25,5 @@ public interface IFiksArkivMessageHandler : IFiksArkivConfigValidation
     /// </summary>
     /// <param name="instance">The instance for which this message relates to.</param>
     /// <param name="receivedMessage">The received message.</param>
-    /// <returns></returns>
     Task HandleReceivedMessage(Instance instance, FiksIOReceivedMessage receivedMessage);
 }

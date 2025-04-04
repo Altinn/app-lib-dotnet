@@ -16,7 +16,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmeldingkvittering;
 using KS.Fiks.Arkiv.Models.V1.Feilmelding;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
-using KS.Fiks.ASiC_E;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -106,8 +105,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         );
     }
 
-    private string GetCorrelationId(Instance instance) =>
-        FiksArkivEventService.GetInstanceUrl(instance, _generalSettings);
+    private string GetCorrelationId(Instance instance) => instance.GetInstanceUrl(_generalSettings);
 
     public Task ValidateConfiguration(
         IReadOnlyList<DataType> configuredDataTypes,
@@ -132,69 +130,40 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         return value;
     }
 
-    private async Task<IReadOnlyList<string>> GetDecryptedPayloads(FiksIOReceivedMessage receivedMessage)
-    {
-        try
-        {
-            List<string> payloads = [];
-            AsiceReader asiceReader = new();
-            using var asiceReadModel = asiceReader.Read(await receivedMessage.Message.DecryptedStream);
-
-            foreach (var verifyReadEntry in asiceReadModel.Entries)
-            {
-                await using var entryStream = verifyReadEntry.OpenStream();
-                using var reader = new StreamReader(entryStream);
-                payloads.Add(await reader.ReadToEndAsync());
-            }
-
-            return payloads;
-        }
-        catch (Exception e)
-        {
-            _logger.LogWarning(e, "Error reading decrypted message content: {Exception}", e.Message);
-        }
-
-        return [];
-    }
-
     private async Task<IReadOnlyList<DeserializationResult>?> DeserializeContent(FiksIOReceivedMessage receivedMessage)
     {
-        string messageType = receivedMessage.Message.MessageType;
-        if (receivedMessage.Message.HasPayload is false)
-            return null;
-
-        var payloads = await GetDecryptedPayloads(receivedMessage);
-        if (payloads.Any() is false)
+        var payloads = await receivedMessage.Message.GetDecryptedPayloadStrings();
+        if (payloads is null)
             return null;
 
         List<DeserializationResult> responses = [];
-        foreach (var payload in payloads)
+        foreach (var (filename, content) in payloads)
         {
             DeserializationResult? result = null;
 
             try
             {
-                result = messageType switch
+                result = receivedMessage.Message.MessageType switch
                 {
                     FiksArkivMeldingtype.ArkivmeldingOpprettKvittering => new DeserializationResult(
-                        payload,
-                        payload.DeserializeXml<ArkivmeldingKvittering>(),
+                        content,
+                        content.DeserializeXml<ArkivmeldingKvittering>(),
                         null
                     ),
                     FiksArkivMeldingtype.Ikkefunnet => new DeserializationResult(
-                        payload,
+                        content,
                         null,
-                        payload.DeserializeXml<Ikkefunnet>()
+                        content.DeserializeXml<Ikkefunnet>()
                     ),
                     FiksArkivMeldingtype.Serverfeil => new DeserializationResult(
-                        payload,
+                        content,
                         null,
-                        payload.DeserializeXml<Serverfeil>()
+                        content.DeserializeXml<Serverfeil>()
                     ),
                     FiksArkivMeldingtype.Ugyldigforespørsel => new DeserializationResult(
-                        payload,
+                        content,
                         null,
-                        payload.DeserializeXml<Ugyldigforespoersel>()
+                        content.DeserializeXml<Ugyldigforespoersel>()
                     ),
                     _ => null,
                 };
@@ -204,7 +173,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
                 _logger.LogError(e, "Error deserializing message content: {Exception}", e.Message);
             }
 
-            responses.Add(result ?? new DeserializationResult(payload, null, null));
+            responses.Add(result ?? new DeserializationResult(content, null, null));
         }
 
         return responses;

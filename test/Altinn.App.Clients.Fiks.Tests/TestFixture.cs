@@ -22,6 +22,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -69,6 +70,8 @@ internal sealed record TestFixture(
     public ResiliencePipeline<FiksIOMessageResponse> FiksIOResiliencePipeline =>
         App.Services.ResolveResiliencePipeline();
     public IProcessReader ProcessReader => App.Services.GetRequiredService<IProcessReader>();
+    public IHttpClientFactory HttpClientFactory => App.Services.GetRequiredService<IHttpClientFactory>();
+    public IAccessTokenGenerator AccessTokenGenerator => App.Services.GetRequiredService<IAccessTokenGenerator>();
 
     private static JsonSerializerOptions _jsonSerializerOptions =>
         new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
@@ -119,8 +122,10 @@ internal sealed record TestFixture(
         var partyClientMock = new Mock<IAltinnPartyClient>();
         var layoutStateInitializerMock = new Mock<ILayoutEvaluatorStateInitializer>();
         var emailNotificationClientMock = new Mock<IEmailNotificationClient>();
-        var loggerFactoryMock = new Mock<ILoggerFactory>();
         var processReaderMock = new Mock<IProcessReader>();
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        var accessTokenGeneratorMock = new Mock<IAccessTokenGenerator>();
+        var loggerFactoryMock = new Mock<ILoggerFactory>();
         loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
 
         builder.Services.AddSingleton(webHostEnvironmentMock.Object);
@@ -136,6 +141,8 @@ internal sealed record TestFixture(
         builder.Services.AddSingleton(instanceClientMock.Object);
         builder.Services.AddSingleton(appModelMock.Object);
         builder.Services.AddSingleton(processReaderMock.Object);
+        builder.Services.AddSingleton(httpClientFactoryMock.Object);
+        builder.Services.AddSingleton(accessTokenGeneratorMock.Object);
 
         // Non-mockable services
         builder.Services.AddTransient<InstanceDataUnitOfWorkInitializer>();
@@ -292,20 +299,20 @@ internal sealed record TestFixture(
 
     public class CustomFiksArkivMessageHandler : IFiksArkivMessageHandler
     {
+        public Task ValidateConfiguration(
+            IReadOnlyList<DataType> configuredDataTypes,
+            IReadOnlyList<ProcessTask> configuredProcessTasks
+        )
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<FiksIOMessageRequest> CreateMessageRequest(string taskId, Instance instance)
         {
             throw new NotImplementedException();
         }
 
         public Task HandleReceivedMessage(Instance instance, FiksIOReceivedMessage receivedMessage)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ValidateConfiguration(
-            IReadOnlyList<DataType> configuredDataTypes,
-            IReadOnlyList<ProcessTask> configuredProcessTasks
-        )
         {
             throw new NotImplementedException();
         }

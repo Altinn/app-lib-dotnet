@@ -8,7 +8,6 @@ using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -17,7 +16,6 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
 {
     private readonly IMaskinportenClient _maskinportenClient;
-    private readonly ILogger<FiksArkivInstanceClient> _logger;
     private readonly Telemetry? _telemetry;
     private readonly PlatformSettings _platformSettings;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -27,7 +25,6 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
 
     public FiksArkivInstanceClient(
         IOptions<PlatformSettings> platformSettings,
-        ILogger<FiksArkivInstanceClient> logger,
         IMaskinportenClient maskinportenClient,
         IHttpClientFactory httpClientFactory,
         IAppMetadata appMetadata,
@@ -36,7 +33,6 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         Telemetry? telemetry = null
     )
     {
-        _logger = logger;
         _telemetry = telemetry;
         _maskinportenClient = maskinportenClient;
         _platformSettings = platformSettings.Value;
@@ -97,7 +93,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
         client.DefaultRequestHeaders.Add(
-            "PlatformAccessToken",
+            General.PlatformAccessTokenHeaderName,
             _accessTokenGenerator.GenerateAccessToken(issuer, appName)
         );
 
