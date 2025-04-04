@@ -63,6 +63,8 @@ internal sealed record TestFixture(
     public IAltinnCdnClient AltinnCdnClient => App.Services.GetRequiredService<IAltinnCdnClient>();
     public IFiksArkivMessageHandler FiksArkivMessageHandler =>
         App.Services.GetRequiredService<IFiksArkivMessageHandler>();
+    public IFiksArkivAutoSendDecision FiksArkivAutoSendDecisionHandler =>
+        App.Services.GetRequiredService<IFiksArkivAutoSendDecision>();
     public IFiksArkivServiceTask FiksArkivServiceTask => App.Services.GetRequiredService<IFiksArkivServiceTask>();
     public ResiliencePipeline<FiksIOMessageResponse> FiksIOResiliencePipeline =>
         App.Services.ResolveResiliencePipeline();
@@ -304,6 +306,14 @@ internal sealed record TestFixture(
             IReadOnlyList<DataType> configuredDataTypes,
             IReadOnlyList<ProcessTask> configuredProcessTasks
         )
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class CustomAutoSendDecision : IFiksArkivAutoSendDecision
+    {
+        public Task<bool> ShouldSend(string taskId, Instance instance)
         {
             throw new NotImplementedException();
         }

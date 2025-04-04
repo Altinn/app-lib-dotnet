@@ -78,8 +78,6 @@ internal sealed class FiksIOClient : IFiksIOClient
             request.MessageType,
             request.SendersReference
         );
-        var externalRequest = request.ToMeldingRequest(AccountSettings.AccountId);
-        var externalAttachments = request.ToPayload();
         var numAttempts = 0;
 
         try
@@ -99,8 +97,8 @@ internal sealed class FiksIOClient : IFiksIOClient
                     numAttempts += 1;
 
                     var externalResult = await _fiksIoClient.Send(
-                        externalRequest,
-                        externalAttachments,
+                        request.ToMeldingRequest(AccountSettings.AccountId),
+                        request.ToPayload(),
                         cancellationToken
                     );
                     var result = new FiksIOMessageResponse(externalResult);

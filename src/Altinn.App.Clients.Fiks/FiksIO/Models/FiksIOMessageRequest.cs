@@ -1,3 +1,4 @@
+using Altinn.App.Clients.Fiks.Extensions;
 using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Crypto.Models;
 
@@ -32,10 +33,10 @@ public sealed record FiksIOMessageRequest(
             mottakerKontoId: Recipient,
             meldingType: MessageType,
             ttl: MessageLifetime,
-            headere: Headers,
+            headere: Headers?.ToDictionary(x => x.Key, x => x.Value),
             svarPaMelding: InReplyToMessage,
             klientMeldingId: SendersReference,
-            klientKorrelasjonsId: CorrelationId
+            klientKorrelasjonsId: CorrelationId?.ToUrlSafeBase64()
         );
     }
 

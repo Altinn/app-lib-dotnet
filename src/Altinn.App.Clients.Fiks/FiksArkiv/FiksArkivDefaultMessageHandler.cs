@@ -106,11 +106,8 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         );
     }
 
-    private string GetCorrelationId(Instance instance)
-    {
-        var baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
-        return $"{baseUrl}instances/{instance.Id}";
-    }
+    private string GetCorrelationId(Instance instance) =>
+        FiksArkivEventService.GetInstanceUrl(instance, _generalSettings);
 
     public Task ValidateConfiguration(
         IReadOnlyList<DataType> configuredDataTypes,

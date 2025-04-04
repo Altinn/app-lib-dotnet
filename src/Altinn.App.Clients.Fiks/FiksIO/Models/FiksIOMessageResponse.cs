@@ -1,3 +1,4 @@
+using Altinn.App.Clients.Fiks.Extensions;
 using KS.Fiks.IO.Client.Models;
 
 namespace Altinn.App.Clients.Fiks.FiksIO.Models;
@@ -20,7 +21,7 @@ public sealed record FiksIOMessageResponse
     /// <summary>
     /// Correlation ID for the message.
     /// </summary>
-    public string? CorrelationId => _sendtMelding.KlientKorrelasjonsId;
+    public string? CorrelationId => _sendtMelding.KlientKorrelasjonsId?.FromUrlSafeBase64();
 
     /// <summary>
     /// The message type (e.g. no.ks.fiks.arkiv.v1.arkivering.arkivmelding.opprett)

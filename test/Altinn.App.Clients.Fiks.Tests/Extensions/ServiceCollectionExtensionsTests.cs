@@ -335,6 +335,22 @@ public class ServiceCollectionExtensionsTests
         Assert.IsType<TestFixture.CustomFiksArkivMessageHandler>(fiksArkivMessageHandler);
     }
 
+    [Fact]
+    public void AddFiksArkiv_OverridesAutoSendDecision()
+    {
+        // Arrange
+        using var fixture = TestFixture.Create(services =>
+            services.AddFiksArkiv().WithAutoSendDecision<TestFixture.CustomAutoSendDecision>()
+        );
+
+        // Act
+        var fiksArkivAutoSendDecisionHandler = fixture.FiksArkivAutoSendDecisionHandler;
+
+        // Assert
+        Assert.NotNull(fiksArkivAutoSendDecisionHandler);
+        Assert.IsType<TestFixture.CustomAutoSendDecision>(fiksArkivAutoSendDecisionHandler);
+    }
+
     private static void AssertDefaultResiliencePipeline(ResiliencePipeline<FiksIOMessageResponse> pipeline)
     {
         var pipelineDescriptor = pipeline.GetPipelineDescriptor();

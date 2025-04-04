@@ -2,12 +2,14 @@ using System.Diagnostics;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
@@ -17,21 +19,24 @@ internal sealed class FiksArkivEventService : BackgroundService
     private readonly IFiksIOClient _fiksIOClient;
     private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
     private readonly Telemetry? _telemetry;
-    private readonly IInstanceClient _instanceClient;
+    private readonly GeneralSettings _generalSettings;
+    private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
 
     public FiksArkivEventService(
         IFiksIOClient fiksIOClient,
         IFiksArkivMessageHandler fiksArkivMessageHandler,
         ILogger<FiksArkivEventService> logger,
-        IInstanceClient instanceClient,
+        IOptions<GeneralSettings> generalSettings,
+        IFiksArkivInstanceClient fiksArkivInstanceClient,
         Telemetry? telemetry = null
     )
     {
         _logger = logger;
         _fiksIOClient = fiksIOClient;
         _fiksArkivMessageHandler = fiksArkivMessageHandler;
-        _instanceClient = instanceClient;
+        _generalSettings = generalSettings.Value;
         _telemetry = telemetry;
+        _fiksArkivInstanceClient = fiksArkivInstanceClient;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -83,7 +88,7 @@ internal sealed class FiksArkivEventService : BackgroundService
                 receivedMessage.Message.SendersReference
             );
 
-            Instance instance = await ParseCorrelationId(receivedMessage);
+            Instance instance = await RetrieveInstance(receivedMessage);
 
             using Activity? innerActivity = _telemetry?.StartFiksMessageHandlerActivity(
                 instance,
@@ -103,31 +108,59 @@ internal sealed class FiksArkivEventService : BackgroundService
         {
             _logger.LogError(e, "Fiks Arkiv MessageReceivedHandler failed with error: {Error}", e.Message);
             mainActivity?.Errored(e);
+
+            // TODO: Remove this
+            await receivedMessage.Responder.Ack();
         }
     }
 
-    private async Task<Instance> ParseCorrelationId(FiksIOReceivedMessage receivedMessage)
+    public static string GetInstanceUrl(Instance instance, GeneralSettings generalSettings)
     {
+        var appIdentifier = new AppIdentifier(instance);
+        var instanceIdentifier = new InstanceIdentifier(instance);
+        return GetInstanceUrl(appIdentifier, instanceIdentifier, generalSettings);
+    }
+
+    public static string GetInstanceUrl(
+        AppIdentifier appIdentifier,
+        InstanceIdentifier instanceIdentifier,
+        GeneralSettings generalSettings
+    )
+    {
+        var baseUrl = generalSettings.FormattedExternalAppBaseUrl(appIdentifier);
+        return $"{baseUrl}instances/{instanceIdentifier}";
+    }
+
+    // TODO: Auth
+    private async Task<Instance> RetrieveInstance(FiksIOReceivedMessage receivedMessage)
+    {
+        var (appIdentifier, instanceIdentifier) = ParseCorrelationId(receivedMessage.Message.CorrelationId);
+
         try
         {
-            Debug.Assert(receivedMessage.Message.CorrelationId is not null); // This may or may not be true, but we're catching below
-
-            var appId = AppIdentifier.CreateFromUrl(receivedMessage.Message.CorrelationId);
-            var instanceId = InstanceIdentifier.CreateFromUrl(receivedMessage.Message.CorrelationId);
-
-            return await _instanceClient.GetInstance(
-                appId.App,
-                appId.Org,
-                instanceId.InstanceOwnerPartyId,
-                instanceId.InstanceGuid
-            );
+            return await _fiksArkivInstanceClient.GetInstance(appIdentifier, instanceIdentifier);
         }
         catch (Exception e)
         {
-            throw new FiksArkivException(
-                $"Error resolving Instance for received message. Correlation ID is most likely missing or malformed: {receivedMessage.Message.CorrelationId}",
-                e
-            );
+            var instanceUrl = GetInstanceUrl(appIdentifier, instanceIdentifier, _generalSettings);
+            throw new FiksArkivException($"Error fetching Instance object for {instanceUrl}: {e.Message}", e);
+        }
+    }
+
+    private static (AppIdentifier appId, InstanceIdentifier instanceId) ParseCorrelationId(string? correlationId)
+    {
+        try
+        {
+            ArgumentNullException.ThrowIfNull(correlationId);
+
+            var appId = AppIdentifier.CreateFromUrl(correlationId);
+            var instanceId = InstanceIdentifier.CreateFromUrl(correlationId);
+
+            return (appId, instanceId);
+        }
+        catch (Exception e)
+        {
+            throw new FiksArkivException($"Error parsing Correlation ID for received message: {correlationId}", e);
         }
     }
 }
