@@ -1,4 +1,5 @@
 using Altinn.App.Clients.Fiks.Constants;
+using Altinn.App.Clients.Fiks.Extensions;
 using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Client.Send;
 
@@ -50,7 +51,7 @@ public sealed record FiksIOReceivedMessageContent
     /// <summary>
     /// The correlation ID for this message, if any.
     /// </summary>
-    public string? CorrelationId => _mottattMelding.KlientKorrelasjonsId;
+    public string? CorrelationId => _mottattMelding.KlientKorrelasjonsId?.FromUrlSafeBase64();
 
     /// <summary>
     /// The encrypted stream.
@@ -121,7 +122,7 @@ public sealed record FiksIOReceivedMessageContent
     /// <returns></returns>
     public Task WriteDecryptedZip(string outPath) => _mottattMelding.WriteDecryptedZip(outPath);
 
-    private IMottattMelding _mottattMelding { get; init; }
+    private IMottattMelding _mottattMelding { get; }
 
     internal FiksIOReceivedMessageContent(IMottattMelding mottattMelding)
     {

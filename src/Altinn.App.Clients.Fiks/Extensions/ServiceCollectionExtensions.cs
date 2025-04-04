@@ -53,6 +53,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IFiksArkivMessageHandler, FiksArkivDefaultMessageHandler>();
         services.AddTransient<IFiksArkivServiceTask, FiksArkivServiceTask>();
         services.AddTransient<IFiksArkivAutoSendDecision, FiksArkivDefaultAutoSendDecision>();
+        services.AddTransient<IFiksArkivInstanceClient, FiksArkivInstanceClient>();
         services.AddHostedService<FiksArkivConfigValidationService>();
         services.AddHostedService<FiksArkivEventService>();
 
