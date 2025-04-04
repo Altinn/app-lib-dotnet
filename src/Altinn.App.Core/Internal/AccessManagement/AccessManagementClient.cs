@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.AccessManagement.Exceptions;
 using Altinn.App.Core.Internal.AccessManagement.Helpers;
@@ -44,13 +45,11 @@ internal sealed class AccessManagementClient(
                 $"Delegating rights to {delegation.To?.Value} from {delegation.From?.Value} for {delegation.ResourceId}"
             );
 
-            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
-            {
-                Content = new StringContent(body, new MediaTypeHeaderValue("application/json")),
-            };
+            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
+            httpRequestMessage.Content = new StringContent(body, new MediaTypeHeaderValue("application/json"));
             httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             httpRequestMessage.Headers.Add(
-                "PlatformAccessToken",
+                General.PlatformAccessTokenHeaderName,
                 accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
             );
 
@@ -106,13 +105,11 @@ internal sealed class AccessManagementClient(
             var body = JsonSerializer.Serialize(DelegationRequest.ConvertToDto(delegation));
             logger.LogInformation($"Revoking rights from {delegation.To?.Value} for {delegation.ResourceId}");
 
-            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
-            {
-                Content = new StringContent(body, new MediaTypeHeaderValue("application/json")),
-            };
+            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
+            httpRequestMessage.Content = new StringContent(body, new MediaTypeHeaderValue("application/json"));
             httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             httpRequestMessage.Headers.Add(
-                "PlatformAccessToken",
+                General.PlatformAccessTokenHeaderName,
                 accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
             );
 
