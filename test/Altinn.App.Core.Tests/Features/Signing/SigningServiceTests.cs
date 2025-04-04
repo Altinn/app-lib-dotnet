@@ -114,7 +114,7 @@ public sealed class SigningServiceTests : IDisposable
                 {
                     IsAccessDelegated = true,
                     HasBeenMessagedForCallToSign = true,
-                    CorrespondenceId = Guid.Parse("12345678-1234-1234-1234-123456789012"),
+                    CtaCorrespondenceId = Guid.Parse("12345678-1234-1234-1234-123456789012"),
                 },
 
                 Signee = new PersonOnBehalfOfOrgSignee
@@ -193,7 +193,7 @@ public sealed class SigningServiceTests : IDisposable
         Assert.True(signeeContextWithMatchingSignatureDocument.SigneeState.HasBeenMessagedForCallToSign);
         Assert.Equal(
             Guid.Parse("12345678-1234-1234-1234-123456789012"),
-            signeeContextWithMatchingSignatureDocument.SigneeState.CorrespondenceId
+            signeeContextWithMatchingSignatureDocument.SigneeState.CtaCorrespondenceId
         );
 
         Assert.NotNull(signeeContextWithMatchingSignatureDocument.SignDocument);

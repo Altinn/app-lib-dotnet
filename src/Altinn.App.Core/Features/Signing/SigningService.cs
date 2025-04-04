@@ -153,7 +153,7 @@ internal sealed class SigningService(
                         serviceOwnerParty,
                         signatureConfiguration.CorrespondenceResources
                     );
-                    signeeContext.SigneeState.CorrespondenceId = response?.Correspondences.Single().CorrespondenceId;
+                    signeeContext.SigneeState.CtaCorrespondenceId = response?.Correspondences.Single().CorrespondenceId;
                     signeeContext.SigneeState.HasBeenMessagedForCallToSign = true;
                 }
                 catch (ConfigurationException e)
@@ -544,12 +544,7 @@ internal sealed class SigningService(
                 signDocument.SigneeInfo.SystemUserId,
                 altinnPartyClient.LookupParty
             ),
-            SigneeState = new SigneeState()
-            {
-                IsAccessDelegated = true,
-                HasBeenMessagedForCallToSign = true,
-                IsReceiptSent = false,
-            },
+            SigneeState = new SigneeState() { IsAccessDelegated = true, HasBeenMessagedForCallToSign = true },
             SignDocument = signDocument,
         };
     }

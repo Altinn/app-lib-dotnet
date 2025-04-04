@@ -31,17 +31,14 @@ public sealed class SigneeState
     public bool HasBeenMessagedForCallToSign { get; set; }
 
     /// <summary>
-    /// The id of the message that was sent to the signee.
+    /// The id of the call to action message that was sent to the signee.
     /// </summary>
-    public Guid? CorrespondenceId { get; set; }
+    [JsonPropertyName("ctaCorrespondenceId")]
+    public Guid? CtaCorrespondenceId { get; set; }
 
     /// <summary>
     /// The reason why the message failed.
     /// </summary>
     [JsonPropertyName("callToSignFailedReason")]
     public string? CallToSignFailedReason { get; set; }
-
-    /// <summary>Indicates whether the receipt for the signature has been send to the signee.</summary>
-    [JsonPropertyName("isReceiptSent")]
-    public bool IsReceiptSent { get; set; }
 }

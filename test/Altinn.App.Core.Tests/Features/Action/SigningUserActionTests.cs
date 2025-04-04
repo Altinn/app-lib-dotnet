@@ -15,12 +15,12 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Tests.Internal.Process.TestUtils;
+using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using static Altinn.App.Core.Features.Signing.Models.Signee;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Action;
@@ -53,7 +53,8 @@ public class SigningUserActionTests
         public static Fixture Create(
             IProcessReader? processReader = null,
             Instance? instance = null,
-            string testBpmnFilename = "signing-task-process.bpmn"
+            string testBpmnFilename = "signing-task-process.bpmn",
+            IReadOnlyList<CorrespondenceDetailsResponse>? overrideCorrespondences = null
         )
         {
             IProcessReader _processReader =
@@ -83,7 +84,7 @@ public class SigningUserActionTests
                 )
                 .Returns(
                     Task.FromResult<SendCorrespondenceResponse?>(
-                        new SendCorrespondenceResponse { Correspondences = [] }
+                        new SendCorrespondenceResponse { Correspondences = overrideCorrespondences ?? [] }
                     )
                 );
 
@@ -162,7 +163,15 @@ public class SigningUserActionTests
     public async Task HandleAction_returns_ok_if_SigningService_Sign_does_not_throw()
     {
         // Arrange
-        var fixture = Fixture.Create();
+        IReadOnlyList<CorrespondenceDetailsResponse> o =
+        [
+            new CorrespondenceDetailsResponse
+            {
+                Recipient = OrganisationOrPersonIdentifier.Create(NationalIdentityNumber.Parse("17858296439")),
+                CorrespondenceId = Guid.Parse("a499c3ef-e88a-436b-8650-1c43e5037ada"),
+            },
+        ];
+        var fixture = Fixture.Create(overrideCorrespondences: o);
 
         var userActionContext = new UserActionContext(
             fixture.InstanceDataMutatorMock.Object,
@@ -207,7 +216,15 @@ public class SigningUserActionTests
     public async Task HandleAction_returns_ok_if_user_is_valid(TestJwtToken token)
     {
         // Arrange
-        var fixture = Fixture.Create();
+        IReadOnlyList<CorrespondenceDetailsResponse> o =
+        [
+            new CorrespondenceDetailsResponse
+            {
+                Recipient = OrganisationOrPersonIdentifier.Create(NationalIdentityNumber.Parse("17858296439")),
+                CorrespondenceId = Guid.Parse("a499c3ef-e88a-436b-8650-1c43e5037ada"),
+            },
+        ];
+        var fixture = Fixture.Create(overrideCorrespondences: o);
 
         var instance = fixture.Instance;
         var signClient = fixture.SignClient;
@@ -305,7 +322,15 @@ public class SigningUserActionTests
             DataTypes = [new DataType { Id = "model", MinCount = 0 }],
         };
 
-        var fixture = Fixture.Create();
+        IReadOnlyList<CorrespondenceDetailsResponse> o =
+        [
+            new CorrespondenceDetailsResponse
+            {
+                Recipient = OrganisationOrPersonIdentifier.Create(NationalIdentityNumber.Parse("17858296439")),
+                CorrespondenceId = Guid.Parse("a499c3ef-e88a-436b-8650-1c43e5037ada"),
+            },
+        ];
+        var fixture = Fixture.Create(overrideCorrespondences: o);
 
         fixture.AppMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(appMetadata);
 
@@ -552,15 +577,14 @@ public class SigningUserActionHandleOnBehalfOfTests
         signingServiceMock
             .Setup(s => s.GetAuthorizedOrganisationSignees(dataMutator.Object, signatureConfig, userId))
             .ReturnsAsync(
-                new List<OrganisationSignee>
-                {
-                    new OrganisationSignee
+                [
+                    new()
                     {
                         OrgNumber = "111111111",
                         OrgName = "TestOrg",
-                        OrgParty = new Platform.Register.Models.Party { PartyId = 123 },
+                        OrgParty = new Party { PartyId = 123 },
                     },
-                }
+                ]
             );
 
         // Act:
@@ -599,11 +623,11 @@ public class SigningUserActionHandleOnBehalfOfTests
             .Setup(s => s.GetAuthorizedOrganisationSignees(dataMutator.Object, signatureConfig, 200))
             .ReturnsAsync(
                 [
-                    new OrganisationSignee
+                    new Core.Features.Signing.Models.Signee.OrganisationSignee
                     {
                         OrgNumber = onBehalfOrg,
                         OrgName = "TestOrg",
-                        OrgParty = new Platform.Register.Models.Party { PartyId = 123 },
+                        OrgParty = new Party { PartyId = 123 },
                     },
                 ]
             );

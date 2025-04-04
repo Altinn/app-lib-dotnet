@@ -168,8 +168,9 @@ internal class SigningUserAction : IUserAction
         if (res.Success)
         {
             _logger.LogInformation(
-                "Correspondence successfully sent to {Recipients}",
-                string.Join(", ", res.Ok.Correspondences.Select(x => x.Recipient))
+                "Correspondence successfully sent to {Recipients} with id {Id}",
+                string.Join(", ", res.Ok.Correspondences.Select(x => x.Recipient)),
+                res.Ok.Correspondences[0].CorrespondenceId
             );
         }
         else if (res.Error is ConfigurationException configurationException)
