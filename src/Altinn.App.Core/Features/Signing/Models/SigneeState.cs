@@ -31,6 +31,11 @@ public sealed class SigneeState
     public bool HasBeenMessagedForCallToSign { get; set; }
 
     /// <summary>
+    /// The id of the message that was sent to the signee.
+    /// </summary>
+    public Guid? CorrespondenceId { get; set; }
+
+    /// <summary>
     /// The reason why the message failed.
     /// </summary>
     [JsonPropertyName("callToSignFailedReason")]
