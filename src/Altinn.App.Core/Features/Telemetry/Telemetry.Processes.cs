@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
 using static Altinn.App.Core.Features.Telemetry.Processes;
@@ -45,6 +46,14 @@ partial class Telemetry
         var activity = ActivitySource.StartActivity($"{Prefix}.Next");
         activity?.SetInstanceId(instance);
         activity?.SetTag(InternalLabels.ProcessAction, action);
+        return activity;
+    }
+
+    // TODO: Does this belong here? Re Fiks, eFormidling and the like...
+    internal Activity? StartApiProcessNextActivity(InstanceIdentifier instanceIdentifier)
+    {
+        var activity = ActivitySource.StartActivity($"{Prefix}.ApiNext");
+        activity?.SetInstanceId(instanceIdentifier.InstanceGuid);
         return activity;
     }
 

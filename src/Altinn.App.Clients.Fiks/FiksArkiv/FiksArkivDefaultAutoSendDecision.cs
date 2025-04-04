@@ -25,19 +25,12 @@ internal class FiksArkivDefaultAutoSendDecision : IFiksArkivAutoSendDecision, IF
         IReadOnlyList<ProcessTask> configuredProcessTasks
     )
     {
-        string? afterTaskId = _fiksArkivSettings.AutoSend?.AfterTaskId;
-        const string propertyName =
-            $"{nameof(FiksArkivSettings.AutoSend)}.{nameof(FiksArkivSettings.AutoSend.AfterTaskId)}";
-
-        if (string.IsNullOrWhiteSpace(afterTaskId))
+        if (_fiksArkivSettings.AutoSend is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName} configuration is required for auto-send with default handler {nameof(FiksArkivDefaultAutoSendDecision)}."
+                $"{nameof(FiksArkivSettings.AutoSend)} configuration is required for auto-send with default handler {GetType().Name}."
             );
 
-        if (configuredProcessTasks.FirstOrDefault(x => x.Id == afterTaskId) is null)
-            throw new FiksArkivConfigurationException(
-                $"{propertyName} mismatch with application process tasks: {afterTaskId}"
-            );
+        _fiksArkivSettings.AutoSend.Validate(configuredProcessTasks);
 
         return Task.CompletedTask;
     }

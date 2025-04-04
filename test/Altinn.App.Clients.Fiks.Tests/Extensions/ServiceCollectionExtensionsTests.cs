@@ -265,6 +265,9 @@ public class ServiceCollectionExtensionsTests
                     {
                         x.AutoSend = settingsOverride.AutoSend;
                         x.ErrorHandling = settingsOverride.ErrorHandling;
+                        x.Documents = settingsOverride.Documents;
+                        x.Recipient = settingsOverride.Recipient;
+                        x.Receipt = settingsOverride.Receipt;
                     }),
             useDefaultFiksArkivSettings: provideDefaultSettings
         );
@@ -274,7 +277,7 @@ public class ServiceCollectionExtensionsTests
 
         // Assert
         Assert.NotNull(fiksArkivSettings);
-        Assert.Equal(settingsOverride, fiksArkivSettings);
+        Assert.Equivalent(settingsOverride, fiksArkivSettings);
     }
 
     [Theory]
@@ -285,14 +288,14 @@ public class ServiceCollectionExtensionsTests
         // Arrange
         var errorHandlingOverride = TestFixture.GetRandomFiksArkivSettings();
         errorHandlingOverride.AutoSend = null;
-        var autoSendOverride = TestFixture.GetRandomFiksArkivSettings();
-        autoSendOverride.ErrorHandling = null;
+        var settingsOverride = TestFixture.GetRandomFiksArkivSettings();
+        settingsOverride.ErrorHandling = null;
 
         using var fixture = TestFixture.Create(
             services => services.AddFiksArkiv().WithFiksArkivConfig("SuperCustomFiksArkivSettings"),
             [
                 ("SuperCustomFiksArkivSettings", errorHandlingOverride),
-                ("SuperCustomFiksArkivSettings", autoSendOverride),
+                ("SuperCustomFiksArkivSettings", settingsOverride),
             ],
             useDefaultFiksArkivSettings: provideDefaultSettings
         );
@@ -302,10 +305,10 @@ public class ServiceCollectionExtensionsTests
 
         // Assert
         Assert.NotNull(fiksArkivSettings.AutoSend);
-        Assert.NotNull(autoSendOverride.AutoSend);
-        Assert.Equivalent(autoSendOverride.AutoSend.Attachments, fiksArkivSettings.AutoSend.Attachments);
-        Assert.Equal(autoSendOverride.AutoSend.PrimaryDocument, fiksArkivSettings.AutoSend.PrimaryDocument);
-        Assert.Equal(autoSendOverride.AutoSend.Recipient, fiksArkivSettings.AutoSend.Recipient);
+        Assert.NotNull(settingsOverride.AutoSend);
+        Assert.Equivalent(settingsOverride.Documents!.Attachments, fiksArkivSettings.Documents!.Attachments);
+        Assert.Equal(settingsOverride.Documents!.PrimaryDocument, fiksArkivSettings.Documents!.PrimaryDocument);
+        Assert.Equal(settingsOverride.Recipient, fiksArkivSettings.Recipient);
 
         Assert.NotNull(fiksArkivSettings.ErrorHandling);
         Assert.NotNull(errorHandlingOverride.ErrorHandling);

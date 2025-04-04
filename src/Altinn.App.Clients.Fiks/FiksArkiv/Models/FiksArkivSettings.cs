@@ -18,17 +18,28 @@ public sealed record FiksArkivSettings
     public FiksArkivErrorHandlingSettings? ErrorHandling { get; set; }
 
     /// <summary>
+    /// Settings related to the receipt for a successful shipment.
+    /// </summary>
+    [JsonPropertyName("receipt")]
+    public FiksArkivReceiptSettings? Receipt { get; set; }
+
+    /// <summary>
+    /// Settings related to the recipient of the message. Used for generation of the payload metadata.
+    /// </summary>
+    [JsonPropertyName("recipient")]
+    public FiksArkivRecipientSettings? Recipient { get; set; }
+
+    /// <summary>
+    /// Settings related to the documents that will be sent to Fiks Arkiv.
+    /// </summary>
+    [JsonPropertyName("documents")]
+    public FiksArkivDocumentSettings? Documents { get; set; }
+
+    /// <summary>
     /// Settings related to auto-submission to Fiks Arkiv.
     /// </summary>
     [JsonPropertyName("autoSend")]
-    // TODO: Restructure this -- many settings in the `AutoSend` relates to payload generation, not just auto-sending
     public FiksArkivAutoSendSettings? AutoSend { get; set; }
-
-    internal void Validate(IReadOnlyList<DataType> dataTypes, IReadOnlyList<ProcessTask> processTasks)
-    {
-        ErrorHandling?.Validate();
-        AutoSend?.Validate(dataTypes, processTasks);
-    }
 }
 
 /// <summary>
@@ -65,6 +76,70 @@ public sealed record FiksArkivErrorHandlingSettings
 }
 
 /// <summary>
+/// Represents the settings for a receipt.
+/// </summary>
+public sealed record FiksArkivReceiptSettings
+{
+    /// <summary>
+    /// The data type of the receipt object.
+    /// </summary>
+    public required string DataType { get; init; }
+
+    /// <summary>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultAutoSendDecision"/>
+    /// </summary>
+    internal void Validate(IReadOnlyList<DataType> dataTypes)
+    {
+        const string propertyName = nameof(FiksArkivSettings.Receipt);
+
+        if (string.IsNullOrWhiteSpace(DataType))
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(DataType)} configuration is required for handler {nameof(FiksArkivDefaultMessageHandler)}."
+            );
+
+        if (dataTypes.Any(x => x.Id == DataType) is false)
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(DataType)} mismatch with application data types: {DataType}"
+            );
+    }
+}
+
+/// <summary>
+/// Represents the settings for Fiks Arkiv documents
+/// </summary>
+public sealed record FiksArkivDocumentSettings
+{
+    /// <summary>
+    /// The settings for the primary document payload.
+    /// This is usually the main data model for the form data, or the PDF representation of this data,
+    /// which will eventually be sent as a `Hoveddokument` to Fiks Arkiv.
+    /// </summary>
+    [JsonPropertyName("primaryDocument")]
+    public required FiksArkivPayloadSettings PrimaryDocument { get; init; }
+
+    /// <summary>
+    /// Optional settings for attachments. These are additional documents that will be sent as `Vedlegg` to Fiks Arkiv.
+    /// </summary>
+    [JsonPropertyName("attachments")]
+    public IReadOnlyList<FiksArkivPayloadSettings>? Attachments { get; init; }
+
+    /// <summary>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// </summary>
+    internal void Validate(IReadOnlyList<DataType> dataTypes)
+    {
+        const string propertyName = nameof(FiksArkivSettings.Documents);
+
+        PrimaryDocument.Validate($"{propertyName}.{nameof(PrimaryDocument)}", dataTypes);
+
+        foreach (var attachment in Attachments ?? [])
+        {
+            attachment.Validate($"{propertyName}.{nameof(Attachments)}", dataTypes);
+        }
+    }
+}
+
+/// <summary>
 /// Represents the settings for auto-sending a message.
 /// </summary>
 public sealed record FiksArkivAutoSendSettings
@@ -83,51 +158,22 @@ public sealed record FiksArkivAutoSendSettings
     public bool AutoProgressToNextTask { get; init; }
 
     /// <summary>
-    /// The data type of the receipt object.
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultAutoSendDecision"/>
     /// </summary>
-    public required string ReceiptDataType { get; init; }
-
-    /// <summary>
-    /// The recipient of the message.
-    /// </summary>
-    [JsonPropertyName("recipient")]
-    public required FiksArkivRecipientSettings Recipient { get; init; }
-
-    /// <summary>
-    /// The settings for the primary document payload.
-    /// This is usually the main data model for the form data, or the PDF representation of this data,
-    /// which will eventually be sent as a `Hoveddokument` to Fiks Arkiv.
-    /// </summary>
-    [JsonPropertyName("primaryDocument")]
-    public required FiksArkivPayloadSettings PrimaryDocument { get; init; }
-
-    /// <summary>
-    /// Optional settings for attachments. These are additional documents that will be sent as `Vedlegg` to Fiks Arkiv.
-    /// </summary>
-    [JsonPropertyName("attachments")]
-    public IReadOnlyList<FiksArkivPayloadSettings>? Attachments { get; init; }
-
-    internal void Validate(IReadOnlyList<DataType> dataTypes, IReadOnlyList<ProcessTask> processTasks)
+    internal void Validate(IReadOnlyList<ProcessTask> configuredProcessTasks)
     {
-        const string propertyName = nameof(FiksArkivSettings.AutoSend);
+        const string propertyName =
+            $"{nameof(FiksArkivSettings.AutoSend)}.{nameof(FiksArkivSettings.AutoSend.AfterTaskId)}";
 
-        if (string.IsNullOrWhiteSpace(ReceiptDataType))
+        if (string.IsNullOrWhiteSpace(AfterTaskId))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(ReceiptDataType)} configuration is required for auto-send."
+                $"{propertyName} configuration is required for default handler {nameof(FiksArkivDefaultAutoSendDecision)}."
             );
 
-        if (dataTypes.Any(x => x.Id == ReceiptDataType) is false)
+        if (configuredProcessTasks.FirstOrDefault(x => x.Id == AfterTaskId) is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(ReceiptDataType)} mismatch with application data types: {ReceiptDataType}"
+                $"{propertyName} mismatch with application process tasks: {AfterTaskId}"
             );
-
-        Recipient.Validate($"{propertyName}.{nameof(Recipient)}", dataTypes);
-        PrimaryDocument.Validate($"{propertyName}.{nameof(PrimaryDocument)}", dataTypes);
-
-        foreach (var attachment in Attachments ?? [])
-        {
-            attachment.Validate($"{propertyName}.{nameof(Attachments)}", dataTypes);
-        }
     }
 }
 
@@ -156,8 +202,13 @@ public sealed record FiksArkivRecipientSettings
     /// </summary>
     public FiksArkivRecipientValue<string>? Name { get; init; }
 
-    internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes)
+    /// <summary>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// </summary>
+    internal void Validate(IReadOnlyList<DataType> dataTypes)
     {
+        const string propertyName = $"{nameof(FiksArkivSettings.Recipient)}";
+
         FiksAccount.Validate($"{propertyName}.{nameof(FiksAccount)}", dataTypes);
         Identifier?.Validate($"{propertyName}.{nameof(Identifier)}", dataTypes);
         OrganizationNumber?.Validate($"{propertyName}.{nameof(OrganizationNumber)}", dataTypes);
@@ -183,11 +234,14 @@ public sealed record FiksArkivRecipientValue<T>
     [JsonPropertyName("dataModelBinding")]
     public FiksArkivDataModelBinding? DataModelBinding { get; init; }
 
+    /// <summary>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// </summary>
     internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes)
     {
         if (Value is null && DataModelBinding is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}: Either `{nameof(Value)}` or `{nameof(DataModelBinding)}` must be configured."
+                $"{propertyName}: Either `{nameof(Value)}` or `{nameof(DataModelBinding)}` must be configured for handler {nameof(FiksArkivDefaultMessageHandler)}."
             );
 
         if (Value is not null && DataModelBinding is not null)
@@ -222,12 +276,16 @@ public sealed record FiksArkivDataModelBinding
     public static implicit operator ModelBinding(FiksArkivDataModelBinding modelBinding) =>
         new() { Field = modelBinding.Field, DataType = modelBinding.DataType };
 
+    /// <summary>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// </summary>
     internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes)
     {
         if (string.IsNullOrWhiteSpace(DataType))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)} configuration is required for auto-send."
+                $"{propertyName}.{nameof(DataType)} configuration is required for handler {nameof(FiksArkivDefaultMessageHandler)}"
             );
+
         if (dataTypes.Any(x => x.Id == DataType) is false)
             throw new FiksArkivConfigurationException(
                 $"{propertyName}.{nameof(DataType)} mismatch with application data types: {DataType}"
@@ -235,7 +293,7 @@ public sealed record FiksArkivDataModelBinding
 
         if (string.IsNullOrWhiteSpace(Field))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(Field)} configuration is required for auto-send."
+                $"{propertyName}.{nameof(Field)} configuration is required for handler {nameof(FiksArkivDefaultMessageHandler)}."
             );
     }
 }
@@ -258,11 +316,14 @@ public sealed record FiksArkivPayloadSettings
     [JsonPropertyName("filename")]
     public string? Filename { get; init; }
 
+    /// <summary>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// </summary>
     internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes)
     {
         if (string.IsNullOrWhiteSpace(DataType))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)} configuration is required for auto-send."
+                $"{propertyName}.{nameof(DataType)} configuration is required for handler {nameof(FiksArkivDefaultMessageHandler)}."
             );
         if (dataTypes.Any(x => x.Id == DataType) is false)
             throw new FiksArkivConfigurationException(

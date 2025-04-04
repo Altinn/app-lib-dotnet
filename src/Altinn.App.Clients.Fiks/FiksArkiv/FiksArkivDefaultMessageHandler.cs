@@ -37,6 +37,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
     private readonly ILayoutEvaluatorStateInitializer _layoutStateInitializer;
     private readonly IEmailNotificationClient _emailNotificationClient;
     private readonly IHostEnvironment _hostEnvironment;
+    private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
     private readonly Telemetry? _telemetry;
     private readonly GeneralSettings _generalSettings;
 
@@ -56,6 +57,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         ILayoutEvaluatorStateInitializer layoutStateInitializer,
         IEmailNotificationClient emailNotificationClient,
         IHostEnvironment hostEnvironment,
+        IFiksArkivInstanceClient fiksArkivInstanceClient,
         Telemetry? telemetry = null
     )
     {
@@ -72,6 +74,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         _layoutStateInitializer = layoutStateInitializer;
         _emailNotificationClient = emailNotificationClient;
         _hostEnvironment = hostEnvironment;
+        _fiksArkivInstanceClient = fiksArkivInstanceClient;
         _telemetry = telemetry;
     }
 
@@ -112,7 +115,27 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         IReadOnlyList<ProcessTask> configuredProcessTasks
     )
     {
-        _fiksArkivSettings.Validate(configuredDataTypes, configuredProcessTasks);
+        if (_fiksArkivSettings.Recipient is null)
+            throw new FiksArkivConfigurationException(
+                $"{nameof(FiksArkivSettings.Recipient)} configuration is required for default handler {GetType().Name}."
+            );
+        _fiksArkivSettings.Recipient.Validate(configuredDataTypes);
+
+        if (_fiksArkivSettings.Documents is null)
+            throw new FiksArkivConfigurationException(
+                $"{nameof(FiksArkivSettings.Documents)} configuration is required for default handler {GetType().Name}."
+            );
+        _fiksArkivSettings.Documents.Validate(configuredDataTypes);
+
+        if (_fiksArkivSettings.Receipt is null)
+            throw new FiksArkivConfigurationException(
+                $"{nameof(FiksArkivSettings.Receipt)} configuration is required for default handler {GetType().Name}."
+            );
+
+        _fiksArkivSettings.Receipt.Validate(configuredDataTypes);
+
+        _fiksArkivSettings.ErrorHandling?.Validate();
+
         return Task.CompletedTask;
     }
 

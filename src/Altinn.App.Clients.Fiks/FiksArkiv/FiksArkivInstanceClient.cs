@@ -8,6 +8,7 @@ using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -22,24 +23,30 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
     private readonly IAppMetadata _appMetadata;
     private readonly IHostEnvironment _hostEnvironment;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
+    private readonly GeneralSettings _generalSettings;
+    private readonly ILogger<FiksArkivInstanceClient> _logger;
 
     public FiksArkivInstanceClient(
         IOptions<PlatformSettings> platformSettings,
+        IOptions<GeneralSettings> generalSettings,
         IMaskinportenClient maskinportenClient,
         IHttpClientFactory httpClientFactory,
         IAppMetadata appMetadata,
         IHostEnvironment hostEnvironment,
         IAccessTokenGenerator accessTokenGenerator,
+        ILogger<FiksArkivInstanceClient> logger,
         Telemetry? telemetry = null
     )
     {
+        _platformSettings = platformSettings.Value;
+        _generalSettings = generalSettings.Value;
         _telemetry = telemetry;
         _maskinportenClient = maskinportenClient;
-        _platformSettings = platformSettings.Value;
         _httpClientFactory = httpClientFactory;
         _appMetadata = appMetadata;
         _hostEnvironment = hostEnvironment;
         _accessTokenGenerator = accessTokenGenerator;
+        _logger = logger;
     }
 
     public async Task<string> GetServiceOwnerAccessToken()
@@ -65,6 +72,30 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             ?? throw new InvalidOperationException(
                 $"Unable to deserialize instance with instance id {instanceIdentifier}"
             );
+    }
+
+    public async Task ProcessMoveNext(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier)
+    {
+        using var activity = _telemetry?.StartApiProcessNextActivity(instanceIdentifier);
+
+        try
+        {
+            string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appIdentifier);
+            string token = await GetServiceOwnerAccessToken();
+            using HttpClient client = await GetAuthenticatedClient(token);
+            using HttpResponseMessage response = await client.PutAsync(
+                $"{baseUrl}instances/{instanceIdentifier}/process/next",
+                new StringContent(string.Empty)
+            );
+
+            response.EnsureSuccessStatusCode();
+            _logger.LogInformation("Moved instance {instanceId} to next step.", instanceIdentifier);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Failed to move instance {InstanceId} to next step: {Error}", instanceIdentifier, e);
+            throw;
+        }
     }
 
     private async Task<string> GetLocaltestToken()

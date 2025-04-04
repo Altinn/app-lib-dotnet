@@ -135,8 +135,8 @@ internal sealed partial class FiksArkivDefaultMessageHandler
     private async Task<ArchiveDocumentsWrapper> GetArchiveDocuments(Instance instance)
     {
         InstanceIdentifier instanceId = new(instance.Id);
-        var primaryDocumentSettings = VerifiedNotNull(_fiksArkivSettings.AutoSend?.PrimaryDocument);
-        var attachmentSettings = _fiksArkivSettings.AutoSend?.Attachments ?? [];
+        var primaryDocumentSettings = VerifiedNotNull(_fiksArkivSettings.Documents?.PrimaryDocument);
+        var attachmentSettings = _fiksArkivSettings.Documents?.Attachments ?? [];
 
         var primaryDataElement = instance.GetRequiredDataElement(primaryDocumentSettings.DataType);
         var primaryDocument = await GetPayload(
@@ -201,7 +201,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
     {
         try
         {
-            var recipientSettings = VerifiedNotNull(_fiksArkivSettings.AutoSend?.Recipient);
+            var recipientSettings = VerifiedNotNull(_fiksArkivSettings.Recipient);
             var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(instance, null, null);
             var layoutState = await _layoutStateInitializer.Init(unitOfWork, null);
 
