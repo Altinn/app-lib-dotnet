@@ -432,6 +432,66 @@ public sealed class ProcessEngineTest
     }
 
     [Fact]
+    public async Task HandleUserAction_returns_successful_when_handler_succeeds()
+    {
+        var expectedInstance = new Instance()
+        {
+            Id = _instanceId,
+            AppId = "org/app",
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
+            Process = new ProcessState()
+            {
+                CurrentTask = null,
+                StartEvent = "StartEvent_1",
+                EndEvent = "EndEvent_1",
+            },
+        };
+        Mock<IUserAction> userActionMock = new Mock<IUserAction>(MockBehavior.Strict);
+        userActionMock.Setup(u => u.Id).Returns("sign");
+        userActionMock
+            .Setup(u => u.HandleAction(It.IsAny<UserActionContext>()))
+            .ReturnsAsync(UserActionResult.SuccessResult());
+        using var fixture = Fixture.Create(updatedInstance: expectedInstance, userActions: [userActionMock.Object]);
+        fixture
+            .Mock<IAppMetadata>()
+            .Setup(x => x.GetApplicationMetadata())
+            .ReturnsAsync(new ApplicationMetadata("org/app"));
+        ProcessEngine processEngine = fixture.ProcessEngine;
+        Instance instance = new Instance()
+        {
+            Id = _instanceId,
+            AppId = "org/app",
+            InstanceOwner = new() { PartyId = "1337" },
+            Data = [],
+            Process = new ProcessState()
+            {
+                StartEvent = "StartEvent_1",
+                CurrentTask = new()
+                {
+                    ElementId = "Task_2",
+                    AltinnTaskType = "signing",
+                    Flow = 3,
+                    Validated = new() { CanCompleteTask = true },
+                },
+            },
+        };
+        ClaimsPrincipal user = new(
+            new ClaimsIdentity(new List<Claim>() { new(AltinnCoreClaimTypes.AuthenticationLevel, "2") })
+        );
+        ProcessNextRequest processNextRequest = new ProcessNextRequest()
+        {
+            Instance = instance,
+            User = user,
+            Action = "sign",
+            Language = null,
+        };
+        UserActionResult result = await processEngine.HandleUserAction(processNextRequest);
+        result.Success.Should().BeTrue();
+        result.ErrorType.Should().Be(null);
+    }
+
+    [Fact]
     public async Task HandleUserAction_returns_unsuccessful_unauthorized_when_action_handler_returns_errortype_Unauthorized()
     {
         var expectedInstance = new Instance()
