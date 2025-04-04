@@ -1,9 +1,11 @@
+using Altinn.App.Core.Exceptions;
+
 namespace Altinn.App.Core.Models.Notifications.Sms;
 
 /// <summary>
 /// Class representing an exception thrown when a SMS notificcation order could not be created
 /// </summary>
-public sealed class SmsNotificationException : Exception
+public sealed class SmsNotificationException : AltinnException
 {
     internal SmsNotificationException(
         string? message,

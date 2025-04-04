@@ -15,6 +15,8 @@ using Altinn.App.Core.Features.Payment.Processors.FakePaymentProcessor;
 using Altinn.App.Core.Features.Payment.Processors.Nets;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Features.Pdf;
+using Altinn.App.Core.Features.Signing;
+using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Helpers.Serialization;
@@ -28,6 +30,7 @@ using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal;
+using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
@@ -108,6 +111,9 @@ public static class ServiceCollectionExtensions
 #pragma warning restore CS0618 // Type or member is obsolete
         services.AddHttpClient<IProcessClient, ProcessClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
+        services.AddHttpClient<IAccessManagementClient, AccessManagementClient>();
+
+#pragma warning disable EXTEXP0018 // is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         services.AddHybridCache();
 
         services.TryAddTransient<IUserTokenProvider, UserTokenProvider>();
@@ -216,6 +222,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IFormDataValidator, DataAnnotationValidator>();
         services.AddTransient<IDataElementValidator, DefaultDataElementValidator>();
         services.AddTransient<ITaskValidator, DefaultTaskValidator>();
+        services.AddTransient<IValidator, SigningTaskValidator>();
 
         var appSettings = configuration.GetSection("AppSettings").Get<AppSettings>();
         if (appSettings?.RequiredValidation is true)
@@ -300,6 +307,10 @@ public static class ServiceCollectionExtensions
     private static void AddSignatureServices(IServiceCollection services)
     {
         services.AddHttpClient<ISignClient, SignClient>();
+        services.AddTransient<ISigningDelegationService, SigningDelegationService>();
+        services.AddTransient<ISigningReceiptService, SigningReceiptService>();
+        services.AddTransient<ISigningCallToActionService, SigningCallToActionService>();
+        services.AddTransient<ISigningService, SigningService>();
     }
 
     private static void AddAppOptions(IServiceCollection services)
@@ -326,6 +337,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddTransient<IProcessExclusiveGateway, ExpressionsExclusiveGateway>();
         services.TryAddTransient<IProcessEngine, ProcessEngine>();
+        services.TryAddTransient<IProcessEngineAuthorizer, ProcessEngineAuthorizer>();
         services.TryAddTransient<IProcessNavigator, ProcessNavigator>();
         services.TryAddSingleton<IProcessReader, ProcessReader>();
         services.TryAddTransient<IProcessEventHandlerDelegator, ProcessEventHandlingDelegator>();
