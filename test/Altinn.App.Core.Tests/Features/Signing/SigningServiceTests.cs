@@ -110,7 +110,12 @@ public sealed class SigningServiceTests : IDisposable
             new()
             {
                 TaskId = instance.Process.CurrentTask.ElementId,
-                SigneeState = new SigneeState { IsAccessDelegated = true },
+                SigneeState = new SigneeState
+                {
+                    IsAccessDelegated = true,
+                    HasBeenMessagedForCallToSign = true,
+                    CtaCorrespondenceId = Guid.Parse("12345678-1234-1234-1234-123456789012"),
+                },
 
                 Signee = new PersonOnBehalfOfOrgSignee
                 {
@@ -185,6 +190,11 @@ public sealed class SigningServiceTests : IDisposable
         Assert.NotNull(signeeContextWithMatchingSignatureDocument);
         Assert.NotNull(signeeContextWithMatchingSignatureDocument.SigneeState);
         Assert.True(signeeContextWithMatchingSignatureDocument.SigneeState.IsAccessDelegated);
+        Assert.True(signeeContextWithMatchingSignatureDocument.SigneeState.HasBeenMessagedForCallToSign);
+        Assert.Equal(
+            Guid.Parse("12345678-1234-1234-1234-123456789012"),
+            signeeContextWithMatchingSignatureDocument.SigneeState.CtaCorrespondenceId
+        );
 
         Assert.NotNull(signeeContextWithMatchingSignatureDocument.SignDocument);
         Assert.NotNull(signeeContextWithMatchingSignatureDocument.SignDocument?.SigneeInfo);

@@ -108,7 +108,6 @@ public class SigningControllerTests
                 {
                     DelegationFailedReason = "delegationFailedReason",
                     IsAccessDelegated = false,
-                    IsReceiptSent = false,
                     HasBeenMessagedForCallToSign = false,
                     CallToSignFailedReason = "callToSignFailedReason",
                 },
@@ -125,7 +124,6 @@ public class SigningControllerTests
                 },
                 SigneeState = new SigneeContextState
                 {
-                    IsReceiptSent = false,
                     DelegationFailedReason = null,
                     IsAccessDelegated = true,
                     HasBeenMessagedForCallToSign = false,
@@ -150,7 +148,6 @@ public class SigningControllerTests
                 },
                 SigneeState = new SigneeContextState
                 {
-                    IsReceiptSent = false,
                     DelegationFailedReason = null,
                     IsAccessDelegated = true,
                     HasBeenMessagedForCallToSign = false,
@@ -175,7 +172,6 @@ public class SigningControllerTests
                 },
                 SigneeState = new SigneeContextState
                 {
-                    IsReceiptSent = false,
                     DelegationFailedReason = null,
                     IsAccessDelegated = true,
                     HasBeenMessagedForCallToSign = true,
@@ -193,7 +189,6 @@ public class SigningControllerTests
                 },
                 SigneeState = new SigneeContextState
                 {
-                    IsReceiptSent = false,
                     DelegationFailedReason = null,
                     IsAccessDelegated = true,
                     HasBeenMessagedForCallToSign = true,
@@ -295,7 +290,6 @@ public class SigningControllerTests
                 {
                     DelegationFailedReason = "delegationFailedReason",
                     IsAccessDelegated = false,
-                    IsReceiptSent = false,
                     HasBeenMessagedForCallToSign = false,
                     CallToSignFailedReason = "callToSignFailedReason",
                 },
@@ -367,7 +361,6 @@ public class SigningControllerTests
                 {
                     DelegationFailedReason = null,
                     IsAccessDelegated = true,
-                    IsReceiptSent = false,
                     HasBeenMessagedForCallToSign = false,
                     CallToSignFailedReason = null,
                 },
@@ -442,7 +435,6 @@ public class SigningControllerTests
                 {
                     DelegationFailedReason = null,
                     IsAccessDelegated = true,
-                    IsReceiptSent = false,
                     HasBeenMessagedForCallToSign = true,
                     CallToSignFailedReason = null,
                 },
