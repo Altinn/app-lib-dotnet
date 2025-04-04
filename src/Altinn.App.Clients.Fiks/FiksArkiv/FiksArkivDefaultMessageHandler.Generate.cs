@@ -71,8 +71,8 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             },
             Journalposttype = new Journalposttype
             {
-                KodeProperty = JournalposttypeKoder.UtgaaendeDokument.Verdi,
-                Beskrivelse = JournalposttypeKoder.UtgaaendeDokument.Beskrivelse,
+                KodeProperty = JournalposttypeKoder.InngaaendeDokument.Verdi,
+                Beskrivelse = JournalposttypeKoder.InngaaendeDokument.Beskrivelse,
             },
             ReferanseForelderMappe = new ReferanseTilMappe
             {

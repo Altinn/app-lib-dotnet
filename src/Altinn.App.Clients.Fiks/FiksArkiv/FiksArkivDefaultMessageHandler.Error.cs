@@ -19,13 +19,16 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             receivedMessage.Message.MessageId,
             deserializedContent?.Select(x => x.StringResult) ?? ["Message contains no content."]
         );
+
+        ArgumentNullException.ThrowIfNull(instance);
+
         if (_fiksArkivSettings.ErrorHandling?.SendEmailNotifications is not true)
         {
             _logger.LogInformation("Error handling is disabled, skipping email notification.");
             return;
         }
 
-        IReadOnlyList<EmailRecipient> recipientEmailAddresses = VerifiedNotNull(
+        List<EmailRecipient> recipientEmailAddresses = VerifiedNotNull(
                 _fiksArkivSettings.ErrorHandling.EmailNotificationRecipients
             )
             .Select(x => new EmailRecipient(x))

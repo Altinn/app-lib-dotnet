@@ -35,6 +35,8 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             return;
         }
 
+        ArgumentNullException.ThrowIfNull(instance);
+
         if (deserializedContent?.Count > 1)
             _logger.LogWarning(
                 "Message contains multiple responses. This is unexpected and possibly warrants further investigation."

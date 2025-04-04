@@ -4,9 +4,9 @@ using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using KS.Fiks.ASiC_E;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -77,6 +77,8 @@ internal sealed class FiksArkivEventService : BackgroundService
             receivedMessage.Message.MessageType
         );
 
+        IReadOnlyList<(string, string)>? decryptedMessagePayloads = null;
+
         try
         {
             _logger.LogInformation(
@@ -88,6 +90,9 @@ internal sealed class FiksArkivEventService : BackgroundService
                 receivedMessage.Message.SendersReference
             );
 
+            decryptedMessagePayloads = await receivedMessage.Message.GetDecryptedPayloadStrings();
+
+            // TODO: Still waiting for proper correlation id support
             Instance instance = await RetrieveInstance(receivedMessage);
 
             using Activity? innerActivity = _telemetry?.StartFiksMessageHandlerActivity(
@@ -107,31 +112,11 @@ internal sealed class FiksArkivEventService : BackgroundService
         catch (Exception e)
         {
             _logger.LogError(e, "Fiks Arkiv MessageReceivedHandler failed with error: {Error}", e.Message);
+            _logger.LogError("The message payload was: {MessagePayload}", decryptedMessagePayloads);
             mainActivity?.Errored(e);
-
-            // TODO: Remove this
-            await receivedMessage.Responder.Ack();
         }
     }
 
-    public static string GetInstanceUrl(Instance instance, GeneralSettings generalSettings)
-    {
-        var appIdentifier = new AppIdentifier(instance);
-        var instanceIdentifier = new InstanceIdentifier(instance);
-        return GetInstanceUrl(appIdentifier, instanceIdentifier, generalSettings);
-    }
-
-    public static string GetInstanceUrl(
-        AppIdentifier appIdentifier,
-        InstanceIdentifier instanceIdentifier,
-        GeneralSettings generalSettings
-    )
-    {
-        var baseUrl = generalSettings.FormattedExternalAppBaseUrl(appIdentifier);
-        return $"{baseUrl}instances/{instanceIdentifier}";
-    }
-
-    // TODO: Auth
     private async Task<Instance> RetrieveInstance(FiksIOReceivedMessage receivedMessage)
     {
         var (appIdentifier, instanceIdentifier) = ParseCorrelationId(receivedMessage.Message.CorrelationId);
@@ -142,8 +127,7 @@ internal sealed class FiksArkivEventService : BackgroundService
         }
         catch (Exception e)
         {
-            var instanceUrl = GetInstanceUrl(appIdentifier, instanceIdentifier, _generalSettings);
-            throw new FiksArkivException($"Error fetching Instance object for {instanceUrl}: {e.Message}", e);
+            throw new FiksArkivException($"Error fetching Instance object for {instanceIdentifier}: {e.Message}", e);
         }
     }
 
