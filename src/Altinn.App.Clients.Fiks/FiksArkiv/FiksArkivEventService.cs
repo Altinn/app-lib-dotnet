@@ -2,14 +2,11 @@ using System.Diagnostics;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using KS.Fiks.ASiC_E;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
@@ -19,14 +16,12 @@ internal sealed class FiksArkivEventService : BackgroundService
     private readonly IFiksIOClient _fiksIOClient;
     private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
     private readonly Telemetry? _telemetry;
-    private readonly GeneralSettings _generalSettings;
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
 
     public FiksArkivEventService(
         IFiksIOClient fiksIOClient,
         IFiksArkivMessageHandler fiksArkivMessageHandler,
         ILogger<FiksArkivEventService> logger,
-        IOptions<GeneralSettings> generalSettings,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
         Telemetry? telemetry = null
     )
@@ -34,7 +29,6 @@ internal sealed class FiksArkivEventService : BackgroundService
         _logger = logger;
         _fiksIOClient = fiksIOClient;
         _fiksArkivMessageHandler = fiksArkivMessageHandler;
-        _generalSettings = generalSettings.Value;
         _telemetry = telemetry;
         _fiksArkivInstanceClient = fiksArkivInstanceClient;
     }

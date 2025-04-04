@@ -203,20 +203,20 @@ internal sealed record TestFixture(
                 SendEmailNotifications = true,
                 EmailNotificationRecipients = ["recipient@example.com"],
             },
-            AutoSend = new FiksArkivAutoSendSettings
+            Receipt = new FiksArkivReceiptSettings { DataType = "fiks-receipt" },
+            Recipient = new FiksArkivRecipientSettings
             {
-                AfterTaskId = "Task_1",
-                ReceiptDataType = "fiks-receipt",
-                Recipient = new FiksArkivRecipientSettings
+                FiksAccount = new FiksArkivRecipientValue<Guid?>
                 {
-                    FiksAccount = new FiksArkivRecipientValue<Guid?>
-                    {
-                        DataModelBinding = new FiksArkivDataModelBinding { DataType = "model", Field = "recipient" },
-                    },
-                    Identifier = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
-                    OrganizationNumber = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
-                    Name = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+                    DataModelBinding = new FiksArkivDataModelBinding { DataType = "model", Field = "recipient" },
                 },
+                Identifier = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+                OrganizationNumber = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+                Name = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+            },
+            AutoSend = new FiksArkivAutoSendSettings { AfterTaskId = "Task_1" },
+            Documents = new FiksArkivDocumentSettings
+            {
                 PrimaryDocument = new FiksArkivPayloadSettings
                 {
                     DataType = "ref-data-as-pdf",
@@ -252,24 +252,24 @@ internal sealed record TestFixture(
                 SendEmailNotifications = true,
                 EmailNotificationRecipients = [Guid.NewGuid().ToString(), Guid.NewGuid().ToString()],
             },
-            AutoSend = new FiksArkivAutoSendSettings
+            Recipient = new FiksArkivRecipientSettings
             {
-                AfterTaskId = Guid.NewGuid().ToString(),
-                ReceiptDataType = Guid.NewGuid().ToString(),
-                Recipient = new FiksArkivRecipientSettings
+                FiksAccount = new FiksArkivRecipientValue<Guid?>
                 {
-                    FiksAccount = new FiksArkivRecipientValue<Guid?>
+                    DataModelBinding = new FiksArkivDataModelBinding
                     {
-                        DataModelBinding = new FiksArkivDataModelBinding
-                        {
-                            DataType = Guid.NewGuid().ToString(),
-                            Field = Guid.NewGuid().ToString(),
-                        },
+                        DataType = Guid.NewGuid().ToString(),
+                        Field = Guid.NewGuid().ToString(),
                     },
-                    Identifier = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
-                    OrganizationNumber = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
-                    Name = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
                 },
+                Identifier = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+                OrganizationNumber = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+                Name = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+            },
+            Receipt = new FiksArkivReceiptSettings { DataType = Guid.NewGuid().ToString() },
+            AutoSend = new FiksArkivAutoSendSettings { AfterTaskId = Guid.NewGuid().ToString() },
+            Documents = new FiksArkivDocumentSettings
+            {
                 PrimaryDocument = new FiksArkivPayloadSettings
                 {
                     DataType = Guid.NewGuid().ToString(),

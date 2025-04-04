@@ -1,5 +1,6 @@
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using Microsoft.Extensions.Logging;
@@ -45,14 +46,18 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         DeserializationResult? messageContent = deserializedContent?.FirstOrDefault();
         var caseFileReceipt = messageContent?.ReceiptResult?.CaseFileReceipt;
         var journalReceipt = messageContent?.ReceiptResult?.JournalEntryReceipt;
+        var instanceIdentifier = new InstanceIdentifier(instance);
+        var appIdentifier = new AppIdentifier(instance);
 
         var receipt = FiksArkivReceipt.Create(caseFileReceipt, journalReceipt);
         _logger.LogInformation("Receipt data received from Fiks message: {Receipt}", receipt);
 
         // TODO: Store receipt data in storage
-        // _fiksArkivSettings.AutoSend.ReceiptDataType
+        // _fiksArkivSettings.Receipt.DataType
 
-        // TODO: Send /complete notification?
-        // _fiksArkivSettings.AutoSend.AutoProgressToNextTask
+        if (_fiksArkivSettings.AutoSend?.AutoProgressToNextTask is true)
+        {
+            await _fiksArkivInstanceClient.ProcessMoveNext(appIdentifier, instanceIdentifier);
+        }
     }
 }
