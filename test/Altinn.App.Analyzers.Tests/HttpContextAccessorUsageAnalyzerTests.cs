@@ -1,6 +1,4 @@
-using System.Collections.Immutable;
 using Altinn.App.Analyzers.Tests.Fixtures;
-using Microsoft.CodeAnalysis;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Analyzers.Tests;
@@ -25,8 +23,11 @@ public class HttpContextAccessorUsageAnalyzerTests
 
         var analyzer = new HttpContextAccessorUsageAnalyzer();
 
-        var compilation = await _fixture.GetCompilation(analyzer, includeAdditionalFiles: false, cancellationToken);
-        var diagnostics = await compilation.GetAnalyzerDiagnosticsAsync(cancellationToken);
+        var (compilation, diagnostics) = await _fixture.GetCompilation(
+            analyzer,
+            includeAdditionalFiles: false,
+            cancellationToken
+        );
 
         Assert.Empty(diagnostics);
     }
@@ -40,11 +41,13 @@ public class HttpContextAccessorUsageAnalyzerTests
         using var modification = _fixture.WithInvalidHttpContextAccessorUse();
         var analyzer = new HttpContextAccessorUsageAnalyzer();
 
-        var compilation = await _fixture.GetCompilation(analyzer, includeAdditionalFiles: false, cancellationToken);
-        var diagnostics = await compilation.GetAnalyzerDiagnosticsAsync(cancellationToken);
+        var (compilation, diagnostics) = await _fixture.GetCompilation(
+            analyzer,
+            includeAdditionalFiles: false,
+            cancellationToken
+        );
 
-        var diagnostic = Assert.Single(diagnostics);
-        Assert.Equal(Diagnostics.CodeSmells.HttpContextAccessorUsage.Id, diagnostic.Id);
+        Assert.Contains(diagnostics, d => Diagnostics.CodeSmells.HttpContextAccessorUsage.Id == d.Id);
         await Verify(diagnostics);
     }
 }

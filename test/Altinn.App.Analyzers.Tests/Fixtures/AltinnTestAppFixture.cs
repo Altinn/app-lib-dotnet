@@ -109,7 +109,7 @@ public sealed partial class AltinnTestAppFixture : IDisposable
         return modification;
     }
 
-    public async Task<CompilationWithAnalyzers> GetCompilation(
+    public async Task<(CompilationWithAnalyzers Compilation, IReadOnlyList<Diagnostic>)> GetCompilation(
         DiagnosticAnalyzer analyzer,
         bool includeAdditionalFiles,
         CancellationToken cancellationToken
@@ -147,7 +147,12 @@ public sealed partial class AltinnTestAppFixture : IDisposable
         var compilationWithAnalyzers = compilation.WithAnalyzers([analyzer], options);
 
         Assert.NotNull(compilationWithAnalyzers);
-        return compilationWithAnalyzers;
+        var diagnostics = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(cancellationToken);
+
+        return (
+            compilationWithAnalyzers,
+            diagnostics.OrderBy(d => d.Location.GetLineSpan().StartLinePosition).ToArray()
+        );
     }
 
     private sealed class TestAdditionalText(DocumentSelector selector) : AdditionalText

@@ -13,7 +13,11 @@ internal sealed class DiagnosticJsonConverter : WriteOnlyJsonConverter<Diagnosti
         writer.WriteMember(value, descriptor.Title.ToString().NormalizeSlashes(), "Title");
         writer.WriteMember(value, value.Severity.ToString(), "Severity");
         writer.WriteMember(value, value.WarningLevel, "WarningLevel");
-        writer.WriteMember(value, value.Location.ToString().NormalizeSlashes(), "Location");
+        var lineSpan = value.Location.GetLineSpan();
+        // Editors count lines from 1, but Roslyn counts from 0, so we just +1
+        var line = lineSpan.StartLinePosition.Line + 1;
+        var column = lineSpan.StartLinePosition.Character + 1;
+        writer.WriteMember(value, $"{lineSpan.Path.NormalizeSlashes()}({line},{column})", "Location");
         var description = descriptor.Description.ToString();
         if (!string.IsNullOrWhiteSpace(description))
         {

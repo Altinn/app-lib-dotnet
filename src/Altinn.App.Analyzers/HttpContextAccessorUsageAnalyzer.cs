@@ -1,8 +1,12 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Altinn.App.Analyzers;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class HttpContextAccessorUsageAnalyzer : DiagnosticAnalyzer
 {
+    private static readonly SymbolEqualityComparer _comparer = SymbolEqualityComparer.Default;
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         [Diagnostics.CodeSmells.HttpContextAccessorUsage];
 
@@ -12,47 +16,60 @@ public sealed class HttpContextAccessorUsageAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(configFlags);
         context.EnableConcurrentExecution();
 
-        // Check all use of `IHttpContextAccessor`
-        context.RegisterSyntaxNodeAction(Analyze, SyntaxKind.SimpleMemberAccessExpression);
+        context.RegisterCompilationStartAction(startContext =>
+        {
+            var httpContextAccessorSymbol = startContext.Compilation.GetTypeByMetadataName(
+                "Microsoft.AspNetCore.Http.IHttpContextAccessor"
+            );
+            if (httpContextAccessorSymbol is null)
+                return;
+            var relevantProperties = httpContextAccessorSymbol.GetMembers("HttpContext");
+            if (relevantProperties.Length == 0)
+                return;
+            if (relevantProperties[0] is not IPropertySymbol httpContextPropertySymbol)
+                return;
+
+            startContext.RegisterOperationAction(
+                context => Analyze(context, httpContextPropertySymbol),
+                OperationKind.PropertyReference
+            );
+        });
     }
 
-    private static void Analyze(SyntaxNodeAnalysisContext context)
+    private static void Analyze(OperationAnalysisContext context, IPropertySymbol httpContextAccessorPropertySymbol)
     {
-        var memberAccess = (MemberAccessExpressionSyntax)context.Node;
-        if (memberAccess.Name is not IdentifierNameSyntax memberName)
+        if (context.Operation is not IPropertyReferenceOperation propertyReference)
             return;
 
         // Check if the member access is a call to IHttpContextAccessor
-        if (memberName.Identifier.Text == "HttpContext")
+        if (!_comparer.Equals(httpContextAccessorPropertySymbol, propertyReference.Property))
+            return;
+
+        // Checks if we are referencing `HttpContext` in a constructor
+        var parent = propertyReference.Parent;
+        while (parent != null)
         {
-            // Check that this is the "HttpContext" property on "IHttpContextAccessor"
-            var memberAccessType = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
-            var fullTypeName = memberAccessType?.ToString();
-            if (fullTypeName == "Microsoft.AspNetCore.Http.IHttpContextAccessor.HttpContext")
+            if (
+                parent is IConstructorBodyOperation
+                || parent is IFieldInitializerOperation
+                || parent is IPropertyInitializerOperation
+            )
             {
-                // Checks if we are referencing `HttpContext` in a constructor
-                var parent = memberAccess.Parent;
-                while (parent != null)
-                {
-                    if (parent is ConstructorDeclarationSyntax)
-                    {
-                        var diagnostic = Diagnostic.Create(
-                            Diagnostics.CodeSmells.HttpContextAccessorUsage,
-                            memberAccess.GetLocation()
-                        );
-                        context.ReportDiagnostic(diagnostic);
-                        break;
-                    }
-
-                    if (parent is MethodDeclarationSyntax or PropertyDeclarationSyntax or ClassDeclarationSyntax)
-                    {
-                        // We are not in a constructor, so we can stop checking
-                        break;
-                    }
-
-                    parent = parent.Parent;
-                }
+                var diagnostic = Diagnostic.Create(
+                    Diagnostics.CodeSmells.HttpContextAccessorUsage,
+                    propertyReference.Syntax.GetLocation()
+                );
+                context.ReportDiagnostic(diagnostic);
+                break;
             }
+
+            if (parent is IMethodBodyOperation)
+            {
+                // We are not in a constructor, so we can stop checking
+                break;
+            }
+
+            parent = parent.Parent;
         }
     }
 }
