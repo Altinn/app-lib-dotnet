@@ -6,12 +6,12 @@ namespace Altinn.App.Core.Constants;
 public static class General
 {
     /// <summary>
-    /// app token name
+    /// App token name
     /// </summary>
     public const string AppTokenName = "AltinnToken";
 
     /// <summary>
-    /// The name of the authorization token
+    /// The name of the authorization token header
     /// </summary>
     public const string AuthorizationTokenHeaderName = "Authorization";
 
@@ -26,12 +26,17 @@ public static class General
     public const string DesignerCookieName = "AltinnStudioDesigner";
 
     /// <summary>
-    /// Header key for API management subscription key
+    /// The name of the API management subscription key header
     /// </summary>
     public const string SubscriptionKeyHeaderName = "Ocp-Apim-Subscription-Key";
 
     /// <summary>
-    /// Header key for access token for eFormidling Integration Point
+    /// The name of the platform access token header
+    /// </summary>
+    public const string PlatformAccessTokenHeaderName = "PlatformAccessToken";
+
+    /// <summary>
+    /// The name of the eFormidling Integration Point token header
     /// </summary>
     public const string EFormidlingAccessTokenHeaderName = "AltinnIntegrationPointToken";
 }
