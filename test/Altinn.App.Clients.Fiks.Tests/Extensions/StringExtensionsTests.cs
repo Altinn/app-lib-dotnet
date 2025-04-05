@@ -57,4 +57,45 @@ public class StringExtensionsTests
         // Assert
         Assert.IsType<InvalidOperationException>(ex);
     }
+
+    [Theory]
+    [InlineData("<<???>>", "PDw_Pz8-Pg")]
+    [InlineData(
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        "TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdC4"
+    )]
+    [InlineData(
+        "http://local.altinn.cloud/ttd/the-app/instances/12345/c9119159-f849-4723-a1cb-fbaead83ab11",
+        "aHR0cDovL2xvY2FsLmFsdGlubi5jbG91ZC90dGQvdGhlLWFwcC9pbnN0YW5jZXMvMTIzNDUvYzkxMTkxNTktZjg0OS00NzIzLWExY2ItZmJhZWFkODNhYjEx"
+    )]
+    public void ToAndFromUrlSafeBase64_ValidString_ConvertsValueCorrectly(string plainTextValue, string base64Value)
+    {
+        // Act
+        var base64Result = plainTextValue.ToUrlSafeBase64();
+        var plainTextResult = base64Value.FromUrlSafeBase64();
+
+        Assert.Equal(plainTextValue, plainTextResult);
+        Assert.Equal(base64Value, base64Result);
+    }
+
+    [Fact]
+    public void ToUrlSafeBase64_NullString_ThrowsArgumentNullException()
+    {
+        string plainText = null!;
+        Assert.Throws<ArgumentNullException>(() => plainText.ToUrlSafeBase64());
+    }
+
+    [Fact]
+    public void FromUrlSafeBase64_NullString_ThrowsArgumentNullException()
+    {
+        string base64Encoded = null!;
+        Assert.Throws<ArgumentNullException>(() => base64Encoded.FromUrlSafeBase64());
+    }
+
+    [Fact]
+    public void FromUrlSafeBase64_InvalidBase64_ThrowsFormatException()
+    {
+        var base64Encoded = "InvalidBase64";
+        Assert.Throws<FormatException>(() => base64Encoded.FromUrlSafeBase64());
+    }
 }
