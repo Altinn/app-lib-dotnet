@@ -15,14 +15,17 @@ internal sealed class FiksArkivEventService : BackgroundService
 {
     private readonly ILogger<FiksArkivEventService> _logger;
     private readonly IFiksIOClient _fiksIOClient;
-    private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
     private readonly Telemetry? _telemetry;
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
     private readonly IWebHostEnvironment _env;
+    private readonly AppImplementationFactory _appImplementationFactory;
+
+    private IFiksArkivMessageHandler _fiksArkivMessageHandler =>
+        _appImplementationFactory.GetRequired<IFiksArkivMessageHandler>();
 
     public FiksArkivEventService(
+        AppImplementationFactory appImplementationFactory,
         IFiksIOClient fiksIOClient,
-        IFiksArkivMessageHandler fiksArkivMessageHandler,
         ILogger<FiksArkivEventService> logger,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
         IWebHostEnvironment env,
@@ -31,9 +34,9 @@ internal sealed class FiksArkivEventService : BackgroundService
     {
         _logger = logger;
         _fiksIOClient = fiksIOClient;
-        _fiksArkivMessageHandler = fiksArkivMessageHandler;
         _telemetry = telemetry;
         _fiksArkivInstanceClient = fiksArkivInstanceClient;
+        _appImplementationFactory = appImplementationFactory;
         _env = env;
     }
 

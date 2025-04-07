@@ -1,5 +1,6 @@
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
@@ -9,20 +10,22 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask, IFiksArkivConfigValidation
 {
-    private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
     private readonly IFiksIOClient _fiksIOClient;
     private readonly ILogger<FiksArkivServiceTask> _logger;
-    private readonly IFiksArkivAutoSendDecision _fiksArkivAutoSendDecision;
+    private readonly AppImplementationFactory _appImplementationFactory;
+
+    private IFiksArkivMessageHandler _fiksArkivMessageHandler =>
+        _appImplementationFactory.GetRequired<IFiksArkivMessageHandler>();
+    private IFiksArkivAutoSendDecision _fiksArkivAutoSendDecision =>
+        _appImplementationFactory.GetRequired<IFiksArkivAutoSendDecision>();
 
     public FiksArkivServiceTask(
-        IFiksArkivMessageHandler fiksArkivMessageHandler,
-        IFiksArkivAutoSendDecision fiksArkivAutoSendDecision,
+        AppImplementationFactory appImplementationFactory,
         IFiksIOClient fiksIOClient,
         ILogger<FiksArkivServiceTask> logger
     )
     {
-        _fiksArkivMessageHandler = fiksArkivMessageHandler;
-        _fiksArkivAutoSendDecision = fiksArkivAutoSendDecision;
+        _appImplementationFactory = appImplementationFactory;
         _fiksIOClient = fiksIOClient;
         _logger = logger;
     }
