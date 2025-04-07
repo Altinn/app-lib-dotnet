@@ -154,8 +154,12 @@ public sealed class AppImplementationInjectionAnalyzer : DiagnosticAnalyzer
         while (parent != null)
         {
             // Checks if the invocation is in a constructor body or field initializer (primary constructor)
-            if (parent is ConstructorDeclarationSyntax or FieldDeclarationSyntax)
+            if (parent is ConstructorDeclarationSyntax or FieldDeclarationSyntax or PropertyDeclarationSyntax)
             {
+                // If this is a property with a null initializer, it is probably an arrow property, which is lazy
+                if (parent is PropertyDeclarationSyntax { Initializer: null })
+                    break;
+
                 var typeInfo = GetAppImplementationFactoryInvocationTypeArgument(
                     context,
                     appImplementationFactoryType,
@@ -172,7 +176,7 @@ public sealed class AppImplementationInjectionAnalyzer : DiagnosticAnalyzer
                 break;
             }
 
-            if (parent is MethodDeclarationSyntax or PropertyDeclarationSyntax or ClassDeclarationSyntax)
+            if (parent is MethodDeclarationSyntax or ClassDeclarationSyntax)
             {
                 // We can stop checking
                 break;
