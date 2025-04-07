@@ -66,5 +66,5 @@ public class AltinnSignatureConfiguration
     /// Sets if the default signing validator, <see cref="SigningTaskValidator"/>, should run. The default validation checks if all parties have signed the task.
     /// </summary>
     [XmlElement("runDefaultValidator", Namespace = "http://altinn.no/process")]
-    public bool RunDefaultValidator { get; set; } = true;
+    public bool RunDefaultValidator { get; set; }
 }
