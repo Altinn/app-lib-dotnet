@@ -40,6 +40,7 @@ public class AppImplementationInjectionAnalyzerTests
         using var _ = _fixture.WithCode(
             """
                 using Altinn.App.Core.Features;
+                using Microsoft.Extensions.DependencyInjection;
 
                 internal sealed class Svc1
                 {
