@@ -4,7 +4,7 @@ internal sealed record DocumentSelector
 {
     public DocumentSelector(params string[] path)
     {
-        FilePath = Path.Combine([Directory.GetCurrentDirectory(), "App", .. path]);
+        FilePath = Path.Combine([Directory.GetCurrentDirectory(), "testapp", "App", .. path]);
     }
 
     public string FilePath { get; }

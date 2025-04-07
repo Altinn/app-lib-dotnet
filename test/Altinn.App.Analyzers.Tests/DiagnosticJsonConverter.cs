@@ -18,6 +18,13 @@ internal sealed class DiagnosticJsonConverter : WriteOnlyJsonConverter<Diagnosti
         var line = lineSpan.StartLinePosition.Line + 1;
         var column = lineSpan.StartLinePosition.Character + 1;
         writer.WriteMember(value, $"{lineSpan.Path.NormalizeSlashes()}({line},{column})", "Location");
+        if (
+            (value.Location.SourceTree?.TryGetText(out var text) ?? false)
+            && text.GetSubText(value.Location.SourceSpan) is { } code
+        )
+        {
+            writer.WriteMember(value, code.ToString(), "Code");
+        }
         var description = descriptor.Description.ToString();
         if (!string.IsNullOrWhiteSpace(description))
         {

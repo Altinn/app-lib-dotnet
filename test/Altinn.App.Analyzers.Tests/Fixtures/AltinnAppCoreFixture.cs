@@ -11,16 +11,10 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Analyzers.Tests.Fixtures;
 
-// This fixture is used to provide a test app Roslyn workspace for the analyzers to run on.
-// The test app is a real blank Altinn app in the "testapp/" folder.
-// Initializing the fixture is expensive, and can take anywhere between 5-20 seconds on my machine currently,
-// so currently tests run in a "global collection" to avoid re-initializing the fixture for each test.
-// It also gives us some flexibility in that we can make physical changes to project files.
+[CollectionDefinition(nameof(AltinnAppCoreCollection), DisableParallelization = false)]
+public class AltinnAppCoreCollection : ICollectionFixture<AltinnAppCoreFixture> { }
 
-[CollectionDefinition(nameof(AltinnTestAppCollection), DisableParallelization = false)]
-public class AltinnTestAppCollection : ICollectionFixture<AltinnTestAppFixture> { }
-
-public sealed partial class AltinnTestAppFixture : IDisposable
+public sealed class AltinnAppCoreFixture : IDisposable
 {
     private ITestOutputHelper? _output;
     private string? _projectDir;
@@ -38,7 +32,7 @@ public sealed partial class AltinnTestAppFixture : IDisposable
 
     public ITestOutputHelper Output => _output ?? throw new InvalidOperationException("Fixture not initialized yet");
 
-    public AltinnTestAppFixture() { }
+    public AltinnAppCoreFixture() { }
 
     internal void Initialize()
     {
@@ -49,60 +43,39 @@ public sealed partial class AltinnTestAppFixture : IDisposable
         var timer = Stopwatch.StartNew();
         try
         {
-            _projectDir = Path.Combine(Directory.GetCurrentDirectory(), "testapp", "App");
+            _projectDir = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "src", "Altinn.App.Core");
             Assert.True(Directory.Exists(_projectDir));
             var manager = new AnalyzerManager();
-            var analyzer = manager.GetProject(Path.Combine(_projectDir, "App.csproj"));
+            var analyzer = manager.GetProject(Path.Combine(_projectDir, "Altinn.App.Core.csproj"));
             _workspace = analyzer.GetWorkspace(addProjectReferences: true);
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.AddDocument));
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.RemoveDocument));
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.ChangeDocument));
             var solution = _workspace.CurrentSolution;
-            _project = solution.Projects.Single(p => p.Name == "App");
+            _project = solution.Projects.Single(p => p.Name == "Altinn.App.Core");
             _isInitialized = true;
 
             timer.Stop();
-            output.WriteLine($"Initialized Altinn test app fixture - took {timer.Elapsed.TotalSeconds:0.000}s");
+            output.WriteLine($"Initialized Altinn.App.Core fixture - took {timer.Elapsed.TotalSeconds:0.000}s");
         }
         catch (Exception ex)
         {
             timer.Stop();
             output.WriteLine(
-                $"Error initializing Altinn test app fixture (took {timer.Elapsed.TotalSeconds:0.000}s): {ex}"
+                $"Error initializing Altinn.App.Core fixture (took {timer.Elapsed.TotalSeconds:0.000}s): {ex}"
             );
             throw;
         }
     }
 
-    public IDisposable WithRemovedModelClass()
+    public IDisposable WithCode(string code)
     {
         if (!_isInitialized)
             throw new InvalidOperationException("Fixture not initialized");
 
-        var content = Content.ModelClass;
-
         var modification = new ProjectModification(this);
 
-        var doc = _project.Documents.Single(d => d.FilePath == content.FilePath);
-        _project = _project.RemoveDocument(doc.Id);
-        Assert.True(_workspace.TryApplyChanges(_project.Solution));
-
-        return modification;
-    }
-
-    public IDisposable WithInvalidHttpContextAccessorUse()
-    {
-        if (!_isInitialized)
-            throw new InvalidOperationException("Fixture not initialized");
-
-        var content = Content.InvalidHttpContextAccessorUse;
-
-        var modification = new ProjectModification(this);
-
-        var doc = _project.AddDocument(
-            content.FilePath,
-            SourceText.From(File.ReadAllText(content.FilePath, Encoding.UTF8), Encoding.UTF8)
-        );
+        var doc = _project.AddDocument("Code.cs", SourceText.From(code, Encoding.UTF8));
         _project = doc.Project;
         Assert.True(_workspace.TryApplyChanges(_project.Solution));
 
@@ -111,7 +84,6 @@ public sealed partial class AltinnTestAppFixture : IDisposable
 
     public async Task<(CompilationWithAnalyzers Compilation, IReadOnlyList<Diagnostic>)> GetCompilation(
         DiagnosticAnalyzer analyzer,
-        bool includeAdditionalFiles,
         CancellationToken cancellationToken
     )
     {
@@ -125,12 +97,8 @@ public sealed partial class AltinnTestAppFixture : IDisposable
             ["build_property.projectdir"] = _projectDir,
         }.ToImmutableDictionary();
 
-        var additionalFiles = ImmutableArray.CreateRange<AdditionalText>(
-            [new TestAdditionalText(Content.ApplicationMetadata), new TestAdditionalText(Content.LayoutSets)]
-        );
-
         var analyzerOptions = new AnalyzerOptions(
-            includeAdditionalFiles ? additionalFiles : [],
+            [],
             new TestOptionsProvider(
                 ImmutableDictionary<object, AnalyzerConfigOptions>.Empty,
                 new TestAnalyzerConfigOptions(globalOptions)
@@ -158,5 +126,45 @@ public sealed partial class AltinnTestAppFixture : IDisposable
     public void Dispose()
     {
         _workspace?.Dispose();
+    }
+
+    /// <summary>
+    /// During tests of analyzers we typically want to modify code to introduce some error that cause diagnostics to
+    /// be emitted. When a test is done, it is important to revert the code to its original state.
+    /// The Roslyn workspace/solution/project models are immutable, so to achieve
+    /// this we can just capture the original variables from the fixture and put them back when
+    /// the modification this class represents is disposed.
+    ///
+    /// Usage:
+    ///   * Create a "With..." method in the fixture representing some modification to the project
+    ///   * Before making modifications, new up this class to capture the original state
+    ///   * In the "With..." method, make the modifications
+    ///   * In the "With..." method, return the instance of this class that now contains the original state
+    ///   * The caller is responsible for disposing the instance of this class, which reverts the fixture back to its original state
+    /// </summary>
+    private sealed record ProjectModification : IDisposable
+    {
+        private readonly AltinnAppCoreFixture _fixture;
+        private readonly AdhocWorkspace _workspace;
+        private readonly Project _project;
+        private readonly Action? _action;
+
+        internal ProjectModification(AltinnAppCoreFixture fixture, Action? action = null)
+        {
+            if (!fixture._isInitialized)
+                throw new InvalidOperationException("Fixture not initialized");
+
+            _fixture = fixture;
+            _workspace = fixture._workspace;
+            _project = fixture._project;
+            _action = action;
+        }
+
+        public void Dispose()
+        {
+            _fixture._workspace = _workspace;
+            _fixture._project = _project;
+            _action?.Invoke();
+        }
     }
 }

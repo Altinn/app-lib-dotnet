@@ -1,15 +1,17 @@
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using Microsoft.CodeAnalysis;
 
 namespace Altinn.App.Analyzers.Tests;
 
 public class ModuleInitializer
 {
+    public static string ProjectDirectory { get; private set; } = "";
+    public static string TestAppDirectory { get; private set; } = "";
+
     [ModuleInitializer]
     public static void Init()
     {
         var testProjectDir = GetTestProjectDirectory();
+        Directory.SetCurrentDirectory(testProjectDir.FullName);
         var path = Path.Combine(testProjectDir.FullName, "testapp", "App.sln");
         Assert.True(File.Exists(path));
         path = Path.GetFullPath(path);
@@ -17,7 +19,8 @@ public class ModuleInitializer
         var testAppDirectory = Path.GetDirectoryName(path);
         Assert.NotNull(testAppDirectory);
         Assert.True(Directory.Exists(testAppDirectory));
-        Directory.SetCurrentDirectory(testAppDirectory);
+        TestAppDirectory = testAppDirectory;
+        ProjectDirectory = testProjectDir.FullName;
 
         InnerVerifier.ThrowIfVerifyHasBeenRun();
         VerifierSettings.AddExtraSettings(serializer =>
@@ -29,16 +32,17 @@ public class ModuleInitializer
         VerifierSettings.AutoVerify(includeBuildServer: false);
     }
 
-    private static DirectoryInfo GetTestProjectDirectory()
+    private static DirectoryInfo GetTestProjectDirectory([CallerFilePath] string callerFilePath = "")
     {
-        var currentDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        Assert.NotNull(currentDir);
-        var dir = new DirectoryInfo(currentDir);
-        var projFile = "Altinn.App.Analyzers.Tests.csproj";
-        for (int i = 0; i < 10 && dir is not null && !dir.GetFiles(projFile).Any(); i++)
-            dir = dir.Parent;
-        if (dir is null)
-            throw new InvalidOperationException("Could not find test project directory");
-        return dir;
+        var projDir = Path.GetDirectoryName(callerFilePath) ?? "";
+        var projFile = Path.Combine(projDir, "Altinn.App.Analyzers.Tests.csproj");
+        if (!File.Exists(projFile))
+        {
+            throw new FileNotFoundException(
+                $"Unable to initialize testproject. Could not find '{projFile}' in the current directory.",
+                projFile
+            );
+        }
+        return new DirectoryInfo(projDir);
     }
 }
