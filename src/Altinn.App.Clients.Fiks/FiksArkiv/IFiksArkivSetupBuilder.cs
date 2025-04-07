@@ -1,6 +1,7 @@
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Features.Maskinporten.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
 using Polly.DependencyInjection;
@@ -39,6 +40,20 @@ public interface IFiksArkivSetupBuilder
     /// <param name="configSectionPath">Configuration section path.</param>
     /// <returns>The <see cref="IFiksArkivSetupBuilder"/> builder instance.</returns>
     IFiksArkivSetupBuilder WithFiksArkivConfig(string configSectionPath);
+
+    /// <summary>
+    /// Configures the underlying Maskinporten client with the provided options.
+    /// </summary>
+    /// <param name="configureOptions">Configuration delegate.</param>
+    /// <returns>The <see cref="IFiksIOSetupBuilder"/> builder instance.</returns>
+    IFiksArkivSetupBuilder WithMaskinportenConfig(Action<MaskinportenSettings> configureOptions);
+
+    /// <summary>
+    /// Configures the underlying Maskinporten client with the options from the specified configuration section.
+    /// </summary>
+    /// <param name="configSectionPath">Configuration section path.</param>
+    /// <returns>The <see cref="IFiksIOSetupBuilder"/> builder instance.</returns>
+    IFiksArkivSetupBuilder WithMaskinportenConfig(string configSectionPath);
 
     /// <summary>
     /// Configures the message handler for the Fiks Arkiv client.

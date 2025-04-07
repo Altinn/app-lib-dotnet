@@ -76,7 +76,7 @@ public class ServiceCollectionExtensionsTests
             {
                 services
                     .AddFiksIOClient()
-                    .WithConfig(x =>
+                    .WithFiksIOConfig(x =>
                     {
                         x.AccountId = settingsOverride.AccountId;
                         x.IntegrationId = settingsOverride.IntegrationId;
@@ -106,7 +106,7 @@ public class ServiceCollectionExtensionsTests
         using var fixture = TestFixture.Create(
             services =>
             {
-                services.AddFiksIOClient().WithConfig("SuperCustomFiksIOSettings");
+                services.AddFiksIOClient().WithFiksIOConfig("SuperCustomFiksIOSettings");
             },
             [("SuperCustomFiksIOSettings", settingsOverride)],
             useDefaultFiksIOSettings: provideDefaultSettings

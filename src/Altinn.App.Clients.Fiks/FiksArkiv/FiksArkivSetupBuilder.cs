@@ -2,6 +2,8 @@ using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Features.Maskinporten.Extensions;
+using Altinn.App.Core.Features.Maskinporten.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
 using Polly.DependencyInjection;
@@ -35,6 +37,20 @@ internal sealed class FiksArkivSetupBuilder(IServiceCollection services) : IFiks
     public IFiksArkivSetupBuilder WithFiksArkivConfig(string configSectionPath)
     {
         services.ConfigureFiksArkiv(configSectionPath);
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IFiksArkivSetupBuilder WithMaskinportenConfig(Action<MaskinportenSettings> configureOptions)
+    {
+        services.ConfigureMaskinportenClient(configureOptions);
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IFiksArkivSetupBuilder WithMaskinportenConfig(string configSectionPath)
+    {
+        services.ConfigureMaskinportenClient(configSectionPath);
         return this;
     }
 
