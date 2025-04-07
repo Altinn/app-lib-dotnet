@@ -90,6 +90,14 @@ public class AppImplementationInjectionAnalyzerTests
                     private object? _p4 { get; } = sp.GetServices<IInstantiationProcessor>(); // X Initialization, IServiceProvider
                     private object? _p5 { get; } = sp.GetServices(typeof(IInstantiationProcessor)); // X Initialization, IServiceProvider
                     private object? _p6 { get; } = factory.Get<IServiceProvider>(); // X AppImplementationFactory -> IServiceProvider
+
+                    private object? _ok1 => factory.Get<IInstantiationProcessor>(); // OK
+                    private object? _ok2 => _factory.Get<IInstantiationProcessor>(); // OK
+
+                    public void Ok()
+                    {
+                        _ = _factory.Get<IInstantiationProcessor>(); // OK
+                    }
                 }
             """
         );
