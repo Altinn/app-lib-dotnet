@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Exceptions;
+using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
@@ -144,7 +145,7 @@ internal sealed class SigningService(
                 {
                     Party signingParty = signeeContext.Signee.GetParty();
 
-                    await _signingCallToActionService.SendSignCallToAction(
+                    SendCorrespondenceResponse? response = await _signingCallToActionService.SendSignCallToAction(
                         signeeContext.Notifications?.OnSignatureAccessRightsDelegated,
                         appIdentifier,
                         new InstanceIdentifier(instanceDataMutator.Instance),
@@ -152,6 +153,7 @@ internal sealed class SigningService(
                         serviceOwnerParty,
                         signatureConfiguration.CorrespondenceResources
                     );
+                    signeeContext.SigneeState.CtaCorrespondenceId = response?.Correspondences.Single().CorrespondenceId;
                     signeeContext.SigneeState.HasBeenMessagedForCallToSign = true;
                 }
                 catch (ConfigurationException e)
@@ -542,12 +544,7 @@ internal sealed class SigningService(
                 signDocument.SigneeInfo.SystemUserId,
                 altinnPartyClient.LookupParty
             ),
-            SigneeState = new SigneeState()
-            {
-                IsAccessDelegated = true,
-                HasBeenMessagedForCallToSign = true,
-                IsReceiptSent = false,
-            },
+            SigneeState = new SigneeState() { IsAccessDelegated = true, HasBeenMessagedForCallToSign = true },
             SignDocument = signDocument,
         };
     }

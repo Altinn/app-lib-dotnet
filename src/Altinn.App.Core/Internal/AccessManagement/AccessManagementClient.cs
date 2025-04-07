@@ -42,7 +42,10 @@ internal sealed class AccessManagementClient(
             var uri = urlHelper.CreateInstanceDelegationUrl(delegation.ResourceId, delegation.InstanceId);
             var body = JsonSerializer.Serialize(DelegationRequest.ConvertToDto(delegation));
             logger.LogInformation(
-                $"Delegating rights to {delegation.To?.Value} from {delegation.From?.Value} for {delegation.ResourceId}"
+                "Delegating rights to {DelegationTo} from {DelegationFrom} for {ResourceId}",
+                delegation.To?.Value,
+                delegation.From?.Value,
+                delegation.ResourceId
             );
 
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
@@ -103,7 +106,11 @@ internal sealed class AccessManagementClient(
 
             var uri = urlHelper.CreateInstanceRevokeUrl(delegation.ResourceId, delegation.InstanceId);
             var body = JsonSerializer.Serialize(DelegationRequest.ConvertToDto(delegation));
-            logger.LogInformation($"Revoking rights from {delegation.To?.Value} for {delegation.ResourceId}");
+            logger.LogInformation(
+                "Revoking rights from {DelegationTo} for {ResourceId}",
+                delegation.To?.Value,
+                delegation.ResourceId
+            );
 
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
             httpRequestMessage.Content = new StringContent(body, new MediaTypeHeaderValue("application/json"));

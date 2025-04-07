@@ -195,13 +195,15 @@ internal sealed class SigningCallToActionService(
                         {
                             NotificationChoice.Email => GetEmailOrThrow(notification),
                             NotificationChoice.SmsAndEmail => notification.Email?.EmailAddress,
-                            NotificationChoice.Sms or _ => null,
+                            NotificationChoice.Sms => null,
+                            _ => null,
                         },
                         MobileNumber = notificationChoice switch
                         {
                             NotificationChoice.Sms => GetMobileNumberOrThrow(notification),
                             NotificationChoice.SmsAndEmail => notification.Sms?.MobileNumber,
-                            NotificationChoice.Email or _ => null,
+                            NotificationChoice.Email => null,
+                            _ => null,
                         },
                     },
                 ],
@@ -215,7 +217,6 @@ internal sealed class SigningCallToActionService(
         {
             throw new InvalidOperationException("Email address is required for email notifications.");
         }
-        // TODO: regex
 
         return notification.Email.EmailAddress;
     }
@@ -226,7 +227,6 @@ internal sealed class SigningCallToActionService(
         {
             throw new InvalidOperationException("Mobile number is required for sms notifications.");
         }
-        // TODO: regex
 
         return notification.Sms.MobileNumber;
     }

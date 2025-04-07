@@ -103,7 +103,6 @@ internal sealed class SigningProcessTask : IProcessTask
     {
         using var cts = new CancellationTokenSource();
 
-        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
 
         var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, null);
