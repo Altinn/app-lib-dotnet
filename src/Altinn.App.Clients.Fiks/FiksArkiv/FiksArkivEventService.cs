@@ -5,6 +5,7 @@ using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -17,12 +18,14 @@ internal sealed class FiksArkivEventService : BackgroundService
     private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
     private readonly Telemetry? _telemetry;
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
+    private readonly IWebHostEnvironment _env;
 
     public FiksArkivEventService(
         IFiksIOClient fiksIOClient,
         IFiksArkivMessageHandler fiksArkivMessageHandler,
         ILogger<FiksArkivEventService> logger,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
+        IWebHostEnvironment env,
         Telemetry? telemetry = null
     )
     {
@@ -31,6 +34,7 @@ internal sealed class FiksArkivEventService : BackgroundService
         _fiksArkivMessageHandler = fiksArkivMessageHandler;
         _telemetry = telemetry;
         _fiksArkivInstanceClient = fiksArkivInstanceClient;
+        _env = env;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -76,12 +80,13 @@ internal sealed class FiksArkivEventService : BackgroundService
         try
         {
             _logger.LogInformation(
-                "Received message {MessageType}:{MessageId} from {MessageSender}, in reply to {MessageReplyFor} with senders reference {SendersReference}",
+                "Received message {MessageType}:{MessageId} from {MessageSender}, in reply to {MessageReplyFor} with senders-reference {SendersReference} and correlation-id {CorrelationId}",
                 receivedMessage.Message.MessageType,
                 receivedMessage.Message.MessageId,
                 receivedMessage.Message.Sender,
                 receivedMessage.Message.InReplyToMessage,
-                receivedMessage.Message.SendersReference
+                receivedMessage.Message.SendersReference,
+                receivedMessage.Message.CorrelationId
             );
 
             decryptedMessagePayloads = await receivedMessage.Message.GetDecryptedPayloadStrings();
@@ -108,6 +113,12 @@ internal sealed class FiksArkivEventService : BackgroundService
             _logger.LogError(e, "Fiks Arkiv MessageReceivedHandler failed with error: {Error}", e.Message);
             _logger.LogError("The message payload was: {MessagePayload}", decryptedMessagePayloads);
             mainActivity?.Errored(e);
+
+            // Avoid clogging up the queue with errors in non-production environments
+            if (_env.IsProduction() is false)
+            {
+                await receivedMessage.Responder.Ack();
+            }
         }
     }
 
