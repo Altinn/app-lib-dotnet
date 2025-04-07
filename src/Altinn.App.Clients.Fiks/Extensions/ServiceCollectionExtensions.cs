@@ -1,3 +1,4 @@
+using Altinn.App.Clients.Fiks.Configuration;
 using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
@@ -40,7 +41,7 @@ public static class ServiceCollectionExtensions
     /// Adds a Fiks Arkiv client and all relevant dependencies to the service collection.
     /// </summary>
     /// <param name="services">The target <see cref="IServiceCollection"/>.</param>
-    /// <returns>A <see cref="FiksArkivSetupBuilder"/> instance that can be used to configure the Fiks Arkiv client.</returns>
+    /// <returns>A <see cref="FiksSetupBuilder"/> instance that can be used to configure the Fiks Arkiv client.</returns>
     public static IFiksArkivSetupBuilder AddFiksArkiv(this IServiceCollection services)
     {
         if (services.IsConfigured<FiksArkivSettings>() is false)
