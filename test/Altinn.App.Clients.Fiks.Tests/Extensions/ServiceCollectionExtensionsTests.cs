@@ -67,7 +67,7 @@ public class ServiceCollectionExtensionsTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void AddFiksIOClient_OverridesConfig_Delegate(bool provideDefaultSettings)
+    public void AddFiksIOClient_OverridesFiksIOConfig_Delegate(bool provideDefaultSettings)
     {
         // Arrange
         var settingsOverride = TestFixture.GetRandomFiksIOSettings();
@@ -99,7 +99,7 @@ public class ServiceCollectionExtensionsTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void AddFiksIOClient_OverridesConfig_JsonPath(bool provideDefaultSettings)
+    public void AddFiksIOClient_OverridesFiksIOConfig_JsonPath(bool provideDefaultSettings)
     {
         // Arrange
         var settingsOverride = TestFixture.GetRandomFiksIOSettings();
@@ -119,6 +119,8 @@ public class ServiceCollectionExtensionsTests
         Assert.NotNull(fiksIOSettings);
         Assert.Equal(settingsOverride, fiksIOSettings);
     }
+
+    // TODO: Add tests for MaskinportenSettings override
 
     [Fact]
     public void AddFiksArkiv_AddsRequiredServicesWithDefaultValues()
@@ -321,6 +323,8 @@ public class ServiceCollectionExtensionsTests
             fiksArkivSettings.ErrorHandling.EmailNotificationRecipients
         );
     }
+
+    // TODO: Add tests for MaskinportenSettings override
 
     [Fact]
     public void AddFiksArkiv_OverridesMessageHandler()

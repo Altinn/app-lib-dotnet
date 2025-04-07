@@ -10,6 +10,7 @@ using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Maskinporten;
+using Altinn.App.Core.Features.Maskinporten.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.AltinnCdn;
@@ -57,6 +58,8 @@ internal sealed record TestFixture(
     public IFiksIOClient FiksIOClient => App.Services.GetRequiredService<IFiksIOClient>();
     public FiksIOSettings FiksIOSettings => App.Services.GetRequiredService<IOptions<FiksIOSettings>>().Value;
     public FiksArkivSettings FiksArkivSettings => App.Services.GetRequiredService<IOptions<FiksArkivSettings>>().Value;
+    public MaskinportenSettings MaskinportenSettings =>
+        App.Services.GetRequiredService<IOptions<MaskinportenSettings>>().Value;
     public FiksArkivConfigValidationService FiksArkivConfigValidationService =>
         App.Services.GetServices<IHostedService>().OfType<FiksArkivConfigValidationService>().Single();
     public FiksArkivEventService FiksArkivEventService =>
@@ -80,7 +83,8 @@ internal sealed record TestFixture(
         Action<IServiceCollection> configureServices,
         IEnumerable<(string, object)>? configurationCollection = null,
         bool useDefaultFiksIOSettings = true,
-        bool useDefaultFiksArkivSettings = true
+        bool useDefaultFiksArkivSettings = true,
+        bool useDefaultMaskinportenSettings = true
     )
     {
         var builder = WebApplication.CreateBuilder();
@@ -95,6 +99,11 @@ internal sealed record TestFixture(
         if (useDefaultFiksArkivSettings)
         {
             config["FiksArkivSettings"] = GetDefaultFiksArkivSettings();
+        }
+        if (useDefaultMaskinportenSettings)
+        {
+            config["MaskinportenSettings"] = GetDefaultMaskinportenSettings();
+            builder.Services.ConfigureMaskinportenClient("MaskinportenSettings");
         }
 
         builder.Configuration.AddJsonStream(GetJsonStream(config));
@@ -147,6 +156,7 @@ internal sealed record TestFixture(
         // Non-mockable services
         builder.Services.AddTransient<InstanceDataUnitOfWorkInitializer>();
         builder.Services.AddSingleton<ModelSerializationService>();
+        builder.Services.AddAppImplementationFactory();
 
         return new TestFixture(
             builder.Build(),
@@ -172,15 +182,15 @@ internal sealed record TestFixture(
         return new MemoryStream(Encoding.UTF8.GetBytes(json));
     }
 
-    // public static MaskinportenSettings GetDefaultMaskinportenSettings()
-    // {
-    //     return new MaskinportenSettings
-    //     {
-    //         Authority = "test-authority",
-    //         ClientId = "test-client-id",
-    //         JwkBase64 = "test-jwk-base64",
-    //     };
-    // }
+    public static MaskinportenSettings GetDefaultMaskinportenSettings()
+    {
+        return new MaskinportenSettings
+        {
+            Authority = "test-authority",
+            ClientId = "test-client-id",
+            JwkBase64 = "test-jwk-base64",
+        };
+    }
 
     public static FiksIOSettings GetDefaultFiksIOSettings()
     {
@@ -228,6 +238,16 @@ internal sealed record TestFixture(
                     new FiksArkivPayloadSettings { DataType = "uploaded_attachment" },
                 ],
             },
+        };
+    }
+
+    public static MaskinportenSettings GetRandomMaskinportenSettings()
+    {
+        return new MaskinportenSettings
+        {
+            Authority = Guid.NewGuid().ToString(),
+            ClientId = Guid.NewGuid().ToString(),
+            JwkBase64 = Guid.NewGuid().ToString(),
         };
     }
 
