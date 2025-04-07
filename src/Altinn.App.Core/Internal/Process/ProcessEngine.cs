@@ -127,6 +127,55 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
+    public async Task<UserActionResult> HandleUserAction(ProcessNextRequest request)
+    {
+        Instance instance = request.Instance;
+
+        var currentAuth = _authenticationContext.Current;
+        IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
+
+        if (actionHandler is null)
+            return UserActionResult.SuccessResult();
+
+        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId: null, request.Language);
+
+        int? userId = currentAuth switch
+        {
+            Authenticated.User auth => auth.UserId,
+            Authenticated.SelfIdentifiedUser auth => auth.UserId,
+            _ => null,
+        };
+
+        UserActionResult actionResult = await actionHandler.HandleAction(
+            new UserActionContext(
+                cachedDataMutator,
+                userId,
+                language: request.Language,
+                authentication: currentAuth,
+                onBehalfOf: request.ActionOnBehalfOf
+            )
+        );
+
+        if (actionResult.ResultType == ResultType.Failure)
+        {
+            return actionResult;
+        }
+
+        if (cachedDataMutator.HasAbandonIssues)
+        {
+            throw new Exception(
+                "Abandon issues found in data elements. Abandon issues should be handled by the action handler."
+            );
+        }
+
+        var changes = cachedDataMutator.GetDataElementChanges(initializeAltinnRowId: false);
+        await cachedDataMutator.UpdateInstanceData(changes);
+        await cachedDataMutator.SaveChanges(changes);
+
+        return actionResult;
+    }
+
+    /// <inheritdoc/>
     public async Task<ProcessChangeResult> Next(ProcessNextRequest request)
     {
         using var activity = _telemetry?.StartProcessNextActivity(request.Instance, request.Action);
@@ -145,53 +194,6 @@ public class ProcessEngine : IProcessEngine
             activity?.SetProcessChangeResult(result);
             return result;
         }
-
-        var currentAuth = _authenticationContext.Current;
-        IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
-        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId: null, request.Language);
-
-        int? userId = currentAuth switch
-        {
-            Authenticated.User auth => auth.UserId,
-            Authenticated.SelfIdentifiedUser auth => auth.UserId,
-            _ => null,
-        };
-        UserActionResult actionResult = actionHandler is null
-            ? UserActionResult.SuccessResult()
-            : await actionHandler.HandleAction(
-                new UserActionContext(
-                    cachedDataMutator,
-                    userId,
-                    language: request.Language,
-                    authentication: currentAuth,
-                    onBehalfOf: request.ActionOnBehalfOf
-                )
-            );
-
-        if (actionResult.ResultType != ResultType.Success)
-        {
-            var result = new ProcessChangeResult()
-            {
-                Success = false,
-                ErrorMessage = $"Action handler for action {request.Action} failed!",
-                ErrorType = actionResult.ErrorType,
-            };
-            activity?.SetProcessChangeResult(result);
-            return result;
-        }
-
-        if (cachedDataMutator.HasAbandonIssues)
-        {
-            throw new Exception(
-                "Abandon issues found in data elements. Abandon issues should be handled by the action handler."
-            );
-        }
-
-        var changes = cachedDataMutator.GetDataElementChanges(initializeAltinnRowId: false);
-        await cachedDataMutator.UpdateInstanceData(changes);
-        await cachedDataMutator.SaveChanges(changes);
-
-        // TODO: consider using the same cachedDataMutator for the rest of the process to avoid refetching data from storage
 
         MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, request.Action);
 
