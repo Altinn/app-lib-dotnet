@@ -20,7 +20,7 @@ public class PersonClientTests
     private readonly Mock<IOptions<PlatformSettings>> _platformSettingsOptions;
     private readonly Mock<IAppMetadata> _appMetadata;
     private readonly Mock<IAccessTokenGenerator> _accessTokenGenerator;
-    private readonly Mock<IUserTokenProvider> _userTokenProvider;
+    private readonly Mock<ITokenProvider> _userTokenProvider;
 
     public PersonClientTests()
     {
@@ -38,8 +38,8 @@ public class PersonClientTests
             .Setup(s => s.GenerateAccessToken(It.Is<string>(org => org == "ttd"), It.Is<string>(app => app == "app")))
             .Returns("accesstoken");
 
-        _userTokenProvider = new Mock<IUserTokenProvider>();
-        _userTokenProvider.Setup(s => s.GetUserToken()).Returns("usertoken");
+        _userTokenProvider = new Mock<ITokenProvider>();
+        _userTokenProvider.Setup(s => s.GetToken()).Returns("usertoken");
     }
 
     [Fact]

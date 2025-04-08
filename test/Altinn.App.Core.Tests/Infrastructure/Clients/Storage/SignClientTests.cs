@@ -17,7 +17,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients.Storage;
 public class SignClientTests
 {
     private readonly IOptions<PlatformSettings> platformSettingsOptions;
-    private readonly Mock<IUserTokenProvider> userTokenProvide;
+    private readonly Mock<ITokenProvider> userTokenProvide;
     private readonly string apiStorageEndpoint = "https://local.platform.altinn.no/api/storage/";
 
     public SignClientTests()
@@ -26,8 +26,8 @@ public class SignClientTests
             new PlatformSettings() { ApiStorageEndpoint = apiStorageEndpoint, SubscriptionKey = "test" }
         );
 
-        userTokenProvide = new Mock<IUserTokenProvider>();
-        userTokenProvide.Setup(s => s.GetUserToken()).Returns("dummytoken");
+        userTokenProvide = new Mock<ITokenProvider>();
+        userTokenProvide.Setup(s => s.GetToken()).Returns("dummytoken");
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class SignClientTests
         await signClient.SignDataElements(signatureContext);
 
         // Assert
-        userTokenProvide.Verify(s => s.GetUserToken(), Times.Once);
+        userTokenProvide.Verify(s => s.GetToken(), Times.Once);
         callCount.Should().Be(1);
         platformRequest.Should().NotBeNull();
         platformRequest!.Method.Should().Be(HttpMethod.Post);

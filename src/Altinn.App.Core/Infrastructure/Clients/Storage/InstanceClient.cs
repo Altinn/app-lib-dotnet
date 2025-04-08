@@ -25,7 +25,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 public class InstanceClient : IInstanceClient
 {
     private readonly ILogger _logger;
-    private readonly IUserTokenProvider _userTokenProvider;
+    private readonly ITokenProvider _userTokenProvider;
     private readonly HttpClient _client;
     private readonly Telemetry? _telemetry;
 
@@ -40,7 +40,7 @@ public class InstanceClient : IInstanceClient
     public InstanceClient(
         IOptions<PlatformSettings> platformSettings,
         ILogger<InstanceClient> logger,
-        IUserTokenProvider userTokenProvider,
+        ITokenProvider userTokenProvider,
         HttpClient httpClient,
         Telemetry? telemetry = null
     )
@@ -62,7 +62,7 @@ public class InstanceClient : IInstanceClient
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceId}";
 
         string apiUrl = $"instances/{instanceIdentifier}";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
 
         HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
         if (response.StatusCode == HttpStatusCode.OK)
@@ -97,7 +97,7 @@ public class InstanceClient : IInstanceClient
         using var activity = _telemetry?.StartGetInstancesActivity();
         var apiUrl = QueryHelpers.AddQueryString("instances", queryParams);
 
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
         QueryResponse<Instance> queryResponse = await QueryInstances(token, apiUrl);
 
         if (queryResponse.Count == 0)
@@ -141,7 +141,7 @@ public class InstanceClient : IInstanceClient
         ProcessState processState = instance.Process;
 
         string apiUrl = $"instances/{instance.Id}/process";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
 
         string processStateString = JsonConvert.SerializeObject(processState);
         _logger.LogInformation($"update process state: {processStateString}");
@@ -172,7 +172,7 @@ public class InstanceClient : IInstanceClient
             instanceEvent.InstanceId = instance.Id;
 
         string apiUrl = $"instances/{instance.Id}/process/instanceandevents";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
 
         var update = new ProcessStateUpdate { State = processState, Events = events };
         string updateString = JsonConvert.SerializeObject(update);
@@ -200,7 +200,7 @@ public class InstanceClient : IInstanceClient
     {
         using var activity = _telemetry?.StartCreateInstanceActivity();
         string apiUrl = $"instances?appId={org}/{app}";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
 
         StringContent content = new(JsonConvert.SerializeObject(instanceTemplate), Encoding.UTF8, "application/json");
         HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
@@ -226,7 +226,7 @@ public class InstanceClient : IInstanceClient
     {
         using var activity = _telemetry?.StartCompleteConfirmationActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/complete";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
 
         HttpResponseMessage response = await _client.PostAsync(token, apiUrl, new StringContent(string.Empty));
 
@@ -247,7 +247,7 @@ public class InstanceClient : IInstanceClient
     {
         using var activity = _telemetry?.StartUpdateReadStatusActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/readstatus?status={readStatus}";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
 
         HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(string.Empty));
 
@@ -272,7 +272,7 @@ public class InstanceClient : IInstanceClient
     {
         using var activity = _telemetry?.StartUpdateSubStatusActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/substatus";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
 
         HttpResponseMessage response = await _client.PutAsync(
             token,
@@ -300,7 +300,7 @@ public class InstanceClient : IInstanceClient
     {
         using var activity = _telemetry?.StartUpdatePresentationTextActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/presentationtexts";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
 
         HttpResponseMessage response = await _client.PutAsync(
             token,
@@ -324,7 +324,7 @@ public class InstanceClient : IInstanceClient
     {
         using var activity = _telemetry?.StartUpdateDataValuesActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/datavalues";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
 
         HttpResponseMessage response = await _client.PutAsync(
             token,
@@ -348,7 +348,7 @@ public class InstanceClient : IInstanceClient
     {
         using var activity = _telemetry?.StartDeleteInstanceActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}?hard={hard}";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
 
         HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
 

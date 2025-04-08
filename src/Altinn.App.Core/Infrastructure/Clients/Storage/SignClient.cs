@@ -16,7 +16,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 /// </summary>
 public class SignClient : ISignClient
 {
-    private readonly IUserTokenProvider _userTokenProvider;
+    private readonly ITokenProvider _userTokenProvider;
     private readonly HttpClient _client;
 
     /// <summary>
@@ -28,7 +28,7 @@ public class SignClient : ISignClient
     public SignClient(
         IOptions<PlatformSettings> platformSettings,
         HttpClient httpClient,
-        IUserTokenProvider userTokenProvider
+        ITokenProvider userTokenProvider
     )
     {
         var platformSettings1 = platformSettings.Value;
@@ -45,7 +45,7 @@ public class SignClient : ISignClient
     public async Task SignDataElements(SignatureContext signatureContext)
     {
         string apiUrl = $"instances/{signatureContext.InstanceIdentifier}/sign";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
         HttpResponseMessage response = await _client.PostAsync(token, apiUrl, BuildSignRequest(signatureContext));
         if (response.IsSuccessStatusCode)
         {

@@ -26,7 +26,7 @@ public class DefaultEFormidlingService : IEFormidlingService
 {
     private readonly ILogger<DefaultEFormidlingService> _logger;
     private readonly IAccessTokenGenerator? _tokenGenerator;
-    private readonly IUserTokenProvider _userTokenProvider;
+    private readonly ITokenProvider _userTokenProvider;
     private readonly AppSettings? _appSettings;
     private readonly PlatformSettings? _platformSettings;
     private readonly IEFormidlingClient? _eFormidlingClient;
@@ -40,7 +40,7 @@ public class DefaultEFormidlingService : IEFormidlingService
     /// </summary>
     public DefaultEFormidlingService(
         ILogger<DefaultEFormidlingService> logger,
-        IUserTokenProvider userTokenProvider,
+        ITokenProvider userTokenProvider,
         IAppMetadata appMetadata,
         IDataClient dataClient,
         IEventsClient eventClient,
@@ -87,7 +87,7 @@ public class DefaultEFormidlingService : IEFormidlingService
             applicationMetadata.Org,
             applicationMetadata.AppIdentifier.App
         );
-        string authzToken = _userTokenProvider.GetUserToken();
+        string authzToken = _userTokenProvider.GetToken();
 
         var requestHeaders = new Dictionary<string, string>
         {

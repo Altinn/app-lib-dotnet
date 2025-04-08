@@ -19,7 +19,7 @@ public sealed class InstanceClientTests : IDisposable
 {
     private readonly Mock<IOptions<PlatformSettings>> _platformSettingsOptions;
     private readonly Mock<HttpMessageHandler> _handlerMock;
-    private readonly Mock<IUserTokenProvider> _userTokenProvider = new(MockBehavior.Strict);
+    private readonly Mock<ITokenProvider> _userTokenProvider = new(MockBehavior.Strict);
     private readonly Mock<ILogger<InstanceClient>> _logger;
     private readonly TelemetrySink _telemetry;
 
@@ -498,7 +498,7 @@ public sealed class InstanceClientTests : IDisposable
         };
         _platformSettingsOptions.Setup(s => s.Value).Returns(platformSettings);
 
-        _userTokenProvider.Setup(s => s.GetUserToken()).Returns("userToken");
+        _userTokenProvider.Setup(s => s.GetToken()).Returns("userToken");
 
         if (httpResponseMessages.Length == 2)
         {

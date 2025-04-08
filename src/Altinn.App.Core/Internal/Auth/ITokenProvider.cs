@@ -5,11 +5,11 @@ namespace Altinn.App.Core.Internal.Auth;
 /// The provider is used by client implementations that needs the user token in requests
 /// against other systems.
 /// </summary>
-public interface IUserTokenProvider
+public interface ITokenProvider
 {
     /// <summary>
     /// Defines a method that can return a JSON Web Token of the current user.
     /// </summary>
     /// <returns>The Json Web Token for the current user.</returns>
-    public string GetUserToken();
+    public string GetToken();
 }

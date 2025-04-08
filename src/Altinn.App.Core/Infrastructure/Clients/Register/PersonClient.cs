@@ -31,7 +31,7 @@ public class PersonClient : IPersonClient
     private readonly HttpClient _httpClient;
     private readonly IAppMetadata _appMetadata;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
-    private readonly IUserTokenProvider _userTokenProvider;
+    private readonly ITokenProvider _userTokenProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PersonClient"/> class.
@@ -46,7 +46,7 @@ public class PersonClient : IPersonClient
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
         IAccessTokenGenerator accessTokenGenerator,
-        IUserTokenProvider userTokenProvider
+        ITokenProvider userTokenProvider
     )
     {
         _httpClient = httpClient;
@@ -81,7 +81,7 @@ public class PersonClient : IPersonClient
         string issuer = application.Org;
         string appName = application.AppIdentifier.App;
         request.Headers.Add("PlatformAccessToken", _accessTokenGenerator.GenerateAccessToken(issuer, appName));
-        request.Headers.Add("Authorization", "Bearer " + _userTokenProvider.GetUserToken());
+        request.Headers.Add("Authorization", "Bearer " + _userTokenProvider.GetToken());
     }
 
     private static async Task<Person?> ReadResponse(HttpResponseMessage response, CancellationToken ct)

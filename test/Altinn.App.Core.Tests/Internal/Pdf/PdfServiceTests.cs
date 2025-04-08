@@ -38,7 +38,7 @@ public class PdfServiceTests
 
     private readonly IOptions<PlatformSettings> _platformSettingsOptions = Options.Create<PlatformSettings>(new() { });
 
-    private readonly Mock<IUserTokenProvider> _userTokenProvider;
+    private readonly Mock<ITokenProvider> _userTokenProvider;
 
     private readonly Mock<IAuthenticationContext> _authenticationContext = new();
 
@@ -62,8 +62,8 @@ public class PdfServiceTests
         httpContext.Request.Host = new(HostName);
         _httpContextAccessor.Setup(s => s.HttpContext!).Returns(httpContext);
 
-        _userTokenProvider = new Mock<IUserTokenProvider>();
-        _userTokenProvider.Setup(s => s.GetUserToken()).Returns("usertoken");
+        _userTokenProvider = new Mock<ITokenProvider>();
+        _userTokenProvider.Setup(s => s.GetToken()).Returns("usertoken");
 
         _authenticationContext.Setup(s => s.Current).Returns(TestAuthentication.GetUserAuthentication());
     }

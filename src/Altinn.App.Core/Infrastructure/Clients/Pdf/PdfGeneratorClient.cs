@@ -30,7 +30,7 @@ public class PdfGeneratorClient : IPdfGeneratorClient
     private readonly HttpClient _httpClient;
     private readonly PdfGeneratorSettings _pdfGeneratorSettings;
     private readonly PlatformSettings _platformSettings;
-    private readonly IUserTokenProvider _userTokenProvider;
+    private readonly ITokenProvider _userTokenProvider;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly Telemetry? _telemetry;
 
@@ -51,7 +51,7 @@ public class PdfGeneratorClient : IPdfGeneratorClient
         HttpClient httpClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
         IOptions<PlatformSettings> platformSettings,
-        IUserTokenProvider userTokenProvider,
+        ITokenProvider userTokenProvider,
         IHttpContextAccessor httpContextAccessor,
         Telemetry? telemetry = null
     )
@@ -117,7 +117,7 @@ public class PdfGeneratorClient : IPdfGeneratorClient
         }
 
         generatorRequest.Cookies.Add(
-            new PdfGeneratorCookieOptions { Value = _userTokenProvider.GetUserToken(), Domain = uri.Host }
+            new PdfGeneratorCookieOptions { Value = _userTokenProvider.GetToken(), Domain = uri.Host }
         );
 
         if (

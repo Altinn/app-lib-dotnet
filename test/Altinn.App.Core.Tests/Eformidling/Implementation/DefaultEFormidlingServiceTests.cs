@@ -59,7 +59,7 @@ public class DefaultEFormidlingServiceTests
         services.AddAppImplementationFactory();
         services.AddLogging(logging => logging.AddProvider(NullLoggerProvider.Instance));
 
-        var userTokenProvider = new Mock<IUserTokenProvider>();
+        var userTokenProvider = new Mock<ITokenProvider>();
         var appMetadata = new Mock<IAppMetadata>();
         var dataClient = new Mock<IDataClient>();
         var eFormidlingMetadata = new Mock<IEFormidlingMetadata>();
@@ -150,7 +150,7 @@ public class DefaultEFormidlingServiceTests
                 }
             );
         tokenGenerator.Setup(t => t.GenerateAccessToken("ttd", "test-app")).Returns("access-token");
-        userTokenProvider.Setup(u => u.GetUserToken()).Returns("authz-token");
+        userTokenProvider.Setup(u => u.GetToken()).Returns("authz-token");
         eFormidlingReceivers.Setup(er => er.GetEFormidlingReceivers(instance)).ReturnsAsync(new List<Receiver>());
         eFormidlingMetadata
             .Setup(em => em.GenerateEFormidlingMetadata(instance))
@@ -210,7 +210,7 @@ public class DefaultEFormidlingServiceTests
 
         fixture.Mock<IAppMetadata>().Verify(a => a.GetApplicationMetadata());
         fixture.Mock<IAccessTokenGenerator>().Verify(t => t.GenerateAccessToken("ttd", "test-app"));
-        fixture.Mock<IUserTokenProvider>().Verify(u => u.GetUserToken());
+        fixture.Mock<ITokenProvider>().Verify(u => u.GetToken());
         fixture.Mock<IEFormidlingReceivers>().Verify(er => er.GetEFormidlingReceivers(instance));
         fixture.Mock<IEFormidlingMetadata>().Verify(em => em.GenerateEFormidlingMetadata(instance));
         var eFormidlingClient = fixture.Mock<IEFormidlingClient>();
@@ -258,7 +258,7 @@ public class DefaultEFormidlingServiceTests
         eFormidlingClient.VerifyNoOtherCalls();
         fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
         fixture.Mock<IAccessTokenGenerator>().VerifyNoOtherCalls();
-        fixture.Mock<IUserTokenProvider>().VerifyNoOtherCalls();
+        fixture.Mock<ITokenProvider>().VerifyNoOtherCalls();
         fixture.Mock<IEFormidlingReceivers>().VerifyNoOtherCalls();
         fixture.Mock<IAppMetadata>().VerifyNoOtherCalls();
 
@@ -345,7 +345,7 @@ public class DefaultEFormidlingServiceTests
 
         fixture.Mock<IAppMetadata>().Verify(a => a.GetApplicationMetadata());
         fixture.Mock<IAccessTokenGenerator>().Verify(t => t.GenerateAccessToken("ttd", "test-app"));
-        fixture.Mock<IUserTokenProvider>().Verify(u => u.GetUserToken());
+        fixture.Mock<ITokenProvider>().Verify(u => u.GetToken());
         fixture.Mock<IEFormidlingReceivers>().Verify(er => er.GetEFormidlingReceivers(instance));
         fixture.Mock<IEFormidlingMetadata>().Verify(em => em.GenerateEFormidlingMetadata(instance));
         var eFormidlingClient = fixture.Mock<IEFormidlingClient>();
@@ -358,7 +358,7 @@ public class DefaultEFormidlingServiceTests
         eFormidlingClient.VerifyNoOtherCalls();
         fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
         fixture.Mock<IAccessTokenGenerator>().VerifyNoOtherCalls();
-        fixture.Mock<IUserTokenProvider>().VerifyNoOtherCalls();
+        fixture.Mock<ITokenProvider>().VerifyNoOtherCalls();
         fixture.Mock<IEFormidlingReceivers>().VerifyNoOtherCalls();
         fixture.Mock<IAppMetadata>().VerifyNoOtherCalls();
 
