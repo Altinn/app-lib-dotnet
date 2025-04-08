@@ -61,13 +61,13 @@ public sealed record FiksArkivCaseFileReceipt
     /// The year of the case file.
     /// </summary>
     [JsonPropertyName("caseFileYear")]
-    public int? CaseFileYear { get; init; }
+    public int? CaseYear { get; init; }
 
     /// <summary>
     /// The date of the case file.
     /// </summary>
     [JsonPropertyName("caseFileDate")]
-    public DateTime? CaseFileDate { get; init; }
+    public DateTime? CaseDate { get; init; }
 
     /// <summary>
     /// The case sequence number.
@@ -90,8 +90,8 @@ public sealed record FiksArkivCaseFileReceipt
                 SystemId = FiksArkivSystemDescription.Create(saksmappeKvittering.SystemID),
                 FolderId = saksmappeKvittering.MappeID,
                 CreatedDate = saksmappeKvittering.OpprettetDato,
-                CaseFileYear = saksmappeKvittering.Saksaar,
-                CaseFileDate = saksmappeKvittering.Saksdato,
+                CaseYear = saksmappeKvittering.Saksaar,
+                CaseDate = saksmappeKvittering.Saksdato,
                 CaseSequenceNumber = saksmappeKvittering.Sakssekvensnummer,
                 CreatedBy = saksmappeKvittering.OpprettetAv,
             };
