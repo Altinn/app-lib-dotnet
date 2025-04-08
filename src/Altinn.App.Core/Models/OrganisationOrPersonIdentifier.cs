@@ -34,9 +34,14 @@ public abstract record OrganisationOrPersonIdentifier
         public override string ToUrnFormattedString() => Value.ToUrnFormattedString();
 
         /// <summary>
-        /// Retrieves the underlying <see cref="OrganisationNumber"/> object.
+        /// Returns the underlying <see cref="OrganisationNumber"/> object.
         /// </summary>
         public OrganisationNumber ToOrganisationNumber() => Value;
+
+        /// <summary>
+        /// Returns the underlying <see cref="OrganisationNumber"/> object.
+        /// </summary>
+        public static implicit operator OrganisationNumber(Organisation org) => org.ToOrganisationNumber();
     }
 
     /// <summary>
@@ -54,9 +59,14 @@ public abstract record OrganisationOrPersonIdentifier
         public override string ToUrnFormattedString() => Value.ToUrnFormattedString();
 
         /// <summary>
-        /// Retrieves the underlying <see cref="NationalIdentityNumber"/> object.
+        /// Returns the underlying <see cref="NationalIdentityNumber"/> object.
         /// </summary>
         public NationalIdentityNumber ToNationalIdentityNumber() => Value;
+
+        /// <summary>
+        /// Returns the underlying <see cref="NationalIdentityNumber"/> object.
+        /// </summary>
+        public static implicit operator NationalIdentityNumber(Person person) => person.ToNationalIdentityNumber();
     }
 
     /// <summary>
@@ -171,4 +181,14 @@ public abstract record OrganisationOrPersonIdentifier
     /// </summary>
     public static bool operator !=(OrganisationOrPersonIdentifier left, NationalIdentityNumber right) =>
         !(left == right);
+
+    /// <summary>
+    /// Creates a new instance of <see cref="Organisation"/> from the given <see cref="OrganisationNumber"/>.
+    /// </summary>
+    public static implicit operator OrganisationOrPersonIdentifier(OrganisationNumber org) => Create(org);
+
+    /// <summary>
+    /// Creates a new instance of <see cref="Person"/> from the given <see cref="NationalIdentityNumber"/>.
+    /// </summary>
+    public static implicit operator OrganisationOrPersonIdentifier(NationalIdentityNumber person) => Create(person);
 }
