@@ -376,7 +376,7 @@ public class CorrespondenceBuilderTests
         builder.WithRecipient(TestHelpers.GetOrganisationNumber(2).Get(OrganisationNumberFormat.International));
         builder.WithRecipient(TestHelpers.GetOrganisationNumber(3));
         builder.WithRecipients(
-            [OrganisationOrPersonIdentifier.Create(orgParty), OrganisationOrPersonIdentifier.Create(personParty)]
+            [OrganisationOrPersonIdentifier.Parse(orgParty), OrganisationOrPersonIdentifier.Parse(personParty)]
         );
         builder.WithRecipients(
             [

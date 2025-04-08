@@ -82,9 +82,10 @@ public abstract record OrganisationOrPersonIdentifier
     /// </summary>
     /// <param name="party">The party to reference</param>
     /// <exception cref="FormatException">The supplied <see cref="Party"/> object does not contain a valid <see cref="Party.OrgNumber"/> nor <see cref="Party.SSN"/></exception>
-    public static OrganisationOrPersonIdentifier Create(Party party)
+    public static OrganisationOrPersonIdentifier Parse(Party party)
     {
-        return !string.IsNullOrWhiteSpace(party.OrgNumber) ? Parse(party.OrgNumber) : Parse(party.SSN);
+        string value = !string.IsNullOrWhiteSpace(party.OrgNumber) ? party.OrgNumber : party.SSN;
+        return Parse(value);
     }
 
     /// <summary>
@@ -94,6 +95,8 @@ public abstract record OrganisationOrPersonIdentifier
     /// <exception cref="FormatException">The supplied string is not a valid format for either type</exception>
     public static OrganisationOrPersonIdentifier Parse(string value)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(value, nameof(value));
+
         // Value has come in padded with urn:altinn:organization:identifier-no
         if (value.StartsWith(OrgUrnPrefix, StringComparison.OrdinalIgnoreCase))
         {
