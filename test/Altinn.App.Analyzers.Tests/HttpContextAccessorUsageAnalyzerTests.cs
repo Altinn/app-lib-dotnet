@@ -23,11 +23,7 @@ public class HttpContextAccessorUsageAnalyzerTests
 
         var analyzer = new HttpContextAccessorUsageAnalyzer();
 
-        var (compilation, diagnostics) = await _fixture.GetCompilation(
-            analyzer,
-            includeAdditionalFiles: false,
-            cancellationToken
-        );
+        var (compilation, diagnostics) = await _fixture.GetCompilation(analyzer, cancellationToken);
 
         Assert.Empty(diagnostics);
     }
@@ -41,11 +37,7 @@ public class HttpContextAccessorUsageAnalyzerTests
         using var modification = _fixture.WithInvalidHttpContextAccessorUse();
         var analyzer = new HttpContextAccessorUsageAnalyzer();
 
-        var (compilation, diagnostics) = await _fixture.GetCompilation(
-            analyzer,
-            includeAdditionalFiles: false,
-            cancellationToken
-        );
+        var (compilation, diagnostics) = await _fixture.GetCompilation(analyzer, cancellationToken);
 
         Assert.Contains(diagnostics, d => Diagnostics.CodeSmells.HttpContextAccessorUsage.Id == d.Id);
         await Verify(diagnostics);

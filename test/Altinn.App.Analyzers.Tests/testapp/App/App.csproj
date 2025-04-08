@@ -5,7 +5,7 @@
     <RootNamespace>Altinn.App</RootNamespace>
 
     <!-- This let's us test with local NuGet packages, just put the .nupkg in the ../packages directory -->
-    <RestoreSources>../packages;https://api.nuget.org/v3/index.json</RestoreSources>
+    <LocalPackagesPath>../packages</LocalPackagesPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,20 +13,28 @@
     <Compile Remove="additional/*.cs" />
   </ItemGroup>
 
+  <Target Name="BeforeTests">
+    <!-- This target is run through Roslyn/Buildalyzer in the fixture of the analyzer tests -->
+    <RemoveDir Directories="$(LocalPackagesPath)" />
+    <MakeDir Directories="$(LocalPackagesPath)"  />
+    <Exec Command="dotnet pack --no-build --no-restore --configuration $(Configuration) --output $(LocalPackagesPath) ../../../../src/Altinn.App.Core/Altinn.App.Core.csproj" />
+    <Exec Command="dotnet pack --no-build --no-restore --configuration $(Configuration) --output $(LocalPackagesPath) ../../../../src/Altinn.App.Api/Altinn.App.Api.csproj" />
+  </Target>
+
   <Target Name="Output" AfterTargets="Build">
     <Message Importance="High" Text="IsAltinnApp = $(IsAltinnApp)" />
   </Target>
 
   <ItemGroup>
-    <!-- <PackageReference Include="Altinn.App.Api" Version="8.6.0-preview.4.56">
+    <PackageReference Include="Altinn.App.Api" Version="8.*-*">
       <CopyToOutputDirectory>lib\$(TargetFramework)\*.xml</CopyToOutputDirectory>
     </PackageReference>
-    <PackageReference Include="Altinn.App.Core" Version="8.6.0-preview.4.56" /> -->
+    <PackageReference Include="Altinn.App.Core" Version="8.*-*" />
 
-    <ProjectReference Include="../../../../src/Altinn.App.Core/Altinn.App.Core.csproj" />
+    <!-- <ProjectReference Include="../../../../src/Altinn.App.Core/Altinn.App.Core.csproj" />
     <ProjectReference Include="../../../../src/Altinn.App.Api/Altinn.App.Api.csproj">
         <CopyToOutputDirectory>lib\$(TargetFramework)\*.xml</CopyToOutputDirectory>
-    </ProjectReference>
+    </ProjectReference> -->
     <ProjectReference Include="../../../../src/Altinn.App.Analyzers/Altinn.App.Analyzers.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
   </ItemGroup>
   <ItemGroup>

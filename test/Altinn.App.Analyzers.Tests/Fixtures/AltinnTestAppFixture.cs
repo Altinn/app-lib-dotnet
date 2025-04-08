@@ -3,10 +3,12 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Buildalyzer;
+using Buildalyzer.Environment;
 using Buildalyzer.Workspaces;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Analyzers.Tests.Fixtures;
@@ -43,8 +45,18 @@ public sealed partial class AltinnTestAppFixture : IDisposable
             _projectDir = Path.Combine(Directory.GetCurrentDirectory(), "testapp", "App");
             Assert.True(Directory.Exists(_projectDir));
             var manager = new AnalyzerManager();
+
+            var logger = manager.LoggerFactory?.CreateLogger<AdhocWorkspace>();
+            _workspace = new AdhocWorkspace();
+            _workspace.WorkspaceChanged += (sender, args) =>
+                logger?.LogDebug("Workspace changed: {Kind}{NewLine}", args.Kind, Environment.NewLine);
+            _workspace.WorkspaceFailed += (sender, args) =>
+                logger?.LogError("Workspace failed: {Diagnostic}{NewLine}", args.Diagnostic, Environment.NewLine);
+
             var analyzer = manager.GetProject(Path.Combine(_projectDir, "App.csproj"));
-            _workspace = analyzer.GetWorkspace();
+            var options = new EnvironmentOptions() { DesignTime = false, TargetsToBuild = { "BeforeTests", "Build" } };
+            var results = analyzer.Build(options);
+            results.First().AddToWorkspace(_workspace);
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.AddDocument));
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.RemoveDocument));
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.ChangeDocument));
@@ -102,7 +114,6 @@ public sealed partial class AltinnTestAppFixture : IDisposable
 
     public async Task<(CompilationWithAnalyzers Compilation, IReadOnlyList<Diagnostic>)> GetCompilation(
         DiagnosticAnalyzer analyzer,
-        bool includeAdditionalFiles,
         CancellationToken cancellationToken
     )
     {
@@ -116,12 +127,8 @@ public sealed partial class AltinnTestAppFixture : IDisposable
             ["build_property.projectdir"] = _projectDir,
         }.ToImmutableDictionary();
 
-        var additionalFiles = ImmutableArray.CreateRange<AdditionalText>(
-            [new TestAdditionalText(Content.ApplicationMetadata), new TestAdditionalText(Content.LayoutSets)]
-        );
-
         var analyzerOptions = new AnalyzerOptions(
-            includeAdditionalFiles ? additionalFiles : [],
+            [],
             new TestOptionsProvider(
                 ImmutableDictionary<object, AnalyzerConfigOptions>.Empty,
                 new TestAnalyzerConfigOptions(globalOptions)
