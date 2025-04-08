@@ -88,7 +88,6 @@ internal sealed record TestFixture(
     )
     {
         var builder = WebApplication.CreateBuilder();
-        configureServices(builder.Services);
 
         // Default configuration values
         Dictionary<string, object> config = new();
@@ -118,6 +117,9 @@ internal sealed record TestFixture(
                 );
             }
         }
+
+        // User-supplied services configuration
+        configureServices(builder.Services);
 
         // Mocks
         var webHostEnvironmentMock = new Mock<IWebHostEnvironment>();

@@ -56,8 +56,6 @@ public interface IFiksSetupBuilder<out T>
     IServiceCollection CompleteSetup();
 }
 
-public interface IFiksSetupBuilderBase : IFiksSetupBuilder<IFiksIOSetupBuilder> { }
-
 /// <summary>
 /// Builder for configuring the Fiks IO client behavior.
 /// </summary>
