@@ -575,7 +575,7 @@ public class SigningCallToActionServiceTests
         // Arrange
         var ssn = GetSsn(1);
         Party party = new() { SSN = ssn };
-        CorrespondenceRecipient recipient = new(party);
+        OrganisationOrPersonIdentifier recipient = OrganisationOrPersonIdentifier.Create(party);
 
         Notification notification = new() { Sms = new Sms { MobileNumber = "12345678" } };
 
@@ -601,7 +601,7 @@ public class SigningCallToActionServiceTests
         // Arrange
         var ssn = GetSsn(1);
         Party party = new() { SSN = ssn };
-        CorrespondenceRecipient recipient = new(party);
+        OrganisationOrPersonIdentifier recipient = OrganisationOrPersonIdentifier.Create(party);
 
         Notification notification = new() { Email = new Email { EmailAddress = "test@tester.no" } };
 
@@ -627,7 +627,7 @@ public class SigningCallToActionServiceTests
         // Arrange
         var orgNo = GetOrgNumber(1);
         Party party = new() { OrgNumber = orgNo };
-        CorrespondenceRecipient recipient = new(party);
+        OrganisationOrPersonIdentifier recipient = OrganisationOrPersonIdentifier.Create(party);
 
         Notification notification = new()
         {
@@ -656,7 +656,7 @@ public class SigningCallToActionServiceTests
     {
         // Arrange
         Party party = new() { SSN = GetSsn(1) };
-        CorrespondenceRecipient recipient = new(party);
+        OrganisationOrPersonIdentifier recipient = OrganisationOrPersonIdentifier.Create(party);
 
         Notification? notification = null;
 
@@ -673,7 +673,7 @@ public class SigningCallToActionServiceTests
     {
         // Arrange
         Party party = new() { SSN = GetSsn(2) };
-        CorrespondenceRecipient recipient = new(party);
+        OrganisationOrPersonIdentifier recipient = OrganisationOrPersonIdentifier.Create(party);
 
         Notification notification = new()
         {
