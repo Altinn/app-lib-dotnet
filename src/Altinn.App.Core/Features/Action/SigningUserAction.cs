@@ -6,6 +6,7 @@ using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -30,6 +31,7 @@ internal class SigningUserAction : IUserAction
     private readonly IProcessReader _processReader;
     private readonly IAppMetadata _appMetadata;
     private readonly ISigningReceiptService _signingReceiptService;
+    private readonly IInstanceClient _instanceClient;
     private readonly ISigningService _signingService;
     private readonly ILogger<SigningUserAction> _logger;
     private readonly ISignClient _signClient;
@@ -37,18 +39,13 @@ internal class SigningUserAction : IUserAction
     /// <summary>
     /// Initializes a new instance of the <see cref="SigningUserAction"/> class
     /// </summary>
-    /// <param name="serviceProvider">The service provider</param>
-    /// <param name="processReader">The process reader</param>
-    /// <param name="signClient">The sign client</param>
-    /// <param name="appMetadata">The application metadata</param>
-    /// <param name="signingReceiptService">The signing receipt service</param>
-    /// <param name="logger">The logger</param>
     public SigningUserAction(
         IServiceProvider serviceProvider,
         IProcessReader processReader,
         ISignClient signClient,
         IAppMetadata appMetadata,
         ISigningReceiptService signingReceiptService,
+        IInstanceClient instanceClient,
         ILogger<SigningUserAction> logger
     )
     {
@@ -56,6 +53,7 @@ internal class SigningUserAction : IUserAction
         _signClient = signClient;
         _appMetadata = appMetadata;
         _signingReceiptService = signingReceiptService;
+        _instanceClient = instanceClient;
         _signingService = serviceProvider.GetRequiredService<ISigningService>();
         _logger = logger;
     }
@@ -146,6 +144,11 @@ internal class SigningUserAction : IUserAction
         try
         {
             await _signClient.SignDataElements(signatureContext);
+
+            // Reloading instance data because we know that storage has added a binary data element to the instance.
+            // This is a workaround until we have a better solution for this. Don't take it as inspiration.
+            Instance instance = await _instanceClient.GetInstance(context.Instance);
+            context.DataMutator.Instance.Data = instance.Data;
         }
         catch (PlatformHttpException)
         {
