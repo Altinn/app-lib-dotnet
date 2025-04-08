@@ -215,6 +215,12 @@ public interface ICorrespondenceRequestBuilder
     ICorrespondenceRequestBuilder WithNotification(CorrespondenceNotification notification);
 
     /// <summary>
+    /// Sets the notification for the correspondence if configured. Skips if <c>null</c>.
+    /// </summary>
+    /// <param name="notification">The notification details to be associated with the correspondence</param>
+    ICorrespondenceRequestBuilder WithNotificationIfConfigured(CorrespondenceNotification? notification);
+
+    /// <summary>
     /// Sets the notification for the correspondence.
     /// </summary>
     /// <param name="builder">A <see cref="CorrespondenceNotificationBuilder"/> instance in the <see cref="ICorrespondenceNotificationBuilder"/> stage</param>

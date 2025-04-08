@@ -135,7 +135,8 @@ public class ActionsController : ControllerBase
             actionRequest.ButtonId,
             actionRequest.Metadata,
             language,
-            currentAuth
+            currentAuth,
+            actionRequest.OnBehalfOf
         );
         IUserAction? actionHandler = _userActionService.GetActionHandler(action);
         if (actionHandler is null)

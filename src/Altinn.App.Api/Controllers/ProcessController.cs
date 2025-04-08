@@ -12,6 +12,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
+using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -40,6 +41,7 @@ public class ProcessController : ControllerBase
     private readonly IProcessEngine _processEngine;
     private readonly IProcessReader _processReader;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -52,7 +54,8 @@ public class ProcessController : ControllerBase
         IAuthorizationService authorization,
         IProcessReader processReader,
         IProcessEngine processEngine,
-        IServiceProvider serviceProvider
+        IServiceProvider serviceProvider,
+        IProcessEngineAuthorizer processEngineAuthorizer
     )
     {
         _logger = logger;
@@ -63,6 +66,7 @@ public class ProcessController : ControllerBase
         _processReader = processReader;
         _processEngine = processEngine;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _processEngineAuthorizer = processEngineAuthorizer;
     }
 
     /// <summary>
@@ -329,16 +333,7 @@ public class ProcessController : ControllerBase
                 );
             }
 
-            string checkedAction = EnsureActionNotTaskType(processNext?.Action ?? altinnTaskType);
-
-            bool authorized = await AuthorizeAction(
-                checkedAction,
-                org,
-                app,
-                instanceOwnerPartyId,
-                instanceGuid,
-                currentTaskId
-            );
+            bool authorized = await _processEngineAuthorizer.AuthorizeProcessNext(instance, processNext?.Action);
 
             if (!authorized)
             {
@@ -347,21 +342,43 @@ public class ProcessController : ControllerBase
                     new ProblemDetails()
                     {
                         Status = StatusCodes.Status403Forbidden,
-                        Detail = $"User is not authorized to perform action {checkedAction} on task {currentTaskId}",
+                        Detail =
+                            $"User is not authorized to perform process next. Task ID: {currentTaskId}. Task type: {altinnTaskType}. Action: {processNext?.Action ?? "none"}.",
                         Title = "Unauthorized",
                     }
                 );
             }
 
-            _logger.LogDebug("User is authorized to perform action {Action}", checkedAction);
+            _logger.LogDebug(
+                "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",
+                currentTaskId,
+                altinnTaskType,
+                LogSanitizer.Sanitize(processNext?.Action ?? "none")
+            );
+
+            string checkedAction = processNext?.Action ?? ConvertTaskTypeToAction(altinnTaskType);
 
             var request = new ProcessNextRequest()
             {
                 Instance = instance,
                 User = User,
                 Action = checkedAction,
+                ActionOnBehalfOf = processNext?.ActionOnBehalfOf,
                 Language = language,
             };
+
+            UserActionResult userActionResult = await _processEngine.HandleUserAction(request);
+            if (userActionResult.ResultType is ResultType.Failure)
+            {
+                var failedUserActionResult = new ProcessChangeResult()
+                {
+                    Success = false,
+                    ErrorMessage = $"Action handler for action {request.Action} failed!",
+                    ErrorType = userActionResult.ErrorType,
+                };
+
+                return GetResultForError(failedUserActionResult);
+            }
 
             // If the action is 'reject' the task is being abandoned, and we should skip validation, but only if reject has been allowed for the task in bpmn.
             if (checkedAction == "reject" && _processReader.IsActionAllowedForTask(currentTaskId, checkedAction))
@@ -521,17 +538,9 @@ public class ProcessController : ControllerBase
             && counter++ < MaxIterationsAllowed
         )
         {
-            string altinnTaskType = EnsureActionNotTaskType(instance.Process.CurrentTask.AltinnTaskType);
+            bool authorizeProcessNext = await _processEngineAuthorizer.AuthorizeProcessNext(instance);
 
-            bool authorized = await AuthorizeAction(
-                altinnTaskType,
-                org,
-                app,
-                instanceOwnerPartyId,
-                instanceGuid,
-                instance.Process.CurrentTask.ElementId
-            );
-            if (!authorized)
+            if (!authorizeProcessNext)
             {
                 return Forbid();
             }
@@ -552,7 +561,7 @@ public class ProcessController : ControllerBase
                 {
                     Instance = instance,
                     User = User,
-                    Action = altinnTaskType,
+                    Action = ConvertTaskTypeToAction(instance.Process.CurrentTask.AltinnTaskType),
                     Language = language,
                 };
                 var result = await _processEngine.Next(request);
@@ -727,7 +736,7 @@ public class ProcessController : ControllerBase
         return await _authorization.AuthorizeActions(instance, HttpContext.User, actions);
     }
 
-    private static string EnsureActionNotTaskType(string actionOrTaskType)
+    private static string ConvertTaskTypeToAction(string actionOrTaskType)
     {
         switch (actionOrTaskType)
         {
@@ -736,6 +745,8 @@ public class ProcessController : ControllerBase
                 return "write";
             case "confirmation":
                 return "confirm";
+            case "signing":
+                return "sign";
             default:
                 // Not any known task type, so assume it is an action type
                 return actionOrTaskType;

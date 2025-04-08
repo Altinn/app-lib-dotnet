@@ -2184,6 +2184,10 @@
           "action": {
             "type": "string",
             "nullable": true
+          },
+          "actionOnBehalfOf": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -2630,6 +2634,11 @@
           },
           "autoDeleteOnProcessEnd": {
             "type": "boolean"
+          },
+          "preventInstanceDeletionForDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           },
           "presentationFields": {
             "type": "array",

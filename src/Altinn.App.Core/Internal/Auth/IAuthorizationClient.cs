@@ -50,4 +50,12 @@ public interface IAuthorizationClient
     /// <param name="actions"></param>
     /// <returns></returns>
     Task<Dictionary<string, bool>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<string> actions);
+
+    /// <summary>
+    /// Get organisations where the logged in user has a key role
+    /// </summary>
+    /// <param name="userId">The user id</param>
+    /// <param name="orgNumbers">The org numbers</param>
+    /// <returns>List of organisations</returns>
+    Task<List<string>> GetKeyRoleOrganisationParties(int userId, List<string> orgNumbers);
 }

@@ -104,6 +104,47 @@ public class CorrespondenceRequestTests
                 ReminderNotificationChannel = CorrespondenceNotificationChannel.SmsPreferred,
                 SendersReference = "senders-reference",
                 RequestedSendTime = DateTimeOffset.UtcNow,
+                CustomNotificationRecipients =
+                [
+                    new CorrespondenceNotificationRecipientWrapper()
+                    {
+                        RecipientToOverride = OrganisationOrPersonIdentifier
+                            .Create(TestHelpers.GetNationalIdentityNumber(2))
+                            .ToString(),
+                        CorrespondenceNotificationRecipients =
+                        [
+                            new CorrespondenceNotificationRecipient
+                            {
+                                EmailAddress = "email-address-1",
+                                IsReserved = false,
+                            },
+                            new CorrespondenceNotificationRecipient
+                            {
+                                MobileNumber = "mobile-number-1",
+                                IsReserved = true,
+                            },
+                        ],
+                    },
+                    new CorrespondenceNotificationRecipientWrapper()
+                    {
+                        RecipientToOverride = OrganisationOrPersonIdentifier
+                            .Create(TestHelpers.GetOrganisationNumber(1))
+                            .ToString(),
+                        CorrespondenceNotificationRecipients =
+                        [
+                            new CorrespondenceNotificationRecipient
+                            {
+                                OrganizationNumber = TestHelpers.GetOrganisationNumber(1).ToString(),
+                                IsReserved = false,
+                            },
+                            new CorrespondenceNotificationRecipient
+                            {
+                                NationalIdentityNumber = TestHelpers.GetNationalIdentityNumber(2),
+                                IsReserved = true,
+                            },
+                        ],
+                    },
+                ],
             },
             ExistingAttachments = [Guid.NewGuid(), Guid.NewGuid()],
         };
@@ -166,7 +207,18 @@ public class CorrespondenceRequestTests
             ["Correspondence.Notification.NotificationChannel"] = correspondence.Notification.NotificationChannel,
             ["Correspondence.Notification.ReminderNotificationChannel"] = correspondence.Notification.ReminderNotificationChannel,
             ["Correspondence.Notification.SendersReference"] = correspondence.Notification.SendersReference,
-            ["Correspondence.Notification.RequestedSendTime"] = correspondence.Notification.RequestedSendTime
+            ["Correspondence.Notification.RequestedSendTime"] = correspondence.Notification.RequestedSendTime,
+            ["Correspondence.Notification.CustomNotificationRecipients[0].RecipientToOverride"] = $"{correspondence.Notification.CustomNotificationRecipients[0].RecipientToOverride}",
+            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].EmailAddress"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[0].EmailAddress!,
+            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[0].IsReserved,
+            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].MobileNumber"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[1].MobileNumber!,
+            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[1].IsReserved,
+            ["Correspondence.Notification.CustomNotificationRecipients[1].RecipientToOverride"] = $"{correspondence.Notification.CustomNotificationRecipients[1].RecipientToOverride}",
+            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].OrganizationNumber"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[0].OrganizationNumber!,
+            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[0].IsReserved,
+            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].NationalIdentityNumber"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[1].NationalIdentityNumber!,
+            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[1].IsReserved,
+
         };
 
         foreach (var (key, value) in expectedSerialisation)
@@ -252,7 +304,7 @@ public class CorrespondenceRequestTests
                 Data = data,
             },
         ];
-        var clonedAttachment = identicalAttachments.Last();
+        var clonedAttachment = identicalAttachments[^1];
 
         // Act
         var processedAttachments = MultipartCorrespondenceItem.CalculateFilenameOverrides(identicalAttachments);

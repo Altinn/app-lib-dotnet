@@ -88,6 +88,21 @@ public abstract record MultipartCorrespondenceItem
         }
     }
 
+    internal static void SerializeOverrideNotificationRecipients(
+        MultipartFormDataContent content,
+        IReadOnlyList<CorrespondenceNotificationRecipient>? notificationRecipients,
+        int parentIndex
+    )
+    {
+        if (IsEmptyCollection(notificationRecipients))
+            return;
+
+        for (int i = 0; i < notificationRecipients.Count; i++)
+        {
+            notificationRecipients[i].Serialise(content, i, parentIndex);
+        }
+    }
+
     internal static void SerializeAttachmentItems(
         MultipartFormDataContent content,
         IReadOnlyList<CorrespondenceAttachment>? attachments
