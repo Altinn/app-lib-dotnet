@@ -1,7 +1,9 @@
 using System.Text;
 using Altinn.App.Core.Features.Correspondence.Builder;
+using Altinn.App.Core.Features.Correspondence.Extensions;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Register.Models;
 using FluentAssertions;
 
 namespace Altinn.App.Core.Tests.Features.Correspondence.Builder;
@@ -174,12 +176,12 @@ public class CorrespondenceBuilderTests
                     .WithRecipientOverride(
                         CorrespondenceNotificationOverrideBuilder
                             .Create()
-                            .WithRecipientToOverride(data.recipient.ToString())
+                            .WithRecipientToOverride(data.recipient)
                             .WithCorrespondenceNotificationRecipients(
                                 [
                                     new CorrespondenceNotificationRecipient
                                     {
-                                        OrganizationNumber = data.recipient.ToString(),
+                                        OrganizationNumber = data.recipient.Value,
                                         MobileNumber = data.notification.overrideMobileNumber,
                                     },
                                 ]
@@ -198,7 +200,6 @@ public class CorrespondenceBuilderTests
                 CorrespondenceAttachmentBuilder
                     .Create()
                     .WithFilename(data.attachments[0].filename)
-                    .WithDisplayName(data.attachments[0].name)
                     .WithSendersReference(data.attachments[0].sendersReference)
                     .WithData(Encoding.UTF8.GetBytes(data.attachments[0].data))
                     .WithDataLocationType(data.attachments[0].dataLocationType)
@@ -208,7 +209,6 @@ public class CorrespondenceBuilderTests
                 new CorrespondenceAttachment
                 {
                     Filename = data.attachments[1].filename,
-                    DisplayName = data.attachments[1].name,
                     SendersReference = data.attachments[1].sendersReference,
                     Data = Encoding.UTF8.GetBytes(data.attachments[1].data),
                     DataLocationType = data.attachments[1].dataLocationType,
@@ -220,7 +220,6 @@ public class CorrespondenceBuilderTests
                     new CorrespondenceAttachment
                     {
                         Filename = data.attachments[2].filename,
-                        DisplayName = data.attachments[2].name,
                         SendersReference = data.attachments[2].sendersReference,
                         Data = Encoding.UTF8.GetBytes(data.attachments[2].data),
                         DataLocationType = data.attachments[2].dataLocationType,
@@ -282,7 +281,6 @@ public class CorrespondenceBuilderTests
         for (int i = 0; i < data.attachments.Length; i++)
         {
             correspondence.Content.Attachments[i].Filename.Should().Be(data.attachments[i].filename);
-            correspondence.Content.Attachments[i].DisplayName.Should().Be(data.attachments[i].name);
             correspondence.Content.Attachments[i].IsEncrypted.Should().Be(data.attachments[i].isEncrypted);
             correspondence.Content.Attachments[i].SendersReference.Should().Be(data.attachments[i].sendersReference);
             correspondence.Content.Attachments[i].DataLocationType.Should().Be(data.attachments[i].dataLocationType);
@@ -311,7 +309,7 @@ public class CorrespondenceBuilderTests
             .Notification.CustomNotificationRecipients![0]
             .CorrespondenceNotificationRecipients[0]
             .OrganizationNumber.Should()
-            .Be(data.recipient.ToString());
+            .Be(data.recipient.Value);
         correspondence
             .Notification.CustomNotificationRecipients![0]
             .CorrespondenceNotificationRecipients[0]
@@ -339,6 +337,9 @@ public class CorrespondenceBuilderTests
     public void Builder_UpdatesAndOverwritesValuesCorrectly()
     {
         // Arrange
+        var orgParty = new Party { OrgNumber = TestHelpers.GetOrganisationNumber(4).ToString() };
+        var personParty = new Party { SSN = TestHelpers.GetNationalIdentityNumber(5).ToString() };
+
         var builder = CorrespondenceRequestBuilder
             .Create()
             .WithResourceId("resourceId-1")
@@ -373,16 +374,14 @@ public class CorrespondenceBuilderTests
         builder.WithSender(TestHelpers.GetOrganisationNumber(2).Get(OrganisationNumberFormat.Local));
         builder.WithSendersReference("sender-reference-2");
         builder.WithRecipient(TestHelpers.GetOrganisationNumber(2).Get(OrganisationNumberFormat.International));
+        builder.WithRecipient(TestHelpers.GetOrganisationNumber(3));
         builder.WithRecipients(
-            [
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(3)),
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(4)),
-            ]
+            [OrganisationOrPersonIdentifier.Create(orgParty), OrganisationOrPersonIdentifier.Create(personParty)]
         );
         builder.WithRecipients(
             [
-                TestHelpers.GetOrganisationNumber(5).Get(OrganisationNumberFormat.Local),
-                TestHelpers.GetNationalIdentityNumber(6).Value,
+                TestHelpers.GetOrganisationNumber(6).Get(OrganisationNumberFormat.Local),
+                TestHelpers.GetNationalIdentityNumber(7).Value,
             ]
         );
         builder.WithDueDateTime(DateTimeOffset.UtcNow.AddDays(2));
@@ -433,18 +432,19 @@ public class CorrespondenceBuilderTests
         correspondence.SendersReference.Should().Be("sender-reference-2");
         correspondence.AllowSystemDeleteAfter.Should().BeSameDateAs(DateTimeOffset.UtcNow.AddDays(2));
         correspondence.DueDateTime.Should().BeSameDateAs(DateTimeOffset.UtcNow.AddDays(2));
-        correspondence.Recipients.Should().HaveCount(6);
+        correspondence.Recipients.Should().HaveCount(7);
         correspondence
             .Recipients.Select(x => x.ToString())
             .Should()
             .BeEquivalentTo(
                 [
-                    TestHelpers.GetOrganisationNumber(1).Get(OrganisationNumberFormat.Local),
-                    TestHelpers.GetOrganisationNumber(2).Get(OrganisationNumberFormat.Local),
-                    TestHelpers.GetOrganisationNumber(3).Get(OrganisationNumberFormat.Local),
-                    TestHelpers.GetNationalIdentityNumber(4).Value,
-                    TestHelpers.GetOrganisationNumber(5).Get(OrganisationNumberFormat.Local),
-                    TestHelpers.GetNationalIdentityNumber(6).Value,
+                    TestHelpers.GetOrganisationNumber(1).ToString(),
+                    TestHelpers.GetOrganisationNumber(2).ToString(),
+                    TestHelpers.GetOrganisationNumber(3).ToString(),
+                    TestHelpers.GetOrganisationNumber(4).ToString(),
+                    TestHelpers.GetNationalIdentityNumber(5).ToString(),
+                    TestHelpers.GetOrganisationNumber(6).ToString(),
+                    TestHelpers.GetNationalIdentityNumber(7).ToString(),
                 ]
             );
         correspondence.Content.Title.Should().Be("content-title-2");
@@ -523,7 +523,7 @@ public class CorrespondenceBuilderTests
             .WithResourceId("resourceId-1")
             .WithSender(TestHelpers.GetOrganisationNumber(1))
             .WithSendersReference("sender-reference-1")
-            .WithRecipient(OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)))
+            .WithRecipient(TestHelpers.GetOrganisationNumber(1))
             .WithContent(
                 CorrespondenceContentBuilder
                     .Create()

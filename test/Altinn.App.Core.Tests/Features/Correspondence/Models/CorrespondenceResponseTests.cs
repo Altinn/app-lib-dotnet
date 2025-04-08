@@ -345,7 +345,6 @@ public class CorrespondenceResponseTests
                             StatusChanged = DateTimeOffset.Parse("2024-11-14T11:06:00.102333+00:00"),
                             Id = Guid.Parse("a40fad32-dad1-442d-b4e1-2564d4561c07"),
                             FileName = "hello-world-3-1.pDf",
-                            DisplayName = "This is the PDF filename 🍕",
                             Checksum = "27bb85ec3681e3cd1ed44a079f5fc501",
                             SendersReference = "1234",
                             DataType = "application/pdf",
