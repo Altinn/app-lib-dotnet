@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Altinn.App.Analyzers.Tests;
+namespace Altinn.App.Analyzers.Tests.Fixtures;
 
 public class InjectedException : Exception
 {

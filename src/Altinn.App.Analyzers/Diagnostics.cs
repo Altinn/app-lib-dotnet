@@ -5,14 +5,14 @@ namespace Altinn.App.Analyzers;
 public static class Diagnostics
 {
     public static readonly DiagnosticDescriptor UnknownError = Warning(
-        "ALTINN9999",
+        "ALTINNAPP9999",
         Category.General,
         "Unknown analyzer error",
         "Unknown error occurred during analysis, contact support: '{0}' {1}"
     );
 
     public static readonly DiagnosticDescriptor ProjectNotFound = Warning(
-        "ALTINN0001",
+        "ALTINNAPP0001",
         Category.General,
         "Altinn app project not found",
         "While starting analysis, we couldn't find the project directory - contact support"
@@ -21,35 +21,35 @@ public static class Diagnostics
     public static class ApplicationMetadata
     {
         public static readonly DiagnosticDescriptor FileNotFound = Warning(
-            "ALTINN0010",
+            "ALTINNAPP0010",
             Category.Metadata,
             "Altinn app metadata file not found",
             "Could not find application metadata file at '{0}'"
         );
 
         public static readonly DiagnosticDescriptor FileNotReadable = Warning(
-            "ALTINN0011",
+            "ALTINNAPP0011",
             Category.Metadata,
             "Altinn app metadata file could not be opened/read",
             "Could not open and read the application metdata file: '{0}' {1}"
         );
 
         public static readonly DiagnosticDescriptor ParsingFailure = Warning(
-            "ALTINN0012",
+            "ALTINNAPP0012",
             Category.Metadata,
             "Altinn app metadata file couldn't be parsed",
             "Could not parse application metadata file: '{0}' {1}"
         );
 
         public static readonly DiagnosticDescriptor DataTypeClassRefInvalid = Warning(
-            "ALTINN0013",
+            "ALTINNAPP0013",
             Category.Metadata,
             "Data type class reference could not be found",
             "Class reference '{0}' for data type '{1}' could not be found"
         );
 
         public static readonly DiagnosticDescriptor OnEntryShowRefInvalid = Warning(
-            "ALTINN0014",
+            "ALTINNAPP0014",
             Category.Metadata,
             "On entry show layout reference could not be found",
             "UI layout reference '{0}' in app metadata 'onEntry' configuration could not be resolved"
@@ -59,28 +59,28 @@ public static class Diagnostics
     public static class Layouts
     {
         public static readonly DiagnosticDescriptor FileNotFound = Warning(
-            "ALTINN0040",
+            "ALTINNAPP0040",
             Category.Metadata,
             "Altinn layout-sets file not found",
             "Could not find layout-sets file at '{0}'"
         );
 
         public static readonly DiagnosticDescriptor FileNotReadable = Warning(
-            "ALTINN0041",
+            "ALTINNAPP0041",
             Category.Metadata,
             "Altinn layout-sets file could not be opened/read",
             "Could not open and read the layout-sets file: '{0}' {1}"
         );
 
         public static readonly DiagnosticDescriptor ParsingFailure = Warning(
-            "ALTINN0042",
+            "ALTINNAPP0042",
             Category.Metadata,
             "Altinn layout-sets file couldn't be parsed",
             "Could not parse the layout-sets file: '{0}' {1}"
         );
 
         public static readonly DiagnosticDescriptor DataTypeRefInvalid = Warning(
-            "ALTINN0043",
+            "ALTINNAPP0043",
             Category.Metadata,
             "Data type reference in layout set could not be resolved",
             "Data type reference '{0}' configured in layout set '{1}' in the 'layout-sets.json'-file could not be resolved"
@@ -90,7 +90,7 @@ public static class Diagnostics
     public static class CodeSmells
     {
         public static readonly DiagnosticDescriptor HttpContextAccessorUsage = Warning(
-            "ALTINN0500",
+            "ALTINNAPP0500",
             Category.CodeSmells,
             "HttpContextAccessor dangerous usage",
             "IHttpContextAccessor.HttpContext should not be accessed in a constructor, see guidance at: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/use-http-context?view=aspnetcore-8.0#httpcontext-isnt-thread-safe"

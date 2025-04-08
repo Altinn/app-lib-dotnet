@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace Altinn.App.Analyzers.Tests;
+namespace Altinn.App.Analyzers.Tests.Fixtures;
 
 // Based on: https://github.com/VerifyTests/Verify.SourceGenerators/blob/18eb1cd67ebf76803f164751ecb27397a4c11951/src/Verify.SourceGenerators/Converters/DiagnosticConverter.cs
 internal sealed class DiagnosticJsonConverter : WriteOnlyJsonConverter<Diagnostic>

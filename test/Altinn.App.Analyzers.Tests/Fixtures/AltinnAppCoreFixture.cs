@@ -11,9 +11,6 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Analyzers.Tests.Fixtures;
 
-[CollectionDefinition(nameof(AltinnAppCoreCollection), DisableParallelization = false)]
-public class AltinnAppCoreCollection : ICollectionFixture<AltinnAppCoreFixture> { }
-
 public sealed class AltinnAppCoreFixture : IDisposable
 {
     private ITestOutputHelper? _output;
@@ -47,7 +44,7 @@ public sealed class AltinnAppCoreFixture : IDisposable
             Assert.True(Directory.Exists(_projectDir));
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(_projectDir, "Altinn.App.Core.csproj"));
-            _workspace = analyzer.GetWorkspace(addProjectReferences: true);
+            _workspace = analyzer.GetWorkspace();
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.AddDocument));
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.RemoveDocument));
             Assert.True(_workspace.CanApplyChange(ApplyChangesKind.ChangeDocument));

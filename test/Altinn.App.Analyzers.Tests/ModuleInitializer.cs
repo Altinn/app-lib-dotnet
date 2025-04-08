@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Altinn.App.Analyzers.Tests.Fixtures;
 
 namespace Altinn.App.Analyzers.Tests;
 
