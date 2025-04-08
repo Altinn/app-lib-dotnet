@@ -107,7 +107,6 @@ internal sealed class SigningCallToActionService(
                 .WithSender(serviceOwnerParty.OrgNumber)
                 .WithSendersReference(instanceIdentifier.ToString())
                 .WithRecipient(recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber)
-                .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
                 .WithContent(correspondenceContent)
                 .WithNotificationIfConfigured(
                     SigningCorrespondenceHelper.GetNotificationChoice(notification) switch
@@ -186,7 +185,9 @@ internal sealed class SigningCallToActionService(
         [
             new CorrespondenceNotificationRecipientWrapper
             {
-                RecipientToOverride = recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber,
+                RecipientToOverride = OrganisationOrPersonIdentifier.Parse(
+                    recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber
+                ),
                 CorrespondenceNotificationRecipients =
                 [
                     new CorrespondenceNotificationRecipient

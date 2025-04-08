@@ -11,19 +11,7 @@ public interface ICorrespondenceAttachmentBuilderFilename
     /// Sets the filename of the attachment.
     /// </summary>
     /// <param name="filename">The attachment filename</param>
-    ICorrespondenceAttachmentBuilderName WithFilename(string filename);
-}
-
-/// <summary>
-/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceAttachment.DisplayName"/> step.
-/// </summary>
-public interface ICorrespondenceAttachmentBuilderName
-{
-    /// <summary>
-    /// Sets the display name of the attachment.
-    /// </summary>
-    /// <param name="displayName">The display name</param>
-    ICorrespondenceAttachmentBuilderSendersReference WithDisplayName(string displayName);
+    ICorrespondenceAttachmentBuilderSendersReference WithFilename(string filename);
 }
 
 /// <summary>
@@ -55,7 +43,6 @@ public interface ICorrespondenceAttachmentBuilderData
 /// </summary>
 public interface ICorrespondenceAttachmentBuilder
     : ICorrespondenceAttachmentBuilderFilename,
-        ICorrespondenceAttachmentBuilderName,
         ICorrespondenceAttachmentBuilderSendersReference,
         ICorrespondenceAttachmentBuilderData
 {

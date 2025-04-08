@@ -8,7 +8,6 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
 {
     private string? _filename;
-    private string? _displayName;
     private string? _sendersReference;
     private ReadOnlyMemory<byte>? _data;
     private bool? _isEncrypted;
@@ -23,18 +22,10 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
     public static ICorrespondenceAttachmentBuilderFilename Create() => new CorrespondenceAttachmentBuilder();
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderName WithFilename(string filename)
+    public ICorrespondenceAttachmentBuilderSendersReference WithFilename(string filename)
     {
         BuilderUtils.NotNullOrEmpty(filename, "Filename cannot be empty");
         _filename = filename;
-        return this;
-    }
-
-    /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilderSendersReference WithDisplayName(string displayName)
-    {
-        BuilderUtils.NotNullOrEmpty(displayName, "DisplayName cannot be empty");
-        _displayName = displayName;
         return this;
     }
 
@@ -72,14 +63,12 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
     public CorrespondenceAttachment Build()
     {
         BuilderUtils.NotNullOrEmpty(_filename);
-        BuilderUtils.NotNullOrEmpty(_displayName);
         BuilderUtils.NotNullOrEmpty(_sendersReference);
         BuilderUtils.NotNullOrEmpty(_data);
 
         return new CorrespondenceAttachment
         {
             Filename = _filename,
-            DisplayName = _displayName,
             SendersReference = _sendersReference,
             Data = _data.Value,
             IsEncrypted = _isEncrypted,

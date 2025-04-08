@@ -73,6 +73,20 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
+    public ICorrespondenceRequestBuilderContent WithRecipient(OrganisationNumber organisation)
+    {
+        BuilderUtils.NotNullOrEmpty(organisation, "Recipients cannot be empty");
+        return WithRecipients([OrganisationOrPersonIdentifier.Create(organisation)]);
+    }
+
+    /// <inheritdoc/>
+    public ICorrespondenceRequestBuilderContent WithRecipient(NationalIdentityNumber person)
+    {
+        BuilderUtils.NotNullOrEmpty(person, "Recipients cannot be empty");
+        return WithRecipients([OrganisationOrPersonIdentifier.Create(person)]);
+    }
+
+    /// <inheritdoc/>
     public ICorrespondenceRequestBuilderContent WithRecipient(string recipient)
     {
         BuilderUtils.NotNullOrEmpty(recipient, "Recipients cannot be empty");
@@ -242,12 +256,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilder WithNotificationIfConfigured(CorrespondenceNotification? notification)
     {
-        if (notification is not null)
-        {
-            return WithNotification(notification);
-        }
-
-        return this;
+        return notification is not null ? WithNotification(notification) : this;
     }
 
     /// <inheritdoc/>

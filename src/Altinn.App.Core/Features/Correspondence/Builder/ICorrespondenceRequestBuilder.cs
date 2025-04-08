@@ -61,6 +61,20 @@ public interface ICorrespondenceRequestBuilderRecipients
     /// <p>Adds a recipient to the correspondence.</p>
     /// <p>This method respects any existing options already stored in <see cref="CorrespondenceRequest.Recipients"/>.</p>
     /// </summary>
+    /// <param name="organisation">A recipient</param>
+    ICorrespondenceRequestBuilderContent WithRecipient(OrganisationNumber organisation);
+
+    /// <summary>
+    /// <p>Adds a recipient to the correspondence.</p>
+    /// <p>This method respects any existing options already stored in <see cref="CorrespondenceRequest.Recipients"/>.</p>
+    /// </summary>
+    /// <param name="person">A recipient</param>
+    ICorrespondenceRequestBuilderContent WithRecipient(NationalIdentityNumber person);
+
+    /// <summary>
+    /// <p>Adds a recipient to the correspondence.</p>
+    /// <p>This method respects any existing options already stored in <see cref="CorrespondenceRequest.Recipients"/>.</p>
+    /// </summary>
     /// <param name="recipient">A recipient: Either a Norwegian organisation number or national identity number</param>
     ICorrespondenceRequestBuilderContent WithRecipient(string recipient);
 

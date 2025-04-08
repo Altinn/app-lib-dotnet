@@ -11,11 +11,6 @@ public sealed record CorrespondenceAttachment : MultipartCorrespondenceItem
     public required string Filename { get; init; }
 
     /// <summary>
-    /// The display name of the attachment.
-    /// </summary>
-    public required string DisplayName { get; init; }
-
-    /// <summary>
     /// A value indicating whether the attachment is encrypted or not.
     /// </summary>
     public bool? IsEncrypted { get; init; }
@@ -43,7 +38,6 @@ public sealed record CorrespondenceAttachment : MultipartCorrespondenceItem
         string actualFilename = filenameOverride ?? Filename;
 
         AddRequired(content, actualFilename, $"{prefix}.Filename");
-        AddRequired(content, DisplayName, $"{prefix}.DisplayName");
         AddRequired(content, SendersReference, $"{prefix}.SendersReference");
         AddRequired(content, DataLocationType.ToString(), $"{prefix}.DataLocationType");
         AddRequired(content, Data, "Attachments", actualFilename); // NOTE: No prefix!
