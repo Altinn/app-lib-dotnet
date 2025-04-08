@@ -12,6 +12,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
+using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -365,6 +366,19 @@ public class ProcessController : ControllerBase
                 ActionOnBehalfOf = processNext?.ActionOnBehalfOf,
                 Language = language,
             };
+
+            UserActionResult userActionResult = await _processEngine.HandleUserAction(request);
+            if (userActionResult.ResultType is ResultType.Failure)
+            {
+                var failedUserActionResult = new ProcessChangeResult()
+                {
+                    Success = false,
+                    ErrorMessage = $"Action handler for action {request.Action} failed!",
+                    ErrorType = userActionResult.ErrorType,
+                };
+
+                return GetResultForError(failedUserActionResult);
+            }
 
             // If the action is 'reject' the task is being abandoned, and we should skip validation, but only if reject has been allowed for the task in bpmn.
             if (checkedAction == "reject" && _processReader.IsActionAllowedForTask(currentTaskId, checkedAction))

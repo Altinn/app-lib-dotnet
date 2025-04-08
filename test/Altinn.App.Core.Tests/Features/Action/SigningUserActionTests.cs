@@ -6,7 +6,9 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -71,7 +73,6 @@ public class SigningUserActionTests
             var instanceDataMutatorMock = new Mock<IInstanceDataMutator>();
 
             appMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(_defaultAppMetadata);
-            instanceDataMutatorMock.Setup(x => x.Instance).Returns(_instance);
             signingReceiptService
                 .Setup(x =>
                     x.SendSignatureReceipt(
@@ -87,6 +88,37 @@ public class SigningUserActionTests
                         new SendCorrespondenceResponse { Correspondences = overrideCorrespondences ?? [] }
                     )
                 );
+
+            AltinnSignatureConfiguration? signingConfig = _processReader
+                .GetAltinnTaskExtension(_instance.Process.CurrentTask.ElementId)
+                ?.SignatureConfiguration;
+
+            var signDocDataElement = new DataElement
+            {
+                Id = Guid.NewGuid().ToString(),
+                DataType = signingConfig?.SignatureDataType,
+            };
+
+            var signatureWasAdded = false;
+            signClient
+                .Setup(x => x.SignDataElements(It.IsAny<SignatureContext>()))
+                .Callback(() =>
+                {
+                    signatureWasAdded = true;
+                });
+
+            instanceDataMutatorMock.Setup(x => x.Instance).Returns(_instance);
+
+            var instanceClientMock = new Mock<IInstanceClient>();
+            instanceClientMock
+                .Setup(x => x.GetInstance(_instance))
+                .ReturnsAsync(() =>
+                {
+                    if (signatureWasAdded)
+                        _instance.Data.Add(signDocDataElement);
+
+                    return _instance;
+                });
 
             var signingServiceMock = new Mock<ISigningService>();
             var services = new ServiceCollection();
@@ -106,6 +138,7 @@ public class SigningUserActionTests
                     signClient.Object,
                     appMetadata.Object,
                     signingReceiptService.Object,
+                    instanceClientMock.Object,
                     new NullLogger<SigningUserAction>()
                 )
             );
@@ -160,7 +193,7 @@ public class SigningUserActionTests
     }
 
     [Fact]
-    public async Task HandleAction_returns_ok_if_SigningService_Sign_does_not_throw()
+    public async Task HandleAction_returns_ok_if_Sign_succeeds()
     {
         // Arrange
         IReadOnlyList<CorrespondenceDetailsResponse> o =
@@ -180,10 +213,13 @@ public class SigningUserActionTests
         );
 
         // Act
+
+        int dataElementCountBeforeSign = fixture.Instance.Data.Count;
         var result = await fixture.SigningUserAction.HandleAction(userActionContext);
 
         // Assert
         Assert.Equal(JsonSerializer.Serialize(UserActionResult.SuccessResult()), JsonSerializer.Serialize(result));
+        Assert.Equal(dataElementCountBeforeSign + 1, fixture.Instance.Data.Count);
     }
 
     [Fact]
@@ -339,7 +375,11 @@ public class SigningUserActionTests
 
         // Act
         var result = await fixture.SigningUserAction.HandleAction(
-            new UserActionContext(instance, 1337, authentication: TestAuthentication.GetUserAuthentication(1337))
+            new UserActionContext(
+                fixture.InstanceDataMutatorMock.Object,
+                1337,
+                authentication: TestAuthentication.GetUserAuthentication(1337)
+            )
         );
 
         // Assert
@@ -374,10 +414,8 @@ public class SigningUserActionTests
         var fixture = Fixture.Create();
         fixture.AppMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(appMetadata);
 
-        var instance = fixture.Instance;
-
         var userActionContext = new UserActionContext(
-            instance,
+            fixture.InstanceDataMutatorMock.Object,
             1337,
             authentication: TestAuthentication.GetUserAuthentication(1337, applicationMetadata: appMetadata)
         );
@@ -394,11 +432,10 @@ public class SigningUserActionTests
     {
         // Arrange
         var fixture = Fixture.Create(testBpmnFilename: "signing-task-process-missing-config.bpmn");
-        var instance = fixture.Instance;
         var signClientMock = fixture.SignClient;
 
         var userActionContext = new UserActionContext(
-            instance,
+            fixture.InstanceDataMutatorMock.Object,
             1337,
             authentication: TestAuthentication.GetUserAuthentication(1337)
         );
@@ -419,7 +456,7 @@ public class SigningUserActionTests
         var signClientMock = fixture.SignClient;
 
         var userActionContext = new UserActionContext(
-            instance,
+            fixture.InstanceDataMutatorMock.Object,
             1337,
             authentication: TestAuthentication.GetUserAuthentication(1337, applicationMetadata: _defaultAppMetadata)
         );
@@ -464,6 +501,7 @@ public class SigningUserActionHandleOnBehalfOfTests
         ISignClient dummySignClient = Mock.Of<ISignClient>();
         var dummyAppMetadata = Mock.Of<IAppMetadata>();
         var dummySigningReceiptService = Mock.Of<ISigningReceiptService>();
+        var dummyInstanceClient = Mock.Of<IInstanceClient>();
 
         return new SigningUserAction(
             serviceProvider,
@@ -471,6 +509,7 @@ public class SigningUserActionHandleOnBehalfOfTests
             dummySignClient,
             dummyAppMetadata,
             dummySigningReceiptService,
+            dummyInstanceClient,
             new NullLogger<SigningUserAction>()
         );
     }
