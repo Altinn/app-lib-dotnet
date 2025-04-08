@@ -5,13 +5,13 @@ namespace Altinn.App.Analyzers.Tests.Fixtures;
 // Initializing the fixture is expensive, and can take anywhere between 5-20 seconds on my machine currently,
 // so currently tests run in a "global collection" to avoid re-initializing the fixture for each test.
 // It also gives us some flexibility in that we can make physical changes to project files.
-[CollectionDefinition(nameof(AltinnTestAppCollection), DisableParallelization = true)]
+[CollectionDefinition(nameof(AltinnTestAppCollection), DisableParallelization = false)]
 public class AltinnTestAppCollection : ICollectionFixture<AltinnTestAppFixture> { }
 
 // This fixture is meant to provide a workspace for injecting code into Altinn.App.Core
 // to test internal analyzers.
-// Note that DisableParallelization is set to true as both fixtures rely on project references
-// to Altinn.App.Core. If tests using these collections run in parallel we will have a race condition
-// between the Roslyn workspaces as they will both try to build Altinn.App.Core at the same time.
-[CollectionDefinition(nameof(AltinnAppCoreCollection), DisableParallelization = true)]
+// Both fixtures rely on Altinn.App.Core as a project reference, but we don't use
+// collection fixture parallelization configuration to avoid race conditions.
+// BaseFixture ensures we don't run into issues when building the projects
+[CollectionDefinition(nameof(AltinnAppCoreCollection), DisableParallelization = false)]
 public class AltinnAppCoreCollection : ICollectionFixture<AltinnAppCoreFixture> { }

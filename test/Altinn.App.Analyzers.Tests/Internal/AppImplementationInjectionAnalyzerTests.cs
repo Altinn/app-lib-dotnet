@@ -5,16 +5,19 @@ using Xunit.Abstractions;
 namespace Altinn.App.Analyzers.Tests.Internal;
 
 [Collection(nameof(AltinnAppCoreCollection))]
-public class AppImplementationInjectionAnalyzerTests
+public class AppImplementationInjectionAnalyzerTests : IAsyncLifetime
 {
     private readonly AltinnAppCoreFixture _fixture;
 
     public AppImplementationInjectionAnalyzerTests(AltinnAppCoreFixture fixture, ITestOutputHelper output)
     {
         fixture.SetTestOutputHelper(output);
-        fixture.Initialize();
         _fixture = fixture;
     }
+
+    public async Task InitializeAsync() => await _fixture.Initialize();
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task Builds_Ok_By_Default()
@@ -48,8 +51,8 @@ public class AppImplementationInjectionAnalyzerTests
                     private readonly AppImplementationFactory _factory;
 
                     public Svc1(
-                        IServiceProvider sp, 
-                        AppImplementationFactory factory, 
+                        IServiceProvider sp,
+                        AppImplementationFactory factory,
                         IInstantiationProcessor p, // X Constructor injection
                         IEnumerable<IInstantiationProcessor> ps, // X Constructor injection
                         IInstantiationProcessor? np = null // X Constructor injection
@@ -67,9 +70,9 @@ public class AppImplementationInjectionAnalyzerTests
                 }
 
                 internal sealed class Svc2(
-                    IServiceProvider sp, 
-                    AppImplementationFactory factory, 
-                    IInstantiationProcessor p, 
+                    IServiceProvider sp,
+                    AppImplementationFactory factory,
+                    IInstantiationProcessor p,
                     IEnumerable<IInstantiationProcessor> ps,
                     IInstantiationProcessor? np = null
                 )
