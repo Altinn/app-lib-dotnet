@@ -1,5 +1,4 @@
 #nullable disable
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.ExternalApi;
 using Altinn.App.Core.Implementation;
@@ -310,7 +309,7 @@ public class AppResourcesSITests
         var featureManagerMock = new Mock<IFeatureManager>();
         var serviceProvider = new ServiceCollection()
             .AddSingleton(Mock.Of<IExternalApiFactory>())
-            .BuildServiceProvider();
+            .BuildStrictServiceProvider();
 
         if (frontendFeatures == null)
         {

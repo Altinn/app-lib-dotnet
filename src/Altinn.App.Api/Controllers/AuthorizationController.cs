@@ -1,12 +1,7 @@
 using System.Globalization;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.Auth;
-using Altinn.App.Core.Internal.Profile;
-using Altinn.App.Core.Internal.Registers;
-using Altinn.App.Core.Models;
-using Altinn.Platform.Register.Models;
-using Authorization.Platform.Authorization.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -19,22 +14,21 @@ namespace Altinn.App.Api.Controllers;
 public class AuthorizationController : Controller
 {
     private readonly IAuthorizationClient _authorization;
-    private readonly UserHelper _userHelper;
     private readonly GeneralSettings _settings;
+    private readonly IAuthenticationContext _authenticationContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthorizationController"/> class
     /// </summary>
     public AuthorizationController(
         IAuthorizationClient authorization,
-        IProfileClient profileClient,
-        IAltinnPartyClient altinnPartyClientClient,
-        IOptions<GeneralSettings> settings
+        IOptions<GeneralSettings> settings,
+        IAuthenticationContext authenticationContext
     )
     {
-        _userHelper = new UserHelper(profileClient, altinnPartyClientClient, settings);
         _authorization = authorization;
         _settings = settings.Value;
+        _authenticationContext = authenticationContext;
     }
 
     /// <summary>
@@ -42,18 +36,92 @@ public class AuthorizationController : Controller
     /// </summary>
     /// <returns>Party id for selected party. If invalid, partyId for logged in user is returned.</returns>
     [Authorize]
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     [HttpGet("{org}/{app}/api/authorization/parties/current")]
     public async Task<ActionResult> GetCurrentParty(bool returnPartyObject = false)
     {
-        (Party? currentParty, _) = await GetCurrentPartyAsync(HttpContext);
-
-        if (returnPartyObject)
+        var context = _authenticationContext.Current;
+        switch (context)
         {
-            return Ok(currentParty);
-        }
+            case Authenticated.None:
+                return Unauthorized();
+            case Authenticated.User user:
+            {
+                var details = await user.LoadDetails(validateSelectedParty: true);
+                if (details.CanRepresent is not bool canRepresent)
+                    throw new Exception("Couldn't validate selected party");
 
-        return Ok(currentParty?.PartyId ?? 0);
+                if (canRepresent)
+                {
+                    if (returnPartyObject)
+                    {
+                        return Ok(details.SelectedParty);
+                    }
+
+                    return Ok(details.SelectedParty.PartyId);
+                }
+
+                // Now we know the user can't represent the selected party (reportee)
+                // so we will automatically switch to the user's own party (from the profile)
+                var reportee = details.Profile.Party;
+                if (user.SelectedPartyId != reportee.PartyId)
+                {
+                    // Setting cookie to partyID of logged in user if it varies from previus value.
+                    Response.Cookies.Append(
+                        _settings.GetAltinnPartyCookieName,
+                        reportee.PartyId.ToString(CultureInfo.InvariantCulture),
+                        new CookieOptions { Domain = _settings.HostName }
+                    );
+                }
+
+                if (returnPartyObject)
+                {
+                    return Ok(reportee);
+                }
+                return Ok(reportee.PartyId);
+            }
+            case Authenticated.SelfIdentifiedUser selfIdentified:
+            {
+                var details = await selfIdentified.LoadDetails();
+                if (returnPartyObject)
+                {
+                    return Ok(details.Party);
+                }
+
+                return Ok(details.Party.PartyId);
+            }
+            case Authenticated.Org org:
+            {
+                var details = await org.LoadDetails();
+                if (returnPartyObject)
+                {
+                    return Ok(details.Party);
+                }
+
+                return Ok(details.Party.PartyId);
+            }
+            case Authenticated.ServiceOwner so:
+            {
+                var details = await so.LoadDetails();
+                if (returnPartyObject)
+                {
+                    return Ok(details.Party);
+                }
+
+                return Ok(details.Party.PartyId);
+            }
+            case Authenticated.SystemUser su:
+            {
+                var details = await su.LoadDetails();
+                if (returnPartyObject)
+                {
+                    return Ok(details.Party);
+                }
+
+                return Ok(details.Party.PartyId);
+            }
+            default:
+                throw new Exception($"Unknown authentication context: {context.GetType().Name}");
+        }
     }
 
     /// <summary>
@@ -81,81 +149,5 @@ public class AuthorizationController : Controller
         {
             return StatusCode(500, $"Something went wrong when trying to validate party {partyId} for user {userId}");
         }
-    }
-
-    /// <summary>
-    /// Fetches roles for current party.
-    /// </summary>
-    /// <returns>List of roles for the current user and party.</returns>
-    // [Authorize]
-    // [HttpGet("{org}/{app}/api/authorization/roles")]
-    // [ProducesResponseType(typeof(IEnumerable<Role), StatusCodes.Status200OK)]
-    // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [Authorize]
-    [HttpGet("{org}/{app}/api/authorization/roles")]
-    [ProducesResponseType(typeof(IEnumerable<Role>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetRolesForCurrentParty()
-    {
-        (Party? currentParty, UserContext userContext) = await GetCurrentPartyAsync(HttpContext);
-
-        if (currentParty == null)
-        {
-            return BadRequest("Both userId and partyId must be provided.");
-        }
-
-        int userId = userContext.UserId;
-        IEnumerable<Role> roles = await _authorization.GetUserRoles(userId, currentParty.PartyId);
-
-        return Ok(roles);
-    }
-
-    /// <summary>
-    /// Helper method to retrieve the current party and user context from the HTTP context.
-    /// </summary>
-    /// <param name="context">The current HttpContext.</param>
-    /// <returns>A tuple containing the current party and user context.</returns>
-    private async Task<(Party? party, UserContext userContext)> GetCurrentPartyAsync(HttpContext context)
-    {
-        UserContext userContext = await _userHelper.GetUserContext(context);
-        int userId = userContext.UserId;
-
-        // If selected party is different than party for user self need to verify
-        if (userContext.UserParty == null || userContext.PartyId != userContext.UserParty.PartyId)
-        {
-            bool? isValid = await _authorization.ValidateSelectedParty(userId, userContext.PartyId);
-            if (isValid != true)
-            {
-                // Not valid, fall back to userParty if available
-                if (userContext.UserParty != null)
-                {
-                    userContext.Party = userContext.UserParty;
-                    userContext.PartyId = userContext.UserParty.PartyId;
-                }
-                else
-                {
-                    userContext.Party = null;
-                    userContext.PartyId = 0;
-                }
-            }
-        }
-
-        // Sync cookie if needed
-        string? cookieValue = Request.Cookies[_settings.GetAltinnPartyCookieName];
-        if (!int.TryParse(cookieValue, out int partyIdFromCookie))
-        {
-            partyIdFromCookie = 0;
-        }
-
-        if (partyIdFromCookie != userContext.PartyId)
-        {
-            Response.Cookies.Append(
-                _settings.GetAltinnPartyCookieName,
-                userContext.PartyId.ToString(CultureInfo.InvariantCulture),
-                new CookieOptions { Domain = _settings.HostName }
-            );
-        }
-
-        return (userContext.Party, userContext);
     }
 }

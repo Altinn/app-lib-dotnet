@@ -43,48 +43,9 @@ public class RunTest2
             },
         };
         var state = await LayoutTestUtils.GetLayoutModelTools(data, "Test2");
-        var hidden = await LayoutEvaluator.GetHiddenFieldsForRemoval(state, includeHiddenRowChildren: true);
 
-        // Should try to remove "some.data[0].binding2", because it is not nullable int and the parent object exists
+        var hidden = await LayoutEvaluator.GetHiddenFieldsForRemoval(state);
         hidden
-            .Should()
-            .BeEquivalentTo(
-                [
-                    new DataReference
-                    {
-                        Field = "some.data[0].binding",
-                        DataElementIdentifier = state.GetDefaultDataElementId(),
-                    },
-                    new DataReference()
-                    {
-                        Field = "some.data[0].binding2",
-                        DataElementIdentifier = state.GetDefaultDataElementId(),
-                    },
-                    new DataReference
-                    {
-                        Field = "some.data[0].binding3",
-                        DataElementIdentifier = state.GetDefaultDataElementId(),
-                    },
-                    new DataReference
-                    {
-                        Field = "some.data[1].binding",
-                        DataElementIdentifier = state.GetDefaultDataElementId(),
-                    },
-                    new DataReference
-                    {
-                        Field = "some.data[1].binding2",
-                        DataElementIdentifier = state.GetDefaultDataElementId(),
-                    },
-                    new DataReference
-                    {
-                        Field = "some.data[1].binding3",
-                        DataElementIdentifier = state.GetDefaultDataElementId(),
-                    },
-                ]
-            );
-
-        var hidden2 = await LayoutEvaluator.GetHiddenFieldsForRemoval(state, includeHiddenRowChildren: false);
-        hidden2
             .Should()
             .BeEquivalentTo(
                 [new DataReference() { Field = "some.data", DataElementIdentifier = state.GetDefaultDataElementId() }]

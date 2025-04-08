@@ -1,7 +1,4 @@
-using System.Globalization;
-using System.Net;
-using System.Security.Claims;
-using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features.Auth;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,34 +12,46 @@ namespace Altinn.App.Api.Helpers;
 /// </remarks>
 internal static class DataElementAccessChecker
 {
-    internal static bool IsValidContributor(DataType dataType, string? org, int? orgNr)
+    internal static bool IsValidContributor(DataType dataType, Authenticated auth)
     {
         if (dataType.AllowedContributers is null || dataType.AllowedContributers.Count == 0)
         {
             return true;
         }
 
+        var (org, orgNr) = auth switch
+        {
+            // System users also have 'orgno',  but this feature was originally intended
+            // to let a service owner "own" a specific data type, so we haven't extended this
+            Authenticated.ServiceOwner a => (a.Name, a.OrgNo),
+            _ => (null, null),
+        };
+
         foreach (string item in dataType.AllowedContributers)
         {
-            string key = item.Split(':')[0];
-            string value = item.Split(':')[1];
+            var splitIndex = item.IndexOf(':');
+            ReadOnlySpan<char> key = item.AsSpan(0, splitIndex);
+            ReadOnlySpan<char> value = item.AsSpan(splitIndex + 1);
 
-            switch (key.ToLowerInvariant())
+            if (key.Equals("org", StringComparison.OrdinalIgnoreCase))
             {
-                case "org":
-                    if (value.Equals(org, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
+                if (org is null)
+                    continue;
 
-                    break;
-                case "orgno":
-                    if (value.Equals(orgNr?.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
+                if (value.Equals(org, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            else if (key.Equals("orgno", StringComparison.OrdinalIgnoreCase))
+            {
+                if (orgNr is null)
+                    continue;
 
-                    break;
+                if (value.Equals(orgNr, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
             }
         }
 
@@ -53,7 +62,7 @@ internal static class DataElementAccessChecker
     /// Checks if the user has access to read a data element of a given data type on an instance.
     /// </summary>
     /// <returns>null for success or ProblemDetails that can be an error response in the Apis</returns>
-    internal static ProblemDetails? GetReaderProblem(Instance instance, DataType dataType, ClaimsPrincipal user)
+    internal static ProblemDetails? GetReaderProblem(Instance instance, DataType dataType, Authenticated auth)
     {
         // We don't have any way to restrict reads based on data type yet, so just return null.
         // Might be used if we get a concept of internal server only data types or similar.
@@ -61,9 +70,9 @@ internal static class DataElementAccessChecker
     }
 
     // Common checks for create, update and delete
-    private static ProblemDetails? GetMutationProblem(Instance instance, DataType dataType, ClaimsPrincipal user)
+    private static ProblemDetails? GetMutationProblem(Instance instance, DataType dataType, Authenticated auth)
     {
-        if (GetReaderProblem(instance, dataType, user) is { } readProblem)
+        if (GetReaderProblem(instance, dataType, auth) is { } readProblem)
         {
             return readProblem;
         }
@@ -73,10 +82,10 @@ internal static class DataElementAccessChecker
             {
                 Title = "Instance Not Active",
                 Detail = $"Cannot update data element of archived or deleted instance {instance.Id}",
-                Status = (int)HttpStatusCode.Conflict,
+                Status = StatusCodes.Status409Conflict,
             };
         }
-        if (!IsValidContributor(dataType, user.GetOrg(), user.GetOrgNumber()))
+        if (!IsValidContributor(dataType, auth))
         {
             return new ProblemDetails
             {
@@ -94,12 +103,12 @@ internal static class DataElementAccessChecker
     internal static ProblemDetails? GetCreateProblem(
         Instance instance,
         DataType dataType,
-        ClaimsPrincipal user,
+        Authenticated auth,
         long? contentLength = null
     )
     {
         // Run the general mutation checks
-        if (GetMutationProblem(instance, dataType, user) is { } problemDetails)
+        if (GetMutationProblem(instance, dataType, auth) is { } problemDetails)
         {
             return problemDetails;
         }
@@ -112,7 +121,7 @@ internal static class DataElementAccessChecker
             {
                 Title = "Max Count Exceeded",
                 Detail = $"Cannot create more than {dataType.MaxCount} data elements of type {dataType.Id}",
-                Status = (int)HttpStatusCode.Conflict,
+                Status = StatusCodes.Status409Conflict,
             };
         }
 
@@ -124,18 +133,18 @@ internal static class DataElementAccessChecker
                 Title = "Max Size Exceeded",
                 Detail =
                     $"Cannot create data element of size {contentLength} which exceeds the max size of {dataType.MaxSize}",
-                Status = (int)HttpStatusCode.BadRequest,
+                Status = StatusCodes.Status400BadRequest,
             };
         }
 
         // Verify that only orgs can create data elements when DisallowUserCreate is true
-        if (dataType.AppLogic?.DisallowUserCreate == true && string.IsNullOrWhiteSpace(user.GetOrg()))
+        if (dataType.AppLogic?.DisallowUserCreate == true && auth is not Authenticated.ServiceOwner)
         {
             return new ProblemDetails()
             {
                 Title = "User Create Disallowed",
                 Detail = $"Cannot create data element of type {dataType.Id} as it is disallowed by app logic",
-                Status = (int)HttpStatusCode.BadRequest,
+                Status = StatusCodes.Status400BadRequest,
             };
         }
 
@@ -146,9 +155,9 @@ internal static class DataElementAccessChecker
     /// Checks if the user has access to mutate a data element of a given data type on an instance.
     /// </summary>
     /// <returns>null for success or ProblemDetails that can be an error response in the Apis</returns>
-    internal static ProblemDetails? GetUpdateProblem(Instance instance, DataType dataType, ClaimsPrincipal user)
+    internal static ProblemDetails? GetUpdateProblem(Instance instance, DataType dataType, Authenticated auth)
     {
-        if (GetMutationProblem(instance, dataType, user) is { } problemDetails)
+        if (GetMutationProblem(instance, dataType, auth) is { } problemDetails)
         {
             return problemDetails;
         }
@@ -164,10 +173,10 @@ internal static class DataElementAccessChecker
         Instance instance,
         DataType dataType,
         Guid dataElementId,
-        ClaimsPrincipal user
+        Authenticated auth
     )
     {
-        if (GetMutationProblem(instance, dataType, user) is { } problemDetails)
+        if (GetMutationProblem(instance, dataType, auth) is { } problemDetails)
         {
             return problemDetails;
         }
@@ -180,17 +189,17 @@ internal static class DataElementAccessChecker
             {
                 Title = "Cannot Delete main data element",
                 Detail = "Cannot delete the only data element of a class with app logic",
-                Status = (int)HttpStatusCode.BadRequest,
+                Status = StatusCodes.Status400BadRequest,
             };
         }
 
-        if (dataType.AppLogic?.DisallowUserDelete == true && !UserHasValidOrgClaim(user))
+        if (dataType.AppLogic?.DisallowUserDelete == true && auth is not Authenticated.ServiceOwner)
         {
             return new ProblemDetails()
             {
                 Title = "User Delete Disallowed",
                 Detail = $"Cannot delete data element of type {dataType.Id} as it is disallowed by app logic",
-                Status = (int)HttpStatusCode.BadRequest,
+                Status = StatusCodes.Status400BadRequest,
             };
         }
 
@@ -201,9 +210,4 @@ internal static class DataElementAccessChecker
     {
         return i?.Status?.Archived is null && i?.Status?.SoftDeleted is null && i?.Status?.HardDeleted is null;
     }
-
-    /// <summary>
-    /// Checks if the current claims principal has a valid `urn:altinn:org` claim
-    /// </summary>
-    private static bool UserHasValidOrgClaim(ClaimsPrincipal user) => !string.IsNullOrWhiteSpace(user.GetOrg());
 }

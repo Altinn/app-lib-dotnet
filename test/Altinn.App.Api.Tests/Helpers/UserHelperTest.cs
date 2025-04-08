@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Altinn.App.Api.Tests.Mocks;
-using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Profile;
@@ -24,7 +23,7 @@ public class UserHelperTest
 
         public static Fixture Create(ClaimsPrincipal userPrincipal, string? partyCookieValue = null)
         {
-            var app = TestUtils.AppBuilder.Build(overrideAltinnAppServices: services =>
+            var app = AppBuilder.Build(overrideAltinnAppServices: services =>
             {
                 var httpContextMock = new Mock<HttpContext>();
                 httpContextMock.Setup(x => x.Request.Cookies["AltinnPartyId"]).Returns(partyCookieValue);
@@ -50,7 +49,7 @@ public class UserHelperTest
     {
         // Arrange
         const int authLevel = 3;
-        var userPrincipal = PrincipalUtil.GetUserPrincipal(userId, partyId, authLevel);
+        var userPrincipal = TestAuthentication.GetUserPrincipal(userId, partyId, authLevel);
         await using var fixture = Fixture.Create(userPrincipal);
         var userHelper = new UserHelper(
             profileClient: fixture.ProfileClientMock,
@@ -71,10 +70,10 @@ public class UserHelperTest
         result
             .Should()
             .BeEquivalentTo(
-                new Altinn.App.Core.Models.UserContext
+                new Core.Models.UserContext
                 {
                     SocialSecurityNumber = ssn,
-                    UserName = $"User{userId}",
+                    UserName = null,
                     UserId = userId,
                     PartyId = partyId,
                     AuthenticationLevel = authLevel,
@@ -91,7 +90,7 @@ public class UserHelperTest
         // Arrange
         const int userId = 1001;
         const int authLevel = 3;
-        var userPrincipal = PrincipalUtil.GetUserPrincipal(userId, default, authLevel);
+        var userPrincipal = TestAuthentication.GetUserPrincipal(userId, default, authLevel);
         await using var fixture = Fixture.Create(userPrincipal);
         var userHelper = new UserHelper(
             profileClient: fixture.ProfileClientMock,
@@ -109,10 +108,10 @@ public class UserHelperTest
         result
             .Should()
             .BeEquivalentTo(
-                new Altinn.App.Core.Models.UserContext
+                new Core.Models.UserContext
                 {
                     SocialSecurityNumber = null,
-                    UserName = $"User{userId}",
+                    UserName = null,
                     UserId = userId,
                     PartyId = default,
                     AuthenticationLevel = authLevel,
@@ -127,7 +126,7 @@ public class UserHelperTest
     public async Task GetUserContext_ThrowsOnMissingUserId()
     {
         // Arrange
-        var userPrincipal = PrincipalUtil.GetUserPrincipal(default, default);
+        var userPrincipal = TestAuthentication.GetUserPrincipal(default, default);
         await using var fixture = Fixture.Create(userPrincipal);
         var userHelper = new UserHelper(
             profileClient: fixture.ProfileClientMock,

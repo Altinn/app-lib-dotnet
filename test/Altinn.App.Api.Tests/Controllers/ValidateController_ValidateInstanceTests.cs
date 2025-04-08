@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
-using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
@@ -56,7 +55,7 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
     private async Task<HttpResponseMessage> CallValidateInstanceApi()
     {
         using var httpClient = GetRootedClient(Org, App);
-        string token = PrincipalUtil.GetToken(1337, null);
+        string token = TestAuthentication.GetUserToken(userId: 1337);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return await httpClient.GetAsync($"/{Org}/{App}/instances/{InstanceId}/validate");
     }
@@ -64,7 +63,7 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
     private async Task<(HttpResponseMessage response, string responseString)> CallValidateDataApi()
     {
         using var httpClient = GetRootedClient(Org, App);
-        string token = PrincipalUtil.GetToken(1337, null);
+        string token = TestAuthentication.GetUserToken(userId: 1337);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await httpClient.GetAsync($"/{Org}/{App}/instances/{InstanceId}/data/{DataGuid}/validate");
         var responseString = await LogResponse(response);

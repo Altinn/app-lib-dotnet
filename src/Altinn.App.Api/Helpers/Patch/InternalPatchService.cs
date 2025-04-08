@@ -1,13 +1,10 @@
-using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Altinn.App.Api.Extensions;
+using Altinn.App.Api.Models;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Helpers.Serialization;
-using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Result;
@@ -23,15 +20,11 @@ namespace Altinn.App.Api.Helpers.Patch;
 /// </summary>
 public class InternalPatchService
 {
-    private readonly IAppMetadata _appMetadata;
-    private readonly IDataClient _dataClient;
-    private readonly IInstanceClient _instanceClient;
-    private readonly ModelSerializationService _modelSerializationService;
     private readonly IHostEnvironment _hostingEnvironment;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly AppImplementationFactory _appImplementationFactory;
     private readonly Telemetry? _telemetry;
     private readonly IValidationService _validationService;
-    private readonly IEnumerable<IDataProcessor> _dataProcessors;
-    private readonly IEnumerable<IDataWriteProcessor> _dataWriteProcessors;
 
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -43,25 +36,16 @@ public class InternalPatchService
     /// Creates a new instance of the <see cref="InternalPatchService"/> class
     /// </summary>
     public InternalPatchService(
-        IAppMetadata appMetadata,
-        IDataClient dataClient,
-        IInstanceClient instanceClient,
         IValidationService validationService,
-        IEnumerable<IDataProcessor> dataProcessors,
-        IEnumerable<IDataWriteProcessor> dataWriteProcessors,
-        ModelSerializationService modelSerializationService,
         IHostEnvironment hostingEnvironment,
+        IServiceProvider serviceProvider,
         Telemetry? telemetry = null
     )
     {
-        _appMetadata = appMetadata;
-        _dataClient = dataClient;
-        _instanceClient = instanceClient;
         _validationService = validationService;
-        _dataProcessors = dataProcessors;
-        _dataWriteProcessors = dataWriteProcessors;
-        _modelSerializationService = modelSerializationService;
         _hostingEnvironment = hostingEnvironment;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _telemetry = telemetry;
     }
 
@@ -76,14 +60,9 @@ public class InternalPatchService
     )
     {
         using var activity = _telemetry?.StartDataPatchActivity(instance);
+        var taskId = instance.Process.CurrentTask.ElementId;
 
-        var dataAccessor = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            await _appMetadata.GetApplicationMetadata(),
-            _modelSerializationService
-        );
+        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
 
         List<FormDataChange> changesAfterPatch = [];
 
@@ -97,7 +76,7 @@ public class InternalPatchService
                 {
                     Title = "Unknown data element to patch",
                     Detail = $"Data element with id {dataElementGuid} not found in instance",
-                    Status = (int)HttpStatusCode.NotFound,
+                    Status = StatusCodes.Status404NotFound,
                 };
             }
 
@@ -110,19 +89,17 @@ public class InternalPatchService
             if (!patchResult.IsSuccess)
             {
                 bool testOperationFailed = patchResult.Error.Contains("is not equal to the indicated value.");
-                return new ProblemDetails()
+                return new DataPatchError()
                 {
                     Title = testOperationFailed ? "Precondition in patch failed" : "Patch Operation Failed",
                     Detail = patchResult.Error,
                     Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
                     Status = testOperationFailed
-                        ? (int)HttpStatusCode.Conflict
-                        : (int)HttpStatusCode.UnprocessableContent,
-                    Extensions = new Dictionary<string, object?>()
-                    {
-                        { "previousModel", oldModel },
-                        { "patchOperationIndex", patchResult.Operation },
-                    },
+                        ? StatusCodes.Status409Conflict
+                        : StatusCodes.Status422UnprocessableEntity,
+                    PreviousModel = oldModel,
+                    DataElementId = dataElementGuid,
+                    PatchOperationIndex = patchResult.Operation,
                 };
             }
 
@@ -134,7 +111,7 @@ public class InternalPatchService
                     Title = "Patch operation did not deserialize",
                     Type = "https://datatracker.ietf.org/doc/html/rfc6902/",
                     Detail = newModelResult.Error,
-                    Status = (int)HttpStatusCode.UnprocessableContent,
+                    Status = StatusCodes.Status422UnprocessableEntity,
                 };
             }
 
@@ -262,7 +239,8 @@ public class InternalPatchService
         string? language
     )
     {
-        foreach (var dataProcessor in _dataProcessors)
+        var dataProcessors = _appImplementationFactory.GetAll<IDataProcessor>();
+        foreach (var dataProcessor in dataProcessors)
         {
             foreach (var change in changes.FormDataChanges)
             {
@@ -290,7 +268,8 @@ public class InternalPatchService
             }
         }
 
-        foreach (var dataWriteProcessor in _dataWriteProcessors)
+        var dataWriteProcessors = _appImplementationFactory.GetAll<IDataWriteProcessor>();
+        foreach (var dataWriteProcessor in dataWriteProcessors)
         {
             using var processWriteActivity = _telemetry?.StartDataProcessWriteActivity(dataWriteProcessor);
             try

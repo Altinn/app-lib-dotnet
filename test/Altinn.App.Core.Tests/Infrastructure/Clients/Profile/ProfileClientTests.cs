@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Internal.App;
@@ -89,7 +88,7 @@ public class ProfileClientTests
         services.AddMemoryCache();
         services.AddSingleton(_ => httpClient);
         services.AddProfileClient();
-        return new(services.BuildServiceProvider(), handler);
+        return new(services.BuildStrictServiceProvider(), handler);
     }
 
     [Fact]

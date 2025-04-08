@@ -1,6 +1,5 @@
 using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Tests.Extensions;
-using Altinn.App.Api.Tests.TestUtils;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Delegates;
@@ -72,7 +71,7 @@ public class MaskinportenClientIntegrationTests
         });
 
         // Assert
-        var serviceProvider = services.BuildServiceProvider();
+        var serviceProvider = services.BuildStrictServiceProvider();
         var optionsMonitor = serviceProvider.GetRequiredService<IOptionsMonitor<MaskinportenSettings>>();
         Assert.NotNull(optionsMonitor);
 

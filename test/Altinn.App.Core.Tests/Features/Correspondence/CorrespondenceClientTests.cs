@@ -1,5 +1,4 @@
 using System.Net;
-using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Exceptions;
@@ -32,7 +31,7 @@ public class CorrespondenceClientTests
             var mockHttpClientFactory = new Mock<IHttpClientFactory>();
             var mockMaskinportenClient = new Mock<IMaskinportenClient>();
 
-            var app = Api.Tests.TestUtils.AppBuilder.Build(registerCustomAppServices: services =>
+            var app = AppBuilder.Build(registerCustomAppServices: services =>
             {
                 services.AddSingleton(mockHttpClientFactory.Object);
                 services.AddSingleton(mockMaskinportenClient.Object);
@@ -333,7 +332,8 @@ public class CorrespondenceClientTests
         var mockHttpClientFactory = fixture.HttpClientFactoryMock;
         var mockMaskinportenClient = fixture.MaskinportenClientMock;
         var mockHttpClient = new Mock<HttpClient>();
-        var altinnTokenResponse = PrincipalUtil.GetOrgToken("ttd");
+        var correspondencePayload = PayloadFactory.Send(authorisation: CorrespondenceAuthorisation.Maskinporten);
+        var altinnTokenResponse = TestAuthentication.GetServiceOwnerToken(org: "ttd");
         var altinnTokenWrapperResponse = JwtToken.Parse(altinnTokenResponse);
 
         Func<Task<object>> action = async () =>

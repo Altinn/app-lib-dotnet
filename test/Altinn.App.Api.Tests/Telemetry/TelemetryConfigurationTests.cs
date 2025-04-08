@@ -1,12 +1,11 @@
 using System.Diagnostics.Tracing;
 using System.Reflection;
-using Altinn.App.Api.Tests.TestUtils;
 using Altinn.App.Core.Features;
 using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -153,7 +152,12 @@ public class TelemetryConfigurationTests
 
         Altinn.App.Api.Extensions.ServiceCollectionExtensions.AddAltinnAppServices(services, config, env);
         services.AddApplicationInsightsTelemetryProcessor<TelemetryProcessor>();
+        services.Configure<ApplicationInsightsServiceOptions>(options =>
+            options.RequestCollectionOptions.InjectResponseHeaders = false
+        );
 
+        // Don't use BuildStrictServiceProvider here since we only want to test parts of the container that
+        // `AddAltinnAppServices` brings in
         await using (var sp = services.BuildServiceProvider())
         {
             var telemetryConfig = sp.GetRequiredService<TelemetryConfiguration>();
@@ -181,44 +185,6 @@ public class TelemetryConfigurationTests
         Assert.Single(customEvents);
         var customEvent = customEvents[0];
         Assert.Equal("TestEvent", customEvent);
-    }
-
-    [Fact]
-    public async Task KeyedServices_Produces_Error_Diagnostics()
-    {
-        // This test just verifies that we rootcaused the issues re: https://github.com/Altinn/app-lib-dotnet/pull/594
-
-        using var listener = new AppInsightsListener();
-
-        var services = new ServiceCollection();
-        var env = new FakeWebHostEnvironment { EnvironmentName = "Development" };
-
-        services.AddSingleton<IWebHostEnvironment>(env);
-        services.AddSingleton<IHostingEnvironment>(env);
-
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(
-                [new KeyValuePair<string, string?>("ApplicationInsights:InstrumentationKey", "test")]
-            )
-            .Build();
-
-        // AppInsights SDK currently can't handle keyed services in the container
-        // Hopefully we can remove all this soon
-        services.AddKeyedSingleton<ITelemetryProcessor, TelemetryProcessor>("test");
-
-        Altinn.App.Api.Extensions.ServiceCollectionExtensions.AddAltinnAppServices(services, config, env);
-
-        await using (var sp = services.BuildServiceProvider())
-        {
-            var client = sp.GetService<TelemetryClient>();
-            Assert.Null(client);
-        }
-
-        await Task.Yield();
-
-        EventLevel[] errorLevels = [EventLevel.Error, EventLevel.Critical];
-        var events = listener.Events;
-        Assert.Contains(events, e => errorLevels.Contains(e.Level));
     }
 
     [Fact]

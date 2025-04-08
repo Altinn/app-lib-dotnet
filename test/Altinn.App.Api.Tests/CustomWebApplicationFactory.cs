@@ -4,7 +4,6 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
@@ -27,7 +26,7 @@ namespace Altinn.App.Api.Tests;
 
 public class ApiTestBase
 {
-    protected static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions
+    internal static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
@@ -98,17 +97,30 @@ public class ApiTestBase
         }
     }
 
-    public HttpClient GetRootedClient(
+    public HttpClient GetRootedUserClient(
         string org,
         string app,
-        int userId,
-        int? partyId,
-        int authenticationLevel = 2,
-        string? serviceOwnerOrg = null
+        int userId = TestAuthentication.DefaultUserId,
+        int partyId = TestAuthentication.DefaultUserPartyId,
+        int authenticationLevel = TestAuthentication.DefaultUserAuthenticationLevel
     )
     {
         var client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(userId, partyId, authenticationLevel, org: serviceOwnerOrg);
+        string token = TestAuthentication.GetUserToken(userId, partyId, authenticationLevel);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
+    public HttpClient GetRootedOrgClient(
+        string org,
+        string app,
+        string orgNumber = TestAuthentication.DefaultOrgNumber,
+        string scope = TestAuthentication.DefaultServiceOwnerScope,
+        string serviceOwnerOrg = TestAuthentication.DefaultOrg
+    )
+    {
+        var client = GetRootedClient(org, app);
+        string token = TestAuthentication.GetServiceOwnerToken(orgNumber, org: serviceOwnerOrg, scope: scope);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }
@@ -231,10 +243,10 @@ public class ApiTestBase
             var clientFactoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
             clientFactoryMock
                 .Setup(f => f.CreateClient(It.IsAny<string>()))
-                .Returns(sp.GetRequiredService<HttpClient>());
+                .Returns(() => sp.GetRequiredService<HttpClient>());
             return clientFactoryMock.Object;
         });
-        services.AddSingleton<HttpClient>(sp => new HttpClient(
+        services.AddTransient<HttpClient>(sp => new HttpClient(
             new MockHttpMessageHandler(SendAsync, sp.GetRequiredService<ILogger<MockHttpMessageHandler>>())
         ));
     }

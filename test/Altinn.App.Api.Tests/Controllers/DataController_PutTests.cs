@@ -1,9 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Text.Json;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
-using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -38,7 +36,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(1337, null, org: "abc");
+        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         _dataProcessor
@@ -179,7 +177,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(1337, null, org: "abc");
+        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Create instance
