@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -17,7 +16,6 @@ using CorrespondenceResult = Altinn.App.Core.Features.Telemetry.Correspondence.C
 namespace Altinn.App.Core.Features.Correspondence;
 
 /// <inheritdoc />
-[Experimental("ALTINNAPP0200")]
 internal sealed class CorrespondenceClient : ICorrespondenceClient
 {
     private readonly ILogger<CorrespondenceClient> _logger;
@@ -43,7 +41,6 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc />
-    [Experimental(diagnosticId: "ALTINNAPP0200")]
     public async Task<SendCorrespondenceResponse> Send(
         SendCorrespondencePayload payload,
         CancellationToken cancellationToken = default
@@ -93,7 +90,6 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     }
 
     /// <inheritdoc/>
-    [Experimental(diagnosticId: "ALTINNAPP0200")]
     public async Task<GetCorrespondenceStatusResponse> GetStatus(
         GetCorrespondenceStatusPayload payload,
         CancellationToken cancellationToken = default

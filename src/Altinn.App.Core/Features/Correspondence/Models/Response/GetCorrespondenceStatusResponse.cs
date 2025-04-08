@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Models;
 
@@ -7,7 +6,6 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Response after a successful <see cref="CorrespondenceClient.GetStatus"/> request.
 /// </summary>
-[Experimental(diagnosticId: "ALTINNAPP0200")]
 public sealed record GetCorrespondenceStatusResponse
 {
     /// <summary>
