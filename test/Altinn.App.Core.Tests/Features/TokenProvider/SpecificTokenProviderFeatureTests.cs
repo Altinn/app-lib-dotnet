@@ -18,7 +18,7 @@ public class SpecificTokenProviderFeatureTests
         stateContext.Current.TokenValue.Should().BeEmpty();
 
         // Act - Using a token within a scope
-        using (var scope = stateContext.UseToken(testToken))
+        using (stateContext.UseToken(testToken))
         {
             // Assert - Token should be set within the scope
             stateContext.Current.TokenValue.Should().Be(testToken);
