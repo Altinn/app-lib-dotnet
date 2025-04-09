@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Signing.Models;
 /// <summary>
 /// A result containing persons and organizations that should sign and related info for each of them.
 /// </summary>
-public class SigneesResult
+public class SigneeProviderResult
 {
     /// <summary>
     /// The signees who are persons that should sign.

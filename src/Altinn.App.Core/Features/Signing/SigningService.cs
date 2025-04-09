@@ -62,7 +62,7 @@ internal sealed class SigningService(
         Instance instance = instanceDataMutator.Instance;
         string taskId = instance.Process.CurrentTask.ElementId;
 
-        SigneesResult? signeesResult = await GetSigneesFromProvider(instance, signatureConfiguration);
+        SigneeProviderResult? signeesResult = await GetSigneesFromProvider(instance, signatureConfiguration);
         if (signeesResult is null)
         {
             return [];
@@ -291,7 +291,7 @@ internal sealed class SigningService(
     /// Get signees from the signee provider implemented in the App.
     /// </summary>
     /// <exception cref="SigneeProviderNotFoundException"></exception>
-    private async Task<SigneesResult?> GetSigneesFromProvider(
+    private async Task<SigneeProviderResult?> GetSigneesFromProvider(
         Instance instance,
         AltinnSignatureConfiguration signatureConfiguration
     )
@@ -307,7 +307,7 @@ internal sealed class SigningService(
                 $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID."
             );
 
-        SigneesResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
+        SigneeProviderResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
         return signeesResult;
     }
 
