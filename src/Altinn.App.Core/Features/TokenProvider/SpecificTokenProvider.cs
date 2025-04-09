@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Features.TokenProvider;
 /// </summary>
 public class SpecificTokenProvider : IUserTokenProvider
 {
-    private IUserTokenProvider _defaultProvider;
+    private readonly IUserTokenProvider _defaultProvider;
     private readonly SpecificTokenProviderStateContext _stateContext;
 
     /// <summary>
