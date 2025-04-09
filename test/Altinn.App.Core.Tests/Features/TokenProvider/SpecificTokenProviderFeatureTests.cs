@@ -25,7 +25,7 @@ public class SpecificTokenProviderFeatureTests
 
             // Act - Using a nested token scope
             var nestedToken = "nested-token-value";
-            using (var nestedScope = stateContext.UseToken(nestedToken))
+            using (stateContext.UseToken(nestedToken))
             {
                 // Assert - Nested token should be active
                 stateContext.Current.TokenValue.Should().Be(nestedToken);
