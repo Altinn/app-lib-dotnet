@@ -5,9 +5,9 @@ namespace Altinn.App.Core.Features.TokenProvider;
 /// <summary>
 /// A Specific Token provider getting the token from a stateful service implemented the same way as httpcontextaccesor with asynclocal
 /// </summary>
-public class SpecificTokenProvider : ITokenProvider
+public class SpecificTokenProvider : IUserTokenProvider
 {
-    private ITokenProvider _defaultProvider;
+    private IUserTokenProvider _defaultProvider;
     private readonly SpecificTokenProviderStateContext _stateContext;
 
     /// <summary>
@@ -15,7 +15,7 @@ public class SpecificTokenProvider : ITokenProvider
     /// </summary>
     /// <param name="defaultProvider"></param>
     /// <param name="stateContext"></param>
-    public SpecificTokenProvider(ITokenProvider defaultProvider, SpecificTokenProviderStateContext stateContext)
+    public SpecificTokenProvider(IUserTokenProvider defaultProvider, SpecificTokenProviderStateContext stateContext)
     {
         _defaultProvider = defaultProvider;
         _stateContext = stateContext;

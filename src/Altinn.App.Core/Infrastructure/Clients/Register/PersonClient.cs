@@ -31,7 +31,7 @@ public class PersonClient : IPersonClient
     private readonly HttpClient _httpClient;
     private readonly IAppMetadata _appMetadata;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
-    private readonly ITokenProvider _userTokenProvider;
+    private readonly IUserTokenProvider _userTokenProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PersonClient"/> class.
@@ -46,7 +46,7 @@ public class PersonClient : IPersonClient
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
         IAccessTokenGenerator accessTokenGenerator,
-        ITokenProvider userTokenProvider
+        IUserTokenProvider userTokenProvider
     )
     {
         _httpClient = httpClient;

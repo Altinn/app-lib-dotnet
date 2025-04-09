@@ -27,7 +27,7 @@ public class DataClient : IDataClient
 {
     private readonly PlatformSettings _platformSettings;
     private readonly ILogger _logger;
-    private readonly ITokenProvider _userTokenProvider;
+    private readonly IUserTokenProvider _userTokenProvider;
     private readonly IAppMetadata _appMetadata;
     private readonly ModelSerializationService _modelSerializationService;
     private readonly Telemetry? _telemetry;
@@ -47,7 +47,7 @@ public class DataClient : IDataClient
         IOptions<PlatformSettings> platformSettings,
         ILogger<DataClient> logger,
         HttpClient httpClient,
-        ITokenProvider userTokenProvider,
+        IUserTokenProvider userTokenProvider,
         IAppMetadata appMetadata,
         ModelSerializationService modelSerializationService,
         Telemetry? telemetry = null

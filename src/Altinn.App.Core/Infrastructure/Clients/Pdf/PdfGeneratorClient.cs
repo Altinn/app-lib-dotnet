@@ -30,7 +30,7 @@ public class PdfGeneratorClient : IPdfGeneratorClient
     private readonly HttpClient _httpClient;
     private readonly PdfGeneratorSettings _pdfGeneratorSettings;
     private readonly PlatformSettings _platformSettings;
-    private readonly ITokenProvider _userTokenProvider;
+    private readonly IUserTokenProvider _userTokenProvider;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly Telemetry? _telemetry;
 
@@ -51,7 +51,7 @@ public class PdfGeneratorClient : IPdfGeneratorClient
         HttpClient httpClient,
         IOptions<PdfGeneratorSettings> pdfGeneratorSettings,
         IOptions<PlatformSettings> platformSettings,
-        ITokenProvider userTokenProvider,
+        IUserTokenProvider userTokenProvider,
         IHttpContextAccessor httpContextAccessor,
         Telemetry? telemetry = null
     )

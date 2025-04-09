@@ -24,7 +24,7 @@ public class AltinnPartyClient : IAltinnPartyClient
     private readonly ILogger _logger;
     private readonly HttpClient _client;
     private readonly IAppMetadata _appMetadata;
-    private readonly ITokenProvider _userTokenProvider;
+    private readonly IUserTokenProvider _userTokenProvider;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
     private readonly Telemetry? _telemetry;
 
@@ -43,7 +43,7 @@ public class AltinnPartyClient : IAltinnPartyClient
         ILogger<AltinnPartyClient> logger,
         HttpClient httpClient,
         IAppMetadata appMetadata,
-        ITokenProvider userTokenProvider,
+        IUserTokenProvider userTokenProvider,
         IAccessTokenGenerator accessTokenGenerator,
         Telemetry? telemetry = null
     )

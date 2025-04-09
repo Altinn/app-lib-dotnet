@@ -35,7 +35,7 @@ public class PdfControllerTests
     private readonly Mock<IInstanceClient> _instanceClient = new();
     private readonly Mock<IPdfFormatter> _pdfFormatter = new();
     private readonly Mock<IAppModel> _appModel = new();
-    private readonly Mock<ITokenProvider> _userTokenProvider = new();
+    private readonly Mock<IUserTokenProvider> _userTokenProvider = new();
 
     private readonly IOptions<PdfGeneratorSettings> _pdfGeneratorSettingsOptions = Options.Create<PdfGeneratorSettings>(
         new() { }

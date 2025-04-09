@@ -112,7 +112,7 @@ public static class ServiceCollectionExtensions
         services.AddHybridCache();
 #pragma warning restore EXTEXP0018
 
-        services.TryAddTransient<ITokenProvider, UserTokenProvider>();
+        services.TryAddTransient<IUserTokenProvider, UserTokenProvider>();
         services.TryAddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
         services.TryAddTransient<IApplicationLanguage, Internal.Language.ApplicationLanguage>();
         services.TryAddTransient<IAuthorizationService, AuthorizationService>();

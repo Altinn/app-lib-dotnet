@@ -25,7 +25,7 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients.Storage;
 public class DataClientTests
 {
     private readonly Mock<IOptions<PlatformSettings>> platformSettingsOptions;
-    private readonly Mock<ITokenProvider> userTokenProvide;
+    private readonly Mock<IUserTokenProvider> userTokenProvide;
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly ILogger<DataClient> logger;
     private readonly string apiStorageEndpoint = "https://local.platform.altinn.no/api/storage/";
@@ -35,7 +35,7 @@ public class DataClientTests
         platformSettingsOptions = new Mock<IOptions<PlatformSettings>>();
         PlatformSettings platformSettings = new() { ApiStorageEndpoint = apiStorageEndpoint };
         platformSettingsOptions.Setup(s => s.Value).Returns(platformSettings);
-        userTokenProvide = new Mock<ITokenProvider>();
+        userTokenProvide = new Mock<IUserTokenProvider>();
         userTokenProvide.Setup(u => u.GetToken()).Returns("dummytesttoken");
 
         logger = new NullLogger<DataClient>();

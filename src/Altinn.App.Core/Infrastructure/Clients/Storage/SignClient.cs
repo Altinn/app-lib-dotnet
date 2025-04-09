@@ -16,7 +16,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 /// </summary>
 public class SignClient : ISignClient
 {
-    private readonly ITokenProvider _userTokenProvider;
+    private readonly IUserTokenProvider _userTokenProvider;
     private readonly HttpClient _client;
 
     /// <summary>
@@ -28,7 +28,7 @@ public class SignClient : ISignClient
     public SignClient(
         IOptions<PlatformSettings> platformSettings,
         HttpClient httpClient,
-        ITokenProvider userTokenProvider
+        IUserTokenProvider userTokenProvider
     )
     {
         var platformSettings1 = platformSettings.Value;

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Altinn.App.Core.Implementation;
 
 /// <summary>
-/// Represents an implementation of <see cref="ITokenProvider"/> using the HttpContext to obtain
+/// Represents an implementation of <see cref="IUserTokenProvider"/> using the HttpContext to obtain
 /// the JSON Web Token needed for the application to make calls to other services.
 /// </summary>
 /// <remarks>
@@ -16,7 +16,7 @@ namespace Altinn.App.Core.Implementation;
 /// There are also very little code to test as most of the logic are in an imported package.
 /// </remarks>
 [ExcludeFromCodeCoverage]
-public class UserTokenProvider : ITokenProvider
+public class UserTokenProvider : IUserTokenProvider
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly string _jwtCookieName;

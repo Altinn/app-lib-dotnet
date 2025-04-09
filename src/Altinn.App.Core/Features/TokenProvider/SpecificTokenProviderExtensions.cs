@@ -29,15 +29,15 @@ public static class SpecificTokenProviderExtensions
     /// <param name="services"></param>
     /// <returns></returns>
     public static IServiceCollection UseSpecificTokenProvider<TDefaultProvider>(this IServiceCollection services)
-        where TDefaultProvider : ITokenProvider
+        where TDefaultProvider : IUserTokenProvider
     {
         return services.Register<TDefaultProvider>();
     }
 
     private static IServiceCollection Register<TDefault>(this IServiceCollection services)
-        where TDefault : ITokenProvider
+        where TDefault : IUserTokenProvider
     {
-        var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(ITokenProvider));
+        var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IUserTokenProvider));
 
         if (descriptor != null)
         {
@@ -48,7 +48,7 @@ public static class SpecificTokenProviderExtensions
 
         services.AddSingleton<SpecificTokenProviderStateContext>();
 
-        services.AddTransient<ITokenProvider, SpecificTokenProvider>(sp =>
+        services.AddTransient<IUserTokenProvider, SpecificTokenProvider>(sp =>
         {
             return new SpecificTokenProvider(
                 sp.GetRequiredService<TDefault>(),

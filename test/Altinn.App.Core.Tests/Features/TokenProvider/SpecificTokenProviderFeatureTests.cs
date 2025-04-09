@@ -44,7 +44,7 @@ public class SpecificTokenProviderFeatureTests
     {
         // Arrange
         var defaultTokenValue = "default-token";
-        var mockDefaultProvider = new Mock<ITokenProvider>();
+        var mockDefaultProvider = new Mock<IUserTokenProvider>();
         mockDefaultProvider.Setup(p => p.GetToken()).Returns(defaultTokenValue);
 
         var stateContext = new SpecificTokenProviderStateContext();

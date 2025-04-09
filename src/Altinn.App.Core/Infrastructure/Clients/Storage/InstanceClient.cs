@@ -25,7 +25,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 public class InstanceClient : IInstanceClient
 {
     private readonly ILogger _logger;
-    private readonly ITokenProvider _userTokenProvider;
+    private readonly IUserTokenProvider _userTokenProvider;
     private readonly HttpClient _client;
     private readonly Telemetry? _telemetry;
 
@@ -40,7 +40,7 @@ public class InstanceClient : IInstanceClient
     public InstanceClient(
         IOptions<PlatformSettings> platformSettings,
         ILogger<InstanceClient> logger,
-        ITokenProvider userTokenProvider,
+        IUserTokenProvider userTokenProvider,
         HttpClient httpClient,
         Telemetry? telemetry = null
     )
