@@ -10,13 +10,13 @@ public class SigneeProviderResult
     /// <summary>
     /// The signees who are persons that should sign.
     /// </summary>
-    public required List<Signee> Signees { get; set; }
+    public required List<ProvidedSignee> Signees { get; set; }
 }
 
 /// <summary>
 /// Represents a person who is a signee.
 /// </summary>
-public abstract class Signee
+public abstract class ProvidedSignee
 {
     /// <summary>
     /// Notifications configuration.
@@ -27,7 +27,7 @@ public abstract class Signee
     /// <summary>
     /// Represents a signee that is a person.
     /// </summary>
-    public class Person : Signee
+    public class Person : ProvidedSignee
     {
         /// <summary>
         /// The social security number.
@@ -45,7 +45,7 @@ public abstract class Signee
     /// <summary>
     /// Represents a signee that is an organization.
     /// </summary>
-    public class Organization : Signee
+    public class Organization : ProvidedSignee
     {
         /// <summary>
         /// The name of the organization.

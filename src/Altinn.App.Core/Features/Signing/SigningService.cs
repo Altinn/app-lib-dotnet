@@ -19,7 +19,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
 using JsonException = Newtonsoft.Json.JsonException;
-using ProvidedSignee = Altinn.App.Core.Features.Signing.Models.Signee;
 using SigneeState = Altinn.App.Core.Features.Signing.Models.Internal.SigneeContextState;
 
 namespace Altinn.App.Core.Features.Signing;

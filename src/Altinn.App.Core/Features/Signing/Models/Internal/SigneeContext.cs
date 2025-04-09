@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using ProvidedSignee = Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Core.Features.Signing.Models.Internal;
 
