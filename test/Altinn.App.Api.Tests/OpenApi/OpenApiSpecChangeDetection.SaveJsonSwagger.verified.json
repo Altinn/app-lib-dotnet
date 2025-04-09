@@ -4882,7 +4882,7 @@
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
+            "description": "unique identifier of the organization responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -4891,7 +4891,7 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
+            "description": "application identifier which is unique within an organization",
             "required": true,
             "schema": {
               "type": "string"
@@ -4990,7 +4990,7 @@
         }
       }
     },
-    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/signing/organisations": {
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/signing/organizations": {
       "get": {
         "tags": [
           "Signing"
@@ -5044,27 +5044,27 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
                 }
               },
               "application/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
                 }
               },
               "text/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
                 }
               }
             }
@@ -6458,7 +6458,7 @@
         },
         "additionalProperties": {}
       },
-      "AuthorizedOrganisationDetails": {
+      "AuthorizedOrganizationDetails": {
         "required": [
           "orgName",
           "orgNumber",
@@ -8525,9 +8525,9 @@
             "description": "The name of the signee.",
             "nullable": true
           },
-          "organisation": {
+          "organization": {
             "type": "string",
-            "description": "The organisation of the signee.",
+            "description": "The organization of the signee.",
             "nullable": true
           },
           "delegationSuccessful": {
@@ -8552,16 +8552,16 @@
         "additionalProperties": false,
         "description": "Contains information about a signee and the current signing status."
       },
-      "SigningAuthorizedOrganisationsResponse": {
+      "SigningAuthorizedOrganizationsResponse": {
         "required": [
-          "organisations"
+          "organizations"
         ],
         "type": "object",
         "properties": {
-          "organisations": {
+          "organizations": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AuthorizedOrganisationDetails"
+              "$ref": "#/components/schemas/AuthorizedOrganizationDetails"
             },
             "description": "The list of authorized organisations.",
             "nullable": true
