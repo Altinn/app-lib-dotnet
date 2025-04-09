@@ -336,6 +336,11 @@ public abstract class Authenticated
         /// </summary>
         public string AuthenticationMethod { get; }
 
+        /// <summary>
+        /// True if the user was authenticated through the Altinn portal
+        /// </summary>
+        public bool InAltinnPortal { get; }
+
         private Details? _extra;
         private readonly Func<int, Task<UserProfile?>> _getUserProfile;
         private readonly ApplicationMetadata _appMetadata;
@@ -355,6 +360,7 @@ public abstract class Authenticated
             AuthenticationMethod = authenticationMethod;
             // Since they are self-identified, they are always 0
             AuthenticationLevel = 0;
+            InAltinnPortal = context.IsInAltinnPortal;
             _getUserProfile = context.GetUserProfile;
             _appMetadata = context.AppMetadata;
         }

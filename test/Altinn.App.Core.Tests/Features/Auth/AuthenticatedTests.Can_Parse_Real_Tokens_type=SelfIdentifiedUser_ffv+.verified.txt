@@ -6,6 +6,7 @@
     UserId: 1428813,
     PartyId: 53328660,
     AuthenticationMethod: SelfIdentified,
+    InAltinnPortal: true,
     TokenIssuer: Altinn,
     TokenIsExchanged: false,
     Scopes: altinn:portal/enduser,
