@@ -71,7 +71,6 @@ internal sealed class SigningReceiptService(
                     .WithSender(senderOrgNumber)
                     .WithSendersReference(instanceIdentifier.ToString())
                     .WithRecipient(recipient)
-                    .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
                     .WithContent(content)
                     .WithAttachments(attachments)
                     .Build(),
@@ -214,9 +213,7 @@ internal sealed class SigningReceiptService(
                 CorrespondenceAttachmentBuilder
                     .Create()
                     .WithFilename(filename)
-                    .WithName(filename)
                     .WithSendersReference(element.Id)
-                    .WithDataType(element.ContentType ?? "application/octet-stream")
                     .WithData(
                         await dataClient.GetDataBytes(
                             appMetadata.AppIdentifier.Org,

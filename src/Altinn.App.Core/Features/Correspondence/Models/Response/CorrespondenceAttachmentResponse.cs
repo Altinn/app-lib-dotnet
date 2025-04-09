@@ -56,12 +56,6 @@ public sealed record CorrespondenceAttachmentResponse
     public string? FileName { get; init; }
 
     /// <summary>
-    /// The display name of the attachment.
-    /// </summary>
-    [JsonPropertyName("name")]
-    public required string Name { get; init; }
-
-    /// <summary>
     /// Indicates if the attachment is encrypted or not.
     /// </summary>
     [JsonPropertyName("isEncrypted")]
@@ -83,5 +77,5 @@ public sealed record CorrespondenceAttachmentResponse
     /// The attachment data type in MIME format.
     /// </summary>
     [JsonPropertyName("dataType")]
-    public required string DataType { get; init; }
+    public string? DataType { get; init; }
 }

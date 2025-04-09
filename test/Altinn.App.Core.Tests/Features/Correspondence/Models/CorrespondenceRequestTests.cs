@@ -1,5 +1,6 @@
 using System.Text;
 using Altinn.App.Core.Constants;
+using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Models;
@@ -41,17 +42,13 @@ public class CorrespondenceRequestTests
                     new CorrespondenceAttachment
                     {
                         Filename = "filename-1",
-                        Name = "name-1",
                         SendersReference = "senders-reference-1",
-                        DataType = "application/pdf",
                         Data = "data"u8.ToArray(),
                     },
                     new CorrespondenceAttachment
                     {
                         Filename = "filename-2",
-                        Name = "name-2",
                         SendersReference = "senders-reference-2",
-                        DataType = "plain/text",
                         Data = "data"u8.ToArray(),
                         DataLocationType = CorrespondenceDataLocationType.NewCorrespondenceAttachment,
                         IsEncrypted = true,
@@ -110,9 +107,9 @@ public class CorrespondenceRequestTests
                 [
                     new CorrespondenceNotificationRecipientWrapper()
                     {
-                        RecipientToOverride = OrganisationOrPersonIdentifier
-                            .Create(TestHelpers.GetNationalIdentityNumber(2))
-                            .ToString(),
+                        RecipientToOverride = OrganisationOrPersonIdentifier.Create(
+                            TestHelpers.GetNationalIdentityNumber(2)
+                        ),
                         CorrespondenceNotificationRecipients =
                         [
                             new CorrespondenceNotificationRecipient
@@ -129,14 +126,14 @@ public class CorrespondenceRequestTests
                     },
                     new CorrespondenceNotificationRecipientWrapper()
                     {
-                        RecipientToOverride = OrganisationOrPersonIdentifier
-                            .Create(TestHelpers.GetOrganisationNumber(1))
-                            .ToString(),
+                        RecipientToOverride = OrganisationOrPersonIdentifier.Create(
+                            TestHelpers.GetOrganisationNumber(1)
+                        ),
                         CorrespondenceNotificationRecipients =
                         [
                             new CorrespondenceNotificationRecipient
                             {
-                                OrganizationNumber = TestHelpers.GetOrganisationNumber(1).ToString(),
+                                OrganizationNumber = TestHelpers.GetOrganisationNumber(1),
                                 IsReserved = false,
                             },
                             new CorrespondenceNotificationRecipient
@@ -156,12 +153,12 @@ public class CorrespondenceRequestTests
         // csharpier-ignore
 
         // Assert
-        var expectedSerialisation = new Dictionary<string, object>
+        var expectedSerialisation = new Dictionary<string, object?>
         {
-            ["Recipients[0]"] = $"{AltinnUrns.OrganisationNumber}:{correspondence.Recipients[0]}",
-            ["Recipients[1]"] = $"{AltinnUrns.PersonId}:{correspondence.Recipients[1]}",
+            ["Recipients[0]"] = correspondence.Recipients[0].ToUrnFormattedString(),
+            ["Recipients[1]"] = correspondence.Recipients[1].ToUrnFormattedString(),
             ["Correspondence.ResourceId"] = correspondence.ResourceId,
-            ["Correspondence.Sender"] = $"{AltinnUrns.OrganisationNumber}:{correspondence.Sender}",
+            ["Correspondence.Sender"] = correspondence.Sender.ToUrnFormattedString(),
             ["Correspondence.SendersReference"] = correspondence.SendersReference,
             ["Correspondence.RequestedPublishTime"] = correspondence.RequestedPublishTime,
             ["Correspondence.AllowSystemDeleteAfter"] = correspondence.AllowSystemDeleteAfter,
@@ -174,14 +171,10 @@ public class CorrespondenceRequestTests
             ["Correspondence.Content.MessageSummary"] = correspondence.Content.Summary,
             ["Correspondence.Content.MessageBody"] = correspondence.Content.Body,
             ["Correspondence.Content.Attachments[0].Filename"] = correspondence.Content.Attachments[0].Filename,
-            ["Correspondence.Content.Attachments[0].Name"] = correspondence.Content.Attachments[0].Name,
             ["Correspondence.Content.Attachments[0].SendersReference"] = correspondence.Content.Attachments[0].SendersReference,
-            ["Correspondence.Content.Attachments[0].DataType"] = correspondence.Content.Attachments[0].DataType,
             ["Correspondence.Content.Attachments[1].Filename"] = correspondence.Content.Attachments[1].Filename,
-            ["Correspondence.Content.Attachments[1].Name"] = correspondence.Content.Attachments[1].Name,
             ["Correspondence.Content.Attachments[1].IsEncrypted"] = correspondence.Content.Attachments[1].IsEncrypted!,
             ["Correspondence.Content.Attachments[1].SendersReference"] = correspondence.Content.Attachments[1].SendersReference,
-            ["Correspondence.Content.Attachments[1].DataType"] = correspondence.Content.Attachments[1].DataType,
             ["Correspondence.ExternalReferences[0].ReferenceType"] = correspondence.ExternalReferences[0].ReferenceType,
             ["Correspondence.ExternalReferences[0].ReferenceValue"] = correspondence.ExternalReferences[0].ReferenceValue!,
             ["Correspondence.ExternalReferences[1].ReferenceType"] = correspondence.ExternalReferences[1].ReferenceType,
@@ -212,15 +205,15 @@ public class CorrespondenceRequestTests
             ["Correspondence.Notification.ReminderNotificationChannel"] = correspondence.Notification.ReminderNotificationChannel,
             ["Correspondence.Notification.SendersReference"] = correspondence.Notification.SendersReference,
             ["Correspondence.Notification.RequestedSendTime"] = correspondence.Notification.RequestedSendTime,
-            ["Correspondence.Notification.CustomNotificationRecipients[0].RecipientToOverride"] = $"{correspondence.Notification.CustomNotificationRecipients[0].RecipientToOverride}",
+            ["Correspondence.Notification.CustomNotificationRecipients[0].RecipientToOverride"] = correspondence.Notification.CustomNotificationRecipients[0].RecipientToOverride,
             ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].EmailAddress"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[0].EmailAddress!,
             ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[0].IsReserved,
             ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].MobileNumber"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[1].MobileNumber!,
             ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[1].IsReserved,
-            ["Correspondence.Notification.CustomNotificationRecipients[1].RecipientToOverride"] = $"{correspondence.Notification.CustomNotificationRecipients[1].RecipientToOverride}",
-            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].OrganizationNumber"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[0].OrganizationNumber!,
+            ["Correspondence.Notification.CustomNotificationRecipients[1].RecipientToOverride"] = correspondence.Notification.CustomNotificationRecipients[1].RecipientToOverride,
+            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].OrganizationNumber"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[0].OrganizationNumber,
             ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[0].IsReserved,
-            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].NationalIdentityNumber"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[1].NationalIdentityNumber!,
+            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].NationalIdentityNumber"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[1].NationalIdentityNumber,
             ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[1].IsReserved,
 
         };
@@ -256,17 +249,13 @@ public class CorrespondenceRequestTests
                     new CorrespondenceAttachment
                     {
                         Filename = clashingFilename,
-                        Name = "name-1",
                         SendersReference = "senders-reference-1",
-                        DataType = "application/pdf",
                         Data = Encoding.UTF8.GetBytes("data-1"),
                     },
                     new CorrespondenceAttachment
                     {
                         Filename = clashingFilename,
-                        Name = "name-2",
                         SendersReference = "senders-reference-2",
-                        DataType = "plain/text",
                         Data = Encoding.UTF8.GetBytes("data-2"),
                     },
                 ],
@@ -291,25 +280,19 @@ public class CorrespondenceRequestTests
             new CorrespondenceAttachment
             {
                 Filename = "filename",
-                Name = "name",
                 SendersReference = "senders-reference",
-                DataType = "plain/text",
                 Data = data,
             },
             new CorrespondenceAttachment
             {
                 Filename = "filename",
-                Name = "name",
                 SendersReference = "senders-reference",
-                DataType = "plain/text",
                 Data = data,
             },
             new CorrespondenceAttachment
             {
                 Filename = "filename",
-                Name = "name",
                 SendersReference = "senders-reference",
-                DataType = "plain/text",
                 Data = data,
             },
         ];
@@ -488,7 +471,7 @@ public class CorrespondenceRequestTests
         act.Should().Throw<CorrespondenceArgumentException>().WithMessage("*not be prior to*");
     }
 
-    private static async Task AssertContent(MultipartFormDataContent content, string dispositionName, object value)
+    private static async Task AssertContent(MultipartFormDataContent content, string dispositionName, object? value)
     {
         var item = content.GetItem(dispositionName);
         var stringValue = FormattedString(value);
@@ -499,21 +482,20 @@ public class CorrespondenceRequestTests
         stringValue.Should().Be(await item.ReadAsStringAsync(), $"`{dispositionName}`");
     }
 
-    private static string FormattedString(object value)
+    private static string FormattedString(object? value)
     {
-        Assert.NotNull(value);
-
         return value switch
         {
-            OrganisationNumber org => org.Get(OrganisationNumberFormat.International),
-            OrganisationOrPersonIdentifier.Organisation org => org.Value.Get(OrganisationNumberFormat.International),
+            OrganisationNumber org => org.ToUrnFormattedString(),
+            NationalIdentityNumber person => person.ToUrnFormattedString(),
+            OrganisationOrPersonIdentifier orgOrPerson => orgOrPerson.ToUrnFormattedString(),
             DateTime dateTime => MultipartCorrespondenceItem.NormaliseDateTime(dateTime).ToString("O"),
             DateTimeOffset dateTimeOffset => MultipartCorrespondenceItem
                 .NormaliseDateTime(dateTimeOffset)
                 .ToString("O"),
-            _ => value.ToString()
+            _ => value?.ToString()
                 ?? throw new NullReferenceException(
-                    $"ToString method call for object `{nameof(value)} ({value.GetType()})` returned null"
+                    $"ToString method call for object `{nameof(value)} ({value?.GetType()})` returned null"
                 ),
         };
     }

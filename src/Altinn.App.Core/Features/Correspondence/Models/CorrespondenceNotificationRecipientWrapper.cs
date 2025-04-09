@@ -1,3 +1,5 @@
+using Altinn.App.Core.Models;
+
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
@@ -6,9 +8,9 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 public sealed record CorrespondenceNotificationRecipientWrapper : MultipartCorrespondenceListItem
 {
     /// <summary>
-    /// The correspondance recipient which the notification should be overridden for. Organization number or national identification number.
+    /// The correspondence recipient which the notification should be overridden for. Organization number or national identification number.
     /// </summary>
-    public required string RecipientToOverride { get; init; }
+    public required OrganisationOrPersonIdentifier RecipientToOverride { get; init; }
 
     /// <summary>
     /// List of custom recipients to override the default recipient.
@@ -19,7 +21,7 @@ public sealed record CorrespondenceNotificationRecipientWrapper : MultipartCorre
     {
         AddRequired(
             content,
-            RecipientToOverride,
+            RecipientToOverride.ToUrnFormattedString(),
             $"Correspondence.Notification.CustomNotificationRecipients[{index}].RecipientToOverride"
         );
         SerializeOverrideNotificationRecipients(content, CorrespondenceNotificationRecipients, index);
