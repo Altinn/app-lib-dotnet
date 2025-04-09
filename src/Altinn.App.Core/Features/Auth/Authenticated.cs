@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Maskinporten.Constants;
@@ -106,6 +105,10 @@ public abstract class Authenticated
 
         /// <summary>
         /// The party the user has selected through party selection
+        /// If the current request is related to an active instance, this value is not relevant.
+        /// The selected party ID is always whatever the user has selected in the party selection screen.
+        /// Party selection is used for instantiating new instances. The selected party ID becomes the instance owner party ID
+        /// when instantiating.
         /// </summary>
         public int SelectedPartyId { get; }
 
@@ -867,7 +870,7 @@ public abstract class Authenticated
         return NewUser(ref context);
     }
 
-    static Authenticated NewUser(ref ParseContext context)
+    static Authenticated.User NewUser(ref ParseContext context)
     {
         if (!context.UserIdClaim.Exists)
             throw new AuthenticationContextException("Missing user ID claim for user token");
