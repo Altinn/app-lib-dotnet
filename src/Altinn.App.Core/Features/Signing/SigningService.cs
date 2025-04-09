@@ -7,6 +7,7 @@ using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
@@ -16,10 +17,9 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
-using static Altinn.App.Core.Features.Signing.Models.Signee;
+using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
 using JsonException = Newtonsoft.Json.JsonException;
-using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganisationSignee;
-using PersonSignee = Altinn.App.Core.Features.Signing.Models.Signee.PersonSignee;
+using ProvidedSignee = Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Core.Features.Signing;
 
@@ -203,7 +203,7 @@ internal sealed class SigningService(
     }
 
     // <inheritdoc />
-    public async Task<List<OrganisationSignee>> GetAuthorizedOrganisationSignees(
+    public async Task<List<OrganizationSignee>> GetAuthorizedOrganizationSignees(
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration,
         int userId
@@ -214,12 +214,12 @@ internal sealed class SigningService(
             signatureConfiguration
         );
 
-        List<OrganisationSignee> orgSignees = [.. signeeContexts.Select(x => x.Signee).OfType<OrganisationSignee>()];
+        List<OrganizationSignee> orgSignees = [.. signeeContexts.Select(x => x.Signee).OfType<OrganizationSignee>()];
         List<string> orgNumbers = [.. orgSignees.Select(x => x.OrgNumber)];
 
         List<string> keyRoleOrganizations = await authorizationClient.GetKeyRoleOrganisationParties(userId, orgNumbers);
 
-        List<OrganisationSignee> authorizedOrganisations = orgSignees
+        List<OrganizationSignee> authorizedOrganisations = orgSignees
             .Where(organisationSignee => keyRoleOrganizations.Contains(organisationSignee.OrgNumber))
             .ToList();
 
@@ -317,7 +317,7 @@ internal sealed class SigningService(
         CancellationToken ct
     )
     {
-        Models.Signee signee = await From(signeeParty, altinnPartyClient.LookupParty);
+        var signee = await From(signeeParty, altinnPartyClient.LookupParty);
         Party party = signee.GetParty();
 
         Models.Notifications? notifications = signeeParty.Notifications;
@@ -448,8 +448,8 @@ internal sealed class SigningService(
         // OrganisationSignee is most general, so it should be sorted to the end of the list
         signeeContexts.Sort(
             (a, b) =>
-                a.Signee is OrganisationSignee ? 1
-                : b.Signee is OrganisationSignee ? -1
+                a.Signee is OrganizationSignee ? 1
+                : b.Signee is OrganizationSignee ? -1
                 : 0
         );
 
@@ -470,7 +470,7 @@ internal sealed class SigningService(
                     SystemSignee systemSignee => IsSystemSignDocument(signDocument)
                         && systemSignee.OnBehalfOfOrg.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
                         && systemSignee.SystemId.Equals(signDocument.SigneeInfo.SystemUserId),
-                    OrganisationSignee orgSignee => IsOrgSignDocument(signDocument)
+                    OrganizationSignee orgSignee => IsOrgSignDocument(signDocument)
                         && orgSignee.OrgNumber == signDocument.SigneeInfo.OrganisationNumber,
 
                     _ => throw new InvalidOperationException("Signee is not of a supported type."),
@@ -479,7 +479,7 @@ internal sealed class SigningService(
 
             if (matchedSignDocument is not null)
             {
-                if (signeeContext.Signee is OrganisationSignee orgSignee)
+                if (signeeContext.Signee is OrganizationSignee orgSignee)
                 {
                     await ConvertOrgSignee(matchedSignDocument, signeeContext, orgSignee);
                 }
@@ -500,7 +500,7 @@ internal sealed class SigningService(
     private async Task ConvertOrgSignee(
         SignDocument? signDocument,
         SigneeContext orgSigneeContext,
-        OrganisationSignee orgSignee
+        OrganizationSignee orgSignee
     )
     {
         if (signDocument is null)

@@ -1,8 +1,9 @@
 using System.Text.Json.Serialization;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using ProvidedSignee = Altinn.App.Core.Features.Signing.Models.Signee;
 
-namespace Altinn.App.Core.Features.Signing.Models;
+namespace Altinn.App.Core.Features.Signing.Models.Internal;
 
 /// <summary>
 ///  Represents the context of a signee.
@@ -40,7 +41,7 @@ internal sealed class SigneeContext
 ///  Represents the state of a signee.
 /// </summary>
 [JsonDerivedType(typeof(PersonSignee), typeDiscriminator: "person")]
-[JsonDerivedType(typeof(OrganisationSignee), typeDiscriminator: "organisation")]
+[JsonDerivedType(typeof(OrganizationSignee), typeDiscriminator: "organisation")]
 [JsonDerivedType(typeof(PersonOnBehalfOfOrgSignee), typeDiscriminator: "personOnBehalfOfOrg")]
 [JsonDerivedType(typeof(SystemSignee), typeDiscriminator: "system")]
 internal abstract class Signee
@@ -50,7 +51,7 @@ internal abstract class Signee
         return this switch
         {
             PersonSignee personSignee => personSignee.Party,
-            OrganisationSignee organisationSignee => organisationSignee.OrgParty,
+            OrganizationSignee organisationSignee => organisationSignee.OrgParty,
             PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgParty,
             SystemSignee systemSignee => systemSignee.OnBehalfOfOrg.OrgParty,
             _ => throw new InvalidOperationException(
@@ -63,13 +64,13 @@ internal abstract class Signee
     {
         return signeeParty switch
         {
-            Models.PersonSignee personSigneeParty => await From(
+            ProvidedSignee.Person personSigneeParty => await From(
                 ssn: personSigneeParty.SocialSecurityNumber,
                 orgNr: null,
                 systemId: null,
                 lookupParty
             ),
-            Models.OrganisationSignee organisationSigneeParty => await From(
+            ProvidedSignee.Organization organisationSigneeParty => await From(
                 ssn: null,
                 orgNr: organisationSigneeParty.OrganisationNumber,
                 systemId: null,
@@ -102,8 +103,8 @@ internal abstract class Signee
                 ?? throw new ArgumentException($"No party found with org number {orgNr}");
         }
 
-        OrganisationSignee? orgSignee = orgParty is not null
-            ? new OrganisationSignee
+        OrganizationSignee? orgSignee = orgParty is not null
+            ? new OrganizationSignee
             {
                 OrgName = orgParty.Name,
                 OrgNumber = orgParty.OrgNumber,
@@ -165,7 +166,7 @@ internal abstract class Signee
     /// <summary>
     /// A signee that is an organisation.
     /// </summary>
-    public sealed class OrganisationSignee : Signee
+    public sealed class OrganizationSignee : Signee
     {
         /// <summary>
         /// The party of the organisation signee.
@@ -236,7 +237,7 @@ internal abstract class Signee
         /// The organisation on behalf of which the person is signing.
         /// If this is null, the person is signing on their own behalf.
         /// </summary>
-        public required OrganisationSignee OnBehalfOfOrg { get; set; }
+        public required OrganizationSignee OnBehalfOfOrg { get; set; }
     }
 
     /// <summary>
@@ -252,6 +253,6 @@ internal abstract class Signee
         /// <summary>
         /// The organisation on behalf of which the system is signing.
         /// </summary>
-        public required OrganisationSignee OnBehalfOfOrg { get; set; }
+        public required OrganizationSignee OnBehalfOfOrg { get; set; }
     }
 }

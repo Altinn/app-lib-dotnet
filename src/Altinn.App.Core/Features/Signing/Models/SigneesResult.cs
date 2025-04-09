@@ -10,55 +10,55 @@ public class SigneesResult
     /// <summary>
     /// The signees who are persons that should sign.
     /// </summary>
-    public required List<ProvidedSignee> Signees { get; set; }
+    public required List<Signee> Signees { get; set; }
 }
 
 /// <summary>
 /// Represents a person who is a signee.
 /// </summary>
-public abstract class ProvidedSignee
+public abstract class Signee
 {
     /// <summary>
     /// Notifications configuration.
     /// </summary>
     [JsonPropertyName("notifications")]
     public Notifications? Notifications { get; init; }
-}
-
-/// <summary>
-/// Represents a signee that is a person.
-/// </summary>
-public class PersonSignee : ProvidedSignee
-{
-    /// <summary>
-    /// The social security number.
-    /// </summary>
-    [JsonPropertyName("socialSecurityNumber")]
-    public required string SocialSecurityNumber { get; init; }
 
     /// <summary>
-    /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
+    /// Represents a signee that is a person.
     /// </summary>
-    [JsonPropertyName("fullName")]
-    public required string FullName { get; init; }
-}
+    public class Person : Signee
+    {
+        /// <summary>
+        /// The social security number.
+        /// </summary>
+        [JsonPropertyName("socialSecurityNumber")]
+        public required string SocialSecurityNumber { get; init; }
 
-/// <summary>
-/// Represents a signee that is an organisation.
-/// </summary>
-public class OrganisationSignee : ProvidedSignee
-{
-    /// <summary>
-    /// The name of the organisation.
-    /// </summary>
-    [JsonPropertyName("name")]
-    public required string Name { get; init; }
+        /// <summary>
+        /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
+        /// </summary>
+        [JsonPropertyName("fullName")]
+        public required string FullName { get; init; }
+    }
 
     /// <summary>
-    /// The organisation number.
+    /// Represents a signee that is an organization.
     /// </summary>
-    [JsonPropertyName("organisationNumber")]
-    public required string OrganisationNumber { get; init; }
+    public class Organization : Signee
+    {
+        /// <summary>
+        /// The name of the organization.
+        /// </summary>
+        [JsonPropertyName("name")]
+        public required string Name { get; init; }
+
+        /// <summary>
+        /// The organisation number.
+        /// </summary>
+        [JsonPropertyName("organisationNumber")]
+        public required string OrganisationNumber { get; init; }
+    }
 }
 
 /// <summary>

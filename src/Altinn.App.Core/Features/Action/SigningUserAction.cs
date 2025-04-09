@@ -222,7 +222,7 @@ internal class SigningUserAction : IUserAction
         }
 
         // Fetch authorized organisation signees for the extracted user ID
-        var authorizedOrganisations = await _signingService.GetAuthorizedOrganisationSignees(
+        var authorizedOrganisations = await _signingService.GetAuthorizedOrganizationSignees(
             context.DataMutator,
             signatureConfiguration,
             userId.Value
