@@ -41,14 +41,14 @@ public class EndTaskEventHandlerTests
             {
                 Mock<IPdfServiceTask> pdfServiceTask = new();
                 services.AddTransient(_ => pdfServiceTask.Object);
-                services.AddTransient<IPdfServiceTask>(_ => pdfServiceTask.Object);
+                services.AddTransient<IServiceTask>(_ => pdfServiceTask.Object);
             }
 
             if (addEformidlingServiceTask)
             {
                 Mock<IEformidlingServiceTask> eformidlingServiceTask = new();
                 services.AddTransient(_ => eformidlingServiceTask.Object);
-                services.AddTransient<IEformidlingServiceTask>(_ => eformidlingServiceTask.Object);
+                services.AddTransient<IServiceTask>(_ => eformidlingServiceTask.Object);
             }
 
             services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
@@ -191,7 +191,7 @@ public class EndTaskEventHandlerTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await eteh.Execute(mockProcessTask.Object, taskId, instance)
         );
-        Assert.Contains("No service for type", ex.Message);
+        Assert.Contains("PdfServiceTask not found in service tasks", ex.Message);
     }
 
     [Fact]
@@ -209,6 +209,6 @@ public class EndTaskEventHandlerTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await eteh.Execute(mockProcessTask.Object, taskId, instance)
         );
-        Assert.Contains("No service for type", ex.Message);
+        Assert.Contains("eFormidlingServiceTask not found in service tasks", ex.Message);
     }
 }
