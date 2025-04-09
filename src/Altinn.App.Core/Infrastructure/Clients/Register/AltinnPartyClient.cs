@@ -24,7 +24,7 @@ public class AltinnPartyClient : IAltinnPartyClient
     private readonly ILogger _logger;
     private readonly HttpClient _client;
     private readonly IAppMetadata _appMetadata;
-    private readonly IUserTokenProvider _userTokenProvider;
+    private readonly ITokenProvider _userTokenProvider;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
     private readonly Telemetry? _telemetry;
 
@@ -43,7 +43,7 @@ public class AltinnPartyClient : IAltinnPartyClient
         ILogger<AltinnPartyClient> logger,
         HttpClient httpClient,
         IAppMetadata appMetadata,
-        IUserTokenProvider userTokenProvider,
+        ITokenProvider userTokenProvider,
         IAccessTokenGenerator accessTokenGenerator,
         Telemetry? telemetry = null
     )
@@ -66,7 +66,7 @@ public class AltinnPartyClient : IAltinnPartyClient
         Party? party = null;
 
         string endpointUrl = $"parties/{partyId}";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
         HttpResponseMessage response = await _client.GetAsync(
             token,
@@ -100,7 +100,7 @@ public class AltinnPartyClient : IAltinnPartyClient
         Party party;
 
         string endpointUrl = "parties/lookup";
-        string token = _userTokenProvider.GetUserToken();
+        string token = _userTokenProvider.GetToken();
 
         StringContent content = new StringContent(JsonSerializerPermissive.Serialize(partyLookup));
         content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
