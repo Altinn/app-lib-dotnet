@@ -98,11 +98,35 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         }
     }
 
+    public async Task MarkInstanceComplete(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier)
+    {
+        using var activity = _telemetry?.StartApiProcessCompleteActivity(instanceIdentifier);
+
+        try
+        {
+            string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appIdentifier);
+            string token = await GetServiceOwnerAccessToken();
+            using HttpClient client = await GetAuthenticatedClient(token);
+            using HttpResponseMessage response = await client.PostAsync(
+                $"{baseUrl}instances/{instanceIdentifier}/complete",
+                new StringContent(string.Empty)
+            );
+
+            response.EnsureSuccessStatusCode();
+            _logger.LogInformation("Marked {instanceId} as completed.", instanceIdentifier);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Failed to mark instance {InstanceId} as completed: {Error}", instanceIdentifier, e);
+            throw;
+        }
+    }
+
     private async Task<string> GetLocaltestToken()
     {
         var appMetadata = await _appMetadata.GetApplicationMetadata();
         var url =
-            $"http://localhost:5101/Home/GetTestOrgToken?org={appMetadata.Org}&authenticationLevel=3&scopes=altinn%3Aserviceowner%2Finstances.read+altinn%3Aserviceowner%2Finstances.write";
+            $"http://localhost:5101/Home/GetTestOrgToken?org={appMetadata.Org}&orgNumber=991825827&authenticationLevel=3&scopes=altinn%3Aserviceowner%2Finstances.read+altinn%3Aserviceowner%2Finstances.write";
 
         using var client = _httpClientFactory.CreateClient();
         using var response = await client.GetAsync(url);
