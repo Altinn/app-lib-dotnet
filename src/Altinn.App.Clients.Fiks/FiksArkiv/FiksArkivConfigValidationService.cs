@@ -10,7 +10,6 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal sealed class FiksArkivConfigValidationService : IHostedService
 {
-    private readonly IFiksArkivServiceTask _fiksArkivServiceTask;
     private readonly IProcessReader _processReader;
     private readonly IAppMetadata _appMetadata;
     private readonly AppImplementationFactory _appImplementationFactory;
@@ -19,16 +18,16 @@ internal sealed class FiksArkivConfigValidationService : IHostedService
         _appImplementationFactory.GetRequired<IFiksArkivMessageHandler>();
     private IFiksArkivAutoSendDecision _fiksArkivAutoSendDecision =>
         _appImplementationFactory.GetRequired<IFiksArkivAutoSendDecision>();
+    private IServiceTask _fiksArkivServiceTask =>
+        _appImplementationFactory.GetAll<IServiceTask>().First(x => x is IFiksArkivServiceTask);
 
     public FiksArkivConfigValidationService(
         AppImplementationFactory appImplementationFactory,
-        IFiksArkivServiceTask fiksArkivServiceTask,
         IProcessReader processReader,
         IAppMetadata appMetadata
     )
     {
         _appImplementationFactory = appImplementationFactory;
-        _fiksArkivServiceTask = fiksArkivServiceTask;
         _processReader = processReader;
         _appMetadata = appMetadata;
     }
