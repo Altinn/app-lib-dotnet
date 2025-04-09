@@ -51,8 +51,8 @@ public static class ServiceCollectionExtensions
 
         services.AddFiksIOClient();
         services.AddTransient<IAltinnCdnClient, AltinnCdnClient>();
+        services.AddTransient<IServiceTask, FiksArkivServiceTask>();
         services.AddTransient<IFiksArkivMessageHandler, FiksArkivDefaultMessageHandler>();
-        services.AddTransient<IFiksArkivServiceTask, FiksArkivServiceTask>();
         services.AddTransient<IFiksArkivAutoSendDecision, FiksArkivDefaultAutoSendDecision>();
         services.AddTransient<IFiksArkivInstanceClient, FiksArkivInstanceClient>();
         services.AddHostedService<FiksArkivConfigValidationService>();

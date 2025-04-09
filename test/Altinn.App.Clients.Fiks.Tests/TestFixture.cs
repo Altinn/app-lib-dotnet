@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
@@ -34,7 +33,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Polly;
-using Polly.Registry;
 
 namespace Altinn.App.Clients.Fiks.Tests;
 
@@ -52,7 +50,9 @@ internal sealed record TestFixture(
     Mock<IAltinnPartyClient> PartyClientMock,
     Mock<ILayoutEvaluatorStateInitializer> LayoutStateInitializerMock,
     Mock<IEmailNotificationClient> EmailNotificationClientMock,
-    Mock<IProcessReader> ProcessReaderMock
+    Mock<IProcessReader> ProcessReaderMock,
+    Mock<IHttpClientFactory> HttpClientFactoryMock,
+    Mock<IAccessTokenGenerator> AccessTokenGeneratorMock
 ) : IAsyncDisposable, IDisposable
 {
     public IFiksIOClient FiksIOClient => App.Services.GetRequiredService<IFiksIOClient>();
@@ -69,12 +69,15 @@ internal sealed record TestFixture(
         App.Services.GetRequiredService<IFiksArkivMessageHandler>();
     public IFiksArkivAutoSendDecision FiksArkivAutoSendDecisionHandler =>
         App.Services.GetRequiredService<IFiksArkivAutoSendDecision>();
-    public IFiksArkivServiceTask FiksArkivServiceTask => App.Services.GetRequiredService<IFiksArkivServiceTask>();
+    public IServiceTask FiksArkivServiceTask =>
+        AppImplementationFactory.GetAll<IServiceTask>().First(x => x is IFiksArkivServiceTask);
     public ResiliencePipeline<FiksIOMessageResponse> FiksIOResiliencePipeline =>
         App.Services.ResolveResiliencePipeline();
     public IProcessReader ProcessReader => App.Services.GetRequiredService<IProcessReader>();
     public IHttpClientFactory HttpClientFactory => App.Services.GetRequiredService<IHttpClientFactory>();
     public IAccessTokenGenerator AccessTokenGenerator => App.Services.GetRequiredService<IAccessTokenGenerator>();
+    public AppImplementationFactory AppImplementationFactory =>
+        App.Services.GetRequiredService<AppImplementationFactory>();
 
     private static JsonSerializerOptions _jsonSerializerOptions =>
         new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
@@ -174,7 +177,9 @@ internal sealed record TestFixture(
             partyClientMock,
             layoutStateInitializerMock,
             emailNotificationClientMock,
-            processReaderMock
+            processReaderMock,
+            httpClientFactoryMock,
+            accessTokenGeneratorMock
         );
     }
 

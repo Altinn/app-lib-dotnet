@@ -366,8 +366,8 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IProcessTask, NullTypeProcessTask>();
 
         // Service tasks
-        services.AddTransient<IPdfServiceTask, PdfServiceTask>();
-        services.AddTransient<IEformidlingServiceTask, EformidlingServiceTask>();
+        services.AddTransient<IServiceTask, PdfServiceTask>();
+        services.AddTransient<IServiceTask, EformidlingServiceTask>();
     }
 
     private static void AddActionServices(IServiceCollection services)
