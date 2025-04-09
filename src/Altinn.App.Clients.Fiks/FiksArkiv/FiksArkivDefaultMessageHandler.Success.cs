@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Models;
@@ -43,6 +44,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
                 "Message contains multiple responses. This is unexpected and possibly warrants further investigation."
             );
 
+        // Process and store receipt object
         DeserializationResult? messageContent = deserializedContent?.FirstOrDefault();
         var caseFileReceipt = messageContent?.ReceiptResult?.CaseFileReceipt;
         var journalReceipt = messageContent?.ReceiptResult?.JournalEntryReceipt;
@@ -52,8 +54,17 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         var receipt = FiksArkivReceipt.Create(caseFileReceipt, journalReceipt);
         _logger.LogInformation("Receipt data received from Fiks message: {Receipt}", receipt);
 
-        // TODO: Store receipt data in storage
-        // _fiksArkivSettings.Receipt.DataType
+        var dataType = VerifiedNotNull(_fiksArkivSettings.Receipt?.DataType);
+        var receiptBytes = JsonSerializer.SerializeToUtf8Bytes(receipt);
+
+        await _fiksArkivInstanceClient.InsertBinaryData(
+            appIdentifier,
+            instanceIdentifier,
+            dataType,
+            "application/json",
+            $"{dataType}.json",
+            new MemoryStream(receiptBytes)
+        );
 
         // Auto-process the instance if configured
         if (_fiksArkivSettings.AutoSend?.AutoProgressToNextTask is true)
