@@ -45,7 +45,7 @@ internal sealed class SigningDelegationService(
 
         foreach (SigneeContext signeeContext in signeeContexts)
         {
-            SigneeState state = signeeContext.SigneeState;
+            SigneeContextState state = signeeContext.SigneeState;
 
             try
             {

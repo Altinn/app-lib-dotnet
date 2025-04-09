@@ -3,7 +3,6 @@ using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
@@ -16,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
+using SigneeState = Altinn.App.Core.Features.Signing.Models.Internal.SigneeContextState;
 using StorageSignee = Altinn.Platform.Storage.Interface.Models.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Signing;

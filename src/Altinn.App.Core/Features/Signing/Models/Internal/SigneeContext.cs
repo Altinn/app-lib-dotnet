@@ -27,7 +27,7 @@ internal sealed class SigneeContext
     /// The state of the signee.
     /// </summary>
     [JsonPropertyName("signeeState")]
-    public required SigneeState SigneeState { get; set; }
+    public required SigneeContextState SigneeState { get; set; }
 
     /// <summary>
     /// The signature document, if it exists yet.

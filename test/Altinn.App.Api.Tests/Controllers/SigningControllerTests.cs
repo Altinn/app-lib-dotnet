@@ -21,8 +21,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
-using SigneeContextState = Altinn.App.Core.Features.Signing.Models.Internal.SigneeState;
-using SigneeState = Altinn.App.Api.Models.SigneeState;
+using SigneeContextState = Altinn.App.Core.Features.Signing.Models.Internal.SigneeContextState;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
