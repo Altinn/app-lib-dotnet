@@ -17,6 +17,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     private readonly IProcessTaskFinalizer _processTaskFinisher;
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly ILogger<EndTaskEventHandler> _logger;
+    private readonly IInstanceClient _instanceClient;
 
     /// <summary>
     /// This event handler is responsible for handling the end event for a process task.
@@ -25,12 +26,14 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         IProcessTaskDataLocker processTaskDataLocker,
         IProcessTaskFinalizer processTaskFinisher,
         IServiceProvider serviceProvider,
+        IInstanceClient instanceClient,
         ILogger<EndTaskEventHandler> logger
     )
     {
         _processTaskDataLocker = processTaskDataLocker;
         _processTaskFinisher = processTaskFinisher;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
+        _instanceClient = instanceClient;
         _logger = logger;
     }
 
@@ -39,17 +42,22 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     /// </summary>
     public async Task Execute(IProcessTask processTask, string taskId, Instance instance)
     {
-        var instanceClient = _appImplementationFactory.GetRequired<IInstanceClient>();
-        var pdfServiceTask = _appImplementationFactory.GetRequired<IPdfServiceTask>();
-        var eformidlingServiceTask = _appImplementationFactory.GetRequired<IEformidlingServiceTask>();
-        var fiksArkivServiceTask = _appImplementationFactory.Get<IFiksArkivServiceTask>();
+        var serviceTasks = _appImplementationFactory.GetAll<IServiceTask>().ToList();
+
+        var pdfServiceTask =
+            serviceTasks.FirstOrDefault(x => x is IPdfServiceTask)
+            ?? throw new InvalidOperationException("PdfServiceTask not found in service tasks");
+        var eformidlingServiceTask =
+            serviceTasks.FirstOrDefault(x => x is IEformidlingServiceTask)
+            ?? throw new InvalidOperationException("eFormidlingServiceTask not found in service tasks");
+        var fiksArkivServiceTask = serviceTasks.FirstOrDefault(x => x is IFiksArkivServiceTask);
 
         await processTask.End(taskId, instance);
         await _processTaskFinisher.Finalize(taskId, instance);
         await RunAppDefinedProcessTaskEndHandlers(taskId, instance);
         await _processTaskDataLocker.Lock(taskId, instance);
 
-        //These two services are scheduled to be removed and replaced by services tasks defined in the processfile.
+        // The below services are scheduled to be removed and replaced by services tasks defined in the process.bpmn file
         try
         {
             await pdfServiceTask.Execute(taskId, instance);
@@ -77,7 +85,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
             try
             {
                 // TODO: It's stupid that we have to re-fetch the instance here to have access to the PDF
-                instance = await instanceClient.GetInstance(instance);
+                instance = await _instanceClient.GetInstance(instance);
                 await fiksArkivServiceTask.Execute(taskId, instance);
             }
             catch (Exception e)
