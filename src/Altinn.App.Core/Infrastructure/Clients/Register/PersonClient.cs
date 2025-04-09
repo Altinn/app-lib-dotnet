@@ -81,7 +81,7 @@ public class PersonClient : IPersonClient
         string issuer = application.Org;
         string appName = application.AppIdentifier.App;
         request.Headers.Add("PlatformAccessToken", _accessTokenGenerator.GenerateAccessToken(issuer, appName));
-        request.Headers.Add("Authorization", "Bearer " + _userTokenProvider.GetToken());
+        request.Headers.Add("Authorization", "Bearer " + _userTokenProvider.GetUserToken());
     }
 
     private static async Task<Person?> ReadResponse(HttpResponseMessage response, CancellationToken ct)

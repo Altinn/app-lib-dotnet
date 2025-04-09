@@ -25,11 +25,11 @@ public class SpecificTokenProvider : IUserTokenProvider
     /// Gets the token from the current context
     /// </summary>
     /// <returns>the token to use</returns>
-    public string GetToken()
+    public string GetUserToken()
     {
         if (string.IsNullOrEmpty(_stateContext.Current.TokenValue))
         {
-            return _defaultProvider.GetToken();
+            return _defaultProvider.GetUserToken();
         }
         else
         {

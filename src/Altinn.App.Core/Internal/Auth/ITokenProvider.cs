@@ -11,5 +11,5 @@ public interface IUserTokenProvider
     /// Defines a method that can return a JSON Web Token of the current user.
     /// </summary>
     /// <returns>The Json Web Token for the current user.</returns>
-    public string GetToken();
+    public string GetUserToken();
 }

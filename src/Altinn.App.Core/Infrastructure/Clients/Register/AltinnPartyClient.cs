@@ -66,7 +66,7 @@ public class AltinnPartyClient : IAltinnPartyClient
         Party? party = null;
 
         string endpointUrl = $"parties/{partyId}";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
         HttpResponseMessage response = await _client.GetAsync(
             token,
@@ -100,7 +100,7 @@ public class AltinnPartyClient : IAltinnPartyClient
         Party party;
 
         string endpointUrl = "parties/lookup";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
 
         StringContent content = new StringContent(JsonSerializerPermissive.Serialize(partyLookup));
         content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");

@@ -95,7 +95,7 @@ public class DataClient : IDataClient
     {
         using var activity = _telemetry?.StartInsertFormDataActivity(instance);
         string apiUrl = $"instances/{instance.Id}/data?dataType={dataTypeString}";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
 
         var application = await _appMetadata.GetApplicationMetadata();
         var dataType =
@@ -141,7 +141,7 @@ public class DataClient : IDataClient
         using var activity = _telemetry?.StartUpdateDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
 
         //TODO: this method does not get enough information to know the content type from the DataType
         //      if we start to support more than XML
@@ -177,7 +177,7 @@ public class DataClient : IDataClient
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
 
         HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
 
@@ -208,7 +208,7 @@ public class DataClient : IDataClient
         using var activity = _telemetry?.StartGetFormDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
 
         HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
         if (response.IsSuccessStatusCode)
@@ -244,7 +244,7 @@ public class DataClient : IDataClient
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
 
         HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
 
@@ -267,7 +267,7 @@ public class DataClient : IDataClient
         using var activity = _telemetry?.StartGetBinaryDataListActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/dataelements";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
 
         DataElementList dataList;
         List<AttachmentList> attachmentList = new List<AttachmentList>();
@@ -351,7 +351,7 @@ public class DataClient : IDataClient
         using var activity = _telemetry?.StartDeleteDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataGuid}?delay={delay}";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
 
         HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
 
@@ -380,7 +380,7 @@ public class DataClient : IDataClient
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl =
             $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data?dataType={dataType}";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
         DataElement dataElement;
 
         StreamContent content = request.CreateContentStream();
@@ -418,7 +418,7 @@ public class DataClient : IDataClient
         {
             apiUrl += $"&generatedFromTask={generatedFromTask}";
         }
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
 
         StreamContent content = new StreamContent(stream);
         content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
@@ -461,7 +461,7 @@ public class DataClient : IDataClient
         using var activity = _telemetry?.StartUpdateBinaryDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
 
         StreamContent content = request.CreateContentStream();
 
@@ -493,7 +493,7 @@ public class DataClient : IDataClient
     {
         using var activity = _telemetry?.StartUpdateBinaryDataActivity(instanceIdentifier.GetInstanceId());
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
         StreamContent content = new StreamContent(stream);
         ArgumentNullException.ThrowIfNull(contentType);
         content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
@@ -524,7 +524,7 @@ public class DataClient : IDataClient
     {
         using var activity = _telemetry?.StartUpdateDataActivity(instance);
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instance.Id}/dataelements/{dataElement.Id}";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
 
         StringContent jsonString = new StringContent(
             JsonConvert.SerializeObject(dataElement),
@@ -551,7 +551,7 @@ public class DataClient : IDataClient
     {
         using var activity = _telemetry?.StartLockDataElementActivity(instanceIdentifier.GetInstanceId(), dataGuid);
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
         _logger.LogDebug(
             "Locking data element {DataGuid} for instance {InstanceIdentifier} URL: {Url}",
             dataGuid,
@@ -581,7 +581,7 @@ public class DataClient : IDataClient
     {
         using var activity = _telemetry?.StartUnlockDataElementActivity(instanceIdentifier.GetInstanceId(), dataGuid);
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
         _logger.LogDebug(
             "Unlocking data element {DataGuid} for instance {InstanceIdentifier} URL: {Url}",
             dataGuid,

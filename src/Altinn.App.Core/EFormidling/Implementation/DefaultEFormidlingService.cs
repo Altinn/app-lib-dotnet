@@ -87,7 +87,7 @@ public class DefaultEFormidlingService : IEFormidlingService
             applicationMetadata.Org,
             applicationMetadata.AppIdentifier.App
         );
-        string authzToken = _userTokenProvider.GetToken();
+        string authzToken = _userTokenProvider.GetUserToken();
 
         var requestHeaders = new Dictionary<string, string>
         {

@@ -36,7 +36,7 @@ public class UserTokenProvider : IUserTokenProvider
     /// Get the current JSON Web Token found on the HttpContext.
     /// </summary>
     /// <returns>The JSON Web Token of the current user.</returns>
-    public string GetToken()
+    public string GetUserToken()
     {
         return JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _jwtCookieName);
     }

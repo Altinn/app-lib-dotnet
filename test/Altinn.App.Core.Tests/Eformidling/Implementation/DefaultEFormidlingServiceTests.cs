@@ -150,7 +150,7 @@ public class DefaultEFormidlingServiceTests
                 }
             );
         tokenGenerator.Setup(t => t.GenerateAccessToken("ttd", "test-app")).Returns("access-token");
-        userTokenProvider.Setup(u => u.GetToken()).Returns("authz-token");
+        userTokenProvider.Setup(u => u.GetUserToken()).Returns("authz-token");
         eFormidlingReceivers.Setup(er => er.GetEFormidlingReceivers(instance)).ReturnsAsync(new List<Receiver>());
         eFormidlingMetadata
             .Setup(em => em.GenerateEFormidlingMetadata(instance))
@@ -210,7 +210,7 @@ public class DefaultEFormidlingServiceTests
 
         fixture.Mock<IAppMetadata>().Verify(a => a.GetApplicationMetadata());
         fixture.Mock<IAccessTokenGenerator>().Verify(t => t.GenerateAccessToken("ttd", "test-app"));
-        fixture.Mock<IUserTokenProvider>().Verify(u => u.GetToken());
+        fixture.Mock<IUserTokenProvider>().Verify(u => u.GetUserToken());
         fixture.Mock<IEFormidlingReceivers>().Verify(er => er.GetEFormidlingReceivers(instance));
         fixture.Mock<IEFormidlingMetadata>().Verify(em => em.GenerateEFormidlingMetadata(instance));
         var eFormidlingClient = fixture.Mock<IEFormidlingClient>();
@@ -345,7 +345,7 @@ public class DefaultEFormidlingServiceTests
 
         fixture.Mock<IAppMetadata>().Verify(a => a.GetApplicationMetadata());
         fixture.Mock<IAccessTokenGenerator>().Verify(t => t.GenerateAccessToken("ttd", "test-app"));
-        fixture.Mock<IUserTokenProvider>().Verify(u => u.GetToken());
+        fixture.Mock<IUserTokenProvider>().Verify(u => u.GetUserToken());
         fixture.Mock<IEFormidlingReceivers>().Verify(er => er.GetEFormidlingReceivers(instance));
         fixture.Mock<IEFormidlingMetadata>().Verify(em => em.GenerateEFormidlingMetadata(instance));
         var eFormidlingClient = fixture.Mock<IEFormidlingClient>();

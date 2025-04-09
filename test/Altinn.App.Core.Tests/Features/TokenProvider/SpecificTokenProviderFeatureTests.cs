@@ -45,24 +45,24 @@ public class SpecificTokenProviderFeatureTests
         // Arrange
         var defaultTokenValue = "default-token";
         var mockDefaultProvider = new Mock<IUserTokenProvider>();
-        mockDefaultProvider.Setup(p => p.GetToken()).Returns(defaultTokenValue);
+        mockDefaultProvider.Setup(p => p.GetUserToken()).Returns(defaultTokenValue);
 
         var stateContext = new SpecificTokenProviderStateContext();
 
         var tokenProvider = new SpecificTokenProvider(mockDefaultProvider.Object, stateContext);
 
         // Act & Assert - Should use default provider when no context token is set
-        tokenProvider.GetToken().Should().Be(defaultTokenValue);
+        tokenProvider.GetUserToken().Should().Be(defaultTokenValue);
 
         // Arrange - Set a specific token in the context
         var specificTokenValue = "specific-token";
         using (stateContext.UseToken(specificTokenValue))
         {
             // Act & Assert - Should use the token from context
-            tokenProvider.GetToken().Should().Be(specificTokenValue);
+            tokenProvider.GetUserToken().Should().Be(specificTokenValue);
         }
 
         // Act & Assert - Should use default provider again after scope is disposed
-        tokenProvider.GetToken().Should().Be(defaultTokenValue);
+        tokenProvider.GetUserToken().Should().Be(defaultTokenValue);
     }
 }

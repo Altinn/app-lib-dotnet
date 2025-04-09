@@ -27,7 +27,7 @@ public class SignClientTests
         );
 
         userTokenProvide = new Mock<IUserTokenProvider>();
-        userTokenProvide.Setup(s => s.GetToken()).Returns("dummytoken");
+        userTokenProvide.Setup(s => s.GetUserToken()).Returns("dummytoken");
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class SignClientTests
         await signClient.SignDataElements(signatureContext);
 
         // Assert
-        userTokenProvide.Verify(s => s.GetToken(), Times.Once);
+        userTokenProvide.Verify(s => s.GetUserToken(), Times.Once);
         callCount.Should().Be(1);
         platformRequest.Should().NotBeNull();
         platformRequest!.Method.Should().Be(HttpMethod.Post);

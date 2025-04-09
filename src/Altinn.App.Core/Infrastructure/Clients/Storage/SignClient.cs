@@ -45,7 +45,7 @@ public class SignClient : ISignClient
     public async Task SignDataElements(SignatureContext signatureContext)
     {
         string apiUrl = $"instances/{signatureContext.InstanceIdentifier}/sign";
-        string token = _userTokenProvider.GetToken();
+        string token = _userTokenProvider.GetUserToken();
         HttpResponseMessage response = await _client.PostAsync(token, apiUrl, BuildSignRequest(signatureContext));
         if (response.IsSuccessStatusCode)
         {

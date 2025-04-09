@@ -498,7 +498,7 @@ public sealed class InstanceClientTests : IDisposable
         };
         _platformSettingsOptions.Setup(s => s.Value).Returns(platformSettings);
 
-        _userTokenProvider.Setup(s => s.GetToken()).Returns("userToken");
+        _userTokenProvider.Setup(s => s.GetUserToken()).Returns("userToken");
 
         if (httpResponseMessages.Length == 2)
         {

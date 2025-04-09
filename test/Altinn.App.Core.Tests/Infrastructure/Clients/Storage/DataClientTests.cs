@@ -36,7 +36,7 @@ public class DataClientTests
         PlatformSettings platformSettings = new() { ApiStorageEndpoint = apiStorageEndpoint };
         platformSettingsOptions.Setup(s => s.Value).Returns(platformSettings);
         userTokenProvide = new Mock<IUserTokenProvider>();
-        userTokenProvide.Setup(u => u.GetToken()).Returns("dummytesttoken");
+        userTokenProvide.Setup(u => u.GetUserToken()).Returns("dummytesttoken");
 
         logger = new NullLogger<DataClient>();
     }

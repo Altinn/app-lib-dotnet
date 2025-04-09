@@ -117,7 +117,7 @@ public class PdfGeneratorClient : IPdfGeneratorClient
         }
 
         generatorRequest.Cookies.Add(
-            new PdfGeneratorCookieOptions { Value = _userTokenProvider.GetToken(), Domain = uri.Host }
+            new PdfGeneratorCookieOptions { Value = _userTokenProvider.GetUserToken(), Domain = uri.Host }
         );
 
         if (

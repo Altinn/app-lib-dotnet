@@ -39,7 +39,7 @@ public class PersonClientTests
             .Returns("accesstoken");
 
         _userTokenProvider = new Mock<IUserTokenProvider>();
-        _userTokenProvider.Setup(s => s.GetToken()).Returns("usertoken");
+        _userTokenProvider.Setup(s => s.GetUserToken()).Returns("usertoken");
     }
 
     [Fact]
