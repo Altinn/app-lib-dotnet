@@ -158,6 +158,12 @@ public sealed record FiksArkivAutoSendSettings
     public bool AutoProgressToNextTask { get; init; }
 
     /// <summary>
+    /// Should we mark the instance as `completed` after successfully sending the message?
+    /// </summary>
+    [JsonPropertyName("markInstanceComplete")]
+    public bool MarkInstanceComplete { get; init; }
+
+    /// <summary>
     /// Internal validation based on the requirements of <see cref="FiksArkivDefaultAutoSendDecision"/>
     /// </summary>
     internal void Validate(IReadOnlyList<ProcessTask> configuredProcessTasks)

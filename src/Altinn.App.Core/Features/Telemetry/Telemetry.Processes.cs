@@ -57,6 +57,14 @@ partial class Telemetry
         return activity;
     }
 
+    // TODO: Does this belong here? Re Fiks, eFormidling and the like...
+    internal Activity? StartApiProcessCompleteActivity(InstanceIdentifier instanceIdentifier)
+    {
+        var activity = ActivitySource.StartActivity($"{Prefix}.ApiComplete");
+        activity?.SetInstanceId(instanceIdentifier.InstanceGuid);
+        return activity;
+    }
+
     internal Activity? StartProcessHandleEventsActivity(Instance instance)
     {
         var activity = ActivitySource.StartActivity($"{Prefix}.HandleEvents");

@@ -55,9 +55,12 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         // TODO: Store receipt data in storage
         // _fiksArkivSettings.Receipt.DataType
 
+        // Auto-process the instance if configured
         if (_fiksArkivSettings.AutoSend?.AutoProgressToNextTask is true)
-        {
             await _fiksArkivInstanceClient.ProcessMoveNext(appIdentifier, instanceIdentifier);
-        }
+
+        // Auto-complete the instance if configured
+        if (_fiksArkivSettings.AutoSend?.MarkInstanceComplete is true)
+            await _fiksArkivInstanceClient.MarkInstanceComplete(appIdentifier, instanceIdentifier);
     }
 }
