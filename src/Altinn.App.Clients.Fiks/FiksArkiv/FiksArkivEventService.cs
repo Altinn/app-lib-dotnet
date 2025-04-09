@@ -93,8 +93,6 @@ internal sealed class FiksArkivEventService : BackgroundService
             );
 
             decryptedMessagePayloads = await receivedMessage.Message.GetDecryptedPayloadStrings();
-
-            // TODO: Still waiting for proper correlation id support
             Instance instance = await RetrieveInstance(receivedMessage);
 
             using Activity? innerActivity = _telemetry?.StartFiksMessageHandlerActivity(

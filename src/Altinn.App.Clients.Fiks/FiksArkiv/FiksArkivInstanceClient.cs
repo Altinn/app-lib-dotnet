@@ -1,8 +1,10 @@
 using System.Net.Http.Headers;
+using System.Net.Mime;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Maskinporten;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
@@ -62,8 +64,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
     {
         using var activity = _telemetry?.StartGetInstanceByGuidActivity(instanceIdentifier.InstanceGuid);
 
-        string token = await GetServiceOwnerAccessToken();
-        using HttpClient client = await GetAuthenticatedClient(token);
+        using HttpClient client = await GetAuthenticatedClient();
         using HttpResponseMessage response = await client.GetAsync($"instances/{instanceIdentifier}");
         response.EnsureSuccessStatusCode();
 
@@ -81,8 +82,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         try
         {
             string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appIdentifier);
-            string token = await GetServiceOwnerAccessToken();
-            using HttpClient client = await GetAuthenticatedClient(token);
+            using HttpClient client = await GetAuthenticatedClient();
             using HttpResponseMessage response = await client.PutAsync(
                 $"{baseUrl}instances/{instanceIdentifier}/process/next",
                 new StringContent(string.Empty)
@@ -105,8 +105,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         try
         {
             string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appIdentifier);
-            string token = await GetServiceOwnerAccessToken();
-            using HttpClient client = await GetAuthenticatedClient(token);
+            using HttpClient client = await GetAuthenticatedClient();
             using HttpResponseMessage response = await client.PostAsync(
                 $"{baseUrl}instances/{instanceIdentifier}/complete",
                 new StringContent(string.Empty)
@@ -122,6 +121,55 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         }
     }
 
+    public async Task<DataElement> InsertBinaryData(
+        AppIdentifier appIdentifier,
+        InstanceIdentifier instanceIdentifier,
+        string dataType,
+        string contentType,
+        string filename,
+        Stream stream,
+        string? generatedFromTask = null
+    )
+    {
+        using var activity = _telemetry?.StartInsertBinaryDataActivity(instanceIdentifier.ToString());
+
+        try
+        {
+            string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appIdentifier);
+            string url = $"{baseUrl}instances/{instanceIdentifier}/data?dataType={dataType}";
+            if (!string.IsNullOrEmpty(generatedFromTask))
+                url += $"&generatedFromTask={generatedFromTask}";
+
+            StreamContent content = new(stream);
+            content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+            content.Headers.ContentDisposition = new ContentDispositionHeaderValue(DispositionTypeNames.Attachment)
+            {
+                FileName = filename,
+                FileNameStar = filename,
+            };
+
+            using HttpClient client = await GetAuthenticatedClient();
+            using HttpResponseMessage response = await client.PostAsync(url, content);
+            string responseContent = await response.Content.ReadAsStringAsync();
+
+            return response.IsSuccessStatusCode
+                ? JsonConvert.DeserializeObject<DataElement>(responseContent)
+                    ?? throw GetPlatformHttpException(response, responseContent)
+                : throw GetPlatformHttpException(response, responseContent);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error storing binary data for instance {InstanceId}: {Error}", instanceIdentifier, e);
+            throw;
+        }
+    }
+
+    private static PlatformHttpException GetPlatformHttpException(HttpResponseMessage response, string content)
+    {
+        string errorMessage = $"{(int)response.StatusCode} {response.ReasonPhrase}: {content}";
+        return new PlatformHttpException(response, errorMessage);
+    }
+
     private async Task<string> GetLocaltestToken()
     {
         var appMetadata = await _appMetadata.GetApplicationMetadata();
@@ -135,11 +183,12 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         return await response.Content.ReadAsStringAsync();
     }
 
-    private async Task<HttpClient> GetAuthenticatedClient(string bearerToken)
+    private async Task<HttpClient> GetAuthenticatedClient(string? bearerToken = null)
     {
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
         string issuer = application.Org;
         string appName = application.AppIdentifier.App;
+        bearerToken ??= await GetServiceOwnerAccessToken();
 
         HttpClient client = _httpClientFactory.CreateClient();
         client.BaseAddress = new Uri(_platformSettings.ApiStorageEndpoint);

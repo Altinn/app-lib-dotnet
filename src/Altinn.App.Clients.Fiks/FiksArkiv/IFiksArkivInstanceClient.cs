@@ -9,4 +9,13 @@ internal interface IFiksArkivInstanceClient
     Task<Instance> GetInstance(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier);
     Task ProcessMoveNext(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier);
     Task MarkInstanceComplete(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier);
+    Task<DataElement> InsertBinaryData(
+        AppIdentifier appIdentifier,
+        InstanceIdentifier instanceIdentifier,
+        string dataType,
+        string contentType,
+        string filename,
+        Stream stream,
+        string? generatedFromTask = null
+    );
 }
