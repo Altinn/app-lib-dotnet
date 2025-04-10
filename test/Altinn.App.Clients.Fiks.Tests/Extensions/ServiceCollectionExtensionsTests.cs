@@ -230,7 +230,6 @@ public class ServiceCollectionExtensionsTests
                     .WithFiksArkivConfig(x =>
                     {
                         x.AutoSend = fiksArkivSettingsOverride.AutoSend;
-                        x.ErrorHandling = fiksArkivSettingsOverride.ErrorHandling;
                         x.Documents = fiksArkivSettingsOverride.Documents;
                         x.Recipient = fiksArkivSettingsOverride.Recipient;
                         x.Receipt = fiksArkivSettingsOverride.Receipt;
