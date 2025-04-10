@@ -9,8 +9,6 @@ using Microsoft.OpenApi.Models;
 
 void RegisterCustomAppServices(IServiceCollection services, IConfiguration config, IWebHostEnvironment env)
 {
-    var error2 = "";
-    System.Console.WriteLine(error2);
     // Register your apps custom service implementations here.
 }
 

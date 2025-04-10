@@ -1,8 +1,8 @@
 {
-  "id": "martinothamar/martinotesttom",
-  "org": "martinothamar",
+  "id": "ttd/testapp",
+  "org": "ttd",
   "title": {
-    "nb": "martinotesttom"
+    "nb": "testapp"
   },
   "dataTypes": [
     {
@@ -47,7 +47,7 @@
   },
   "autoDeleteOnProcessEnd": false,
   "created": "2024-05-15T12:17:03.656228Z",
-  "createdBy": "martinothamar",
+  "createdBy": "altinn",
   "lastChanged": "2024-05-15T12:17:03.65623Z",
-  "lastChangedBy": "martinothamar"
+  "lastChangedBy": "altinn"
 }
