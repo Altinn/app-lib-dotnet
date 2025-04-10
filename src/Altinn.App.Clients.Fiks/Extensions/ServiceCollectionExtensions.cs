@@ -112,7 +112,9 @@ public static class ServiceCollectionExtensions
             .Configure(options =>
             {
                 options.AutoSend = null;
-                options.ErrorHandling = null;
+                options.Documents = null;
+                options.Receipt = null;
+                options.Recipient = null;
             })
             .BindConfiguration(configSectionPath);
         return services;

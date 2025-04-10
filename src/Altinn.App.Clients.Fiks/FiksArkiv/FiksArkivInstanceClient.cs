@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Mime;
+using System.Text;
+using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
@@ -13,6 +15,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
@@ -66,16 +69,15 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
 
         using HttpClient client = await GetAuthenticatedClient();
         using HttpResponseMessage response = await client.GetAsync($"instances/{instanceIdentifier}");
-        response.EnsureSuccessStatusCode();
 
-        string instanceData = await response.Content.ReadAsStringAsync();
-        return JsonConvert.DeserializeObject<Instance>(instanceData)
-            ?? throw new InvalidOperationException(
-                $"Unable to deserialize instance with instance id {instanceIdentifier}"
-            );
+        return await DeserializeResponse<Instance>(response);
     }
 
-    public async Task ProcessMoveNext(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier)
+    public async Task ProcessMoveNext(
+        AppIdentifier appIdentifier,
+        InstanceIdentifier instanceIdentifier,
+        string? action = null
+    )
     {
         using var activity = _telemetry?.StartApiProcessNextActivity(instanceIdentifier);
 
@@ -85,16 +87,31 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             using HttpClient client = await GetAuthenticatedClient();
             using HttpResponseMessage response = await client.PutAsync(
                 $"{baseUrl}instances/{instanceIdentifier}/process/next",
-                new StringContent(string.Empty)
+                GetProcessNextAction()
             );
 
-            response.EnsureSuccessStatusCode();
+            await EnsureSuccessStatusCode(response);
+
             _logger.LogInformation("Moved instance {instanceId} to next step.", instanceIdentifier);
         }
         catch (Exception e)
         {
             _logger.LogError("Failed to move instance {InstanceId} to next step: {Error}", instanceIdentifier, e);
             throw;
+        }
+
+        StringContent GetProcessNextAction()
+        {
+            if (string.IsNullOrWhiteSpace(action))
+                return new StringContent(string.Empty);
+
+            var payload = new { Action = action };
+
+            return new StringContent(
+                JsonSerializer.Serialize(payload, JsonSerializerOptions.Web),
+                Encoding.UTF8,
+                "application/json"
+            );
         }
     }
 
@@ -111,7 +128,8 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
                 new StringContent(string.Empty)
             );
 
-            response.EnsureSuccessStatusCode();
+            await EnsureSuccessStatusCode(response);
+
             _logger.LogInformation("Marked {instanceId} as completed.", instanceIdentifier);
         }
         catch (Exception e)
@@ -150,18 +168,31 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
 
             using HttpClient client = await GetAuthenticatedClient();
             using HttpResponseMessage response = await client.PostAsync(url, content);
-            string responseContent = await response.Content.ReadAsStringAsync();
 
-            return response.IsSuccessStatusCode
-                ? JsonConvert.DeserializeObject<DataElement>(responseContent)
-                    ?? throw GetPlatformHttpException(response, responseContent)
-                : throw GetPlatformHttpException(response, responseContent);
+            return await DeserializeResponse<DataElement>(response);
         }
         catch (Exception e)
         {
             _logger.LogError("Error storing binary data for instance {InstanceId}: {Error}", instanceIdentifier, e);
             throw;
         }
+    }
+
+    private static async Task<T> DeserializeResponse<T>(HttpResponseMessage response)
+    {
+        await EnsureSuccessStatusCode(response);
+        string content = await response.Content.ReadAsStringAsync();
+
+        return JsonConvert.DeserializeObject<T>(content) ?? throw GetPlatformHttpException(response, content);
+    }
+
+    private static async Task EnsureSuccessStatusCode(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode)
+            return;
+
+        string content = await response.Content.ReadAsStringAsync();
+        throw GetPlatformHttpException(response, content);
     }
 
     private static PlatformHttpException GetPlatformHttpException(HttpResponseMessage response, string content)
@@ -178,7 +209,8 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
 
         using var client = _httpClientFactory.CreateClient();
         using var response = await client.GetAsync(url);
-        response.EnsureSuccessStatusCode();
+
+        await EnsureSuccessStatusCode(response);
 
         return await response.Content.ReadAsStringAsync();
     }

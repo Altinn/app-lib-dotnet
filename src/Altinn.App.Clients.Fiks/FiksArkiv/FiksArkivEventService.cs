@@ -17,7 +17,7 @@ internal sealed class FiksArkivEventService : BackgroundService
     private readonly IFiksIOClient _fiksIOClient;
     private readonly Telemetry? _telemetry;
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
-    private readonly IWebHostEnvironment _env;
+    private readonly IHostEnvironment _env;
     private readonly AppImplementationFactory _appImplementationFactory;
 
     private IFiksArkivMessageHandler _fiksArkivMessageHandler =>
@@ -28,7 +28,7 @@ internal sealed class FiksArkivEventService : BackgroundService
         IFiksIOClient fiksIOClient,
         ILogger<FiksArkivEventService> logger,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
-        IWebHostEnvironment env,
+        IHostEnvironment env,
         Telemetry? telemetry = null
     )
     {

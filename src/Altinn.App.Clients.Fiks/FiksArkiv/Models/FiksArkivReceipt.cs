@@ -173,13 +173,18 @@ public sealed record FiksArkivJournalEntryReceipt
                 RegistrationId = journalpostKvittering.RegistreringsID,
                 CreatedDate = journalpostKvittering.OpprettetDato,
                 JournalYear = journalpostKvittering.Journalaar,
-                JournalDate = journalpostKvittering.Journaldato,
+                JournalDate = NullIfDefault(journalpostKvittering.Journaldato),
                 JournalEntryNumber = journalpostKvittering.Journalpostnummer,
                 JournalSequenceNumber = journalpostKvittering.Journalsekvensnummer,
                 JournalEntryType = FiksArkivCodeDescription.Create(journalpostKvittering.Journalposttype),
                 JournalStatus = FiksArkivCodeDescription.Create(journalpostKvittering.Journalstatus),
                 CreatedBy = journalpostKvittering.OpprettetAv,
             };
+    }
+
+    private static DateTime? NullIfDefault(DateTime dateTime)
+    {
+        return dateTime == default ? null : dateTime;
     }
 };
 

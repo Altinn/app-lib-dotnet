@@ -12,16 +12,10 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv.Models;
 public sealed record FiksArkivSettings
 {
     /// <summary>
-    /// Settings related to error handling.
-    /// </summary>
-    [JsonPropertyName("errorHandling")]
-    public FiksArkivErrorHandlingSettings? ErrorHandling { get; set; }
-
-    /// <summary>
     /// Settings related to the receipt for a successful shipment.
     /// </summary>
     [JsonPropertyName("receipt")]
-    public FiksArkivReceiptSettings? Receipt { get; set; }
+    public FiksArkivDataTypeSettings? Receipt { get; set; }
 
     /// <summary>
     /// Settings related to the recipient of the message. Used for generation of the payload metadata.
@@ -43,68 +37,6 @@ public sealed record FiksArkivSettings
 }
 
 /// <summary>
-/// Represents the settings for error handling.
-/// </summary>
-public sealed record FiksArkivErrorHandlingSettings
-{
-    /// <summary>
-    /// Should we send email notifications?
-    /// </summary>
-    [JsonPropertyName("sendEmailNotifications")]
-    public bool? SendEmailNotifications { get; init; }
-
-    /// <summary>
-    /// The email addresses to send error notifications to.
-    /// </summary>
-    [JsonPropertyName("emailNotificationRecipients")]
-    public IEnumerable<string>? EmailNotificationRecipients { get; init; }
-
-    internal void Validate()
-    {
-        const string propertyName = nameof(FiksArkivSettings.ErrorHandling);
-
-        if (SendEmailNotifications is true && EmailNotificationRecipients?.Any() is false)
-            throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(SendEmailNotifications)} is enabled, but no recipients have been configured."
-            );
-
-        if (EmailNotificationRecipients?.Any(string.IsNullOrWhiteSpace) is true)
-            throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(EmailNotificationRecipients)} contains empty entries."
-            );
-    }
-}
-
-/// <summary>
-/// Represents the settings for a receipt.
-/// </summary>
-public sealed record FiksArkivReceiptSettings
-{
-    /// <summary>
-    /// The data type of the receipt object.
-    /// </summary>
-    public required string DataType { get; init; }
-
-    /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultAutoSendDecision"/>
-    /// </summary>
-    internal void Validate(IReadOnlyList<DataType> dataTypes)
-    {
-        const string propertyName = nameof(FiksArkivSettings.Receipt);
-
-        if (string.IsNullOrWhiteSpace(DataType))
-            throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)} configuration is required for handler {nameof(FiksArkivDefaultMessageHandler)}."
-            );
-
-        if (dataTypes.Any(x => x.Id == DataType) is false)
-            throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)} mismatch with application data types: {DataType}"
-            );
-    }
-}
-
-/// <summary>
 /// Represents the settings for Fiks Arkiv documents
 /// </summary>
 public sealed record FiksArkivDocumentSettings
@@ -115,13 +47,13 @@ public sealed record FiksArkivDocumentSettings
     /// which will eventually be sent as a `Hoveddokument` to Fiks Arkiv.
     /// </summary>
     [JsonPropertyName("primaryDocument")]
-    public required FiksArkivPayloadSettings PrimaryDocument { get; init; }
+    public required FiksArkivDataTypeSettings PrimaryDocument { get; init; }
 
     /// <summary>
     /// Optional settings for attachments. These are additional documents that will be sent as `Vedlegg` to Fiks Arkiv.
     /// </summary>
     [JsonPropertyName("attachments")]
-    public IReadOnlyList<FiksArkivPayloadSettings>? Attachments { get; init; }
+    public IReadOnlyList<FiksArkivDataTypeSettings>? Attachments { get; init; }
 
     /// <summary>
     /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
@@ -152,22 +84,24 @@ public sealed record FiksArkivAutoSendSettings
     public string? AfterTaskId { get; init; }
 
     /// <summary>
-    /// Should we automatically progress to the next task after successfully sending the message?
+    /// Settings related to error handling.
     /// </summary>
-    [JsonPropertyName("autoProgressToNextTask")]
-    public bool AutoProgressToNextTask { get; init; }
+    [JsonPropertyName("errorHandling")]
+    public FiksArkivErrorHandlingSettings? ErrorHandling { get; set; }
 
     /// <summary>
-    /// Should we mark the instance as `completed` after successfully sending the message?
+    /// Settings related to success handling.
     /// </summary>
-    [JsonPropertyName("markInstanceComplete")]
-    public bool MarkInstanceComplete { get; init; }
+    [JsonPropertyName("successHandling")]
+    public FiksArkivSuccessHandlingSettings? SuccessHandling { get; set; }
 
     /// <summary>
     /// Internal validation based on the requirements of <see cref="FiksArkivDefaultAutoSendDecision"/>
     /// </summary>
     internal void Validate(IReadOnlyList<ProcessTask> configuredProcessTasks)
     {
+        ErrorHandling?.Validate();
+
         const string propertyName =
             $"{nameof(FiksArkivSettings.AutoSend)}.{nameof(FiksArkivSettings.AutoSend.AfterTaskId)}";
 
@@ -179,6 +113,76 @@ public sealed record FiksArkivAutoSendSettings
         if (configuredProcessTasks.FirstOrDefault(x => x.Id == AfterTaskId) is null)
             throw new FiksArkivConfigurationException(
                 $"{propertyName} mismatch with application process tasks: {AfterTaskId}"
+            );
+    }
+}
+
+/// <summary>
+/// Represents the settings for success handling.
+/// </summary>
+public sealed record FiksArkivSuccessHandlingSettings
+{
+    /// <summary>
+    /// Should we automatically progress to the next task after successfully sending the message?
+    /// </summary>
+    [JsonPropertyName("moveToNextTask")]
+    public bool MoveToNextTask { get; init; }
+
+    /// <summary>
+    /// When progressing to the next task, which action should we send?
+    /// </summary>
+    [JsonPropertyName("action")]
+    public string? Action { get; init; }
+
+    /// <summary>
+    /// Should we mark the instance as `completed` after successfully sending the message?
+    /// </summary>
+    [JsonPropertyName("markInstanceComplete")]
+    public bool MarkInstanceComplete { get; init; }
+}
+
+/// <summary>
+/// Represents the settings for error handling.
+/// </summary>
+public sealed record FiksArkivErrorHandlingSettings
+{
+    /// <summary>
+    /// Should we automatically progress to the next task after failing to send the message?
+    /// </summary>
+    [JsonPropertyName("moveToNextTask")]
+    public bool MoveToNextTask { get; init; }
+
+    /// <summary>
+    /// When progressing to the next task, which action should we send?
+    /// </summary>
+    [JsonPropertyName("action")]
+    public string? Action { get; init; }
+
+    /// <summary>
+    /// Should we send email notifications?
+    /// </summary>
+    [JsonPropertyName("sendEmailNotifications")]
+    public bool? SendEmailNotifications { get; init; }
+
+    /// <summary>
+    /// The email addresses to send error notifications to.
+    /// </summary>
+    [JsonPropertyName("emailNotificationRecipients")]
+    public IEnumerable<string>? EmailNotificationRecipients { get; init; }
+
+    internal void Validate()
+    {
+        const string propertyName =
+            $"{nameof(FiksArkivSettings.AutoSend)}.{nameof(FiksArkivSettings.AutoSend.ErrorHandling)}";
+
+        if (SendEmailNotifications is true && EmailNotificationRecipients?.Any() is not true)
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(SendEmailNotifications)} is enabled, but no recipients have been configured."
+            );
+
+        if (EmailNotificationRecipients?.Any(string.IsNullOrWhiteSpace) is true)
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(EmailNotificationRecipients)} contains empty entries."
             );
     }
 }
@@ -305,18 +309,18 @@ public sealed record FiksArkivDataModelBinding
 }
 
 /// <summary>
-/// Represents the settings for a Fiks Arkiv document or attachment payload.
+/// Represents the settings for a Fiks Arkiv <see cref="DataType"/> binding (document, attachment, receipt).
 /// </summary>
-public sealed record FiksArkivPayloadSettings
+public sealed record FiksArkivDataTypeSettings
 {
     /// <summary>
-    /// The data type of the payload.
+    /// The data type as defined in applicationmetadata.json.
     /// </summary>
     [JsonPropertyName("dataType")]
     public required string DataType { get; init; }
 
     /// <summary>
-    /// Optional filename for the payload. If not specified, the filename from <see cref="DataElement"/> will be used.
+    /// Optional filename for the binding. If not specified, the filename from <see cref="DataElement"/> will be used.
     /// If that also is missing, the filename will be derived from the data type.
     /// </summary>
     [JsonPropertyName("filename")]

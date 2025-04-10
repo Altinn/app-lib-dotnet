@@ -132,9 +132,9 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
                 $"{nameof(FiksArkivSettings.Receipt)} configuration is required for default handler {GetType().Name}."
             );
 
-        _fiksArkivSettings.Receipt.Validate(configuredDataTypes);
+        _fiksArkivSettings.Receipt.Validate(nameof(_fiksArkivSettings.Receipt), configuredDataTypes);
 
-        _fiksArkivSettings.ErrorHandling?.Validate();
+        _fiksArkivSettings.AutoSend?.ErrorHandling?.Validate();
 
         return Task.CompletedTask;
     }

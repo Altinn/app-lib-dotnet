@@ -1,4 +1,5 @@
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -21,32 +22,46 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         );
 
         ArgumentNullException.ThrowIfNull(instance);
-
-        if (_fiksArkivSettings.ErrorHandling?.SendEmailNotifications is not true)
+        if (_fiksArkivSettings.AutoSend?.ErrorHandling is null)
         {
-            _logger.LogInformation("Error handling is disabled, skipping email notification.");
+            _logger.LogInformation("Error handling is disabled, skipping further processing.");
             return;
         }
 
-        List<EmailRecipient> recipientEmailAddresses = VerifiedNotNull(
-                _fiksArkivSettings.ErrorHandling.EmailNotificationRecipients
-            )
-            .Select(x => new EmailRecipient(x))
-            .ToList();
+        InstanceIdentifier instanceIdentifier = new(instance);
+        AppIdentifier appIdentifier = new(instance);
 
-        EmailOrderResponse result = await _emailNotificationClient.Order(
-            new EmailNotification
-            {
-                Subject = $"Altinn: Fiks Arkiv feil i {instance.AppId}",
-                Body =
-                    $"Det har oppstått en feil ved sending av melding til Fiks Arkiv for Altinn app instans {instance.Id}.\n\nVidere undersøkelser må gjøres manuelt. Se logg for ytterligere detaljer.",
-                Recipients = recipientEmailAddresses,
-                SendersReference = instance.Id,
-                RequestedSendTime = DateTime.UtcNow,
-            },
-            CancellationToken.None
-        );
+        // Email notifications
+        if (_fiksArkivSettings.AutoSend.ErrorHandling.SendEmailNotifications is true)
+        {
+            List<EmailRecipient> recipientEmailAddresses = VerifiedNotNull(
+                    _fiksArkivSettings.AutoSend.ErrorHandling.EmailNotificationRecipients
+                )
+                .Select(x => new EmailRecipient(x))
+                .ToList();
 
-        _logger.LogInformation("Email order successfully submitted: {OrderId}", result.OrderId);
+            EmailOrderResponse result = await _emailNotificationClient.Order(
+                new EmailNotification
+                {
+                    Subject = $"Altinn: Fiks Arkiv feil i {appIdentifier}",
+                    Body =
+                        $"Det har oppstått en feil ved sending av melding til Fiks Arkiv for Altinn app instans {instanceIdentifier}.\n\nVidere undersøkelser må gjøres manuelt. Se logg for ytterligere detaljer.",
+                    Recipients = recipientEmailAddresses,
+                    SendersReference = instanceIdentifier.ToString(),
+                    RequestedSendTime = DateTime.UtcNow,
+                },
+                CancellationToken.None
+            );
+
+            _logger.LogInformation("Email order successfully submitted: {OrderId}", result.OrderId);
+        }
+
+        // Move the instance process forward if configured
+        if (_fiksArkivSettings.AutoSend?.ErrorHandling?.MoveToNextTask is true)
+            await _fiksArkivInstanceClient.ProcessMoveNext(
+                appIdentifier,
+                instanceIdentifier,
+                _fiksArkivSettings.AutoSend?.ErrorHandling?.Action
+            );
     }
 }
