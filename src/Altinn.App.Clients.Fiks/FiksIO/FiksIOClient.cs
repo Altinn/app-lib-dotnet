@@ -27,7 +27,7 @@ internal sealed class FiksIOClient : IFiksIOClient
 {
     private readonly IOptionsMonitor<FiksIOSettings> _fiksIOSettings;
     private readonly IAppMetadata _appMetadata;
-    private readonly IWebHostEnvironment _env;
+    private readonly IHostEnvironment _env;
     private readonly ILogger<FiksIOClient> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IMaskinportenClient _maskinportenClient;
@@ -42,7 +42,7 @@ internal sealed class FiksIOClient : IFiksIOClient
     public FiksIOClient(
         IServiceProvider serviceProvider,
         IOptionsMonitor<FiksIOSettings> fiksIOSettings,
-        IWebHostEnvironment env,
+        IHostEnvironment env,
         IAppMetadata appMetadata,
         IMaskinportenClient maskinportenClient,
         ILoggerFactory loggerFactory,

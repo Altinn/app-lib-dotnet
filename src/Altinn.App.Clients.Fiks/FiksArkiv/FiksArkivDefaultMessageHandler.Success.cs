@@ -3,6 +3,7 @@ using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmeldingkvittering;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using Microsoft.Extensions.Logging;
 
@@ -37,41 +38,47 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             return;
         }
 
-        ArgumentNullException.ThrowIfNull(instance);
-
         if (deserializedContent?.Count > 1)
             _logger.LogWarning(
                 "Message contains multiple responses. This is unexpected and possibly warrants further investigation."
             );
 
         // Process and store receipt object
+        ArgumentNullException.ThrowIfNull(instance);
         DeserializationResult? messageContent = deserializedContent?.FirstOrDefault();
-        var caseFileReceipt = messageContent?.ReceiptResult?.CaseFileReceipt;
-        var journalReceipt = messageContent?.ReceiptResult?.JournalEntryReceipt;
-        var instanceIdentifier = new InstanceIdentifier(instance);
-        var appIdentifier = new AppIdentifier(instance);
+        SaksmappeKvittering? caseFileReceipt = messageContent?.ReceiptResult?.CaseFileReceipt;
+        JournalpostKvittering? journalReceipt = messageContent?.ReceiptResult?.JournalEntryReceipt;
+        InstanceIdentifier instanceIdentifier = new(instance);
+        AppIdentifier appIdentifier = new(instance);
 
-        var receipt = FiksArkivReceipt.Create(caseFileReceipt, journalReceipt);
+        FiksArkivReceipt receipt = FiksArkivReceipt.Create(caseFileReceipt, journalReceipt);
+        byte[] receiptBytes = JsonSerializer.SerializeToUtf8Bytes(receipt);
         _logger.LogInformation("Receipt data received from Fiks message: {Receipt}", receipt);
 
-        var dataType = VerifiedNotNull(_fiksArkivSettings.Receipt?.DataType);
-        var receiptBytes = JsonSerializer.SerializeToUtf8Bytes(receipt);
+        FiksArkivDataTypeSettings receiptConfig = VerifiedNotNull(_fiksArkivSettings.Receipt);
+        string filename = !string.IsNullOrWhiteSpace(receiptConfig.Filename)
+            ? receiptConfig.Filename
+            : $"{receiptConfig.DataType}.json";
 
         await _fiksArkivInstanceClient.InsertBinaryData(
             appIdentifier,
             instanceIdentifier,
-            dataType,
+            receiptConfig.DataType,
             "application/json",
-            $"{dataType}.json",
+            filename,
             new MemoryStream(receiptBytes)
         );
 
-        // Auto-process the instance if configured
-        if (_fiksArkivSettings.AutoSend?.AutoProgressToNextTask is true)
-            await _fiksArkivInstanceClient.ProcessMoveNext(appIdentifier, instanceIdentifier);
+        // Move the instance process forward if configured
+        if (_fiksArkivSettings.AutoSend?.SuccessHandling?.MoveToNextTask is true)
+            await _fiksArkivInstanceClient.ProcessMoveNext(
+                appIdentifier,
+                instanceIdentifier,
+                _fiksArkivSettings.AutoSend?.SuccessHandling?.Action
+            );
 
-        // Auto-complete the instance if configured
-        if (_fiksArkivSettings.AutoSend?.MarkInstanceComplete is true)
+        // Mark the instance as completed if configured
+        if (_fiksArkivSettings.AutoSend?.SuccessHandling?.MarkInstanceComplete is true)
             await _fiksArkivInstanceClient.MarkInstanceComplete(appIdentifier, instanceIdentifier);
     }
 }
