@@ -87,7 +87,7 @@ public class SigningProcessTaskTests
 
         _signingServiceMock.Verify(
             x =>
-                x.InitialiseSignees(
+                x.InitializeSignees(
                     taskId,
                     It.IsAny<IInstanceDataMutator>(),
                     It.IsAny<List<SigneeContext>>(),

@@ -97,7 +97,7 @@ internal sealed class SigningCallToActionService(
 
         if (serviceOwnerParty.OrgNumber == "ttd" && _hostEnvironment.IsProduction() is false)
         {
-            // TestDepartementet is often used in test environments, but does not have an organisation number
+            // TestDepartementet is often used in test environments, but does not have an organization number
             // Use Digitaliseringsdirektoratet's orgnr instead.
             serviceOwnerParty.OrgNumber = "991825827";
         }

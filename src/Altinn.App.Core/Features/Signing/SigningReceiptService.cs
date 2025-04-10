@@ -119,7 +119,7 @@ internal sealed class SigningReceiptService(
             if (senderDetails is null || string.IsNullOrEmpty(senderOrgNumber))
             {
                 throw new InvalidOperationException(
-                    $"Error looking up sender's organisation number from Altinn CDN, using key `{appMetadata.Org}`"
+                    $"Error looking up sender's organization number from Altinn CDN, using key `{appMetadata.Org}`"
                 );
             }
 

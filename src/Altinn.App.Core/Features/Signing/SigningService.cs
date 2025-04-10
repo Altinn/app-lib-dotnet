@@ -89,7 +89,7 @@ internal sealed class SigningService(
     }
 
     // <inheritdoc />
-    public async Task<List<SigneeContext>> InitialiseSignees(
+    public async Task<List<SigneeContext>> InitializeSignees(
         string taskId,
         IInstanceDataMutator instanceDataMutator,
         List<SigneeContext> signeeContexts,
@@ -219,11 +219,11 @@ internal sealed class SigningService(
 
         List<string> keyRoleOrganizations = await authorizationClient.GetKeyRoleOrganisationParties(userId, orgNumbers);
 
-        List<OrganizationSignee> authorizedOrganisations = orgSignees
-            .Where(organisationSignee => keyRoleOrganizations.Contains(organisationSignee.OrgNumber))
+        List<OrganizationSignee> authorizedOrganizations = orgSignees
+            .Where(organizationSignee => keyRoleOrganizations.Contains(organizationSignee.OrgNumber))
             .ToList();
 
-        return authorizedOrganisations;
+        return authorizedOrganizations;
     }
 
     // <inheritdoc />
@@ -445,7 +445,7 @@ internal sealed class SigningService(
 
         List<SignDocument> unmatchedSignDocuments = signDocuments;
 
-        // OrganisationSignee is most general, so it should be sorted to the end of the list
+        // OrganizationSignee is most general, so it should be sorted to the end of the list
         signeeContexts.Sort(
             (a, b) =>
                 a.Signee is OrganizationSignee ? 1
@@ -555,7 +555,7 @@ internal sealed class SigningService(
         {
             if (instanceOwner.OrganisationNumber == "ttd")
             {
-                // Testdepartementet is often used in test environments, it does not have an organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+                // Testdepartementet is often used in test environments, it does not have an organization number, so we use Digitaliseringsdirektoratet's orgnr instead.
                 instanceOwner.OrganisationNumber = "991825827";
             }
 
@@ -588,7 +588,7 @@ internal sealed class SigningService(
 
             if (serviceOwnerDetails?.Orgnr == "ttd")
             {
-                // TestDepartementet is often used in test environments, it does not have an organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+                // TestDepartementet is often used in test environments, it does not have an organization number, so we use Digitaliseringsdirektoratet's orgnr instead.
                 serviceOwnerDetails.Orgnr = "991825827";
             }
 

@@ -40,7 +40,7 @@ internal sealed class SigneeContext
 ///  Represents the state of a signee.
 /// </summary>
 [JsonDerivedType(typeof(PersonSignee), typeDiscriminator: "person")]
-[JsonDerivedType(typeof(OrganizationSignee), typeDiscriminator: "organisation")]
+[JsonDerivedType(typeof(OrganizationSignee), typeDiscriminator: "organization")]
 [JsonDerivedType(typeof(PersonOnBehalfOfOrgSignee), typeDiscriminator: "personOnBehalfOfOrg")]
 [JsonDerivedType(typeof(SystemSignee), typeDiscriminator: "system")]
 internal abstract class Signee
@@ -50,11 +50,11 @@ internal abstract class Signee
         return this switch
         {
             PersonSignee personSignee => personSignee.Party,
-            OrganizationSignee organisationSignee => organisationSignee.OrgParty,
+            OrganizationSignee organizationSignee => organizationSignee.OrgParty,
             PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgParty,
             SystemSignee systemSignee => systemSignee.OnBehalfOfOrg.OrgParty,
             _ => throw new InvalidOperationException(
-                "Signee is neither a person, an organisation, a person on behalf of an organisation, nor a system"
+                "Signee is neither a person, an organization, a person on behalf of an organization, nor a system"
             ),
         };
     }
@@ -69,13 +69,13 @@ internal abstract class Signee
                 systemId: null,
                 lookupParty
             ),
-            ProvidedSignee.Organization organisationSigneeParty => await From(
+            ProvidedSignee.Organization organizationSigneeParty => await From(
                 ssn: null,
-                orgNr: organisationSigneeParty.OrganisationNumber,
+                orgNr: organizationSigneeParty.OrganizationNumber,
                 systemId: null,
                 lookupParty
             ),
-            _ => throw new InvalidOperationException("SigneeParty is neither a person nor an organisation"),
+            _ => throw new InvalidOperationException("SigneeParty is neither a person nor an organization"),
         };
     }
 
@@ -137,7 +137,7 @@ internal abstract class Signee
         }
 
         throw new ArgumentException(
-            "Could not find party for person or organisation. A valid SSN or OrgNr must be provided."
+            "Could not find party for person or organization. A valid SSN or OrgNr must be provided."
         );
     }
 
@@ -163,27 +163,27 @@ internal abstract class Signee
     }
 
     /// <summary>
-    /// A signee that is an organisation.
+    /// A signee that is an organization.
     /// </summary>
     public sealed class OrganizationSignee : Signee
     {
         /// <summary>
-        /// The party of the organisation signee.
+        /// The party of the organization signee.
         /// </summary>
         public required Party OrgParty { get; set; }
 
         /// <summary>
-        /// The organisation number.
+        /// The organization number.
         /// </summary>
         public required string OrgNumber { get; set; }
 
         /// <summary>
-        /// The name of the organisation.
+        /// The name of the organization.
         /// </summary>
         public required string OrgName { get; set; }
 
         /// <summary>
-        /// Converts this organisation signee to a person signee
+        /// Converts this organization signee to a person signee
         /// </summary>
         /// <param name="ssn"></param>
         /// <param name="lookupParty"></param>
@@ -213,7 +213,7 @@ internal abstract class Signee
     }
 
     /// <summary>
-    /// A person signee signing on behalf of an organisation.
+    /// A person signee signing on behalf of an organization.
     /// </summary>
     public sealed class PersonOnBehalfOfOrgSignee : Signee
     {
@@ -233,7 +233,7 @@ internal abstract class Signee
         public required string FullName { get; set; }
 
         /// <summary>
-        /// The organisation on behalf of which the person is signing.
+        /// The organization on behalf of which the person is signing.
         /// If this is null, the person is signing on their own behalf.
         /// </summary>
         public required OrganizationSignee OnBehalfOfOrg { get; set; }
@@ -250,7 +250,7 @@ internal abstract class Signee
         public required Guid SystemId { get; set; }
 
         /// <summary>
-        /// The organisation on behalf of which the system is signing.
+        /// The organization on behalf of which the system is signing.
         /// </summary>
         public required OrganizationSignee OnBehalfOfOrg { get; set; }
     }

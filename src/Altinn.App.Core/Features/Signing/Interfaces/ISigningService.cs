@@ -19,7 +19,7 @@ internal interface ISigningService
     /// Delegates access to the current task, notifies the signees about
     /// a new task to sign and saves the signee contexts to Storage.
     /// </summary>
-    Task<List<SigneeContext>> InitialiseSignees(
+    Task<List<SigneeContext>> InitializeSignees(
         string taskId,
         IInstanceDataMutator instanceDataMutator,
         List<SigneeContext> signeeContexts,
@@ -36,7 +36,7 @@ internal interface ISigningService
     );
 
     /// <summary>
-    /// Gets the organisation signees the current user is authorized to sign on behalf of.
+    /// Gets the organization signees the current user is authorized to sign on behalf of.
     /// </summary>
     Task<List<OrganizationSignee>> GetAuthorizedOrganizationSignees(
         IInstanceDataAccessor instanceDataAccessor,

@@ -54,10 +54,10 @@ public abstract class ProvidedSignee
         public required string Name { get; init; }
 
         /// <summary>
-        /// The organisation number.
+        /// The organization number.
         /// </summary>
-        [JsonPropertyName("organisationNumber")]
-        public required string OrganisationNumber { get; init; }
+        [JsonPropertyName("organizationNumber")]
+        public required string OrganizationNumber { get; init; }
     }
 }
 
@@ -120,7 +120,7 @@ public class Sms
 public class Email
 {
     /// <summary>
-    /// The email address to send the email to. If not set, the registry email address will be used for organisations. For persons, no email will be sent.
+    /// The email address to send the email to. If not set, the registry email address will be used for organizations. For persons, no email will be sent.
     /// </summary>
     [JsonPropertyName("emailAddress")]
     public string? EmailAddress { get; set; }

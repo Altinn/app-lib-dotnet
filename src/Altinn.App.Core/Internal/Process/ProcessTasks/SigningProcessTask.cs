@@ -132,7 +132,7 @@ internal sealed class SigningProcessTask : IProcessTask
             ct
         );
 
-        await _signingService.InitialiseSignees(taskId, cachedDataMutator, signeeContexts, signatureConfiguration, ct);
+        await _signingService.InitializeSignees(taskId, cachedDataMutator, signeeContexts, signatureConfiguration, ct);
     }
 
     private AltinnSignatureConfiguration GetAltinnSignatureConfiguration(string taskId)
