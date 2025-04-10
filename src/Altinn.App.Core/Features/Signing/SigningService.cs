@@ -219,9 +219,10 @@ internal sealed class SigningService(
 
         List<string> keyRoleOrganizations = await authorizationClient.GetKeyRoleOrganisationParties(userId, orgNumbers);
 
-        List<OrganisationSignee> authorizedOrganisations = orgSignees
-            .Where(organisationSignee => keyRoleOrganizations.Contains(organisationSignee.OrgNumber))
-            .ToList();
+        List<OrganisationSignee> authorizedOrganisations =
+        [
+            .. orgSignees.Where(organisationSignee => keyRoleOrganizations.Contains(organisationSignee.OrgNumber)),
+        ];
 
         return authorizedOrganisations;
     }
