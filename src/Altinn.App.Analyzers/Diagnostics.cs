@@ -26,7 +26,7 @@ public static class Diagnostics
         );
     }
 
-    private const string DocsRoot = "https://docs.altinn.studio/altinn-studio/reference/analysis/";
+    private const string DocsRoot = "https://docs.altinn.studio/nb/altinn-studio/reference/analysis/";
     private const string RulesRoot = DocsRoot + "rules/";
 
     private static DiagnosticDescriptor Warning(string id, string category, string title, string messageFormat) =>
@@ -38,7 +38,7 @@ public static class Diagnostics
         string messageFormat,
         string category,
         DiagnosticSeverity severity
-    ) => new(id, title, messageFormat, category, severity, true, helpLinkUri: RulesRoot + id);
+    ) => new(id, title, messageFormat, category, severity, true, helpLinkUri: RulesRoot + id.ToLowerInvariant());
 
     private static class Category
     {
