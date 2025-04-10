@@ -22,10 +22,10 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,7 +38,7 @@ namespace Altinn.App.Clients.Fiks.Tests;
 
 internal sealed record TestFixture(
     WebApplication App,
-    Mock<IWebHostEnvironment> WebHostEnvironmentMock,
+    Mock<IHostEnvironment> HostEnvironmentMock,
     Mock<IAppMetadata> AppMetadataMock,
     Mock<IMaskinportenClient> MaskinportenClientMock,
     Mock<ILoggerFactory> LoggerFactoryMock,
@@ -69,6 +69,8 @@ internal sealed record TestFixture(
         App.Services.GetRequiredService<IFiksArkivMessageHandler>();
     public IFiksArkivAutoSendDecision FiksArkivAutoSendDecisionHandler =>
         App.Services.GetRequiredService<IFiksArkivAutoSendDecision>();
+    public IFiksArkivInstanceClient FiksArkivInstanceClient =>
+        App.Services.GetRequiredService<IFiksArkivInstanceClient>();
     public IServiceTask FiksArkivServiceTask =>
         AppImplementationFactory.GetAll<IServiceTask>().First(x => x is IFiksArkivServiceTask);
     public ResiliencePipeline<FiksIOMessageResponse> FiksIOResiliencePipeline =>
@@ -125,7 +127,7 @@ internal sealed record TestFixture(
         configureServices(builder.Services);
 
         // Mocks
-        var webHostEnvironmentMock = new Mock<IWebHostEnvironment>();
+        var hostEnvironmentMock = new Mock<IHostEnvironment>();
         var appMetadataMock = new Mock<IAppMetadata>();
         var maskinportenClientMock = new Mock<IMaskinportenClient>();
         var dataClientMock = new Mock<IDataClient>();
@@ -140,9 +142,13 @@ internal sealed record TestFixture(
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var accessTokenGeneratorMock = new Mock<IAccessTokenGenerator>();
         var loggerFactoryMock = new Mock<ILoggerFactory>();
-        loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
 
-        builder.Services.AddSingleton(webHostEnvironmentMock.Object);
+        loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
+        appMetadataMock
+            .Setup(x => x.GetApplicationMetadata())
+            .ReturnsAsync(new ApplicationMetadata("ttd/unit-testing"));
+
+        builder.Services.AddSingleton(hostEnvironmentMock.Object);
         builder.Services.AddSingleton(appMetadataMock.Object);
         builder.Services.AddSingleton(maskinportenClientMock.Object);
         builder.Services.AddSingleton(loggerFactoryMock.Object);
@@ -165,7 +171,7 @@ internal sealed record TestFixture(
 
         return new TestFixture(
             builder.Build(),
-            webHostEnvironmentMock,
+            hostEnvironmentMock,
             appMetadataMock,
             maskinportenClientMock,
             loggerFactoryMock,
@@ -215,12 +221,7 @@ internal sealed record TestFixture(
     {
         return new FiksArkivSettings
         {
-            ErrorHandling = new FiksArkivErrorHandlingSettings
-            {
-                SendEmailNotifications = true,
-                EmailNotificationRecipients = ["recipient@example.com"],
-            },
-            Receipt = new FiksArkivReceiptSettings { DataType = "fiks-receipt" },
+            Receipt = new FiksArkivDataTypeSettings { DataType = "fiks-receipt" },
             Recipient = new FiksArkivRecipientSettings
             {
                 FiksAccount = new FiksArkivRecipientValue<Guid?>
@@ -231,18 +232,32 @@ internal sealed record TestFixture(
                 OrganizationNumber = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
                 Name = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
             },
-            AutoSend = new FiksArkivAutoSendSettings { AfterTaskId = "Task_1" },
+            AutoSend = new FiksArkivAutoSendSettings
+            {
+                AfterTaskId = "Task_1",
+                SuccessHandling = new FiksArkivSuccessHandlingSettings
+                {
+                    MoveToNextTask = true,
+                    MarkInstanceComplete = true,
+                },
+                ErrorHandling = new FiksArkivErrorHandlingSettings
+                {
+                    MoveToNextTask = true,
+                    SendEmailNotifications = true,
+                    EmailNotificationRecipients = ["someone@somewhere.com"],
+                },
+            },
             Documents = new FiksArkivDocumentSettings
             {
-                PrimaryDocument = new FiksArkivPayloadSettings
+                PrimaryDocument = new FiksArkivDataTypeSettings
                 {
                     DataType = "ref-data-as-pdf",
                     Filename = "formdata.pdf",
                 },
                 Attachments =
                 [
-                    new FiksArkivPayloadSettings { DataType = "model", Filename = "formdata.xml" },
-                    new FiksArkivPayloadSettings { DataType = "uploaded_attachment" },
+                    new FiksArkivDataTypeSettings { DataType = "model", Filename = "formdata.xml" },
+                    new FiksArkivDataTypeSettings { DataType = "uploaded_attachment" },
                 ],
             },
         };
@@ -274,11 +289,6 @@ internal sealed record TestFixture(
     {
         return new FiksArkivSettings
         {
-            ErrorHandling = new FiksArkivErrorHandlingSettings
-            {
-                SendEmailNotifications = true,
-                EmailNotificationRecipients = [Guid.NewGuid().ToString(), Guid.NewGuid().ToString()],
-            },
             Recipient = new FiksArkivRecipientSettings
             {
                 FiksAccount = new FiksArkivRecipientValue<Guid?>
@@ -293,18 +303,25 @@ internal sealed record TestFixture(
                 OrganizationNumber = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
                 Name = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
             },
-            Receipt = new FiksArkivReceiptSettings { DataType = Guid.NewGuid().ToString() },
-            AutoSend = new FiksArkivAutoSendSettings { AfterTaskId = Guid.NewGuid().ToString() },
+            Receipt = new FiksArkivDataTypeSettings { DataType = Guid.NewGuid().ToString() },
+            AutoSend = new FiksArkivAutoSendSettings
+            {
+                AfterTaskId = Guid.NewGuid().ToString(),
+                ErrorHandling = new FiksArkivErrorHandlingSettings
+                {
+                    EmailNotificationRecipients = [Guid.NewGuid().ToString(), Guid.NewGuid().ToString()],
+                },
+            },
             Documents = new FiksArkivDocumentSettings
             {
-                PrimaryDocument = new FiksArkivPayloadSettings
+                PrimaryDocument = new FiksArkivDataTypeSettings
                 {
                     DataType = Guid.NewGuid().ToString(),
                     Filename = Guid.NewGuid().ToString(),
                 },
                 Attachments =
                 [
-                    new FiksArkivPayloadSettings
+                    new FiksArkivDataTypeSettings
                     {
                         DataType = Guid.NewGuid().ToString(),
                         Filename = Guid.NewGuid().ToString(),
