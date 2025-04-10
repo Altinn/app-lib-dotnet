@@ -125,11 +125,11 @@ internal sealed class FiksArkivEventService : BackgroundService
 
     private async Task<Instance> RetrieveInstance(FiksIOReceivedMessage receivedMessage)
     {
-        var (appIdentifier, instanceIdentifier) = ParseCorrelationId(receivedMessage.Message.CorrelationId);
+        InstanceIdentifier instanceIdentifier = ParseCorrelationId(receivedMessage.Message.CorrelationId);
 
         try
         {
-            return await _fiksArkivInstanceClient.GetInstance(appIdentifier, instanceIdentifier);
+            return await _fiksArkivInstanceClient.GetInstance(instanceIdentifier);
         }
         catch (Exception e)
         {
@@ -137,16 +137,12 @@ internal sealed class FiksArkivEventService : BackgroundService
         }
     }
 
-    private static (AppIdentifier appId, InstanceIdentifier instanceId) ParseCorrelationId(string? correlationId)
+    private static InstanceIdentifier ParseCorrelationId(string? correlationId)
     {
         try
         {
             ArgumentNullException.ThrowIfNull(correlationId);
-
-            var appId = AppIdentifier.CreateFromUrl(correlationId);
-            var instanceId = InstanceIdentifier.CreateFromUrl(correlationId);
-
-            return (appId, instanceId);
+            return InstanceIdentifier.CreateFromUrl(correlationId);
         }
         catch (Exception e)
         {
