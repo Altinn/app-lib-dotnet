@@ -491,7 +491,7 @@ public class SigningUserActionHandleOnBehalfOfTests
     }
 
     [Fact]
-    public async Task HandleOnBehalfOf_ReturnsTrue_When_OnBehalfOf_Equals_InstanceOwner()
+    public async Task HandleOnBehalfOf_ReturnsFalse_When_OnBehalfOf_Equals_InstanceOwner()
     {
         // Arrange:
         // If the context's OnBehalfOf equals the instance owner's organization number,
@@ -512,11 +512,15 @@ public class SigningUserActionHandleOnBehalfOfTests
         var signatureConfig = new AltinnSignatureConfiguration();
         var action = CreateSigningUserAction(out var signingServiceMock);
 
+        signingServiceMock
+            .Setup(s => s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, userId))
+            .ReturnsAsync([]);
+
         // Act:
         bool result = await action.HandleOnBehalfOf(context, signatureConfig);
 
         // Assert:
-        result.Should().BeTrue();
+        result.Should().BeFalse();
         signingServiceMock.Verify(
             s =>
                 s.GetAuthorizedOrganizationSignees(
@@ -524,8 +528,8 @@ public class SigningUserActionHandleOnBehalfOfTests
                     It.IsAny<AltinnSignatureConfiguration>(),
                     It.IsAny<int>()
                 ),
-            Times.Never,
-            "the instance owner check should bypass any call to GetAuthorizedOrganizationSignees"
+            Times.Once,
+            "the instance owner check should not bypass any call to GetAuthorizedOrganisationSignees"
         );
     }
 
