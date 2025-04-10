@@ -29,7 +29,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         }
 
         InstanceIdentifier instanceIdentifier = new(instance);
-        AppIdentifier appIdentifier = new(instance);
+        ApplicationMetadata appMetadata = await GetApplicationMetadata();
 
         // Email notifications
         if (_fiksArkivSettings.AutoSend.ErrorHandling.SendEmailNotifications is true)
@@ -43,7 +43,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             EmailOrderResponse result = await _emailNotificationClient.Order(
                 new EmailNotification
                 {
-                    Subject = $"Altinn: Fiks Arkiv feil i {appIdentifier}",
+                    Subject = $"Altinn: Fiks Arkiv feil i {appMetadata.AppIdentifier}",
                     Body =
                         $"Det har oppstått en feil ved sending av melding til Fiks Arkiv for Altinn app instans {instanceIdentifier}.\n\nVidere undersøkelser må gjøres manuelt. Se logg for ytterligere detaljer.",
                     Recipients = recipientEmailAddresses,
@@ -59,7 +59,6 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         // Move the instance process forward if configured
         if (_fiksArkivSettings.AutoSend?.ErrorHandling?.MoveToNextTask is true)
             await _fiksArkivInstanceClient.ProcessMoveNext(
-                appIdentifier,
                 instanceIdentifier,
                 _fiksArkivSettings.AutoSend?.ErrorHandling?.Action
             );

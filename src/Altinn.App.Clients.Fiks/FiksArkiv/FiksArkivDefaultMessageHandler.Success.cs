@@ -49,7 +49,6 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         SaksmappeKvittering? caseFileReceipt = messageContent?.ReceiptResult?.CaseFileReceipt;
         JournalpostKvittering? journalReceipt = messageContent?.ReceiptResult?.JournalEntryReceipt;
         InstanceIdentifier instanceIdentifier = new(instance);
-        AppIdentifier appIdentifier = new(instance);
 
         FiksArkivReceipt receipt = FiksArkivReceipt.Create(caseFileReceipt, journalReceipt);
         byte[] receiptBytes = JsonSerializer.SerializeToUtf8Bytes(receipt);
@@ -61,7 +60,6 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             : $"{receiptConfig.DataType}.json";
 
         await _fiksArkivInstanceClient.InsertBinaryData(
-            appIdentifier,
             instanceIdentifier,
             receiptConfig.DataType,
             "application/json",
@@ -72,13 +70,12 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         // Move the instance process forward if configured
         if (_fiksArkivSettings.AutoSend?.SuccessHandling?.MoveToNextTask is true)
             await _fiksArkivInstanceClient.ProcessMoveNext(
-                appIdentifier,
                 instanceIdentifier,
                 _fiksArkivSettings.AutoSend?.SuccessHandling?.Action
             );
 
         // Mark the instance as completed if configured
         if (_fiksArkivSettings.AutoSend?.SuccessHandling?.MarkInstanceComplete is true)
-            await _fiksArkivInstanceClient.MarkInstanceComplete(appIdentifier, instanceIdentifier);
+            await _fiksArkivInstanceClient.MarkInstanceComplete(instanceIdentifier);
     }
 }

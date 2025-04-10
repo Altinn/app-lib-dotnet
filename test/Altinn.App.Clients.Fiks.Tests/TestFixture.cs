@@ -53,7 +53,7 @@ internal sealed record TestFixture(
     Mock<IProcessReader> ProcessReaderMock,
     Mock<IHttpClientFactory> HttpClientFactoryMock,
     Mock<IAccessTokenGenerator> AccessTokenGeneratorMock
-) : IAsyncDisposable, IDisposable
+) : IAsyncDisposable
 {
     public IFiksIOClient FiksIOClient => App.Services.GetRequiredService<IFiksIOClient>();
     public FiksIOSettings FiksIOSettings => App.Services.GetRequiredService<IOptions<FiksIOSettings>>().Value;
@@ -143,6 +143,7 @@ internal sealed record TestFixture(
         var accessTokenGeneratorMock = new Mock<IAccessTokenGenerator>();
         var loggerFactoryMock = new Mock<ILoggerFactory>();
 
+        hostEnvironmentMock.Setup(x => x.EnvironmentName).Returns("Development");
         loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
         appMetadataMock
             .Setup(x => x.GetApplicationMetadata())
@@ -334,11 +335,6 @@ internal sealed record TestFixture(
     public async ValueTask DisposeAsync()
     {
         await App.DisposeAsync();
-    }
-
-    public void Dispose()
-    {
-        ((IDisposable)App).Dispose();
     }
 
     public class CustomFiksArkivMessageHandler : IFiksArkivMessageHandler

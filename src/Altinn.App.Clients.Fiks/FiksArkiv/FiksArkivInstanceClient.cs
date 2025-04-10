@@ -63,7 +63,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             );
     }
 
-    public async Task<Instance> GetInstance(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier)
+    public async Task<Instance> GetInstance(InstanceIdentifier instanceIdentifier)
     {
         using var activity = _telemetry?.StartGetInstanceByGuidActivity(instanceIdentifier.InstanceGuid);
 
@@ -73,26 +73,21 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         return await DeserializeResponse<Instance>(response);
     }
 
-    public async Task ProcessMoveNext(
-        AppIdentifier appIdentifier,
-        InstanceIdentifier instanceIdentifier,
-        string? action = null
-    )
+    public async Task ProcessMoveNext(InstanceIdentifier instanceIdentifier, string? action = null)
     {
         using var activity = _telemetry?.StartApiProcessNextActivity(instanceIdentifier);
 
         try
         {
-            string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appIdentifier);
             using HttpClient client = await GetAuthenticatedClient();
             using HttpResponseMessage response = await client.PutAsync(
-                $"{baseUrl}instances/{instanceIdentifier}/process/next",
+                $"instances/{instanceIdentifier}/process/next",
                 GetProcessNextAction()
             );
 
             await EnsureSuccessStatusCode(response);
 
-            _logger.LogInformation("Moved instance {instanceId} to next step.", instanceIdentifier);
+            _logger.LogInformation("Moved instance {InstanceId} to next step.", instanceIdentifier);
         }
         catch (Exception e)
         {
@@ -115,22 +110,21 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         }
     }
 
-    public async Task MarkInstanceComplete(AppIdentifier appIdentifier, InstanceIdentifier instanceIdentifier)
+    public async Task MarkInstanceComplete(InstanceIdentifier instanceIdentifier)
     {
         using var activity = _telemetry?.StartApiProcessCompleteActivity(instanceIdentifier);
 
         try
         {
-            string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appIdentifier);
             using HttpClient client = await GetAuthenticatedClient();
             using HttpResponseMessage response = await client.PostAsync(
-                $"{baseUrl}instances/{instanceIdentifier}/complete",
+                $"instances/{instanceIdentifier}/complete",
                 new StringContent(string.Empty)
             );
 
             await EnsureSuccessStatusCode(response);
 
-            _logger.LogInformation("Marked {instanceId} as completed.", instanceIdentifier);
+            _logger.LogInformation("Marked {InstanceId} as completed.", instanceIdentifier);
         }
         catch (Exception e)
         {
@@ -140,7 +134,6 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
     }
 
     public async Task<DataElement> InsertBinaryData(
-        AppIdentifier appIdentifier,
         InstanceIdentifier instanceIdentifier,
         string dataType,
         string contentType,
@@ -153,8 +146,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
 
         try
         {
-            string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appIdentifier);
-            string url = $"{baseUrl}instances/{instanceIdentifier}/data?dataType={dataType}";
+            string url = $"instances/{instanceIdentifier}/data?dataType={dataType}";
             if (!string.IsNullOrEmpty(generatedFromTask))
                 url += $"&generatedFromTask={generatedFromTask}";
 
@@ -183,7 +175,21 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         await EnsureSuccessStatusCode(response);
         string content = await response.Content.ReadAsStringAsync();
 
-        return JsonConvert.DeserializeObject<T>(content) ?? throw GetPlatformHttpException(response, content);
+        T? deserializedContent;
+        try
+        {
+            deserializedContent = JsonConvert.DeserializeObject<T>(content);
+        }
+        catch (Exception e)
+        {
+            throw new PlatformHttpException(
+                response,
+                $"Error deserializing JSON data: {e.Message}. The content was: {content}",
+                e
+            );
+        }
+
+        return deserializedContent ?? throw GetPlatformHttpException(response, content);
     }
 
     private static async Task EnsureSuccessStatusCode(HttpResponseMessage response)
@@ -195,10 +201,14 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         throw GetPlatformHttpException(response, content);
     }
 
-    private static PlatformHttpException GetPlatformHttpException(HttpResponseMessage response, string content)
+    private static PlatformHttpException GetPlatformHttpException(
+        HttpResponseMessage response,
+        string content,
+        Exception? innerException = null
+    )
     {
         string errorMessage = $"{(int)response.StatusCode} {response.ReasonPhrase}: {content}";
-        return new PlatformHttpException(response, errorMessage);
+        return new PlatformHttpException(response, errorMessage, innerException);
     }
 
     private async Task<string> GetLocaltestToken()
@@ -217,20 +227,19 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
 
     private async Task<HttpClient> GetAuthenticatedClient(string? bearerToken = null)
     {
-        ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
-        string issuer = application.Org;
-        string appName = application.AppIdentifier.App;
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         bearerToken ??= await GetServiceOwnerAccessToken();
+        string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appMetadata.AppIdentifier);
 
         HttpClient client = _httpClientFactory.CreateClient();
-        client.BaseAddress = new Uri(_platformSettings.ApiStorageEndpoint);
+        client.BaseAddress = new Uri(baseUrl);
         client.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
         client.DefaultRequestHeaders.Add(
             General.PlatformAccessTokenHeaderName,
-            _accessTokenGenerator.GenerateAccessToken(issuer, appName)
+            _accessTokenGenerator.GenerateAccessToken(appMetadata.AppIdentifier.Org, appMetadata.AppIdentifier.App)
         );
 
         return client;

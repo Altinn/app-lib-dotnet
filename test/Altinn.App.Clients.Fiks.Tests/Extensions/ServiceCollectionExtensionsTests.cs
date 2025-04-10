@@ -14,10 +14,10 @@ namespace Altinn.App.Clients.Fiks.Tests.Extensions;
 public class ServiceCollectionExtensionsTests
 {
     [Fact]
-    public void AddFiksIOClient_AddsRequiredServicesWithDefaultValues()
+    public async Task AddFiksIOClient_AddsRequiredServicesWithDefaultValues()
     {
         // Arrange
-        using var fixture = TestFixture.Create(services => services.AddFiksIOClient());
+        await using var fixture = TestFixture.Create(services => services.AddFiksIOClient());
 
         // Act
         var fiksIOClient = fixture.FiksIOClient;
@@ -35,7 +35,7 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddFiksIOClient_OverridesResiliencePipeline()
+    public async Task AddFiksIOClient_OverridesResiliencePipeline()
     {
         // Arrange
         var pipelineOverride = (
@@ -46,7 +46,7 @@ public class ServiceCollectionExtensionsTests
             builder.AddRetry(new RetryStrategyOptions<FiksIOMessageResponse> { MaxRetryAttempts = 1 });
         };
 
-        using var fixture = TestFixture.Create(services =>
+        await using var fixture = TestFixture.Create(services =>
         {
             services.AddFiksIOClient().WithResiliencePipeline(pipelineOverride);
         });
@@ -67,12 +67,12 @@ public class ServiceCollectionExtensionsTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void AddFiksIOClient_OverridesConfig_Delegates(bool provideDefaultSettings)
+    public async Task AddFiksIOClient_OverridesConfig_Delegates(bool provideDefaultSettings)
     {
         // Arrange
         var fiksIOSettingsOverride = TestFixture.GetRandomFiksIOSettings();
         var maskinportenSettingsOverride = TestFixture.GetRandomMaskinportenSettings();
-        using var fixture = TestFixture.Create(
+        await using var fixture = TestFixture.Create(
             services =>
             {
                 services
@@ -110,12 +110,12 @@ public class ServiceCollectionExtensionsTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void AddFiksIOClient_OverridesConfig_JsonPaths(bool provideDefaultSettings)
+    public async Task AddFiksIOClient_OverridesConfig_JsonPaths(bool provideDefaultSettings)
     {
         // Arrange
         var fiksIOSettingsOverride = TestFixture.GetRandomFiksIOSettings();
         var maskinportenSettingsOverride = TestFixture.GetRandomMaskinportenSettings();
-        using var fixture = TestFixture.Create(
+        await using var fixture = TestFixture.Create(
             services =>
             {
                 services
@@ -143,10 +143,10 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddFiksArkiv_AddsRequiredServicesWithDefaultValues()
+    public async Task AddFiksArkiv_AddsRequiredServicesWithDefaultValues()
     {
         // Arrange
-        using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
+        await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
 
         // Act
         var fiksIOClient = fixture.FiksIOClient;
@@ -177,7 +177,7 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddFiksArkiv_OverridesResiliencePipeline()
+    public async Task AddFiksArkiv_OverridesResiliencePipeline()
     {
         // Arrange
         var pipelineOverride = (
@@ -188,7 +188,7 @@ public class ServiceCollectionExtensionsTests
             builder.AddRetry(new RetryStrategyOptions<FiksIOMessageResponse> { MaxRetryAttempts = 1 });
         };
 
-        using var fixture = TestFixture.Create(services =>
+        await using var fixture = TestFixture.Create(services =>
         {
             services.AddFiksArkiv().WithResiliencePipeline(pipelineOverride);
         });
@@ -209,13 +209,13 @@ public class ServiceCollectionExtensionsTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void AddFiksArkiv_OverridesConfig_Delegates(bool provideDefaultSettings)
+    public async Task AddFiksArkiv_OverridesConfig_Delegates(bool provideDefaultSettings)
     {
         // Arrange
         var fiksIOSettingsOverride = TestFixture.GetRandomFiksIOSettings();
         var fiksArkivSettingsOverride = TestFixture.GetRandomFiksArkivSettings();
         var maskinportenSettingsOverride = TestFixture.GetRandomMaskinportenSettings();
-        using var fixture = TestFixture.Create(
+        await using var fixture = TestFixture.Create(
             services =>
                 services
                     .AddFiksArkiv()
@@ -262,13 +262,13 @@ public class ServiceCollectionExtensionsTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void AddFiksArkiv_OverridesConfig_JsonPaths(bool provideDefaultSettings)
+    public async Task AddFiksArkiv_OverridesConfig_JsonPaths(bool provideDefaultSettings)
     {
         // Arrange
         var fiksIOSettingsOverride = TestFixture.GetRandomFiksIOSettings();
         var fiksArkivSettingsOverride = TestFixture.GetRandomFiksArkivSettings();
         var maskinportenSettingsOverride = TestFixture.GetRandomMaskinportenSettings();
-        using var fixture = TestFixture.Create(
+        await using var fixture = TestFixture.Create(
             services =>
                 services
                     .AddFiksArkiv()
@@ -300,10 +300,10 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddFiksArkiv_OverridesMessageHandler()
+    public async Task AddFiksArkiv_OverridesMessageHandler()
     {
         // Arrange
-        using var fixture = TestFixture.Create(services =>
+        await using var fixture = TestFixture.Create(services =>
             services.AddFiksArkiv().WithMessageHandler<TestFixture.CustomFiksArkivMessageHandler>()
         );
 
@@ -316,10 +316,10 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddFiksArkiv_OverridesAutoSendDecision()
+    public async Task AddFiksArkiv_OverridesAutoSendDecision()
     {
         // Arrange
-        using var fixture = TestFixture.Create(services =>
+        await using var fixture = TestFixture.Create(services =>
             services.AddFiksArkiv().WithAutoSendDecision<TestFixture.CustomAutoSendDecision>()
         );
 
