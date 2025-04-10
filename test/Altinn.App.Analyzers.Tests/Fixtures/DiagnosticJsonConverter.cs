@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 namespace Altinn.App.Analyzers.Tests.Fixtures;
 
 // Based on: https://github.com/VerifyTests/Verify.SourceGenerators/blob/18eb1cd67ebf76803f164751ecb27397a4c11951/src/Verify.SourceGenerators/Converters/DiagnosticConverter.cs
+// This converter improves the output of diagnostic locations and also include the code snippet it refers to.
 internal sealed class DiagnosticJsonConverter : WriteOnlyJsonConverter<Diagnostic>
 {
     public override void Write(VerifyJsonWriter writer, Diagnostic value)

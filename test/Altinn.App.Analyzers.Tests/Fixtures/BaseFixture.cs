@@ -103,21 +103,9 @@ public abstract class BaseFixture : IDisposable
         {
             var compilation = await Project.GetCompilationAsync(cancellationToken);
             Assert.NotNull(compilation);
-            var globalOptions = new Dictionary<string, string>()
-            {
-                ["build_property.projectdir"] = ProjectDir,
-            }.ToImmutableDictionary();
-
-            var analyzerOptions = new AnalyzerOptions(
-                [],
-                new TestOptionsProvider(
-                    ImmutableDictionary<object, AnalyzerConfigOptions>.Empty,
-                    new TestAnalyzerConfigOptions(globalOptions)
-                )
-            );
 
             var options = new CompilationWithAnalyzersOptions(
-                analyzerOptions,
+                new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty),
                 static (ex, analyzer, diagnostic) => Assert.Fail($"Analyzer exception due to {diagnostic.Id}: {ex}"),
                 concurrentAnalysis: true,
                 logAnalyzerExecutionTime: true

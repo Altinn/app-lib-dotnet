@@ -35,8 +35,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" PrivateAssets="all" />
-    <PackageReference Include="PolySharp" Version="1.15.0" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
-    <PackageReference Include="SvSoft.Analyzers.ClosedTypeHierarchyDiagnosticSuppression" Version="1.1.1"  PrivateAssets="All" />
 
     <!-- <PackageReference Include="System.Text.Json" GeneratePathProperty="true" Version="8.0.5" />
     <None Include="$(PKGSystem_Text_Json)/lib/netstandard2.0/System.Text.Json.dll" CopyToOutputDirectory="PreserveNewest" /> -->
