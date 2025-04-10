@@ -310,6 +310,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ISigningDelegationService, SigningDelegationService>();
         services.AddTransient<ISigningReceiptService, SigningReceiptService>();
         services.AddTransient<ISigningCallToActionService, SigningCallToActionService>();
+        services.AddTransient<ISigneeContextsManager, SigneeContextsManager>();
         services.AddTransient<ISigningService, SigningService>();
     }
 

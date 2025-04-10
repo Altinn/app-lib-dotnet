@@ -27,9 +27,11 @@ internal class SigningController : ControllerBase
 {
     private readonly IInstanceClient _instanceClient;
     private readonly IProcessReader _processReader;
+    private readonly ISigneeContextsManager _signeeContextsManager;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly ILogger<SigningController> _logger;
     private readonly ISigningService _signingService;
+
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     /// <summary>
@@ -48,6 +50,7 @@ internal class SigningController : ControllerBase
         _authenticationContext = authenticationContext;
         _logger = logger;
         _signingService = serviceProvider.GetRequiredService<ISigningService>();
+        _signeeContextsManager = serviceProvider.GetRequiredService<ISigneeContextsManager>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
@@ -93,7 +96,7 @@ internal class SigningController : ControllerBase
             (_processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.SignatureConfiguration)
             ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
-        List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(
+        List<SigneeContext> signeeContexts = await _signeeContextsManager.GetSigneeContexts(
             cachedDataMutator,
             signingConfiguration
         );
