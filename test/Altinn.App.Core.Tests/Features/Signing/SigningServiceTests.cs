@@ -29,6 +29,7 @@ public sealed class SigningServiceTests : IDisposable
     private readonly Mock<ISigningDelegationService> _signingDelegationService = new(MockBehavior.Strict);
     private readonly Mock<ISigneeProvider> _signeeProvider = new(MockBehavior.Strict);
     private readonly Mock<ILogger<SigningService>> _logger = new();
+    private readonly Mock<ISigneeContextsManager> _signeeContextsManager = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
     private readonly Mock<ISigningCallToActionService> _signingCallToActionService = new(MockBehavior.Strict);
     private readonly Mock<IAuthorizationClient> _authorizationClient = new(MockBehavior.Strict);
@@ -45,11 +46,11 @@ public sealed class SigningServiceTests : IDisposable
         _signingService = new SigningService(
             _altinnPartyClient.Object,
             _signingDelegationService.Object,
-            _serviceProvider.GetRequiredService<AppImplementationFactory>(),
             _appMetadata.Object,
             _signingCallToActionService.Object,
             _authorizationClient.Object,
-            _logger.Object
+            _logger.Object,
+            _signeeContextsManager.Object
         );
 
         _altinnPartyClient
@@ -141,9 +142,10 @@ public sealed class SigningServiceTests : IDisposable
         };
 
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
-        cachedInstanceMutator
-            .Setup(x => x.GetBinaryData(new DataElementIdentifier(signeeStateDataElement.Id)))
-            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signeeContexts)));
+
+        _signeeContextsManager
+            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync(signeeContexts);
 
         cachedInstanceMutator
             .Setup(x => x.GetBinaryData(new DataElementIdentifier(signDocumentDataElement.Id)))
@@ -899,9 +901,9 @@ public sealed class SigningServiceTests : IDisposable
             .Setup(x => x.GetBinaryData(signatureDataElementIdentifier))
             .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signDocument)));
 
-        cachedInstanceMutator
-            .Setup(x => x.GetBinaryData(signeeStateDataElementIdentifier))
-            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signeeContexts)));
+        _signeeContextsManager
+            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync(signeeContexts);
 
         _signingDelegationService
             .Setup(x =>
@@ -937,7 +939,10 @@ public sealed class SigningServiceTests : IDisposable
         cachedInstanceMutator.Verify(x => x.RemoveDataElement(signatureDataElement), Times.Once);
 
         // It's expected that the blobs are downloaded to sync signee contexts with sign documents.
-        cachedInstanceMutator.Verify(x => x.GetBinaryData(signeeStateDataElementIdentifier), Times.Once);
+        _signeeContextsManager.Verify(
+            x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration),
+            Times.Once
+        );
         cachedInstanceMutator.Verify(x => x.GetBinaryData(signatureDataElementIdentifier), Times.Once);
         cachedInstanceMutator.VerifyNoOtherCalls();
 
@@ -972,6 +977,9 @@ public sealed class SigningServiceTests : IDisposable
             Data = [],
         };
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+        _signeeContextsManager
+            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync([]);
 
         await _signingService.AbortRuntimeDelegatedSigning(
             "task1",
@@ -1021,9 +1029,9 @@ public sealed class SigningServiceTests : IDisposable
             },
         };
 
-        cachedInstanceMutator
-            .Setup(x => x.GetBinaryData(It.IsAny<DataElementIdentifier>()))
-            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signeeContexts)));
+        _signeeContextsManager
+            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync(signeeContexts);
 
         List<string> orgNrs = ["123456789", "555555555"];
 

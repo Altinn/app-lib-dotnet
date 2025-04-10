@@ -6,7 +6,6 @@ using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -18,9 +17,8 @@ using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
-namespace Altinn.App.Core.Features.Signing;
+namespace Altinn.App.Core.Features.Signing.Models.Internal;
 
 internal sealed class SigningReceiptService(
     ICorrespondenceClient correspondenceClient,
@@ -40,7 +38,7 @@ internal sealed class SigningReceiptService(
 
     public async Task<SendCorrespondenceResponse?> SendSignatureReceipt(
         InstanceIdentifier instanceIdentifier,
-        Signee signee,
+        Altinn.App.Core.Internal.Sign.Signee signee,
         IEnumerable<DataElementSignature> dataElementSignatures,
         UserActionContext context,
         List<AltinnEnvironmentConfig>? correspondenceResources

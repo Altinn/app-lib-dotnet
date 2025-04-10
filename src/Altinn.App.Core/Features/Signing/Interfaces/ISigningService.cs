@@ -7,15 +7,6 @@ namespace Altinn.App.Core.Features.Signing.Interfaces;
 internal interface ISigningService
 {
     /// <summary>
-    /// Creates the signee contexts for the current task.
-    /// </summary>
-    Task<List<SigneeContext>> GenerateSigneeContexts(
-        IInstanceDataMutator instanceDataMutator,
-        AltinnSignatureConfiguration signatureConfiguration,
-        CancellationToken ct
-    );
-
-    /// <summary>
     /// Delegates access to the current task, notifies the signees about
     /// a new task to sign and saves the signee contexts to Storage.
     /// </summary>
@@ -25,14 +16,6 @@ internal interface ISigningService
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
-    );
-
-    /// <summary>
-    /// Gets the signee contexts for the current task.
-    /// </summary>
-    Task<List<SigneeContext>> GetSigneeContexts(
-        IInstanceDataAccessor instanceDataAccessor,
-        AltinnSignatureConfiguration signatureConfiguration
     );
 
     /// <summary>

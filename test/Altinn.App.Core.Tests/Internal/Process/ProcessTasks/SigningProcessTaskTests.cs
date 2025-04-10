@@ -24,6 +24,7 @@ public class SigningProcessTaskTests
     private readonly Mock<IProcessReader> _processReaderMock = new();
     private readonly Mock<IInstanceClient> _instanceClientMock = new();
     private readonly Mock<ISigningService> _signingServiceMock = new();
+    private readonly Mock<ISigneeContextsManager> _signeeContextsManagerMock = new();
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
     private readonly Mock<IHostEnvironment> _hostEnvironmentMock = new();
     private readonly Mock<IAppModel> _appModelMock = new();
@@ -40,6 +41,7 @@ public class SigningProcessTaskTests
         _serviceCollection.AddSingleton(Options.Create(new FrontEndSettings()));
         _serviceCollection.AddSingleton(_processReaderMock.Object);
         _serviceCollection.AddSingleton(_signingServiceMock.Object);
+        _serviceCollection.AddSingleton(_signeeContextsManagerMock.Object);
         _serviceCollection.AddSingleton(_instanceClientMock.Object);
         _serviceCollection.AddSingleton(_appModelMock.Object);
         _serviceCollection.AddSingleton(_appMetadataMock.Object);
@@ -61,7 +63,7 @@ public class SigningProcessTaskTests
         var signingProcessTask = sp.GetRequiredService<SigningProcessTask>();
 
         _processReaderMock.Setup(x => x.GetAltinnTaskExtension(It.IsAny<string>())).Returns(altinnTaskExtension);
-        _signingServiceMock
+        _signeeContextsManagerMock
             .Setup(x =>
                 x.GenerateSigneeContexts(
                     It.IsAny<IInstanceDataMutator>(),
@@ -75,7 +77,7 @@ public class SigningProcessTaskTests
         await signingProcessTask.Start(taskId, instance);
 
         // Assert
-        _signingServiceMock.Verify(
+        _signeeContextsManagerMock.Verify(
             x =>
                 x.GenerateSigneeContexts(
                     It.IsAny<IInstanceDataMutator>(),

@@ -1,5 +1,4 @@
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
@@ -7,7 +6,7 @@ using Altinn.App.Core.Models;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Telemetry.DelegationConst;
 
-namespace Altinn.App.Core.Features.Signing;
+namespace Altinn.App.Core.Features.Signing.Models.Internal;
 
 internal sealed class SigningDelegationService(
     IAccessManagementClient accessManagementClient,
