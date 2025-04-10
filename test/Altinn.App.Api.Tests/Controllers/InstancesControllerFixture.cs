@@ -11,6 +11,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.Common.PEP.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -77,6 +78,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
         services.AddSingleton(new Mock<IOrganizationClient>().Object);
         services.AddSingleton(new Mock<IHostEnvironment>().Object);
         services.AddSingleton(new Mock<IValidationService>().Object);
+        services.AddSingleton(new Mock<ITranslationService>().Object);
         services.AddSingleton(new Mock<IAppResources>(MockBehavior.Strict).Object);
 
         var httpContextMock = new Mock<HttpContext>();
