@@ -18,7 +18,7 @@ namespace Altinn.App.Core.Tests.Features.Validators.Default;
 public class SigningTaskValidatorTest
 {
     private readonly Mock<IProcessReader> _processReaderMock = new();
-    private readonly Mock<ISigningService> _signingServiceMock = new();
+    private readonly Mock<ISigneeContextsManager> _signeeContextsManagerMock = new();
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
     private readonly Mock<ILogger<SigningTaskValidator>> _loggerMock = new();
     private readonly SigningTaskValidator _validator;
@@ -28,7 +28,7 @@ public class SigningTaskValidatorTest
         _validator = new SigningTaskValidator(
             _loggerMock.Object,
             _processReaderMock.Object,
-            _signingServiceMock.Object,
+            _signeeContextsManagerMock.Object,
             _appMetadataMock.Object
         );
     }
@@ -62,7 +62,7 @@ public class SigningTaskValidatorTest
             .Setup(pr => pr.GetAltinnTaskExtension(taskId))
             .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
-        _signingServiceMock
+        _signeeContextsManagerMock
             .Setup(ss => ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration))
             .ReturnsAsync(signeeContexts);
 
@@ -102,7 +102,7 @@ public class SigningTaskValidatorTest
             .Setup(pr => pr.GetAltinnTaskExtension(taskId))
             .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
-        _signingServiceMock
+        _signeeContextsManagerMock
             .Setup(ss => ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration))
             .ReturnsAsync(signeeContexts);
 
@@ -164,7 +164,7 @@ public class SigningTaskValidatorTest
             .Setup(pr => pr.GetAltinnTaskExtension(taskId))
             .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
-        _signingServiceMock
+        _signeeContextsManagerMock
             .Setup(ss => ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration))
             .ThrowsAsync(exception);
 
