@@ -52,7 +52,8 @@ internal sealed record TestFixture(
     Mock<IEmailNotificationClient> EmailNotificationClientMock,
     Mock<IProcessReader> ProcessReaderMock,
     Mock<IHttpClientFactory> HttpClientFactoryMock,
-    Mock<IAccessTokenGenerator> AccessTokenGeneratorMock
+    Mock<IAccessTokenGenerator> AccessTokenGeneratorMock,
+    Mock<KS.Fiks.IO.Client.IFiksIOClient> ExternalFiksIOClientMock
 ) : IAsyncDisposable
 {
     public IFiksIOClient FiksIOClient => App.Services.GetRequiredService<IFiksIOClient>();
@@ -143,6 +144,7 @@ internal sealed record TestFixture(
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var accessTokenGeneratorMock = new Mock<IAccessTokenGenerator>();
         var loggerFactoryMock = new Mock<ILoggerFactory>();
+        var externalFiksIOClientMock = new Mock<KS.Fiks.IO.Client.IFiksIOClient>();
 
         hostEnvironmentMock.Setup(x => x.EnvironmentName).Returns("Development");
         loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
@@ -165,6 +167,7 @@ internal sealed record TestFixture(
         builder.Services.AddSingleton(processReaderMock.Object);
         builder.Services.AddSingleton(httpClientFactoryMock.Object);
         builder.Services.AddSingleton(accessTokenGeneratorMock.Object);
+        builder.Services.AddSingleton(externalFiksIOClientMock.Object);
 
         // Non-mockable services
         builder.Services.AddTransient<InstanceDataUnitOfWorkInitializer>();
@@ -187,7 +190,8 @@ internal sealed record TestFixture(
             emailNotificationClientMock,
             processReaderMock,
             httpClientFactoryMock,
-            accessTokenGeneratorMock
+            accessTokenGeneratorMock,
+            externalFiksIOClientMock
         );
     }
 

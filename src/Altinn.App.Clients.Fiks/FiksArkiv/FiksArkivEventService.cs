@@ -5,7 +5,6 @@ using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -19,6 +18,7 @@ internal sealed class FiksArkivEventService : BackgroundService
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
     private readonly IHostEnvironment _env;
     private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly TimeProvider _timeProvider;
 
     private IFiksArkivMessageHandler _fiksArkivMessageHandler =>
         _appImplementationFactory.GetRequired<IFiksArkivMessageHandler>();
@@ -29,6 +29,7 @@ internal sealed class FiksArkivEventService : BackgroundService
         ILogger<FiksArkivEventService> logger,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
         IHostEnvironment env,
+        TimeProvider? timeProvider = null,
         Telemetry? telemetry = null
     )
     {
@@ -37,38 +38,49 @@ internal sealed class FiksArkivEventService : BackgroundService
         _telemetry = telemetry;
         _fiksArkivInstanceClient = fiksArkivInstanceClient;
         _appImplementationFactory = appImplementationFactory;
+        _timeProvider = timeProvider ?? TimeProvider.System;
         _env = env;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Fiks Arkiv Service starting");
-        await _fiksIOClient.OnMessageReceived(MessageReceivedHandler);
-
-        var loopInterval = TimeSpan.FromSeconds(1);
-        var healthCheckInterval = TimeSpan.FromMinutes(10);
-        var counter = TimeSpan.Zero;
-
-        // Keep-alive loop
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            await Task.Delay(loopInterval, stoppingToken);
-            counter += loopInterval;
+            _logger.LogInformation("Fiks Arkiv Service starting");
+            await _fiksIOClient.OnMessageReceived(MessageReceivedHandler);
 
-            // Perform health check
-            if (counter >= healthCheckInterval)
+            DateTimeOffset nextIteration = GetLoopDelay();
+            DateTimeOffset nextHealthCheck = GetHealthCheckDelay();
+
+            // Keep-alive loop
+            while (!stoppingToken.IsCancellationRequested)
             {
-                counter = TimeSpan.Zero;
-                if (await _fiksIOClient.IsHealthy() is false)
+                TimeSpan delta = nextIteration - _timeProvider.GetUtcNow();
+                await _timeProvider.Delay(delta > TimeSpan.Zero ? delta : TimeSpan.Zero, stoppingToken);
+
+                // Perform health check
+                if (_timeProvider.GetUtcNow() >= nextHealthCheck)
                 {
-                    _logger.LogError("FiksIO Client is unhealthy, reconnecting.");
-                    await _fiksIOClient.Reconnect();
+                    if (await _fiksIOClient.IsHealthy() is false)
+                    {
+                        _logger.LogError("FiksIO Client is unhealthy, reconnecting.");
+                        await _fiksIOClient.Reconnect();
+                    }
+
+                    nextHealthCheck = GetHealthCheckDelay();
                 }
+
+                nextIteration = GetLoopDelay();
             }
         }
+        finally
+        {
+            _logger.LogInformation("Fiks Arkiv Service stopping.");
+            await _fiksIOClient.DisposeAsync();
+        }
 
-        _logger.LogInformation("Fiks Arkiv Service stopping");
-        await _fiksIOClient.DisposeAsync();
+        DateTimeOffset GetLoopDelay() => _timeProvider.GetUtcNow() + TimeSpan.FromSeconds(1);
+        DateTimeOffset GetHealthCheckDelay() => _timeProvider.GetUtcNow() + TimeSpan.FromMinutes(10);
     }
 
     private async Task MessageReceivedHandler(FiksIOReceivedMessage receivedMessage)
