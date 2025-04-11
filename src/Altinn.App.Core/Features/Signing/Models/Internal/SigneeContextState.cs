@@ -1,16 +1,16 @@
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Features.Signing.Models;
+namespace Altinn.App.Core.Features.Signing.Models.Internal;
 
 /// <summary>
 /// The signee state
 /// </summary>
-public sealed class SigneeState
+internal sealed class SigneeContextState
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="SigneeState"/> class.
+    /// Initializes a new instance of the <see cref="SigneeContextState"/> class.
     /// </summary>
-    public SigneeState() { }
+    public SigneeContextState() { }
 
     /// <summary>
     /// Indicates whether signee has been delegated rights to sign.
