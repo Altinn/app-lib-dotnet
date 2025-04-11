@@ -19,8 +19,6 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         IReadOnlyList<DeserializationResult>? deserializedContent
     )
     {
-        await Task.CompletedTask;
-
         _logger.LogInformation(
             "Received message {MessageType}:{MessageId} is a successful response: {MessageContent}",
             receivedMessage.Message.MessageType,

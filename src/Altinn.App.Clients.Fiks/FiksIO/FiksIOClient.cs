@@ -34,6 +34,7 @@ internal sealed class FiksIOClient : IFiksIOClient
     private readonly ResiliencePipeline<FiksIOMessageResponse> _resiliencePipeline;
     private readonly IExternalFiksIOClient? _fiksIoClientOverride;
     private IExternalFiksIOClient? _fiksIoClient;
+    private bool _isDisposed;
     private event Func<FiksIOReceivedMessage, Task>? _messageReceivedHandler;
     private readonly Telemetry? _telemetry;
 
@@ -258,14 +259,25 @@ internal sealed class FiksIOClient : IFiksIOClient
 
     public async ValueTask DisposeAsync()
     {
-        if (_fiksIoClientOverride is not null)
-        {
-            await _fiksIoClientOverride.DisposeAsync();
-        }
+        if (_isDisposed)
+            return;
 
-        if (_fiksIoClient is not null)
+        _isDisposed = true;
+
+        if (
+            _fiksIoClient is not null
+            && _fiksIoClientOverride is not null
+            && ReferenceEquals(_fiksIoClient, _fiksIoClientOverride)
+        )
         {
             await _fiksIoClient.DisposeAsync();
+            return;
         }
+
+        if (_fiksIoClientOverride is not null)
+            await _fiksIoClientOverride.DisposeAsync();
+
+        if (_fiksIoClient is not null)
+            await _fiksIoClient.DisposeAsync();
     }
 }
