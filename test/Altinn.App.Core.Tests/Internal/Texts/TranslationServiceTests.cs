@@ -48,21 +48,21 @@ public class TranslationServiceTests
     public async Task Returns_Nb()
     {
         var result = await _translationService.TranslateTextKey("text", "nb");
-        Assert.Equal(result, "bokmål");
+        Assert.Equal("bokmål", result);
     }
 
     [Fact]
     public async Task Returns_En()
     {
         var result = await _translationService.TranslateTextKey("text", "en");
-        Assert.Equal(result, "english");
+        Assert.Equal("english", result);
     }
 
     [Fact]
     public async Task Fallback_Nb()
     {
         var result = await _translationService.TranslateTextKey("text", "nn");
-        Assert.Equal(result, "bokmål");
+        Assert.Equal("bokmål", result);
     }
 
     [Fact]
