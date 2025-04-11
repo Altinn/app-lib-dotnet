@@ -29,7 +29,7 @@ public class ServiceCollectionExtensionsTests
         Assert.NotNull(fiksIOSettings);
         Assert.NotNull(resiliencePipeline);
         Assert.IsType<FiksIOClient>(fiksIOClient);
-        Assert.Equal(TestFixture.GetDefaultFiksIOSettings(), fiksIOSettings);
+        Assert.Equal(TestHelpers.GetDefaultFiksIOSettings(), fiksIOSettings);
 
         AssertDefaultResiliencePipeline(resiliencePipeline);
     }
@@ -70,8 +70,8 @@ public class ServiceCollectionExtensionsTests
     public async Task AddFiksIOClient_OverridesConfig_Delegates(bool provideDefaultSettings)
     {
         // Arrange
-        var fiksIOSettingsOverride = TestFixture.GetRandomFiksIOSettings();
-        var maskinportenSettingsOverride = TestFixture.GetRandomMaskinportenSettings();
+        var fiksIOSettingsOverride = TestHelpers.GetRandomFiksIOSettings();
+        var maskinportenSettingsOverride = TestHelpers.GetRandomMaskinportenSettings();
         await using var fixture = TestFixture.Create(
             services =>
             {
@@ -113,8 +113,8 @@ public class ServiceCollectionExtensionsTests
     public async Task AddFiksIOClient_OverridesConfig_JsonPaths(bool provideDefaultSettings)
     {
         // Arrange
-        var fiksIOSettingsOverride = TestFixture.GetRandomFiksIOSettings();
-        var maskinportenSettingsOverride = TestFixture.GetRandomMaskinportenSettings();
+        var fiksIOSettingsOverride = TestHelpers.GetRandomFiksIOSettings();
+        var maskinportenSettingsOverride = TestHelpers.GetRandomMaskinportenSettings();
         await using var fixture = TestFixture.Create(
             services =>
             {
@@ -167,7 +167,7 @@ public class ServiceCollectionExtensionsTests
         Assert.NotNull(fiksArkivServiceTask);
         Assert.NotNull(fiksArkivConfigValidationService);
         Assert.NotNull(fiksArkivEventService);
-        Assert.Equal(TestFixture.GetDefaultFiksIOSettings(), fiksIOSettings);
+        Assert.Equal(TestHelpers.GetDefaultFiksIOSettings(), fiksIOSettings);
         Assert.IsType<FiksIOClient>(fiksIOClient);
         Assert.IsType<FiksArkivDefaultMessageHandler>(fiksArkivMessageHandler);
         Assert.IsType<FiksArkivServiceTask>(fiksArkivServiceTask);
@@ -212,9 +212,9 @@ public class ServiceCollectionExtensionsTests
     public async Task AddFiksArkiv_OverridesConfig_Delegates(bool provideDefaultSettings)
     {
         // Arrange
-        var fiksIOSettingsOverride = TestFixture.GetRandomFiksIOSettings();
-        var fiksArkivSettingsOverride = TestFixture.GetRandomFiksArkivSettings();
-        var maskinportenSettingsOverride = TestFixture.GetRandomMaskinportenSettings();
+        var fiksIOSettingsOverride = TestHelpers.GetRandomFiksIOSettings();
+        var fiksArkivSettingsOverride = TestHelpers.GetRandomFiksArkivSettings();
+        var maskinportenSettingsOverride = TestHelpers.GetRandomMaskinportenSettings();
         await using var fixture = TestFixture.Create(
             services =>
                 services
@@ -265,9 +265,9 @@ public class ServiceCollectionExtensionsTests
     public async Task AddFiksArkiv_OverridesConfig_JsonPaths(bool provideDefaultSettings)
     {
         // Arrange
-        var fiksIOSettingsOverride = TestFixture.GetRandomFiksIOSettings();
-        var fiksArkivSettingsOverride = TestFixture.GetRandomFiksArkivSettings();
-        var maskinportenSettingsOverride = TestFixture.GetRandomMaskinportenSettings();
+        var fiksIOSettingsOverride = TestHelpers.GetRandomFiksIOSettings();
+        var fiksArkivSettingsOverride = TestHelpers.GetRandomFiksArkivSettings();
+        var maskinportenSettingsOverride = TestHelpers.GetRandomMaskinportenSettings();
         await using var fixture = TestFixture.Create(
             services =>
                 services
@@ -304,7 +304,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         await using var fixture = TestFixture.Create(services =>
-            services.AddFiksArkiv().WithMessageHandler<TestFixture.CustomFiksArkivMessageHandler>()
+            services.AddFiksArkiv().WithMessageHandler<TestHelpers.CustomFiksArkivMessageHandler>()
         );
 
         // Act
@@ -312,7 +312,7 @@ public class ServiceCollectionExtensionsTests
 
         // Assert
         Assert.NotNull(fiksArkivMessageHandler);
-        Assert.IsType<TestFixture.CustomFiksArkivMessageHandler>(fiksArkivMessageHandler);
+        Assert.IsType<TestHelpers.CustomFiksArkivMessageHandler>(fiksArkivMessageHandler);
     }
 
     [Fact]
@@ -320,7 +320,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         await using var fixture = TestFixture.Create(services =>
-            services.AddFiksArkiv().WithAutoSendDecision<TestFixture.CustomAutoSendDecision>()
+            services.AddFiksArkiv().WithAutoSendDecision<TestHelpers.CustomAutoSendDecision>()
         );
 
         // Act
@@ -328,7 +328,7 @@ public class ServiceCollectionExtensionsTests
 
         // Assert
         Assert.NotNull(fiksArkivAutoSendDecisionHandler);
-        Assert.IsType<TestFixture.CustomAutoSendDecision>(fiksArkivAutoSendDecisionHandler);
+        Assert.IsType<TestHelpers.CustomAutoSendDecision>(fiksArkivAutoSendDecisionHandler);
     }
 
     private static void AssertDefaultResiliencePipeline(ResiliencePipeline<FiksIOMessageResponse> pipeline)

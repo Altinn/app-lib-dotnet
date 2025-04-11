@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
+using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
@@ -82,7 +83,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             using HttpClient client = await GetAuthenticatedClient();
             using HttpResponseMessage response = await client.PutAsync(
                 $"instances/{instanceIdentifier}/process/next",
-                GetProcessNextAction()
+                GetProcessNextAction(action)
             );
 
             await EnsureSuccessStatusCode(response);
@@ -93,20 +94,6 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         {
             _logger.LogError("Failed to move instance {InstanceId} to next step: {Error}", instanceIdentifier, e);
             throw;
-        }
-
-        StringContent GetProcessNextAction()
-        {
-            if (string.IsNullOrWhiteSpace(action))
-                return new StringContent(string.Empty);
-
-            var payload = new { Action = action };
-
-            return new StringContent(
-                JsonSerializer.Serialize(payload, JsonSerializerOptions.Web),
-                Encoding.UTF8,
-                "application/json"
-            );
         }
     }
 
@@ -146,6 +133,13 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
 
         try
         {
+            if (string.IsNullOrWhiteSpace(dataType))
+                throw new FiksArkivException("Data type cannot be null or empty.");
+            if (string.IsNullOrWhiteSpace(filename))
+                throw new FiksArkivException("Filename cannot be null or empty.");
+            if (contentType?.Contains('/') != true)
+                throw new FiksArkivException("Content type must be a valid MIME type.");
+
             string url = $"instances/{instanceIdentifier}/data?dataType={dataType}";
             if (!string.IsNullOrEmpty(generatedFromTask))
                 url += $"&generatedFromTask={generatedFromTask}";
@@ -243,5 +237,19 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         );
 
         return client;
+    }
+
+    internal static StringContent GetProcessNextAction(string? action)
+    {
+        if (string.IsNullOrWhiteSpace(action))
+            return new StringContent(string.Empty);
+
+        var payload = new { Action = action };
+
+        return new StringContent(
+            JsonSerializer.Serialize(payload, JsonSerializerOptions.Web),
+            Encoding.UTF8,
+            "application/json"
+        );
     }
 }
