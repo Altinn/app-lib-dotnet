@@ -203,7 +203,6 @@ internal class SigningUserAction : IUserAction
         int? userId = context.Authentication switch
         {
             Authenticated.User user => user.UserId,
-            Authenticated.SelfIdentifiedUser selfIdentifiedUser => selfIdentifiedUser.UserId,
             _ => null,
         };
 
