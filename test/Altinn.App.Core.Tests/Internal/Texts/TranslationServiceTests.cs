@@ -59,6 +59,13 @@ public class TranslationServiceTests
     }
 
     [Fact]
+    public async Task Default_Nb()
+    {
+        var result = await _translationService.TranslateTextKey("text", null);
+        Assert.Equal("bokmål", result);
+    }
+
+    [Fact]
     public async Task Fallback_Nb()
     {
         var result = await _translationService.TranslateTextKey("text", "nn");
