@@ -553,32 +553,22 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
 
     [Theory]
     [MemberData(nameof(PartitionValidationIssuesByDataElement))]
-    public void TestPartitionCodeForCompatibility(
-        int index,
-        List<ValidationSourcePair> validationIssues,
-        string expectedJson
-    )
+    public void TestPartitionCodeForCompatibility(List<ValidationSourcePair> validationIssues, string expectedJson)
     {
         var partitionedIssues = ActionsController.PartitionValidationIssuesByDataElement(validationIssues);
         var json = JsonSerializer.Serialize(partitionedIssues);
         Assert.Equal(expectedJson, json);
     }
 
-    public static TheoryData<int, List<ValidationSourcePair>, string> PartitionValidationIssuesByDataElement =>
+    public static TheoryData<List<ValidationSourcePair>, string> PartitionValidationIssuesByDataElement =>
         new()
         {
+            { [new ValidationSourcePair("source", new List<ValidationIssueWithSource>())], """{"":{"source":[]}}""" },
             {
-                1,
-                [new ValidationSourcePair("source", new List<ValidationIssueWithSource>())],
-                """{"":{"source":[]}}"""
-            },
-            {
-                2,
                 [new ValidationSourcePair("source", []), new ValidationSourcePair("source2", [])],
                 """{"":{"source":[],"source2":[]}}"""
             },
             {
-                3,
                 [
                     new ValidationSourcePair(
                         "source",
@@ -597,7 +587,6 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
                 """{"123445":{"source":[{"severity":0,"dataElementId":"123445","field":null,"code":null,"description":null,"source":"null"}]}}"""
             },
             {
-                4,
                 [
                     new ValidationSourcePair(
                         "source",
@@ -629,7 +618,6 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
                 """{"123445":{"source":[{"severity":0,"dataElementId":"123445","field":null,"code":null,"description":null,"source":"null"}],"source2":[{"severity":0,"dataElementId":"123445","field":null,"code":null,"description":null,"source":"null"}]}}"""
             },
             {
-                5,
                 [
                     new ValidationSourcePair(
                         "source",
