@@ -179,7 +179,6 @@ internal class SigningController : ControllerBase
         int? userId = currentAuth switch
         {
             Authenticated.User user => user.UserId,
-            Authenticated.SelfIdentifiedUser selfIdentifiedUser => selfIdentifiedUser.UserId,
             _ => null,
         };
 

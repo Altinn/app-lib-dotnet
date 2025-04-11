@@ -66,30 +66,42 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipient(OrganisationOrPersonIdentifier recipient)
+    public ICorrespondenceRequestBuilderContent WithRecipient(OrganisationOrPersonIdentifier recipient)
     {
         BuilderUtils.NotNullOrEmpty(recipient, "Recipients cannot be empty");
         return WithRecipients([recipient]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipient(string recipient)
+    public ICorrespondenceRequestBuilderContent WithRecipient(OrganisationNumber organisation)
+    {
+        BuilderUtils.NotNullOrEmpty(organisation, "Recipients cannot be empty");
+        return WithRecipients([OrganisationOrPersonIdentifier.Create(organisation)]);
+    }
+
+    /// <inheritdoc/>
+    public ICorrespondenceRequestBuilderContent WithRecipient(NationalIdentityNumber person)
+    {
+        BuilderUtils.NotNullOrEmpty(person, "Recipients cannot be empty");
+        return WithRecipients([OrganisationOrPersonIdentifier.Create(person)]);
+    }
+
+    /// <inheritdoc/>
+    public ICorrespondenceRequestBuilderContent WithRecipient(string recipient)
     {
         BuilderUtils.NotNullOrEmpty(recipient, "Recipients cannot be empty");
         return WithRecipients([recipient]);
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipients(IEnumerable<string> recipients)
+    public ICorrespondenceRequestBuilderContent WithRecipients(IEnumerable<string> recipients)
     {
         BuilderUtils.NotNullOrEmpty(recipients);
         return WithRecipients(recipients.Select(OrganisationOrPersonIdentifier.Parse));
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderAllowSystemDeleteAfter WithRecipients(
-        IEnumerable<OrganisationOrPersonIdentifier> recipients
-    )
+    public ICorrespondenceRequestBuilderContent WithRecipients(IEnumerable<OrganisationOrPersonIdentifier> recipients)
     {
         BuilderUtils.NotNullOrEmpty(recipients, "Recipients cannot be empty");
         _recipients ??= [];
@@ -98,7 +110,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderContent WithAllowSystemDeleteAfter(DateTimeOffset allowSystemDeleteAfter)
+    public ICorrespondenceRequestBuilder WithAllowSystemDeleteAfter(DateTimeOffset allowSystemDeleteAfter)
     {
         BuilderUtils.NotNullOrEmpty(allowSystemDeleteAfter, "AllowSystemDeleteAfter cannot be empty");
         _allowSystemDeleteAfter = allowSystemDeleteAfter;
@@ -244,12 +256,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilder WithNotificationIfConfigured(CorrespondenceNotification? notification)
     {
-        if (notification is not null)
-        {
-            return WithNotification(notification);
-        }
-
-        return this;
+        return notification is not null ? WithNotification(notification) : this;
     }
 
     /// <inheritdoc/>
@@ -307,7 +314,6 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
         BuilderUtils.NotNullOrEmpty(_sender);
         BuilderUtils.NotNullOrEmpty(_sendersReference);
         BuilderUtils.NotNullOrEmpty(_content);
-        BuilderUtils.NotNullOrEmpty(_allowSystemDeleteAfter);
         BuilderUtils.NotNullOrEmpty(_recipients);
 
         return new CorrespondenceRequest
@@ -316,7 +322,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
             Sender = _sender.Value,
             SendersReference = _sendersReference,
             Content = _content with { Attachments = _contentAttachments },
-            AllowSystemDeleteAfter = _allowSystemDeleteAfter.Value,
+            AllowSystemDeleteAfter = _allowSystemDeleteAfter,
             DueDateTime = _dueDateTime,
             Recipients = _recipients,
             RequestedPublishTime = _requestedPublishTime,

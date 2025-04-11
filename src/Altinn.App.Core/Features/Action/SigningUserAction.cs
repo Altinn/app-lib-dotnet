@@ -66,12 +66,7 @@ internal class SigningUserAction : IUserAction
     /// <exception cref="ApplicationConfigException"></exception>
     public async Task<UserActionResult> HandleAction(UserActionContext context)
     {
-        if (
-            context.Authentication
-            is not Authenticated.User
-                and not Authenticated.SelfIdentifiedUser
-                and not Authenticated.SystemUser
-        )
+        if (context.Authentication is not Authenticated.User and not Authenticated.SystemUser)
         {
             return UserActionResult.FailureResult(
                 error: new ActionError { Code = "NoUserId", Message = "User id is missing in token" },
@@ -208,7 +203,6 @@ internal class SigningUserAction : IUserAction
         int? userId = context.Authentication switch
         {
             Authenticated.User user => user.UserId,
-            Authenticated.SelfIdentifiedUser selfIdentifiedUser => selfIdentifiedUser.UserId,
             _ => null,
         };
 
@@ -295,8 +289,6 @@ internal class SigningUserAction : IUserAction
                     OrganisationNumber = context.OnBehalfOf,
                 };
             }
-            case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
-                return new Signee { UserId = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture) };
             case Authenticated.SystemUser systemUser:
                 return new Signee
                 {

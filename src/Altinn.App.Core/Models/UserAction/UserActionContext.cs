@@ -89,7 +89,6 @@ public class UserActionContext
         ?? Authentication switch
         {
             Authenticated.User user => user.UserId,
-            Authenticated.SelfIdentifiedUser selfIdentifiedUser => selfIdentifiedUser.UserId,
             _ => null,
         };
 

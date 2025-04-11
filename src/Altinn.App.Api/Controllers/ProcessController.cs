@@ -367,17 +367,20 @@ public class ProcessController : ControllerBase
                 Language = language,
             };
 
-            UserActionResult userActionResult = await _processEngine.HandleUserAction(request);
-            if (userActionResult.ResultType is ResultType.Failure)
+            if (processNext?.Action is not null)
             {
-                var failedUserActionResult = new ProcessChangeResult()
+                UserActionResult userActionResult = await _processEngine.HandleUserAction(request);
+                if (userActionResult.ResultType is ResultType.Failure)
                 {
-                    Success = false,
-                    ErrorMessage = $"Action handler for action {request.Action} failed!",
-                    ErrorType = userActionResult.ErrorType,
-                };
+                    var failedUserActionResult = new ProcessChangeResult()
+                    {
+                        Success = false,
+                        ErrorMessage = $"Action handler for action {request.Action} failed!",
+                        ErrorType = userActionResult.ErrorType,
+                    };
 
-                return GetResultForError(failedUserActionResult);
+                    return GetResultForError(failedUserActionResult);
+                }
             }
 
             // If the action is 'reject' the task is being abandoned, and we should skip validation, but only if reject has been allowed for the task in bpmn.

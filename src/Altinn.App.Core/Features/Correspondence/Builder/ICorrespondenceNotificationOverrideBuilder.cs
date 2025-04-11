@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features.Correspondence.Models;
+using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
@@ -12,6 +13,28 @@ public interface ICorrespondenceNotificationOverrideBuilder
     /// </summary>
     /// <param name="recipientToOverride">The recipient to override notifications for. Organization number / national identifier</param>
     public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(string recipientToOverride);
+
+    /// <summary>
+    /// Sets the recipient to override for the correspondence notification.
+    /// </summary>
+    /// <param name="recipientToOverride">The recipient to override notifications for.</param>
+    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(OrganisationNumber recipientToOverride);
+
+    /// <summary>
+    /// Sets the recipient to override for the correspondence notification.
+    /// </summary>
+    /// <param name="recipientToOverride">The recipient to override notifications for.</param>
+    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(
+        NationalIdentityNumber recipientToOverride
+    );
+
+    /// <summary>
+    /// Sets the recipient to override for the correspondence notification.
+    /// </summary>
+    /// <param name="recipientToOverride">The recipient to override notifications for.</param>
+    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(
+        OrganisationOrPersonIdentifier recipientToOverride
+    );
 
     /// <summary>
     /// Sets the custom recipients to override the default recipient.

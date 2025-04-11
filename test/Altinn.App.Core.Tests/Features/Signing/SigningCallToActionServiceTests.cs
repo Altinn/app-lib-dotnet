@@ -21,14 +21,17 @@ namespace Altinn.App.Core.Tests.Features.Signing;
 
 public class SigningCallToActionServiceTests
 {
-    private readonly IOptions<GeneralSettings> _generalSettings;
+    private readonly IOptions<GeneralSettings> _generalSettings = Microsoft.Extensions.Options.Options.Create(
+        new GeneralSettings()
+    );
 
-    public SigningCallToActionServiceTests()
-    {
-        _generalSettings = Microsoft.Extensions.Options.Options.Create(new GeneralSettings());
-    }
+    private static OrganisationNumber GetOrgNumber(int index) =>
+        IdentificationNumberProvider.OrganisationNumbers.GetValidNumber(index);
 
-    SigningCallToActionService SetupService(
+    private static NationalIdentityNumber GetSsn(int index) =>
+        IdentificationNumberProvider.NationalIdentityNumbers.GetValidNumber(index);
+
+    private SigningCallToActionService SetupService(
         Mock<ICorrespondenceClient>? correspondenceClientMockOverride = null,
         Mock<IHostEnvironment>? hostEnvironmentMockOverride = null,
         Mock<IAppResources>? appResourcesMockOverride = null,
@@ -53,7 +56,7 @@ public class SigningCallToActionServiceTests
         );
     }
 
-    Mock<IAppResources> SetupAppResourcesMock(
+    private Mock<IAppResources> SetupAppResourcesMock(
         TextResource? textResourceOverride = null,
         List<TextResourceElement>? additionalTextResourceElements = null
     )
@@ -123,11 +126,15 @@ public class SigningCallToActionServiceTests
         };
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
-        Party signingParty = new() { Name = "Signee", SSN = "17858296439" };
-        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = "043871668" };
+
+        var orgNo = GetOrgNumber(1);
+        var ssn = GetSsn(1);
+
+        Party signingParty = new() { Name = "Signee", SSN = ssn };
+        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = orgNo };
         List<AltinnEnvironmentConfig> correspondenceResources =
         [
-            new AltinnEnvironmentConfig { Environment = "tt02", Value = "app_ttd_appname" },
+            new() { Environment = "tt02", Value = "app_ttd_appname" },
         ];
 
         // Act
@@ -156,12 +163,9 @@ public class SigningCallToActionServiceTests
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
-        Assert.Equal("043871668", capturedPayload.CorrespondenceRequest.Sender.ToString());
+        Assert.Equal(orgNo.ToString(), capturedPayload.CorrespondenceRequest.Sender.ToString());
         Assert.IsType<OrganisationOrPersonIdentifier.Person>(capturedPayload.CorrespondenceRequest.Recipients[0]);
-        Assert.Equal(
-            "17858296439",
-            (capturedPayload.CorrespondenceRequest.Recipients[0] as OrganisationOrPersonIdentifier.Person)!.ToString()
-        );
+        Assert.True(ssn == capturedPayload.CorrespondenceRequest.Recipients[0]);
     }
 
     /// <summary>
@@ -179,8 +183,8 @@ public class SigningCallToActionServiceTests
             .Callback<SendCorrespondencePayload, CancellationToken>((payload, token) => capturedPayload = payload);
         List<TextResourceElement> smsTextResource =
         [
-            new TextResourceElement { Id = "signing.email_subject", Value = "Custom email subject" },
-            new TextResourceElement { Id = "signing.email_content", Value = "Custom email content" },
+            new() { Id = "signing.email_subject", Value = "Custom email subject" },
+            new() { Id = "signing.email_content", Value = "Custom email content" },
         ];
         Mock<IAppResources> appResourcesMock = SetupAppResourcesMock(additionalTextResourceElements: smsTextResource);
         Mock<IHostEnvironment> hostEnvironmentMock = new();
@@ -210,11 +214,15 @@ public class SigningCallToActionServiceTests
         };
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
-        Party signingParty = new() { Name = "Signee", SSN = "17858296439" };
-        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = "043871668" };
+
+        var orgNo = GetOrgNumber(10);
+        var ssn = GetSsn(10);
+
+        Party signingParty = new() { Name = "Signee", SSN = ssn };
+        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = orgNo };
         List<AltinnEnvironmentConfig> correspondenceResources =
         [
-            new AltinnEnvironmentConfig { Environment = "tt02", Value = "app_ttd_appname" },
+            new() { Environment = "tt02", Value = "app_ttd_appname" },
         ];
 
         // Act
@@ -243,12 +251,9 @@ public class SigningCallToActionServiceTests
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
-        Assert.Equal("043871668", capturedPayload.CorrespondenceRequest.Sender.ToString());
+        Assert.Equal(orgNo.ToString(), capturedPayload.CorrespondenceRequest.Sender.ToString());
         Assert.IsType<OrganisationOrPersonIdentifier.Person>(capturedPayload.CorrespondenceRequest.Recipients[0]);
-        Assert.Equal(
-            "17858296439",
-            (capturedPayload.CorrespondenceRequest.Recipients[0] as OrganisationOrPersonIdentifier.Person)!.ToString()
-        );
+        Assert.True(ssn == capturedPayload.CorrespondenceRequest.Recipients[0]);
     }
 
     /// <summary>
@@ -267,9 +272,9 @@ public class SigningCallToActionServiceTests
             .Callback<SendCorrespondencePayload, CancellationToken>((payload, token) => capturedPayload = payload);
         List<TextResourceElement> smsTextResource =
         [
-            new TextResourceElement { Id = smsContentTextResourceKey, Value = "Custom sms content" },
-            new TextResourceElement { Id = "signing.email_subject", Value = "Custom email subject" },
-            new TextResourceElement { Id = "signing.email_content", Value = "Custom email content" },
+            new() { Id = smsContentTextResourceKey, Value = "Custom sms content" },
+            new() { Id = "signing.email_subject", Value = "Custom email subject" },
+            new() { Id = "signing.email_content", Value = "Custom email content" },
         ];
         Mock<IAppResources> appResourcesMock = SetupAppResourcesMock(additionalTextResourceElements: smsTextResource);
         Mock<IHostEnvironment> hostEnvironmentMock = new();
@@ -300,11 +305,15 @@ public class SigningCallToActionServiceTests
         };
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
-        Party signingParty = new() { Name = "Signee", SSN = "17858296439" };
-        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = "043871668" };
+
+        var orgNo = GetOrgNumber(4);
+        var ssn = GetSsn(8);
+
+        Party signingParty = new() { Name = "Signee", SSN = ssn };
+        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = orgNo };
         List<AltinnEnvironmentConfig> correspondenceResources =
         [
-            new AltinnEnvironmentConfig { Environment = "tt02", Value = "app_ttd_appname" },
+            new() { Environment = "tt02", Value = "app_ttd_appname" },
         ];
 
         // Act
@@ -333,12 +342,9 @@ public class SigningCallToActionServiceTests
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
-        Assert.Equal("043871668", capturedPayload.CorrespondenceRequest.Sender.ToString());
+        Assert.Equal(orgNo, capturedPayload.CorrespondenceRequest.Sender);
         Assert.IsType<OrganisationOrPersonIdentifier.Person>(capturedPayload.CorrespondenceRequest.Recipients[0]);
-        Assert.Equal(
-            "17858296439",
-            (capturedPayload.CorrespondenceRequest.Recipients[0] as OrganisationOrPersonIdentifier.Person)!.ToString()
-        );
+        Assert.True(ssn == capturedPayload.CorrespondenceRequest.Recipients[0]);
     }
 
     /// <summary>
@@ -374,11 +380,15 @@ public class SigningCallToActionServiceTests
         Notification notification = new() { };
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
-        Party signingParty = new() { Name = "Signee", SSN = "17858296439" };
-        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = "043871668" };
+
+        var orgNo = GetOrgNumber(1);
+        var ssn = GetSsn(1);
+
+        Party signingParty = new() { Name = "Signee", SSN = ssn };
+        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = orgNo };
         List<AltinnEnvironmentConfig> correspondenceResources =
         [
-            new AltinnEnvironmentConfig { Environment = "tt02", Value = "app_ttd_appname" },
+            new() { Environment = "tt02", Value = "app_ttd_appname" },
         ];
 
         // Act
@@ -413,12 +423,9 @@ public class SigningCallToActionServiceTests
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
-        Assert.Equal("043871668", capturedPayload.CorrespondenceRequest.Sender.ToString());
+        Assert.Equal(orgNo, capturedPayload.CorrespondenceRequest.Sender.ToString());
         Assert.IsType<OrganisationOrPersonIdentifier.Person>(capturedPayload.CorrespondenceRequest.Recipients[0]);
-        Assert.Equal(
-            "17858296439",
-            (capturedPayload.CorrespondenceRequest.Recipients[0] as OrganisationOrPersonIdentifier.Person)!.ToString()
-        );
+        Assert.True(ssn == capturedPayload.CorrespondenceRequest.Recipients[0]);
     }
 
     /// <summary>
@@ -454,8 +461,8 @@ public class SigningCallToActionServiceTests
         Notification notification = new() { };
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
-        Party signingParty = new() { Name = "Signee", SSN = "17858296439" };
-        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = "043871668" };
+        Party signingParty = new() { Name = "Signee", SSN = GetSsn(1) };
+        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = GetOrgNumber(1) };
         List<AltinnEnvironmentConfig> correspondenceResources =
         [
             // No resource for tt02 - should throw exception
@@ -482,7 +489,7 @@ public class SigningCallToActionServiceTests
         string smsContentTextResourceKey = "signing.sms_content";
         List<TextResourceElement> smsTextResource =
         [
-            new TextResourceElement { Id = smsContentTextResourceKey, Value = "Custom sms content" },
+            new() { Id = smsContentTextResourceKey, Value = "Custom sms content" },
         ];
         Mock<IAppResources> mock = SetupAppResourcesMock(additionalTextResourceElements: smsTextResource);
         SigningCallToActionService service = SetupService(appResourcesMockOverride: mock);
@@ -566,8 +573,9 @@ public class SigningCallToActionServiceTests
     public void OverrideRecipientIfConfigured_SmsWithConfiguredRecipient_OverridesRecipient()
     {
         // Arrange
-        Party party = new() { SSN = "12345678901" };
-        CorrespondenceRecipient recipient = new(party);
+        var ssn = GetSsn(1);
+        Party party = new() { SSN = ssn };
+        OrganisationOrPersonIdentifier recipient = OrganisationOrPersonIdentifier.Parse(party);
 
         Notification notification = new() { Sms = new Sms { MobileNumber = "12345678" } };
 
@@ -577,10 +585,10 @@ public class SigningCallToActionServiceTests
             .FirstOrDefault()!;
         CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
             wrapper.CorrespondenceNotificationRecipients.FirstOrDefault()!;
-        string recipientToOverride = wrapper.RecipientToOverride;
+        var recipientToOverride = wrapper.RecipientToOverride;
 
         // Assert
-        Assert.Equal("12345678901", recipientToOverride);
+        Assert.True(ssn == recipientToOverride);
         Assert.Null(correspondenceNotificationRecipient.NationalIdentityNumber);
         Assert.Null(correspondenceNotificationRecipient.OrganizationNumber);
         Assert.Equal("12345678", correspondenceNotificationRecipient.MobileNumber);
@@ -591,8 +599,9 @@ public class SigningCallToActionServiceTests
     public void OverrideRecipientIfConfigured_EmailWithConfiguredRecipient_OverridesRecipient()
     {
         // Arrange
-        Party party = new() { SSN = "12345678901" };
-        CorrespondenceRecipient recipient = new(party);
+        var ssn = GetSsn(1);
+        Party party = new() { SSN = ssn };
+        OrganisationOrPersonIdentifier recipient = OrganisationOrPersonIdentifier.Parse(party);
 
         Notification notification = new() { Email = new Email { EmailAddress = "test@tester.no" } };
 
@@ -602,10 +611,10 @@ public class SigningCallToActionServiceTests
             .FirstOrDefault()!;
         CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
             wrapper.CorrespondenceNotificationRecipients.FirstOrDefault()!;
-        string recipientToOverride = wrapper.RecipientToOverride;
+        var recipientToOverride = wrapper.RecipientToOverride;
 
         // Assert
-        Assert.Equal("12345678901", recipientToOverride);
+        Assert.True(ssn == recipientToOverride);
         Assert.Null(correspondenceNotificationRecipient.NationalIdentityNumber);
         Assert.Null(correspondenceNotificationRecipient.OrganizationNumber);
         Assert.Equal("test@tester.no", correspondenceNotificationRecipient.EmailAddress);
@@ -616,8 +625,9 @@ public class SigningCallToActionServiceTests
     public void OverrideRecipientIfConfigured_EmailAndSmsWithConfiguredRecipient_OverridesRecipient()
     {
         // Arrange
-        Party party = new() { OrgNumber = "123456789" };
-        CorrespondenceRecipient recipient = new(party);
+        var orgNo = GetOrgNumber(1);
+        Party party = new() { OrgNumber = orgNo };
+        OrganisationOrPersonIdentifier recipient = OrganisationOrPersonIdentifier.Parse(party);
 
         Notification notification = new()
         {
@@ -631,10 +641,10 @@ public class SigningCallToActionServiceTests
             .FirstOrDefault()!;
         CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
             wrapper.CorrespondenceNotificationRecipients.FirstOrDefault()!;
-        string recipientToOverride = wrapper.RecipientToOverride;
+        var recipientToOverride = wrapper.RecipientToOverride;
 
         // Assert
-        Assert.Equal("123456789", recipientToOverride);
+        Assert.True(orgNo == recipientToOverride);
         Assert.Null(correspondenceNotificationRecipient.NationalIdentityNumber);
         Assert.Null(correspondenceNotificationRecipient.NationalIdentityNumber);
         Assert.Equal("12345678", correspondenceNotificationRecipient.MobileNumber);
@@ -645,8 +655,8 @@ public class SigningCallToActionServiceTests
     public void OverrideRecipientIfConfigured_NoNotificationConfigured_ReturnsNull()
     {
         // Arrange
-        Party party = new() { SSN = "12345678901" };
-        CorrespondenceRecipient recipient = new(party);
+        Party party = new() { SSN = GetSsn(1) };
+        OrganisationOrPersonIdentifier recipient = OrganisationOrPersonIdentifier.Parse(party);
 
         Notification? notification = null;
 
@@ -662,8 +672,8 @@ public class SigningCallToActionServiceTests
     public void OverrideRecipientIfConfigured_NoNotificationChoiceConfigured_ReturnsNull()
     {
         // Arrange
-        Party party = new() { SSN = "12345678901" };
-        CorrespondenceRecipient recipient = new(party);
+        Party party = new() { SSN = GetSsn(2) };
+        OrganisationOrPersonIdentifier recipient = OrganisationOrPersonIdentifier.Parse(party);
 
         Notification notification = new()
         {

@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features.Correspondence.Models;
+using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
@@ -7,7 +8,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// </summary>
 public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotificationOverrideBuilder
 {
-    private string? _recipientToOverride;
+    private OrganisationOrPersonIdentifier? _recipientToOverride;
     private List<CorrespondenceNotificationRecipient>? _correspondenceNotificationRecipients;
 
     private CorrespondenceNotificationOverrideBuilder() { }
@@ -21,6 +22,31 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
 
     /// <inheritdoc/>
     public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(string recipientToOverride)
+    {
+        _recipientToOverride = OrganisationOrPersonIdentifier.Parse(recipientToOverride);
+        return this;
+    }
+
+    /// <inheritdoc />
+    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(OrganisationNumber recipientToOverride)
+    {
+        _recipientToOverride = OrganisationOrPersonIdentifier.Create(recipientToOverride);
+        return this;
+    }
+
+    /// <inheritdoc />
+    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(
+        NationalIdentityNumber recipientToOverride
+    )
+    {
+        _recipientToOverride = OrganisationOrPersonIdentifier.Create(recipientToOverride);
+        return this;
+    }
+
+    /// <inheritdoc />
+    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(
+        OrganisationOrPersonIdentifier recipientToOverride
+    )
     {
         _recipientToOverride = recipientToOverride;
         return this;

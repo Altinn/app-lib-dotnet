@@ -612,6 +612,7 @@ public class SigningControllerTests
         var parseContext = default(Authenticated.ParseContext);
         return new Authenticated.User(
             userId: userId,
+            username: "Username",
             userPartyId: 12345,
             authenticationLevel: 2,
             authenticationMethod: "test",

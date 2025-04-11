@@ -62,14 +62,14 @@ internal sealed class SigningCallToActionService(
             );
         }
 
-        CorrespondenceRecipient recipient = new(signingParty);
+        OrganisationOrPersonIdentifier recipient = OrganisationOrPersonIdentifier.Parse(signingParty);
         string instanceUrl = _urlHelper.GetInstanceUrl(appIdentifier, instanceIdentifier);
         UserProfile? recipientProfile = null;
-        if (recipient.IsPerson)
+        if (recipient is OrganisationOrPersonIdentifier.Person person)
         {
             try
             {
-                recipientProfile = await _profileClient.GetUserProfile(recipient.SSN);
+                recipientProfile = await _profileClient.GetUserProfile(person.Value);
             }
             catch (Exception e)
             {
@@ -94,9 +94,10 @@ internal sealed class SigningCallToActionService(
         string? emailSubject = contentWrapper.EmailSubject;
         string? smsBody = contentWrapper.SmsBody;
 
-        if (serviceOwnerParty.OrgNumber == "ttd")
+        if (serviceOwnerParty.OrgNumber == "ttd" && _hostEnvironment.IsProduction() is false)
         {
-            // TestDepartementet is often used in test environments, it does not have a organisation number, so we use Digitaliseringsdirektoratet's orgnr instead.
+            // TestDepartementet is often used in test environments, but does not have an organisation number
+            // Use Digitaliseringsdirektoratet's orgnr instead.
             serviceOwnerParty.OrgNumber = "991825827";
         }
 
@@ -106,8 +107,7 @@ internal sealed class SigningCallToActionService(
                 .WithResourceId(resource)
                 .WithSender(serviceOwnerParty.OrgNumber)
                 .WithSendersReference(instanceIdentifier.ToString())
-                .WithRecipient(recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber)
-                .WithAllowSystemDeleteAfter(DateTime.Now.AddYears(1))
+                .WithRecipient(recipient)
                 .WithContent(correspondenceContent)
                 .WithNotificationIfConfigured(
                     SigningCorrespondenceHelper.GetNotificationChoice(notification) switch
@@ -173,20 +173,19 @@ internal sealed class SigningCallToActionService(
     }
 
     internal static List<CorrespondenceNotificationRecipientWrapper>? OverrideRecipientIfConfigured(
-        CorrespondenceRecipient recipient,
+        OrganisationOrPersonIdentifier recipient,
         Notification? notification,
         NotificationChoice notificationChoice
     )
     {
         if (notification is null || notificationChoice == NotificationChoice.None)
-        {
             return null;
-        }
+
         return
         [
             new CorrespondenceNotificationRecipientWrapper
             {
-                RecipientToOverride = recipient.IsPerson ? recipient.SSN : recipient.OrganisationNumber,
+                RecipientToOverride = recipient,
                 CorrespondenceNotificationRecipients =
                 [
                     new CorrespondenceNotificationRecipient

@@ -142,7 +142,6 @@ public class ProcessEngine : IProcessEngine
         int? userId = currentAuth switch
         {
             Authenticated.User auth => auth.UserId,
-            Authenticated.SelfIdentifiedUser auth => auth.UserId,
             _ => null,
         };
 
@@ -372,17 +371,6 @@ public class ProcessEngine : IProcessEngine
                     UserId = auth.UserId,
                     AuthenticationLevel = auth.AuthenticationLevel,
                     NationalIdentityNumber = details.Profile.Party.SSN,
-                };
-                break;
-            }
-            case Authenticated.SelfIdentifiedUser auth:
-            {
-                var details = await auth.LoadDetails();
-                user = new PlatformUser
-                {
-                    UserId = auth.UserId,
-                    AuthenticationLevel = auth.AuthenticationLevel,
-                    NationalIdentityNumber = details.Profile.Party.SSN, // This is probably null?
                 };
                 break;
             }
