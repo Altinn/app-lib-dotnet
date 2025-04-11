@@ -11,11 +11,12 @@
 
     <!-- SonarCloud requires a ProjectGuid to separate projects. -->
     <ProjectGuid>{E8F29FE8-6B62-41F1-A08C-2A318DD08BB4}</ProjectGuid>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Altinn.Common.PEP" Version="4.1.2" />
-    <PackageReference Include="Altinn.Platform.Storage.Interface" Version="4.0.6" />
+    <PackageReference Include="Altinn.Platform.Storage.Interface" Version="4.0.7" />
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" Version="4.0.0" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.11.2" />
