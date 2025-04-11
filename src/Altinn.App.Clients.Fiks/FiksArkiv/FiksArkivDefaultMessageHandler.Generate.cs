@@ -316,20 +316,20 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             {
                 UserProfile userProfile = await user.LookupProfile();
 
-                return new Klassifikasjon
-                {
-                    KlasseID = userProfile.Party.SSN.ToString(CultureInfo.InvariantCulture),
-                    KlassifikasjonssystemID = "Fødselsnummer",
-                    Tittel = userProfile.Party.Name,
-                };
+                return !string.IsNullOrWhiteSpace(userProfile.Party.SSN)
+                    ? new Klassifikasjon
+                    {
+                        KlasseID = userProfile.Party.SSN.ToString(CultureInfo.InvariantCulture),
+                        KlassifikasjonssystemID = "Fødselsnummer",
+                        Tittel = userProfile.Party.Name,
+                    }
+                    : new Klassifikasjon
+                    {
+                        KlasseID = user.UserId.ToString(CultureInfo.InvariantCulture),
+                        KlassifikasjonssystemID = "AltinnBrukerId",
+                        Tittel = user.Username,
+                    };
             }
-            case Authenticated.SelfIdentifiedUser selfIdentifiedUser:
-                return new Klassifikasjon
-                {
-                    KlasseID = selfIdentifiedUser.UserId.ToString(CultureInfo.InvariantCulture),
-                    KlassifikasjonssystemID = "AltinnBrukerId",
-                    Tittel = selfIdentifiedUser.Username,
-                };
             case Authenticated.SystemUser systemUser:
                 return new Klassifikasjon
                 {
