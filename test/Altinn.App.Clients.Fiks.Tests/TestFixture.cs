@@ -36,6 +36,13 @@ using Polly;
 
 namespace Altinn.App.Clients.Fiks.Tests;
 
+/// <summary>
+/// Test fixture for FiksIO and FiksArkiv.
+/// Sets up mocks for external dependencies, but not for FiksIO/Arkiv implementations.
+/// <p>Use the <see cref="Action{IServiceCollection}"/> delegate in the <see cref="Create"/> metod to register
+/// <see cref="Fiks.Extensions.ServiceCollectionExtensions.AddFiksIOClient"/> or <see cref="Fiks.Extensions.ServiceCollectionExtensions.AddFiksArkiv"/>
+/// along with any additional services and mocks.</p>
+/// </summary>
 internal sealed record TestFixture(
     WebApplication App,
     Mock<IHostEnvironment> HostEnvironmentMock,
@@ -52,8 +59,7 @@ internal sealed record TestFixture(
     Mock<IEmailNotificationClient> EmailNotificationClientMock,
     Mock<IProcessReader> ProcessReaderMock,
     Mock<IHttpClientFactory> HttpClientFactoryMock,
-    Mock<IAccessTokenGenerator> AccessTokenGeneratorMock,
-    Mock<KS.Fiks.IO.Client.IFiksIOClient> ExternalFiksIOClientMock
+    Mock<IAccessTokenGenerator> AccessTokenGeneratorMock
 ) : IAsyncDisposable
 {
     public IFiksIOClient FiksIOClient => App.Services.GetRequiredService<IFiksIOClient>();
@@ -76,6 +82,7 @@ internal sealed record TestFixture(
         AppImplementationFactory.GetAll<IServiceTask>().First(x => x is IFiksArkivServiceTask);
     public ResiliencePipeline<FiksIOMessageResponse> FiksIOResiliencePipeline =>
         App.Services.ResolveResiliencePipeline();
+    public IFiksIOClientFactory FiksIOClientFactory => App.Services.GetRequiredService<IFiksIOClientFactory>();
     public IProcessReader ProcessReader => App.Services.GetRequiredService<IProcessReader>();
     public IHttpClientFactory HttpClientFactory => App.Services.GetRequiredService<IHttpClientFactory>();
     public IAccessTokenGenerator AccessTokenGenerator => App.Services.GetRequiredService<IAccessTokenGenerator>();
@@ -86,6 +93,9 @@ internal sealed record TestFixture(
     private static JsonSerializerOptions _jsonSerializerOptions =>
         new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
 
+    /// <summary>
+    /// Creates a new test fixture instance
+    /// </summary>
     public static TestFixture Create(
         Action<IServiceCollection> configureServices,
         IEnumerable<(string, object)>? configurationCollection = null,
@@ -144,7 +154,6 @@ internal sealed record TestFixture(
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var accessTokenGeneratorMock = new Mock<IAccessTokenGenerator>();
         var loggerFactoryMock = new Mock<ILoggerFactory>();
-        var externalFiksIOClientMock = new Mock<KS.Fiks.IO.Client.IFiksIOClient>();
 
         hostEnvironmentMock.Setup(x => x.EnvironmentName).Returns("Development");
         loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
@@ -167,7 +176,6 @@ internal sealed record TestFixture(
         builder.Services.AddSingleton(processReaderMock.Object);
         builder.Services.AddSingleton(httpClientFactoryMock.Object);
         builder.Services.AddSingleton(accessTokenGeneratorMock.Object);
-        builder.Services.AddSingleton(externalFiksIOClientMock.Object);
 
         // Non-mockable services
         builder.Services.AddTransient<InstanceDataUnitOfWorkInitializer>();
@@ -190,8 +198,7 @@ internal sealed record TestFixture(
             emailNotificationClientMock,
             processReaderMock,
             httpClientFactoryMock,
-            accessTokenGeneratorMock,
-            externalFiksIOClientMock
+            accessTokenGeneratorMock
         );
     }
 

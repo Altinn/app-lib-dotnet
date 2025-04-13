@@ -11,13 +11,11 @@ using KS.Fiks.IO.Client.Configuration;
 using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Crypto.Configuration;
 using KS.Fiks.IO.Send.Client.Configuration;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
 using RabbitMQ.Client.Events;
-using ExternalFiksIOClient = KS.Fiks.IO.Client.FiksIOClient;
 using FiksResult = Altinn.App.Core.Features.Telemetry.Fiks.FiksResult;
 using IExternalFiksIOClient = KS.Fiks.IO.Client.IFiksIOClient;
 
@@ -32,11 +30,11 @@ internal sealed class FiksIOClient : IFiksIOClient
     private readonly ILoggerFactory _loggerFactory;
     private readonly IMaskinportenClient _maskinportenClient;
     private readonly ResiliencePipeline<FiksIOMessageResponse> _resiliencePipeline;
-    private readonly IExternalFiksIOClient? _fiksIoClientOverride;
     private IExternalFiksIOClient? _fiksIoClient;
-    private bool _isDisposed;
-    private event Func<FiksIOReceivedMessage, Task>? _messageReceivedHandler;
     private readonly Telemetry? _telemetry;
+    private readonly IFiksIOClientFactory _fiksIOClientFactory;
+    private event Func<FiksIOReceivedMessage, Task>? _messageReceivedHandler;
+    private bool _isDisposed;
 
     public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
 
@@ -47,7 +45,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         IAppMetadata appMetadata,
         IMaskinportenClient maskinportenClient,
         ILoggerFactory loggerFactory,
-        IExternalFiksIOClient? fiksIoClientOverride = null,
+        IFiksIOClientFactory fiksIOClientFactory,
         Telemetry? telemetry = null
     )
     {
@@ -57,7 +55,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         _loggerFactory = loggerFactory;
         _maskinportenClient = maskinportenClient;
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
-        _fiksIoClientOverride = fiksIoClientOverride;
+        _fiksIOClientFactory = fiksIOClientFactory;
         _resiliencePipeline = serviceProvider.ResolveResiliencePipeline();
         _telemetry = telemetry;
 
@@ -186,13 +184,11 @@ internal sealed class FiksIOClient : IFiksIOClient
         if (_fiksIoClient is not null)
             await _fiksIoClient.DisposeAsync();
 
-        _fiksIoClient =
-            _fiksIoClientOverride
-            ?? await ExternalFiksIOClient.CreateAsync(
-                configuration: fiksConfiguration,
-                maskinportenClient: new FiksIOMaskinportenClient(_maskinportenClient),
-                loggerFactory: _loggerFactory
-            );
+        _fiksIoClient = await _fiksIOClientFactory.CreateClient(
+            fiksConfiguration,
+            new FiksIOMaskinportenClient(_maskinportenClient),
+            _loggerFactory
+        );
 
         if (_messageReceivedHandler is not null)
             await SubscribeToEvents();
@@ -263,19 +259,6 @@ internal sealed class FiksIOClient : IFiksIOClient
             return;
 
         _isDisposed = true;
-
-        if (
-            _fiksIoClient is not null
-            && _fiksIoClientOverride is not null
-            && ReferenceEquals(_fiksIoClient, _fiksIoClientOverride)
-        )
-        {
-            await _fiksIoClient.DisposeAsync();
-            return;
-        }
-
-        if (_fiksIoClientOverride is not null)
-            await _fiksIoClientOverride.DisposeAsync();
 
         if (_fiksIoClient is not null)
             await _fiksIoClient.DisposeAsync();
