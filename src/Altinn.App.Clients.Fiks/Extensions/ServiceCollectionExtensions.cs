@@ -31,6 +31,7 @@ public static class ServiceCollectionExtensions
         if (services.IsConfigured<FiksIOSettings>() is false)
             services.ConfigureFiksIOClient("FiksIOSettings");
 
+        services.AddTransient<IFiksIOClientFactory, FiksIOClientFactory>();
         services.AddTransient<IFiksIOClient, FiksIOClient>();
         services.AddDefaultFiksIOResiliencePipeline();
 
