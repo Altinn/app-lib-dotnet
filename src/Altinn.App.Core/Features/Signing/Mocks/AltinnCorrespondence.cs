@@ -44,7 +44,7 @@ public class BaseCorrespondenceExt
     public required string ResourceId { get; set; }
 
     /// <summary>
-    /// The Sending organisation of the correspondence.
+    /// The Sending organization of the correspondence.
     /// </summary>
     /// <remarks>
     /// Organization number in countrycode:organizationnumber format.

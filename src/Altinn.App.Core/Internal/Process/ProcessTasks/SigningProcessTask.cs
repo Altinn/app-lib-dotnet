@@ -1,6 +1,6 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -132,7 +132,7 @@ internal sealed class SigningProcessTask : IProcessTask
             ct
         );
 
-        await _signingService.InitialiseSignees(taskId, cachedDataMutator, signeeContexts, signatureConfiguration, ct);
+        await _signingService.InitializeSignees(taskId, cachedDataMutator, signeeContexts, signatureConfiguration, ct);
     }
 
     private AltinnSignatureConfiguration GetAltinnSignatureConfiguration(string taskId)

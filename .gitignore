@@ -380,3 +380,6 @@ src/Altinn.Apps/AppTemplates/AspNet/App/Properties/launchSettings.json
 
 *.received.txt
 *.received.json
+
+# Benchmark Results
+BenchmarkDotNet.Artifacts/

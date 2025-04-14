@@ -17,6 +17,7 @@ using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Features.Pdf;
 using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Internal;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Helpers.Serialization;
@@ -168,6 +169,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IAppResources, AppResourcesSI>();
         services.TryAddSingleton<IAppMetadata, AppMetadata>();
         services.TryAddSingleton<IFrontendFeatures, FrontendFeatures>();
+        services.TryAddSingleton<ITranslationService, TranslationService>();
         services.TryAddTransient<IAppEvents, DefaultAppEvents>();
 #pragma warning disable CS0618, CS0612 // Type or member is obsolete
         services.TryAddTransient<IPageOrder, DefaultPageOrder>();
