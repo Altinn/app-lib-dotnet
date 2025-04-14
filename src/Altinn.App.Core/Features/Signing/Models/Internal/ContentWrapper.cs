@@ -1,6 +1,6 @@
 using Altinn.App.Core.Features.Correspondence.Models;
 
-namespace Altinn.App.Core.Features.Signing.Models;
+namespace Altinn.App.Core.Features.Signing.Models.Internal;
 
 internal record ContentWrapper
 {

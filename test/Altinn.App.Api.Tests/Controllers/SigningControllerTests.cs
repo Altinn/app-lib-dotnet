@@ -4,6 +4,7 @@ using Altinn.App.Api.Models;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -19,9 +20,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using static Altinn.App.Core.Features.Signing.Models.Signee;
-using SigneeContext = Altinn.App.Core.Features.Signing.Models.SigneeContext;
-using SigneeContextState = Altinn.App.Core.Features.Signing.Models.SigneeState;
+using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
+using SigneeContextState = Altinn.App.Core.Features.Signing.Models.Internal.SigneeContextState;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
@@ -98,7 +98,7 @@ public class SigningControllerTests
             new SigneeContext
             {
                 TaskId = "task1",
-                Signee = new OrganisationSignee
+                Signee = new OrganizationSignee
                 {
                     OrgName = "org1",
                     OrgNumber = "123456789",
@@ -116,7 +116,7 @@ public class SigningControllerTests
             new SigneeContext
             {
                 TaskId = "task1",
-                Signee = new OrganisationSignee
+                Signee = new OrganizationSignee
                 {
                     OrgName = "org1",
                     OrgNumber = "123456789",
@@ -140,7 +140,7 @@ public class SigningControllerTests
             new SigneeContext
             {
                 TaskId = "task1",
-                Signee = new OrganisationSignee
+                Signee = new OrganizationSignee
                 {
                     OrgName = "org2",
                     OrgNumber = "987654321",
@@ -164,7 +164,7 @@ public class SigningControllerTests
             new SigneeContext
             {
                 TaskId = "task1",
-                Signee = new OrganisationSignee
+                Signee = new OrganizationSignee
                 {
                     OrgName = "org2",
                     OrgNumber = "987654321",
@@ -181,7 +181,7 @@ public class SigningControllerTests
             new SigneeContext
             {
                 TaskId = "task1",
-                Signee = new OrganisationSignee
+                Signee = new OrganizationSignee
                 {
                     OrgName = "org2",
                     OrgNumber = "987654321",
@@ -219,7 +219,7 @@ public class SigningControllerTests
                 new SigneeState
                 {
                     Name = null,
-                    Organisation = "org1",
+                    Organization = "org1",
                     DelegationSuccessful = false,
                     NotificationStatus = NotificationStatus.Failed,
                     SignedTime = null,
@@ -228,7 +228,7 @@ public class SigningControllerTests
                 new SigneeState
                 {
                     Name = null,
-                    Organisation = "org1",
+                    Organization = "org1",
                     DelegationSuccessful = true,
                     NotificationStatus = NotificationStatus.NotSent,
                     SignedTime = signedTime,
@@ -237,7 +237,7 @@ public class SigningControllerTests
                 new SigneeState
                 {
                     Name = null,
-                    Organisation = "org2",
+                    Organization = "org2",
                     DelegationSuccessful = true,
                     NotificationStatus = NotificationStatus.Failed,
                     SignedTime = signedTime,
@@ -246,7 +246,7 @@ public class SigningControllerTests
                 new SigneeState
                 {
                     Name = null,
-                    Organisation = "org2",
+                    Organization = "org2",
                     DelegationSuccessful = true,
                     NotificationStatus = NotificationStatus.Sent,
                     SignedTime = null,
@@ -255,7 +255,7 @@ public class SigningControllerTests
                 new SigneeState
                 {
                     Name = null,
-                    Organisation = "org2",
+                    Organization = "org2",
                     DelegationSuccessful = true,
                     NotificationStatus = NotificationStatus.Sent,
                     SignedTime = null,
@@ -318,7 +318,7 @@ public class SigningControllerTests
                 new SigneeState
                 {
                     Name = "person1",
-                    Organisation = null,
+                    Organization = null,
                     DelegationSuccessful = false,
                     NotificationStatus = NotificationStatus.Failed,
                     SignedTime = null,
@@ -350,7 +350,7 @@ public class SigningControllerTests
                     FullName = "person1",
                     SocialSecurityNumber = "123456789",
                     Party = new Party { PartyId = 123 },
-                    OnBehalfOfOrg = new OrganisationSignee
+                    OnBehalfOfOrg = new OrganizationSignee
                     {
                         OrgName = "org1",
                         OrgNumber = "123456789",
@@ -395,7 +395,7 @@ public class SigningControllerTests
                 new SigneeState
                 {
                     Name = "person1",
-                    Organisation = "org1",
+                    Organization = "org1",
                     DelegationSuccessful = true,
                     NotificationStatus = NotificationStatus.NotSent,
                     SignedTime = signedTime,
@@ -424,7 +424,7 @@ public class SigningControllerTests
                 Signee = new SystemSignee
                 {
                     SystemId = Guid.NewGuid(),
-                    OnBehalfOfOrg = new OrganisationSignee
+                    OnBehalfOfOrg = new OrganizationSignee
                     {
                         OrgName = "org1",
                         OrgNumber = "123456789",
@@ -469,7 +469,7 @@ public class SigningControllerTests
                 new SigneeState
                 {
                     Name = "System",
-                    Organisation = "org1",
+                    Organization = "org1",
                     DelegationSuccessful = true,
                     NotificationStatus = NotificationStatus.Sent,
                     SignedTime = signedTime,
@@ -482,22 +482,22 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetAuthorizedOrganisations_Returns_Expected_Organisations()
+    public async Task GetAuthorizedOrganizations_Returns_Expected_Organizations()
     {
         // Arrange
         SetupAuthenticationContextMock(authenticated: CreateAuthenticatedUser());
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
-        List<OrganisationSignee> organisationSignees =
+        List<OrganizationSignee> organisationSignees =
         [
-            new OrganisationSignee
+            new OrganizationSignee
             {
                 OrgName = "org1",
                 OrgNumber = "123456789",
                 OrgParty = new Party { PartyId = 1 },
             },
-            new OrganisationSignee
+            new OrganizationSignee
             {
                 OrgName = "org2",
                 OrgNumber = "987654321",
@@ -507,7 +507,7 @@ public class SigningControllerTests
 
         _signingServiceMock
             .Setup(s =>
-                s.GetAuthorizedOrganisationSignees(
+                s.GetAuthorizedOrganizationSignees(
                     It.IsAny<InstanceDataUnitOfWork>(),
                     _altinnTaskExtension.SignatureConfiguration!,
                     It.IsAny<int>()
@@ -516,25 +516,25 @@ public class SigningControllerTests
             .ReturnsAsync(organisationSignees);
 
         // Act
-        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetAuthorizedOrganizations("tdd", "app", 1337, Guid.NewGuid());
 
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
-        var signingAuthorizedOrganisationsResponse = okResult.Value as SigningAuthorizedOrganisationsResponse;
+        var signingAuthorizedOrganizationsResponse = okResult.Value as SigningAuthorizedOrganizationsResponse;
 
         // Assert
-        var expected = new SigningAuthorizedOrganisationsResponse
+        var expected = new SigningAuthorizedOrganizationsResponse
         {
-            Organisations =
+            Organizations =
             [
-                new AuthorizedOrganisationDetails
+                new AuthorizedOrganizationDetails
                 {
                     OrgName = "org1",
                     OrgNumber = "123456789",
                     PartyId = 1,
                 },
-                new AuthorizedOrganisationDetails
+                new AuthorizedOrganizationDetails
                 {
                     OrgName = "org2",
                     OrgNumber = "987654321",
@@ -545,12 +545,12 @@ public class SigningControllerTests
 
         Assert.Equal(
             JsonSerializer.Serialize(expected),
-            JsonSerializer.Serialize(signingAuthorizedOrganisationsResponse)
+            JsonSerializer.Serialize(signingAuthorizedOrganizationsResponse)
         );
     }
 
     [Fact]
-    public async Task GetAuthorizedOrganisations_TaskTypeIsNotSigning_Returns_BadRequest()
+    public async Task GetAuthorizedOrganizations_TaskTypeIsNotSigning_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock();
@@ -571,14 +571,14 @@ public class SigningControllerTests
             );
 
         // Act
-        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetAuthorizedOrganizations("tdd", "app", 1337, Guid.NewGuid());
 
         // Assert
         Assert.IsType<BadRequestObjectResult>(actionResult);
     }
 
     [Fact]
-    public async Task GetAuthorizedOrganisations_UserIdIsNull_Returns_Unathorized()
+    public async Task GetAuthorizedOrganizations_UserIdIsNull_Returns_Unathorized()
     {
         // Arrange
         SetupAuthenticationContextMock(authenticated: CreateAuthenticatedNone());
@@ -586,7 +586,7 @@ public class SigningControllerTests
         var controller = sp.GetRequiredService<SigningController>();
 
         // Act
-        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetAuthorizedOrganizations("tdd", "app", 1337, Guid.NewGuid());
 
         // Assert
         Assert.IsType<UnauthorizedResult>(actionResult);

@@ -3,18 +3,18 @@ namespace Altinn.App.Api.Models;
 /// <summary>
 /// Represents the response from the API when fetching organisations the user is authorized to sign on behalf of.
 /// </summary>
-public record SigningAuthorizedOrganisationsResponse
+public record SigningAuthorizedOrganizationsResponse
 {
     /// <summary>
     /// The list of authorized organisations.
     /// </summary>
-    public required List<AuthorizedOrganisationDetails> Organisations { get; init; }
+    public required List<AuthorizedOrganizationDetails> Organizations { get; init; }
 }
 
 /// <summary>
 /// Represents the details of an authorized organisation.
 /// </summary>
-public record AuthorizedOrganisationDetails
+public record AuthorizedOrganizationDetails
 {
     /// <summary>
     /// The organisation number.

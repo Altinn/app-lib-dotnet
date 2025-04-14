@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Signing.Models;
 /// <summary>
 /// A result containing persons and organizations that should sign and related info for each of them.
 /// </summary>
-public class SigneesResult
+public class SigneeProviderResult
 {
     /// <summary>
     /// The signees who are persons that should sign.
@@ -23,42 +23,42 @@ public abstract class ProvidedSignee
     /// </summary>
     [JsonPropertyName("notifications")]
     public Notifications? Notifications { get; init; }
-}
-
-/// <summary>
-/// Represents a signee that is a person.
-/// </summary>
-public class PersonSignee : ProvidedSignee
-{
-    /// <summary>
-    /// The social security number.
-    /// </summary>
-    [JsonPropertyName("socialSecurityNumber")]
-    public required string SocialSecurityNumber { get; init; }
 
     /// <summary>
-    /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
+    /// Represents a signee that is a person.
     /// </summary>
-    [JsonPropertyName("fullName")]
-    public required string FullName { get; init; }
-}
+    public class Person : ProvidedSignee
+    {
+        /// <summary>
+        /// The social security number.
+        /// </summary>
+        [JsonPropertyName("socialSecurityNumber")]
+        public required string SocialSecurityNumber { get; init; }
 
-/// <summary>
-/// Represents a signee that is an organisation.
-/// </summary>
-public class OrganisationSignee : ProvidedSignee
-{
-    /// <summary>
-    /// The name of the organisation.
-    /// </summary>
-    [JsonPropertyName("name")]
-    public required string Name { get; init; }
+        /// <summary>
+        /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
+        /// </summary>
+        [JsonPropertyName("fullName")]
+        public required string FullName { get; init; }
+    }
 
     /// <summary>
-    /// The organisation number.
+    /// Represents a signee that is an organization.
     /// </summary>
-    [JsonPropertyName("organisationNumber")]
-    public required string OrganisationNumber { get; init; }
+    public class Organization : ProvidedSignee
+    {
+        /// <summary>
+        /// The name of the organization.
+        /// </summary>
+        [JsonPropertyName("name")]
+        public required string Name { get; init; }
+
+        /// <summary>
+        /// The organization number.
+        /// </summary>
+        [JsonPropertyName("organizationNumber")]
+        public required string OrganizationNumber { get; init; }
+    }
 }
 
 /// <summary>
@@ -120,7 +120,7 @@ public class Sms
 public class Email
 {
     /// <summary>
-    /// The email address to send the email to. If not set, the registry email address will be used for organisations. For persons, no email will be sent.
+    /// The email address to send the email to. If not set, the registry email address will be used for organizations. For persons, no email will be sent.
     /// </summary>
     [JsonPropertyName("emailAddress")]
     public string? EmailAddress { get; set; }

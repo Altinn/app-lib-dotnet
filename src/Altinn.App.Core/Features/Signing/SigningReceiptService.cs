@@ -6,7 +6,7 @@ using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -119,7 +119,7 @@ internal sealed class SigningReceiptService(
             if (senderDetails is null || string.IsNullOrEmpty(senderOrgNumber))
             {
                 throw new InvalidOperationException(
-                    $"Error looking up sender's organisation number from Altinn CDN, using key `{appMetadata.Org}`"
+                    $"Error looking up sender's organization number from Altinn CDN, using key `{appMetadata.Org}`"
                 );
             }
 

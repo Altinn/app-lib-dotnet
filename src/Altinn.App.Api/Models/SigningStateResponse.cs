@@ -25,10 +25,10 @@ public class SigneeState
     public string? Name { get; set; }
 
     /// <summary>
-    /// The organisation of the signee.
+    /// The organization of the signee.
     /// </summary>
-    [JsonPropertyName("organisation")]
-    public string? Organisation { get; set; }
+    [JsonPropertyName("organization")]
+    public string? Organization { get; set; }
 
     /// <summary>
     /// Whether delegation of signing rights has been successful.

@@ -2,7 +2,7 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -11,8 +11,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
-using OrganisationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganisationSignee;
-using Signee = Altinn.App.Core.Features.Signing.Models.Signee;
+using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -54,8 +53,8 @@ internal class SigningController : ControllerBase
     /// <summary>
     /// Get updated signing state for the current signing task.
     /// </summary>
-    /// <param name="org">unique identifier of the organisation responsible for the app</param>
-    /// <param name="app">application identifier which is unique within an organisation</param>
+    /// <param name="org">unique identifier of the organization responsible for the app</param>
+    /// <param name="app">application identifier which is unique within an organization</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
@@ -106,34 +105,34 @@ internal class SigningController : ControllerBase
                     .Select(signeeContext =>
                     {
                         string? name = null;
-                        string? organisation = null;
+                        string? organization = null;
 
                         switch (signeeContext.Signee)
                         {
-                            case Signee.PersonSignee personSignee:
+                            case PersonSignee personSignee:
                                 name = personSignee.FullName;
                                 break;
 
-                            case Signee.PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee:
+                            case PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee:
                                 name = personOnBehalfOfOrgSignee.FullName;
-                                organisation = personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgName;
+                                organization = personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgName;
                                 break;
 
-                            case Signee.OrganisationSignee organisationSignee:
+                            case OrganizationSignee organizationSignee:
                                 name = null;
-                                organisation = organisationSignee.OrgName;
+                                organization = organizationSignee.OrgName;
                                 break;
 
-                            case Signee.SystemSignee systemSignee:
+                            case SystemSignee systemSignee:
                                 name = "System";
-                                organisation = systemSignee.OnBehalfOfOrg.OrgName;
+                                organization = systemSignee.OnBehalfOfOrg.OrgName;
                                 break;
                         }
 
                         return new Models.SigneeState
                         {
                             Name = name,
-                            Organisation = organisation,
+                            Organization = organization,
                             SignedTime = signeeContext.SignDocument?.SignedTime,
                             DelegationSuccessful = signeeContext.SigneeState.IsAccessDelegated,
                             NotificationStatus = GetNotificationState(signeeContext),
@@ -148,11 +147,11 @@ internal class SigningController : ControllerBase
         return Ok(response);
     }
 
-    [HttpGet("organisations")]
-    [ProducesResponseType(typeof(SigningAuthorizedOrganisationsResponse), StatusCodes.Status200OK)]
+    [HttpGet("organizations")]
+    [ProducesResponseType(typeof(SigningAuthorizedOrganizationsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetAuthorizedOrganisations(
+    public async Task<IActionResult> GetAuthorizedOrganizations(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
@@ -187,19 +186,19 @@ internal class SigningController : ControllerBase
             return Unauthorized();
         }
 
-        List<OrganisationSignee> authorizedOrganisations = await _signingService.GetAuthorizedOrganisationSignees(
+        List<OrganizationSignee> authorizedOrganizations = await _signingService.GetAuthorizedOrganizationSignees(
             cachedDataMutator,
             signingConfiguration,
             userId.Value
         );
 
-        SigningAuthorizedOrganisationsResponse response = new()
+        SigningAuthorizedOrganizationsResponse response = new()
         {
-            Organisations =
+            Organizations =
             [
-                .. authorizedOrganisations.Select(x =>
+                .. authorizedOrganizations.Select(x =>
                 {
-                    return new AuthorizedOrganisationDetails
+                    return new AuthorizedOrganizationDetails
                     {
                         OrgName = x.OrgName,
                         OrgNumber = x.OrgNumber,

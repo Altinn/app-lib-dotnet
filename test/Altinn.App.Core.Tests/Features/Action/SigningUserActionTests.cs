@@ -6,7 +6,6 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
@@ -23,6 +22,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Action;
@@ -453,7 +453,7 @@ public class SigningUserActionTests
 
 public class SigningUserActionHandleOnBehalfOfTests
 {
-    // // Helper: Creates a dummy Instance with the provided instance owner organisation number.
+    // // Helper: Creates a dummy Instance with the provided instance owner organization number.
     private Instance CreateDummyInstance(string instanceOwnerOrg)
     {
         return new Instance
@@ -494,7 +494,7 @@ public class SigningUserActionHandleOnBehalfOfTests
     public async Task HandleOnBehalfOf_ReturnsTrue_When_OnBehalfOf_Equals_InstanceOwner()
     {
         // Arrange:
-        // If the context's OnBehalfOf equals the instance owner's organisation number,
+        // If the context's OnBehalfOf equals the instance owner's organization number,
         // the method should return true immediately without calling the signing service.
         string ownerOrg = "12345";
         Instance instance = CreateDummyInstance(ownerOrg);
@@ -519,13 +519,13 @@ public class SigningUserActionHandleOnBehalfOfTests
         result.Should().BeTrue();
         signingServiceMock.Verify(
             s =>
-                s.GetAuthorizedOrganisationSignees(
+                s.GetAuthorizedOrganizationSignees(
                     It.IsAny<IInstanceDataMutator>(),
                     It.IsAny<AltinnSignatureConfiguration>(),
                     It.IsAny<int>()
                 ),
             Times.Never,
-            "the instance owner check should bypass any call to GetAuthorizedOrganisationSignees"
+            "the instance owner check should bypass any call to GetAuthorizedOrganizationSignees"
         );
     }
 
@@ -558,7 +558,7 @@ public class SigningUserActionHandleOnBehalfOfTests
         result.Should().BeFalse();
         signingServiceMock.Verify(
             s =>
-                s.GetAuthorizedOrganisationSignees(
+                s.GetAuthorizedOrganizationSignees(
                     It.IsAny<IInstanceDataMutator>(),
                     It.IsAny<AltinnSignatureConfiguration>(),
                     It.IsAny<int>()
@@ -590,7 +590,7 @@ public class SigningUserActionHandleOnBehalfOfTests
         var action = CreateSigningUserAction(out var signingServiceMock);
 
         signingServiceMock
-            .Setup(s => s.GetAuthorizedOrganisationSignees(dataMutator.Object, signatureConfig, userId))
+            .Setup(s => s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, userId))
             .ReturnsAsync(
                 [
                     new()
@@ -608,7 +608,7 @@ public class SigningUserActionHandleOnBehalfOfTests
         // Assert:
         result.Should().BeFalse();
         signingServiceMock.Verify(
-            s => s.GetAuthorizedOrganisationSignees(dataMutator.Object, signatureConfig, userId),
+            s => s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, userId),
             Times.Once
         );
     }
@@ -635,10 +635,10 @@ public class SigningUserActionHandleOnBehalfOfTests
         var action = CreateSigningUserAction(out var signingServiceMock);
 
         signingServiceMock
-            .Setup(s => s.GetAuthorizedOrganisationSignees(dataMutator.Object, signatureConfig, 200))
+            .Setup(s => s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, 200))
             .ReturnsAsync(
                 [
-                    new Core.Features.Signing.Models.Signee.OrganisationSignee
+                    new OrganizationSignee
                     {
                         OrgNumber = onBehalfOrg,
                         OrgName = "TestOrg",
@@ -653,7 +653,7 @@ public class SigningUserActionHandleOnBehalfOfTests
         // Assert:
         result.Should().BeTrue();
         signingServiceMock.Verify(
-            s => s.GetAuthorizedOrganisationSignees(dataMutator.Object, signatureConfig, 200),
+            s => s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, 200),
             Times.Once
         );
     }

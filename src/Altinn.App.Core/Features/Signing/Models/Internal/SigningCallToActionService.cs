@@ -9,6 +9,7 @@ using Altinn.App.Core.Features.Signing.Enums;
 using Altinn.App.Core.Features.Signing.Helpers;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Language;
@@ -22,7 +23,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Features.Signing;
+namespace Altinn.App.Core.Features.Signing.Internal;
 
 internal sealed class SigningCallToActionService(
     ICorrespondenceClient correspondenceClient,
@@ -96,7 +97,7 @@ internal sealed class SigningCallToActionService(
 
         if (serviceOwnerParty.OrgNumber == "ttd" && _hostEnvironment.IsProduction() is false)
         {
-            // TestDepartementet is often used in test environments, but does not have an organisation number
+            // TestDepartementet is often used in test environments, but does not have an organization number
             // Use Digitaliseringsdirektoratet's orgnr instead.
             serviceOwnerParty.OrgNumber = "991825827";
         }

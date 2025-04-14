@@ -1,17 +1,20 @@
 using Altinn.App.Core.Features.Signing;
-using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
+using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
+using InternalSignee = Altinn.App.Core.Features.Signing.Models.Internal.Signee;
+using SigneeState = Altinn.App.Core.Features.Signing.Models.Internal.SigneeContextState;
 
 namespace Altinn.App.Core.Tests.Features.Signing.Delegation;
 
 public class SigningDelegationServiceTests
 {
-    private readonly Signee _signee = new Signee.PersonSignee
+    private readonly InternalSignee _signee = new PersonSignee
     {
         FullName = "Testperson 1",
         SocialSecurityNumber = "123456678233",
