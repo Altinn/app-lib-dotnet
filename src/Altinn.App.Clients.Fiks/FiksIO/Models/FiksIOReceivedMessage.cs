@@ -130,7 +130,7 @@ public sealed record FiksIOReceivedMessageContent
     }
 
     /// <summary>
-    /// Gets the decrypted payload content as strings.
+    /// Gets the decrypted payload content as strings. Cached after first call.
     /// </summary>
     public async Task<IReadOnlyList<(string Filename, string Content)>?> GetDecryptedPayloadStrings()
     {
