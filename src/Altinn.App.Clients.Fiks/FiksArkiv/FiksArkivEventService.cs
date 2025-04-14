@@ -79,6 +79,8 @@ internal sealed class FiksArkivEventService : BackgroundService
             await _fiksIOClient.DisposeAsync();
         }
 
+        return;
+
         DateTimeOffset GetLoopDelay() => _timeProvider.GetUtcNow() + TimeSpan.FromSeconds(1);
         DateTimeOffset GetHealthCheckDelay() => _timeProvider.GetUtcNow() + TimeSpan.FromMinutes(10);
     }
