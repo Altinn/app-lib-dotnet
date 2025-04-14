@@ -88,10 +88,10 @@ public class FiksArkivEventServiceTest
 
     // TODO: Add test for MessageReceivedHandler (which uses RetrieveInstance and ParseCorrelationId)
     [Fact]
-    public async Task ExecuteAsync_RegistersMessageReceivedHandler_ExecutesMessageHandler() { }
+    public Task ExecuteAsync_RegistersMessageReceivedHandler_ExecutesMessageHandler() { }
 
     [Fact]
-    public async Task ExecuteAsync_RegistersMessageReceivedHandler_ThrowsOnError() { }
+    public Task ExecuteAsync_RegistersMessageReceivedHandler_ThrowsOnError() { }
 
     private static Expression<Action<ILogger<T>>> MatchLogEntry<T>(
         LogLevel logLevel,
