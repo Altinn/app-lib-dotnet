@@ -85,7 +85,7 @@ internal sealed class FiksArkivEventService : BackgroundService
         DateTimeOffset GetHealthCheckDelay() => _timeProvider.GetUtcNow() + TimeSpan.FromMinutes(10);
     }
 
-    private async Task MessageReceivedHandler(FiksIOReceivedMessage receivedMessage)
+    internal async Task MessageReceivedHandler(FiksIOReceivedMessage receivedMessage)
     {
         using Activity? mainActivity = _telemetry?.StartReceiveFiksActivity(
             receivedMessage.Message.MessageId,
