@@ -104,67 +104,27 @@ internal sealed class SignDocumentManager(
         List<SignDocument> unmatchedSignDocuments = [.. signDocuments];
 
         // OrganizationSignee is most general, so it should be sorted to the end of the list
-        result.Sort(
-            (a, b) =>
-                a.Signee is OrganizationSignee ? 1
-                : b.Signee is OrganizationSignee ? -1
-                : 0
-        );
+        SortSigneeContexts(result);
 
         for (int i = 0; i < result.Count; i++)
         {
             SigneeContext signeeContext = result[i];
-            SignDocument? matchedSignDocument = unmatchedSignDocuments.FirstOrDefault(signDocument =>
-            {
-                return signeeContext.Signee switch
-                {
-                    PersonSignee personSignee => IsPersonSignDocument(signDocument)
-                        && personSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber,
-                    PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => IsPersonOnBehalfOfOrgSignDocument(
-                        signDocument
-                    )
-                        && personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgNumber
-                            == signDocument.SigneeInfo.OrganisationNumber
-                        && personOnBehalfOfOrgSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber,
-                    SystemSignee systemSignee => IsSystemSignDocument(signDocument)
-                        && systemSignee.OnBehalfOfOrg.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
-                        && systemSignee.SystemId.Equals(signDocument.SigneeInfo.SystemUserId),
-                    OrganizationSignee orgSignee => IsOrgSignDocument(signDocument)
-                        && orgSignee.OrgNumber == signDocument.SigneeInfo.OrganisationNumber,
-
-                    _ => throw new InvalidOperationException("Signee is not of a supported type."),
-                };
-            });
+            SignDocument? matchedSignDocument = FindMatchingSignDocument(signeeContext, unmatchedSignDocuments);
 
             if (matchedSignDocument is not null)
             {
-                SigneeContext updatedContext = new()
-                {
-                    TaskId = signeeContext.TaskId,
-                    Signee = signeeContext.Signee,
-                    SigneeState = signeeContext.SigneeState,
-                    SignDocument = matchedSignDocument,
-                    Notifications = signeeContext.Notifications,
-                };
-
-                if (signeeContext.Signee is OrganizationSignee orgSignee)
-                {
-                    updatedContext = await ConvertOrgSignee(matchedSignDocument, updatedContext, orgSignee);
-                }
-
-                result[i] = updatedContext;
+                result[i] = await UpdateSigneeContextWithMatchedDocument(signeeContext, matchedSignDocument);
                 unmatchedSignDocuments.Remove(matchedSignDocument);
             }
         }
 
         // Create new contexts for documents that aren't matched with existing signee contexts
-        foreach (SignDocument signDocument in unmatchedSignDocuments)
-        {
-            SigneeContext newSigneeContext = await CreateSigneeContextFromSignDocument(taskId, signDocument);
-            result.Add(newSigneeContext);
-        }
+        var signeeContextsForUnmatchedDocuments = await CreateSigneeContextsForUnmatchedDocuments(
+            taskId,
+            unmatchedSignDocuments
+        );
 
-        return result;
+        return [.. result, .. signeeContextsForUnmatchedDocuments];
     }
 
     private async Task<SignDocument> DownloadSignDocumentAsync(
@@ -189,6 +149,60 @@ internal sealed class SignDocumentManager(
             );
             throw;
         }
+    }
+
+    private static void SortSigneeContexts(List<SigneeContext> signeeContexts)
+    {
+        // OrganizationSignee is most general, so it should be sorted to the end of the list
+        signeeContexts.Sort(
+            (a, b) =>
+                a.Signee is OrganizationSignee ? 1
+                : b.Signee is OrganizationSignee ? -1
+                : 0
+        );
+    }
+
+    private static SignDocument? FindMatchingSignDocument(SigneeContext signeeContext, List<SignDocument> signDocuments)
+    {
+        return signDocuments.FirstOrDefault(signDocument =>
+        {
+            return signeeContext.Signee switch
+            {
+                PersonSignee personSignee => IsPersonSignDocument(signDocument)
+                    && personSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber,
+                PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => IsPersonOnBehalfOfOrgSignDocument(signDocument)
+                    && personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
+                    && personOnBehalfOfOrgSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber,
+                SystemSignee systemSignee => IsSystemSignDocument(signDocument)
+                    && systemSignee.OnBehalfOfOrg.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
+                    && systemSignee.SystemId.Equals(signDocument.SigneeInfo.SystemUserId),
+                OrganizationSignee orgSignee => IsOrgSignDocument(signDocument)
+                    && orgSignee.OrgNumber == signDocument.SigneeInfo.OrganisationNumber,
+                _ => throw new InvalidOperationException("Signee is not of a supported type."),
+            };
+        });
+    }
+
+    private async Task<SigneeContext> UpdateSigneeContextWithMatchedDocument(
+        SigneeContext signeeContext,
+        SignDocument matchedSignDocument
+    )
+    {
+        SigneeContext updatedContext = new()
+        {
+            TaskId = signeeContext.TaskId,
+            Signee = signeeContext.Signee,
+            SigneeState = signeeContext.SigneeState,
+            SignDocument = matchedSignDocument,
+            Notifications = signeeContext.Notifications,
+        };
+
+        if (signeeContext.Signee is OrganizationSignee orgSignee)
+        {
+            updatedContext = await ConvertOrgSignee(matchedSignDocument, updatedContext, orgSignee);
+        }
+
+        return updatedContext;
     }
 
     private async Task<SigneeContext> ConvertOrgSignee(
@@ -221,6 +235,35 @@ internal sealed class SignDocumentManager(
             SignDocument = context.SignDocument,
             Notifications = context.Notifications,
         };
+    }
+
+    private async Task<List<SigneeContext>> CreateSigneeContextsForUnmatchedDocuments(
+        string taskId,
+        List<SignDocument> unmatchedSignDocuments
+    )
+    {
+        try
+        {
+            // Process all documents in parallel and collect results
+            return
+            [
+                .. await Task.WhenAll(
+                    unmatchedSignDocuments.Select(signDocument =>
+                        CreateSigneeContextFromSignDocument(taskId, signDocument)
+                    )
+                ),
+            ];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to create signee contexts for {Count} unmatched documents for task {TaskId}.",
+                unmatchedSignDocuments.Count,
+                taskId
+            );
+            throw;
+        }
     }
 
     private async Task<SigneeContext> CreateSigneeContextFromSignDocument(string taskId, SignDocument signDocument)
