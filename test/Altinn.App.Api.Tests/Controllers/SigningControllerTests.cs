@@ -592,6 +592,187 @@ public class SigningControllerTests
         Assert.IsType<UnauthorizedResult>(actionResult);
     }
 
+    [Fact]
+    public async Task GetDataElements_WhenTaskTypeIsSigning_Returns_ExpectedDataElements()
+    {
+        // Arrange
+        SetupAuthenticationContextMock();
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
+        // Setup controller context with request
+        var httpContext = new DefaultHttpContext();
+        var request = httpContext.Request;
+        request.Scheme = "https";
+        request.Host = new HostString("localhost");
+        request.Path = "/tdd/app/instances/1337/guid/signing/data-elements";
+
+        controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
+        // Create test instance with data elements
+        var instance = new Instance
+        {
+            InstanceOwner = new InstanceOwner { PartyId = "1337" },
+            Process = new ProcessState
+            {
+                CurrentTask = new ProcessElementInfo { ElementId = "task1", AltinnTaskType = "signing" },
+            },
+            Data =
+            [
+                new DataElement
+                {
+                    Id = "dataElement1",
+                    DataType = "dataTypeToSign", // This matches the DataTypesToSign in _altinnTaskExtension
+                    ContentType = "application/json",
+                    Size = 100,
+                    Filename = "file1.json",
+                },
+                new DataElement
+                {
+                    Id = "dataElement2",
+                    DataType = "otherDataType", // This doesn't match the DataTypesToSign
+                    ContentType = "application/json",
+                    Size = 200,
+                    Filename = "file2.json",
+                },
+                new DataElement
+                {
+                    Id = "dataElement3",
+                    DataType = "dataTypeToSign", // This matches the DataTypesToSign in _altinnTaskExtension
+                    ContentType = "application/xml",
+                    Size = 300,
+                    Filename = "file3.xml",
+                },
+            ],
+        };
+
+        _instanceClientMock
+            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ReturnsAsync(instance);
+
+        // Act
+        var actionResult = await controller.GetDataElements("tdd", "app", 1337, Guid.NewGuid());
+
+        // Assert
+        var okResult = actionResult as OkObjectResult;
+        Assert.NotNull(okResult);
+
+        var signingDataElementsResponse = okResult.Value as SigningDataElementsResponse;
+        Assert.NotNull(signingDataElementsResponse);
+
+        // Should only include data elements with DataType that matches DataTypesToSign
+        Assert.Equal(2, signingDataElementsResponse.DataElements.Count);
+        Assert.Contains(signingDataElementsResponse.DataElements, de => de.Id == "dataElement1");
+        Assert.Contains(signingDataElementsResponse.DataElements, de => de.Id == "dataElement3");
+        Assert.DoesNotContain(signingDataElementsResponse.DataElements, de => de.Id == "dataElement2");
+
+        // Verify all data elements have self links set
+        foreach (var dataElement in signingDataElementsResponse.DataElements)
+        {
+            Assert.NotNull(dataElement.SelfLinks);
+            Assert.NotEmpty(dataElement.SelfLinks.Apps);
+        }
+    }
+
+    [Fact]
+    public async Task GetDataElements_WhenTaskTypeIsNotSigning_Returns_BadRequest()
+    {
+        // Arrange
+        SetupAuthenticationContextMock();
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
+        _instanceClientMock
+            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ReturnsAsync(
+                new Instance
+                {
+                    InstanceOwner = new InstanceOwner { PartyId = "1337" },
+                    Process = new ProcessState
+                    {
+                        CurrentTask = new ProcessElementInfo { ElementId = "task1", AltinnTaskType = "not-signing" },
+                    },
+                }
+            );
+
+        // Act
+        var actionResult = await controller.GetDataElements("tdd", "app", 1337, Guid.NewGuid());
+
+        // Assert
+        var badRequestResult = actionResult as BadRequestObjectResult;
+        Assert.NotNull(badRequestResult);
+
+        var problemDetails = badRequestResult.Value as ProblemDetails;
+        Assert.NotNull(problemDetails);
+        Assert.Equal("Not a signing task", problemDetails.Title);
+        Assert.Equal("This endpoint is only callable while the current task is a signing task.", problemDetails.Detail);
+        Assert.Equal(StatusCodes.Status400BadRequest, problemDetails.Status);
+    }
+
+    [Fact]
+    public async Task GetDataElements_WhenNoMatchingDataTypes_Returns_EmptyList()
+    {
+        // Arrange
+        SetupAuthenticationContextMock();
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<SigningController>();
+
+        // Setup controller context with request
+        var httpContext = new DefaultHttpContext();
+        var request = httpContext.Request;
+        request.Scheme = "https";
+        request.Host = new HostString("localhost");
+        request.Path = "/tdd/app/instances/1337/guid/signing/data-elements";
+
+        controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
+        // Create test instance with data elements that don't match the data types to sign
+        var instance = new Instance
+        {
+            InstanceOwner = new InstanceOwner { PartyId = "1337" },
+            Process = new ProcessState
+            {
+                CurrentTask = new ProcessElementInfo { ElementId = "task1", AltinnTaskType = "signing" },
+            },
+            Data =
+            [
+                new DataElement
+                {
+                    Id = "dataElement1",
+                    DataType = "otherDataType1", // Doesn't match DataTypesToSign
+                    ContentType = "application/json",
+                    Size = 100,
+                    Filename = "file1.json",
+                },
+                new DataElement
+                {
+                    Id = "dataElement2",
+                    DataType = "otherDataType2", // Doesn't match DataTypesToSign
+                    ContentType = "application/json",
+                    Size = 200,
+                    Filename = "file2.json",
+                },
+            ],
+        };
+
+        _instanceClientMock
+            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ReturnsAsync(instance);
+
+        // Act
+        var actionResult = await controller.GetDataElements("tdd", "app", 1337, Guid.NewGuid());
+
+        // Assert
+        var okResult = actionResult as OkObjectResult;
+        Assert.NotNull(okResult);
+
+        var signingDataElementsResponse = okResult.Value as SigningDataElementsResponse;
+        Assert.NotNull(signingDataElementsResponse);
+
+        // Should return an empty list since no data elements match DataTypesToSign
+        Assert.Empty(signingDataElementsResponse.DataElements);
+    }
+
     private void SetupAuthenticationContextMock(Authenticated? authenticated = null)
     {
         var authenticationContextMock = new Mock<IAuthenticationContext>();
