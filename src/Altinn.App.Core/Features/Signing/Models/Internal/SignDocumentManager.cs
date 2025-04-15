@@ -73,12 +73,19 @@ internal sealed class SignDocumentManager(
         List<SignDocument> signDocuments
     )
     {
-        _logger.LogDebug(
-            "Synchronizing signee contexts {SigneeContexts} with sign documents {SignDocuments} for task {TaskId}.",
-            JsonSerializer.Serialize(signeeContexts, _jsonSerializerOptions),
-            JsonSerializer.Serialize(signDocuments, _jsonSerializerOptions),
-            taskId
-        );
+        try
+        {
+            _logger.LogDebug(
+                "Synchronizing signee contexts {SigneeContexts} with sign documents {SignDocuments} for task {TaskId}.",
+                JsonSerializer.Serialize(signeeContexts, _jsonSerializerOptions),
+                JsonSerializer.Serialize(signDocuments, _jsonSerializerOptions),
+                taskId
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to serialize signee contexts or sign documents.");
+        }
 
         // Create a new list with copies of the original signee contexts
         List<SigneeContext> result =
