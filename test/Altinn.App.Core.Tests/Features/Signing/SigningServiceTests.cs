@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Signing;
+using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
 using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.App;
@@ -1051,6 +1051,208 @@ public sealed class SigningServiceTests : IDisposable
         Assert.Single(result);
         Assert.Equal("123456789", result[0].OrgNumber);
         Assert.Equal("An org", result[0].OrgName);
+    }
+
+    [Fact]
+    public async Task InitializeSignees_MissingSigneeStatesDataTypeId_ThrowsApplicationConfigException()
+    {
+        // Arrange
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = null, // Missing required configuration
+            SignatureDataType = "signature",
+        };
+
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance
+        {
+            Id = "123/abc",
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
+            Data = [],
+        };
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        List<SigneeContext> signeeContexts = [];
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(
+            () =>
+                _signingService.InitializeSignees(
+                    "Task_1",
+                    cachedInstanceMutator.Object,
+                    signeeContexts,
+                    signatureConfiguration,
+                    CancellationToken.None
+                )
+        );
+
+        Assert.Contains("SigneeStatesDataTypeId is not set", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetSigneeContexts_MissingSignatureDataType_ThrowsApplicationConfigException()
+    {
+        // Arrange
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = "signeeStates",
+            SignatureDataType = null, // Missing required configuration
+        };
+
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance
+        {
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
+            Data = [],
+        };
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        _signeeContextsManager
+            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync(new List<SigneeContext>());
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(
+            () => _signingService.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration)
+        );
+
+        Assert.Contains("SignatureDataType is not set", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetInstanceOwnerParty_WithTtdOrganization_UsesDigitaliseringsdirektoratetOrgNumber()
+    {
+        // Arrange
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = "signeeStates",
+            SignatureDataType = "signature",
+        };
+
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance
+        {
+            Id = "123/abc",
+            AppId = "ttd/app1",
+            InstanceOwner = new InstanceOwner { PartyId = "123", OrganisationNumber = "ttd" }, // ttd organization
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
+            Data = [],
+        };
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        _signeeContextsManager
+            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync(new List<SigneeContext>());
+
+        // Act
+        await _signingService.AbortRuntimeDelegatedSigning(
+            "Task_1",
+            cachedInstanceMutator.Object,
+            signatureConfiguration,
+            CancellationToken.None
+        );
+
+        // Assert
+        _altinnPartyClient.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ConvertOrgSignee_WithNullSignDocument_ReturnsWithoutChanges()
+    {
+        // Arrange
+        var orgNumber = "987654321";
+
+        var orgSignee = new OrganizationSignee
+        {
+            OrgName = "TestOrg",
+            OrgNumber = orgNumber,
+            OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
+        };
+
+        var signeeContext = new SigneeContext
+        {
+            TaskId = "Task_1",
+            SigneeState = new SigneeState(),
+            Signee = orgSignee,
+        };
+
+        // Act
+        await _signingService.SynchronizeSigneeContextsWithSignDocuments(
+            "Task_1",
+            [signeeContext],
+            [] // Empty sign documents list
+        );
+
+        // Assert
+        Assert.Same(orgSignee, signeeContext.Signee); // Signee should remain unchanged
+        Assert.Null(signeeContext.SignDocument); // No sign document should be assigned
+    }
+
+    [Fact]
+    public async Task AbortRuntimeDelegatedSigning_WithExceptionInPartyLookup_LogsErrorAndThrowsException()
+    {
+        // Arrange
+        var signatureConfiguration = new AltinnSignatureConfiguration
+        {
+            SigneeStatesDataTypeId = "signeeStates",
+            SignatureDataType = "signature",
+        };
+
+        var signeeStateDataElement = new DataElement { Id = Guid.NewGuid().ToString(), DataType = "signeeStates" };
+
+        var signatureDataElement = new DataElement { Id = Guid.NewGuid().ToString(), DataType = "signature" };
+
+        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
+        var instance = new Instance
+        {
+            Id = "123/abc",
+            AppId = "ttd/app1",
+            InstanceOwner = new InstanceOwner { PartyId = "123", OrganisationNumber = "org123" },
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
+            Data = [signeeStateDataElement, signatureDataElement],
+        };
+        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        // Mock the GetBinaryData method to return valid JSON for the signature data element
+        var signDocument = new SignDocument { SigneeInfo = new StorageSignee { PersonNumber = "12345678910" } };
+        cachedInstanceMutator
+            .Setup(x => x.GetBinaryData(It.IsAny<DataElementIdentifier>()))
+            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signDocument)));
+
+        // Setup to throw exception during party lookup
+        _altinnPartyClient.Reset();
+        _altinnPartyClient
+            .Setup(x => x.LookupParty(It.IsAny<PartyLookup>()))
+            .ThrowsAsync(new Exception("Party lookup failed"));
+
+        // We need to return an empty list to avoid the test trying to revoke delegation rights
+        _signeeContextsManager
+            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync([]);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<SigningException>(
+            () =>
+                _signingService.AbortRuntimeDelegatedSigning(
+                    "Task_1",
+                    cachedInstanceMutator.Object,
+                    signatureConfiguration,
+                    CancellationToken.None
+                )
+        );
+
+        Assert.Contains("Failed to look up party.", exception.Message);
+        _logger.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => true),
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
+                ),
+            Times.AtLeastOnce
+        );
     }
 
     private static byte[] ToBytes<T>(T obj)

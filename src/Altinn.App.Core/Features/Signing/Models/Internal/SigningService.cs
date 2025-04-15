@@ -405,35 +405,39 @@ internal sealed class SigningService(
                 signDocument.SigneeInfo.PersonNumber,
                 signDocument.SigneeInfo.OrganisationNumber,
                 signDocument.SigneeInfo.SystemUserId,
-                altinnPartyClient.LookupParty
+                LookupParty
             ),
             SigneeState = new SigneeState() { IsAccessDelegated = true, HasBeenMessagedForCallToSign = true },
             SignDocument = signDocument,
         };
     }
 
-    private async Task<Party?> GetInstanceOwnerParty(InstanceOwner instanceOwner)
+    private async Task<Party> LookupParty(PartyLookup partyLookup)
     {
         try
         {
-            if (instanceOwner.OrganisationNumber == "ttd")
-            {
-                // Testdepartementet is often used in test environments, it does not have an organization number, so we use Digitaliseringsdirektoratet's orgnr instead.
-                instanceOwner.OrganisationNumber = "991825827";
-            }
-
-            return await altinnPartyClient.LookupParty(
-                !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
-                    ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
-                    : new PartyLookup { Ssn = instanceOwner.PersonNumber }
-            );
+            return await altinnPartyClient.LookupParty(partyLookup);
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed to look up party for instance owner.");
+            _logger.LogError(e, "Failed to look up party.");
+            throw new SigningException("Failed to look up party.");
+        }
+    }
+
+    private async Task<Party?> GetInstanceOwnerParty(InstanceOwner instanceOwner)
+    {
+        if (instanceOwner.OrganisationNumber == "ttd")
+        {
+            // Testdepartementet is often used in test environments, it does not have an organization number, so we use Digitaliseringsdirektoratet's orgnr instead.
+            instanceOwner.OrganisationNumber = "991825827";
         }
 
-        return null;
+        return await LookupParty(
+            !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
+                ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
+                : new PartyLookup { Ssn = instanceOwner.PersonNumber }
+        );
     }
 
     private async Task<(Party serviceOwnerParty, bool success)> GetServiceOwnerParty(CancellationToken ct)
