@@ -67,7 +67,7 @@ internal sealed class SignDocumentManager(
     /// <summary>
     /// This method exists to ensure we have a SigneeContext for both signees that have been delegated access to sign and signees that have signed using access granted through the policy.xml file.
     /// </summary>
-    public async Task SynchronizeSigneeContextsWithSignDocuments(
+    public async Task<List<SigneeContext>> SynchronizeSigneeContextsWithSignDocuments(
         string taskId,
         List<SigneeContext> signeeContexts,
         List<SignDocument> signDocuments
@@ -80,19 +80,34 @@ internal sealed class SignDocumentManager(
             taskId
         );
 
-        List<SignDocument> unmatchedSignDocuments = signDocuments;
+        // Create a new list with copies of the original signee contexts
+        List<SigneeContext> result =
+        [
+            .. signeeContexts.Select(context => new SigneeContext
+            {
+                TaskId = context.TaskId,
+                Signee = context.Signee,
+                SigneeState = context.SigneeState,
+                SignDocument = context.SignDocument,
+                Notifications = context.Notifications,
+            }),
+        ];
+
+        // Create a copy of the sign documents list to track unmatched documents
+        List<SignDocument> unmatchedSignDocuments = [.. signDocuments];
 
         // OrganizationSignee is most general, so it should be sorted to the end of the list
-        signeeContexts.Sort(
+        result.Sort(
             (a, b) =>
                 a.Signee is OrganizationSignee ? 1
                 : b.Signee is OrganizationSignee ? -1
                 : 0
         );
 
-        foreach (SigneeContext signeeContext in signeeContexts)
+        for (int i = 0; i < result.Count; i++)
         {
-            SignDocument? matchedSignDocument = signDocuments.FirstOrDefault(signDocument =>
+            SigneeContext signeeContext = result[i];
+            SignDocument? matchedSignDocument = unmatchedSignDocuments.FirstOrDefault(signDocument =>
             {
                 return signeeContext.Signee switch
                 {
@@ -116,12 +131,21 @@ internal sealed class SignDocumentManager(
 
             if (matchedSignDocument is not null)
             {
+                SigneeContext updatedContext = new()
+                {
+                    TaskId = signeeContext.TaskId,
+                    Signee = signeeContext.Signee,
+                    SigneeState = signeeContext.SigneeState,
+                    SignDocument = matchedSignDocument,
+                    Notifications = signeeContext.Notifications,
+                };
+
                 if (signeeContext.Signee is OrganizationSignee orgSignee)
                 {
-                    await ConvertOrgSignee(matchedSignDocument, signeeContext, orgSignee);
+                    updatedContext = await ConvertOrgSignee(matchedSignDocument, updatedContext, orgSignee);
                 }
 
-                signeeContext.SignDocument = matchedSignDocument;
+                result[i] = updatedContext;
                 unmatchedSignDocuments.Remove(matchedSignDocument);
             }
         }
@@ -130,8 +154,10 @@ internal sealed class SignDocumentManager(
         foreach (SignDocument signDocument in unmatchedSignDocuments)
         {
             SigneeContext newSigneeContext = await CreateSigneeContextFromSignDocument(taskId, signDocument);
-            signeeContexts.Add(newSigneeContext);
+            result.Add(newSigneeContext);
         }
+
+        return result;
     }
 
     private async Task<SignDocument> DownloadSignDocumentAsync(
@@ -158,32 +184,36 @@ internal sealed class SignDocumentManager(
         }
     }
 
-    // Keep the original method for backward compatibility
-    private async Task ConvertOrgSignee(
-        SignDocument? signDocument,
-        SigneeContext orgSigneeContext,
+    private async Task<SigneeContext> ConvertOrgSignee(
+        SignDocument signDocument,
+        SigneeContext context,
         OrganizationSignee orgSignee
     )
     {
-        if (signDocument is null)
-        {
-            return;
-        }
-
         var signeeInfo = signDocument.SigneeInfo;
+        Signee updatedSignee = orgSignee;
 
         if (!string.IsNullOrEmpty(signeeInfo.PersonNumber))
         {
-            orgSigneeContext.Signee = await orgSignee.ToPersonOnBehalfOfOrgSignee(signeeInfo.PersonNumber, LookupParty);
+            updatedSignee = await orgSignee.ToPersonOnBehalfOfOrgSignee(signeeInfo.PersonNumber, LookupParty);
         }
         else if (signeeInfo.SystemUserId.HasValue)
         {
-            orgSigneeContext.Signee = orgSignee.ToSystemSignee(signeeInfo.SystemUserId.Value);
+            updatedSignee = orgSignee.ToSystemSignee(signeeInfo.SystemUserId.Value);
         }
         else
         {
             throw new InvalidOperationException("Signee is neither a person nor a system user");
         }
+
+        return new SigneeContext
+        {
+            TaskId = context.TaskId,
+            Signee = updatedSignee,
+            SigneeState = context.SigneeState,
+            SignDocument = context.SignDocument,
+            Notifications = context.Notifications,
+        };
     }
 
     private async Task<SigneeContext> CreateSigneeContextFromSignDocument(string taskId, SignDocument signDocument)

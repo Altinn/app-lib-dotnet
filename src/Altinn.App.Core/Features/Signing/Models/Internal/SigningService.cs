@@ -159,7 +159,11 @@ internal sealed class SigningService(
             signatureConfiguration
         );
 
-        await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(taskId, signeeContexts, signDocuments);
+        signeeContexts = await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
+            taskId,
+            signeeContexts,
+            signDocuments
+        );
 
         return signeeContexts;
     }

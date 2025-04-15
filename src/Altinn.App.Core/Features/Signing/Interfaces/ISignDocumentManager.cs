@@ -11,7 +11,7 @@ internal interface ISignDocumentManager
         AltinnSignatureConfiguration signatureConfiguration
     );
 
-    Task SynchronizeSigneeContextsWithSignDocuments(
+    Task<List<SigneeContext>> SynchronizeSigneeContextsWithSignDocuments(
         string taskId,
         List<SigneeContext> signeeContexts,
         List<SignDocument> signDocuments
