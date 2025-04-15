@@ -28,6 +28,14 @@ internal interface ISigningService
     );
 
     /// <summary>
+    /// Gets the list of signee contexts.
+    /// </summary>
+    Task<List<SigneeContext>> GetSigneeContexts(
+        IInstanceDataAccessor instanceDataAccessor,
+        AltinnSignatureConfiguration signatureConfiguration
+    );
+
+    /// <summary>
     /// Aborts runtime delegated signing. Deletes all signing data and revokes delegated access.
     /// </summary>
     Task AbortRuntimeDelegatedSigning(

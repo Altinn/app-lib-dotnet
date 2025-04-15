@@ -31,7 +31,6 @@ public class SigningControllerTests
     private readonly Mock<IProcessReader> _processReaderMock = new();
     private readonly Mock<ILogger<SigningController>> _loggerMock = new();
     private readonly Mock<ISigningService> _signingServiceMock = new();
-    private readonly Mock<ISigneeContextsManager> _signeeContextsManagerMock = new();
     private readonly Mock<IDataClient> _dataClientMock = new();
     private readonly Mock<IAppMetadata> _applicationMetadataMock = new();
     private readonly Mock<IAppModel> _appModelMock = new();
@@ -60,7 +59,6 @@ public class SigningControllerTests
         _serviceCollection.AddTransient<SigningController>();
         _serviceCollection.AddSingleton(Options.Create(new FrontEndSettings()));
         _serviceCollection.AddSingleton(_instanceClientMock.Object);
-        _serviceCollection.AddSingleton(_signeeContextsManagerMock.Object);
         _serviceCollection.AddSingleton(_signingServiceMock.Object);
         _serviceCollection.AddSingleton(_appModelMock.Object);
         _serviceCollection.AddSingleton(_dataClientMock.Object);
@@ -199,7 +197,7 @@ public class SigningControllerTests
             },
         ];
 
-        _signeeContextsManagerMock
+        _signingServiceMock
             .Setup(s =>
                 s.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), _altinnTaskExtension.SignatureConfiguration!)
             )
@@ -298,7 +296,7 @@ public class SigningControllerTests
                 SignDocument = null,
             },
         ];
-        _signeeContextsManagerMock
+        _signingServiceMock
             .Setup(s =>
                 s.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), _altinnTaskExtension.SignatureConfiguration!)
             )
@@ -375,7 +373,7 @@ public class SigningControllerTests
                 },
             },
         ];
-        _signeeContextsManagerMock
+        _signingServiceMock
             .Setup(s =>
                 s.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), _altinnTaskExtension.SignatureConfiguration!)
             )
@@ -449,7 +447,7 @@ public class SigningControllerTests
                 },
             },
         ];
-        _signeeContextsManagerMock
+        _signingServiceMock
             .Setup(s =>
                 s.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), _altinnTaskExtension.SignatureConfiguration!)
             )
