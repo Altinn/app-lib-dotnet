@@ -35,10 +35,16 @@ internal sealed class SigningDelegationService(
             return (signeeContexts, false);
         }
 
-        if (!Guid.TryParse(instanceIdCombo.Split("/")[1], out var instanceGuid))
+        Guid instanceGuid = Guid.Empty;
+        try
+        {
+            instanceGuid = Guid.Parse(instanceIdCombo.Split("/")[1]);
+        }
+        catch
         {
             throw new ArgumentException("Invalid instanceId format", nameof(instanceIdCombo));
         }
+
         var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
         bool success = true;
 
@@ -119,10 +125,16 @@ internal sealed class SigningDelegationService(
         Telemetry? telemetry = null
     )
     {
-        if (!Guid.TryParse(instanceIdCombo.Split("/")[1], out var instanceGuid))
+        Guid instanceGuid = Guid.Empty;
+        try
+        {
+            instanceGuid = Guid.Parse(instanceIdCombo.Split("/")[1]);
+        }
+        catch
         {
             throw new ArgumentException("Invalid instanceId format", nameof(instanceIdCombo));
         }
+
         var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
         bool success = true;
         foreach (SigneeContext signeeContext in signeeContexts)
