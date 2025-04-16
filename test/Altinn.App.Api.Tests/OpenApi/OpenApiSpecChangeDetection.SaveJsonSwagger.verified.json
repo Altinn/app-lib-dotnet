@@ -4998,7 +4998,7 @@
         }
       }
     },
-    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/signing/organizations": {
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/signing/organisations": {
       "get": {
         "tags": [
           "Signing"
