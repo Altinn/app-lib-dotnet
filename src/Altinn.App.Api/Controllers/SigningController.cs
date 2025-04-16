@@ -148,7 +148,7 @@ internal class SigningController : ControllerBase
         return Ok(response);
     }
 
-    [HttpGet("organizations")]
+    [HttpGet("organisations")]
     [ProducesResponseType(typeof(SigningAuthorizedOrganizationsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
