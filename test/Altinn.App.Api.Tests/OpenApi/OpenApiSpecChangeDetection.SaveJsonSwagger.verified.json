@@ -5052,27 +5052,27 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
                 }
               },
               "application/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
                 }
               },
               "text/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
                 }
               }
             }
@@ -6466,7 +6466,7 @@
         },
         "additionalProperties": {}
       },
-      "AuthorizedOrganizationDetails": {
+      "AuthorizedOrganisationDetails": {
         "required": [
           "orgName",
           "orgNumber",
@@ -8560,16 +8560,16 @@
         "additionalProperties": false,
         "description": "Contains information about a signee and the current signing status."
       },
-      "SigningAuthorizedOrganizationsResponse": {
+      "SigningAuthorizedOrganisationsResponse": {
         "required": [
-          "organizations"
+          "organisations"
         ],
         "type": "object",
         "properties": {
-          "organizations": {
+          "organisations": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AuthorizedOrganizationDetails"
+              "$ref": "#/components/schemas/AuthorizedOrganisationDetails"
             },
             "description": "The list of authorized organisations.",
             "nullable": true
