@@ -312,6 +312,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ISigningReceiptService, SigningReceiptService>();
         services.AddTransient<ISigningCallToActionService, SigningCallToActionService>();
         services.AddTransient<ISigneeContextsManager, SigneeContextsManager>();
+        services.AddTransient<ISignDocumentManager, SignDocumentManager>();
         services.AddTransient<ISigningService, SigningService>();
     }
 

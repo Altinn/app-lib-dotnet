@@ -1,5 +1,3 @@
-﻿using System.Text;
-using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
@@ -30,6 +28,7 @@ public sealed class SigningServiceTests : IDisposable
     private readonly Mock<ISigneeProvider> _signeeProvider = new(MockBehavior.Strict);
     private readonly Mock<ILogger<SigningService>> _logger = new();
     private readonly Mock<ISigneeContextsManager> _signeeContextsManager = new(MockBehavior.Strict);
+    private readonly Mock<ISignDocumentManager> _signDocumentManager = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
     private readonly Mock<ISigningCallToActionService> _signingCallToActionService = new(MockBehavior.Strict);
     private readonly Mock<IAuthorizationClient> _authorizationClient = new(MockBehavior.Strict);
@@ -50,7 +49,8 @@ public sealed class SigningServiceTests : IDisposable
             _signingCallToActionService.Object,
             _authorizationClient.Object,
             _logger.Object,
-            _signeeContextsManager.Object
+            _signeeContextsManager.Object,
+            _signDocumentManager.Object
         );
 
         _altinnPartyClient
@@ -141,19 +141,68 @@ public sealed class SigningServiceTests : IDisposable
             SigneeInfo = new StorageSignee { PersonNumber = person.SSN },
         };
 
+        var signDocuments = new List<SignDocument>
+        {
+            signDocumentWithMatchingSignatureContext,
+            signDocumentWithoutMatchingSignatureContext,
+        };
+
+        var synchronizedSigneeContexts = new List<SigneeContext>
+        {
+            new()
+            {
+                TaskId = instance.Process.CurrentTask.ElementId,
+                SigneeState = new SigneeState
+                {
+                    IsAccessDelegated = true,
+                    HasBeenMessagedForCallToSign = true,
+                    CtaCorrespondenceId = Guid.Parse("12345678-1234-1234-1234-123456789012"),
+                },
+                Signee = new PersonOnBehalfOfOrgSignee
+                {
+                    FullName = "A person",
+                    SocialSecurityNumber = person.SSN,
+                    Party = new Party { SSN = person.SSN, Name = person.Name },
+                    OnBehalfOfOrg = new OrganizationSignee
+                    {
+                        OrgName = org.Name,
+                        OrgNumber = org.OrgNumber,
+                        OrgParty = new Party { Name = org.Name, OrgNumber = org.OrgNumber },
+                    },
+                },
+                SignDocument = signDocumentWithMatchingSignatureContext,
+            },
+            new()
+            {
+                TaskId = instance.Process.CurrentTask.ElementId,
+                SigneeState = new() { IsAccessDelegated = true, HasBeenMessagedForCallToSign = true },
+                Signee = new PersonSignee
+                {
+                    SocialSecurityNumber = person.SSN,
+                    FullName = person.Name,
+                    Party = new Party { SSN = person.SSN, Name = person.Name },
+                },
+                SignDocument = signDocumentWithoutMatchingSignatureContext,
+            },
+        };
+
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
         _signeeContextsManager
             .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
             .ReturnsAsync(signeeContexts);
-
-        cachedInstanceMutator
-            .Setup(x => x.GetBinaryData(new DataElementIdentifier(signDocumentDataElement.Id)))
-            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signDocumentWithMatchingSignatureContext)));
-
-        cachedInstanceMutator
-            .Setup(x => x.GetBinaryData(new DataElementIdentifier(signDocumentDataElement2.Id)))
-            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signDocumentWithoutMatchingSignatureContext)));
+        _signDocumentManager
+            .Setup(x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync([signDocumentWithMatchingSignatureContext, signDocumentWithoutMatchingSignatureContext]);
+        _signDocumentManager
+            .Setup(x =>
+                x.SynchronizeSigneeContextsWithSignDocuments(
+                    instance.Process.CurrentTask.ElementId,
+                    signeeContexts,
+                    signDocuments
+                )
+            )
+            .ReturnsAsync(synchronizedSigneeContexts);
 
         _altinnPartyClient
             .Setup(x => x.LookupParty(It.IsAny<PartyLookup>()))
@@ -233,616 +282,6 @@ public sealed class SigningServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task SynchronizeSigneeContextsWithSignDocuments_WithOnlySsn_MatchesCorrectSignDocument()
-    {
-        var ssn = "12345678910";
-
-        List<SignDocument> testDocuments =
-        [
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn, OrganisationNumber = null },
-            },
-        ];
-        List<SigneeContext> testSigneeContexts =
-        [
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonSignee
-                {
-                    FullName = "Test Testesen",
-                    SocialSecurityNumber = ssn,
-                    Party = new Party { Name = "Test Testesen", SSN = ssn },
-                },
-            },
-        ];
-
-        await _signingService.SynchronizeSigneeContextsWithSignDocuments("Task_1", testSigneeContexts, testDocuments);
-
-        Assert.Single(testSigneeContexts);
-        Assert.NotNull(testSigneeContexts.First().SignDocument);
-        Assert.True(testSigneeContexts.First().SignDocument?.SigneeInfo.PersonNumber == ssn);
-        Assert.IsType<PersonSignee>(testSigneeContexts.First().Signee);
-    }
-
-    [Fact]
-    public async Task SynchronizeSigneeContextsWithSignDocuments_WithOrgNrAndSsn_MatchesCorrectSignDocument()
-    {
-        var ssn = "12345678910";
-        var orgNumber = "987654321";
-
-        List<SignDocument> testDocuments = SetupSignDocuments(ssn, orgNumber);
-        List<SigneeContext> testSigneeContexts =
-        [
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonOnBehalfOfOrgSignee
-                {
-                    FullName = "Test Testesen",
-                    SocialSecurityNumber = ssn,
-                    Party = new Party { Name = "Test Testesen", SSN = ssn },
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg",
-                        OrgNumber = orgNumber,
-                        OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                    },
-                },
-            },
-        ];
-
-        await _signingService.SynchronizeSigneeContextsWithSignDocuments("Task_1", testSigneeContexts, testDocuments);
-
-        Assert.Single(testSigneeContexts);
-        Assert.NotNull(testSigneeContexts.First().SignDocument);
-        Assert.True(testSigneeContexts.First().SignDocument?.SigneeInfo.PersonNumber == ssn);
-        Assert.True(testSigneeContexts.First().SignDocument?.SigneeInfo.OrganisationNumber == orgNumber);
-        Assert.IsType<PersonOnBehalfOfOrgSignee>(testSigneeContexts.First().Signee);
-    }
-
-    [Fact]
-    public async Task SynchronizeSigneeContextsWithSignDocuments_WithNonMatchingSsn_AppendsNewSigneeContext()
-    {
-        var ssn = "12345678910";
-        var orgNumber = "987654321";
-
-        List<SignDocument> testDocuments = SetupSignDocuments(ssn, orgNumber);
-        List<SigneeContext> testSigneeContexts =
-        [
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonOnBehalfOfOrgSignee
-                {
-                    FullName = "Test Testesen",
-                    SocialSecurityNumber = "11111111111",
-                    Party = new Party { Name = "Test Testesen" },
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg",
-                        OrgNumber = orgNumber,
-                        OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                    },
-                },
-            },
-        ];
-
-        await _signingService.SynchronizeSigneeContextsWithSignDocuments("Task_1", testSigneeContexts, testDocuments);
-
-        Assert.Equal(2, testSigneeContexts.Count);
-        Assert.NotNull(testSigneeContexts[1].SignDocument);
-        Assert.True(testSigneeContexts[1].SignDocument?.SigneeInfo.PersonNumber == ssn);
-        Assert.True(testSigneeContexts[1].SignDocument?.SigneeInfo.OrganisationNumber == orgNumber);
-    }
-
-    [Fact]
-    public async Task SynchronizeSigneeContextsWithSignDocuments_WithOnePersonSigneeAndOnePersonOnBehalfOfOrgSignDocumentWithMatchingSsn_CreatesNewSigneeContext()
-    {
-        var ssn = "12345678910";
-        var orgNumber = "987654321";
-
-        List<SignDocument> signDocuments =
-        [
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn, OrganisationNumber = orgNumber },
-            },
-        ];
-
-        List<SigneeContext> signeeContexts =
-        [
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonSignee
-                {
-                    FullName = "Test Testesen",
-                    SocialSecurityNumber = ssn,
-                    Party = new Party { Name = "Test Testesen", SSN = ssn },
-                },
-            },
-        ];
-
-        await _signingService.SynchronizeSigneeContextsWithSignDocuments("Task_1", signeeContexts, signDocuments);
-
-        Assert.Equal(2, signeeContexts.Count);
-        Assert.NotNull(signeeContexts[1].SignDocument);
-        Assert.True(signeeContexts[1].SignDocument?.SigneeInfo.PersonNumber == ssn);
-        Assert.True(signeeContexts[1].SignDocument?.SigneeInfo.OrganisationNumber == orgNumber);
-    }
-
-    [Fact]
-    public async Task SynchronizeSigneeContextsWithSignDocuments_WithOrgAndSystemUserId_MatchesCorrectSigneeContext()
-    {
-        var orgNumber = "987654321";
-        var systemUserId = Guid.NewGuid();
-
-        List<SignDocument> testDocuments =
-        [
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { SystemUserId = systemUserId, OrganisationNumber = orgNumber },
-            },
-        ];
-        List<SigneeContext> testSigneeContexts =
-        [
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new SystemSignee
-                {
-                    SystemId = systemUserId,
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg",
-                        OrgNumber = orgNumber,
-                        OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                    },
-                },
-            },
-        ];
-
-        await _signingService.SynchronizeSigneeContextsWithSignDocuments("Task_1", testSigneeContexts, testDocuments);
-
-        Assert.Single(testSigneeContexts);
-        Assert.NotNull(testSigneeContexts.First().SignDocument);
-        Assert.Null(testSigneeContexts.First().SignDocument?.SigneeInfo.PersonNumber);
-        Assert.True(testSigneeContexts.First().SignDocument?.SigneeInfo.OrganisationNumber == orgNumber);
-        Assert.True(testSigneeContexts.First().SignDocument?.SigneeInfo.SystemUserId == systemUserId);
-        Assert.IsType<SystemSignee>(testSigneeContexts.First().Signee);
-    }
-
-    [Fact]
-    public async Task SynchronizeSigneeContextsWithSignDocuments_WithMultiplePersonOrgAndSystemSignatures_MatchesCorrectSignatureContexts()
-    {
-        var systemUserId1 = new Guid("11111111-1111-1111-1111-111111111111");
-        var systemUserId2 = new Guid("22222222-2222-2222-2222-222222222222");
-
-        var ssn1 = "11111111111";
-        var ssn2 = "22222222222";
-
-        var orgNumber1 = "111111111";
-        var orgNumber2 = "222222222";
-        var unmatchedOrgNumber = "12324323423";
-
-        List<SignDocument> signDocuments =
-        [
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn1, OrganisationNumber = null },
-            },
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn2, OrganisationNumber = null },
-            },
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn1, OrganisationNumber = orgNumber1 },
-            },
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn2, OrganisationNumber = orgNumber1 },
-            },
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { SystemUserId = systemUserId1, OrganisationNumber = orgNumber1 },
-            },
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { SystemUserId = systemUserId2, OrganisationNumber = orgNumber2 },
-            },
-        ];
-
-        List<SigneeContext> signeeContexts =
-        [
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new OrganizationSignee
-                {
-                    OrgName = "TestOrg 2",
-                    OrgNumber = orgNumber2,
-                    OrgParty = new Party { Name = "TestOrg 2", OrgNumber = orgNumber2 },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new OrganizationSignee
-                {
-                    OrgName = "TestOrg 1",
-                    OrgNumber = orgNumber1,
-                    OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new OrganizationSignee
-                {
-                    OrgName = "TestOrg 1",
-                    OrgNumber = orgNumber1,
-                    OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new OrganizationSignee
-                {
-                    OrgName = "TestOrg 1",
-                    OrgNumber = orgNumber1,
-                    OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonSignee
-                {
-                    FullName = "Test Testesen 2",
-                    SocialSecurityNumber = ssn2,
-                    Party = new Party { Name = "Test Testesen 2", SSN = ssn2 },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonSignee
-                {
-                    FullName = "Test Testesen 1",
-                    SocialSecurityNumber = ssn1,
-                    Party = new Party { Name = "Test Testesen 1", SSN = ssn1 },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new OrganizationSignee
-                {
-                    OrgName = "Unmatched Org",
-                    OrgNumber = unmatchedOrgNumber,
-                    OrgParty = new Party { Name = "Unmatched Org", OrgNumber = unmatchedOrgNumber },
-                },
-            },
-        ];
-
-        List<SigneeContext> expected =
-        [
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonSignee
-                {
-                    FullName = "Test Testesen 2",
-                    SocialSecurityNumber = ssn2,
-                    Party = new Party { Name = "Test Testesen 2", SSN = ssn2 },
-                },
-                SignDocument = signDocuments[1],
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonSignee
-                {
-                    FullName = "Test Testesen 1",
-                    SocialSecurityNumber = ssn1,
-                    Party = new Party { Name = "Test Testesen 1", SSN = ssn1 },
-                },
-                SignDocument = signDocuments[0],
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new SystemSignee
-                {
-                    SystemId = systemUserId2,
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg 2",
-                        OrgNumber = orgNumber2,
-                        OrgParty = new Party { Name = "TestOrg 2", OrgNumber = orgNumber2 },
-                    },
-                },
-                SignDocument = signDocuments[5],
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonOnBehalfOfOrgSignee
-                {
-                    SocialSecurityNumber = ssn1,
-                    FullName = null!,
-                    Party = new Party { SSN = ssn1 },
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg 1",
-                        OrgNumber = orgNumber1,
-                        OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                    },
-                },
-                SignDocument = signDocuments[2],
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonOnBehalfOfOrgSignee
-                {
-                    SocialSecurityNumber = ssn2,
-                    FullName = null!,
-                    Party = new Party { SSN = ssn2 },
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg 1",
-                        OrgNumber = orgNumber1,
-                        OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                    },
-                },
-                SignDocument = signDocuments[3],
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new SystemSignee
-                {
-                    SystemId = systemUserId1,
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg 1",
-                        OrgNumber = orgNumber1,
-                        OrgParty = new Party { Name = "TestOrg 1", OrgNumber = orgNumber1 },
-                    },
-                },
-                SignDocument = signDocuments[4],
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new OrganizationSignee
-                {
-                    OrgName = "Unmatched Org",
-                    OrgNumber = unmatchedOrgNumber,
-                    OrgParty = new Party { Name = "Unmatched Org", OrgNumber = unmatchedOrgNumber },
-                },
-            },
-        ];
-
-        await _signingService.SynchronizeSigneeContextsWithSignDocuments("Task_1", signeeContexts, signDocuments);
-        Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(signeeContexts));
-    }
-
-    [Fact]
-    public async Task SynchronizeSigneeContextsWithSignDocuments_WithDifferentOrder_ShouldReturnSameResult()
-    {
-        var ssn = "12345678910";
-        var orgNumber = "987654321";
-        Guid systemUserId = new("11111111-1111-1111-1111-111111111111");
-
-        List<SignDocument> signDocuments =
-        [
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn, OrganisationNumber = orgNumber },
-            },
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { SystemUserId = systemUserId, OrganisationNumber = orgNumber },
-            },
-        ];
-
-        List<SigneeContext> signeeContexts =
-        [
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new OrganizationSignee
-                {
-                    OrgName = "TestOrg",
-                    OrgNumber = orgNumber,
-                    OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new SystemSignee
-                {
-                    SystemId = systemUserId,
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg",
-                        OrgNumber = orgNumber,
-                        OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                    },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonOnBehalfOfOrgSignee
-                {
-                    FullName = "Test Testesen",
-                    SocialSecurityNumber = ssn,
-                    Party = new Party { Name = "Test Testesen", SSN = ssn },
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg",
-                        OrgNumber = orgNumber,
-                        OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                    },
-                },
-            },
-        ];
-
-        List<SigneeContext> expected =
-        [
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new SystemSignee
-                {
-                    SystemId = systemUserId,
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg",
-                        OrgNumber = orgNumber,
-                        OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                    },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonOnBehalfOfOrgSignee
-                {
-                    FullName = "Test Testesen",
-                    SocialSecurityNumber = ssn,
-                    Party = new Party { Name = "Test Testesen", SSN = ssn },
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg",
-                        OrgNumber = orgNumber,
-                        OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                    },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new OrganizationSignee
-                {
-                    OrgName = "TestOrg",
-                    OrgNumber = orgNumber,
-                    OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                },
-            },
-        ];
-
-        List<SigneeContext> signeeContextsCopy = [.. signeeContexts];
-
-        await _signingService.SynchronizeSigneeContextsWithSignDocuments("Task_1", signeeContextsCopy, signDocuments);
-        Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(signeeContextsCopy));
-
-        List<SigneeContext> signeeContextsReversed = [.. signeeContextsCopy];
-        signeeContextsReversed.Reverse();
-
-        List<SigneeContext> expectedReversed =
-        [
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new PersonOnBehalfOfOrgSignee
-                {
-                    FullName = "Test Testesen",
-                    SocialSecurityNumber = ssn,
-                    Party = new Party { Name = "Test Testesen", SSN = ssn },
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg",
-                        OrgNumber = orgNumber,
-                        OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                    },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new SystemSignee
-                {
-                    SystemId = systemUserId,
-                    OnBehalfOfOrg = new OrganizationSignee
-                    {
-                        OrgName = "TestOrg",
-                        OrgNumber = orgNumber,
-                        OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                    },
-                },
-            },
-            new SigneeContext
-            {
-                TaskId = "Task_1",
-                SigneeState = new SigneeState(),
-                Signee = new OrganizationSignee
-                {
-                    OrgName = "TestOrg",
-                    OrgNumber = orgNumber,
-                    OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-                },
-            },
-        ];
-
-        await _signingService.SynchronizeSigneeContextsWithSignDocuments(
-            "Task_1",
-            signeeContextsReversed,
-            signDocuments
-        );
-
-        Assert.Equal(JsonSerializer.Serialize(expectedReversed), JsonSerializer.Serialize(signeeContextsReversed));
-    }
-
-    private static List<SignDocument> SetupSignDocuments(string ssn, string? orgNumber = null)
-    {
-        List<SignDocument> testDocuments =
-        [
-            new SignDocument
-            {
-                SigneeInfo = new StorageSignee { PersonNumber = ssn, OrganisationNumber = orgNumber },
-            },
-        ];
-
-        return testDocuments;
-    }
-
-    [Fact]
     public async Task AbortRuntimeDelegatedSigning_Removes_SigningData_And_Revokes_Delegation()
     {
         // Arrange
@@ -895,15 +334,38 @@ public sealed class SigningServiceTests : IDisposable
         };
 
         var signatureDataElementIdentifier = new DataElementIdentifier(signatureDataElement.Id);
-        var signDocument = new SignDocument { SigneeInfo = new StorageSignee { PersonNumber = "12345678910" } };
+        List<SignDocument> signDocuments =
+        [
+            new SignDocument { SigneeInfo = new StorageSignee { PersonNumber = "12345678910" } },
+        ];
 
-        cachedInstanceMutator
-            .Setup(x => x.GetBinaryData(signatureDataElementIdentifier))
-            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signDocument)));
+        var signeeContextsWithDocuments = new List<SigneeContext>()
+        {
+            new()
+            {
+                TaskId = taskId,
+                Signee = new PersonSignee
+                {
+                    SocialSecurityNumber = "12345678910",
+                    FullName = "Name",
+                    Party = new Party(),
+                },
+                SigneeState = new SigneeState { IsAccessDelegated = true },
+                SignDocument = signDocuments[0],
+            },
+        };
 
         _signeeContextsManager
             .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
             .ReturnsAsync(signeeContexts);
+
+        _signDocumentManager
+            .Setup(x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync(signDocuments);
+
+        _signDocumentManager
+            .Setup(x => x.SynchronizeSigneeContextsWithSignDocuments(taskId, signeeContexts, signDocuments))
+            .ReturnsAsync(signeeContextsWithDocuments);
 
         _signingDelegationService
             .Setup(x =>
@@ -938,13 +400,24 @@ public sealed class SigningServiceTests : IDisposable
         cachedInstanceMutator.Verify(x => x.RemoveDataElement(signeeStateDataElement), Times.Once);
         cachedInstanceMutator.Verify(x => x.RemoveDataElement(signatureDataElement), Times.Once);
 
-        // It's expected that the blobs are downloaded to sync signee contexts with sign documents.
+        cachedInstanceMutator.VerifyNoOtherCalls();
+
+        // Verify that the signee contexts are retrieved and synchronized
         _signeeContextsManager.Verify(
             x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration),
             Times.Once
         );
-        cachedInstanceMutator.Verify(x => x.GetBinaryData(signatureDataElementIdentifier), Times.Once);
-        cachedInstanceMutator.VerifyNoOtherCalls();
+        _signeeContextsManager.VerifyNoOtherCalls();
+
+        _signDocumentManager.Verify(
+            x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration),
+            Times.Once
+        );
+        _signDocumentManager.Verify(
+            x => x.SynchronizeSigneeContextsWithSignDocuments(taskId, signeeContexts, signDocuments),
+            Times.Once
+        );
+        _signDocumentManager.VerifyNoOtherCalls();
 
         // Verify that the delegation is revoked
         _signingDelegationService.Verify(x =>
@@ -977,6 +450,20 @@ public sealed class SigningServiceTests : IDisposable
             Data = [],
         };
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
+
+        _signDocumentManager
+            .Setup(x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync([]);
+        _signDocumentManager
+            .Setup(x =>
+                x.SynchronizeSigneeContextsWithSignDocuments(
+                    instance.Process.CurrentTask.ElementId,
+                    It.IsAny<List<SigneeContext>>(),
+                    It.IsAny<List<SignDocument>>()
+                )
+            )
+            .ReturnsAsync([]);
+
         _signeeContextsManager
             .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
             .ReturnsAsync([]);
@@ -1090,36 +577,6 @@ public sealed class SigningServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetSigneeContexts_MissingSignatureDataType_ThrowsApplicationConfigException()
-    {
-        // Arrange
-        var signatureConfiguration = new AltinnSignatureConfiguration
-        {
-            SigneeStatesDataTypeId = "signeeStates",
-            SignatureDataType = null, // Missing required configuration
-        };
-
-        var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
-        var instance = new Instance
-        {
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
-            Data = [],
-        };
-        cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
-
-        _signeeContextsManager
-            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
-            .ReturnsAsync(new List<SigneeContext>());
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(
-            () => _signingService.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration)
-        );
-
-        Assert.Contains("SignatureDataType is not set", exception.Message);
-    }
-
-    [Fact]
     public async Task GetInstanceOwnerParty_WithTtdOrganization_UsesDigitaliseringsdirektoratetOrgNumber()
     {
         // Arrange
@@ -1139,10 +596,21 @@ public sealed class SigningServiceTests : IDisposable
             Data = [],
         };
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
-
         _signeeContextsManager
             .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
-            .ReturnsAsync(new List<SigneeContext>());
+            .ReturnsAsync([]);
+        _signDocumentManager
+            .Setup(x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync([]);
+        _signDocumentManager
+            .Setup(x =>
+                x.SynchronizeSigneeContextsWithSignDocuments(
+                    instance.Process.CurrentTask.ElementId,
+                    It.IsAny<List<SigneeContext>>(),
+                    It.IsAny<List<SignDocument>>()
+                )
+            )
+            .ReturnsAsync([]);
 
         // Act
         await _signingService.AbortRuntimeDelegatedSigning(
@@ -1154,38 +622,6 @@ public sealed class SigningServiceTests : IDisposable
 
         // Assert
         _altinnPartyClient.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task ConvertOrgSignee_WithNullSignDocument_ReturnsWithoutChanges()
-    {
-        // Arrange
-        var orgNumber = "987654321";
-
-        var orgSignee = new OrganizationSignee
-        {
-            OrgName = "TestOrg",
-            OrgNumber = orgNumber,
-            OrgParty = new Party { Name = "TestOrg", OrgNumber = orgNumber },
-        };
-
-        var signeeContext = new SigneeContext
-        {
-            TaskId = "Task_1",
-            SigneeState = new SigneeState(),
-            Signee = orgSignee,
-        };
-
-        // Act
-        await _signingService.SynchronizeSigneeContextsWithSignDocuments(
-            "Task_1",
-            [signeeContext],
-            [] // Empty sign documents list
-        );
-
-        // Assert
-        Assert.Same(orgSignee, signeeContext.Signee); // Signee should remain unchanged
-        Assert.Null(signeeContext.SignDocument); // No sign document should be assigned
     }
 
     [Fact]
@@ -1213,22 +649,45 @@ public sealed class SigningServiceTests : IDisposable
         };
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
+        // We need to return an empty list to avoid the test trying to revoke delegation rights
+        _signeeContextsManager
+            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync([]);
         // Mock the GetBinaryData method to return valid JSON for the signature data element
         var signDocument = new SignDocument { SigneeInfo = new StorageSignee { PersonNumber = "12345678910" } };
-        cachedInstanceMutator
-            .Setup(x => x.GetBinaryData(It.IsAny<DataElementIdentifier>()))
-            .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signDocument)));
+        _signDocumentManager
+            .Setup(x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration))
+            .ReturnsAsync([signDocument]);
+        _signDocumentManager
+            .Setup(x =>
+                x.SynchronizeSigneeContextsWithSignDocuments(
+                    instance.Process.CurrentTask.ElementId,
+                    It.IsAny<List<SigneeContext>>(),
+                    It.IsAny<List<SignDocument>>()
+                )
+            )
+            .ReturnsAsync(
+                [
+                    new SigneeContext
+                    {
+                        TaskId = "Task_1",
+                        SignDocument = signDocument,
+                        SigneeState = new SigneeState { IsAccessDelegated = true },
+                        Signee = new PersonSignee
+                        {
+                            FullName = "Test Person",
+                            Party = new Party(),
+                            SocialSecurityNumber = "12345678910",
+                        },
+                    },
+                ]
+            );
 
         // Setup to throw exception during party lookup
         _altinnPartyClient.Reset();
         _altinnPartyClient
             .Setup(x => x.LookupParty(It.IsAny<PartyLookup>()))
             .ThrowsAsync(new Exception("Party lookup failed"));
-
-        // We need to return an empty list to avoid the test trying to revoke delegation rights
-        _signeeContextsManager
-            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
-            .ReturnsAsync([]);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<SigningException>(
@@ -1253,10 +712,5 @@ public sealed class SigningServiceTests : IDisposable
                 ),
             Times.AtLeastOnce
         );
-    }
-
-    private static byte[] ToBytes<T>(T obj)
-    {
-        return Encoding.UTF8.GetBytes(JsonSerializer.Serialize(obj));
     }
 }
