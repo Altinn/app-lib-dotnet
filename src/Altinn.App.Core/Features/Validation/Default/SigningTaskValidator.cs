@@ -16,7 +16,7 @@ namespace Altinn.App.Core.Features.Validation.Default;
 internal sealed class SigningTaskValidator : IValidator
 {
     private readonly IProcessReader _processReader;
-    private readonly ISigneeContextsManager _signeeContextsManager;
+    private readonly ISigningService _signingService;
     private readonly IAppMetadata _appMetadata;
     private readonly ILogger<SigningTaskValidator> _logger;
 
@@ -26,13 +26,13 @@ internal sealed class SigningTaskValidator : IValidator
     public SigningTaskValidator(
         ILogger<SigningTaskValidator> logger,
         IProcessReader processReader,
-        ISigneeContextsManager signeeContextsManager,
+        ISigningService signingService,
         IAppMetadata appMetadata
     )
     {
         _logger = logger;
         _processReader = processReader;
-        _signeeContextsManager = signeeContextsManager;
+        _signingService = signingService;
         _appMetadata = appMetadata;
     }
 
@@ -96,7 +96,7 @@ internal sealed class SigningTaskValidator : IValidator
         }
 
         var signeeContextsResult = await CatchError(
-            _signeeContextsManager.GetSigneeContexts(dataAccessor, signingConfiguration)
+            _signingService.GetSigneeContexts(dataAccessor, signingConfiguration)
         );
         if (!signeeContextsResult.Success)
         {
