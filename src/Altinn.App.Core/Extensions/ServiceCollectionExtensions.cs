@@ -15,9 +15,8 @@ using Altinn.App.Core.Features.Payment.Processors.FakePaymentProcessor;
 using Altinn.App.Core.Features.Payment.Processors.Nets;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Features.Pdf;
-using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Internal;
+using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Helpers.Serialization;
@@ -312,6 +311,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ISigningDelegationService, SigningDelegationService>();
         services.AddTransient<ISigningReceiptService, SigningReceiptService>();
         services.AddTransient<ISigningCallToActionService, SigningCallToActionService>();
+        services.AddTransient<ISigneeContextsManager, SigneeContextsManager>();
         services.AddTransient<ISigningService, SigningService>();
     }
 

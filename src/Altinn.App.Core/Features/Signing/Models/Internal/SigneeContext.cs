@@ -31,7 +31,7 @@ internal sealed class SigneeContext
     /// <summary>
     /// The signature document, if it exists yet.
     /// </summary>
-    /// <remarks>This is not and should not be serialized and persisted in storage, it's looked up on-the-fly when the signee contexts are retrieved through <see cref="SigningService.GetSigneeContexts"/></remarks>
+    /// <remarks>This is not and should not be serialized and persisted in storage, it's looked up on-the-fly when the signee contexts are retrieved through <see cref="SigneeContextsManager.GetSigneeContexts"/></remarks>
     [JsonIgnore]
     public SignDocument? SignDocument { get; set; }
 }

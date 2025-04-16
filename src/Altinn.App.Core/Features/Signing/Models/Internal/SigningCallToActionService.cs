@@ -8,8 +8,6 @@ using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Enums;
 using Altinn.App.Core.Features.Signing.Helpers;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models;
-using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Language;
@@ -23,7 +21,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Features.Signing.Internal;
+namespace Altinn.App.Core.Features.Signing.Models.Internal;
 
 internal sealed class SigningCallToActionService(
     ICorrespondenceClient correspondenceClient,

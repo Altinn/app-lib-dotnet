@@ -23,6 +23,7 @@ internal sealed class SigningProcessTask : IProcessTask
     private readonly IHostEnvironment _hostEnvironment;
     private readonly IDataClient _dataClient;
     private readonly IPdfService _pdfService;
+    private readonly ISigneeContextsManager _signeeContextsManager;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     public SigningProcessTask(
@@ -32,6 +33,7 @@ internal sealed class SigningProcessTask : IProcessTask
         IHostEnvironment hostEnvironment,
         IDataClient dataClient,
         IPdfService pdfService,
+        ISigneeContextsManager signeeContextsManager,
         InstanceDataUnitOfWorkInitializer instanceDataUnitOfWorkInitializer
     )
     {
@@ -41,6 +43,7 @@ internal sealed class SigningProcessTask : IProcessTask
         _hostEnvironment = hostEnvironment;
         _dataClient = dataClient;
         _pdfService = pdfService;
+        _signeeContextsManager = signeeContextsManager;
         _instanceDataUnitOfWorkInitializer = instanceDataUnitOfWorkInitializer;
     }
 
@@ -126,7 +129,7 @@ internal sealed class SigningProcessTask : IProcessTask
         CancellationToken ct
     )
     {
-        List<SigneeContext> signeeContexts = await _signingService.GenerateSigneeContexts(
+        List<SigneeContext> signeeContexts = await _signeeContextsManager.GenerateSigneeContexts(
             cachedDataMutator,
             signatureConfiguration,
             ct

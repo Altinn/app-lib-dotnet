@@ -6,8 +6,6 @@ using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models;
-using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
@@ -21,16 +19,16 @@ using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
 using JsonException = Newtonsoft.Json.JsonException;
 using SigneeState = Altinn.App.Core.Features.Signing.Models.Internal.SigneeContextState;
 
-namespace Altinn.App.Core.Features.Signing;
+namespace Altinn.App.Core.Features.Signing.Models.Internal;
 
 internal sealed class SigningService(
     IAltinnPartyClient altinnPartyClient,
     ISigningDelegationService signingDelegationService,
-    AppImplementationFactory appImplementationFactory,
     IAppMetadata appMetadata,
     ISigningCallToActionService signingCallToActionService,
     IAuthorizationClient authorizationClient,
     ILogger<SigningService> logger,
+    ISigneeContextsManager signeeContextsManager,
     Telemetry? telemetry = null
 ) : ISigningService
 {
@@ -45,48 +43,10 @@ internal sealed class SigningService(
         }
     );
     private readonly ILogger<SigningService> _logger = logger;
+    private readonly ISigneeContextsManager _signeeContextsManager = signeeContextsManager;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ISigningCallToActionService _signingCallToActionService = signingCallToActionService;
-    private readonly AppImplementationFactory _appImplementationFactory = appImplementationFactory;
     private const string ApplicationJsonContentType = "application/json";
-
-    // <inheritdoc />
-    public async Task<List<SigneeContext>> GenerateSigneeContexts(
-        IInstanceDataMutator instanceDataMutator,
-        AltinnSignatureConfiguration signatureConfiguration,
-        CancellationToken ct
-    )
-    {
-        using Activity? activity = telemetry?.StartAssignSigneesActivity();
-
-        Instance instance = instanceDataMutator.Instance;
-        string taskId = instance.Process.CurrentTask.ElementId;
-
-        SigneeProviderResult? signeesResult = await GetSigneesFromProvider(instance, signatureConfiguration);
-        if (signeesResult is null)
-        {
-            return [];
-        }
-
-        List<SigneeContext> signeeContexts = [];
-        foreach (ProvidedSignee signeeParty in signeesResult.Signees)
-        {
-            SigneeContext signeeContext = await GenerateSigneeContext(taskId, signeeParty, ct);
-            signeeContexts.Add(signeeContext);
-        }
-
-        _logger.LogInformation(
-            "Assigning {SigneeContextsCount} signees to task {TaskId}.",
-            signeeContexts.Count,
-            taskId
-        );
-        _logger.LogDebug(
-            "Signee context state: {SigneeContexts}",
-            JsonSerializer.Serialize(signeeContexts, _jsonSerializerOptions)
-        );
-
-        return signeeContexts;
-    }
 
     // <inheritdoc />
     public async Task<List<SigneeContext>> InitializeSignees(
@@ -188,7 +148,7 @@ internal sealed class SigningService(
     )
     {
         using Activity? activity = telemetry?.StartReadSigneesActivity();
-        List<SigneeContext> signeeContexts = await TryDownLoadSigneeContexts(
+        List<SigneeContext> signeeContexts = await _signeeContextsManager.GetSigneeContexts(
             instanceDataAccessor,
             signatureConfiguration
         );
@@ -209,7 +169,7 @@ internal sealed class SigningService(
         int userId
     )
     {
-        List<SigneeContext> signeeContexts = await TryDownLoadSigneeContexts(
+        List<SigneeContext> signeeContexts = await _signeeContextsManager.GetSigneeContexts(
             instanceDataAccessor,
             signatureConfiguration
         );
@@ -274,103 +234,6 @@ internal sealed class SigningService(
             signeeContextsWithDelegation,
             ct
         );
-    }
-
-    private async Task<List<SigneeContext>> TryDownLoadSigneeContexts(
-        IInstanceDataAccessor instanceDataAccessor,
-        AltinnSignatureConfiguration signatureConfiguration
-    )
-    {
-        // If no SigneeStatesDataTypeId is set, delegated signing is not enabled and there is nothing to download.
-        return !string.IsNullOrEmpty(signatureConfiguration.SigneeStatesDataTypeId)
-            ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)
-            : [];
-    }
-
-    /// <summary>
-    /// Get signees from the signee provider implemented in the App.
-    /// </summary>
-    /// <exception cref="SigneeProviderNotFoundException"></exception>
-    private async Task<SigneeProviderResult?> GetSigneesFromProvider(
-        Instance instance,
-        AltinnSignatureConfiguration signatureConfiguration
-    )
-    {
-        string? signeeProviderId = signatureConfiguration.SigneeProviderId;
-        if (string.IsNullOrEmpty(signeeProviderId))
-            return null;
-
-        var signeeProviders = _appImplementationFactory.GetAll<ISigneeProvider>();
-        ISigneeProvider signeeProvider =
-            signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
-            ?? throw new SigneeProviderNotFoundException(
-                $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID."
-            );
-
-        SigneeProviderResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
-        return signeesResult;
-    }
-
-    private async Task<SigneeContext> GenerateSigneeContext(
-        string taskId,
-        ProvidedSignee signeeParty,
-        CancellationToken ct
-    )
-    {
-        var signee = await From(signeeParty, altinnPartyClient.LookupParty);
-        Party party = signee.GetParty();
-
-        Models.Notifications? notifications = signeeParty.Notifications;
-
-        Email? emailNotification = notifications?.OnSignatureAccessRightsDelegated?.Email;
-        if (emailNotification is not null && string.IsNullOrEmpty(emailNotification.EmailAddress))
-        {
-            emailNotification.EmailAddress = party.Organization?.EMailAddress;
-        }
-
-        Sms? smsNotification = notifications?.OnSignatureAccessRightsDelegated?.Sms;
-        if (smsNotification is not null && string.IsNullOrEmpty(smsNotification.MobileNumber))
-        {
-            smsNotification.MobileNumber = party.Organization?.MobileNumber ?? party.Person?.MobileNumber;
-        }
-
-        return new SigneeContext
-        {
-            TaskId = taskId,
-            SigneeState = new SigneeState(),
-            Notifications = notifications,
-            Signee = signee,
-        };
-    }
-
-    private async Task<List<SigneeContext>> DownloadSigneeContexts(
-        IInstanceDataAccessor instanceDataAccessor,
-        AltinnSignatureConfiguration signatureConfiguration
-    )
-    {
-        string signeeStatesDataTypeId =
-            signatureConfiguration.SigneeStatesDataTypeId
-            ?? throw new ApplicationConfigException(
-                "SigneeStatesDataTypeId is not set in the signature configuration."
-            );
-
-        IEnumerable<DataElement> dataElements = instanceDataAccessor.GetDataElementsForType(signeeStatesDataTypeId);
-
-        DataElement? signeeStateDataElement = dataElements.SingleOrDefault();
-
-        if (signeeStateDataElement is null)
-        {
-            _logger.LogInformation("Didn't find any signee states for task.");
-            return [];
-        }
-
-        ReadOnlyMemory<byte> data = await instanceDataAccessor.GetBinaryData(signeeStateDataElement);
-        string signeeStateSerialized = Encoding.UTF8.GetString(data.ToArray());
-
-        List<SigneeContext> signeeContexts =
-            JsonSerializer.Deserialize<List<SigneeContext>>(signeeStateSerialized, _jsonSerializerOptions) ?? [];
-
-        return signeeContexts;
     }
 
     private async Task<List<SignDocument>> DownloadSignDocuments(
@@ -542,35 +405,39 @@ internal sealed class SigningService(
                 signDocument.SigneeInfo.PersonNumber,
                 signDocument.SigneeInfo.OrganisationNumber,
                 signDocument.SigneeInfo.SystemUserId,
-                altinnPartyClient.LookupParty
+                LookupParty
             ),
             SigneeState = new SigneeState() { IsAccessDelegated = true, HasBeenMessagedForCallToSign = true },
             SignDocument = signDocument,
         };
     }
 
-    private async Task<Party?> GetInstanceOwnerParty(InstanceOwner instanceOwner)
+    private async Task<Party> LookupParty(PartyLookup partyLookup)
     {
         try
         {
-            if (instanceOwner.OrganisationNumber == "ttd")
-            {
-                // Testdepartementet is often used in test environments, it does not have an organization number, so we use Digitaliseringsdirektoratet's orgnr instead.
-                instanceOwner.OrganisationNumber = "991825827";
-            }
-
-            return await altinnPartyClient.LookupParty(
-                !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
-                    ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
-                    : new PartyLookup { Ssn = instanceOwner.PersonNumber }
-            );
+            return await altinnPartyClient.LookupParty(partyLookup);
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed to look up party for instance owner.");
+            _logger.LogError(e, "Failed to look up party.");
+            throw new SigningException("Failed to look up party.");
+        }
+    }
+
+    private async Task<Party?> GetInstanceOwnerParty(InstanceOwner instanceOwner)
+    {
+        if (instanceOwner.OrganisationNumber == "ttd")
+        {
+            // Testdepartementet is often used in test environments, it does not have an organization number, so we use Digitaliseringsdirektoratet's orgnr instead.
+            instanceOwner.OrganisationNumber = "991825827";
         }
 
-        return null;
+        return await LookupParty(
+            !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
+                ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
+                : new PartyLookup { Ssn = instanceOwner.PersonNumber }
+        );
     }
 
     private async Task<(Party serviceOwnerParty, bool success)> GetServiceOwnerParty(CancellationToken ct)

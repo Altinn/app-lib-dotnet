@@ -29,6 +29,7 @@ internal class SigningController : ControllerBase
     private readonly IAuthenticationContext _authenticationContext;
     private readonly ILogger<SigningController> _logger;
     private readonly ISigningService _signingService;
+
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     /// <summary>
