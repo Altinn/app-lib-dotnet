@@ -31,7 +31,7 @@ internal sealed class SigneeContext
     /// <summary>
     /// The signature document, if it exists yet.
     /// </summary>
-    /// <remarks>This is not and should not be serialized and persisted in storage, it's looked up on-the-fly when the signee contexts are retrieved through <see cref="SigningService.GetSigneeContexts"/></remarks>
+    /// <remarks>This is not and should not be serialized and persisted in storage, it's looked up on-the-fly when the signee contexts are retrieved through <see cref="SigneeContextsManager.GetSigneeContexts"/></remarks>
     [JsonIgnore]
     public SignDocument? SignDocument { get; set; }
 }
@@ -51,7 +51,7 @@ internal abstract class Signee
         {
             PersonSignee personSignee => personSignee.Party,
             OrganizationSignee organizationSignee => organizationSignee.OrgParty,
-            PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgParty,
+            PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.Party,
             SystemSignee systemSignee => systemSignee.OnBehalfOfOrg.OrgParty,
             _ => throw new InvalidOperationException(
                 "Signee is neither a person, an organization, a person on behalf of an organization, nor a system"

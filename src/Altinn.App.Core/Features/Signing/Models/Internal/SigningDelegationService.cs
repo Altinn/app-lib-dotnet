@@ -1,5 +1,4 @@
 using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
@@ -7,7 +6,7 @@ using Altinn.App.Core.Models;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Telemetry.DelegationConst;
 
-namespace Altinn.App.Core.Features.Signing;
+namespace Altinn.App.Core.Features.Signing.Models.Internal;
 
 internal sealed class SigningDelegationService(
     IAccessManagementClient accessManagementClient,
@@ -36,10 +35,8 @@ internal sealed class SigningDelegationService(
             return (signeeContexts, false);
         }
 
-        if (!Guid.TryParse(instanceIdCombo.Split("/")[1], out var instanceGuid))
-        {
-            throw new ArgumentException("Invalid instanceId format", nameof(instanceIdCombo));
-        }
+        Guid instanceGuid = ParseInstanceGuid(instanceIdCombo);
+
         var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
         bool success = true;
 
@@ -58,6 +55,7 @@ internal sealed class SigningDelegationService(
                         instanceOwnerPartyUuid,
                         appResourceId.Value
                     );
+
                     DelegationRequest delegationRequest = new()
                     {
                         ResourceId = appResourceId.Value,
@@ -69,29 +67,7 @@ internal sealed class SigningDelegationService(
                                 partyUuid.ToString()
                                 ?? throw new InvalidOperationException("Delegatee: PartyUuid is null"),
                         },
-                        Rights =
-                        [
-                            new RightRequest
-                            {
-                                Resource =
-                                [
-                                    new AppResource { Value = appIdentifier.App },
-                                    new OrgResource { Value = appIdentifier.Org },
-                                    new TaskResource { Value = taskId },
-                                ],
-                                Action = new AltinnAction { Value = ActionType.Read },
-                            },
-                            new RightRequest
-                            {
-                                Resource =
-                                [
-                                    new AppResource { Value = appIdentifier.App },
-                                    new OrgResource { Value = appIdentifier.Org },
-                                    new TaskResource { Value = taskId },
-                                ],
-                                Action = new AltinnAction { Value = ActionType.Sign },
-                            },
-                        ],
+                        Rights = CreateRights(appIdentifier, taskId),
                     };
                     await accessManagementClient.DelegateRights(delegationRequest, ct);
                     state.IsAccessDelegated = true;
@@ -120,10 +96,8 @@ internal sealed class SigningDelegationService(
         Telemetry? telemetry = null
     )
     {
-        if (!Guid.TryParse(instanceIdCombo.Split("/")[1], out var instanceGuid))
-        {
-            throw new ArgumentException("Invalid instanceId format", nameof(instanceIdCombo));
-        }
+        Guid instanceGuid = ParseInstanceGuid(instanceIdCombo);
+
         var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);
         bool success = true;
         foreach (SigneeContext signeeContext in signeeContexts)
@@ -150,29 +124,7 @@ internal sealed class SigningDelegationService(
                                 partyUuid.ToString()
                                 ?? throw new InvalidOperationException("Delegatee: PartyUuid is null"),
                         },
-                        Rights =
-                        [
-                            new RightRequest
-                            {
-                                Resource =
-                                [
-                                    new AppResource { Value = appIdentifier.App },
-                                    new OrgResource { Value = appIdentifier.Org },
-                                    new TaskResource { Value = taskId },
-                                ],
-                                Action = new AltinnAction { Value = ActionType.Read },
-                            },
-                            new RightRequest
-                            {
-                                Resource =
-                                [
-                                    new AppResource { Value = appIdentifier.App },
-                                    new OrgResource { Value = appIdentifier.Org },
-                                    new TaskResource { Value = taskId },
-                                ],
-                                Action = new AltinnAction { Value = ActionType.Sign },
-                            },
-                        ],
+                        Rights = CreateRights(appIdentifier, taskId),
                     };
                     await accessManagementClient.RevokeRights(delegationRequest, ct);
                     signeeContext.SigneeState.IsAccessDelegated = false;
@@ -188,5 +140,41 @@ internal sealed class SigningDelegationService(
             }
         }
         return (signeeContexts, success);
+    }
+
+    private static Guid ParseInstanceGuid(string instanceIdCombo)
+    {
+        try
+        {
+            return Guid.Parse(instanceIdCombo.Split("/")[1]);
+        }
+        catch
+        {
+            throw new ArgumentException("Invalid instanceId format", nameof(instanceIdCombo));
+        }
+    }
+
+    private static List<RightRequest> CreateRights(AppIdentifier appIdentifier, string taskId)
+    {
+        var resources = new List<Resource>
+        {
+            new AppResource { Value = appIdentifier.App },
+            new OrgResource { Value = appIdentifier.Org },
+            new TaskResource { Value = taskId },
+        };
+
+        return
+        [
+            new RightRequest
+            {
+                Resource = resources,
+                Action = new AltinnAction { Value = ActionType.Read },
+            },
+            new RightRequest
+            {
+                Resource = resources,
+                Action = new AltinnAction { Value = ActionType.Sign },
+            },
+        ];
     }
 }

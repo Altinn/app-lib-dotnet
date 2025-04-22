@@ -1,0 +1,19 @@
+using Altinn.App.Core.Features.Signing.Models.Internal;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.Platform.Storage.Interface.Models;
+
+namespace Altinn.App.Core.Features.Signing.Interfaces;
+
+internal interface ISignDocumentManager
+{
+    Task<List<SignDocument>> GetSignDocuments(
+        IInstanceDataAccessor instanceDataAccessor,
+        AltinnSignatureConfiguration signatureConfiguration
+    );
+
+    Task<List<SigneeContext>> SynchronizeSigneeContextsWithSignDocuments(
+        string taskId,
+        List<SigneeContext> signeeContexts,
+        List<SignDocument> signDocuments
+    );
+}

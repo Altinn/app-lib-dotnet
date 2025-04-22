@@ -3,7 +3,6 @@ using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Enums;
-using Altinn.App.Core.Features.Signing.Internal;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.App;
