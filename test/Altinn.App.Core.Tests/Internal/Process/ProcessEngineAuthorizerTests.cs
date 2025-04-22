@@ -265,6 +265,25 @@ public class ProcessEngineAuthorizerTests
         );
     }
 
+    [Theory]
+    [InlineData("data", new[] { "write" })]
+    [InlineData("feedback", new[] { "write" })]
+    [InlineData("payment", new[] { "pay", "write" })]
+    [InlineData("confirmation", new[] { "confirm" })]
+    [InlineData("signing", new[] { "sign", "write" })]
+    [InlineData("customTask", new[] { "customTask" })]
+    public void GetActionsThatAllowProcessNextForTaskType_ReturnsExpectedActions(
+        string taskType,
+        string[] expectedActions
+    )
+    {
+        // Act
+        string[] result = ProcessEngineAuthorizer.GetActionsThatAllowProcessNextForTaskType(taskType);
+
+        // Assert
+        Assert.Equal(expectedActions, result);
+    }
+
     private static Instance CreateInstance(string? taskId, string? taskType = null)
     {
         var instance = new Instance
