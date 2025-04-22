@@ -5,6 +5,9 @@ using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.Platform.Storage.Interface.Models;
+using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
+using KS.Fiks.IO.Client.Models;
+using KS.Fiks.IO.Send.Client.Models;
 using Moq;
 using Moq.Protected;
 
@@ -187,6 +190,49 @@ internal static class TestHelpers
                 ],
             },
         };
+    }
+
+    public static FiksIOMessageResponse GetFiksIOMessageResponse(
+        string messageType = FiksArkivMeldingtype.ArkivmeldingOpprettMottatt,
+        Guid? inReplyToMessage = null,
+        string? correlationId = null
+    )
+    {
+        return new FiksIOMessageResponse(
+            SendtMelding.FromSentMessageApiModel(
+                new SendtMeldingApiModel
+                {
+                    MeldingId = Guid.NewGuid(),
+                    MeldingType = messageType,
+                    AvsenderKontoId = Guid.NewGuid(),
+                    MottakerKontoId = Guid.NewGuid(),
+                    SvarPaMelding = inReplyToMessage,
+                    Headere = new Dictionary<string, string>
+                    {
+                        [MeldingBase.HeaderKlientKorrelasjonsId] = correlationId ?? string.Empty,
+                    },
+                }
+            )
+        );
+    }
+
+    public static FiksIOMessageRequest GetFiksIOMessageRequest(
+        string messageType = FiksArkivMeldingtype.ArkivmeldingOpprett,
+        Guid? recipient = null,
+        Guid? sendersReference = null,
+        Guid? inReplyToMessage = null,
+        string? correlationId = null,
+        IEnumerable<FiksIOMessagePayload>? payload = null
+    )
+    {
+        return new FiksIOMessageRequest(
+            recipient ?? Guid.NewGuid(),
+            messageType,
+            sendersReference ?? Guid.NewGuid(),
+            payload ?? [],
+            inReplyToMessage,
+            correlationId
+        );
     }
 
     public class CustomFiksArkivMessageHandler : IFiksArkivMessageHandler
