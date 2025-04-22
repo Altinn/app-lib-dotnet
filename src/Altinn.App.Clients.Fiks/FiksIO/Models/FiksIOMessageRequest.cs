@@ -12,8 +12,8 @@ namespace Altinn.App.Clients.Fiks.FiksIO.Models;
 /// <param name="SendersReference">Your reference for this message.</param>
 /// <param name="Payload">The payload(s) for the message.</param>
 /// <param name="InReplyToMessage">Is this a reply? If so, the original message ID goes here.</param>
-/// <param name="CorrelationId">Correlation ID for the message. If set, this same value will be returned with any and all replies.</param>
-/// <param name="MessageLifetime">How long is this message valid for, if it goes unreceived?</param>
+/// <param name="CorrelationId">Correlation ID for the message. If set, this same value will be returned with all replies.</param>
+/// <param name="MessageLifetime">How long is this message valid for if it goes unreceived?</param>
 /// <param name="Headers">Message headers.</param>
 public sealed record FiksIOMessageRequest(
     Guid Recipient,
