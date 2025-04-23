@@ -5,8 +5,6 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
-using Altinn.App.Core.Features.Signing.Enums;
-using Altinn.App.Core.Features.Signing.Helpers;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Helpers;
@@ -110,7 +108,7 @@ internal sealed class SigningCallToActionService(
                 .WithRecipient(recipient)
                 .WithContent(correspondenceContent)
                 .WithNotificationIfConfigured(
-                    SigningCorrespondenceHelper.GetNotificationChoice(notification) switch
+                    GetNotificationChoice(notification) switch
                     {
                         NotificationChoice.Email => new CorrespondenceNotification
                         {
@@ -361,5 +359,38 @@ internal sealed class SigningCallToActionService(
                     $"Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
             },
         };
+    }
+
+    internal static NotificationChoice GetNotificationChoice(Notification? notification)
+    {
+        if (
+            notification?.Email is not null
+            && notification.Email.EmailAddress is not null
+            && notification.Sms is not null
+            && notification.Sms.MobileNumber is not null
+        )
+        {
+            return NotificationChoice.SmsAndEmail;
+        }
+
+        if (notification?.Email is not null && notification.Email.EmailAddress is not null)
+        {
+            return NotificationChoice.Email;
+        }
+
+        if (notification?.Sms is not null && notification.Sms.MobileNumber is not null)
+        {
+            return NotificationChoice.Sms;
+        }
+
+        return NotificationChoice.None;
+    }
+
+    internal enum NotificationChoice
+    {
+        None,
+        Sms,
+        Email,
+        SmsAndEmail,
     }
 }

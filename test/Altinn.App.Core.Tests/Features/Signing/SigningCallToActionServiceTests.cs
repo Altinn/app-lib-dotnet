@@ -2,7 +2,6 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Models;
-using Altinn.App.Core.Features.Signing.Enums;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Features.Signing.Services;
@@ -582,7 +581,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         CorrespondenceNotificationRecipientWrapper wrapper = SigningCallToActionService
-            .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.Sms)!
+            .OverrideRecipientIfConfigured(recipient, notification, SigningCallToActionService.NotificationChoice.Sms)!
             .FirstOrDefault()!;
         CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
             wrapper.CorrespondenceNotificationRecipients.FirstOrDefault()!;
@@ -608,7 +607,11 @@ public class SigningCallToActionServiceTests
 
         // Act
         CorrespondenceNotificationRecipientWrapper wrapper = SigningCallToActionService
-            .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.Email)!
+            .OverrideRecipientIfConfigured(
+                recipient,
+                notification,
+                SigningCallToActionService.NotificationChoice.Email
+            )!
             .FirstOrDefault()!;
         CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
             wrapper.CorrespondenceNotificationRecipients.FirstOrDefault()!;
@@ -638,7 +641,11 @@ public class SigningCallToActionServiceTests
 
         // Act
         CorrespondenceNotificationRecipientWrapper wrapper = SigningCallToActionService
-            .OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.SmsAndEmail)!
+            .OverrideRecipientIfConfigured(
+                recipient,
+                notification,
+                SigningCallToActionService.NotificationChoice.SmsAndEmail
+            )!
             .FirstOrDefault()!;
         CorrespondenceNotificationRecipient correspondenceNotificationRecipient =
             wrapper.CorrespondenceNotificationRecipients.FirstOrDefault()!;
@@ -663,7 +670,11 @@ public class SigningCallToActionServiceTests
 
         // Act
         List<CorrespondenceNotificationRecipientWrapper>? wrapperList =
-            SigningCallToActionService.OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.Email);
+            SigningCallToActionService.OverrideRecipientIfConfigured(
+                recipient,
+                notification,
+                SigningCallToActionService.NotificationChoice.Email
+            );
 
         // Assert
         Assert.Null(wrapperList);
@@ -684,7 +695,11 @@ public class SigningCallToActionServiceTests
 
         // Act
         List<CorrespondenceNotificationRecipientWrapper>? wrapperList =
-            SigningCallToActionService.OverrideRecipientIfConfigured(recipient, notification, NotificationChoice.None); // No notification choice configured
+            SigningCallToActionService.OverrideRecipientIfConfigured(
+                recipient,
+                notification,
+                SigningCallToActionService.NotificationChoice.None
+            ); // No notification choice configured
 
         // Assert
         Assert.Null(wrapperList);
@@ -770,5 +785,100 @@ public class SigningCallToActionServiceTests
         Assert.NotNull(result.EmailBody);
         Assert.NotNull(result.EmailSubject);
         Assert.Contains(expectedBodyContains, result.Body);
+    }
+
+    [Fact]
+    public void GetNotificationChoice_EmailAndSms_ReturnsSmsAndEmail()
+    {
+        // Arrange
+        var notification = new Notification
+        {
+            Email = new Email { EmailAddress = "test@tester.no" },
+            Sms = new Sms { MobileNumber = "12345678" },
+        };
+
+        // Act
+        var result = SigningCallToActionService.GetNotificationChoice(notification);
+
+        // Assert
+        Assert.Equal(SigningCallToActionService.NotificationChoice.SmsAndEmail, result);
+    }
+
+    [Fact]
+    public void GetNotificationChoice_EmailOnly_ReturnsEmail()
+    {
+        // Arrange
+        var notification = new Notification { Email = new Email { EmailAddress = "test@tester.no" } };
+
+        // Act
+        var result = SigningCallToActionService.GetNotificationChoice(notification);
+
+        // Assert
+        Assert.Equal(SigningCallToActionService.NotificationChoice.Email, result);
+    }
+
+    [Fact]
+    public void GetNotificationChoice_SmsOnly_ReturnsSms()
+    {
+        // Arrange
+        var notification = new Notification { Sms = new Sms { MobileNumber = "12345678" } };
+
+        // Act
+        var result = SigningCallToActionService.GetNotificationChoice(notification);
+
+        // Assert
+        Assert.Equal(SigningCallToActionService.NotificationChoice.Sms, result);
+    }
+
+    [Fact]
+    public void GetNotificationChoice_NoNotification_ReturnsNone()
+    {
+        // Arrange
+        var notification = new Notification();
+
+        // Act
+        var result = SigningCallToActionService.GetNotificationChoice(notification);
+
+        // Assert
+        Assert.Equal(SigningCallToActionService.NotificationChoice.None, result);
+    }
+
+    [Fact]
+    public void GetNotificationChoice_NullNotification_ReturnsNone()
+    {
+        // Arrange
+        Notification? notification = null;
+
+        // Act
+        var result = SigningCallToActionService.GetNotificationChoice(notification);
+
+        // Assert
+        Assert.Equal(SigningCallToActionService.NotificationChoice.None, result);
+    }
+
+    [Fact]
+    public void GetNotificationChoice_SmsButNoMobileNumber_ReturnsNone()
+    {
+        // Arrange
+        var notification = new Notification { Sms = new Sms { BodyTextResourceKey = "sms_body" } };
+
+        // Act
+        var result = SigningCallToActionService.GetNotificationChoice(notification);
+
+        // Assert
+        Assert.Equal(SigningCallToActionService.NotificationChoice.None, result);
+    }
+
+    [Fact]
+    public void GetNotificationChoice_EmailButNoEmailAddress_ReturnsNone()
+    {
+        // Arrange
+        var notification = new Notification { Email = new Email { BodyTextResourceKey = "email_body" } };
+
+        // Act
+        var result = SigningCallToActionService.GetNotificationChoice(notification);
+
+        // Assert
+        Assert.Equal(SigningCallToActionService.NotificationChoice.None, result);
     }
 }
