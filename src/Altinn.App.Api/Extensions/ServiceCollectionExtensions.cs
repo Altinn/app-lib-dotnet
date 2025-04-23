@@ -2,7 +2,6 @@ using System.Diagnostics;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Controllers.Attributes;
 using Altinn.App.Api.Controllers.Conventions;
-using Altinn.App.Api.Controllers.Providers;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Infrastructure.Filters;
@@ -52,16 +51,11 @@ public static class ServiceCollectionExtensions
         services.AddAppConfigurationCache();
 
         // Add API controllers from Altinn.App.Api
-        IMvcBuilder mvcBuilder = services
-            .AddControllersWithViews(options =>
-            {
-                options.Filters.Add<TelemetryEnrichingResultFilter>();
-                options.Conventions.Add(new AltinnControllerConventions());
-            })
-            .ConfigureApplicationPartManager(manager =>
-            {
-                manager.FeatureProviders.Add(new InternalControllerFeatureProvider());
-            });
+        IMvcBuilder mvcBuilder = services.AddControllersWithViews(options =>
+        {
+            options.Filters.Add<TelemetryEnrichingResultFilter>();
+            options.Conventions.Add(new AltinnControllerConventions());
+        });
 
         mvcBuilder
             .AddApplicationPart(typeof(InstancesController).Assembly)
