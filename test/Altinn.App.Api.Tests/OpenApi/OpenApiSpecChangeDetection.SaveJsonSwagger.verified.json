@@ -4998,15 +4998,17 @@
         }
       }
     },
-    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/signing/organisations": {
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/signing/organizations": {
       "get": {
         "tags": [
           "Signing"
         ],
+        "summary": "Get the organizations that the user can sign on behalf of, if any. Determined by the user having a key role at the organization.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
+            "description": "unique identifier of the organization responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -5015,6 +5017,7 @@
           {
             "name": "app",
             "in": "path",
+            "description": "application identifier which is unique within an organization",
             "required": true,
             "schema": {
               "type": "string"
@@ -5023,6 +5026,7 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
+            "description": "unique id of the party that this the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5032,6 +5036,7 @@
           {
             "name": "instanceGuid",
             "in": "path",
+            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -5041,6 +5046,7 @@
           {
             "name": "language",
             "in": "query",
+            "description": "The currently used language by the user (or null if not available)",
             "schema": {
               "type": "string"
             }
@@ -5150,7 +5156,7 @@
           {
             "name": "org",
             "in": "path",
-            "description": "",
+            "description": "unique identifier of the organization responsible for the app",
             "required": true,
             "schema": {
               "type": "string"
@@ -5159,7 +5165,7 @@
           {
             "name": "app",
             "in": "path",
-            "description": "",
+            "description": "application identifier which is unique within an organization",
             "required": true,
             "schema": {
               "type": "string"
@@ -5168,7 +5174,7 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "",
+            "description": "unique id of the party that this the owner of the instance",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5178,7 +5184,7 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "",
+            "description": "unique id to identify the instance",
             "required": true,
             "schema": {
               "type": "string",
@@ -5188,7 +5194,7 @@
           {
             "name": "language",
             "in": "query",
-            "description": "",
+            "description": "The currently used language by the user (or null if not available)",
             "schema": {
               "type": "string"
             }

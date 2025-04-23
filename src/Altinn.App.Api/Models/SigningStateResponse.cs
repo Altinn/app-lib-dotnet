@@ -10,7 +10,7 @@ public class SigningStateResponse
     /// <summary>
     /// The signees for the current task.
     /// </summary>
-    public required List<SigneeState> SigneeStates { get; set; }
+    public required List<SigneeState> SigneeStates { get; init; }
 }
 
 /// <summary>
