@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Exceptions;
-using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
@@ -16,7 +16,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
 
-namespace Altinn.App.Core.Features.Signing.Models.Internal;
+namespace Altinn.App.Core.Features.Signing.Services;
 
 internal sealed class SigningService(
     IAltinnPartyClient altinnPartyClient,

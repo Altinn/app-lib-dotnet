@@ -1,7 +1,7 @@
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Features.Signing.Interfaces;
+namespace Altinn.App.Core.Features.Signing;
 
 /// <summary>
 /// Interface for implementing app-specific logic for deriving signees.
@@ -17,5 +17,5 @@ public interface ISigneeProvider
     /// <summary>
     /// Returns a list of signees for the current signing task.
     /// </summary>
-    Task<SigneeProviderResult> GetSigneesAsync(Instance instance);
+    Task<SigneeProviderResult> GetSigneesAsync(Instance instance); //TODO: Wrap parameters in a class?
 }

@@ -3,7 +3,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Signing.Exceptions;
-using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
@@ -11,8 +12,9 @@ using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
+using Signee = Altinn.App.Core.Features.Signing.Models.Internal.Signee;
 
-namespace Altinn.App.Core.Features.Signing.Models.Internal;
+namespace Altinn.App.Core.Features.Signing.Services;
 
 internal sealed class SigneeContextsManager : ISigneeContextsManager
 {
