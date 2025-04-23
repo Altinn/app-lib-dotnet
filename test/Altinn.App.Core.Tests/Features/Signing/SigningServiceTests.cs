@@ -1,6 +1,7 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Interfaces.Internal;
 using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;

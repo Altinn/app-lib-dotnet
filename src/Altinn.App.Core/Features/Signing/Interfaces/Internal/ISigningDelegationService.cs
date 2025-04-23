@@ -1,7 +1,7 @@
 using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Models;
 
-namespace Altinn.App.Core.Features.Signing.Interfaces;
+namespace Altinn.App.Core.Features.Signing.Interfaces.Internal;
 
 /// <summary>
 /// Interface for implementing app-specific logic for delegating signee rights.

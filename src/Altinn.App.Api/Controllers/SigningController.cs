@@ -1,7 +1,7 @@
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Auth;
-using Altinn.App.Core.Features.Signing.Interfaces;
+using Altinn.App.Core.Features.Signing.Interfaces.Internal;
 using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
