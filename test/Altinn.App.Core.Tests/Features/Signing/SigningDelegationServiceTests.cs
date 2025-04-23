@@ -10,7 +10,7 @@ using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
 using InternalSignee = Altinn.App.Core.Features.Signing.Models.Internal.Signee;
 using SigneeState = Altinn.App.Core.Features.Signing.Models.Internal.SigneeContextState;
 
-namespace Altinn.App.Core.Tests.Features.Signing.Delegation;
+namespace Altinn.App.Core.Tests.Features.Signing;
 
 public class SigningDelegationServiceTests
 {
