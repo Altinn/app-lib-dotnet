@@ -103,7 +103,6 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
     /// <summary>
     /// Get signees from the signee provider implemented in the App.
     /// </summary>
-    /// <exception cref="SigneeProviderNotFoundException"></exception>
     private async Task<SigneeProviderResult?> GetSigneesFromProvider(
         Instance instance,
         AltinnSignatureConfiguration signatureConfiguration
