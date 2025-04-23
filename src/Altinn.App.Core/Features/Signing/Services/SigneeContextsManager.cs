@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Signing.Exceptions;
-using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Models.Internal;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -132,7 +131,7 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
         Signee signee = await From(providedSignee, _altinnPartyClient.LookupParty);
         Party party = signee.GetParty();
 
-        Models.Notifications? notifications = providedSignee.Notifications;
+        Notifications? notifications = providedSignee.Notifications;
 
         Email? emailNotification = notifications?.OnSignatureAccessRightsDelegated?.Email;
         if (emailNotification is not null && string.IsNullOrEmpty(emailNotification.EmailAddress))

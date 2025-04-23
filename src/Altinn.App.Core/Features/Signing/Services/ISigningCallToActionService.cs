@@ -1,5 +1,4 @@
 using Altinn.App.Core.Features.Correspondence.Models;
-using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;

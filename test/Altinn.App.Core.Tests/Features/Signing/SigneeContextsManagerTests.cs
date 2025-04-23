@@ -13,12 +13,12 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using EmailModel = Altinn.App.Core.Features.Signing.Models.Email;
+using EmailModel = Altinn.App.Core.Features.Signing.Email;
 using InternalOrganisationSignee = Altinn.App.Core.Features.Signing.Models.Internal.Signee.OrganizationSignee;
 using InternalPersonSignee = Altinn.App.Core.Features.Signing.Models.Internal.Signee.PersonSignee;
-using NotificationModel = Altinn.App.Core.Features.Signing.Models.Notification;
-using NotificationsModel = Altinn.App.Core.Features.Signing.Models.Notifications;
-using SmsModel = Altinn.App.Core.Features.Signing.Models.Sms;
+using NotificationModel = Altinn.App.Core.Features.Signing.Notification;
+using NotificationsModel = Altinn.App.Core.Features.Signing.Notifications;
+using SmsModel = Altinn.App.Core.Features.Signing.Sms;
 
 namespace Altinn.App.Core.Tests.Features.Signing;
 
