@@ -1,8 +1,8 @@
-using Altinn.App.Core.Features.Signing.Models.Internal;
+using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Features.Signing.Interfaces;
+namespace Altinn.App.Core.Features.Signing.Services;
 
 internal interface ISignDocumentManager
 {

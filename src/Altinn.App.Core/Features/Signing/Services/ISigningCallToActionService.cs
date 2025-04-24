@@ -1,10 +1,9 @@
 using Altinn.App.Core.Features.Correspondence.Models;
-using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 
-namespace Altinn.App.Core.Features.Signing.Interfaces;
+namespace Altinn.App.Core.Features.Signing.Services;
 
 /// <summary>
 /// Interface for sending correspondence to alert a signee of a signing call to action.

@@ -4,7 +4,7 @@ using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
 
-namespace Altinn.App.Core.Features.Signing.Interfaces;
+namespace Altinn.App.Core.Features.Signing.Services;
 
 /// <summary>
 /// Interface for sending correspondence receipt for a signing user action.

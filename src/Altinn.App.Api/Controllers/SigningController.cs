@@ -1,8 +1,8 @@
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Auth;
-using Altinn.App.Core.Features.Signing.Interfaces;
-using Altinn.App.Core.Features.Signing.Models.Internal;
+using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -11,7 +11,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
-using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -22,7 +22,7 @@ namespace Altinn.App.Api.Controllers;
 [ApiController]
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/signing")]
-internal class SigningController : ControllerBase
+public class SigningController : ControllerBase
 {
     private readonly IInstanceClient _instanceClient;
     private readonly IProcessReader _processReader;
@@ -81,8 +81,12 @@ internal class SigningController : ControllerBase
             instanceOwnerPartyId
         );
 
-        var taskId = instance.Process.CurrentTask.ElementId;
-        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
+        string? taskId = instance.Process.CurrentTask.ElementId;
+        InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            taskId,
+            language
+        );
 
         if (instance.Process.CurrentTask.AltinnTaskType != "signing")
         {
@@ -130,7 +134,7 @@ internal class SigningController : ControllerBase
                                 break;
                         }
 
-                        return new Models.SigneeState
+                        return new SigneeState
                         {
                             Name = name,
                             Organization = organization,
@@ -148,6 +152,15 @@ internal class SigningController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// Get the organizations that the user can sign on behalf of, if any. Determined by the user having a key role at the organization.
+    /// </summary>
+    /// <param name="org">unique identifier of the organization responsible for the app</param>
+    /// <param name="app">application identifier which is unique within an organization</param>
+    /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
+    /// <param name="instanceGuid">unique id to identify the instance</param>
+    /// <param name="language">The currently used language by the user (or null if not available)</param>
+    /// <returns>An object containing a list of organisations that the user can sign on behalf of</returns>
     [HttpGet("organisations")]
     [ProducesResponseType(typeof(SigningAuthorizedOrganisationsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -162,8 +175,12 @@ internal class SigningController : ControllerBase
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
-        var taskId = instance.Process.CurrentTask.ElementId;
-        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
+        string? taskId = instance.Process.CurrentTask.ElementId;
+        InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            taskId,
+            language
+        );
 
         if (instance.Process.CurrentTask.AltinnTaskType != "signing")
         {
@@ -174,7 +191,7 @@ internal class SigningController : ControllerBase
             (_processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.SignatureConfiguration)
             ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
-        var currentAuth = _authenticationContext.Current;
+        Authenticated currentAuth = _authenticationContext.Current;
 
         int? userId = currentAuth switch
         {
@@ -197,14 +214,11 @@ internal class SigningController : ControllerBase
         {
             Organisations =
             [
-                .. authorizedOrganisations.Select(x =>
+                .. authorizedOrganisations.Select(x => new AuthorizedOrganisationDetails
                 {
-                    return new AuthorizedOrganisationDetails
-                    {
-                        OrgName = x.OrgName,
-                        OrgNumber = x.OrgNumber,
-                        PartyId = x.OrgParty.PartyId,
-                    };
+                    OrgName = x.OrgName,
+                    OrgNumber = x.OrgNumber,
+                    PartyId = x.OrgParty.PartyId,
                 }),
             ],
         };
@@ -215,13 +229,12 @@ internal class SigningController : ControllerBase
     /// <summary>
     /// Get the data elements being signed in the current signature task.
     /// </summary>
-    /// <param name="org"></param>
-    /// <param name="app"></param>
-    /// <param name="instanceOwnerPartyId"></param>
-    /// <param name="instanceGuid"></param>
-    /// <param name="language"></param>
+    /// <param name="org">unique identifier of the organization responsible for the app</param>
+    /// <param name="app">application identifier which is unique within an organization</param>
+    /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
+    /// <param name="instanceGuid">unique id to identify the instance</param>
+    /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns>An object containing the documents to be signed</returns>
-    /// <exception cref="ApplicationConfigException"></exception>
     [HttpGet("data-elements")]
     [ProducesResponseType(typeof(SigningDataElementsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -273,7 +286,7 @@ internal class SigningController : ControllerBase
 
     private static NotificationStatus GetNotificationState(SigneeContext signeeContext)
     {
-        var signeeState = signeeContext.SigneeState;
+        SigneeContextState signeeState = signeeContext.SigneeState;
         if (signeeState.HasBeenMessagedForCallToSign)
         {
             return NotificationStatus.Sent;
