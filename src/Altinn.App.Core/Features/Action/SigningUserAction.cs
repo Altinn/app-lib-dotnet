@@ -154,13 +154,14 @@ internal class SigningUserAction : IUserAction
         }
 
         ServiceResult<SendCorrespondenceResponse?, Exception> res = await CatchError(
-            _signingReceiptService.SendSignatureReceipt(
-                signatureContext.InstanceIdentifier,
-                signatureContext.Signee,
-                dataElementSignatures,
-                context,
-                signatureConfiguration.CorrespondenceResources
-            )
+            () =>
+                _signingReceiptService.SendSignatureReceipt(
+                    signatureContext.InstanceIdentifier,
+                    signatureContext.Signee,
+                    dataElementSignatures,
+                    context,
+                    signatureConfiguration.CorrespondenceResources
+                )
         );
 
         if (res.Success)
@@ -301,13 +302,13 @@ internal class SigningUserAction : IUserAction
     }
 
     /// <summary>
-    /// Catch exceptions from a task and return them as a ServiceResult record with the result.
+    /// Catch exceptions from an async function and return them as a ServiceResult record with the result.
     /// </summary>
-    private static async Task<ServiceResult<T, Exception>> CatchError<T>(Task<T> task)
+    private static async Task<ServiceResult<T, Exception>> CatchError<T>(Func<Task<T>> function)
     {
         try
         {
-            var result = await task;
+            var result = await function();
             return result;
         }
         catch (Exception ex)
