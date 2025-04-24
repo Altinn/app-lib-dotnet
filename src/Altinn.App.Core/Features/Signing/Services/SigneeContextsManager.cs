@@ -58,11 +58,7 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
         Instance instance = instanceDataMutator.Instance;
         string taskId = instance.Process.CurrentTask.ElementId;
 
-        SigneeProviderResult? signeesResult = await GetSigneesFromProvider(instance, signatureConfiguration);
-        if (signeesResult is null)
-        {
-            throw new SigningException("No signees returned from the signees provider");
-        }
+        SigneeProviderResult signeesResult = await GetSigneesFromProvider(instance, signatureConfiguration);
 
         List<SigneeContext> signeeContexts = [];
         foreach (ProvidedSignee signeeParty in signeesResult.Signees)
