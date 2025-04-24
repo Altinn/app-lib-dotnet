@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Signing.Models.Internal;
+using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -12,8 +12,9 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 using Person = Altinn.Platform.Register.Models.Person;
+using Signee = Altinn.App.Core.Features.Signing.Models.Signee;
 using StorageSignee = Altinn.Platform.Storage.Interface.Models.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Signing;
@@ -169,11 +170,7 @@ public sealed class SignDocumentManagerTests : IDisposable
         };
     }
 
-    private static SigneeContext CreateSigneeContext(
-        string taskId,
-        Core.Features.Signing.Models.Internal.Signee signee,
-        SignDocument? signDocument = null
-    )
+    private static SigneeContext CreateSigneeContext(string taskId, Signee signee, SignDocument? signDocument = null)
     {
         return new SigneeContext
         {
@@ -493,7 +490,7 @@ public sealed class SignDocumentManagerTests : IDisposable
         var taskId = "Task_1";
 
         // Create a mock signee that doesn't match any of the expected types
-        var mockSignee = new Mock<Core.Features.Signing.Models.Internal.Signee>();
+        var mockSignee = new Mock<Signee>();
 
         var signeeContext = new SigneeContext
         {

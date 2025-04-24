@@ -1,4 +1,4 @@
-using Altinn.App.Core.Features.Signing.Models.Internal;
+using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 
 namespace Altinn.App.Core.Features.Signing.Services;

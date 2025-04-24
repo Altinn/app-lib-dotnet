@@ -1,4 +1,4 @@
-namespace Altinn.App.Core.Features.Signing.Models.Internal;
+namespace Altinn.App.Core.Features.Signing.Models;
 
 internal sealed record DefaultTexts
 {

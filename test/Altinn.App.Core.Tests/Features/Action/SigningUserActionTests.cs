@@ -22,7 +22,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 using Signee = Altinn.App.Core.Internal.Sign.Signee;
 
 namespace Altinn.App.Core.Tests.Features.Action;

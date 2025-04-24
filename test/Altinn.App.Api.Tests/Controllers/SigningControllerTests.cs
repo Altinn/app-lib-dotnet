@@ -3,7 +3,7 @@ using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Auth;
-using Altinn.App.Core.Features.Signing.Models.Internal;
+using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -20,8 +20,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
-using SigneeContextState = Altinn.App.Core.Features.Signing.Models.Internal.SigneeContextState;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
+using SigneeContextState = Altinn.App.Core.Features.Signing.Models.SigneeContextState;
 
 namespace Altinn.App.Api.Tests.Controllers;
 

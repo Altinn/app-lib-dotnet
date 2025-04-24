@@ -3,7 +3,7 @@ using Altinn.App.Core.Features.Signing.Services;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Features.Signing.Models.Internal;
+namespace Altinn.App.Core.Features.Signing.Models;
 
 /// <summary>
 ///  Represents the context of a signee.

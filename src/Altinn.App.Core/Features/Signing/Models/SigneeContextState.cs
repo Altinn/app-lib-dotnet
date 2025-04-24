@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Features.Signing.Models.Internal;
+namespace Altinn.App.Core.Features.Signing.Models;
 
 /// <summary>
 /// The signee state

@@ -1,6 +1,6 @@
-﻿using Altinn.App.Core.Features.Signing.Models.Internal;
+﻿using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Core.Features.Signing.Services;
 

@@ -1,7 +1,7 @@
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Auth;
-using Altinn.App.Core.Features.Signing.Models.Internal;
+using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
@@ -11,7 +11,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
-using static Altinn.App.Core.Features.Signing.Models.Internal.Signee;
+using static Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Api.Controllers;
 
