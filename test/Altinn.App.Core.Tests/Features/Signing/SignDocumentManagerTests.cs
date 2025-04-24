@@ -133,7 +133,7 @@ public sealed class SignDocumentManagerTests : IDisposable
         };
     }
 
-    private static SystemSignee CreateSystemSignee(Guid systemId, string orgNumber, string orgName)
+    private static SystemUserSignee CreateSystemUserSignee(Guid systemId, string orgNumber, string orgName)
     {
         var party = new Party
         {
@@ -141,7 +141,7 @@ public sealed class SignDocumentManagerTests : IDisposable
             Name = orgName,
             Organization = new Organization { OrgNumber = orgNumber, Name = orgName },
         };
-        return new SystemSignee
+        return new SystemUserSignee
         {
             SystemId = systemId,
             OnBehalfOfOrg = new OrganizationSignee
@@ -361,14 +361,14 @@ public sealed class SignDocumentManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task SynchronizeSigneeContextsWithSignDocuments_WithMatchingSystemSignee_UpdatesSigneeContext()
+    public async Task SynchronizeSigneeContextsWithSignDocuments_WithMatchingSystemUserSignee_UpdatesSigneeContext()
     {
         // Arrange
         var taskId = "Task_1";
         var systemId = new Guid("11111111-1111-1111-1111-111111111111");
 
-        var systemSignee = CreateSystemSignee(systemId, "123456789", "Test Organization");
-        var signeeContext = CreateSigneeContext(taskId, systemSignee);
+        var systemUserSignee = CreateSystemUserSignee(systemId, "123456789", "Test Organization");
+        var signeeContext = CreateSigneeContext(taskId, systemUserSignee);
         var signDocument = CreateSignDocument(null, "123456789", systemId);
 
         // Act
@@ -416,7 +416,7 @@ public sealed class SignDocumentManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task SynchronizeSigneeContextsWithSignDocuments_WithOrgSigneeAndSystemUser_ConvertsToSystemSignee()
+    public async Task SynchronizeSigneeContextsWithSignDocuments_WithOrgSigneeAndSystemUser_ConvertsToSystemUserSignee()
     {
         // Arrange
         var taskId = "Task_1";
@@ -440,8 +440,8 @@ public sealed class SignDocumentManagerTests : IDisposable
         Assert.Equal(signDocument, updatedSigneeContext.SignDocument);
 
         // Verify that the org signee was converted to a system signee
-        Assert.IsType<SystemSignee>(updatedSigneeContext.Signee);
-        var convertedSignee = (SystemSignee)updatedSigneeContext.Signee;
+        Assert.IsType<SystemUserSignee>(updatedSigneeContext.Signee);
+        var convertedSignee = (SystemUserSignee)updatedSigneeContext.Signee;
         Assert.Equal(systemId, convertedSignee.SystemId);
         Assert.Equal("123456789", convertedSignee.OnBehalfOfOrg.OrgNumber);
     }
@@ -548,7 +548,7 @@ public sealed class SignDocumentManagerTests : IDisposable
             CreateSigneeContext("Task_1", CreatePersonSignee(person1.SSN, person1.Name), signDocuments[0]),
             CreateSigneeContext(
                 "Task_1",
-                CreateSystemSignee(systemUserId2, org2.OrgNumber, org2.Name),
+                CreateSystemUserSignee(systemUserId2, org2.OrgNumber, org2.Name),
                 signDocuments[5]
             ),
             CreateSigneeContext(
@@ -563,7 +563,7 @@ public sealed class SignDocumentManagerTests : IDisposable
             ),
             CreateSigneeContext(
                 "Task_1",
-                CreateSystemSignee(systemUserId1, org1.OrgNumber, org1.Name),
+                CreateSystemUserSignee(systemUserId1, org1.OrgNumber, org1.Name),
                 signDocuments[4]
             ),
             CreateSigneeContext("Task_1", CreateOrganizationSignee(unmatchedOrg.OrgNumber, unmatchedOrg.Name)),
@@ -594,13 +594,13 @@ public sealed class SignDocumentManagerTests : IDisposable
         List<SigneeContext> signeeContexts =
         [
             CreateSigneeContext("Task_1", CreateOrganizationSignee(orgNumber, "TestOrg")),
-            CreateSigneeContext("Task_1", CreateSystemSignee(systemUserId, orgNumber, "TestOrg")),
+            CreateSigneeContext("Task_1", CreateSystemUserSignee(systemUserId, orgNumber, "TestOrg")),
             CreateSigneeContext("Task_1", CreatePersonOnBehalfOfOrgSignee(ssn, "Test Testesen", orgNumber, "TestOrg")),
         ];
 
         List<SigneeContext> expected =
         [
-            CreateSigneeContext("Task_1", CreateSystemSignee(systemUserId, orgNumber, "TestOrg"), signDocuments[1]),
+            CreateSigneeContext("Task_1", CreateSystemUserSignee(systemUserId, orgNumber, "TestOrg"), signDocuments[1]),
             CreateSigneeContext(
                 "Task_1",
                 CreatePersonOnBehalfOfOrgSignee(ssn, "Test Testesen", orgNumber, "TestOrg"),
@@ -626,7 +626,7 @@ public sealed class SignDocumentManagerTests : IDisposable
                 CreatePersonOnBehalfOfOrgSignee(ssn, "Test Testesen", orgNumber, "TestOrg"),
                 signDocuments[0]
             ),
-            CreateSigneeContext("Task_1", CreateSystemSignee(systemUserId, orgNumber, "TestOrg"), signDocuments[1]),
+            CreateSigneeContext("Task_1", CreateSystemUserSignee(systemUserId, orgNumber, "TestOrg"), signDocuments[1]),
             CreateSigneeContext("Task_1", CreateOrganizationSignee(orgNumber, "TestOrg")),
         ];
 

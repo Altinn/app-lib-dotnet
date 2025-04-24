@@ -43,7 +43,7 @@ internal sealed class SigneeContext
 [JsonDerivedType(typeof(PersonSignee), typeDiscriminator: "person")]
 [JsonDerivedType(typeof(OrganizationSignee), typeDiscriminator: "organization")]
 [JsonDerivedType(typeof(PersonOnBehalfOfOrgSignee), typeDiscriminator: "personOnBehalfOfOrg")]
-[JsonDerivedType(typeof(SystemSignee), typeDiscriminator: "system")]
+[JsonDerivedType(typeof(SystemUserSignee), typeDiscriminator: "system")]
 internal abstract class Signee
 {
     internal Party GetParty()
@@ -53,7 +53,7 @@ internal abstract class Signee
             PersonSignee personSignee => personSignee.Party,
             OrganizationSignee organizationSignee => organizationSignee.OrgParty,
             PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => personOnBehalfOfOrgSignee.Party,
-            SystemSignee systemSignee => systemSignee.OnBehalfOfOrg.OrgParty,
+            SystemUserSignee systemUserSignee => systemUserSignee.OnBehalfOfOrg.OrgParty,
             _ => throw new InvalidOperationException(
                 "Signee is neither a person, an organization, a person on behalf of an organization, nor a system"
             ),
@@ -133,7 +133,7 @@ internal abstract class Signee
         if (orgSignee is not null)
         {
             return systemId.HasValue
-                ? new SystemSignee { SystemId = (Guid)systemId, OnBehalfOfOrg = orgSignee }
+                ? new SystemUserSignee { SystemId = (Guid)systemId, OnBehalfOfOrg = orgSignee }
                 : orgSignee;
         }
 
@@ -207,9 +207,9 @@ internal abstract class Signee
             };
         }
 
-        internal SystemSignee ToSystemSignee(Guid systemId)
+        internal SystemUserSignee ToSystemUserSignee(Guid systemId)
         {
-            return new SystemSignee { SystemId = systemId, OnBehalfOfOrg = this };
+            return new SystemUserSignee { SystemId = systemId, OnBehalfOfOrg = this };
         }
     }
 
@@ -243,7 +243,7 @@ internal abstract class Signee
     /// <summary>
     /// A signee that is a system.
     /// </summary>
-    public sealed class SystemSignee : Signee
+    public sealed class SystemUserSignee : Signee
     {
         /// <summary>
         /// The system ID of the system signee.
