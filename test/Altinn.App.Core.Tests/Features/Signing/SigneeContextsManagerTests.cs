@@ -37,7 +37,6 @@ public sealed class SigneeContextsManagerTests : IDisposable
     private readonly Mock<IAltinnPartyClient> _altinnPartyClient = new(MockBehavior.Strict);
     private readonly Mock<ISigneeProvider> _signeeProvider = new(MockBehavior.Strict);
     private readonly Mock<ILogger<SigneeContextsManager>> _logger = new();
-    private readonly AppImplementationFactory _appImplementationFactory;
 
     public void Dispose() => _serviceProvider.Dispose();
 
@@ -48,11 +47,11 @@ public sealed class SigneeContextsManagerTests : IDisposable
         services.AddSingleton(_signeeProvider.Object);
         _serviceProvider = services.BuildServiceProvider();
 
-        _appImplementationFactory = _serviceProvider.GetRequiredService<AppImplementationFactory>();
+        var appImplementationFactory = _serviceProvider.GetRequiredService<AppImplementationFactory>();
 
         _signeeContextsManager = new SigneeContextsManager(
             _altinnPartyClient.Object,
-            _appImplementationFactory,
+            appImplementationFactory,
             _logger.Object
         );
 
@@ -102,15 +101,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
     public async Task GenerateSigneeContexts_WithValidPersonSignees_ReturnsCorrectSigneeContexts()
     {
         // Arrange
-        var signatureConfiguration = new AltinnSignatureConfiguration
-        {
-            SigneeProviderId = "testProvider",
-            SigneeStatesDataTypeId = "signeeStates",
-        };
+        var signatureConfiguration = new AltinnSignatureConfiguration { SigneeStatesDataTypeId = "signeeStates" };
 
+        var taskId = "Task_1";
         var instance = new Instance
         {
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = taskId } },
         };
 
         var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
@@ -146,7 +142,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
 
         var signeesResult = new SigneeProviderResult { Signees = [personSignee1, personSignee2] };
 
-        _signeeProvider.Setup(x => x.Id).Returns("testProvider");
+        _signeeProvider.Setup(x => x.ShouldRunForTask(taskId)).Returns(true);
 
         _signeeProvider.Setup(x => x.GetSigneesAsync(It.IsAny<Instance>())).ReturnsAsync(signeesResult);
 
@@ -162,8 +158,8 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.Equal(2, result.Count);
 
         // Verify first signee context
-        var firstContext = result[0];
-        Assert.Equal("Task_1", firstContext.TaskId);
+        SigneeContext firstContext = result[0];
+        Assert.Equal(taskId, firstContext.TaskId);
         Assert.NotNull(firstContext.SigneeState);
         Assert.False(firstContext.SigneeState.IsAccessDelegated);
         Assert.False(firstContext.SigneeState.HasBeenMessagedForCallToSign);
@@ -184,8 +180,8 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.Equal("11111111", firstContext.Notifications.OnSignatureAccessRightsDelegated.Sms.MobileNumber);
 
         // Verify second signee context
-        var secondContext = result[1];
-        Assert.Equal("Task_1", secondContext.TaskId);
+        SigneeContext secondContext = result[1];
+        Assert.Equal(taskId, secondContext.TaskId);
         Assert.NotNull(secondContext.SigneeState);
         Assert.False(secondContext.SigneeState.IsAccessDelegated);
         Assert.False(secondContext.SigneeState.HasBeenMessagedForCallToSign);
@@ -210,15 +206,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
     public async Task GenerateSigneeContexts_WithValidOrganisationSignees_ReturnsCorrectSigneeContexts()
     {
         // Arrange
-        var signatureConfiguration = new AltinnSignatureConfiguration
-        {
-            SigneeProviderId = "testProvider",
-            SigneeStatesDataTypeId = "signeeStates",
-        };
+        var signatureConfiguration = new AltinnSignatureConfiguration { SigneeStatesDataTypeId = "signeeStates" };
 
+        var taskId = "Task_1";
         var instance = new Instance
         {
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = taskId } },
         };
 
         var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
@@ -240,12 +233,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
 
         var signeesResult = new SigneeProviderResult { Signees = [orgSignee] };
 
-        _signeeProvider.Setup(x => x.Id).Returns("testProvider");
+        _signeeProvider.Setup(x => x.ShouldRunForTask(taskId)).Returns(true);
 
         _signeeProvider.Setup(x => x.GetSigneesAsync(It.IsAny<Instance>())).ReturnsAsync(signeesResult);
 
         // Act
-        var result = await _signeeContextsManager.GenerateSigneeContexts(
+        List<SigneeContext> result = await _signeeContextsManager.GenerateSigneeContexts(
             cachedInstanceMutator.Object,
             signatureConfiguration,
             CancellationToken.None
@@ -255,8 +248,8 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.NotNull(result);
         Assert.Single(result);
 
-        var context = result[0];
-        Assert.Equal("Task_1", context.TaskId);
+        SigneeContext context = result[0];
+        Assert.Equal(taskId, context.TaskId);
         Assert.NotNull(context.SigneeState);
         Assert.False(context.SigneeState.IsAccessDelegated);
         Assert.False(context.SigneeState.HasBeenMessagedForCallToSign);
@@ -278,11 +271,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
     public async Task GenerateSigneeContexts_WithNoSigneeProvider_ReturnsEmptyList()
     {
         // Arrange
-        var signatureConfiguration = new AltinnSignatureConfiguration
-        {
-            SigneeProviderId = null,
-            SigneeStatesDataTypeId = "signeeStates",
-        };
+        var signatureConfiguration = new AltinnSignatureConfiguration { SigneeStatesDataTypeId = "signeeStates" };
 
         var instance = new Instance
         {
@@ -292,37 +281,46 @@ public sealed class SigneeContextsManagerTests : IDisposable
         var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
-        // Act
-        var result = await _signeeContextsManager.GenerateSigneeContexts(
-            cachedInstanceMutator.Object,
-            signatureConfiguration,
-            CancellationToken.None
+        // Setting up a new appImplementationFactory that will return [] when asked for signee providers.
+        var services = new ServiceCollection();
+        services.AddAppImplementationFactory();
+        ServiceProvider serviceProvider = services.BuildServiceProvider();
+
+        var appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
+
+        var signeeContextsManager = new SigneeContextsManager(
+            _altinnPartyClient.Object,
+            appImplementationFactory,
+            _logger.Object
         );
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        // Act
+        await Assert.ThrowsAsync<SigneeProviderNotFoundException>(
+            () =>
+                signeeContextsManager.GenerateSigneeContexts(
+                    cachedInstanceMutator.Object,
+                    signatureConfiguration,
+                    CancellationToken.None
+                )
+        );
     }
 
     [Fact]
     public async Task GenerateSigneeContexts_WithNoMatchingProvider_ThrowsSigneeProviderNotFoundException()
     {
         // Arrange
-        var signatureConfiguration = new AltinnSignatureConfiguration
-        {
-            SigneeProviderId = "nonExistentProvider",
-            SigneeStatesDataTypeId = "signeeStates",
-        };
+        var signatureConfiguration = new AltinnSignatureConfiguration { SigneeStatesDataTypeId = "signeeStates" };
 
+        var taskId = "Task_1";
         var instance = new Instance
         {
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = taskId } },
         };
 
         var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
-        _signeeProvider.Setup(x => x.Id).Returns("testProvider");
+        _signeeProvider.Setup(x => x.ShouldRunForTask(taskId)).Returns(false);
 
         // Act & Assert
         await Assert.ThrowsAsync<SigneeProviderNotFoundException>(
@@ -339,11 +337,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
     public async Task GetSigneeContexts_WithNoSigneeStatesDataTypeId_ReturnsEmptyList()
     {
         // Arrange
-        var signatureConfiguration = new AltinnSignatureConfiguration
-        {
-            SigneeProviderId = "testProvider",
-            SigneeStatesDataTypeId = null,
-        };
+        var signatureConfiguration = new AltinnSignatureConfiguration { SigneeStatesDataTypeId = null };
 
         var instance = new Instance
         {
@@ -368,11 +362,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
     public async Task GetSigneeContexts_WithNoMatchingDataElement_ReturnsEmptyList()
     {
         // Arrange
-        var signatureConfiguration = new AltinnSignatureConfiguration
-        {
-            SigneeProviderId = "testProvider",
-            SigneeStatesDataTypeId = "signeeStates",
-        };
+        var signatureConfiguration = new AltinnSignatureConfiguration { SigneeStatesDataTypeId = "signeeStates" };
 
         var instance = new Instance
         {
@@ -398,11 +388,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
     public async Task GetSigneeContexts_WithValidDataElement_ReturnsDeserializedSigneeContexts()
     {
         // Arrange
-        var signatureConfiguration = new AltinnSignatureConfiguration
-        {
-            SigneeProviderId = "testProvider",
-            SigneeStatesDataTypeId = "signeeStates",
-        };
+        var signatureConfiguration = new AltinnSignatureConfiguration { SigneeStatesDataTypeId = "signeeStates" };
 
         var signeeStateDataElement = new DataElement { Id = Guid.NewGuid().ToString(), DataType = "signeeStates" };
 
@@ -484,11 +470,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
     public async Task GetSigneeContexts_WithMissingSigneeStatesDataTypeId_ThrowsApplicationConfigException()
     {
         // Arrange
-        var signatureConfiguration = new AltinnSignatureConfiguration
-        {
-            SigneeProviderId = "testProvider",
-            SigneeStatesDataTypeId = null,
-        };
+        var signatureConfiguration = new AltinnSignatureConfiguration { SigneeStatesDataTypeId = null };
 
         var instance = new Instance
         {

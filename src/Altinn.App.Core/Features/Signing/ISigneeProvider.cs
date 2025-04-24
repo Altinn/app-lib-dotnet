@@ -10,9 +10,17 @@ namespace Altinn.App.Core.Features.Signing;
 public interface ISigneeProvider
 {
     /// <summary>
-    /// Used to select the correct <see cref="ISigneeProvider" /> implementation for a given signing task.
+    /// The task id for the task that the signee provider is associated with or "*" if the signee provider should be available for all tasks
     /// </summary>
-    public string Id { get; init; }
+    /// <remarks>Ignored if <see cref="ShouldRunForTask"/> is implemented</remarks>
+    public string TaskId { get; }
+
+    /// <summary>
+    /// Check if this signee provider should be available for the given task.
+    ///
+    /// Default implementations check <see cref="TaskId"/>
+    /// </summary>
+    public bool ShouldRunForTask(string taskId) => TaskId == "*" || TaskId == taskId;
 
     /// <summary>
     /// Returns a list of signees for the current signing task.

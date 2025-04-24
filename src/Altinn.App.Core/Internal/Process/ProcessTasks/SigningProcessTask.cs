@@ -61,12 +61,13 @@ internal sealed class SigningProcessTask : IProcessTask
 
         ValidateSigningConfiguration(appMetadata, signatureConfiguration);
 
-        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, null);
+        InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            taskId,
+            null
+        );
 
-        if (
-            signatureConfiguration.SigneeProviderId is not null
-            && signatureConfiguration.SigneeStatesDataTypeId is not null
-        )
+        if (signatureConfiguration.SigneeStatesDataTypeId is not null)
         {
             await InitialiseRuntimeDelegatedSigning(taskId, cachedDataMutator, signatureConfiguration, cts.Token);
         }
@@ -161,7 +162,6 @@ internal sealed class SigningProcessTask : IProcessTask
     {
         string? signaturesDataType = signatureConfiguration.SignatureDataType;
         string? signeeStatesDataTypeId = signatureConfiguration.SigneeStatesDataTypeId;
-        string? signeeProviderId = signatureConfiguration.SigneeProviderId;
 
         if (signaturesDataType is null)
         {
@@ -174,13 +174,6 @@ internal sealed class SigningProcessTask : IProcessTask
         if (_hostEnvironment.IsDevelopment())
         {
             AllowedContributorsHelper.EnsureDataTypeIsAppOwned(appMetadata, signaturesDataType);
-        }
-
-        if (signeeProviderId is null != signeeStatesDataTypeId is null)
-        {
-            throw new ApplicationConfigException(
-                $"Both {nameof(signatureConfiguration.SigneeProviderId)} and {nameof(signatureConfiguration.SigneeStatesDataTypeId)} must either be set together, or left unset. These properties are required to enable delegation based signing."
-            );
         }
 
         // The signee state data type should be app owned, so that the end user can't manipulate the data. Tell the developer during development if this is not the case.

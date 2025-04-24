@@ -61,7 +61,7 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
         SigneeProviderResult? signeesResult = await GetSigneesFromProvider(instance, signatureConfiguration);
         if (signeesResult is null)
         {
-            return [];
+            throw new SigningException("No signees returned from the signees provider");
         }
 
         List<SigneeContext> signeeContexts = [];
@@ -102,23 +102,40 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
     /// <summary>
     /// Get signees from the signee provider implemented in the App.
     /// </summary>
-    private async Task<SigneeProviderResult?> GetSigneesFromProvider(
+    private async Task<SigneeProviderResult> GetSigneesFromProvider(
         Instance instance,
         AltinnSignatureConfiguration signatureConfiguration
     )
     {
-        string? signeeProviderId = signatureConfiguration.SigneeProviderId;
-        if (string.IsNullOrEmpty(signeeProviderId))
-            return null;
+        string taskId = instance.Process.CurrentTask.ElementId;
 
-        var signeeProviders = _appImplementationFactory.GetAll<ISigneeProvider>();
+        List<ISigneeProvider> matchingSigneeProviders = _appImplementationFactory
+            .GetAll<ISigneeProvider>()
+            .Where(x => x.ShouldRunForTask(taskId))
+            .ToList();
+
+        if (matchingSigneeProviders.Count == 0)
+        {
+            throw new SigneeProviderNotFoundException(
+                $"No signee provider found for task {taskId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID."
+            );
+        }
+
+        if (matchingSigneeProviders.Count > 1)
+        {
+            throw new SigneeProviderNotFoundException(
+                $"Found more than one signee provider for task {taskId}: [{string.Join(",", matchingSigneeProviders)}]. Please ensure that maximum one signee provider is configured to run for each signing task. Multiple tasks can use the same provider."
+            );
+        }
+
         ISigneeProvider signeeProvider =
-            signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
+            matchingSigneeProviders.FirstOrDefault()
             ?? throw new SigneeProviderNotFoundException(
-                $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID."
+                "Unexpected error: Didn't find a matching signee provider when one was expected. Signee provider matching code is not working as expected."
             );
 
         SigneeProviderResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
+
         return signeesResult;
     }
 

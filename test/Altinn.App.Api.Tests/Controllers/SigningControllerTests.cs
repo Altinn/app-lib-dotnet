@@ -44,7 +44,6 @@ public class SigningControllerTests
         {
             DataTypesToSign = ["dataTypeToSign"],
             SignatureDataType = "signatureDataType",
-            SigneeProviderId = "signeeProviderId",
             SigneeStatesDataTypeId = "signeeStatesDataTypeId",
             SigningPdfDataType = "signingPdfDataType",
             CorrespondenceResources = [],

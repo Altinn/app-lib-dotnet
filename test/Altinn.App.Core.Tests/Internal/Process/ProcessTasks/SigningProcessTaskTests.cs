@@ -149,7 +149,6 @@ public class SigningProcessTaskTests
         {
             SignatureDataType = "SignatureDataType",
             SigneeStatesDataTypeId = "SigneeStatesDataTypeId",
-            SigneeProviderId = "SigneeProviderId",
         };
     }
 }

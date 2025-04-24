@@ -436,7 +436,6 @@ public class ProcessReaderTests
                     DataTypesToSign = ["signatureDataType1", "signatureDataType2"],
                     SignatureDataType = "signature",
                     UniqueFromSignaturesInDataTypes = ["signature1"],
-                    SigneeProviderId = "signeeProviderId",
                     SigneeStatesDataTypeId = "signeeStatesDataTypeId",
                     CorrespondenceResources =
                     [
