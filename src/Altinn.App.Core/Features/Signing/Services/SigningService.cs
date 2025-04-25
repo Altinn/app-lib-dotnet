@@ -183,7 +183,7 @@ internal sealed class SigningService(
         List<OrganizationSignee> orgSignees = [.. signeeContexts.Select(x => x.Signee).OfType<OrganizationSignee>()];
         List<string> orgNumbers = [.. orgSignees.Select(x => x.OrgNumber)];
 
-        List<string> keyRoleOrganizations = await authorizationClient.GetKeyRoleOrganisationParties(userId, orgNumbers);
+        List<string> keyRoleOrganizations = await authorizationClient.GetKeyRoleOrganizationParties(userId, orgNumbers);
 
         List<OrganizationSignee> authorizedOrganizations =
         [

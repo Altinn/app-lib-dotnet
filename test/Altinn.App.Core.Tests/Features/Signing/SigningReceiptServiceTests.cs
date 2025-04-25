@@ -2,7 +2,6 @@ using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Models;
-using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Internal.AltinnCdn;

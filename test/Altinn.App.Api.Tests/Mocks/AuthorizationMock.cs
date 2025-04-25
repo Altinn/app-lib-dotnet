@@ -86,7 +86,7 @@ public class AuthorizationMock : IAuthorizationClient
         );
     }
 
-    public Task<List<string>> GetKeyRoleOrganisationParties(int userId, List<string> orgNumbers)
+    public Task<List<string>> GetKeyRoleOrganizationParties(int userId, List<string> orgNumbers)
     {
         throw new NotImplementedException();
     }

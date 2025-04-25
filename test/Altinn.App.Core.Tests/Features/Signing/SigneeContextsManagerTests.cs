@@ -13,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using EmailModel = Altinn.App.Core.Features.Signing.Email;
-using InternalOrganisationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganizationSignee;
+using InternalOrganizationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganizationSignee;
 using InternalPersonSignee = Altinn.App.Core.Features.Signing.Models.Signee.PersonSignee;
 using NotificationModel = Altinn.App.Core.Features.Signing.Notification;
 using NotificationsModel = Altinn.App.Core.Features.Signing.Notifications;
@@ -207,7 +207,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task GenerateSigneeContexts_WithValidOrganisationSignees_ReturnsCorrectSigneeContexts()
+    public async Task GenerateSigneeContexts_WithValidOrganizationSignees_ReturnsCorrectSigneeContexts()
     {
         // Arrange
         var signatureConfiguration = new AltinnSignatureConfiguration
@@ -261,8 +261,8 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.False(context.SigneeState.IsAccessDelegated);
         Assert.False(context.SigneeState.HasBeenMessagedForCallToSign);
 
-        Assert.IsType<InternalOrganisationSignee>(context.Signee);
-        var signee = (InternalOrganisationSignee)context.Signee;
+        Assert.IsType<InternalOrganizationSignee>(context.Signee);
+        var signee = (InternalOrganizationSignee)context.Signee;
         Assert.Equal("123456789", signee.OrgNumber);
         Assert.Equal("Test Organization", signee.OrgName);
 

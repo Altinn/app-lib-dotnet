@@ -4998,7 +4998,7 @@
         }
       }
     },
-    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/signing/organisations": {
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/signing/organizations": {
       "get": {
         "tags": [
           "Signing"
@@ -5058,27 +5058,27 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
                 }
               },
               "application/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
                 }
               },
               "text/xml": {
                 "schema": {
-                  "$ref": "#/components/schemas/SigningAuthorizedOrganisationsResponse"
+                  "$ref": "#/components/schemas/SigningAuthorizedOrganizationsResponse"
                 }
               }
             }
@@ -6472,7 +6472,7 @@
         },
         "additionalProperties": {}
       },
-      "AuthorizedOrganisationDetails": {
+      "AuthorizedOrganizationDetails": {
         "required": [
           "orgName",
           "orgNumber",
@@ -6482,12 +6482,12 @@
         "properties": {
           "orgNumber": {
             "type": "string",
-            "description": "The organisation number.",
+            "description": "The organization number.",
             "nullable": true
           },
           "orgName": {
             "type": "string",
-            "description": "The name of the organisation.",
+            "description": "The name of the organization.",
             "nullable": true
           },
           "partyId": {
@@ -6497,7 +6497,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "Represents the details of an authorized organisation."
+        "description": "Represents the details of an authorized organization."
       },
       "CalculationResult": {
         "type": "object",
@@ -8566,23 +8566,23 @@
         "additionalProperties": false,
         "description": "Contains information about a signee and the current signing status."
       },
-      "SigningAuthorizedOrganisationsResponse": {
+      "SigningAuthorizedOrganizationsResponse": {
         "required": [
-          "organisations"
+          "organizations"
         ],
         "type": "object",
         "properties": {
-          "organisations": {
+          "organizations": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AuthorizedOrganisationDetails"
+              "$ref": "#/components/schemas/AuthorizedOrganizationDetails"
             },
-            "description": "The list of authorized organisations.",
+            "description": "The list of authorized organizations.",
             "nullable": true
           }
         },
         "additionalProperties": false,
-        "description": "Represents the response from the API when fetching organisations the user is authorized to sign on behalf of."
+        "description": "Represents the response from the API when fetching organizations the user is authorized to sign on behalf of."
       },
       "SigningDataElementsResponse": {
         "required": [

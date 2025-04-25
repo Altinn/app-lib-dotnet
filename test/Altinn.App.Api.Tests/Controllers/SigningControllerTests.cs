@@ -516,25 +516,25 @@ public class SigningControllerTests
             .ReturnsAsync(organisationSignees);
 
         // Act
-        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetAuthorizedOrganizations("tdd", "app", 1337, Guid.NewGuid());
 
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
 
-        var signingAuthorizedOrganizationsResponse = okResult.Value as SigningAuthorizedOrganisationsResponse;
+        var signingAuthorizedOrganizationsResponse = okResult.Value as SigningAuthorizedOrganizationsResponse;
 
         // Assert
-        var expected = new SigningAuthorizedOrganisationsResponse
+        var expected = new SigningAuthorizedOrganizationsResponse
         {
-            Organisations =
+            Organizations =
             [
-                new AuthorizedOrganisationDetails
+                new AuthorizedOrganizationDetails
                 {
                     OrgName = "org1",
                     OrgNumber = "123456789",
                     PartyId = 1,
                 },
-                new AuthorizedOrganisationDetails
+                new AuthorizedOrganizationDetails
                 {
                     OrgName = "org2",
                     OrgNumber = "987654321",
@@ -571,7 +571,7 @@ public class SigningControllerTests
             );
 
         // Act
-        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetAuthorizedOrganizations("tdd", "app", 1337, Guid.NewGuid());
 
         // Assert
         Assert.IsType<BadRequestObjectResult>(actionResult);
@@ -586,7 +586,7 @@ public class SigningControllerTests
         var controller = sp.GetRequiredService<SigningController>();
 
         // Act
-        var actionResult = await controller.GetAuthorizedOrganisations("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetAuthorizedOrganizations("tdd", "app", 1337, Guid.NewGuid());
 
         // Assert
         Assert.IsType<UnauthorizedResult>(actionResult);
