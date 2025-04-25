@@ -1,6 +1,6 @@
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0@sha256:1875fc5f4be6211c22c4353aafd6b13279c0175f277fbfa53d52375d99e8a9b8 AS build
-WORKDIR /app
+WORKDIR /app-root-dir
 
 COPY AppLibDotnet.sln .
 COPY test/Altinn.App.Api.Tests/Altinn.App.Api.Tests.csproj test/Altinn.App.Api.Tests/
@@ -21,3 +21,5 @@ RUN dotnet test
 
 # Run in project root with
 # docker build --progress=plain -f test/Dockerfile .
+# or
+# DOCKER_BUILDKIT=0 docker build -f test/Dockerfile .
