@@ -215,7 +215,7 @@ public sealed class SigningServiceTests : IDisposable
                         : new Party
                         {
                             OrgNumber = lookup.OrgNo,
-                            Organization = new Organization { Name = "An organisation", OrgNumber = lookup.OrgNo },
+                            Organization = new Organization { Name = "An organization", OrgNumber = lookup.OrgNo },
                         };
                 }
             );
@@ -481,7 +481,7 @@ public sealed class SigningServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetAuthorizedOrganisations_Returns_Organisations_With_Authorization()
+    public async Task GetAuthorizedOrganizations_Returns_Organizations_With_Authorization()
     {
         // Arrange
         var signatureConfiguration = new AltinnSignatureConfiguration
@@ -524,7 +524,7 @@ public sealed class SigningServiceTests : IDisposable
         List<string> orgNrs = ["123456789", "555555555"];
 
         _authorizationClient
-            .Setup(x => x.GetKeyRoleOrganisationParties(123, It.IsAny<List<string>>()))
+            .Setup(x => x.GetKeyRoleOrganizationParties(123, It.IsAny<List<string>>()))
             .ReturnsAsync(orgNrs);
 
         // Act

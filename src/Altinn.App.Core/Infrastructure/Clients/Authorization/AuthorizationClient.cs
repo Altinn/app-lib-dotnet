@@ -184,7 +184,7 @@ public class AuthorizationClient : IAuthorizationClient
     }
 
     /// <inheritdoc />
-    public async Task<List<string>> GetKeyRoleOrganisationParties(int userId, List<string> orgNumbers)
+    public async Task<List<string>> GetKeyRoleOrganizationParties(int userId, List<string> orgNumbers)
     {
         XacmlJsonRequestRoot request = CreateXacmlJsonRequest(userId, orgNumbers);
         XacmlJsonResponse response = await _pdp.GetDecisionForRequest(request);

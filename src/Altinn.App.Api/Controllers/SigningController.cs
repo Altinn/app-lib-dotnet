@@ -160,12 +160,12 @@ public class SigningController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
-    /// <returns>An object containing a list of organisations that the user can sign on behalf of</returns>
-    [HttpGet("organisations")]
-    [ProducesResponseType(typeof(SigningAuthorizedOrganisationsResponse), StatusCodes.Status200OK)]
+    /// <returns>An object containing a list of organizations that the user can sign on behalf of</returns>
+    [HttpGet("organizations")]
+    [ProducesResponseType(typeof(SigningAuthorizedOrganizationsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetAuthorizedOrganisations(
+    public async Task<IActionResult> GetAuthorizedOrganizations(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
@@ -204,17 +204,17 @@ public class SigningController : ControllerBase
             return Unauthorized();
         }
 
-        List<OrganizationSignee> authorizedOrganisations = await _signingService.GetAuthorizedOrganizationSignees(
+        List<OrganizationSignee> authorizedOrganizations = await _signingService.GetAuthorizedOrganizationSignees(
             cachedDataMutator,
             signingConfiguration,
             userId.Value
         );
 
-        SigningAuthorizedOrganisationsResponse response = new()
+        SigningAuthorizedOrganizationsResponse response = new()
         {
-            Organisations =
+            Organizations =
             [
-                .. authorizedOrganisations.Select(x => new AuthorizedOrganisationDetails
+                .. authorizedOrganizations.Select(x => new AuthorizedOrganizationDetails
                 {
                     OrgName = x.OrgName,
                     OrgNumber = x.OrgNumber,
