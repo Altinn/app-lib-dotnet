@@ -88,7 +88,7 @@ internal sealed class SigningTaskValidator : IValidator
             (_processReader.GetAltinnTaskExtension(taskId)?.SignatureConfiguration)
             ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
-        var appMetadataResult = await CatchError(_appMetadata.GetApplicationMetadata());
+        var appMetadataResult = await CatchError(_appMetadata.GetApplicationMetadata);
         if (!appMetadataResult.Success)
         {
             _logger.LogError(appMetadataResult.Error, "Error while fetching application metadata");
@@ -96,7 +96,7 @@ internal sealed class SigningTaskValidator : IValidator
         }
 
         var signeeContextsResult = await CatchError(
-            _signingService.GetSigneeContexts(dataAccessor, signingConfiguration)
+            () => _signingService.GetSigneeContexts(dataAccessor, signingConfiguration)
         );
         if (!signeeContextsResult.Success)
         {
@@ -126,13 +126,13 @@ internal sealed class SigningTaskValidator : IValidator
     }
 
     /// <summary>
-    /// Catch exceptions from a task and return them as a ServiceResult record with the result.
+    /// Catch exceptions from an async function and return them as a ServiceResult record with the result.
     /// </summary>
-    private static async Task<ServiceResult<T, Exception>> CatchError<T>(Task<T> task)
+    private static async Task<ServiceResult<T, Exception>> CatchError<T>(Func<Task<T>> function)
     {
         try
         {
-            var result = await task;
+            var result = await function();
             return result;
         }
         catch (Exception ex)

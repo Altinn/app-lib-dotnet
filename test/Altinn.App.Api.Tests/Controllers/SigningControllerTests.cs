@@ -421,7 +421,7 @@ public class SigningControllerTests
             new SigneeContext
             {
                 TaskId = "task1",
-                Signee = new SystemSignee
+                Signee = new SystemUserSignee
                 {
                     SystemId = Guid.NewGuid(),
                     OnBehalfOfOrg = new OrganizationSignee

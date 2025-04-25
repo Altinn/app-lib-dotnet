@@ -128,9 +128,9 @@ public class SigningController : ControllerBase
                                 organization = organizationSignee.OrgName;
                                 break;
 
-                            case SystemSignee systemSignee:
+                            case SystemUserSignee systemUserSignee:
                                 name = "System";
-                                organization = systemSignee.OnBehalfOfOrg.OrgName;
+                                organization = systemUserSignee.OnBehalfOfOrg.OrgName;
                                 break;
                         }
 

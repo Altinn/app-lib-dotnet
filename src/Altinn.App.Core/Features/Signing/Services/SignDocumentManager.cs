@@ -174,9 +174,9 @@ internal sealed class SignDocumentManager(
                 PersonOnBehalfOfOrgSignee personOnBehalfOfOrgSignee => IsPersonOnBehalfOfOrgSignDocument(signDocument)
                     && personOnBehalfOfOrgSignee.OnBehalfOfOrg.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
                     && personOnBehalfOfOrgSignee.SocialSecurityNumber == signDocument.SigneeInfo.PersonNumber,
-                SystemSignee systemSignee => IsSystemSignDocument(signDocument)
-                    && systemSignee.OnBehalfOfOrg.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
-                    && systemSignee.SystemId.Equals(signDocument.SigneeInfo.SystemUserId),
+                SystemUserSignee systemUserSignee => IsSystemSignDocument(signDocument)
+                    && systemUserSignee.OnBehalfOfOrg.OrgNumber == signDocument.SigneeInfo.OrganisationNumber
+                    && systemUserSignee.SystemId.Equals(signDocument.SigneeInfo.SystemUserId),
                 OrganizationSignee orgSignee => IsOrgSignDocument(signDocument)
                     && orgSignee.OrgNumber == signDocument.SigneeInfo.OrganisationNumber,
                 _ => throw new InvalidOperationException("Signee is not of a supported type."),
@@ -221,7 +221,7 @@ internal sealed class SignDocumentManager(
         }
         else if (signeeInfo.SystemUserId.HasValue)
         {
-            updatedSignee = orgSignee.ToSystemSignee(signeeInfo.SystemUserId.Value);
+            updatedSignee = orgSignee.ToSystemUserSignee(signeeInfo.SystemUserId.Value);
         }
         else
         {
