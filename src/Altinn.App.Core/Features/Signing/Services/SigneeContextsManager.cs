@@ -131,15 +131,15 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
         Signee signee = await From(providedSignee, _altinnPartyClient.LookupParty);
         Party party = signee.GetParty();
 
-        ContactDetails? contactDetails = providedSignee.ContactDetails;
+        Notification? notification = providedSignee.ContactDetails?.Notification;
 
-        Email? emailNotification = contactDetails?.Notification?.Email;
+        Email? emailNotification = notification?.Email;
         if (emailNotification is not null && string.IsNullOrEmpty(emailNotification.EmailAddress))
         {
             emailNotification.EmailAddress = party.Organization?.EMailAddress;
         }
 
-        Sms? smsNotification = contactDetails?.Notification?.Sms;
+        Sms? smsNotification = notification?.Sms;
         if (smsNotification is not null && string.IsNullOrEmpty(smsNotification.MobileNumber))
         {
             smsNotification.MobileNumber = party.Organization?.MobileNumber ?? party.Person?.MobileNumber;
@@ -149,7 +149,7 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
         {
             TaskId = taskId,
             SigneeState = new SigneeContextState(),
-            ContactDetails = contactDetails,
+            ContactDetails = providedSignee.ContactDetails,
             Signee = signee,
         };
     }
