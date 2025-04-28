@@ -64,13 +64,13 @@ internal abstract class Signee
     {
         return signeeParty switch
         {
-            ProvidedSignee.Person personSigneeParty => await From(
+            ProvidedPerson personSigneeParty => await From(
                 ssn: personSigneeParty.SocialSecurityNumber,
                 orgNr: null,
                 systemId: null,
                 lookupParty
             ),
-            ProvidedSignee.Organization organizationSigneeParty => await From(
+            ProvidedOrganization organizationSigneeParty => await From(
                 ssn: null,
                 orgNr: organizationSigneeParty.OrganizationNumber,
                 systemId: null,
