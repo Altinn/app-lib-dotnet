@@ -111,6 +111,7 @@ public class InboxMessage
     /// <summary>
     /// The body of the message.
     /// </summary>
+    /// <remarks>Replaces "$InstanceUrl" with the link to the instance of the application.</remarks>
     [JsonPropertyName("bodyTextResourceKey")]
     public required string BodyTextResourceKey { get; set; }
 
