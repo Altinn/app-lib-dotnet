@@ -53,6 +53,11 @@
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.assert" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
+
+    <!-- Used by Fiks clients projects -->
+    <PackageVersion Include="KS.Fiks.Arkiv.Models.V1" Version="1.0.4"/>
+    <PackageVersion Include="KS.Fiks.IO.Client" Version="6.0.0"/>
+    <PackageVersion Include="Polly.Extensions" Version="8.5.2" />
   </ItemGroup>
 
   <ItemGroup>
