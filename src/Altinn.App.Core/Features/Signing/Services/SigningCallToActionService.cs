@@ -286,9 +286,7 @@ internal sealed class SigningCallToActionService(
                 communicationConfig?.Notification?.Email?.SubjectTextResourceKey,
                 language
             );
-            appName =
-                await translationService.TranslateTextKeyLenient("appName", language)
-                ?? await translationService.TranslateTextKeyLenient("ServiceName", language);
+            appName = await translationService.TranslateFirstMatchingTextKey(language, "appName", "ServiceName");
         }
         catch (Exception e)
         {

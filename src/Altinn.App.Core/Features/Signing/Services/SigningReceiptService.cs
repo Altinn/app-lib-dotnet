@@ -161,9 +161,7 @@ internal sealed class SigningReceiptService(
                 language
             );
             body = await translationService.TranslateTextKeyLenient("signing.correspondence_receipt_body", language);
-            appName =
-                await translationService.TranslateTextKeyLenient("appName", language)
-                ?? await translationService.TranslateTextKeyLenient("ServiceName", language);
+            appName = await translationService.TranslateFirstMatchingTextKey(language, "appName", "ServiceName");
         }
         catch (Exception e)
         {

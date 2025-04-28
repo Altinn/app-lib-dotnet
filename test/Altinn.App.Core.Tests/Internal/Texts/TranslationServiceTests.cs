@@ -18,7 +18,16 @@ public class TranslationServiceTests
             .Setup(appResources =>
                 appResources.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.Is<string>(s => s == LanguageConst.Nb))
             )
-            .ReturnsAsync(new TextResource { Resources = [new TextResourceElement { Id = "text", Value = "bokmål" }] });
+            .ReturnsAsync(
+                new TextResource
+                {
+                    Resources =
+                    [
+                        new TextResourceElement { Id = "text", Value = "bokmål" },
+                        new TextResourceElement { Id = "text2", Value = "bokmål2" },
+                    ],
+                }
+            );
 
         _appResourcesMock
             .Setup(appResources =>
@@ -32,35 +41,35 @@ public class TranslationServiceTests
     }
 
     [Fact]
-    public async Task Returns_Nb()
+    public async Task TranslateTextKey_Returns_Nb()
     {
         var result = await _translationService.TranslateTextKey("text", LanguageConst.Nb);
         Assert.Equal("bokmål", result);
     }
 
     [Fact]
-    public async Task Returns_En()
+    public async Task TranslateTextKey_Returns_En()
     {
         var result = await _translationService.TranslateTextKey("text", LanguageConst.En);
         Assert.Equal("english", result);
     }
 
     [Fact]
-    public async Task Default_Nb()
+    public async Task TranslateTextKey_Default_Nb()
     {
         var result = await _translationService.TranslateTextKey("text", null);
         Assert.Equal("bokmål", result);
     }
 
     [Fact]
-    public async Task Fallback_Nb()
+    public async Task TranslateTextKey_Fallback_Nb()
     {
         var result = await _translationService.TranslateTextKey("text", LanguageConst.Nn);
         Assert.Equal("bokmål", result);
     }
 
     [Fact]
-    public async Task Fail_Missing()
+    public async Task TranslateTextKey_Fail_Missing()
     {
         await Assert.ThrowsAsync<ArgumentException>(
             async () => await _translationService.TranslateTextKey("missing", LanguageConst.Nb)
@@ -68,9 +77,47 @@ public class TranslationServiceTests
     }
 
     [Fact]
-    public async Task Lenient_Returns_Null_If_Key_Is_Null()
+    public async Task TranslateTextKeyLenient_Returns_Null_If_Key_Is_Null()
     {
         var result = await _translationService.TranslateTextKeyLenient(null, LanguageConst.Nb);
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task TranslateFirstMatchingTextKey_Returns_First_Match()
+    {
+        var result = await _translationService.TranslateFirstMatchingTextKey(
+            LanguageConst.Nb,
+            "missing",
+            "text2",
+            "text"
+        );
+        Assert.Equal("bokmål2", result);
+    }
+
+    [Fact]
+    public async Task TranslateFirstMatchingTextKey_Returns_Null_If_No_Match()
+    {
+        var result = await _translationService.TranslateFirstMatchingTextKey(
+            LanguageConst.Nb,
+            "missing",
+            "missing2",
+            "missing3"
+        );
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task TranslateFirstMatchingTextKey_Default_Nb()
+    {
+        var result = await _translationService.TranslateFirstMatchingTextKey(null, "text");
+        Assert.Equal("bokmål", result);
+    }
+
+    [Fact]
+    public async Task TranslateFirstMatchingTextKey_Fallback_Nb()
+    {
+        var result = await _translationService.TranslateFirstMatchingTextKey(LanguageConst.Nn, "text");
+        Assert.Equal("bokmål", result);
     }
 }
