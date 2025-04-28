@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -34,23 +35,23 @@ public class SigningCallToActionServiceTests
     private SigningCallToActionService SetupService(
         Mock<ICorrespondenceClient>? correspondenceClientMockOverride = null,
         Mock<IHostEnvironment>? hostEnvironmentMockOverride = null,
-        Mock<IAppResources>? appResourcesMockOverride = null,
         Mock<IAppMetadata>? appMetadataMockOverride = null,
-        Mock<IProfileClient>? profileClientMockOverride = null
+        Mock<IProfileClient>? profileClientMockOverride = null,
+        ITranslationService? translationServiceOverride = null
     )
     {
         Mock<ICorrespondenceClient> correspondenceClientMock = correspondenceClientMockOverride ?? new();
         Mock<IHostEnvironment> hostEnvironmentMock = hostEnvironmentMockOverride ?? new();
-        Mock<IAppResources> appResourcesMock = appResourcesMockOverride ?? new();
         Mock<IAppMetadata> appMetadataMock = appMetadataMockOverride ?? new();
+        Mock<ITranslationService> translationServiceMock = new();
         Mock<IProfileClient> profileClientMock = profileClientMockOverride ?? new();
         Mock<ILogger<SigningCallToActionService>> loggerMock = new();
         return new SigningCallToActionService(
             correspondenceClientMock.Object,
             hostEnvironmentMock.Object,
-            appResourcesMock.Object,
             appMetadataMock.Object,
             profileClientMock.Object,
+            translationServiceOverride ?? translationServiceMock.Object,
             loggerMock.Object,
             _generalSettings
         );
@@ -98,9 +99,12 @@ public class SigningCallToActionServiceTests
         Mock<IAppMetadata> appMetadataMock = new();
         appMetadataMock.Setup(m => m.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
 
+        AppIdentifier appIdentifier = new("org", "app");
+        TranslationService translationService = new(appIdentifier, appResourcesMock.Object);
+
         SigningCallToActionService service = SetupService(
             correspondenceClientMockOverride: correspondenceClientMock,
-            appResourcesMockOverride: appResourcesMock,
+            translationServiceOverride: translationService,
             appMetadataMockOverride: appMetadataMock,
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
@@ -113,7 +117,6 @@ public class SigningCallToActionServiceTests
             },
         };
 
-        AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
 
         var orgNo = GetOrgNumber(1);
@@ -179,9 +182,12 @@ public class SigningCallToActionServiceTests
         Mock<IAppMetadata> appMetadataMock = new();
         appMetadataMock.Setup(m => m.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
 
+        AppIdentifier appIdentifier = new("org", "app");
+        TranslationService translationService = new(appIdentifier, appResourcesMock.Object);
+
         SigningCallToActionService service = SetupService(
             correspondenceClientMockOverride: correspondenceClientMock,
-            appResourcesMockOverride: appResourcesMock,
+            translationServiceOverride: translationService,
             appMetadataMockOverride: appMetadataMock,
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
@@ -198,8 +204,6 @@ public class SigningCallToActionServiceTests
                 },
             },
         };
-
-        AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
 
         var orgNo = GetOrgNumber(10);
@@ -274,9 +278,12 @@ public class SigningCallToActionServiceTests
         Mock<IAppMetadata> appMetadataMock = new();
         appMetadataMock.Setup(m => m.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
 
+        AppIdentifier appIdentifier = new("org", "app");
+        TranslationService translationService = new(appIdentifier, appResourcesMock.Object);
+
         SigningCallToActionService service = SetupService(
             correspondenceClientMockOverride: correspondenceClientMock,
-            appResourcesMockOverride: appResourcesMock,
+            translationServiceOverride: translationService,
             appMetadataMockOverride: appMetadataMock,
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
@@ -300,7 +307,6 @@ public class SigningCallToActionServiceTests
                 },
             },
         };
-        AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
 
         var orgNo = GetOrgNumber(4);
@@ -367,15 +373,17 @@ public class SigningCallToActionServiceTests
         Mock<IAppMetadata> appMetadataMock = new();
         appMetadataMock.Setup(m => m.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
 
+        AppIdentifier appIdentifier = new("org", "app");
+        TranslationService translationService = new(appIdentifier, appResourcesMock.Object);
+
         SigningCallToActionService service = SetupService(
             correspondenceClientMockOverride: correspondenceClientMock,
-            appResourcesMockOverride: appResourcesMock,
+            translationServiceOverride: translationService,
             appMetadataMockOverride: appMetadataMock,
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        CommunicationConfig communicationConfig = new() { Notification = new Notification { } };
-        AppIdentifier appIdentifier = new("org", "app");
+        CommunicationConfig communicationConfig = new() { Notification = new() { }};
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
 
         var orgNo = GetOrgNumber(1);
@@ -448,15 +456,17 @@ public class SigningCallToActionServiceTests
         Mock<IAppMetadata> appMetadataMock = new();
         appMetadataMock.Setup(m => m.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
 
+        AppIdentifier appIdentifier = new("org", "app");
+        TranslationService translationService = new(appIdentifier, appResourcesMock.Object);
+
         SigningCallToActionService service = SetupService(
             correspondenceClientMockOverride: correspondenceClientMock,
-            appResourcesMockOverride: appResourcesMock,
+            translationServiceOverride: translationService,
             appMetadataMockOverride: appMetadataMock,
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
         CommunicationConfig communicationConfig = new() { Notification = new Notification { } };
-        AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
         Party signingParty = new() { Name = "Signee", SSN = GetSsn(1) };
         Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = GetOrgNumber(1) };
@@ -489,16 +499,12 @@ public class SigningCallToActionServiceTests
             new() { Id = smsContentTextResourceKey, Value = "Custom sms content" },
         ];
         Mock<IAppResources> mock = SetupAppResourcesMock(additionalTextResourceElements: smsTextResource);
-        SigningCallToActionService service = SetupService(appResourcesMockOverride: mock);
 
-        CommunicationConfig communicationConfig = new()
-        {
-            Notification = new()
-            {
-                Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey },
-            },
-        };
+        CommunicationConfig communicationConfig = new() { Notification = new Notification { Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey } } };
         AppIdentifier appIdentifier = new("org", "app");
+        TranslationService translationService = new(appIdentifier, mock.Object);
+        SigningCallToActionService service = SetupService(translationServiceOverride: translationService);
+
         ApplicationMetadata applicationMetadata = new("org/app")
         {
             Title = new Dictionary<string, string> { { LanguageConst.En, "App name" } },
@@ -533,16 +539,15 @@ public class SigningCallToActionServiceTests
         Mock<IAppResources> mock = SetupAppResourcesMock();
         mock.Setup(m => m.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ThrowsAsync(new Exception());
-        SigningCallToActionService service = SetupService(appResourcesMockOverride: mock);
 
-        CommunicationConfig communicationConfig = new()
-        {
-            Notification = new()
+        CommunicationConfig communicationConfig = new() { Notification = new()
             {
                 Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = "signing.sms_content" },
-            },
-        };
+            }};
         AppIdentifier appIdentifier = new("org", "app");
+        TranslationService translationService = new(appIdentifier, mock.Object);
+        SigningCallToActionService service = SetupService(translationServiceOverride: translationService);
+
         ApplicationMetadata applicationMetadata = new("org/app")
         {
             Title = new Dictionary<string, string> { { LanguageConst.En, "App name" } },

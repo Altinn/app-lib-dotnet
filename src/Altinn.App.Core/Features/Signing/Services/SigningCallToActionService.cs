@@ -1,7 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Exceptions;
-using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
@@ -11,10 +10,10 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,16 +23,15 @@ namespace Altinn.App.Core.Features.Signing.Services;
 internal sealed class SigningCallToActionService(
     ICorrespondenceClient correspondenceClient,
     IHostEnvironment hostEnvironment,
-    IAppResources appResources,
     IAppMetadata appMetadata,
     IProfileClient profileClient,
+    ITranslationService translationService,
     ILogger<SigningCallToActionService> logger,
     IOptions<GeneralSettings> settings
 ) : ISigningCallToActionService
 {
     private readonly ICorrespondenceClient _correspondenceClient = correspondenceClient;
     private readonly IHostEnvironment _hostEnvironment = hostEnvironment;
-    private readonly IAppResources _appResources = appResources;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly IProfileClient _profileClient = profileClient;
     private readonly ILogger<SigningCallToActionService> _logger = logger;
@@ -234,7 +232,8 @@ internal sealed class SigningCallToActionService(
         {
             LanguageConst.Nn => "Klikk her for å opne skjema",
             LanguageConst.En => "Click here to open the form",
-            LanguageConst.Nb or _ => "Klikk her for å åpne skjema",
+            LanguageConst.Nb => "Klikk her for å åpne skjema",
+            _ => "Klikk her for å åpne skjema",
         };
     }
 
@@ -247,7 +246,6 @@ internal sealed class SigningCallToActionService(
         string language
     )
     {
-        TextResource? textResource = null;
         string? correspondenceTitle = null;
         string? correspondenceSummary = null;
         string? correspondenceBody = null;
@@ -257,31 +255,40 @@ internal sealed class SigningCallToActionService(
         string? appName = null;
 
         string appOwner = senderParty.Name ?? appMetadata.Org;
-        string defaultAppName =
-            appMetadata.Title?.GetValueOrDefault(language)
-            ?? appMetadata.Title?.FirstOrDefault().Value
-            ?? appMetadata.Id;
 
         try
         {
-            textResource ??=
-                await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, language)
-                ?? throw new InvalidOperationException($"No text resource found for language ({language})");
-
             string linkDisplayText = GetLinkDisplayText(language);
-            correspondenceTitle = textResource.GetText(communicationConfig?.InboxMessage?.TitleTextResourceKey);
-            correspondenceSummary = textResource.GetText(communicationConfig?.InboxMessage?.SummaryTextResourceKey);
-            correspondenceBody = textResource.GetText(communicationConfig?.InboxMessage?.BodyTextResourceKey);
+            correspondenceTitle = await translationService.TranslateTextKeyLenient(
+                communicationConfig?.InboxMessage?.TitleTextResourceKey,
+                language
+            );
+            correspondenceSummary = await translationService.TranslateTextKeyLenient(
+                communicationConfig?.InboxMessage?.SummaryTextResourceKey,
+                language
+            );
+            correspondenceBody = await translationService.TranslateTextKeyLenient(communicationConfig?.InboxMessage?.BodyTextResourceKey, language);
             correspondenceBody = correspondenceBody?.Replace(
                 "$InstanceUrl",
                 $"[{linkDisplayText}]({instanceUrl})",
                 StringComparison.InvariantCultureIgnoreCase
             );
-            appName = textResource.GetFirstMatchingText("appName", "ServiceName");
 
-            smsBody = textResource.GetText(communicationConfig?.Notification?.Sms?.BodyTextResourceKey);
-            emailBody = textResource.GetText(communicationConfig?.Notification?.Email?.BodyTextResourceKey);
-            emailSubject = textResource.GetText(communicationConfig?.Notification?.Email?.SubjectTextResourceKey);
+            smsBody = await translationService.TranslateTextKeyLenient(
+                communicationConfig?.Notification?.Sms?.BodyTextResourceKey,
+                language
+            );
+            emailBody = await translationService.TranslateTextKeyLenient(
+                communicationConfig?.Notification?.Email?.BodyTextResourceKey,
+                language
+            );
+            emailSubject = await translationService.TranslateTextKeyLenient(
+                communicationConfig?.Notification?.Email?.SubjectTextResourceKey,
+                language
+            );
+            appName =
+                await translationService.TranslateTextKeyLenient("appName", language)
+                ?? await translationService.TranslateTextKeyLenient("ServiceName", language);
         }
         catch (Exception e)
         {
@@ -294,7 +301,10 @@ internal sealed class SigningCallToActionService(
 
         if (string.IsNullOrWhiteSpace(appName))
         {
-            appName = defaultAppName;
+            appName =
+                appMetadata.Title?.GetValueOrDefault(language)
+                ?? appMetadata.Title?.FirstOrDefault().Value
+                ?? appMetadata.Id;
         }
 
         var defaults = GetDefaultTexts(instanceUrl, language, appName, appOwner);
@@ -302,7 +312,7 @@ internal sealed class SigningCallToActionService(
         {
             CorrespondenceContent = new CorrespondenceContent()
             {
-                Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? language),
+                Language = LanguageCode<Iso6391>.Parse(language),
                 Title = correspondenceTitle ?? defaults.Title,
                 Summary = correspondenceSummary ?? defaults.Summary,
                 Body = correspondenceBody ?? defaults.Body,
