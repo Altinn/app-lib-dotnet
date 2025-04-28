@@ -45,7 +45,7 @@ public abstract class ProvidedSignee
     /// <summary>
     /// Represents a signee that is a person.
     /// </summary>
-    public class Person : ProvidedSignee
+    public class ProvidedPerson : ProvidedSignee
     {
         /// <summary>
         /// The social security number.
@@ -63,7 +63,7 @@ public abstract class ProvidedSignee
     /// <summary>
     /// Represents a signee that is an organization.
     /// </summary>
-    public class Organization : ProvidedSignee
+    public class ProvidedOrganization : ProvidedSignee
     {
         /// <summary>
         /// The name of the organization.

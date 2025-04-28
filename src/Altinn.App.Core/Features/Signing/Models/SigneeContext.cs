@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using static Altinn.App.Core.Features.Signing.ProvidedSignee;
 
 namespace Altinn.App.Core.Features.Signing.Models;
 
@@ -64,13 +65,13 @@ internal abstract class Signee
     {
         return signeeParty switch
         {
-            ProvidedSignee.Person personSigneeParty => await From(
+            ProvidedPerson personSigneeParty => await From(
                 ssn: personSigneeParty.SocialSecurityNumber,
                 orgNr: null,
                 systemId: null,
                 lookupParty
             ),
-            ProvidedSignee.Organization organizationSigneeParty => await From(
+            ProvidedOrganization organizationSigneeParty => await From(
                 ssn: null,
                 orgNr: organizationSigneeParty.OrganizationNumber,
                 systemId: null,

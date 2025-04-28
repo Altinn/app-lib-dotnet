@@ -12,6 +12,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using static Altinn.App.Core.Features.Signing.ProvidedSignee;
 using EmailModel = Altinn.App.Core.Features.Signing.Email;
 using InternalOrganizationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganizationSignee;
 using InternalPersonSignee = Altinn.App.Core.Features.Signing.Models.Signee.PersonSignee;
@@ -116,7 +117,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
-        var personSignee1 = new ProvidedSignee.Person
+        var personSignee1 = new ProvidedPerson
         {
             SocialSecurityNumber = "12345678901",
             FullName = "Person One",
@@ -130,7 +131,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
             },
         };
 
-        var personSignee2 = new ProvidedSignee.Person
+        var personSignee2 = new ProvidedPerson
         {
             SocialSecurityNumber = "10987654321",
             FullName = "Person Two",
@@ -224,7 +225,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         var cachedInstanceMutator = new Mock<IInstanceDataMutator>();
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
-        var orgSignee = new ProvidedSignee.Organization
+        var orgSignee = new ProvidedOrganization
         {
             OrganizationNumber = "123456789",
             Name = "Test Organization",
