@@ -105,7 +105,7 @@ internal sealed class SigningService(
                     Party signingParty = signeeContext.Signee.GetParty();
 
                     SendCorrespondenceResponse? response = await _signingCallToActionService.SendSignCallToAction(
-                        signeeContext.Notifications?.OnSignatureAccessRightsDelegated,
+                        signeeContext.ContactDetails,
                         appIdentifier,
                         new InstanceIdentifier(instanceDataMutator.Instance),
                         signingParty,

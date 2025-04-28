@@ -97,7 +97,7 @@ internal sealed class SignDocumentManager(
                 Signee = context.Signee,
                 SigneeState = context.SigneeState,
                 SignDocument = context.SignDocument,
-                Notifications = context.Notifications,
+                ContactDetails = context.ContactDetails,
             }),
         ];
 
@@ -195,7 +195,7 @@ internal sealed class SignDocumentManager(
             Signee = signeeContext.Signee,
             SigneeState = signeeContext.SigneeState,
             SignDocument = matchedSignDocument,
-            Notifications = signeeContext.Notifications,
+            ContactDetails = signeeContext.ContactDetails,
         };
 
         if (signeeContext.Signee is OrganizationSignee orgSignee)
@@ -234,7 +234,7 @@ internal sealed class SignDocumentManager(
             Signee = updatedSignee,
             SigneeState = context.SigneeState,
             SignDocument = context.SignDocument,
-            Notifications = context.Notifications,
+            ContactDetails = context.ContactDetails,
         };
     }
 

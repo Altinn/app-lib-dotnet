@@ -62,22 +62,7 @@ public class SigningCallToActionServiceTests
     )
     {
         Mock<IAppResources> appResourcesMock = new();
-        TextResource textResource =
-            textResourceOverride
-            ?? new TextResource
-            {
-                Resources =
-                [
-                    new TextResourceElement { Id = "signing.correspondence_cta_title", Value = "Custom title" },
-                    new TextResourceElement { Id = "signing.correspondence_cta_summary", Value = "Custom summary" },
-                    new TextResourceElement
-                    {
-                        Id = "signing.correspondence_cta_body",
-                        Value =
-                            "Custom body with replacement for instance url here: $InstanceUrl, and some more text after",
-                    },
-                ],
-            };
+        TextResource textResource = textResourceOverride ?? new TextResource { Resources = [] };
         textResource.Resources.AddRange(additionalTextResourceElements ?? []);
         appResourcesMock
             .Setup(m => m.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
@@ -99,11 +84,11 @@ public class SigningCallToActionServiceTests
         correspondenceClientMock
             .Setup(m => m.Send(It.IsAny<SendCorrespondencePayload>(), It.IsAny<CancellationToken>()))
             .Callback<SendCorrespondencePayload, CancellationToken>((payload, token) => capturedPayload = payload);
-        List<TextResourceElement> smsTextResource =
+        List<TextResourceElement> textResources =
         [
             new TextResourceElement { Id = smsContentTextResourceKey, Value = "Custom sms content" },
         ];
-        Mock<IAppResources> appResourcesMock = SetupAppResourcesMock(additionalTextResourceElements: smsTextResource);
+        Mock<IAppResources> appResourcesMock = SetupAppResourcesMock(additionalTextResourceElements: textResources);
         Mock<IHostEnvironment> hostEnvironmentMock = new();
         hostEnvironmentMock.Setup(m => m.EnvironmentName).Returns("tt02");
         ApplicationMetadata applicationMetadata = new("org/app")
@@ -120,10 +105,14 @@ public class SigningCallToActionServiceTests
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        Notification notification = new()
+        ContactDetails contactDetails = new()
         {
-            Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey },
+            Notification = new Notification
+            {
+                Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey },
+            },
         };
+
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
 
@@ -139,7 +128,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         await service.SendSignCallToAction(
-            notification,
+            contactDetails,
             appIdentifier,
             instanceIdentifier,
             signingParty,
@@ -156,12 +145,6 @@ public class SigningCallToActionServiceTests
         Assert.Equal("Custom sms content", capturedPayload.CorrespondenceRequest.Notification.SmsBody);
         Assert.Null(capturedPayload.CorrespondenceRequest.Notification.EmailBody);
         Assert.Null(capturedPayload.CorrespondenceRequest.Notification.EmailSubject);
-        Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
-        Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
-        Assert.Equal(
-            "Custom body with replacement for instance url here: [Klikk her for å åpne skjema](http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07), and some more text after",
-            capturedPayload.CorrespondenceRequest.Content.Body
-        );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
         Assert.Equal(orgNo.ToString(), capturedPayload.CorrespondenceRequest.Sender.ToString());
         Assert.IsType<OrganisationOrPersonIdentifier.Person>(capturedPayload.CorrespondenceRequest.Recipients[0]);
@@ -181,12 +164,12 @@ public class SigningCallToActionServiceTests
         correspondenceClientMock
             .Setup(m => m.Send(It.IsAny<SendCorrespondencePayload>(), It.IsAny<CancellationToken>()))
             .Callback<SendCorrespondencePayload, CancellationToken>((payload, token) => capturedPayload = payload);
-        List<TextResourceElement> smsTextResource =
+        List<TextResourceElement> textResources =
         [
             new() { Id = "signing.email_subject", Value = "Custom email subject" },
             new() { Id = "signing.email_content", Value = "Custom email content" },
         ];
-        Mock<IAppResources> appResourcesMock = SetupAppResourcesMock(additionalTextResourceElements: smsTextResource);
+        Mock<IAppResources> appResourcesMock = SetupAppResourcesMock(additionalTextResourceElements: textResources);
         Mock<IHostEnvironment> hostEnvironmentMock = new();
         hostEnvironmentMock.Setup(m => m.EnvironmentName).Returns("tt02");
         ApplicationMetadata applicationMetadata = new("org/app")
@@ -203,15 +186,19 @@ public class SigningCallToActionServiceTests
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        Notification notification = new()
+        ContactDetails contactDetails = new()
         {
-            Email = new Email
+            Notification = new()
             {
-                EmailAddress = "my.email@test.no",
-                BodyTextResourceKey = "signing.email_content",
-                SubjectTextResourceKey = "signing.email_subject",
+                Email = new Email
+                {
+                    EmailAddress = "my.email@test.no",
+                    BodyTextResourceKey = "signing.email_content",
+                    SubjectTextResourceKey = "signing.email_subject",
+                },
             },
         };
+
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
 
@@ -227,7 +214,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         await service.SendSignCallToAction(
-            notification,
+            contactDetails,
             appIdentifier,
             instanceIdentifier,
             signingParty,
@@ -244,12 +231,6 @@ public class SigningCallToActionServiceTests
         Assert.Null(capturedPayload.CorrespondenceRequest.Notification.SmsBody);
         Assert.Equal("Custom email content", capturedPayload.CorrespondenceRequest.Notification.EmailBody);
         Assert.Equal("Custom email subject", capturedPayload.CorrespondenceRequest.Notification.EmailSubject);
-        Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
-        Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
-        Assert.Equal(
-            "Custom body with replacement for instance url here: [Klikk her for å åpne skjema](http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07), and some more text after",
-            capturedPayload.CorrespondenceRequest.Content.Body
-        );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
         Assert.Equal(orgNo.ToString(), capturedPayload.CorrespondenceRequest.Sender.ToString());
         Assert.IsType<OrganisationOrPersonIdentifier.Person>(capturedPayload.CorrespondenceRequest.Recipients[0]);
@@ -261,22 +242,29 @@ public class SigningCallToActionServiceTests
     /// Expected: Email is preferred, CorrespondenceClient is called with correct parameters.
     /// </summary>
     [Fact]
-    public async Task SendSignCallToAction_SmsAndEmailNotificationConfigured_CallsCorrespondenceClientWithCorrectParameters()
+    public async Task SendSignCallToAction_AllCustomContactDetails_CallsCorrespondenceClientWithCorrectParameters()
     {
         // Arrange
-        string smsContentTextResourceKey = "signing.sms_content";
         SendCorrespondencePayload? capturedPayload = null;
         Mock<ICorrespondenceClient> correspondenceClientMock = new();
         correspondenceClientMock
             .Setup(m => m.Send(It.IsAny<SendCorrespondencePayload>(), It.IsAny<CancellationToken>()))
             .Callback<SendCorrespondencePayload, CancellationToken>((payload, token) => capturedPayload = payload);
-        List<TextResourceElement> smsTextResource =
+        List<TextResourceElement> textResources =
         [
-            new() { Id = smsContentTextResourceKey, Value = "Custom sms content" },
+            new() { Id = "signing.sms_content", Value = "Custom sms content" },
             new() { Id = "signing.email_subject", Value = "Custom email subject" },
             new() { Id = "signing.email_content", Value = "Custom email content" },
+            new() { Id = "signing.inbox_title", Value = "Custom inbox title" },
+            new()
+            {
+                Id = "signing.inbox_content",
+                Value =
+                    "Custom inbox body with replacement for instance url here: $instanceUrl, and some more text after",
+            },
+            new() { Id = "signing.inbox_summary", Value = "Custom inbox summary" },
         ];
-        Mock<IAppResources> appResourcesMock = SetupAppResourcesMock(additionalTextResourceElements: smsTextResource);
+        Mock<IAppResources> appResourcesMock = SetupAppResourcesMock(additionalTextResourceElements: textResources);
         Mock<IHostEnvironment> hostEnvironmentMock = new();
         hostEnvironmentMock.Setup(m => m.EnvironmentName).Returns("tt02");
         ApplicationMetadata applicationMetadata = new("org/app")
@@ -293,14 +281,23 @@ public class SigningCallToActionServiceTests
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        Notification notification = new()
+        ContactDetails contactDetails = new()
         {
-            Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey },
-            Email = new Email
+            InboxMessage = new InboxMessage
             {
-                EmailAddress = "my.email@test.no",
-                BodyTextResourceKey = "signing.email_content",
-                SubjectTextResourceKey = "signing.email_subject",
+                TitleTextResourceKey = "signing.inbox_title",
+                BodyTextResourceKey = "signing.inbox_content",
+                SummaryTextResourceKey = "signing.inbox_summary",
+            },
+            Notification = new()
+            {
+                Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = "signing.sms_content" },
+                Email = new Email
+                {
+                    EmailAddress = "my.email@test.no",
+                    BodyTextResourceKey = "signing.email_content",
+                    SubjectTextResourceKey = "signing.email_subject",
+                },
             },
         };
         AppIdentifier appIdentifier = new("org", "app");
@@ -318,7 +315,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         await service.SendSignCallToAction(
-            notification,
+            contactDetails,
             appIdentifier,
             instanceIdentifier,
             signingParty,
@@ -335,10 +332,10 @@ public class SigningCallToActionServiceTests
         Assert.Equal("Custom sms content", capturedPayload.CorrespondenceRequest.Notification.SmsBody);
         Assert.Equal("Custom email content", capturedPayload.CorrespondenceRequest.Notification.EmailBody);
         Assert.Equal("Custom email subject", capturedPayload.CorrespondenceRequest.Notification.EmailSubject);
-        Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
-        Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
+        Assert.Equal("Custom inbox title", capturedPayload.CorrespondenceRequest.Content.Title);
+        Assert.Equal("Custom inbox summary", capturedPayload.CorrespondenceRequest.Content.Summary);
         Assert.Equal(
-            "Custom body with replacement for instance url here: [Klikk her for å åpne skjema](http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07), and some more text after",
+            "Custom inbox body with replacement for instance url here: [Klikk her for å åpne skjema](http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07), and some more text after",
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
@@ -377,7 +374,7 @@ public class SigningCallToActionServiceTests
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        Notification notification = new() { };
+        ContactDetails contactDetails = new() { Notification = new Notification { } };
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
 
@@ -393,7 +390,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         await service.SendSignCallToAction(
-            notification,
+            contactDetails,
             appIdentifier,
             instanceIdentifier,
             signingParty,
@@ -416,10 +413,10 @@ public class SigningCallToActionServiceTests
             "TestAppName: Oppgave til signering",
             capturedPayload.CorrespondenceRequest.Notification.EmailSubject
         );
-        Assert.Equal("Custom title", capturedPayload.CorrespondenceRequest.Content.Title);
-        Assert.Equal("Custom summary", capturedPayload.CorrespondenceRequest.Content.Summary);
+        Assert.Equal("TestAppName: Oppgave til signering", capturedPayload.CorrespondenceRequest.Content.Title);
+        Assert.Equal("Din signatur ventes for TestAppName.", capturedPayload.CorrespondenceRequest.Content.Summary);
         Assert.Equal(
-            "Custom body with replacement for instance url here: [Klikk her for å åpne skjema](http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07), and some more text after",
+            "Du har en oppgave som venter på din signatur. <a href=\"http://local.altinn.cloud/org/app/#/instance/123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07\">Klikk her for å åpne applikasjonen</a>.<br /><br />Hvis du lurer på noe, kan du kontakte Service owner.",
             capturedPayload.CorrespondenceRequest.Content.Body
         );
         Assert.Equal("app_ttd_appname", capturedPayload.CorrespondenceRequest.ResourceId);
@@ -458,7 +455,7 @@ public class SigningCallToActionServiceTests
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        Notification notification = new() { };
+        ContactDetails contactDetails = new() { Notification = new Notification { } };
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
         Party signingParty = new() { Name = "Signee", SSN = GetSsn(1) };
@@ -472,7 +469,7 @@ public class SigningCallToActionServiceTests
         await Assert.ThrowsAsync<ConfigurationException>(
             async () =>
                 await service.SendSignCallToAction(
-                    notification,
+                    contactDetails,
                     appIdentifier,
                     instanceIdentifier,
                     signingParty,
@@ -493,9 +490,13 @@ public class SigningCallToActionServiceTests
         ];
         Mock<IAppResources> mock = SetupAppResourcesMock(additionalTextResourceElements: smsTextResource);
         SigningCallToActionService service = SetupService(appResourcesMockOverride: mock);
-        Notification notification = new()
+
+        ContactDetails contactDetails = new()
         {
-            Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey },
+            Notification = new()
+            {
+                Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey },
+            },
         };
         AppIdentifier appIdentifier = new("org", "app");
         ApplicationMetadata applicationMetadata = new("org/app")
@@ -508,7 +509,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         ContentWrapper res = await service.GetContent(
-            notification,
+            contactDetails,
             appIdentifier,
             applicationMetadata,
             sendersParty,
@@ -523,12 +524,6 @@ public class SigningCallToActionServiceTests
         Assert.Contains(defaultEmailSubjectContains, res.EmailSubject);
         Assert.Contains(defaultEmailBodyContains, res.EmailBody);
         Assert.Equal(language, res.CorrespondenceContent.Language);
-        Assert.Equal("Custom title", res.CorrespondenceContent.Title);
-        Assert.Equal("Custom summary", res.CorrespondenceContent.Summary);
-        Assert.Equal(
-            "Custom body with replacement for instance url here: [Click here to open the form](https://altinn.local.cloud), and some more text after",
-            res.CorrespondenceContent.Body
-        );
     }
 
     [Fact]
@@ -539,9 +534,13 @@ public class SigningCallToActionServiceTests
         mock.Setup(m => m.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ThrowsAsync(new Exception());
         SigningCallToActionService service = SetupService(appResourcesMockOverride: mock);
-        Notification notification = new()
+
+        ContactDetails contactDetails = new()
         {
-            Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = "signing.sms_content" },
+            Notification = new()
+            {
+                Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = "signing.sms_content" },
+            },
         };
         AppIdentifier appIdentifier = new("org", "app");
         ApplicationMetadata applicationMetadata = new("org/app")
@@ -554,7 +553,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         ContentWrapper res = await service.GetContent(
-            notification,
+            contactDetails,
             appIdentifier,
             applicationMetadata,
             sendersParty,
