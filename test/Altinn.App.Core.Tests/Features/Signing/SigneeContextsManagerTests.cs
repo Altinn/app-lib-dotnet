@@ -12,7 +12,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using static Altinn.App.Core.Features.Signing.ProvidedSignee;
 using EmailModel = Altinn.App.Core.Features.Signing.Email;
 using InternalOrganizationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganizationSignee;
 using InternalPersonSignee = Altinn.App.Core.Features.Signing.Models.Signee.PersonSignee;

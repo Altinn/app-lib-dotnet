@@ -41,42 +41,42 @@ public abstract class ProvidedSignee
     /// </summary>
     [JsonPropertyName("notifications")]
     public Notifications? Notifications { get; init; }
+}
+
+/// <summary>
+/// Represents a signee that is a person.
+/// </summary>
+public class ProvidedPerson : ProvidedSignee
+{
+    /// <summary>
+    /// The social security number.
+    /// </summary>
+    [JsonPropertyName("socialSecurityNumber")]
+    public required string SocialSecurityNumber { get; init; }
 
     /// <summary>
-    /// Represents a signee that is a person.
+    /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
     /// </summary>
-    public class ProvidedPerson : ProvidedSignee
-    {
-        /// <summary>
-        /// The social security number.
-        /// </summary>
-        [JsonPropertyName("socialSecurityNumber")]
-        public required string SocialSecurityNumber { get; init; }
+    [JsonPropertyName("fullName")]
+    public required string FullName { get; init; }
+}
 
-        /// <summary>
-        /// The full name of the signee. {FirstName} {LastName} or {FirstName} {MiddleName} {LastName}.
-        /// </summary>
-        [JsonPropertyName("fullName")]
-        public required string FullName { get; init; }
-    }
+/// <summary>
+/// Represents a signee that is an organization.
+/// </summary>
+public class ProvidedOrganization : ProvidedSignee
+{
+    /// <summary>
+    /// The name of the organization.
+    /// </summary>
+    [JsonPropertyName("name")]
+    public required string Name { get; init; }
 
     /// <summary>
-    /// Represents a signee that is an organization.
+    /// The organization number.
     /// </summary>
-    public class ProvidedOrganization : ProvidedSignee
-    {
-        /// <summary>
-        /// The name of the organization.
-        /// </summary>
-        [JsonPropertyName("name")]
-        public required string Name { get; init; }
-
-        /// <summary>
-        /// The organization number.
-        /// </summary>
-        [JsonPropertyName("organizationNumber")]
-        public required string OrganizationNumber { get; init; }
-    }
+    [JsonPropertyName("organizationNumber")]
+    public required string OrganizationNumber { get; init; }
 }
 
 /// <summary>
