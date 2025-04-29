@@ -37,10 +37,10 @@ public class SigneeProviderResult
 public abstract class ProvidedSignee
 {
     /// <summary>
-    /// Notifications configuration.
+    /// Communication configuration.
     /// </summary>
-    [JsonPropertyName("notifications")]
-    public Notifications? Notifications { get; init; }
+    [JsonPropertyName("communicationConfig")]
+    public CommunicationConfig? CommunicationConfig { get; init; }
 }
 
 /// <summary>
@@ -80,19 +80,50 @@ public class ProvidedOrganization : ProvidedSignee
 }
 
 /// <summary>
-/// Configuration for notifications
+/// Configuration for communication with the signee. Requires a correspondence resource.
 /// </summary>
-public class Notifications
+public class CommunicationConfig
 {
+    /// <summary>
+    /// The message to be sent to the inbox. If not set, a default will be used.
+    /// </summary>
+    [JsonPropertyName("inboxMessage")]
+    public InboxMessage? InboxMessage { get; set; }
+
     /// <summary>
     /// Notification for when a party has been delegated the rights to sign.
     /// </summary>
-    [JsonPropertyName("onSignatureAccessRightsDelegated")]
-    public Notification? OnSignatureAccessRightsDelegated { get; set; }
+    [JsonPropertyName("notification")]
+    public Notification? Notification { get; set; }
 }
 
 /// <summary>
-/// The notification setup for an event in the signature lifetime.
+/// The message to be sent to the inbox.
+/// </summary>
+public class InboxMessage
+{
+    /// <summary>
+    /// The title of the message.
+    /// </summary>
+    [JsonPropertyName("titleTextResourceKey")]
+    public required string TitleTextResourceKey { get; set; }
+
+    /// <summary>
+    /// The body of the message.
+    /// </summary>
+    /// <remarks>Replaces "$InstanceUrl" with the link to the instance of the application.</remarks>
+    [JsonPropertyName("bodyTextResourceKey")]
+    public required string BodyTextResourceKey { get; set; }
+
+    /// <summary>
+    /// The summary of the message.
+    /// </summary>
+    [JsonPropertyName("summaryTextResourceKey")]
+    public required string SummaryTextResourceKey { get; set; }
+}
+
+/// <summary>
+/// The notification setup for notifying the signee about the signing task.
 /// </summary>
 public class Notification
 {

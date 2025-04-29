@@ -15,8 +15,6 @@ using Moq;
 using EmailModel = Altinn.App.Core.Features.Signing.Email;
 using InternalOrganizationSignee = Altinn.App.Core.Features.Signing.Models.Signee.OrganizationSignee;
 using InternalPersonSignee = Altinn.App.Core.Features.Signing.Models.Signee.PersonSignee;
-using NotificationModel = Altinn.App.Core.Features.Signing.Notification;
-using NotificationsModel = Altinn.App.Core.Features.Signing.Notifications;
 using SmsModel = Altinn.App.Core.Features.Signing.Sms;
 
 namespace Altinn.App.Core.Tests.Features.Signing;
@@ -120,9 +118,9 @@ public sealed class SigneeContextsManagerTests : IDisposable
         {
             SocialSecurityNumber = "12345678901",
             FullName = "Person One",
-            Notifications = new NotificationsModel
+            CommunicationConfig = new CommunicationConfig
             {
-                OnSignatureAccessRightsDelegated = new NotificationModel
+                Notification = new Notification
                 {
                     Email = new EmailModel { EmailAddress = "person1@example.com" },
                     Sms = new SmsModel { MobileNumber = "11111111" },
@@ -134,9 +132,9 @@ public sealed class SigneeContextsManagerTests : IDisposable
         {
             SocialSecurityNumber = "10987654321",
             FullName = "Person Two",
-            Notifications = new NotificationsModel
+            CommunicationConfig = new CommunicationConfig
             {
-                OnSignatureAccessRightsDelegated = new NotificationModel
+                Notification = new Notification
                 {
                     Email = new EmailModel { EmailAddress = "person2@example.com" },
                     Sms = new SmsModel { MobileNumber = "22222222" },
@@ -173,15 +171,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.Equal("12345678901", firstSignee.SocialSecurityNumber);
         Assert.Equal("Test Person", firstSignee.FullName);
 
-        Assert.NotNull(firstContext.Notifications);
-        Assert.NotNull(firstContext.Notifications.OnSignatureAccessRightsDelegated);
-        Assert.NotNull(firstContext.Notifications.OnSignatureAccessRightsDelegated.Email);
-        Assert.Equal(
-            "person1@example.com",
-            firstContext.Notifications.OnSignatureAccessRightsDelegated.Email.EmailAddress
-        );
-        Assert.NotNull(firstContext.Notifications.OnSignatureAccessRightsDelegated.Sms);
-        Assert.Equal("11111111", firstContext.Notifications.OnSignatureAccessRightsDelegated.Sms.MobileNumber);
+        Assert.NotNull(firstContext.CommunicationConfig);
+        Assert.NotNull(firstContext.CommunicationConfig.Notification);
+        Assert.NotNull(firstContext.CommunicationConfig.Notification.Email);
+        Assert.Equal("person1@example.com", firstContext.CommunicationConfig.Notification.Email.EmailAddress);
+        Assert.NotNull(firstContext.CommunicationConfig.Notification.Sms);
+        Assert.Equal("11111111", firstContext.CommunicationConfig.Notification.Sms.MobileNumber);
 
         // Verify second signee context
         var secondContext = result[1];
@@ -195,15 +190,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.Equal("10987654321", secondSignee.SocialSecurityNumber);
         Assert.Equal("Test Person", secondSignee.FullName);
 
-        Assert.NotNull(secondContext.Notifications);
-        Assert.NotNull(secondContext.Notifications.OnSignatureAccessRightsDelegated);
-        Assert.NotNull(secondContext.Notifications.OnSignatureAccessRightsDelegated.Email);
-        Assert.Equal(
-            "person2@example.com",
-            secondContext.Notifications.OnSignatureAccessRightsDelegated.Email.EmailAddress
-        );
-        Assert.NotNull(secondContext.Notifications.OnSignatureAccessRightsDelegated.Sms);
-        Assert.Equal("22222222", secondContext.Notifications.OnSignatureAccessRightsDelegated.Sms.MobileNumber);
+        Assert.NotNull(secondContext.CommunicationConfig);
+        Assert.NotNull(secondContext.CommunicationConfig.Notification);
+        Assert.NotNull(secondContext.CommunicationConfig.Notification.Email);
+        Assert.Equal("person2@example.com", secondContext.CommunicationConfig.Notification.Email.EmailAddress);
+        Assert.NotNull(secondContext.CommunicationConfig.Notification.Sms);
+        Assert.Equal("22222222", secondContext.CommunicationConfig.Notification.Sms.MobileNumber);
     }
 
     [Fact]
@@ -228,9 +220,9 @@ public sealed class SigneeContextsManagerTests : IDisposable
         {
             OrganizationNumber = "123456789",
             Name = "Test Organization",
-            Notifications = new NotificationsModel
+            CommunicationConfig = new CommunicationConfig
             {
-                OnSignatureAccessRightsDelegated = new NotificationModel
+                Notification = new Notification
                 {
                     Email = new EmailModel { }, // Empty to test auto-fill from Party
                     Sms = new SmsModel { }, // Empty to test auto-fill from Party
@@ -266,12 +258,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.Equal("123456789", signee.OrgNumber);
         Assert.Equal("Test Organization", signee.OrgName);
 
-        Assert.NotNull(context.Notifications);
-        Assert.NotNull(context.Notifications.OnSignatureAccessRightsDelegated);
-        Assert.NotNull(context.Notifications.OnSignatureAccessRightsDelegated.Email);
-        Assert.Equal("test@org.com", context.Notifications.OnSignatureAccessRightsDelegated.Email.EmailAddress);
-        Assert.NotNull(context.Notifications.OnSignatureAccessRightsDelegated.Sms);
-        Assert.Equal("87654321", context.Notifications.OnSignatureAccessRightsDelegated.Sms.MobileNumber);
+        Assert.NotNull(context.CommunicationConfig);
+        Assert.NotNull(context.CommunicationConfig.Notification);
+        Assert.NotNull(context.CommunicationConfig.Notification.Email);
+        Assert.Equal("test@org.com", context.CommunicationConfig.Notification.Email.EmailAddress);
+        Assert.NotNull(context.CommunicationConfig.Notification.Sms);
+        Assert.Equal("87654321", context.CommunicationConfig.Notification.Sms.MobileNumber);
     }
 
     [Fact]
@@ -430,9 +422,9 @@ public sealed class SigneeContextsManagerTests : IDisposable
                     SocialSecurityNumber = "12345678901",
                     Party = new Party { SSN = "12345678901", Name = "Test Person" },
                 },
-                Notifications = new NotificationsModel
+                CommunicationConfig = new CommunicationConfig
                 {
-                    OnSignatureAccessRightsDelegated = new NotificationModel
+                    Notification = new Notification
                     {
                         Email = new EmailModel { EmailAddress = "test@example.com" },
                         Sms = new SmsModel { MobileNumber = "12345678" },
@@ -472,12 +464,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.Equal("12345678901", signee.SocialSecurityNumber);
         Assert.Equal("Test Person", signee.FullName);
 
-        Assert.NotNull(context.Notifications);
-        Assert.NotNull(context.Notifications.OnSignatureAccessRightsDelegated);
-        Assert.NotNull(context.Notifications.OnSignatureAccessRightsDelegated.Email);
-        Assert.Equal("test@example.com", context.Notifications.OnSignatureAccessRightsDelegated.Email.EmailAddress);
-        Assert.NotNull(context.Notifications.OnSignatureAccessRightsDelegated.Sms);
-        Assert.Equal("12345678", context.Notifications.OnSignatureAccessRightsDelegated.Sms.MobileNumber);
+        Assert.NotNull(context.CommunicationConfig);
+        Assert.NotNull(context.CommunicationConfig.Notification);
+        Assert.NotNull(context.CommunicationConfig.Notification.Email);
+        Assert.Equal("test@example.com", context.CommunicationConfig.Notification.Email.EmailAddress);
+        Assert.NotNull(context.CommunicationConfig.Notification.Sms);
+        Assert.Equal("12345678", context.CommunicationConfig.Notification.Sms.MobileNumber);
     }
 
     [Fact]

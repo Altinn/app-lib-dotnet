@@ -18,10 +18,10 @@ internal sealed class SigneeContext
     public required Signee Signee { get; set; }
 
     /// <summary>
-    /// Notifications configuration.
+    /// Communication configuration.
     /// </summary>
-    [JsonPropertyName("notifications")]
-    public Notifications? Notifications { get; init; }
+    [JsonPropertyName("CommunicationConfig")]
+    public CommunicationConfig? CommunicationConfig { get; init; }
 
     /// <summary>
     /// The state of the signee.
