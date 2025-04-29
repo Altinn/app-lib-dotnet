@@ -118,7 +118,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         {
             SocialSecurityNumber = "12345678901",
             FullName = "Person One",
-            ContactDetails = new ContactDetails
+            CommunicationConfig = new CommunicationConfig
             {
                 Notification = new Notification
                 {
@@ -132,7 +132,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         {
             SocialSecurityNumber = "10987654321",
             FullName = "Person Two",
-            ContactDetails = new ContactDetails
+            CommunicationConfig = new CommunicationConfig
             {
                 Notification = new Notification
                 {
@@ -171,12 +171,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.Equal("12345678901", firstSignee.SocialSecurityNumber);
         Assert.Equal("Test Person", firstSignee.FullName);
 
-        Assert.NotNull(firstContext.ContactDetails);
-        Assert.NotNull(firstContext.ContactDetails.Notification);
-        Assert.NotNull(firstContext.ContactDetails.Notification.Email);
-        Assert.Equal("person1@example.com", firstContext.ContactDetails.Notification.Email.EmailAddress);
-        Assert.NotNull(firstContext.ContactDetails.Notification.Sms);
-        Assert.Equal("11111111", firstContext.ContactDetails.Notification.Sms.MobileNumber);
+        Assert.NotNull(firstContext.CommunicationConfig);
+        Assert.NotNull(firstContext.CommunicationConfig.Notification);
+        Assert.NotNull(firstContext.CommunicationConfig.Notification.Email);
+        Assert.Equal("person1@example.com", firstContext.CommunicationConfig.Notification.Email.EmailAddress);
+        Assert.NotNull(firstContext.CommunicationConfig.Notification.Sms);
+        Assert.Equal("11111111", firstContext.CommunicationConfig.Notification.Sms.MobileNumber);
 
         // Verify second signee context
         var secondContext = result[1];
@@ -190,12 +190,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.Equal("10987654321", secondSignee.SocialSecurityNumber);
         Assert.Equal("Test Person", secondSignee.FullName);
 
-        Assert.NotNull(secondContext.ContactDetails);
-        Assert.NotNull(secondContext.ContactDetails.Notification);
-        Assert.NotNull(secondContext.ContactDetails.Notification.Email);
-        Assert.Equal("person2@example.com", secondContext.ContactDetails.Notification.Email.EmailAddress);
-        Assert.NotNull(secondContext.ContactDetails.Notification.Sms);
-        Assert.Equal("22222222", secondContext.ContactDetails.Notification.Sms.MobileNumber);
+        Assert.NotNull(secondContext.CommunicationConfig);
+        Assert.NotNull(secondContext.CommunicationConfig.Notification);
+        Assert.NotNull(secondContext.CommunicationConfig.Notification.Email);
+        Assert.Equal("person2@example.com", secondContext.CommunicationConfig.Notification.Email.EmailAddress);
+        Assert.NotNull(secondContext.CommunicationConfig.Notification.Sms);
+        Assert.Equal("22222222", secondContext.CommunicationConfig.Notification.Sms.MobileNumber);
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         {
             OrganizationNumber = "123456789",
             Name = "Test Organization",
-            ContactDetails = new ContactDetails
+            CommunicationConfig = new CommunicationConfig
             {
                 Notification = new Notification
                 {
@@ -258,12 +258,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.Equal("123456789", signee.OrgNumber);
         Assert.Equal("Test Organization", signee.OrgName);
 
-        Assert.NotNull(context.ContactDetails);
-        Assert.NotNull(context.ContactDetails.Notification);
-        Assert.NotNull(context.ContactDetails.Notification.Email);
-        Assert.Equal("test@org.com", context.ContactDetails.Notification.Email.EmailAddress);
-        Assert.NotNull(context.ContactDetails.Notification.Sms);
-        Assert.Equal("87654321", context.ContactDetails.Notification.Sms.MobileNumber);
+        Assert.NotNull(context.CommunicationConfig);
+        Assert.NotNull(context.CommunicationConfig.Notification);
+        Assert.NotNull(context.CommunicationConfig.Notification.Email);
+        Assert.Equal("test@org.com", context.CommunicationConfig.Notification.Email.EmailAddress);
+        Assert.NotNull(context.CommunicationConfig.Notification.Sms);
+        Assert.Equal("87654321", context.CommunicationConfig.Notification.Sms.MobileNumber);
     }
 
     [Fact]
@@ -422,7 +422,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
                     SocialSecurityNumber = "12345678901",
                     Party = new Party { SSN = "12345678901", Name = "Test Person" },
                 },
-                ContactDetails = new ContactDetails
+                CommunicationConfig = new CommunicationConfig
                 {
                     Notification = new Notification
                     {
@@ -464,12 +464,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.Equal("12345678901", signee.SocialSecurityNumber);
         Assert.Equal("Test Person", signee.FullName);
 
-        Assert.NotNull(context.ContactDetails);
-        Assert.NotNull(context.ContactDetails.Notification);
-        Assert.NotNull(context.ContactDetails.Notification.Email);
-        Assert.Equal("test@example.com", context.ContactDetails.Notification.Email.EmailAddress);
-        Assert.NotNull(context.ContactDetails.Notification.Sms);
-        Assert.Equal("12345678", context.ContactDetails.Notification.Sms.MobileNumber);
+        Assert.NotNull(context.CommunicationConfig);
+        Assert.NotNull(context.CommunicationConfig.Notification);
+        Assert.NotNull(context.CommunicationConfig.Notification.Email);
+        Assert.Equal("test@example.com", context.CommunicationConfig.Notification.Email.EmailAddress);
+        Assert.NotNull(context.CommunicationConfig.Notification.Sms);
+        Assert.Equal("12345678", context.CommunicationConfig.Notification.Sms.MobileNumber);
     }
 
     [Fact]

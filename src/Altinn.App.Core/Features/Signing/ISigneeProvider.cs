@@ -37,10 +37,10 @@ public class SigneeProviderResult
 public abstract class ProvidedSignee
 {
     /// <summary>
-    /// ContactDetails configuration.
+    /// Communication configuration.
     /// </summary>
-    [JsonPropertyName("contactDetails")]
-    public ContactDetails? ContactDetails { get; init; }
+    [JsonPropertyName("communicationConfig")]
+    public CommunicationConfig? CommunicationConfig { get; init; }
 }
 
 /// <summary>
@@ -82,7 +82,7 @@ public class ProvidedOrganization : ProvidedSignee
 /// <summary>
 /// Configuration for contact details for a signee.
 /// </summary>
-public class ContactDetails
+public class CommunicationConfig
 {
     /// <summary>
     /// The message to be sent to the inbox. If not set, a default will be used.

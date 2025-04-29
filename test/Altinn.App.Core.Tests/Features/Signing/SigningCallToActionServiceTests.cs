@@ -105,7 +105,7 @@ public class SigningCallToActionServiceTests
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        ContactDetails contactDetails = new()
+        CommunicationConfig communicationConfig = new()
         {
             Notification = new Notification
             {
@@ -128,7 +128,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         await service.SendSignCallToAction(
-            contactDetails,
+            communicationConfig,
             appIdentifier,
             instanceIdentifier,
             signingParty,
@@ -186,7 +186,7 @@ public class SigningCallToActionServiceTests
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        ContactDetails contactDetails = new()
+        CommunicationConfig communicationConfig = new()
         {
             Notification = new()
             {
@@ -214,7 +214,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         await service.SendSignCallToAction(
-            contactDetails,
+            communicationConfig,
             appIdentifier,
             instanceIdentifier,
             signingParty,
@@ -242,7 +242,7 @@ public class SigningCallToActionServiceTests
     /// Expected: Email is preferred, CorrespondenceClient is called with correct parameters.
     /// </summary>
     [Fact]
-    public async Task SendSignCallToAction_AllCustomContactDetails_CallsCorrespondenceClientWithCorrectParameters()
+    public async Task SendSignCallToAction_AllCustomcommunicationConfig_CallsCorrespondenceClientWithCorrectParameters()
     {
         // Arrange
         SendCorrespondencePayload? capturedPayload = null;
@@ -281,7 +281,7 @@ public class SigningCallToActionServiceTests
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        ContactDetails contactDetails = new()
+        CommunicationConfig communicationConfig = new()
         {
             InboxMessage = new InboxMessage
             {
@@ -315,7 +315,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         await service.SendSignCallToAction(
-            contactDetails,
+            communicationConfig,
             appIdentifier,
             instanceIdentifier,
             signingParty,
@@ -374,7 +374,7 @@ public class SigningCallToActionServiceTests
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        ContactDetails contactDetails = new() { Notification = new Notification { } };
+        CommunicationConfig communicationConfig = new() { Notification = new Notification { } };
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
 
@@ -390,7 +390,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         await service.SendSignCallToAction(
-            contactDetails,
+            communicationConfig,
             appIdentifier,
             instanceIdentifier,
             signingParty,
@@ -455,7 +455,7 @@ public class SigningCallToActionServiceTests
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        ContactDetails contactDetails = new() { Notification = new Notification { } };
+        CommunicationConfig communicationConfig = new() { Notification = new Notification { } };
         AppIdentifier appIdentifier = new("org", "app");
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
         Party signingParty = new() { Name = "Signee", SSN = GetSsn(1) };
@@ -469,7 +469,7 @@ public class SigningCallToActionServiceTests
         await Assert.ThrowsAsync<ConfigurationException>(
             async () =>
                 await service.SendSignCallToAction(
-                    contactDetails,
+                    communicationConfig,
                     appIdentifier,
                     instanceIdentifier,
                     signingParty,
@@ -491,7 +491,7 @@ public class SigningCallToActionServiceTests
         Mock<IAppResources> mock = SetupAppResourcesMock(additionalTextResourceElements: smsTextResource);
         SigningCallToActionService service = SetupService(appResourcesMockOverride: mock);
 
-        ContactDetails contactDetails = new()
+        CommunicationConfig communicationConfig = new()
         {
             Notification = new()
             {
@@ -509,7 +509,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         ContentWrapper res = await service.GetContent(
-            contactDetails,
+            communicationConfig,
             appIdentifier,
             applicationMetadata,
             sendersParty,
@@ -535,7 +535,7 @@ public class SigningCallToActionServiceTests
             .ThrowsAsync(new Exception());
         SigningCallToActionService service = SetupService(appResourcesMockOverride: mock);
 
-        ContactDetails contactDetails = new()
+        CommunicationConfig communicationConfig = new()
         {
             Notification = new()
             {
@@ -553,7 +553,7 @@ public class SigningCallToActionServiceTests
 
         // Act
         ContentWrapper res = await service.GetContent(
-            contactDetails,
+            communicationConfig,
             appIdentifier,
             applicationMetadata,
             sendersParty,

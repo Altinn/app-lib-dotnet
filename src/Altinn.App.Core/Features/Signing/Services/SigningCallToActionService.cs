@@ -40,7 +40,7 @@ internal sealed class SigningCallToActionService(
     private readonly UrlHelper _urlHelper = new(settings);
 
     public async Task<SendCorrespondenceResponse?> SendSignCallToAction(
-        ContactDetails? contactDetails,
+        CommunicationConfig? communicationConfig,
         AppIdentifier appIdentifier,
         InstanceIdentifier instanceIdentifier,
         Party signingParty,
@@ -79,7 +79,7 @@ internal sealed class SigningCallToActionService(
         }
         string recipientLanguage = recipientProfile?.ProfileSettingPreference.Language ?? LanguageConst.Nb;
         ContentWrapper contentWrapper = await GetContent(
-            contactDetails,
+            communicationConfig,
             appIdentifier,
             applicationMetadata,
             serviceOwnerParty,
@@ -90,7 +90,7 @@ internal sealed class SigningCallToActionService(
         string? emailBody = contentWrapper.EmailBody;
         string? emailSubject = contentWrapper.EmailSubject;
         string? smsBody = contentWrapper.SmsBody;
-        Notification? notification = contactDetails?.Notification;
+        Notification? notification = communicationConfig?.Notification;
 
         if (serviceOwnerParty.OrgNumber == "ttd" && _hostEnvironment.IsProduction() is false)
         {
@@ -239,7 +239,7 @@ internal sealed class SigningCallToActionService(
     }
 
     internal async Task<ContentWrapper> GetContent(
-        ContactDetails? contactDetails,
+        CommunicationConfig? communicationConfig,
         AppIdentifier appIdentifier,
         ApplicationMetadata appMetadata,
         Party senderParty,
@@ -269,9 +269,9 @@ internal sealed class SigningCallToActionService(
                 ?? throw new InvalidOperationException($"No text resource found for language ({language})");
 
             string linkDisplayText = GetLinkDisplayText(language);
-            correspondenceTitle = textResource.GetText(contactDetails?.InboxMessage?.TitleTextResourceKey);
-            correspondenceSummary = textResource.GetText(contactDetails?.InboxMessage?.SummaryTextResourceKey);
-            correspondenceBody = textResource.GetText(contactDetails?.InboxMessage?.BodyTextResourceKey);
+            correspondenceTitle = textResource.GetText(communicationConfig?.InboxMessage?.TitleTextResourceKey);
+            correspondenceSummary = textResource.GetText(communicationConfig?.InboxMessage?.SummaryTextResourceKey);
+            correspondenceBody = textResource.GetText(communicationConfig?.InboxMessage?.BodyTextResourceKey);
             correspondenceBody = correspondenceBody?.Replace(
                 "$InstanceUrl",
                 $"[{linkDisplayText}]({instanceUrl})",
@@ -279,9 +279,9 @@ internal sealed class SigningCallToActionService(
             );
             appName = textResource.GetFirstMatchingText("appName", "ServiceName");
 
-            smsBody = textResource.GetText(contactDetails?.Notification?.Sms?.BodyTextResourceKey);
-            emailBody = textResource.GetText(contactDetails?.Notification?.Email?.BodyTextResourceKey);
-            emailSubject = textResource.GetText(contactDetails?.Notification?.Email?.SubjectTextResourceKey);
+            smsBody = textResource.GetText(communicationConfig?.Notification?.Sms?.BodyTextResourceKey);
+            emailBody = textResource.GetText(communicationConfig?.Notification?.Email?.BodyTextResourceKey);
+            emailSubject = textResource.GetText(communicationConfig?.Notification?.Email?.SubjectTextResourceKey);
         }
         catch (Exception e)
         {
