@@ -529,7 +529,7 @@ public class SigningUserActionHandleOnBehalfOfTests
                     It.IsAny<int>()
                 ),
             Times.Once,
-            "the instance owner check should not bypass any call to GetAuthorizedOrganisationSignees"
+            "the instance owner check should not bypass any call to GetAuthorizedOrganizationSignees"
         );
     }
 
