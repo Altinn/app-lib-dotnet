@@ -1,7 +1,6 @@
 using System.Globalization;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Exceptions;
-using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Models;
@@ -12,6 +11,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Sign;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
@@ -24,21 +24,20 @@ internal sealed class SigningReceiptService(
     ICorrespondenceClient correspondenceClient,
     IDataClient dataClient,
     IHostEnvironment hostEnvironment,
-    IAppResources appResources,
     IAppMetadata appMetadata,
+    ITranslationService translationService,
     ILogger<SigningReceiptService> logger
 ) : ISigningReceiptService
 {
     private readonly ICorrespondenceClient _correspondenceClient = correspondenceClient;
     private readonly IDataClient _dataClient = dataClient;
     private readonly IHostEnvironment _hostEnvironment = hostEnvironment;
-    private readonly IAppResources _appResources = appResources;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ILogger<SigningReceiptService> _logger = logger;
 
     public async Task<SendCorrespondenceResponse?> SendSignatureReceipt(
         InstanceIdentifier instanceIdentifier,
-        Altinn.App.Core.Internal.Sign.Signee signee,
+        Internal.Sign.Signee signee,
         IEnumerable<DataElementSignature> dataElementSignatures,
         UserActionContext context,
         List<AltinnEnvironmentConfig>? correspondenceResources
@@ -138,7 +137,6 @@ internal sealed class SigningReceiptService(
         AltinnCdnOrgDetails senderDetails
     )
     {
-        TextResource? textResource = null;
         string? title = null;
         string? summary = null;
         string? body = null;
@@ -151,20 +149,16 @@ internal sealed class SigningReceiptService(
             ?? appMetadata.Title?.FirstOrDefault().Value
             ?? appMetadata.Id;
 
+        string language = context.Language ?? defaultLanguage;
+
         try
         {
             AppIdentifier appIdentifier = new(context.Instance);
 
-            textResource =
-                await _appResources.GetTexts(appIdentifier.Org, appIdentifier.App, context.Language ?? defaultLanguage)
-                ?? throw new InvalidOperationException(
-                    $"No text resource found for specified language ({context.Language}) nor the default language ({defaultLanguage})"
-                );
-
-            title = textResource.GetText("signing.correspondence_receipt_title");
-            summary = textResource.GetText("signing.correspondence_receipt_summary");
-            body = textResource.GetText("signing.correspondence_receipt_body");
-            appName = textResource.GetFirstMatchingText("appName", "ServiceName");
+            title = await translationService.TranslateTextKey("signing.correspondence_receipt_title", language);
+            summary = await translationService.TranslateTextKey("signing.correspondence_receipt_summary", language);
+            body = await translationService.TranslateTextKey("signing.correspondence_receipt_body", language);
+            appName = await translationService.TranslateFirstMatchingTextKey(language, "appName", "ServiceName");
         }
         catch (Exception e)
         {
@@ -180,11 +174,11 @@ internal sealed class SigningReceiptService(
             appName = defaultAppName;
         }
 
-        var defaults = GetDefaultTexts(context.Language ?? defaultLanguage, appName, appOwner);
+        var defaults = GetDefaultTexts(language, appName, appOwner);
 
         CorrespondenceContent content = new()
         {
-            Language = LanguageCode<Iso6391>.Parse(textResource?.Language ?? defaultLanguage),
+            Language = LanguageCode<Iso6391>.Parse(language),
             Title = title ?? defaults.Title,
             Summary = summary ?? defaults.Summary,
             Body = body ?? defaults.Body,

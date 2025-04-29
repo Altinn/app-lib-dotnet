@@ -62,7 +62,7 @@ internal class SigningUserAction : IUserAction
     public string Id => "sign";
 
     /// <inheritdoc />
-    /// <exception cref="Helpers.PlatformHttpException"></exception>
+    /// <exception cref="PlatformHttpException"></exception>
     /// <exception cref="ApplicationConfigException"></exception>
     public async Task<UserActionResult> HandleAction(UserActionContext context)
     {

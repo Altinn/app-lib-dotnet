@@ -10,6 +10,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Sign;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
@@ -25,22 +26,22 @@ public class SigningReceiptServiceTests
         Mock<ICorrespondenceClient>? correspondenceClientMockOverride = null,
         Mock<IHostEnvironment>? hostEnvironmentMockOverride = null,
         Mock<IDataClient>? dataClientMockOverride = null,
-        Mock<IAppResources>? appResourcesMockOverride = null,
-        Mock<IAppMetadata>? appMetadataMockOverride = null
+        Mock<IAppMetadata>? appMetadataMockOverride = null,
+        ITranslationService? translationServiceOverride = null
     )
     {
         Mock<ICorrespondenceClient> correspondenceClientMock = correspondenceClientMockOverride ?? new();
         Mock<IHostEnvironment> hostEnvironmentMock = hostEnvironmentMockOverride ?? new();
         Mock<IDataClient>? dataClientMock = dataClientMockOverride ?? new();
-        Mock<IAppResources> appResourcesMock = appResourcesMockOverride ?? new();
         Mock<IAppMetadata> appMetadataMock = appMetadataMockOverride ?? new();
+        Mock<ITranslationService> translationServiceMock = new();
         Mock<ILogger<SigningReceiptService>> loggerMock = new();
         return new SigningReceiptService(
             correspondenceClientMock.Object,
             dataClientMock.Object,
             hostEnvironmentMock.Object,
-            appResourcesMock.Object,
             appMetadataMock.Object,
+            translationServiceOverride ?? translationServiceMock.Object,
             loggerMock.Object
         );
     }
@@ -246,7 +247,10 @@ public class SigningReceiptServiceTests
             additionalTextResourceElements: textResourceElements
         );
 
-        var service = SetupService(appResourcesMockOverride: appResourcesMock);
+        AppIdentifier appIdentifier = new("org", "app");
+        TranslationService translationService = new(appIdentifier, appResourcesMock.Object);
+
+        var service = SetupService(translationServiceOverride: translationService);
 
         Instance instance = new() { Id = "org/app" };
 
@@ -293,7 +297,10 @@ public class SigningReceiptServiceTests
             .Setup(r => r.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ThrowsAsync(new Exception("Test exception"));
 
-        var service = SetupService(appResourcesMockOverride: appResourcesMock);
+        AppIdentifier appIdentifier = new("org", "app");
+        TranslationService translationService = new(appIdentifier, appResourcesMock.Object);
+
+        var service = SetupService(translationServiceOverride: translationService);
 
         Instance instance = new() { Id = "org/app" };
 
