@@ -267,7 +267,10 @@ internal sealed class SigningCallToActionService(
                 communicationConfig?.InboxMessage?.SummaryTextResourceKey,
                 language
             );
-            correspondenceBody = await translationService.TranslateTextKeyLenient(communicationConfig?.InboxMessage?.BodyTextResourceKey, language);
+            correspondenceBody = await translationService.TranslateTextKeyLenient(
+                communicationConfig?.InboxMessage?.BodyTextResourceKey,
+                language
+            );
             correspondenceBody = correspondenceBody?.Replace(
                 "$InstanceUrl",
                 $"[{linkDisplayText}]({instanceUrl})",

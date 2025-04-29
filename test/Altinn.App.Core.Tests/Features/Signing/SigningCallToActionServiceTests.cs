@@ -383,7 +383,7 @@ public class SigningCallToActionServiceTests
             hostEnvironmentMockOverride: hostEnvironmentMock
         );
 
-        CommunicationConfig communicationConfig = new() { Notification = new() { }};
+        CommunicationConfig communicationConfig = new() { Notification = new() { } };
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
 
         var orgNo = GetOrgNumber(1);
@@ -500,7 +500,13 @@ public class SigningCallToActionServiceTests
         ];
         Mock<IAppResources> mock = SetupAppResourcesMock(additionalTextResourceElements: smsTextResource);
 
-        CommunicationConfig communicationConfig = new() { Notification = new Notification { Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey } } };
+        CommunicationConfig communicationConfig = new()
+        {
+            Notification = new Notification
+            {
+                Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey },
+            },
+        };
         AppIdentifier appIdentifier = new("org", "app");
         TranslationService translationService = new(appIdentifier, mock.Object);
         SigningCallToActionService service = SetupService(translationServiceOverride: translationService);
@@ -540,10 +546,13 @@ public class SigningCallToActionServiceTests
         mock.Setup(m => m.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ThrowsAsync(new Exception());
 
-        CommunicationConfig communicationConfig = new() { Notification = new()
+        CommunicationConfig communicationConfig = new()
+        {
+            Notification = new()
             {
                 Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = "signing.sms_content" },
-            }};
+            },
+        };
         AppIdentifier appIdentifier = new("org", "app");
         TranslationService translationService = new(appIdentifier, mock.Object);
         SigningCallToActionService service = SetupService(translationServiceOverride: translationService);
