@@ -195,12 +195,6 @@ internal class SigningUserAction : IUserAction
         AltinnSignatureConfiguration signatureConfiguration
     )
     {
-        if (context.OnBehalfOf == context.Instance.InstanceOwner.OrganisationNumber)
-        {
-            _logger.LogInformation("On behalf of the instance owner, no need to check for authorized organisations.");
-            return true;
-        }
-
         int? userId = context.Authentication switch
         {
             Authenticated.User user => user.UserId,
