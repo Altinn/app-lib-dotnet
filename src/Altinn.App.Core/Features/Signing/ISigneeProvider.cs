@@ -80,7 +80,7 @@ public class ProvidedOrganization : ProvidedSignee
 }
 
 /// <summary>
-/// Configuration for contact details for a signee.
+/// Configuration for communication with the signee. Requires a correspondence resource.
 /// </summary>
 public class CommunicationConfig
 {
@@ -123,7 +123,7 @@ public class InboxMessage
 }
 
 /// <summary>
-/// The notification setup for an event in the signature lifetime.
+/// The notification setup for notifying the signee about the signing task.
 /// </summary>
 public class Notification
 {
