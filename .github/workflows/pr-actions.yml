@@ -58,7 +58,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore
-        run: dotnet restore -v m -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
+        run: dotnet restore solutions/All.sln -v m
 
       - name: Build
         run: dotnet build -v m --no-restore -c Release -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
