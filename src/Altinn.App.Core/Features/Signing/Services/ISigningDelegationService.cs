@@ -17,8 +17,7 @@ internal interface ISigningDelegationService
         Guid? instanceOwnerPartyUuid,
         AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
-        CancellationToken ct,
-        Telemetry? telemetry = null
+        CancellationToken ct
     );
 
     /// <summary>
@@ -30,7 +29,6 @@ internal interface ISigningDelegationService
         Guid instanceOwnerPartyUuid,
         AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
-        CancellationToken ct,
-        Telemetry? telemetry = null
+        CancellationToken ct
     );
 }

@@ -10,7 +10,8 @@ namespace Altinn.App.Core.Features.Signing.Services;
 
 internal sealed class SigningDelegationService(
     IAccessManagementClient accessManagementClient,
-    ILogger<SigningDelegationService> logger
+    ILogger<SigningDelegationService> logger,
+    Telemetry? telemetry = null
 ) : ISigningDelegationService
 {
     public async Task<(List<SigneeContext>, bool success)> DelegateSigneeRights(
@@ -19,10 +20,10 @@ internal sealed class SigningDelegationService(
         Guid? instanceOwnerPartyUuid,
         AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
-        CancellationToken ct,
-        Telemetry? telemetry = null
+        CancellationToken ct
     )
     {
+        using var activity = telemetry?.StartDelegateSigneeRightsActivity(taskId);
         if (instanceOwnerPartyUuid is null)
         {
             signeeContexts.ForEach(signeeContext =>
@@ -92,10 +93,10 @@ internal sealed class SigningDelegationService(
         Guid instanceOwnerPartyUuid,
         AppIdentifier appIdentifier,
         List<SigneeContext> signeeContexts,
-        CancellationToken ct,
-        Telemetry? telemetry = null
+        CancellationToken ct
     )
     {
+        using var activity = telemetry?.StartRevokeSigneeRightsActivity(taskId);
         Guid instanceGuid = ParseInstanceGuid(instanceIdCombo);
 
         var appResourceId = AppResourceId.FromAppIdentifier(appIdentifier);

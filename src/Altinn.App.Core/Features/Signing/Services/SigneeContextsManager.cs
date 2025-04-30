@@ -53,7 +53,7 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
         CancellationToken ct
     )
     {
-        using Activity? activity = _telemetry?.StartAssignSigneesActivity();
+        using Activity? activity = _telemetry?.StartGenerateSigneeContextsActivity();
 
         Instance instance = instanceDataMutator.Instance;
         string taskId = instance.Process.CurrentTask.ElementId;
@@ -90,7 +90,7 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
         AltinnSignatureConfiguration signatureConfiguration
     )
     {
-        using Activity? activity = _telemetry?.StartReadSigneesActivity();
+        using Activity? activity = _telemetry?.StartReadSigneesContextsActivity();
         // If no SigneeStatesDataTypeId is set, delegated signing is not enabled and there is nothing to download.
         List<SigneeContext> signeeContexts = !string.IsNullOrEmpty(signatureConfiguration.SigneeStatesDataTypeId)
             ? await DownloadSigneeContexts(instanceDataAccessor, signatureConfiguration)

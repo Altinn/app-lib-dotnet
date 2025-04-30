@@ -26,7 +26,8 @@ internal sealed class SigningReceiptService(
     IHostEnvironment hostEnvironment,
     IAppMetadata appMetadata,
     ITranslationService translationService,
-    ILogger<SigningReceiptService> logger
+    ILogger<SigningReceiptService> logger,
+    Telemetry? telemetry = null
 ) : ISigningReceiptService
 {
     private readonly ICorrespondenceClient _correspondenceClient = correspondenceClient;
@@ -34,6 +35,7 @@ internal sealed class SigningReceiptService(
     private readonly IHostEnvironment _hostEnvironment = hostEnvironment;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ILogger<SigningReceiptService> _logger = logger;
+    private readonly Telemetry? _telemetry = telemetry;
 
     public async Task<SendCorrespondenceResponse?> SendSignatureReceipt(
         InstanceIdentifier instanceIdentifier,
@@ -43,6 +45,7 @@ internal sealed class SigningReceiptService(
         List<AltinnEnvironmentConfig>? correspondenceResources
     )
     {
+        using var activity = _telemetry?.StartSendSignatureReceiptActivity();
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
         var (resource, senderOrgNumber, senderDetails, recipient) = await GetCorrespondenceHeaders(
             signee.PersonNumber,
@@ -88,6 +91,7 @@ internal sealed class SigningReceiptService(
         IAltinnCdnClient? altinnCdnClient = null
     )
     {
+        using var activity = _telemetry?.StartGetCorrespondenceHeadersActivity();
         HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
         var resource = AltinnTaskExtension.GetConfigForEnvironment(env, correspondenceResources)?.Value;
         if (string.IsNullOrEmpty(resource))

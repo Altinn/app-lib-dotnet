@@ -13,12 +13,14 @@ using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
 
 namespace Altinn.App.Core.Features.Signing.Services;
 
 internal sealed class SigningService(
+    IHostEnvironment hostEnvironment,
     IAltinnPartyClient altinnPartyClient,
     ISigningDelegationService signingDelegationService,
     IAppMetadata appMetadata,
@@ -43,6 +45,7 @@ internal sealed class SigningService(
     private readonly ILogger<SigningService> _logger = logger;
     private readonly ISigneeContextsManager _signeeContextsManager = signeeContextsManager;
     private readonly ISignDocumentManager _signDocumentManager = signDocumentManager;
+    private readonly IHostEnvironment _hostEnvironment = hostEnvironment;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ISigningCallToActionService _signingCallToActionService = signingCallToActionService;
     private const string ApplicationJsonContentType = "application/json";
@@ -79,8 +82,7 @@ internal sealed class SigningService(
             instanceOwnerPartyUuid,
             appIdentifier,
             signeeContexts,
-            ct,
-            telemetry
+            ct
         );
 
         Party serviceOwnerParty = new();
@@ -175,6 +177,7 @@ internal sealed class SigningService(
         int userId
     )
     {
+        using var activity = telemetry?.StartReadAuthorizedSigneesActivity();
         List<SigneeContext> signeeContexts = await _signeeContextsManager.GetSigneeContexts(
             instanceDataAccessor,
             signatureConfiguration
@@ -201,6 +204,7 @@ internal sealed class SigningService(
         CancellationToken ct
     )
     {
+        using var activity = telemetry?.StartAbortRuntimeDelegatedSigningActivity(taskId);
         // cleanup
         RemoveSigneeState(instanceDataMutator, signatureConfiguration.SigneeStatesDataTypeId);
         RemoveAllSignatures(instanceDataMutator, signatureConfiguration.SignatureDataType);
@@ -221,10 +225,13 @@ internal sealed class SigningService(
         InstanceOwner instanceOwner = instanceDataMutator.Instance.InstanceOwner;
         Party instanceOwnerParty =
             await GetInstanceOwnerParty(instanceOwner)
-            ?? throw new SigningException("Failed to lookup instance owner party.");
+            ?? throw new SigningException("Failed to lookup instance owner party. Unable to revoke signing rights.");
 
         Guid instanceOwnerPartyUuid =
-            instanceOwnerParty.PartyUuid ?? throw new SigningException("PartyUuid was missing on instance owner party");
+            instanceOwnerParty.PartyUuid
+            ?? throw new SigningException(
+                "PartyUuid was missing on instance owner party. Unable to revoke signing rights."
+            );
 
         AppIdentifier appIdentifier = new(instanceDataMutator.Instance.AppId);
 
@@ -238,28 +245,16 @@ internal sealed class SigningService(
         );
     }
 
-    private async Task<Party> LookupParty(PartyLookup partyLookup)
-    {
-        try
-        {
-            return await altinnPartyClient.LookupParty(partyLookup);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Failed to look up party.");
-            throw new SigningException("Failed to look up party.");
-        }
-    }
-
     private async Task<Party?> GetInstanceOwnerParty(InstanceOwner instanceOwner)
     {
-        if (instanceOwner.OrganisationNumber == "ttd")
+        using var activity = telemetry?.StartGetInstanceOwnerPartyActivity();
+        if (instanceOwner.OrganisationNumber == "ttd" && _hostEnvironment.IsProduction() is false)
         {
             // Testdepartementet is often used in test environments, it does not have an organization number, so we use Digitaliseringsdirektoratet's orgnr instead.
             instanceOwner.OrganisationNumber = "991825827";
         }
 
-        return await LookupParty(
+        return await altinnPartyClient.LookupParty(
             !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
                 ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
                 : new PartyLookup { Ssn = instanceOwner.PersonNumber }
@@ -268,6 +263,7 @@ internal sealed class SigningService(
 
     private async Task<(Party serviceOwnerParty, bool success)> GetServiceOwnerParty(CancellationToken ct)
     {
+        using var activity = telemetry?.StartGetServiceOwnerPartyActivity();
         Party serviceOwnerParty;
         try
         {
@@ -285,7 +281,9 @@ internal sealed class SigningService(
                 serviceOwnerDetails.Orgnr = "991825827";
             }
 
-            serviceOwnerParty = await LookupParty(new PartyLookup { OrgNo = serviceOwnerDetails?.Orgnr });
+            serviceOwnerParty = await altinnPartyClient.LookupParty(
+                new PartyLookup { OrgNo = serviceOwnerDetails?.Orgnr }
+            );
         }
         catch (Exception e)
         {
@@ -298,12 +296,12 @@ internal sealed class SigningService(
 
     private void RemoveSigneeState(IInstanceDataMutator instanceDataMutator, string? signeeStatesDataTypeId)
     {
+        using Activity? activity = telemetry?.StartRemoveSigneeStateActivity();
+
         if (string.IsNullOrEmpty(signeeStatesDataTypeId))
         {
             return;
         }
-
-        using Activity? activity = telemetry?.StartRemoveSigneeStateActivity();
 
         IEnumerable<DataElement> signeeStateDataElements = instanceDataMutator.GetDataElementsForType(
             signeeStatesDataTypeId
@@ -318,12 +316,12 @@ internal sealed class SigningService(
 
     private void RemoveAllSignatures(IInstanceDataMutator instanceDataMutator, string signatureDataType)
     {
+        using Activity? activity = telemetry?.StartRemoveAllSignaturesActivity(signatureDataType);
+
         if (string.IsNullOrEmpty(signatureDataType))
         {
             return;
         }
-
-        using Activity? activity = telemetry?.StartRemoveAllSignaturesActivity();
 
         IEnumerable<DataElement> signatures = instanceDataMutator.GetDataElementsForType(signatureDataType);
 
