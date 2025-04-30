@@ -254,11 +254,19 @@ internal sealed class SigningService(
             instanceOwner.OrganisationNumber = "991825827";
         }
 
-        return await altinnPartyClient.LookupParty(
-            !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
-                ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
-                : new PartyLookup { Ssn = instanceOwner.PersonNumber }
-        );
+        try
+        {
+            return await altinnPartyClient.LookupParty(
+                !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
+                    ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
+                    : new PartyLookup { Ssn = instanceOwner.PersonNumber }
+            );
+        }
+        catch (Exception)
+        {
+            _logger.LogError("Failed to look up party for instance owner.");
+            throw new SigningException("Failed to lookup party information for instance owner.");
+        }
     }
 
     private async Task<(Party serviceOwnerParty, bool success)> GetServiceOwnerParty(CancellationToken ct)

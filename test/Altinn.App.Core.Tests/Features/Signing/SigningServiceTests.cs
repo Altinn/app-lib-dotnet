@@ -45,7 +45,7 @@ public sealed class SigningServiceTests : IDisposable
         services.AddSingleton(_signeeProvider.Object);
         _serviceProvider = services.BuildStrictServiceProvider();
 
-        _hostEnvironment.Setup(x => x.IsProduction()).Returns(false);
+        _hostEnvironment.Setup(x => x.EnvironmentName).Returns("Development");
 
         _signingService = new SigningService(
             _hostEnvironment.Object,
@@ -704,7 +704,7 @@ public sealed class SigningServiceTests : IDisposable
                 )
         );
 
-        Assert.Contains("Failed to look up party.", exception.Message);
+        Assert.Contains("Failed to lookup party information for instance owner.", exception.Message);
         _logger.Verify(
             x =>
                 x.Log(
