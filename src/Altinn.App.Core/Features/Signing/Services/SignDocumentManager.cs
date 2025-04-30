@@ -74,6 +74,7 @@ internal sealed class SignDocumentManager(
         List<SignDocument> signDocuments
     )
     {
+        using var activity = telemetry?.StartSynchronizeSigneeContextsWithSignDocumentsActivity(taskId);
         try
         {
             _logger.LogDebug(
@@ -133,6 +134,7 @@ internal sealed class SignDocumentManager(
         DataElement signatureDataElement
     )
     {
+        using var activity = telemetry?.StartDownloadSignDocumentActivity();
         try
         {
             ReadOnlyMemory<byte> data = await instanceDataAccessor.GetBinaryData(signatureDataElement);

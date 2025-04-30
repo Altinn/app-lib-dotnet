@@ -11,6 +11,7 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
@@ -33,6 +34,7 @@ public sealed class SigningServiceTests : IDisposable
     private readonly Mock<IAppMetadata> _appMetadata = new(MockBehavior.Strict);
     private readonly Mock<ISigningCallToActionService> _signingCallToActionService = new(MockBehavior.Strict);
     private readonly Mock<IAuthorizationClient> _authorizationClient = new(MockBehavior.Strict);
+    private readonly Mock<IHostEnvironment> _hostEnvironment = new(MockBehavior.Strict);
 
     public void Dispose() => _serviceProvider.Dispose();
 
@@ -43,7 +45,10 @@ public sealed class SigningServiceTests : IDisposable
         services.AddSingleton(_signeeProvider.Object);
         _serviceProvider = services.BuildStrictServiceProvider();
 
+        _hostEnvironment.Setup(x => x.EnvironmentName).Returns("Development");
+
         _signingService = new SigningService(
+            _hostEnvironment.Object,
             _altinnPartyClient.Object,
             _signingDelegationService.Object,
             _appMetadata.Object,
@@ -376,8 +381,7 @@ public sealed class SigningServiceTests : IDisposable
                     It.IsAny<Guid>(),
                     It.IsAny<AppIdentifier>(),
                     It.IsAny<List<SigneeContext>>(),
-                    It.IsAny<CancellationToken>(),
-                    null
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync((signeeContexts, true));
@@ -428,8 +432,7 @@ public sealed class SigningServiceTests : IDisposable
                 It.IsAny<Guid>(),
                 It.IsAny<AppIdentifier>(),
                 It.IsAny<List<SigneeContext>>(),
-                It.IsAny<CancellationToken>(),
-                null
+                It.IsAny<CancellationToken>()
             )
         );
         _signingDelegationService.VerifyNoOtherCalls();
@@ -701,7 +704,7 @@ public sealed class SigningServiceTests : IDisposable
                 )
         );
 
-        Assert.Contains("Failed to look up party.", exception.Message);
+        Assert.Contains("Failed to lookup party information for instance owner.", exception.Message);
         _logger.Verify(
             x =>
                 x.Log(

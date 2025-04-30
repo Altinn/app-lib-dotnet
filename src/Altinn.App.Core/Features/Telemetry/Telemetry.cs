@@ -74,6 +74,7 @@ public sealed partial class Telemetry : IDisposable
             InitInstances(context);
             InitNotifications(context);
             InitSigning(context);
+            InitSigningDelegation(context);
             InitProcesses(context);
             InitValidation(context);
             InitMaskinporten(context);
@@ -136,6 +137,11 @@ public sealed partial class Telemetry : IDisposable
         /// Label for the guid that identifies the data.
         /// </summary>
         public static readonly string DataGuid = "data.guid";
+
+        /// <summary>
+        /// Label for the type of the data.
+        /// </summary>
+        public static readonly string DataType = "data.type";
 
         /// <summary>
         /// Label for the ID of the task.

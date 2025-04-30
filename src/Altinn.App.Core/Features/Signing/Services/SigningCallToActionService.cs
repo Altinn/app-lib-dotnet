@@ -27,7 +27,8 @@ internal sealed class SigningCallToActionService(
     IProfileClient profileClient,
     ITranslationService translationService,
     ILogger<SigningCallToActionService> logger,
-    IOptions<GeneralSettings> settings
+    IOptions<GeneralSettings> settings,
+    Telemetry? telemetry = null
 ) : ISigningCallToActionService
 {
     private readonly ICorrespondenceClient _correspondenceClient = correspondenceClient;
@@ -35,6 +36,7 @@ internal sealed class SigningCallToActionService(
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly IProfileClient _profileClient = profileClient;
     private readonly ILogger<SigningCallToActionService> _logger = logger;
+    private readonly Telemetry? _telemetry = telemetry;
     private readonly UrlHelper _urlHelper = new(settings);
 
     public async Task<SendCorrespondenceResponse?> SendSignCallToAction(
@@ -46,6 +48,7 @@ internal sealed class SigningCallToActionService(
         List<AltinnEnvironmentConfig>? correspondenceResources
     )
     {
+        using var activity = _telemetry?.StartSendSignCallToActionActivity();
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
         HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
