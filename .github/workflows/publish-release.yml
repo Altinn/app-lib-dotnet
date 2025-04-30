@@ -15,6 +15,8 @@ jobs:
       || contains(github.event.release.tag_name, 'rc')      && 'staging'
       ||                                                       'prod'
       }}
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
       - name: Validate tag
         env:
@@ -33,9 +35,7 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-      - name: Install deps
-        run: |
-          dotnet restore
+
       - name: Extract release notes
         id: extract-notes
         run: |
@@ -43,15 +43,23 @@ jobs:
           echo "" >> RELEASE_NOTES.md
           echo "${{ github.event.release.body }}" >> RELEASE_NOTES.md
           cat RELEASE_NOTES.md
+
+      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ${{ github.workspace }}/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
+
       - name: Build
-        run: |
-          dotnet build --configuration Release --no-restore -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
+        run: dotnet build -c Release --no-restore -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
+
       - name: Pack
-        run: |
-          dotnet pack --configuration Release --no-restore --no-build -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
-      - name: Versions
-        run: |
-          dotnet --version
+        run: dotnet pack -c Release --no-restore --no-build -p:Deterministic=true -p:BuildNumber=${{ github.run_number }}
+
       - name: Publish
         run: |
           dotnet nuget push src/**/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
