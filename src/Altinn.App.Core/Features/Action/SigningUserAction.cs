@@ -160,7 +160,8 @@ internal class SigningUserAction : IUserAction
                     signatureContext.Signee,
                     dataElementSignatures,
                     context,
-                    signatureConfiguration.CorrespondenceResources
+                    signatureConfiguration.CorrespondenceResources,
+                    CancellationToken.None
                 )
         );
 
@@ -214,7 +215,8 @@ internal class SigningUserAction : IUserAction
         var authorizedOrganisations = await _signingService.GetAuthorizedOrganizationSignees(
             context.DataMutator,
             signatureConfiguration,
-            userId.Value
+            userId.Value,
+            CancellationToken.None
         );
 
         bool isAuthorized = authorizedOrganisations.Any(o => o.OrgNumber == context.OnBehalfOf);

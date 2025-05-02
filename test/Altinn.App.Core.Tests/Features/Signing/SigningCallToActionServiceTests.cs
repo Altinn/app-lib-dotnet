@@ -136,7 +136,8 @@ public class SigningCallToActionServiceTests
             instanceIdentifier,
             signingParty,
             serviceOwnerParty,
-            correspondenceResources
+            correspondenceResources,
+            CancellationToken.None
         );
 
         // Assert
@@ -223,7 +224,8 @@ public class SigningCallToActionServiceTests
             instanceIdentifier,
             signingParty,
             serviceOwnerParty,
-            correspondenceResources
+            correspondenceResources,
+            CancellationToken.None
         );
 
         // Assert
@@ -326,7 +328,8 @@ public class SigningCallToActionServiceTests
             instanceIdentifier,
             signingParty,
             serviceOwnerParty,
-            correspondenceResources
+            correspondenceResources,
+            CancellationToken.None
         );
 
         // Assert
@@ -403,7 +406,8 @@ public class SigningCallToActionServiceTests
             instanceIdentifier,
             signingParty,
             serviceOwnerParty,
-            correspondenceResources
+            correspondenceResources,
+            CancellationToken.None
         );
 
         // Assert
@@ -484,7 +488,8 @@ public class SigningCallToActionServiceTests
                     instanceIdentifier,
                     signingParty,
                     serviceOwnerParty,
-                    correspondenceResources
+                    correspondenceResources,
+                    CancellationToken.None
                 )
         );
     }

@@ -68,7 +68,8 @@ public class SigningController : ControllerBase
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromQuery] string? language = null
+        [FromQuery] string? language = null,
+        CancellationToken? ct = null
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
@@ -99,7 +100,8 @@ public class SigningController : ControllerBase
 
         List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(
             cachedDataMutator,
-            signingConfiguration
+            signingConfiguration,
+            ct ?? CancellationToken.None
         );
 
         var response = new SigningStateResponse
@@ -207,7 +209,8 @@ public class SigningController : ControllerBase
         List<OrganizationSignee> authorizedOrganizations = await _signingService.GetAuthorizedOrganizationSignees(
             cachedDataMutator,
             signingConfiguration,
-            userId.Value
+            userId.Value,
+            CancellationToken.None
         );
 
         SigningAuthorizedOrganizationsResponse response = new()

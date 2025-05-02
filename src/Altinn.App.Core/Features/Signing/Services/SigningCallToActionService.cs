@@ -45,7 +45,8 @@ internal sealed class SigningCallToActionService(
         InstanceIdentifier instanceIdentifier,
         Party signingParty,
         Party serviceOwnerParty,
-        List<AltinnEnvironmentConfig>? correspondenceResources
+        List<AltinnEnvironmentConfig>? correspondenceResources,
+        CancellationToken ct
     )
     {
         using var activity = _telemetry?.StartSendSignCallToActionActivity();

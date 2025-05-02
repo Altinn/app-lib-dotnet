@@ -80,7 +80,8 @@ public class SigningUserActionTests
                         It.IsAny<Signee>(),
                         It.IsAny<IEnumerable<DataElementSignature>>(),
                         It.IsAny<UserActionContext>(),
-                        It.IsAny<List<AltinnEnvironmentConfig>>()
+                        It.IsAny<List<AltinnEnvironmentConfig>>(),
+                        CancellationToken.None
                     )
                 )
                 .Returns(
@@ -513,7 +514,9 @@ public class SigningUserActionHandleOnBehalfOfTests
         var action = CreateSigningUserAction(out var signingServiceMock);
 
         signingServiceMock
-            .Setup(s => s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, userId))
+            .Setup(s =>
+                s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, userId, CancellationToken.None)
+            )
             .ReturnsAsync([]);
 
         // Act:
@@ -526,7 +529,8 @@ public class SigningUserActionHandleOnBehalfOfTests
                 s.GetAuthorizedOrganizationSignees(
                     It.IsAny<IInstanceDataMutator>(),
                     It.IsAny<AltinnSignatureConfiguration>(),
-                    It.IsAny<int>()
+                    It.IsAny<int>(),
+                    CancellationToken.None
                 ),
             Times.Once,
             "the instance owner check should not bypass any call to GetAuthorizedOrganizationSignees"
@@ -565,7 +569,8 @@ public class SigningUserActionHandleOnBehalfOfTests
                 s.GetAuthorizedOrganizationSignees(
                     It.IsAny<IInstanceDataMutator>(),
                     It.IsAny<AltinnSignatureConfiguration>(),
-                    It.IsAny<int>()
+                    It.IsAny<int>(),
+                    CancellationToken.None
                 ),
             Times.Never,
             "unsupported authentication should return false without calling the signing service"
@@ -594,7 +599,9 @@ public class SigningUserActionHandleOnBehalfOfTests
         var action = CreateSigningUserAction(out var signingServiceMock);
 
         signingServiceMock
-            .Setup(s => s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, userId))
+            .Setup(s =>
+                s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, userId, CancellationToken.None)
+            )
             .ReturnsAsync(
                 [
                     new()
@@ -612,7 +619,8 @@ public class SigningUserActionHandleOnBehalfOfTests
         // Assert:
         result.Should().BeFalse();
         signingServiceMock.Verify(
-            s => s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, userId),
+            s =>
+                s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, userId, CancellationToken.None),
             Times.Once
         );
     }
@@ -639,7 +647,9 @@ public class SigningUserActionHandleOnBehalfOfTests
         var action = CreateSigningUserAction(out var signingServiceMock);
 
         signingServiceMock
-            .Setup(s => s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, 200))
+            .Setup(s =>
+                s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, 200, CancellationToken.None)
+            )
             .ReturnsAsync(
                 [
                     new OrganizationSignee
@@ -657,7 +667,7 @@ public class SigningUserActionHandleOnBehalfOfTests
         // Assert:
         result.Should().BeTrue();
         signingServiceMock.Verify(
-            s => s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, 200),
+            s => s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, 200, CancellationToken.None),
             Times.Once
         );
     }

@@ -199,7 +199,11 @@ public class SigningControllerTests
 
         _signingServiceMock
             .Setup(s =>
-                s.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), _altinnTaskExtension.SignatureConfiguration!)
+                s.GetSigneeContexts(
+                    It.IsAny<InstanceDataUnitOfWork>(),
+                    _altinnTaskExtension.SignatureConfiguration!,
+                    CancellationToken.None
+                )
             )
             .ReturnsAsync(signeeContexts);
 
@@ -298,7 +302,11 @@ public class SigningControllerTests
         ];
         _signingServiceMock
             .Setup(s =>
-                s.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), _altinnTaskExtension.SignatureConfiguration!)
+                s.GetSigneeContexts(
+                    It.IsAny<InstanceDataUnitOfWork>(),
+                    _altinnTaskExtension.SignatureConfiguration!,
+                    CancellationToken.None
+                )
             )
             .ReturnsAsync(signeeContexts);
 
@@ -375,7 +383,11 @@ public class SigningControllerTests
         ];
         _signingServiceMock
             .Setup(s =>
-                s.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), _altinnTaskExtension.SignatureConfiguration!)
+                s.GetSigneeContexts(
+                    It.IsAny<InstanceDataUnitOfWork>(),
+                    _altinnTaskExtension.SignatureConfiguration!,
+                    CancellationToken.None
+                )
             )
             .ReturnsAsync(signeeContexts);
 
@@ -449,7 +461,11 @@ public class SigningControllerTests
         ];
         _signingServiceMock
             .Setup(s =>
-                s.GetSigneeContexts(It.IsAny<InstanceDataUnitOfWork>(), _altinnTaskExtension.SignatureConfiguration!)
+                s.GetSigneeContexts(
+                    It.IsAny<InstanceDataUnitOfWork>(),
+                    _altinnTaskExtension.SignatureConfiguration!,
+                    CancellationToken.None
+                )
             )
             .ReturnsAsync(signeeContexts);
 
@@ -510,7 +526,8 @@ public class SigningControllerTests
                 s.GetAuthorizedOrganizationSignees(
                     It.IsAny<InstanceDataUnitOfWork>(),
                     _altinnTaskExtension.SignatureConfiguration!,
-                    It.IsAny<int>()
+                    It.IsAny<int>(),
+                    CancellationToken.None
                 )
             )
             .ReturnsAsync(organisationSignees);

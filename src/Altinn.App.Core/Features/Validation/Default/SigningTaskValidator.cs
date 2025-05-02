@@ -96,7 +96,7 @@ internal sealed class SigningTaskValidator : IValidator
         }
 
         var signeeContextsResult = await CatchError(
-            () => _signingService.GetSigneeContexts(dataAccessor, signingConfiguration)
+            () => _signingService.GetSigneeContexts(dataAccessor, signingConfiguration, CancellationToken.None)
         );
         if (!signeeContextsResult.Success)
         {

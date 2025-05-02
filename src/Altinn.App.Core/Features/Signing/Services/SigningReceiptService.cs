@@ -42,7 +42,8 @@ internal sealed class SigningReceiptService(
         Internal.Sign.Signee signee,
         IEnumerable<DataElementSignature> dataElementSignatures,
         UserActionContext context,
-        List<AltinnEnvironmentConfig>? correspondenceResources
+        List<AltinnEnvironmentConfig>? correspondenceResources,
+        CancellationToken ct
     )
     {
         using var activity = _telemetry?.StartSendSignatureReceiptActivity();

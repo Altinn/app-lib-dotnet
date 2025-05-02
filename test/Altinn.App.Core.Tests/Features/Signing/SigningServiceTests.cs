@@ -195,17 +195,22 @@ public sealed class SigningServiceTests : IDisposable
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
         _signeeContextsManager
-            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .Setup(x =>
+                x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync(signeeContexts);
         _signDocumentManager
-            .Setup(x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration))
+            .Setup(x =>
+                x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync([signDocumentWithMatchingSignatureContext, signDocumentWithoutMatchingSignatureContext]);
         _signDocumentManager
             .Setup(x =>
                 x.SynchronizeSigneeContextsWithSignDocuments(
                     instance.Process.CurrentTask.ElementId,
                     signeeContexts,
-                    signDocuments
+                    signDocuments,
+                    CancellationToken.None
                 )
             )
             .ReturnsAsync(synchronizedSigneeContexts);
@@ -228,7 +233,8 @@ public sealed class SigningServiceTests : IDisposable
         // Act
         List<SigneeContext> result = await _signingService.GetSigneeContexts(
             cachedInstanceMutator.Object,
-            signatureConfiguration
+            signatureConfiguration,
+            CancellationToken.None
         );
 
         // Assert
@@ -362,15 +368,26 @@ public sealed class SigningServiceTests : IDisposable
         };
 
         _signeeContextsManager
-            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .Setup(x =>
+                x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync(signeeContexts);
 
         _signDocumentManager
-            .Setup(x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration))
+            .Setup(x =>
+                x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync(signDocuments);
 
         _signDocumentManager
-            .Setup(x => x.SynchronizeSigneeContextsWithSignDocuments(taskId, signeeContexts, signDocuments))
+            .Setup(x =>
+                x.SynchronizeSigneeContextsWithSignDocuments(
+                    taskId,
+                    signeeContexts,
+                    signDocuments,
+                    CancellationToken.None
+                )
+            )
             .ReturnsAsync(signeeContextsWithDocuments);
 
         _signingDelegationService
@@ -409,17 +426,23 @@ public sealed class SigningServiceTests : IDisposable
 
         // Verify that the signee contexts are retrieved and synchronized
         _signeeContextsManager.Verify(
-            x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration),
+            x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None),
             Times.Once
         );
         _signeeContextsManager.VerifyNoOtherCalls();
 
         _signDocumentManager.Verify(
-            x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration),
+            x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None),
             Times.Once
         );
         _signDocumentManager.Verify(
-            x => x.SynchronizeSigneeContextsWithSignDocuments(taskId, signeeContexts, signDocuments),
+            x =>
+                x.SynchronizeSigneeContextsWithSignDocuments(
+                    taskId,
+                    signeeContexts,
+                    signDocuments,
+                    CancellationToken.None
+                ),
             Times.Once
         );
         _signDocumentManager.VerifyNoOtherCalls();
@@ -456,20 +479,25 @@ public sealed class SigningServiceTests : IDisposable
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
 
         _signDocumentManager
-            .Setup(x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration))
+            .Setup(x =>
+                x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync([]);
         _signDocumentManager
             .Setup(x =>
                 x.SynchronizeSigneeContextsWithSignDocuments(
                     instance.Process.CurrentTask.ElementId,
                     It.IsAny<List<SigneeContext>>(),
-                    It.IsAny<List<SignDocument>>()
+                    It.IsAny<List<SignDocument>>(),
+                    CancellationToken.None
                 )
             )
             .ReturnsAsync([]);
 
         _signeeContextsManager
-            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .Setup(x =>
+                x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync([]);
 
         await _signingService.AbortRuntimeDelegatedSigning(
@@ -521,7 +549,9 @@ public sealed class SigningServiceTests : IDisposable
         };
 
         _signeeContextsManager
-            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .Setup(x =>
+                x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync(signeeContexts);
 
         List<string> orgNrs = ["123456789", "555555555"];
@@ -534,7 +564,8 @@ public sealed class SigningServiceTests : IDisposable
         var result = await _signingService.GetAuthorizedOrganizationSignees(
             cachedInstanceMutator.Object,
             signatureConfiguration,
-            123
+            123,
+            CancellationToken.None
         );
 
         // Assert
@@ -601,17 +632,22 @@ public sealed class SigningServiceTests : IDisposable
         };
         cachedInstanceMutator.Setup(x => x.Instance).Returns(instance);
         _signeeContextsManager
-            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .Setup(x =>
+                x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync([]);
         _signDocumentManager
-            .Setup(x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration))
+            .Setup(x =>
+                x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync([]);
         _signDocumentManager
             .Setup(x =>
                 x.SynchronizeSigneeContextsWithSignDocuments(
                     instance.Process.CurrentTask.ElementId,
                     It.IsAny<List<SigneeContext>>(),
-                    It.IsAny<List<SignDocument>>()
+                    It.IsAny<List<SignDocument>>(),
+                    CancellationToken.None
                 )
             )
             .ReturnsAsync([]);
@@ -655,19 +691,24 @@ public sealed class SigningServiceTests : IDisposable
 
         // We need to return an empty list to avoid the test trying to revoke delegation rights
         _signeeContextsManager
-            .Setup(x => x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration))
+            .Setup(x =>
+                x.GetSigneeContexts(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync([]);
         // Mock the GetBinaryData method to return valid JSON for the signature data element
         var signDocument = new SignDocument { SigneeInfo = new StorageSignee { PersonNumber = "12345678910" } };
         _signDocumentManager
-            .Setup(x => x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration))
+            .Setup(x =>
+                x.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync([signDocument]);
         _signDocumentManager
             .Setup(x =>
                 x.SynchronizeSigneeContextsWithSignDocuments(
                     instance.Process.CurrentTask.ElementId,
                     It.IsAny<List<SigneeContext>>(),
-                    It.IsAny<List<SignDocument>>()
+                    It.IsAny<List<SignDocument>>(),
+                    CancellationToken.None
                 )
             )
             .ReturnsAsync(

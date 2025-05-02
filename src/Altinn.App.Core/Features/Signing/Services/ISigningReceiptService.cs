@@ -19,6 +19,7 @@ internal interface ISigningReceiptService
         Signee signee,
         IEnumerable<DataElementSignature> dataElementSignatures,
         UserActionContext context,
-        List<AltinnEnvironmentConfig>? correspondenceResources
+        List<AltinnEnvironmentConfig>? correspondenceResources,
+        CancellationToken ct
     );
 }
