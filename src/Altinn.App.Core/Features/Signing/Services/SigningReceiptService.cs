@@ -76,7 +76,8 @@ internal sealed class SigningReceiptService(
                     .WithAttachments(attachments)
                     .Build(),
                 CorrespondenceAuthorisation.Maskinporten
-            )
+            ),
+            ct
         );
     }
 
