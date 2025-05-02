@@ -68,8 +68,7 @@ public class SigningController : ControllerBase
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromQuery] string? language = null,
-        CancellationToken? ct = null
+        [FromQuery] string? language = null
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
@@ -101,7 +100,7 @@ public class SigningController : ControllerBase
         List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(
             cachedDataMutator,
             signingConfiguration,
-            ct ?? CancellationToken.None
+            CancellationToken.None
         );
 
         var response = new SigningStateResponse
