@@ -58,7 +58,7 @@ public class SigningController : ControllerBase
     /// <param name="app">application identifier which is unique within an organization</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
-    /// <param name="ct">Cancellation Token, populated by the framework</param>
+    /// <param name="ct">Cancellation token, populated by the framework</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns>An object containing updated signee state</returns>
     [HttpGet]
@@ -162,7 +162,7 @@ public class SigningController : ControllerBase
     /// <param name="app">application identifier which is unique within an organization</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
-    /// <param name="ct">Cancellation Token, populated by the framework</param>
+    /// <param name="ct">Cancellation token, populated by the framework</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns>An object containing a list of organizations that the user can sign on behalf of</returns>
     [HttpGet("organizations")]
