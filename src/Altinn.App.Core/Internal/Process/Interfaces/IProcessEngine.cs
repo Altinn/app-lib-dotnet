@@ -22,7 +22,7 @@ public interface IProcessEngine
     /// <summary>
     /// Method to handle user action
     /// </summary>
-    Task<UserActionResult> HandleUserAction(ProcessNextRequest request);
+    Task<UserActionResult> HandleUserAction(ProcessNextRequest request, CancellationToken ct);
 
     /// <summary>
     /// Handle process events and update storage

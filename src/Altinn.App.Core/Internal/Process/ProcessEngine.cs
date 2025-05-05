@@ -127,7 +127,7 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<UserActionResult> HandleUserAction(ProcessNextRequest request)
+    public async Task<UserActionResult> HandleUserAction(ProcessNextRequest request, CancellationToken ct)
     {
         Instance instance = request.Instance;
 
@@ -152,7 +152,8 @@ public class ProcessEngine : IProcessEngine
                 language: request.Language,
                 authentication: currentAuth,
                 onBehalfOf: request.ActionOnBehalfOf
-            )
+            ),
+            ct
         );
 
         if (actionResult.ResultType == ResultType.Failure)
