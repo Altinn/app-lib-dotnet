@@ -4,3 +4,4 @@ obj/
 *.xml
 *.csproj
 *.props
+*.targets
