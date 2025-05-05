@@ -208,7 +208,7 @@ public class SigningControllerTests
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid(), CancellationToken.None);
 
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
@@ -311,7 +311,7 @@ public class SigningControllerTests
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid(), CancellationToken.None);
 
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
@@ -392,7 +392,7 @@ public class SigningControllerTests
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid(), CancellationToken.None);
 
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
@@ -470,7 +470,7 @@ public class SigningControllerTests
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetSigneesState("tdd", "app", 1337, Guid.NewGuid(), CancellationToken.None);
 
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
@@ -533,7 +533,13 @@ public class SigningControllerTests
             .ReturnsAsync(organisationSignees);
 
         // Act
-        var actionResult = await controller.GetAuthorizedOrganizations("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetAuthorizedOrganizations(
+            "tdd",
+            "app",
+            1337,
+            Guid.NewGuid(),
+            CancellationToken.None
+        );
 
         var okResult = actionResult as OkObjectResult;
         Assert.NotNull(okResult);
@@ -588,7 +594,13 @@ public class SigningControllerTests
             );
 
         // Act
-        var actionResult = await controller.GetAuthorizedOrganizations("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetAuthorizedOrganizations(
+            "tdd",
+            "app",
+            1337,
+            Guid.NewGuid(),
+            CancellationToken.None
+        );
 
         // Assert
         Assert.IsType<BadRequestObjectResult>(actionResult);
@@ -603,7 +615,13 @@ public class SigningControllerTests
         var controller = sp.GetRequiredService<SigningController>();
 
         // Act
-        var actionResult = await controller.GetAuthorizedOrganizations("tdd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.GetAuthorizedOrganizations(
+            "tdd",
+            "app",
+            1337,
+            Guid.NewGuid(),
+            CancellationToken.None
+        );
 
         // Assert
         Assert.IsType<UnauthorizedResult>(actionResult);
