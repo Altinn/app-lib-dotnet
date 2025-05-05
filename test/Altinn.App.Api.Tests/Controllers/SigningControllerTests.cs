@@ -202,7 +202,7 @@ public class SigningControllerTests
                 s.GetSigneeContexts(
                     It.IsAny<InstanceDataUnitOfWork>(),
                     _altinnTaskExtension.SignatureConfiguration!,
-                    CancellationToken.None
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(signeeContexts);
@@ -305,7 +305,7 @@ public class SigningControllerTests
                 s.GetSigneeContexts(
                     It.IsAny<InstanceDataUnitOfWork>(),
                     _altinnTaskExtension.SignatureConfiguration!,
-                    CancellationToken.None
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(signeeContexts);
@@ -386,7 +386,7 @@ public class SigningControllerTests
                 s.GetSigneeContexts(
                     It.IsAny<InstanceDataUnitOfWork>(),
                     _altinnTaskExtension.SignatureConfiguration!,
-                    CancellationToken.None
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(signeeContexts);
@@ -464,7 +464,7 @@ public class SigningControllerTests
                 s.GetSigneeContexts(
                     It.IsAny<InstanceDataUnitOfWork>(),
                     _altinnTaskExtension.SignatureConfiguration!,
-                    CancellationToken.None
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(signeeContexts);
@@ -527,7 +527,7 @@ public class SigningControllerTests
                     It.IsAny<InstanceDataUnitOfWork>(),
                     _altinnTaskExtension.SignatureConfiguration!,
                     It.IsAny<int>(),
-                    CancellationToken.None
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(organisationSignees);
