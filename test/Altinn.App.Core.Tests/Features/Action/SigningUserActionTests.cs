@@ -449,6 +449,80 @@ public class SigningUserActionTests
         signClientMock.VerifyNoOtherCalls();
     }
 
+    [Fact]
+    public async Task HandleAction_throws_ApplicationConfigException_If_Empty_DataTypesToSign()
+    {
+        // Arrange
+        var appMetadata = new ApplicationMetadata("org/id") { DataTypes = [] };
+        (var userAction, var signClientMock) = CreateSigningUserAction(
+            applicationMetadataToReturn: appMetadata,
+            testBpmnfilename: "signing-task-process-empty-datatypes-to-sign.bpmn"
+        );
+        var instance = new Instance()
+        {
+            Id = "500000/b194e9f5-02d0-41bc-8461-a0cbac8a6efc",
+            InstanceOwner = new() { PartyId = "5000" },
+            Process = new() { CurrentTask = new() { ElementId = "Task2" } },
+            Data = new()
+            {
+                new() { Id = "a499c3ef-e88a-436b-8650-1c43e5037ada", DataType = "Model" },
+            },
+        };
+        var userActionContext = new UserActionContext(
+            instance,
+            1337,
+            authentication: TestAuthentication.GetUserAuthentication(1337, applicationMetadata: appMetadata)
+        );
+
+        // Act
+        await Assert.ThrowsAsync<ApplicationConfigException>(async () =>
+            await userAction.HandleAction(userActionContext, CancellationToken.None)
+        );
+        signClientMock.VerifyNoOtherCalls();
+    }
+
+    private static (SigningUserAction SigningUserAction, Mock<ISignClient> SignClientMock) CreateSigningUserAction(
+        ApplicationMetadata applicationMetadataToReturn,
+        PlatformHttpException platformHttpExceptionToThrow = null,
+        string testBpmnfilename = "signing-task-process.bpmn"
+    )
+    {
+        IProcessReader processReader = ProcessTestUtils.SetupProcessReader(
+            testBpmnfilename,
+            Path.Combine("Features", "Action", "TestData")
+        );
+
+        var signingClientMock = new Mock<ISignClient>();
+        var appMetadataMock = new Mock<IAppMetadata>();
+        appMetadataMock.Setup(m => m.GetApplicationMetadata()).ReturnsAsync(applicationMetadataToReturn);
+        if (platformHttpExceptionToThrow != null)
+        {
+            signingClientMock
+                .Setup(p => p.SignDataElements(It.IsAny<SignatureContext>()))
+                .ThrowsAsync(platformHttpExceptionToThrow);
+        }
+
+        var services = new ServiceCollection();
+        services.AddSingleton(Mock.Of<ISigningService>());
+        var serviceProvider = services.BuildServiceProvider();
+
+        var dummySigningReceiptService = Mock.Of<ISigningReceiptService>();
+        var dummyInstanceClient = Mock.Of<IInstanceClient>();
+
+        return (
+            new SigningUserAction(
+                serviceProvider,
+                processReader,
+                signingClientMock.Object,
+                appMetadataMock.Object,
+                dummySigningReceiptService,
+                dummyInstanceClient,
+                new NullLogger<SigningUserAction>()
+            ),
+            signingClientMock
+        );
+    }
+
     private bool AssertSigningContextAsExpected(SignatureContext s1, SignatureContext s2)
     {
         s1.Should().BeEquivalentTo(s2);
