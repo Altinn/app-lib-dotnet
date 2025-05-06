@@ -16,13 +16,13 @@ public interface ISigneeProvider
     /// <summary>
     /// Returns a list of signees for the current signing task.
     /// </summary>
-    Task<SigneeProviderResult> GetSigneesAsync(SigneeProviderParameters parameters);
+    Task<SigneeProviderResult> GetSigneesAsync(GetSigneesParameters parameters);
 }
 
 /// <summary>
 /// Parameters than can be depended on by the <see cref="ISigneeProvider" /> implementation.
 /// </summary>
-public sealed record SigneeProviderParameters
+public sealed record GetSigneesParameters
 {
     /// <summary>
     /// An instance data accessor that can be used to retrieve instance data.
