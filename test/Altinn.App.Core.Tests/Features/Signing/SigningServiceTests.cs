@@ -409,7 +409,6 @@ public sealed class SigningServiceTests : IDisposable
 
         // Act
         await _signingService.AbortRuntimeDelegatedSigning(
-            taskId,
             cachedInstanceMutator.Object,
             signatureConfiguration,
             CancellationToken.None
@@ -501,7 +500,6 @@ public sealed class SigningServiceTests : IDisposable
             .ReturnsAsync([]);
 
         await _signingService.AbortRuntimeDelegatedSigning(
-            "task1",
             cachedInstanceMutator.Object,
             signatureConfiguration,
             CancellationToken.None
@@ -599,7 +597,6 @@ public sealed class SigningServiceTests : IDisposable
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ApplicationConfigException>(() =>
             _signingService.InitializeSignees(
-                "Task_1",
                 cachedInstanceMutator.Object,
                 signeeContexts,
                 signatureConfiguration,
@@ -653,7 +650,6 @@ public sealed class SigningServiceTests : IDisposable
 
         // Act
         await _signingService.AbortRuntimeDelegatedSigning(
-            "Task_1",
             cachedInstanceMutator.Object,
             signatureConfiguration,
             CancellationToken.None
@@ -736,7 +732,6 @@ public sealed class SigningServiceTests : IDisposable
         // Act & Assert
         var exception = await Assert.ThrowsAsync<SigningException>(() =>
             _signingService.AbortRuntimeDelegatedSigning(
-                "Task_1",
                 cachedInstanceMutator.Object,
                 signatureConfiguration,
                 CancellationToken.None

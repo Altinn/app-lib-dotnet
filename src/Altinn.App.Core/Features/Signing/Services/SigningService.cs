@@ -52,7 +52,6 @@ internal sealed class SigningService(
 
     // <inheritdoc />
     public async Task<List<SigneeContext>> InitializeSignees(
-        string taskId,
         IInstanceDataMutator instanceDataMutator,
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -60,6 +59,8 @@ internal sealed class SigningService(
     )
     {
         using Activity? activity = telemetry?.StartAssignSigneesActivity();
+
+        string taskId = instanceDataMutator.Instance.Process.CurrentTask.ElementId;
 
         string signeeStateDataTypeId =
             signatureConfiguration.SigneeStatesDataTypeId
@@ -205,13 +206,15 @@ internal sealed class SigningService(
 
     // <inheritdoc />
     public async Task AbortRuntimeDelegatedSigning(
-        string taskId,
         IInstanceDataMutator instanceDataMutator,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
     )
     {
+        string taskId = instanceDataMutator.Instance.Process.CurrentTask.ElementId;
+
         using var activity = telemetry?.StartAbortRuntimeDelegatedSigningActivity(taskId);
+
         // cleanup
         RemoveSigneeState(instanceDataMutator, signatureConfiguration.SigneeStatesDataTypeId);
         RemoveAllSignatures(instanceDataMutator, signatureConfiguration.SignatureDataType);
