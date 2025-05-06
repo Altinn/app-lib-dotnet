@@ -55,10 +55,14 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
     {
         using Activity? activity = _telemetry?.StartGenerateSigneeContextsActivity();
 
-        Instance instance = instanceDataMutator.Instance;
-        string taskId = instance.Process.CurrentTask.ElementId;
+        string taskId = instanceDataMutator.Instance.Process.CurrentTask.ElementId;
 
-        SigneeProviderResult? signeesResult = await GetSigneesFromProvider(instance, signatureConfiguration, ct);
+        SigneeProviderResult? signeesResult = await GetSigneesFromProvider(
+            instanceDataMutator,
+            signatureConfiguration,
+            ct
+        );
+
         if (signeesResult is null)
         {
             return [];
@@ -104,7 +108,7 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
     /// Get signees from the signee provider implemented in the App.
     /// </summary>
     private async Task<SigneeProviderResult?> GetSigneesFromProvider(
-        Instance instance,
+        IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
     )
@@ -133,8 +137,10 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
         }
 
         ISigneeProvider signeeProvider = matchingSigneeProviders.Single();
+        SigneeProviderResult signeesResult = await signeeProvider.GetSigneesAsync(
+            new SigneeProviderParameters { InstanceDataAccessor = instanceDataAccessor }
+        );
 
-        SigneeProviderResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
         return signeesResult;
     }
 
