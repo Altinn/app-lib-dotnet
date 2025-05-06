@@ -198,8 +198,8 @@ public class SigningReceiptServiceTests
         ];
 
         // Act & Assert
-        await Assert.ThrowsAsync<ConfigurationException>(
-            () => service.GetCorrespondenceHeaders(recipientNin, applicationMetadata, correspondenceResources)
+        await Assert.ThrowsAsync<ConfigurationException>(() =>
+            service.GetCorrespondenceHeaders(recipientNin, applicationMetadata, correspondenceResources)
         );
     }
 
@@ -226,8 +226,8 @@ public class SigningReceiptServiceTests
         ];
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.GetCorrespondenceHeaders(recipientNin, applicationMetadata, correspondenceResources)
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GetCorrespondenceHeaders(recipientNin, applicationMetadata, correspondenceResources)
         );
     }
 

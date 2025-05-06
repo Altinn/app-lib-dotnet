@@ -245,13 +245,12 @@ public sealed class SignDocumentManagerTests : IDisposable
         var instanceDataAccessor = new Mock<IInstanceDataAccessor>();
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(
-            () =>
-                _signDocumentManager.GetSignDocuments(
-                    instanceDataAccessor.Object,
-                    signatureConfiguration,
-                    CancellationToken.None
-                )
+        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(() =>
+            _signDocumentManager.GetSignDocuments(
+                instanceDataAccessor.Object,
+                signatureConfiguration,
+                CancellationToken.None
+            )
         );
 
         Assert.Equal("SignatureDataType is not set in the signature configuration.", exception.Message);
@@ -315,13 +314,12 @@ public sealed class SignDocumentManagerTests : IDisposable
             .ReturnsAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("invalid json")));
 
         // Act & Assert
-        await Assert.ThrowsAsync<JsonException>(
-            () =>
-                _signDocumentManager.GetSignDocuments(
-                    instanceDataAccessor.Object,
-                    signatureConfiguration,
-                    CancellationToken.None
-                )
+        await Assert.ThrowsAsync<JsonException>(() =>
+            _signDocumentManager.GetSignDocuments(
+                instanceDataAccessor.Object,
+                signatureConfiguration,
+                CancellationToken.None
+            )
         );
     }
 
@@ -526,14 +524,13 @@ public sealed class SignDocumentManagerTests : IDisposable
         var signDocument = CreateSignDocument("12345678901", null, null);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () =>
-                _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
-                    taskId,
-                    [signeeContext],
-                    [signDocument],
-                    CancellationToken.None
-                )
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
+                taskId,
+                [signeeContext],
+                [signDocument],
+                CancellationToken.None
+            )
         );
     }
 

@@ -153,16 +153,15 @@ internal class SigningUserAction : IUserAction
             );
         }
 
-        ServiceResult<SendCorrespondenceResponse?, Exception> res = await CatchError(
-            () =>
-                _signingReceiptService.SendSignatureReceipt(
-                    signatureContext.InstanceIdentifier,
-                    signatureContext.Signee,
-                    dataElementSignatures,
-                    context,
-                    signatureConfiguration.CorrespondenceResources,
-                    ct
-                )
+        ServiceResult<SendCorrespondenceResponse?, Exception> res = await CatchError(() =>
+            _signingReceiptService.SendSignatureReceipt(
+                signatureContext.InstanceIdentifier,
+                signatureContext.Signee,
+                dataElementSignatures,
+                context,
+                signatureConfiguration.CorrespondenceResources,
+                ct
+            )
         );
 
         if (res.Success)

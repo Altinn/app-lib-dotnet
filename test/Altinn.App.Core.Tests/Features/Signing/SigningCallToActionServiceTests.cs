@@ -480,17 +480,16 @@ public class SigningCallToActionServiceTests
         ];
 
         // Act & Assert
-        await Assert.ThrowsAsync<ConfigurationException>(
-            async () =>
-                await service.SendSignCallToAction(
-                    communicationConfig,
-                    appIdentifier,
-                    instanceIdentifier,
-                    signingParty,
-                    serviceOwnerParty,
-                    correspondenceResources,
-                    CancellationToken.None
-                )
+        await Assert.ThrowsAsync<ConfigurationException>(async () =>
+            await service.SendSignCallToAction(
+                communicationConfig,
+                appIdentifier,
+                instanceIdentifier,
+                signingParty,
+                serviceOwnerParty,
+                correspondenceResources,
+                CancellationToken.None
+            )
         );
     }
 

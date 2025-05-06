@@ -260,8 +260,8 @@ public class ProcessEngineAuthorizerTests
         _httpContextAccessorMock.Setup(x => x.HttpContext).Returns((HttpContext?)null);
 
         // Act & Assert
-        await Assert.ThrowsAsync<AuthenticationContextException>(
-            async () => await _authorizer.AuthorizeProcessNext(instance)
+        await Assert.ThrowsAsync<AuthenticationContextException>(async () =>
+            await _authorizer.AuthorizeProcessNext(instance)
         );
     }
 

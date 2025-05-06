@@ -597,15 +597,14 @@ public sealed class SigningServiceTests : IDisposable
         List<SigneeContext> signeeContexts = [];
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(
-            () =>
-                _signingService.InitializeSignees(
-                    "Task_1",
-                    cachedInstanceMutator.Object,
-                    signeeContexts,
-                    signatureConfiguration,
-                    CancellationToken.None
-                )
+        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(() =>
+            _signingService.InitializeSignees(
+                "Task_1",
+                cachedInstanceMutator.Object,
+                signeeContexts,
+                signatureConfiguration,
+                CancellationToken.None
+            )
         );
 
         Assert.Contains("SigneeStatesDataTypeId is not set", exception.Message);
@@ -735,14 +734,13 @@ public sealed class SigningServiceTests : IDisposable
             .ThrowsAsync(new Exception("Party lookup failed"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<SigningException>(
-            () =>
-                _signingService.AbortRuntimeDelegatedSigning(
-                    "Task_1",
-                    cachedInstanceMutator.Object,
-                    signatureConfiguration,
-                    CancellationToken.None
-                )
+        var exception = await Assert.ThrowsAsync<SigningException>(() =>
+            _signingService.AbortRuntimeDelegatedSigning(
+                "Task_1",
+                cachedInstanceMutator.Object,
+                signatureConfiguration,
+                CancellationToken.None
+            )
         );
 
         Assert.Contains("Failed to lookup party information for instance owner.", exception.Message);

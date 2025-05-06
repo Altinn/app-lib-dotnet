@@ -317,13 +317,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
         _signeeProvider.Setup(x => x.Id).Returns("testProvider");
 
         // Act & Assert
-        await Assert.ThrowsAsync<SigneeProviderNotFoundException>(
-            () =>
-                _signeeContextsManager.GenerateSigneeContexts(
-                    cachedInstanceMutator.Object,
-                    signatureConfiguration,
-                    CancellationToken.None
-                )
+        await Assert.ThrowsAsync<SigneeProviderNotFoundException>(() =>
+            _signeeContextsManager.GenerateSigneeContexts(
+                cachedInstanceMutator.Object,
+                signatureConfiguration,
+                CancellationToken.None
+            )
         );
     }
 

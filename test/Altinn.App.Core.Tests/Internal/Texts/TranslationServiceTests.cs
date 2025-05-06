@@ -71,8 +71,8 @@ public class TranslationServiceTests
     [Fact]
     public async Task TranslateTextKey_Fail_Missing()
     {
-        await Assert.ThrowsAsync<ArgumentException>(
-            async () => await _translationService.TranslateTextKey("missing", LanguageConst.Nb)
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _translationService.TranslateTextKey("missing", LanguageConst.Nb)
         );
     }
 

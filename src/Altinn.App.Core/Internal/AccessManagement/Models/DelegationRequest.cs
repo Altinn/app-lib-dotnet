@@ -8,7 +8,6 @@ namespace Altinn.App.Core.Internal.AccessManagement.Models;
 /// <summary>
 /// Represents a request to delegate rights to a user.
 /// </summary>\
-
 public sealed class DelegationRequest
 {
     /// <summary>

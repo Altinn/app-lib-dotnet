@@ -402,8 +402,8 @@ public class SigningUserActionTests
         );
 
         // Act
-        await Assert.ThrowsAsync<ApplicationConfigException>(
-            async () => await fixture.SigningUserAction.HandleAction(userActionContext, CancellationToken.None)
+        await Assert.ThrowsAsync<ApplicationConfigException>(async () =>
+            await fixture.SigningUserAction.HandleAction(userActionContext, CancellationToken.None)
         );
         fixture.SignClient.VerifyNoOtherCalls();
     }
@@ -422,8 +422,8 @@ public class SigningUserActionTests
         );
 
         // Act
-        await Assert.ThrowsAsync<ApplicationConfigException>(
-            async () => await fixture.SigningUserAction.HandleAction(userActionContext, CancellationToken.None)
+        await Assert.ThrowsAsync<ApplicationConfigException>(async () =>
+            await fixture.SigningUserAction.HandleAction(userActionContext, CancellationToken.None)
         );
         signClientMock.VerifyNoOtherCalls();
     }
@@ -443,8 +443,8 @@ public class SigningUserActionTests
         );
 
         // Act
-        await Assert.ThrowsAsync<ApplicationConfigException>(
-            async () => await fixture.SigningUserAction.HandleAction(userActionContext, CancellationToken.None)
+        await Assert.ThrowsAsync<ApplicationConfigException>(async () =>
+            await fixture.SigningUserAction.HandleAction(userActionContext, CancellationToken.None)
         );
         signClientMock.VerifyNoOtherCalls();
     }
@@ -483,7 +483,7 @@ public class SigningUserActionTests
 
     private static (SigningUserAction SigningUserAction, Mock<ISignClient> SignClientMock) CreateSigningUserAction(
         ApplicationMetadata applicationMetadataToReturn,
-        PlatformHttpException platformHttpExceptionToThrow = null,
+        PlatformHttpException platformHttpExceptionToThrow = null!,
         string testBpmnfilename = "signing-task-process.bpmn"
     )
     {

@@ -296,16 +296,15 @@ public class SigningDelegationServiceTests
         var ct = new CancellationToken();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            () =>
-                service.DelegateSigneeRights(
-                    taskId,
-                    invalidInstanceId,
-                    instanceOwnerPartyUuid,
-                    appIdentifier,
-                    signeeContexts,
-                    ct
-                )
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.DelegateSigneeRights(
+                taskId,
+                invalidInstanceId,
+                instanceOwnerPartyUuid,
+                appIdentifier,
+                signeeContexts,
+                ct
+            )
         );
     }
 
@@ -373,16 +372,15 @@ public class SigningDelegationServiceTests
         var ct = new CancellationToken();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            () =>
-                service.RevokeSigneeRights(
-                    taskId,
-                    invalidInstanceId,
-                    instanceOwnerPartyUuid,
-                    appIdentifier,
-                    signeeContexts,
-                    ct
-                )
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.RevokeSigneeRights(
+                taskId,
+                invalidInstanceId,
+                instanceOwnerPartyUuid,
+                appIdentifier,
+                signeeContexts,
+                ct
+            )
         );
     }
 
