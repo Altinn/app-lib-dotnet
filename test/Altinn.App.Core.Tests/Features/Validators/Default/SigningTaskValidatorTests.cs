@@ -64,7 +64,9 @@ public class SigningTaskValidatorTest
             .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         _signingServiceMock
-            .Setup(ss => ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration))
+            .Setup(ss =>
+                ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync(signeeContexts);
 
         // Act
@@ -104,7 +106,9 @@ public class SigningTaskValidatorTest
             .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         _signingServiceMock
-            .Setup(ss => ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration))
+            .Setup(ss =>
+                ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration, CancellationToken.None)
+            )
             .ReturnsAsync(signeeContexts);
 
         // Act
@@ -166,7 +170,9 @@ public class SigningTaskValidatorTest
             .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         _signingServiceMock
-            .Setup(ss => ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration))
+            .Setup(ss =>
+                ss.GetSigneeContexts(It.IsAny<IInstanceDataAccessor>(), signingConfiguration, CancellationToken.None)
+            )
             .ThrowsAsync(exception);
 
         // Act

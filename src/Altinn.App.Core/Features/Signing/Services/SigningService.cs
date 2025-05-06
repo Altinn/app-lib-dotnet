@@ -112,7 +112,8 @@ internal sealed class SigningService(
                         new InstanceIdentifier(instanceDataMutator.Instance),
                         signingParty,
                         serviceOwnerParty,
-                        signatureConfiguration.CorrespondenceResources
+                        signatureConfiguration.CorrespondenceResources,
+                        ct
                     );
                     signeeContext.SigneeState.CtaCorrespondenceId = response?.Correspondences.Single().CorrespondenceId;
                     signeeContext.SigneeState.HasBeenMessagedForCallToSign = true;
@@ -145,26 +146,30 @@ internal sealed class SigningService(
     // <inheritdoc />
     public async Task<List<SigneeContext>> GetSigneeContexts(
         IInstanceDataAccessor instanceDataAccessor,
-        AltinnSignatureConfiguration signatureConfiguration
+        AltinnSignatureConfiguration signatureConfiguration,
+        CancellationToken ct
     )
     {
         using Activity? activity = telemetry?.StartReadSigneesActivity();
         List<SigneeContext> signeeContexts = await _signeeContextsManager.GetSigneeContexts(
             instanceDataAccessor,
-            signatureConfiguration
+            signatureConfiguration,
+            ct
         );
 
         var taskId = instanceDataAccessor.Instance.Process.CurrentTask.ElementId;
 
         List<SignDocument> signDocuments = await _signDocumentManager.GetSignDocuments(
             instanceDataAccessor,
-            signatureConfiguration
+            signatureConfiguration,
+            ct
         );
 
         signeeContexts = await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
             taskId,
             signeeContexts,
-            signDocuments
+            signDocuments,
+            ct
         );
 
         return signeeContexts;
@@ -174,13 +179,15 @@ internal sealed class SigningService(
     public async Task<List<OrganizationSignee>> GetAuthorizedOrganizationSignees(
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration,
-        int userId
+        int userId,
+        CancellationToken ct
     )
     {
         using var activity = telemetry?.StartReadAuthorizedSigneesActivity();
         List<SigneeContext> signeeContexts = await _signeeContextsManager.GetSigneeContexts(
             instanceDataAccessor,
-            signatureConfiguration
+            signatureConfiguration,
+            ct
         );
 
         List<OrganizationSignee> orgSignees = [.. signeeContexts.Select(x => x.Signee).OfType<OrganizationSignee>()];
@@ -209,7 +216,7 @@ internal sealed class SigningService(
         RemoveSigneeState(instanceDataMutator, signatureConfiguration.SigneeStatesDataTypeId);
         RemoveAllSignatures(instanceDataMutator, signatureConfiguration.SignatureDataType);
 
-        List<SigneeContext> signeeContexts = await GetSigneeContexts(instanceDataMutator, signatureConfiguration);
+        List<SigneeContext> signeeContexts = await GetSigneeContexts(instanceDataMutator, signatureConfiguration, ct);
         List<SigneeContext> signeeContextsWithDelegation =
         [
             .. signeeContexts.Where(x => x.SigneeState.IsAccessDelegated),

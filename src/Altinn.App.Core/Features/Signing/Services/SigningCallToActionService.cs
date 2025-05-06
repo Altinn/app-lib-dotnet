@@ -45,7 +45,8 @@ internal sealed class SigningCallToActionService(
         InstanceIdentifier instanceIdentifier,
         Party signingParty,
         Party serviceOwnerParty,
-        List<AltinnEnvironmentConfig>? correspondenceResources
+        List<AltinnEnvironmentConfig>? correspondenceResources,
+        CancellationToken ct
     )
     {
         using var activity = _telemetry?.StartSendSignCallToActionActivity();
@@ -165,7 +166,7 @@ internal sealed class SigningCallToActionService(
             CorrespondenceAuthorisation.Maskinporten
         );
 
-        SendCorrespondenceResponse response = await _correspondenceClient.Send(request);
+        SendCorrespondenceResponse response = await _correspondenceClient.Send(request, ct);
         var correspondenceId = response?.Correspondences[0]?.CorrespondenceId ?? Guid.Empty;
         _logger.LogInformation("Correspondence request sent. CorrespondenceId: {CorrespondenceId}", correspondenceId);
         return response;

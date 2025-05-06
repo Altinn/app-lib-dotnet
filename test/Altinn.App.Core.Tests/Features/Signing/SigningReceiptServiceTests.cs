@@ -148,7 +148,8 @@ public class SigningReceiptServiceTests
             signee,
             dataElementSignatures,
             context,
-            correspondenceResources
+            correspondenceResources,
+            CancellationToken.None
         );
 
         // Assert

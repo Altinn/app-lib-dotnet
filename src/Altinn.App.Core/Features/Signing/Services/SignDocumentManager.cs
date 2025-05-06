@@ -36,7 +36,8 @@ internal sealed class SignDocumentManager(
 
     public async Task<List<SignDocument>> GetSignDocuments(
         IInstanceDataAccessor instanceDataAccessor,
-        AltinnSignatureConfiguration signatureConfiguration
+        AltinnSignatureConfiguration signatureConfiguration,
+        CancellationToken ct
     )
     {
         using Activity? activity = telemetry?.StartGetSignDocumentsActivity();
@@ -71,7 +72,8 @@ internal sealed class SignDocumentManager(
     public async Task<List<SigneeContext>> SynchronizeSigneeContextsWithSignDocuments(
         string taskId,
         List<SigneeContext> signeeContexts,
-        List<SignDocument> signDocuments
+        List<SignDocument> signDocuments,
+        CancellationToken ct
     )
     {
         using var activity = telemetry?.StartSynchronizeSigneeContextsWithSignDocumentsActivity(taskId);

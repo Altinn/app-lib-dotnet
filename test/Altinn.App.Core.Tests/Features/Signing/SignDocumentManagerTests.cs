@@ -224,7 +224,11 @@ public sealed class SignDocumentManagerTests : IDisposable
             .ReturnsAsync(new ReadOnlyMemory<byte>(ToBytes(signDocument2)));
 
         // Act
-        var result = await _signDocumentManager.GetSignDocuments(cachedInstanceMutator.Object, signatureConfiguration);
+        var result = await _signDocumentManager.GetSignDocuments(
+            cachedInstanceMutator.Object,
+            signatureConfiguration,
+            CancellationToken.None
+        );
 
         // Assert
         Assert.NotNull(result);
@@ -242,7 +246,12 @@ public sealed class SignDocumentManagerTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ApplicationConfigException>(
-            () => _signDocumentManager.GetSignDocuments(instanceDataAccessor.Object, signatureConfiguration)
+            () =>
+                _signDocumentManager.GetSignDocuments(
+                    instanceDataAccessor.Object,
+                    signatureConfiguration,
+                    CancellationToken.None
+                )
         );
 
         Assert.Equal("SignatureDataType is not set in the signature configuration.", exception.Message);
@@ -271,7 +280,11 @@ public sealed class SignDocumentManagerTests : IDisposable
             .ReturnsAsync(new ReadOnlyMemory<byte>([]));
 
         // Act
-        var result = await _signDocumentManager.GetSignDocuments(instanceDataAccessor.Object, signatureConfiguration);
+        var result = await _signDocumentManager.GetSignDocuments(
+            instanceDataAccessor.Object,
+            signatureConfiguration,
+            CancellationToken.None
+        );
 
         // Assert
         Assert.NotNull(result);
@@ -303,7 +316,12 @@ public sealed class SignDocumentManagerTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<JsonException>(
-            () => _signDocumentManager.GetSignDocuments(instanceDataAccessor.Object, signatureConfiguration)
+            () =>
+                _signDocumentManager.GetSignDocuments(
+                    instanceDataAccessor.Object,
+                    signatureConfiguration,
+                    CancellationToken.None
+                )
         );
     }
 
@@ -321,7 +339,8 @@ public sealed class SignDocumentManagerTests : IDisposable
         var result = await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
             taskId,
             [signeeContext],
-            [signDocument]
+            [signDocument],
+            CancellationToken.None
         );
 
         // Assert
@@ -350,7 +369,8 @@ public sealed class SignDocumentManagerTests : IDisposable
         var result = await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
             taskId,
             [signeeContext],
-            [signDocument]
+            [signDocument],
+            CancellationToken.None
         );
 
         // Assert
@@ -375,7 +395,8 @@ public sealed class SignDocumentManagerTests : IDisposable
         var result = await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
             taskId,
             [signeeContext],
-            [signDocument]
+            [signDocument],
+            CancellationToken.None
         );
 
         // Assert
@@ -399,7 +420,8 @@ public sealed class SignDocumentManagerTests : IDisposable
         var result = await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
             taskId,
             [signeeContext],
-            [signDocument]
+            [signDocument],
+            CancellationToken.None
         );
 
         // Assert
@@ -430,7 +452,8 @@ public sealed class SignDocumentManagerTests : IDisposable
         var result = await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
             taskId,
             [signeeContext],
-            [signDocument]
+            [signDocument],
+            CancellationToken.None
         );
 
         // Assert
@@ -464,7 +487,8 @@ public sealed class SignDocumentManagerTests : IDisposable
         var result = await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
             taskId,
             signeeContexts,
-            [signDocument1, signDocument2]
+            [signDocument1, signDocument2],
+            CancellationToken.None
         );
 
         // Assert
@@ -504,7 +528,12 @@ public sealed class SignDocumentManagerTests : IDisposable
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
             () =>
-                _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(taskId, [signeeContext], [signDocument])
+                _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
+                    taskId,
+                    [signeeContext],
+                    [signDocument],
+                    CancellationToken.None
+                )
         );
     }
 
@@ -572,7 +601,8 @@ public sealed class SignDocumentManagerTests : IDisposable
         var result = await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
             "Task_1",
             signeeContexts,
-            signDocuments
+            signDocuments,
+            CancellationToken.None
         );
 
         Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(result));
@@ -612,7 +642,8 @@ public sealed class SignDocumentManagerTests : IDisposable
         var result = await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
             "Task_1",
             signeeContexts,
-            signDocuments
+            signDocuments,
+            CancellationToken.None
         );
         Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(result));
 
@@ -633,7 +664,8 @@ public sealed class SignDocumentManagerTests : IDisposable
         var reversedResult = await _signDocumentManager.SynchronizeSigneeContextsWithSignDocuments(
             "Task_1",
             signeeContextsReversed,
-            signDocuments
+            signDocuments,
+            CancellationToken.None
         );
 
         Assert.Equal(JsonSerializer.Serialize(expectedReversed), JsonSerializer.Serialize(reversedResult));

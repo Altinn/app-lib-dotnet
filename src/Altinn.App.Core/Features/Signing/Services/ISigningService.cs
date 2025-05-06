@@ -24,7 +24,8 @@ internal interface ISigningService
     Task<List<OrganizationSignee>> GetAuthorizedOrganizationSignees(
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration,
-        int userId
+        int userId,
+        CancellationToken ct
     );
 
     /// <summary>
@@ -32,7 +33,8 @@ internal interface ISigningService
     /// </summary>
     Task<List<SigneeContext>> GetSigneeContexts(
         IInstanceDataAccessor instanceDataAccessor,
-        AltinnSignatureConfiguration signatureConfiguration
+        AltinnSignatureConfiguration signatureConfiguration,
+        CancellationToken ct
     );
 
     /// <summary>

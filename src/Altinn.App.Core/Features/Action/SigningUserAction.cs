@@ -64,7 +64,7 @@ internal class SigningUserAction : IUserAction
     /// <inheritdoc />
     /// <exception cref="PlatformHttpException"></exception>
     /// <exception cref="ApplicationConfigException"></exception>
-    public async Task<UserActionResult> HandleAction(UserActionContext context)
+    public async Task<UserActionResult> HandleAction(UserActionContext context, CancellationToken ct)
     {
         if (context.Authentication is not Authenticated.User and not Authenticated.SystemUser)
         {
@@ -122,7 +122,7 @@ internal class SigningUserAction : IUserAction
 
         if (!string.IsNullOrEmpty(context.OnBehalfOf))
         {
-            var canSignOnbehalfOf = await HandleOnBehalfOf(context, signatureConfiguration);
+            var canSignOnbehalfOf = await HandleOnBehalfOf(context, signatureConfiguration, ct);
             if (!canSignOnbehalfOf)
             {
                 return UserActionResult.FailureResult(
@@ -160,7 +160,8 @@ internal class SigningUserAction : IUserAction
                     signatureContext.Signee,
                     dataElementSignatures,
                     context,
-                    signatureConfiguration.CorrespondenceResources
+                    signatureConfiguration.CorrespondenceResources,
+                    ct
                 )
         );
 
@@ -192,7 +193,8 @@ internal class SigningUserAction : IUserAction
 
     internal async Task<bool> HandleOnBehalfOf(
         UserActionContext context,
-        AltinnSignatureConfiguration signatureConfiguration
+        AltinnSignatureConfiguration signatureConfiguration,
+        CancellationToken ct
     )
     {
         int? userId = context.Authentication switch
@@ -214,7 +216,8 @@ internal class SigningUserAction : IUserAction
         var authorizedOrganisations = await _signingService.GetAuthorizedOrganizationSignees(
             context.DataMutator,
             signatureConfiguration,
-            userId.Value
+            userId.Value,
+            ct
         );
 
         bool isAuthorized = authorizedOrganisations.Any(o => o.OrgNumber == context.OnBehalfOf);

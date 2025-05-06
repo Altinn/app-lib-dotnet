@@ -444,7 +444,7 @@ public sealed class ProcessEngineTest
         Mock<IUserAction> userActionMock = new Mock<IUserAction>(MockBehavior.Strict);
         userActionMock.Setup(u => u.Id).Returns("sign");
         userActionMock
-            .Setup(u => u.HandleAction(It.IsAny<UserActionContext>()))
+            .Setup(u => u.HandleAction(It.IsAny<UserActionContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserActionResult.SuccessResult());
         using var fixture = Fixture.Create(updatedInstance: expectedInstance, userActions: [userActionMock.Object]);
         fixture
@@ -480,7 +480,7 @@ public sealed class ProcessEngineTest
             Action = "sign",
             Language = null,
         };
-        UserActionResult result = await processEngine.HandleUserAction(processNextRequest);
+        UserActionResult result = await processEngine.HandleUserAction(processNextRequest, CancellationToken.None);
         result.Success.Should().BeTrue();
         result.ErrorType.Should().Be(null);
     }
@@ -504,7 +504,7 @@ public sealed class ProcessEngineTest
         Mock<IUserAction> userActionMock = new Mock<IUserAction>(MockBehavior.Strict);
         userActionMock.Setup(u => u.Id).Returns("sign");
         userActionMock
-            .Setup(u => u.HandleAction(It.IsAny<UserActionContext>()))
+            .Setup(u => u.HandleAction(It.IsAny<UserActionContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 UserActionResult.FailureResult(
                     error: new ActionError() { Code = "NoUserId", Message = "User id is missing in token" },
@@ -545,7 +545,7 @@ public sealed class ProcessEngineTest
             Action = "sign",
             Language = null,
         };
-        UserActionResult result = await processEngine.HandleUserAction(processNextRequest);
+        UserActionResult result = await processEngine.HandleUserAction(processNextRequest, CancellationToken.None);
         result.Success.Should().BeFalse();
         result.ErrorType.Should().Be(ProcessErrorType.Unauthorized);
     }

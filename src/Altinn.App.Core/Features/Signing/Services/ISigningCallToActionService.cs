@@ -19,6 +19,7 @@ internal interface ISigningCallToActionService
         InstanceIdentifier instanceIdentifier,
         Party signingParty,
         Party serviceOwnerParty,
-        List<AltinnEnvironmentConfig>? correspondenceResources
+        List<AltinnEnvironmentConfig>? correspondenceResources,
+        CancellationToken ct
     );
 }

@@ -348,7 +348,8 @@ public sealed class SigneeContextsManagerTests : IDisposable
         // Act
         var result = await _signeeContextsManager.GetSigneeContexts(
             cachedInstanceAccessor.Object,
-            signatureConfiguration
+            signatureConfiguration,
+            CancellationToken.None
         );
 
         // Assert
@@ -378,7 +379,8 @@ public sealed class SigneeContextsManagerTests : IDisposable
         // Act
         var result = await _signeeContextsManager.GetSigneeContexts(
             cachedInstanceAccessor.Object,
-            signatureConfiguration
+            signatureConfiguration,
+            CancellationToken.None
         );
 
         // Assert
@@ -445,7 +447,8 @@ public sealed class SigneeContextsManagerTests : IDisposable
         // Act
         var result = await _signeeContextsManager.GetSigneeContexts(
             cachedInstanceAccessor.Object,
-            signatureConfiguration
+            signatureConfiguration,
+            CancellationToken.None
         );
 
         // Assert
@@ -493,7 +496,8 @@ public sealed class SigneeContextsManagerTests : IDisposable
         // Act & Assert - This should not throw since the method handles null SigneeStatesDataTypeId
         var result = await _signeeContextsManager.GetSigneeContexts(
             cachedInstanceAccessor.Object,
-            signatureConfiguration
+            signatureConfiguration,
+            CancellationToken.None
         );
 
         Assert.Empty(result);
