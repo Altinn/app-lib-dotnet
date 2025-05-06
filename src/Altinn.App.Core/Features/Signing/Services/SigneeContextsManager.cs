@@ -113,12 +113,26 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
         if (string.IsNullOrEmpty(signeeProviderId))
             return null;
 
-        var signeeProviders = _appImplementationFactory.GetAll<ISigneeProvider>();
-        ISigneeProvider signeeProvider =
-            signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
-            ?? throw new SigneeProviderNotFoundException(
-                $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID."
+        List<ISigneeProvider> matchingSigneeProviders = _appImplementationFactory
+            .GetAll<ISigneeProvider>()
+            .Where(x => x.Id == signeeProviderId)
+            .ToList();
+
+        if (matchingSigneeProviders.Count == 0)
+        {
+            throw new SigneeProviderNotFoundException(
+                $"No signee provider found with ID {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID if it's misspelled."
             );
+        }
+
+        if (matchingSigneeProviders.Count > 1)
+        {
+            throw new SigneeProviderNotFoundException(
+                $"Found more than one signee provider with ID {signeeProviderId}. Please ensure that exactly one signee provider uses that ID."
+            );
+        }
+
+        ISigneeProvider signeeProvider = matchingSigneeProviders.Single();
 
         SigneeProviderResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
         return signeesResult;
