@@ -11,7 +11,6 @@ internal interface ISigningService
     /// a new task to sign and saves the signee contexts to Storage.
     /// </summary>
     Task<List<SigneeContext>> InitializeSignees(
-        string taskId,
         IInstanceDataMutator instanceDataMutator,
         List<SigneeContext> signeeContexts,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -41,7 +40,6 @@ internal interface ISigningService
     /// Aborts runtime delegated signing. Deletes all signing data and revokes delegated access.
     /// </summary>
     Task AbortRuntimeDelegatedSigning(
-        string taskId,
         IInstanceDataMutator instanceDataMutator,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct

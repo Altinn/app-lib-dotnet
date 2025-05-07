@@ -90,7 +90,6 @@ public class SigningProcessTaskTests
         _signingServiceMock.Verify(
             x =>
                 x.InitializeSignees(
-                    taskId,
                     It.IsAny<IInstanceDataMutator>(),
                     It.IsAny<List<SigneeContext>>(),
                     It.IsAny<AltinnSignatureConfiguration>(),
@@ -121,7 +120,6 @@ public class SigningProcessTaskTests
         // Assert
         _signingServiceMock.Verify(x =>
             x.AbortRuntimeDelegatedSigning(
-                taskId,
                 It.IsAny<IInstanceDataMutator>(),
                 altinnTaskExtension.SignatureConfiguration,
                 It.IsAny<CancellationToken>()

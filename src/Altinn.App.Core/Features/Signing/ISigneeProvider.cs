@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Signing;
 
@@ -10,14 +9,25 @@ namespace Altinn.App.Core.Features.Signing;
 public interface ISigneeProvider
 {
     /// <summary>
-    /// Used to select the correct <see cref="ISigneeProvider" /> implementation for a given signing task.
+    /// Used to select the correct <see cref="ISigneeProvider" /> implementation for a given signing task. Should match the SigneeProviderId parameter in the task configuration.
     /// </summary>
     public string Id { get; init; }
 
     /// <summary>
     /// Returns a list of signees for the current signing task.
     /// </summary>
-    Task<SigneeProviderResult> GetSigneesAsync(Instance instance); //TODO: Wrap parameters in a class?
+    Task<SigneeProviderResult> GetSigneesAsync(GetSigneesParameters parameters);
+}
+
+/// <summary>
+/// Parameters than can be depended on by the <see cref="ISigneeProvider" /> implementation.
+/// </summary>
+public sealed record GetSigneesParameters
+{
+    /// <summary>
+    /// An instance data accessor that can be used to retrieve instance data.
+    /// </summary>
+    public required IInstanceDataAccessor InstanceDataAccessor { get; init; }
 }
 
 /// <summary>

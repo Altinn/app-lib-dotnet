@@ -61,14 +61,18 @@ internal sealed class SigningProcessTask : IProcessTask
 
         ValidateSigningConfiguration(appMetadata, signatureConfiguration);
 
-        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, null);
+        InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            taskId,
+            null
+        );
 
         if (
             signatureConfiguration.SigneeProviderId is not null
             && signatureConfiguration.SigneeStatesDataTypeId is not null
         )
         {
-            await InitialiseRuntimeDelegatedSigning(taskId, cachedDataMutator, signatureConfiguration, cts.Token);
+            await InitialiseRuntimeDelegatedSigning(cachedDataMutator, signatureConfiguration, cts.Token);
         }
 
         DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
@@ -110,12 +114,7 @@ internal sealed class SigningProcessTask : IProcessTask
 
         var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, null);
 
-        await _signingService.AbortRuntimeDelegatedSigning(
-            taskId,
-            cachedDataMutator,
-            signatureConfiguration,
-            cts.Token
-        );
+        await _signingService.AbortRuntimeDelegatedSigning(cachedDataMutator, signatureConfiguration, cts.Token);
 
         DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
         await cachedDataMutator.UpdateInstanceData(changes);
@@ -123,7 +122,6 @@ internal sealed class SigningProcessTask : IProcessTask
     }
 
     private async Task InitialiseRuntimeDelegatedSigning(
-        string taskId,
         IInstanceDataMutator cachedDataMutator,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
@@ -135,7 +133,7 @@ internal sealed class SigningProcessTask : IProcessTask
             ct
         );
 
-        await _signingService.InitializeSignees(taskId, cachedDataMutator, signeeContexts, signatureConfiguration, ct);
+        await _signingService.InitializeSignees(cachedDataMutator, signeeContexts, signatureConfiguration, ct);
     }
 
     private AltinnSignatureConfiguration GetAltinnSignatureConfiguration(string taskId)

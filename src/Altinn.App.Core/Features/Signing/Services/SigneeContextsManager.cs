@@ -55,10 +55,14 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
     {
         using Activity? activity = _telemetry?.StartGenerateSigneeContextsActivity();
 
-        Instance instance = instanceDataMutator.Instance;
-        string taskId = instance.Process.CurrentTask.ElementId;
+        string taskId = instanceDataMutator.Instance.Process.CurrentTask.ElementId;
 
-        SigneeProviderResult? signeesResult = await GetSigneesFromProvider(instance, signatureConfiguration, ct);
+        SigneeProviderResult? signeesResult = await GetSigneesFromProvider(
+            instanceDataMutator,
+            signatureConfiguration,
+            ct
+        );
+
         if (signeesResult is null)
         {
             return [];
@@ -104,7 +108,7 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
     /// Get signees from the signee provider implemented in the App.
     /// </summary>
     private async Task<SigneeProviderResult?> GetSigneesFromProvider(
-        Instance instance,
+        IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration,
         CancellationToken ct
     )
@@ -113,14 +117,30 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
         if (string.IsNullOrEmpty(signeeProviderId))
             return null;
 
-        var signeeProviders = _appImplementationFactory.GetAll<ISigneeProvider>();
-        ISigneeProvider signeeProvider =
-            signeeProviders.FirstOrDefault(sp => sp.Id == signeeProviderId)
-            ?? throw new SigneeProviderNotFoundException(
-                $"No signee provider found for task {instance.Process.CurrentTask.ElementId} with signeeProviderId {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID."
-            );
+        List<ISigneeProvider> matchingSigneeProviders = _appImplementationFactory
+            .GetAll<ISigneeProvider>()
+            .Where(x => x.Id == signeeProviderId)
+            .ToList();
 
-        SigneeProviderResult signeesResult = await signeeProvider.GetSigneesAsync(instance);
+        if (matchingSigneeProviders.Count == 0)
+        {
+            throw new SigneeProviderNotFoundException(
+                $"No signee provider found with ID {signeeProviderId}. Please add an implementation of the {nameof(ISigneeProvider)} interface with that ID or correct the ID if it's misspelled."
+            );
+        }
+
+        if (matchingSigneeProviders.Count > 1)
+        {
+            throw new SigneeProviderNotFoundException(
+                $"Found more than one signee provider with ID {signeeProviderId}. Please ensure that exactly one signee provider uses that ID."
+            );
+        }
+
+        ISigneeProvider signeeProvider = matchingSigneeProviders.Single();
+        SigneeProviderResult signeesResult = await signeeProvider.GetSigneesAsync(
+            new GetSigneesParameters { InstanceDataAccessor = instanceDataAccessor }
+        );
+
         return signeesResult;
     }
 
