@@ -55,7 +55,7 @@ public class InstancesController : ControllerBase
 
     private readonly IInstanceClient _instanceClient;
     private readonly IDataClient _dataClient;
-    private readonly IAltinnPartyClient _altinnPartyClientClient;
+    private readonly IAltinnPartyClient _altinnPartyClient;
     private readonly IRegisterClient _registerClient;
     private readonly IEventsClient _eventsClient;
     private readonly IProfileClient _profileClient;
@@ -104,7 +104,7 @@ public class InstancesController : ControllerBase
         _instanceClient = instanceClient;
         _dataClient = dataClient;
         _appMetadata = appMetadata;
-        _altinnPartyClientClient = altinnPartyClient;
+        _altinnPartyClient = altinnPartyClient;
         _registerClient = serviceProvider.GetRequiredService<IRegisterClient>();
         _appModel = appModel;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
@@ -1113,14 +1113,12 @@ public class InstancesController : ControllerBase
                 if (!string.IsNullOrEmpty(instanceOwner.PersonNumber))
                 {
                     lookupNumber = "personNumber";
-                    return await _altinnPartyClientClient.LookupParty(
-                        new PartyLookup { Ssn = instanceOwner.PersonNumber }
-                    );
+                    return await _altinnPartyClient.LookupParty(new PartyLookup { Ssn = instanceOwner.PersonNumber });
                 }
                 else if (!string.IsNullOrEmpty(instanceOwner.OrganisationNumber))
                 {
                     lookupNumber = "organisationNumber";
-                    return await _altinnPartyClientClient.LookupParty(
+                    return await _altinnPartyClient.LookupParty(
                         new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
                     );
                 }
