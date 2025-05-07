@@ -1,7 +1,8 @@
 ﻿{
   Activities: [
     {
-      ActivityName: Instance.CompleteConfirmation,
+      Name: Instance.CompleteConfirmation,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
@@ -9,8 +10,7 @@
         {
           instance.owner.party.id: 1337
         }
-      ],
-      IdFormat: W3C
+      ]
     }
   ],
   Metrics: [

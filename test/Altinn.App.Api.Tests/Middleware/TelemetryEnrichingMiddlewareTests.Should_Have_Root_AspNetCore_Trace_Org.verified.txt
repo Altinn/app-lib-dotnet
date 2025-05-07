@@ -1,7 +1,9 @@
 ﻿{
   Activities: [
     {
-      ActivityName: GET {org}/{app}/api/v1/applicationmetadata,
+      Name: GET {org}/{app}/api/v1/applicationmetadata,
+      IdFormat: W3C,
+      Kind: Server,
       Tags: [
         {
           http.request.method: GET
@@ -48,10 +50,7 @@
         {
           user.authentication.type: ServiceOwner
         }
-      ],
-      IdFormat: W3C,
-      Kind: Server
+      ]
     }
-  ],
-  Metrics: []
+  ]
 }

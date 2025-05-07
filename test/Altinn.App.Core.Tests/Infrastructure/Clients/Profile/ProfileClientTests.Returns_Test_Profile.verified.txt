@@ -1,14 +1,13 @@
 ﻿{
   Activities: [
     {
-      ActivityName: ProfileClient.GetUserProfile,
+      Name: ProfileClient.GetUserProfile,
+      IdFormat: W3C,
       Tags: [
         {
           user.id: 1234
         }
-      ],
-      IdFormat: W3C
+      ]
     }
-  ],
-  Metrics: []
+  ]
 }

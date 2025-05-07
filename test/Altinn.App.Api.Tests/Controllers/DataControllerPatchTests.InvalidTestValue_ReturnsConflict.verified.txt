@@ -1,16 +1,18 @@
 ﻿{
   Activities: [
     {
-      ActivityName: Data.Patch,
+      Name: Data.Patch,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: PATCH {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid},
+      Name: PATCH {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid},
+      IdFormat: W3C,
+      Kind: Server,
       Tags: [
         {
           http.request.method: PATCH
@@ -72,19 +74,16 @@
         {
           user.party.id: 500600
         }
-      ],
-      IdFormat: W3C,
-      Kind: Server
+      ]
     },
     {
-      ActivityName: SerializationService.DeserializeXml,
+      Name: SerializationService.DeserializeXml,
+      IdFormat: W3C,
       Tags: [
         {
           Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
         }
-      ],
-      IdFormat: W3C
+      ]
     }
-  ],
-  Metrics: []
+  ]
 }

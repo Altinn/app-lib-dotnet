@@ -1,7 +1,9 @@
 ﻿{
   Activities: [
     {
-      ActivityName: POST {org}/{app}/instances/create,
+      Name: POST {org}/{app}/instances/create,
+      IdFormat: W3C,
+      Kind: Server,
       Tags: [
         {
           http.request.method: POST
@@ -51,10 +53,7 @@
         {
           user.party.id: 501337
         }
-      ],
-      IdFormat: W3C,
-      Kind: Server
+      ]
     }
-  ],
-  Metrics: []
+  ]
 }
