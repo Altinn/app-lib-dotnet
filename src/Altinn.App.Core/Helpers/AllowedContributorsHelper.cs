@@ -9,7 +9,16 @@ internal static class AllowedContributorsHelper
 {
     internal static bool IsValidContributor(DataType dataType, Authenticated auth)
     {
-        if (dataType.AllowedContributers is null || dataType.AllowedContributers.Count == 0)
+#pragma warning disable CS0618 // Type or member is obsolete
+        List<string>? allowedContributors = dataType.AllowedContributers;
+#pragma warning restore CS0618 // Type or member is obsolete
+
+        if (allowedContributors is null || allowedContributors.Count == 0)
+        {
+            allowedContributors = dataType.AllowedContributors;
+        }
+
+        if (allowedContributors is null || allowedContributors.Count == 0)
         {
             return true;
         }
@@ -22,7 +31,7 @@ internal static class AllowedContributorsHelper
             _ => (null, null),
         };
 
-        foreach (string item in dataType.AllowedContributers)
+        foreach (string item in allowedContributors)
         {
             var splitIndex = item.IndexOf(':');
             ReadOnlySpan<char> key = item.AsSpan(0, splitIndex);
@@ -61,7 +70,14 @@ internal static class AllowedContributorsHelper
         }
 
         DataType? dataType = metadata.DataTypes.Find(x => x.Id == dataTypeId);
+#pragma warning disable CS0618 // Type or member is obsolete
         List<string>? allowedContributors = dataType?.AllowedContributers;
+#pragma warning restore CS0618 // Type or member is obsolete
+
+        if (allowedContributors is null || allowedContributors.Count == 0)
+        {
+            allowedContributors = dataType?.AllowedContributors;
+        }
 
         if (
             allowedContributors is null
