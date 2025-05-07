@@ -9,7 +9,9 @@ internal static class AllowedContributorsHelper
 {
     internal static bool IsValidContributor(DataType dataType, Authenticated auth)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
         List<string>? allowedContributors = dataType.AllowedContributers;
+#pragma warning restore CS0618 // Type or member is obsolete
 
         if (allowedContributors is null || allowedContributors.Count == 0)
         {
