@@ -121,7 +121,7 @@ public class InboxMessage
     /// <summary>
     /// The body of the message.
     /// </summary>
-    /// <remarks>Replaces "$InstanceUrl" with the link to the instance of the application.</remarks>
+    /// <remarks>Replaces "$instanceUrl$" with the link to the instance of the application.</remarks>
     [JsonPropertyName("bodyTextResourceKey")]
     public required string BodyTextResourceKey { get; set; }
 
@@ -191,7 +191,7 @@ public class Email
     public string? SubjectTextResourceKey { get; set; }
 
     /// <summary>
-    /// The body. If not set, a default will be used. Replaces "$InstanceUrl" with the Url.
+    /// The body. If not set, a default will be used. Replaces "$instanceUrl$" with the Url.
     /// </summary>
     [JsonPropertyName("bodyTextResourceKey")]
     public string? BodyTextResourceKey { get; set; }

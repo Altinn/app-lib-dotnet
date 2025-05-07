@@ -275,6 +275,14 @@ internal sealed class SigningCallToActionService(
                 communicationConfig?.InboxMessage?.BodyTextResourceKey,
                 language
             );
+
+            correspondenceBody = correspondenceBody?.Replace(
+                "$instanceUrl$",
+                $"[{linkDisplayText}]({instanceUrl})",
+                StringComparison.InvariantCultureIgnoreCase
+            );
+
+            // TODO: Should be deprecated in the future, but is used in some apps today.
             correspondenceBody = correspondenceBody?.Replace(
                 "$InstanceUrl",
                 $"[{linkDisplayText}]({instanceUrl})",
