@@ -9,7 +9,14 @@ internal static class AllowedContributorsHelper
 {
     internal static bool IsValidContributor(DataType dataType, Authenticated auth)
     {
-        if (dataType.AllowedContributers is null || dataType.AllowedContributers.Count == 0)
+        List<string>? allowedContributors = dataType.AllowedContributers;
+
+        if (allowedContributors is null || allowedContributors.Count == 0)
+        {
+            allowedContributors = dataType.AllowedContributors;
+        }
+
+        if (allowedContributors is null || allowedContributors.Count == 0)
         {
             return true;
         }
@@ -22,7 +29,7 @@ internal static class AllowedContributorsHelper
             _ => (null, null),
         };
 
-        foreach (string item in dataType.AllowedContributers)
+        foreach (string item in allowedContributors)
         {
             var splitIndex = item.IndexOf(':');
             ReadOnlySpan<char> key = item.AsSpan(0, splitIndex);
