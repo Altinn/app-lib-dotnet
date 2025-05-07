@@ -70,7 +70,14 @@ internal static class AllowedContributorsHelper
         }
 
         DataType? dataType = metadata.DataTypes.Find(x => x.Id == dataTypeId);
+#pragma warning disable CS0618 // Type or member is obsolete
         List<string>? allowedContributors = dataType?.AllowedContributers;
+#pragma warning restore CS0618 // Type or member is obsolete
+
+        if (allowedContributors is null || allowedContributors.Count == 0)
+        {
+            allowedContributors = dataType?.AllowedContributors;
+        }
 
         if (
             allowedContributors is null
