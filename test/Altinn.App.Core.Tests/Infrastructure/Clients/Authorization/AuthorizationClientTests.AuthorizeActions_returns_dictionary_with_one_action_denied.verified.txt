@@ -1,14 +1,13 @@
 ﻿{
   Activities: [
     {
-      ActivityName: Authorization.Client.AuthorizeActions,
+      Name: Authorization.Client.AuthorizeActions,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
-      IdFormat: W3C
+      ]
     }
-  ],
-  Metrics: []
+  ]
 }

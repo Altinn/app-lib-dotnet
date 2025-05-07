@@ -2,7 +2,8 @@
   telemetry: {
     Activities: [
       {
-        ActivityName: Validation.RunValidator,
+        Name: Validation.RunValidator,
+        IdFormat: W3C,
         Tags: [
           {
             validation.issue_count: 1
@@ -16,11 +17,11 @@
           {
             validator.type: FormDataValidatorWrapper
           }
-        ],
-        IdFormat: W3C
+        ]
       },
       {
-        ActivityName: Validation.ValidateIncremental,
+        Name: Validation.ValidateIncremental,
+        IdFormat: W3C,
         Tags: [
           {
             task.id: Task_1
@@ -29,7 +30,6 @@
             validation.total_issue_count: 1
           }
         ],
-        IdFormat: W3C,
         Events: [
           {
             Name: ChangedDataElements,
@@ -48,8 +48,7 @@
           }
         ]
       }
-    ],
-    Metrics: []
+    ]
   },
   issues: [
     {

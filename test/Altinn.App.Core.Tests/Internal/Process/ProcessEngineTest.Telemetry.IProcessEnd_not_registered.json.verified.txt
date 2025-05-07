@@ -1,32 +1,32 @@
 ﻿{
   Activities: [
     {
-      ActivityName: Process.End,
+      Name: Process.End,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Process.HandleEvents,
+      Name: Process.HandleEvents,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Process.Next,
-      Tags: [
-        {
-          instance.guid: Guid_1
-        }
-      ],
+      Name: Process.Next,
       IdFormat: W3C,
       Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        }
+      ],
       Events: [
         {
           Name: change,
@@ -48,14 +48,13 @@
       ]
     },
     {
-      ActivityName: Process.StoreEvents,
+      Name: Process.StoreEvents,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
-      IdFormat: W3C
+      ]
     }
-  ],
-  Metrics: []
+  ]
 }

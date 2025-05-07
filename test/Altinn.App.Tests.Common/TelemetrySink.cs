@@ -263,20 +263,30 @@ public class TelemetrySnapshot(
 )
 {
     // Properties must be public to be accessible for Verify.Xunit
-    public readonly IEnumerable<object>? Activities = activities?.Select(a => new
-    {
-        ActivityName = a.DisplayName,
-        Tags = a
-            .TagObjects.Select(tag => new KeyValuePair<string, string?>(tag.Key, tag.Value?.ToString()))
-            .Where(tag => tag.Key != "_MS.ProcessedByMetricExtractors")
-            .OrderBy(tag => tag.Key)
-            .ToList(),
-        a.IdFormat,
-        a.Status,
-        a.Events,
-        a.Kind,
-    });
-    public readonly IEnumerable<KeyValuePair<string, IReadOnlyList<MetricMeasurement>>>? Metrics = metrics
+    public readonly IReadOnlyList<ActivityInfo>? Activities = activities
+        ?.Select(a => new ActivityInfo(
+            a.DisplayName,
+            a.IdFormat,
+            a.Kind,
+            a.Status,
+            a.TagObjects.Select(tag => new KeyValuePair<string, string?>(tag.Key, tag.Value?.ToString()))
+                .Where(tag => tag.Key != "_MS.ProcessedByMetricExtractors")
+                .OrderBy(tag => tag.Key)
+                .ToArray(),
+            a.Events
+        ))
+        .ToArray();
+    public readonly IReadOnlyList<KeyValuePair<string, IReadOnlyList<MetricMeasurement>>>? Metrics = metrics
         ?.Select(m => new KeyValuePair<string, IReadOnlyList<MetricMeasurement>>(m.Key, m.Value))
-        .Where(x => x.Value.Count != 0);
+        .Where(x => x.Value.Count != 0)
+        .ToArray();
 }
+
+public sealed record ActivityInfo(
+    string Name,
+    ActivityIdFormat IdFormat,
+    ActivityKind Kind,
+    ActivityStatusCode Status,
+    IEnumerable<KeyValuePair<string, string?>> Tags,
+    IEnumerable<ActivityEvent> Events
+);

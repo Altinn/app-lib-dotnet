@@ -1,7 +1,8 @@
 ﻿{
   Activities: [
     {
-      ActivityName: PdfService.GenerateAndStorePdf,
+      Name: PdfService.GenerateAndStorePdf,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
@@ -9,9 +10,7 @@
         {
           task.id: Task_1
         }
-      ],
-      IdFormat: W3C
+      ]
     }
-  ],
-  Metrics: []
+  ]
 }

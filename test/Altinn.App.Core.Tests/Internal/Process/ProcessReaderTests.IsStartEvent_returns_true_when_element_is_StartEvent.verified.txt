@@ -1,17 +1,16 @@
 ﻿{
   Activities: [
     {
-      ActivityName: ProcessReader.GetStartEventIds,
+      Name: ProcessReader.GetStartEventIds,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetStartEvents,
+      Name: ProcessReader.GetStartEvents,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.IsStartEvent,
+      Name: ProcessReader.IsStartEvent,
       IdFormat: W3C
     }
-  ],
-  Metrics: []
+  ]
 }
