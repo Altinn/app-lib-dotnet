@@ -4,7 +4,6 @@ using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -21,8 +20,6 @@ internal sealed class SigningProcessTask : IProcessTask
     private readonly IProcessReader _processReader;
     private readonly IAppMetadata _appMetadata;
     private readonly IHostEnvironment _hostEnvironment;
-    private readonly IDataClient _dataClient;
-    private readonly IPdfService _pdfService;
     private readonly ISigneeContextsManager _signeeContextsManager;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
@@ -31,8 +28,6 @@ internal sealed class SigningProcessTask : IProcessTask
         IProcessReader processReader,
         IAppMetadata appMetadata,
         IHostEnvironment hostEnvironment,
-        IDataClient dataClient,
-        IPdfService pdfService,
         ISigneeContextsManager signeeContextsManager,
         InstanceDataUnitOfWorkInitializer instanceDataUnitOfWorkInitializer
     )
@@ -41,15 +36,11 @@ internal sealed class SigningProcessTask : IProcessTask
         _processReader = processReader;
         _appMetadata = appMetadata;
         _hostEnvironment = hostEnvironment;
-        _dataClient = dataClient;
-        _pdfService = pdfService;
         _signeeContextsManager = signeeContextsManager;
         _instanceDataUnitOfWorkInitializer = instanceDataUnitOfWorkInitializer;
     }
 
     public string Type => "signing";
-
-    private const string PdfContentType = "application/pdf";
 
     /// <inheritdoc/>
     public async Task Start(string taskId, Instance instance)
@@ -81,28 +72,32 @@ internal sealed class SigningProcessTask : IProcessTask
     }
 
     /// <inheritdoc/>
-    /// <remarks> Generates a PDF if the signature configuration specifies a signature data type. </remarks>
     public async Task End(string taskId, Instance instance)
     {
-        AltinnSignatureConfiguration? signatureConfiguration = _processReader
-            .GetAltinnTaskExtension(taskId)
-            ?.SignatureConfiguration;
+        // PDF feature disabled for now. Can be uncommented if someone strongly need it quickly, but we'd rather offer the possibility to generate a PDF of the signing task using a service task in the not too distant future.
+        // Comment can be deleted if we support it through a service task in the future.
+        //
+        // AltinnSignatureConfiguration? signatureConfiguration = _processReader
+        //     .GetAltinnTaskExtension(taskId)
+        //     ?.SignatureConfiguration;
+        //
+        // string? signingPdfDataType = signatureConfiguration?.SigningPdfDataType;
+        //
+        // if (signingPdfDataType is not null)
+        // {
+        //     using Stream pdfStream = await _pdfService.GeneratePdf(instance, taskId, false, CancellationToken.None);
+        //
+        //     await _dataClient.InsertBinaryData(
+        //         instance.Id,
+        //         signingPdfDataType,
+        //         PdfContentType,
+        //         signingPdfDataType + ".pdf",
+        //         pdfStream,
+        //         taskId
+        //     );
+        // }
 
-        string? signingPdfDataType = signatureConfiguration?.SigningPdfDataType;
-
-        if (signingPdfDataType is not null)
-        {
-            using Stream pdfStream = await _pdfService.GeneratePdf(instance, taskId, false, CancellationToken.None);
-
-            await _dataClient.InsertBinaryData(
-                instance.Id,
-                signingPdfDataType,
-                PdfContentType,
-                signingPdfDataType + ".pdf",
-                pdfStream,
-                taskId
-            );
-        }
+        await Task.CompletedTask;
     }
 
     /// <inheritdoc/>

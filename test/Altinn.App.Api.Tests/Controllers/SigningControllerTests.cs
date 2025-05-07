@@ -46,7 +46,6 @@ public class SigningControllerTests
             SignatureDataType = "signatureDataType",
             SigneeProviderId = "signeeProviderId",
             SigneeStatesDataTypeId = "signeeStatesDataTypeId",
-            SigningPdfDataType = "signingPdfDataType",
             CorrespondenceResources = [],
             RunDefaultValidator = true,
         },
