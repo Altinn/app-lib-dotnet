@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
@@ -114,7 +113,10 @@ internal sealed class RegisterClient : IRegisterClient
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            return await response.Content.ReadFromJsonAsync<IReadOnlyList<Party>>(cancellationToken) ?? [];
+            return await JsonSerializerPermissive.DeserializeAsync<IReadOnlyList<Party>>(
+                    response.Content,
+                    cancellationToken
+                ) ?? [];
         }
         else if (response.StatusCode == HttpStatusCode.NotFound)
         {
