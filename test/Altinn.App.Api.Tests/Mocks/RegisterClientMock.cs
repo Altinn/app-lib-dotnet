@@ -15,13 +15,13 @@ public class RegisterClientMock : IRegisterClient
 
     private readonly string _partyFolder = TestData.GetAltinnProfilePath();
 
-    public async Task<Party?> GetParty(int partyId, CancellationToken cancellationToken)
+    public async Task<Party?> GetPartyUnchecked(int partyId, CancellationToken cancellationToken)
     {
-        var partyList = await GetPartyList([partyId], cancellationToken);
+        var partyList = await GetPartyListUnchecked([partyId], cancellationToken);
         return partyList.SingleOrDefault(p => p.PartyId == partyId);
     }
 
-    public async Task<IReadOnlyList<Party>> GetPartyList(
+    public async Task<IReadOnlyList<Party>> GetPartyListUnchecked(
         IReadOnlyList<int> partyIds,
         CancellationToken cancellationToken
     )

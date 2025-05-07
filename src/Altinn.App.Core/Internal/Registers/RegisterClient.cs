@@ -39,7 +39,7 @@ internal interface IRegisterClient
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns></returns>
     /// <exception cref="ServiceException"></exception>
-    Task<Party?> GetParty(int partyId, CancellationToken cancellationToken);
+    Task<Party?> GetPartyUnchecked(int partyId, CancellationToken cancellationToken);
 
     /// <summary>
     /// This API does not validate that the requestor (based on token)
@@ -49,7 +49,7 @@ internal interface IRegisterClient
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns></returns>
     /// <exception cref="ServiceException"></exception>
-    Task<IReadOnlyList<Party>> GetPartyList(IReadOnlyList<int> partyIds, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Party>> GetPartyListUnchecked(IReadOnlyList<int> partyIds, CancellationToken cancellationToken);
 }
 
 internal sealed class RegisterClient : IRegisterClient
@@ -82,14 +82,14 @@ internal sealed class RegisterClient : IRegisterClient
         _telemetry = telemetry;
     }
 
-    public async Task<Party?> GetParty(int partyId, CancellationToken cancellationToken)
+    public async Task<Party?> GetPartyUnchecked(int partyId, CancellationToken cancellationToken)
     {
         int[] partyIds = [partyId];
-        var partyList = await GetPartyList(partyIds, cancellationToken);
+        var partyList = await GetPartyListUnchecked(partyIds, cancellationToken);
         return partyList.SingleOrDefault(p => p.PartyId == partyId);
     }
 
-    public async Task<IReadOnlyList<Party>> GetPartyList(
+    public async Task<IReadOnlyList<Party>> GetPartyListUnchecked(
         IReadOnlyList<int> partyIds,
         CancellationToken cancellationToken
     )

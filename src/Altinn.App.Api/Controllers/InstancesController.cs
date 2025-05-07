@@ -169,7 +169,7 @@ public class InstancesController : ControllerBase
                 await _instanceClient.UpdateReadStatus(instanceOwnerPartyId, instanceGuid, "read");
             }
 
-            var instanceOwnerParty = await _registerClient.GetParty(instanceOwnerPartyId, cancellationToken);
+            var instanceOwnerParty = await _registerClient.GetPartyUnchecked(instanceOwnerPartyId, cancellationToken);
 
             var dto = InstanceResponse.From(instance, instanceOwnerParty);
 
@@ -1089,7 +1089,7 @@ public class InstancesController : ControllerBase
         {
             try
             {
-                return await _registerClient.GetParty(
+                return await _registerClient.GetPartyUnchecked(
                     int.Parse(instanceOwner.PartyId, CultureInfo.InvariantCulture),
                     this.HttpContext.RequestAborted
                 );
