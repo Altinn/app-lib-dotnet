@@ -40,9 +40,15 @@ public class SigningTaskValidatorTest
         // Arrange
         var dataAccessorMock = new Mock<IInstanceDataAccessor>();
         dataAccessorMock.Setup(da => da.Instance).Returns(new Instance());
+
         var taskId = "task1";
-        var signingConfiguration = new AltinnSignatureConfiguration();
-        var appMetadata = new ApplicationMetadata("org/app");
+        var signatureDataType = "signatures";
+
+        var signingConfiguration = new AltinnSignatureConfiguration() { SignatureDataType = signatureDataType };
+        var appMetadata = new ApplicationMetadata("org/app")
+        {
+            DataTypes = [new DataType { Id = signatureDataType, MinCount = 1 }],
+        };
         var signeeContexts = new List<SigneeContext>
         {
             new()
@@ -82,9 +88,16 @@ public class SigningTaskValidatorTest
         // Arrange
         var dataAccessorMock = new Mock<IInstanceDataAccessor>();
         dataAccessorMock.Setup(da => da.Instance).Returns(new Instance());
+
         var taskId = "task1";
-        var signingConfiguration = new AltinnSignatureConfiguration();
-        var appMetadata = new ApplicationMetadata("org/app");
+        var signatureDataType = "signatures";
+
+        var signingConfiguration = new AltinnSignatureConfiguration() { SignatureDataType = signatureDataType };
+        var appMetadata = new ApplicationMetadata("org/app")
+        {
+            DataTypes = [new DataType { Id = signatureDataType, MinCount = 1 }],
+        };
+
         List<SigneeContext> signeeContexts =
         [
             new()
