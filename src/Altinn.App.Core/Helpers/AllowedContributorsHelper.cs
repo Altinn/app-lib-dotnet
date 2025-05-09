@@ -85,7 +85,7 @@ internal static class AllowedContributorsHelper
         )
         {
             throw new ApplicationConfigException(
-                $"AllowedContributers must be set to ['app:owned'] on the data type ${dataType?.Id}. This is to prevent editing of the data type through the API."
+                $"AllowedContributors (or AllowedContributers) must be set to ['app:owned'] on the data type ${dataType?.Id}. This is to prevent editing of the data type through the API."
             );
         }
     }
