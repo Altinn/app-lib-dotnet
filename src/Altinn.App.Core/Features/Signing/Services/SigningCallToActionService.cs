@@ -353,7 +353,7 @@ internal sealed class SigningCallToActionService(
                 Title = $"{appName}: Task for signing",
                 Summary = $"Your signature is requested for {appName}.",
                 Body =
-                    $"You have a task waiting for your signature. <a href=\"{instanceUrl}\">Click here to open the application</a>.<br /><br />If you have any questions, you can contact {appOwner}.",
+                    $"You have a task waiting for your signature. [{GetLinkDisplayText(LanguageConst.En)}]({instanceUrl})\n\nIf you have any questions, you can contact {appOwner}.",
                 SmsBody = $"Your signature is requested for {appName}. Open your Altinn inbox to proceed.",
                 EmailSubject = $"{appName}: Task for signing",
                 EmailBody =
@@ -364,7 +364,7 @@ internal sealed class SigningCallToActionService(
                 Title = $"{appName}: Oppgåve til signering",
                 Summary = $"Signaturen din vert venta for {appName}.",
                 Body =
-                    $"Du har ei oppgåve som ventar på signaturen din. <a href=\"{instanceUrl}\">Klikk her for å opne applikasjonen</a>.<br /><br />Om du lurer på noko, kan du kontakte {appOwner}.",
+                    $"Du har ei oppgåve som ventar på signaturen din. [{GetLinkDisplayText(LanguageConst.Nn)}]({instanceUrl})\n\nOm du lurer på noko, kan du kontakte {appOwner}.",
                 SmsBody = $"Signaturen din vert venta for {appName}. Opne Altinn-innboksen din for å gå vidare.",
                 EmailSubject = $"{appName}: Oppgåve til signering",
                 EmailBody =
@@ -375,7 +375,7 @@ internal sealed class SigningCallToActionService(
                 Title = $"{appName}: Oppgave til signering",
                 Summary = $"Din signatur ventes for {appName}.",
                 Body =
-                    $"Du har en oppgave som venter på din signatur. <a href=\"{instanceUrl}\">Klikk her for å åpne applikasjonen</a>.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
+                    $"Du har en oppgave som venter på din signatur. [{GetLinkDisplayText(LanguageConst.Nb)}]({instanceUrl})\n\nHvis du lurer på noe, kan du kontakte {appOwner}.",
                 SmsBody = $"Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.",
                 EmailSubject = $"{appName}: Oppgave til signering",
                 EmailBody =
