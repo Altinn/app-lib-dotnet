@@ -6,6 +6,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Result;
 using Altinn.App.Core.Models.Validation;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Validation.Default;
@@ -104,12 +105,19 @@ internal sealed class SigningTaskValidator : IValidator
             return [];
         }
 
-        bool atLeastOneSignature = signeeContextsResult.Ok.Any(signeeContext => signeeContext.SignDocument is not null);
+        DataType signatureDateType =
+            appMetadataResult.Ok.DataTypes.First(x => x.Id == signingConfiguration.SignatureDataType)
+            ?? throw new ApplicationConfigException("Didn't find signature data type in app metadata");
+
+        bool minimumAmountOfSignatures =
+            signeeContextsResult.Ok.Count(signeeContext => signeeContext.SignDocument is not null)
+            >= signatureDateType.MinCount;
+
         bool allSigneesHaveSigned = signeeContextsResult.Ok.All(signeeContext =>
             signeeContext.SignDocument is not null
         );
 
-        if (atLeastOneSignature && allSigneesHaveSigned)
+        if (minimumAmountOfSignatures && allSigneesHaveSigned)
         {
             return [];
         }
