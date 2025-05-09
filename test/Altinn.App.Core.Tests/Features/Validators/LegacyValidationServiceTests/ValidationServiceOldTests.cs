@@ -83,7 +83,7 @@ public class ValidationServiceOldTests
         var instance = new Instance() { Data = [dataElement] };
         var dataAccessor = new Mock<IInstanceDataAccessor>(MockBehavior.Strict);
         dataAccessor.SetupGet(da => da.Instance).Returns(instance);
-        dataAccessor.Setup(da => da.GetDataType(dataType.Id)).Returns(dataType);
+        dataAccessor.Setup(da => da.DataTypes).Returns([dataType]);
 
         List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
             dataAccessor.Object,
@@ -114,7 +114,7 @@ public class ValidationServiceOldTests
 
         var dataAccessorMock = new Mock<IInstanceDataAccessor>(MockBehavior.Strict);
         dataAccessorMock.SetupGet(da => da.Instance).Returns(instance);
-        dataAccessorMock.Setup(da => da.GetDataType(dataType.Id)).Returns(dataType);
+        dataAccessorMock.Setup(da => da.DataTypes).Returns([dataType]);
 
         List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
             dataAccessorMock.Object,
@@ -145,7 +145,7 @@ public class ValidationServiceOldTests
         var instance = new Instance() { Data = [dataElement] };
         var dataAccessorMock = new Mock<IInstanceDataAccessor>(MockBehavior.Strict);
         dataAccessorMock.SetupGet(da => da.Instance).Returns(instance);
-        dataAccessorMock.Setup(da => da.GetDataType(dataType.Id)).Returns(dataType);
+        dataAccessorMock.Setup(da => da.DataTypes).Returns([dataType]);
 
         List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
             dataAccessorMock.Object,
@@ -219,7 +219,7 @@ public class ValidationServiceOldTests
         };
         var dataAccessorMock = new Mock<IInstanceDataAccessor>(MockBehavior.Strict);
         dataAccessorMock.SetupGet(da => da.Instance).Returns(instance);
-        dataAccessorMock.Setup(da => da.GetDataType(dataType.Id)).Returns(dataType);
+        dataAccessorMock.Setup(da => da.DataTypes).Returns([dataType]);
 
         var issues = await validationService.ValidateInstanceAtTask(dataAccessorMock.Object, taskId, null, null, null);
         issues.Should().BeEmpty();
@@ -268,7 +268,7 @@ public class ValidationServiceOldTests
         };
         var dataAccessorMock = new Mock<IInstanceDataAccessor>(MockBehavior.Strict);
         dataAccessorMock.SetupGet(da => da.Instance).Returns(instance);
-        dataAccessorMock.Setup(da => da.GetDataType(dataType.Id)).Returns(dataType);
+        dataAccessorMock.Setup(da => da.DataTypes).Returns([dataType]);
 
         var issues = await validationService.ValidateInstanceAtTask(dataAccessorMock.Object, taskId, null, null, null);
         issues.Should().HaveCount(1);

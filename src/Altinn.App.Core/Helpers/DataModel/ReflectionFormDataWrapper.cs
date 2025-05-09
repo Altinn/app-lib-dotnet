@@ -1,66 +1,98 @@
 using System.Globalization;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using Altinn.App.Core.Features;
 
 namespace Altinn.App.Core.Helpers.DataModel;
 
 /// <summary>
 /// Get data fields from a model, using string keys (like "Bedrifter[1].Ansatte[1].Alder")
 /// </summary>
-[Obsolete("Will be removed in v9 use Altinn.App.Core.Helpers.DataModel.FormDataWrapperFactory instead")]
-public class DataModelWrapper
+public class ReflectionFormDataWrapper : IFormDataWrapper
 {
     private readonly object _dataModel;
 
     /// <summary>
     /// Constructor that wraps a PCOC data model, and gives extra tool for working with the data in an object using json like keys and reflection
     /// </summary>
-    public DataModelWrapper(object dataModel)
+    public ReflectionFormDataWrapper(object dataModel)
     {
         _dataModel = dataModel;
     }
 
-    /// <summary>
-    /// Get model data based on key and optionally indicies
-    /// </summary>
-    /// <remarks>
-    /// Inline indexes in the key "Bedrifter[1].Ansatte[1].Alder" will override
-    /// normal indexes, and if both "Bedrifter" and "Ansatte" is lists,
-    /// "Bedrifter[1].Ansatte.Alder", will fail, because the indexes will be reset
-    /// after an inline index is used
-    /// </remarks>
-    public object? GetModelData(string field, ReadOnlySpan<int> rowIndexes = default)
+    /// <inheritdoc />
+    public Type BackingDataType => _dataModel.GetType();
+
+    /// <inheritdoc />
+    public T BackingData<T>()
+        where T : class
     {
-        return GetModelDataRecursive(field.Split('.'), 0, _dataModel, rowIndexes);
+        return (T)_dataModel;
     }
 
-    /// <summary>
-    /// Get the count of data elements set in a group (enumerable)
-    /// </summary>
-    public int? GetModelDataCount(string field, ReadOnlySpan<int> rowIndexes = default)
+    /// <inheritdoc />
+    public object? Get(ReadOnlySpan<char> path)
     {
-        if (
-            GetModelDataRecursive(field.Split('.'), 0, _dataModel, rowIndexes)
-            is System.Collections.IEnumerable childEnum
-        )
+        if (path.IsEmpty)
         {
-            int retCount = 0;
-            foreach (var _ in childEnum)
-            {
-                retCount++;
-            }
-            return retCount;
+            return null;
+        }
+        var field = path.ToString();
+        if (string.IsNullOrEmpty(field))
+        {
+            throw new ArgumentException("Field cannot be empty");
+        }
+        return GetModelDataRecursive(field.Split('.'), 0, _dataModel);
+    }
+
+    /// <inheritdoc />
+    public void RemoveField(ReadOnlySpan<char> path, RowRemovalOption rowRemovalOption)
+    {
+        RemoveField(path.ToString(), rowRemovalOption);
+    }
+
+    /// <inheritdoc />
+    public ReadOnlySpan<char> AddIndexToPath(ReadOnlySpan<char> path, ReadOnlySpan<int> rowIndexes, Span<char> buffer)
+    {
+        if (rowIndexes.Length == 0)
+        {
+            return path;
         }
 
-        return null;
+        string tmp = AddIndicies(path.ToString(), rowIndexes);
+        tmp.AsSpan().CopyTo(buffer);
+        return buffer.Slice(0, tmp.Length);
     }
 
-    private static object? GetModelDataRecursive(
-        string[] keys,
-        int index,
-        object currentModel,
-        ReadOnlySpan<int> rowIndexes
-    )
+    /// <inheritdoc />
+    public IFormDataWrapper Copy()
+    {
+        return FormDataWrapperFactory.Create(
+            JsonSerializer.Deserialize(JsonSerializer.SerializeToUtf8Bytes(_dataModel), _dataModel.GetType())
+                ?? throw new InvalidOperationException("Failed to copy data model")
+        );
+    }
+
+    /// <inheritdoc />
+    public void RemoveAltinnRowIds()
+    {
+        ObjectUtils.RemoveAltinnRowId(_dataModel);
+    }
+
+    /// <inheritdoc />
+    public void InitializeAltinnRowIds()
+    {
+        ObjectUtils.InitializeAltinnRowId(_dataModel);
+    }
+
+    /// <inheritdoc />
+    public void PrepareModelForXmlStorage()
+    {
+        ObjectUtils.PrepareModelForXmlStorage(_dataModel);
+    }
+
+    private static object? GetModelDataRecursive(string[] keys, int index, object currentModel)
     {
         if (index == keys.Length)
         {
@@ -79,26 +111,18 @@ public class DataModelWrapper
         // Other enumerable types is treated as a collection
         if (!(childModel is not string && childModel is System.Collections.IEnumerable childModelList))
         {
-            return GetModelDataRecursive(keys, index + 1, childModel, rowIndexes);
+            return GetModelDataRecursive(keys, index + 1, childModel);
         }
 
         if (groupIndex is null)
         {
             if (index == keys.Length - 1)
             {
+                // Return the full list if the last key is missing index
                 return childModelList;
             }
 
-            if (rowIndexes.Length == 0)
-            {
-                return null; // Error index for collection not specified
-            }
-
-            groupIndex = rowIndexes[0];
-        }
-        else
-        {
-            rowIndexes = default; //when you use a literal index, the context indecies are not to be used later.
+            return null; // Error index for collection not specified
         }
 
         var elementAt = GetElementAt(childModelList, groupIndex.Value);
@@ -107,102 +131,7 @@ public class DataModelWrapper
             return null; // Error condition, no value at index
         }
 
-        return GetModelDataRecursive(keys, index + 1, elementAt, rowIndexes.Length > 0 ? rowIndexes[1..] : rowIndexes);
-    }
-
-    /// <summary>
-    /// Get all valid indexed keys for the field, depending on the number of rows in repeating groups
-    /// </summary>
-    /// <example>
-    /// GetResolvedKeys("data.bedrifter.styre.medlemmer") =>
-    /// [
-    ///     "data.bedrifter[0].styre.medlemmer",
-    ///     "data.bedrifter[1].styre.medlemmer"
-    ///     ...
-    /// ]
-    /// </example>
-    public string[] GetResolvedKeys(string field)
-    {
-        if (_dataModel is null)
-        {
-            return [];
-        }
-
-        var fieldParts = field.Split('.');
-        return GetResolvedKeysRecursive(fieldParts, _dataModel);
-    }
-
-    private static string JoinFieldKeyParts(string? currentKey, string? key)
-    {
-        if (string.IsNullOrEmpty(currentKey))
-        {
-            return key ?? "";
-        }
-        if (string.IsNullOrEmpty(key))
-        {
-            return currentKey;
-        }
-
-        return currentKey + "." + key;
-    }
-
-    private static string[] GetResolvedKeysRecursive(
-        string[] keyParts,
-        object currentModel,
-        int currentIndex = 0,
-        string currentKey = ""
-    )
-    {
-        if (currentModel is null)
-        {
-            return [];
-        }
-
-        if (currentIndex == keyParts.Length)
-        {
-            return [currentKey];
-        }
-
-        var (key, groupIndex) = ParseKeyPart(keyParts[currentIndex]);
-        var prop = Array.Find(currentModel.GetType().GetProperties(), p => IsPropertyWithJsonName(p, key));
-        var childModel = prop?.GetValue(currentModel);
-        if (childModel is null)
-        {
-            return [];
-        }
-
-        if (childModel is not string && childModel is System.Collections.IEnumerable childModelList)
-        {
-            // childModel is a list
-            if (groupIndex is null)
-            {
-                // Index not specified, recurse on all elements
-                int i = 0;
-                var resolvedKeys = new List<string>();
-                foreach (var child in childModelList)
-                {
-                    var newResolvedKeys = GetResolvedKeysRecursive(
-                        keyParts,
-                        child,
-                        currentIndex + 1,
-                        JoinFieldKeyParts(currentKey, key + "[" + i + "]")
-                    );
-                    resolvedKeys.AddRange(newResolvedKeys);
-                    i++;
-                }
-                return resolvedKeys.ToArray();
-            }
-            // Index specified, recurse on that element
-            return GetResolvedKeysRecursive(
-                keyParts,
-                childModel,
-                currentIndex + 1,
-                JoinFieldKeyParts(currentKey, key + "[" + groupIndex + "]")
-            );
-        }
-
-        // Otherwise, just recurse
-        return GetResolvedKeysRecursive(keyParts, childModel, currentIndex + 1, JoinFieldKeyParts(currentKey, key));
+        return GetModelDataRecursive(keys, index + 1, elementAt);
     }
 
     private static object? GetElementAt(System.Collections.IEnumerable enumerable, int index)
@@ -236,14 +165,25 @@ public class DataModelWrapper
             return (keyPart, null);
         }
         var match = _keyPartRegex.Match(keyPart);
-        return (match.Groups[1].Value, int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture));
+        if (!match.Success)
+        {
+            throw new DataModelException($"Invalid key part {keyPart}");
+        }
+
+        var indexString = match.Groups[2].Value;
+
+        if (indexString.Length == 0)
+        {
+            return (match.Groups[1].Value, null);
+        }
+        return (match.Groups[1].Value, int.Parse(indexString, CultureInfo.InvariantCulture));
     }
 
     private static void AddIndexesRecursive(
         List<string> ret,
         Type currentModelType,
         ReadOnlySpan<string> keys,
-        ReadOnlySpan<int> indexes
+        ReadOnlySpan<int> rowIndexes
     )
     {
         if (keys.Length == 0)
@@ -254,35 +194,38 @@ public class DataModelWrapper
         var prop = Array.Find(currentModelType.GetProperties(), p => IsPropertyWithJsonName(p, key));
         if (prop is null)
         {
-            throw new DataModelException($"Unknown model property {key} in {string.Join(".", ret)}.{key}");
+            // Looking up something that does not exist is currently not an error, but should return null
+            ret.Clear();
+            return;
         }
 
-        var currentIndex = groupIndex ?? (indexes.Length > 0 ? indexes[0] : null);
-
         var childType = prop.PropertyType;
-        // Strings are enumerable in C#
-        // Other enumerable types is treated as an collection
-        if (
-            childType != typeof(string)
-            && childType.IsAssignableTo(typeof(System.Collections.IEnumerable))
-            && currentIndex is not null
-        )
+
+        // Everything that is an System.Collections.ICollection<> can be mapped to a repeating group
+        // Other types are treated as a single value (no index[])
+        var childTypeEnumerableParameter = childType.GetInterface("ICollection`1")?.GenericTypeArguments[0];
+        if (childTypeEnumerableParameter is not null)
         {
-            // Hope the first generic argument is tied to the IEnumerable implementation
-            var childTypeEnumerableParameter = childType.GetGenericArguments().FirstOrDefault();
-
-            if (childTypeEnumerableParameter is null)
+            if (groupIndex is null)
             {
-                throw new DataModelException("DataModels must have generic IEnumerable<> implementation for list");
+                if (rowIndexes.Length != 0)
+                {
+                    ret.Add($"{key}[{rowIndexes[0]}]");
+                    rowIndexes = rowIndexes.Slice(1);
+                }
+                else
+                {
+                    // Add empty index to indicate that this is a repeating group where we don't know the row
+                    ret.Add($"{key}[]");
+                }
+            }
+            else
+            {
+                rowIndexes = default; //when you use a literal index, the context indecies are not to be used later.
+                ret.Add($"{key}[{groupIndex}]");
             }
 
-            ret.Add($"{key}[{currentIndex}]");
-            if (indexes.Length > 0)
-            {
-                indexes = indexes.Slice(1);
-            }
-
-            AddIndexesRecursive(ret, childTypeEnumerableParameter, keys.Slice(1), indexes);
+            AddIndexesRecursive(ret, childTypeEnumerableParameter, keys.Slice(1), rowIndexes);
         }
         else
         {
@@ -292,7 +235,7 @@ public class DataModelWrapper
             }
 
             ret.Add(key);
-            AddIndexesRecursive(ret, childType, keys.Slice(1), indexes);
+            AddIndexesRecursive(ret, childType, keys.Slice(1), rowIndexes);
         }
     }
 
@@ -304,7 +247,7 @@ public class DataModelWrapper
     /// indicies = [1,2]
     /// => "bedrift[1].ansatte[2].navn"
     /// </example>
-    public string AddIndicies(string field, ReadOnlySpan<int> rowIndexes = default)
+    private string AddIndicies(string field, ReadOnlySpan<int> rowIndexes = default)
     {
         if (rowIndexes.Length == 0)
         {
@@ -354,13 +297,13 @@ public class DataModelWrapper
     /// <summary>
     /// Set the value of a field in the model to default (null)
     /// </summary>
-    public void RemoveField(string field, RowRemovalOption rowRemovalOption)
+    private void RemoveField(string field, RowRemovalOption rowRemovalOption)
     {
         var fieldSplit = field.Split('.');
         var keys = fieldSplit[0..^1];
         var (lastKey, lastGroupIndex) = ParseKeyPart(fieldSplit[^1]);
 
-        var containingObject = GetModelDataRecursive(keys, 0, _dataModel, default);
+        var containingObject = GetModelDataRecursive(keys, 0, _dataModel);
         if (containingObject is null)
         {
             // Already empty field

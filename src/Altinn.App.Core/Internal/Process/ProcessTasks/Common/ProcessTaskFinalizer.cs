@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
@@ -81,10 +82,12 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         string? language = null
     )
     {
-        var data = await dataAccessor.GetFormData(dataElement);
+        var formDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement);
 
         // remove AltinnRowIds
-        ObjectUtils.RemoveAltinnRowId(data);
+        formDataWrapper.RemoveAltinnRowIds();
+
+        var data = formDataWrapper.BackingData<object>();
 
         // Remove hidden data before validation, ignore hidden rows.
         if (_appSettings.Value?.RemoveHiddenData == true)
@@ -136,7 +139,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
                     ?? throw new JsonException(
                         "Could not deserialize back datamodel after removing shadow fields. Data was \"null\""
                     );
-                dataAccessor.SetFormData(dataElement, newData);
+                dataAccessor.SetFormData(dataElement, FormDataWrapperFactory.Create(newData));
             }
         }
     }
