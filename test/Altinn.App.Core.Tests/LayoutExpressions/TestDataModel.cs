@@ -334,7 +334,7 @@ public class TestDataModel
         modelHelper.Get("friends[0]").Should().BeOfType<Friend>().Which.Name?.Value.Should().Be("Ole");
         modelHelper.Get("friends[3]").Should().BeNull();
 
-        modelHelper.AddIndexToPath("tull.sd", [2]).Should().Be(null);
+        Assert.Null(modelHelper.AddIndexToPath("tull.sd", [2]));
 
         modelHelper
             .Invoking(m => m.AddIndexToPath("id[4]", [6]))
