@@ -1,5 +1,4 @@
-﻿using Altinn.App.Core.Features.Auth;
-using Altinn.App.Core.Helpers;
+﻿using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -97,7 +96,7 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
     }
 
     private HttpContext _httpContext =>
-        _httpContextAccessor.HttpContext ?? throw new AuthenticationContextException("No HTTP context available");
+        _httpContextAccessor.HttpContext ?? throw new ProcessException("No HTTP context available");
 
     /// <summary>
     /// Get all actions that allow process next for the given task type. Meant to be used to authorize the process next when no action is provided.
