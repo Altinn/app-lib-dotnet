@@ -63,6 +63,7 @@ public class ValidationServiceOldTests
         _serviceCollection.AddSingleton<IValidatorFactory, ValidatorFactory>();
         _serviceCollection.AddSingleton(_dataElementAccessCheckerMock.Object);
         _serviceCollection.AddSingleton(Microsoft.Extensions.Options.Options.Create(new GeneralSettings()));
+        _serviceCollection.AddSingleton(Microsoft.Extensions.Options.Options.Create(new AppSettings()));
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(_applicationMetadata);
     }
 
