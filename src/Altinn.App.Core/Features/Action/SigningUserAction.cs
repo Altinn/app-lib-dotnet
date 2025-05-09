@@ -64,7 +64,7 @@ internal class SigningUserAction : IUserAction
     /// <inheritdoc />
     /// <exception cref="PlatformHttpException"></exception>
     /// <exception cref="ApplicationConfigException"></exception>
-    public async Task<UserActionResult> HandleAction(UserActionContext context, CancellationToken ct)
+    public async Task<UserActionResult> HandleAction(UserActionContext context, CancellationToken ct = default)
     {
         if (context.Authentication is not Authenticated.User and not Authenticated.SystemUser)
         {
