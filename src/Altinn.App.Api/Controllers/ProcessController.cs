@@ -10,7 +10,6 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Validation;
-using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Models.Validation;
@@ -715,24 +714,6 @@ public class ProcessController : ControllerBase
                 Status = 500,
                 Title = message,
             }
-        );
-    }
-
-    private async Task<bool> AuthorizeAction(
-        string action,
-        string org,
-        string app,
-        int instanceOwnerPartyId,
-        Guid instanceGuid,
-        string? taskId = null
-    )
-    {
-        return await _authorization.AuthorizeAction(
-            new AppIdentifier(org, app),
-            new InstanceIdentifier(instanceOwnerPartyId, instanceGuid),
-            HttpContext.User,
-            action,
-            taskId
         );
     }
 
