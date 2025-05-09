@@ -1,8 +1,10 @@
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Validation;
 
@@ -14,6 +16,7 @@ public class ValidationService : IValidationService
     private readonly IValidatorFactory _validatorFactory;
     private readonly ITranslationService _translationService;
     private readonly ILogger<ValidationService> _logger;
+    private readonly IOptions<AppSettings> _appSettings;
     private readonly Telemetry? _telemetry;
 
     /// <summary>
@@ -23,12 +26,14 @@ public class ValidationService : IValidationService
         IValidatorFactory validatorFactory,
         ITranslationService translationService,
         ILogger<ValidationService> logger,
+        IOptions<AppSettings> appSettings,
         Telemetry? telemetry = null
     )
     {
         _validatorFactory = validatorFactory;
         _translationService = translationService;
         _logger = logger;
+        _appSettings = appSettings;
         _telemetry = telemetry;
     }
 
@@ -46,6 +51,11 @@ public class ValidationService : IValidationService
         ArgumentNullException.ThrowIfNull(taskId);
 
         using var activity = _telemetry?.StartValidateInstanceAtTaskActivity(taskId);
+
+        if (_appSettings.Value.RemoveHiddenData)
+        {
+            dataAccessor = dataAccessor.GetCleanAccessor();
+        }
 
         var validators = _validatorFactory.GetValidators(taskId);
         // Filter out validators that should be ignored or not run incrementally
@@ -118,6 +128,44 @@ public class ValidationService : IValidationService
             .ToArray();
 
         ThrowIfDuplicateValidators(validators, taskId);
+
+        if (_appSettings.Value.RemoveHiddenData)
+        {
+            // Run validations on clean data when we remove hidden data
+            var cleanAccessor = dataAccessor.GetCleanAccessor();
+            var previousAccessor = dataAccessor.GetPreviousDataAccessor().GetCleanAccessor();
+            var cleanedChangeList = new List<DataElementChange>();
+
+            foreach (var change in changes.AllChanges)
+            {
+                // Clean FormDataChange updates but keep other changes as is
+                if (change is FormDataChange { DataElement: not null, Type: ChangeType.Updated } fdc)
+                {
+                    cleanedChangeList.Add(
+                        new FormDataChange()
+                        {
+                            ContentType = fdc.ContentType,
+                            DataElement = fdc.DataElement,
+                            DataType = fdc.DataType,
+                            Type = fdc.Type,
+
+                            PreviousFormData = await previousAccessor.GetFormData(fdc.DataElementIdentifier),
+                            CurrentFormData = await cleanAccessor.GetFormData(fdc.DataElementIdentifier),
+                            // The binary data is kept as is, because logic is assumed to not use it
+                            CurrentBinaryData = fdc.CurrentBinaryData,
+                            PreviousBinaryData = fdc.PreviousBinaryData,
+                        }
+                    );
+                }
+                else
+                {
+                    cleanedChangeList.Add(change);
+                }
+            }
+
+            changes = new DataElementChanges(cleanedChangeList);
+            dataAccessor = cleanAccessor;
+        }
 
         // Start the validation tasks (but don't await yet, so that they can run in parallel)
         var validationTasks = validators.Select(async validator =>
