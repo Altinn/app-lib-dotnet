@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using DataType = Altinn.Platform.Storage.Interface.Models.DataType;
 
@@ -115,7 +116,8 @@ public sealed class PatchServiceTests : IDisposable
         var validationService = new ValidationService(
             validatorFactory,
             _translationService.Object,
-            _vLoggerMock.Object
+            _vLoggerMock.Object,
+            Options.Create(new AppSettings())
         );
 
         _patchService = new InternalPatchService(
