@@ -192,14 +192,11 @@ public class LayoutModel
         var dataElementsForSubForm = dataModel.Instance.Data.Where(d => d.DataType == layout.DefaultDataType.Id);
         foreach (var dataElement in dataElementsForSubForm)
         {
-            List<ComponentContext> subForms = [];
-
             foreach (var page in layout.Pages)
             {
-                subForms.Add(await GenerateComponentContextsRecurs(page, dataModel, dataElement, indexes: null));
+                // "Subform" does not support "hiddenRow", so we don't need to create a context for each data element/row
+                children.Add(await GenerateComponentContextsRecurs(page, dataModel, dataElement, indexes: null));
             }
-
-            children.Add(new ComponentContext(subFormComponent, null, dataElement, subForms));
         }
 
         return new ComponentContext(subFormComponent, null, defaultDataElementIdentifier, children);
