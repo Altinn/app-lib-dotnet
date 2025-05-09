@@ -1,5 +1,6 @@
 using System.Collections;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -77,6 +78,16 @@ public class InstanceDataAccessorFake : IInstanceDataAccessor, IEnumerable<KeyVa
     public Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier)
     {
         return Task.FromResult(FormDataWrapperFactory.Create(_dataById[dataElementIdentifier]));
+    }
+
+    public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IInstanceDataAccessor GetPreviousDataAccessor()
+    {
+        throw new NotImplementedException();
     }
 
     public Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)
