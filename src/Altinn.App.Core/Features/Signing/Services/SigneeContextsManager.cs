@@ -137,7 +137,7 @@ internal sealed class SigneeContextsManager : ISigneeContextsManager
         }
 
         ISigneeProvider signeeProvider = matchingSigneeProviders.Single();
-        SigneeProviderResult signeesResult = await signeeProvider.GetSigneesAsync(
+        SigneeProviderResult signeesResult = await signeeProvider.GetSignees(
             new GetSigneesParameters { InstanceDataAccessor = instanceDataAccessor }
         );
 

@@ -145,7 +145,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         var signeesResult = new SigneeProviderResult { Signees = [personSignee1, personSignee2] };
 
         _signeeProvider.Setup(x => x.Id).Returns("testProvider");
-        _signeeProvider.Setup(x => x.GetSigneesAsync(It.IsAny<GetSigneesParameters>())).ReturnsAsync(signeesResult);
+        _signeeProvider.Setup(x => x.GetSignees(It.IsAny<GetSigneesParameters>())).ReturnsAsync(signeesResult);
 
         // Act
         var result = await _signeeContextsManager.GenerateSigneeContexts(
@@ -232,7 +232,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         var signeesResult = new SigneeProviderResult { Signees = [orgSignee] };
 
         _signeeProvider.Setup(x => x.Id).Returns("testProvider");
-        _signeeProvider.Setup(x => x.GetSigneesAsync(It.IsAny<GetSigneesParameters>())).ReturnsAsync(signeesResult);
+        _signeeProvider.Setup(x => x.GetSignees(It.IsAny<GetSigneesParameters>())).ReturnsAsync(signeesResult);
 
         // Act
         var result = await _signeeContextsManager.GenerateSigneeContexts(
