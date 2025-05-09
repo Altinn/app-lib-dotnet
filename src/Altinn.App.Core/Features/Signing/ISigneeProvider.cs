@@ -16,7 +16,7 @@ public interface ISigneeProvider
     /// <summary>
     /// Returns a list of signees for the current signing task.
     /// </summary>
-    Task<SigneeProviderResult> GetSigneesAsync(GetSigneesParameters parameters);
+    Task<SigneeProviderResult> GetSignees(GetSigneesParameters parameters);
 }
 
 /// <summary>
