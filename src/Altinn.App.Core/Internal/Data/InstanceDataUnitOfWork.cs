@@ -31,6 +31,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     private readonly IInstanceClient _instanceClient;
     private readonly ApplicationMetadata _appMetadata;
     private readonly ModelSerializationService _modelSerializationService;
+    private readonly IAppResources _appResources;
+    private readonly IOptions<FrontEndSettings> _frontEndSettings;
+    private readonly string? _taskId;
+    private readonly string? _language;
 
     // Cache for the most up-to-date form data (can be mutated or replaced with SetFormData(dataElementId, data))
     private readonly DataElementCache<IFormDataWrapper> _formDataCache = new();
@@ -68,6 +72,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _modelSerializationService = modelSerializationService;
+        _taskId = taskId;
+        _language = language;
+        _frontEndSettings = frontEndSettings;
+        _appResources = appResources;
         _instanceClient = instanceClient;
     }
 
@@ -97,6 +105,31 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                     )
                 );
             }
+        );
+    }
+
+    /// <inheritdoc />
+    public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)
+    {
+        return new CleanInstanceDataAccessor(
+            this,
+            _taskId,
+            _appResources,
+            _frontEndSettings.Value,
+            rowRemovalOption,
+            _language
+        );
+    }
+
+    public IInstanceDataAccessor GetPreviousDataAccessor()
+    {
+        return new PreviousDataAccessor(
+            this,
+            _taskId,
+            _appResources,
+            _modelSerializationService,
+            _frontEndSettings.Value,
+            _language
         );
     }
 
