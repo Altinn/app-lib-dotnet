@@ -21,6 +21,11 @@ public class FullTests
 
             public class Skjema
             {
+                // Extra properties to test that they get ignored by source generator
+                public const string FormDataType = "form";
+                public static readonly string FormDataTypeStatic = FormDataType;
+                public string FormDataTypeId => FormDataType;
+
                 [JsonPropertyName("skjemanummer")]
                 public string? Skjemanummer { get; set; }
 

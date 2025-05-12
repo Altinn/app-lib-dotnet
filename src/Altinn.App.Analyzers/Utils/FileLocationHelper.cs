@@ -28,7 +28,7 @@ public static class FileLocationHelper
 
     private static LinePosition GetLinePosition(int position, ReadOnlySpan<char> fileContent)
     {
-        Debug.Assert(position >= 0 && position < fileContent.Length);
+        Debug.Assert(position >= 0 && position <= fileContent.Length);
         var line = 0;
         var character = 0;
         for (var i = 0; i < position; i++)
