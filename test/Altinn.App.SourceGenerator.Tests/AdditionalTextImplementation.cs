@@ -6,9 +6,9 @@ namespace Altinn.App.SourceGenerator.Tests;
 
 public class AdditionalTextImplementation : AdditionalText
 {
-    private readonly string _text;
+    private readonly string? _text;
 
-    public AdditionalTextImplementation(string text, string filePath)
+    public AdditionalTextImplementation(string? text, string filePath)
     {
         _text = text;
         Path = filePath;
@@ -16,7 +16,7 @@ public class AdditionalTextImplementation : AdditionalText
 
     public override SourceText? GetText(CancellationToken cancellationToken = new CancellationToken())
     {
-        return new StringSourceText(_text);
+        return _text != null ? new StringSourceText(_text) : null;
     }
 
     public override string Path { get; }

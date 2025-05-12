@@ -28,7 +28,7 @@ public static class Diagnostics
 
     public static class FormDataWrapperGenerator
     {
-        public static readonly DiagnosticDescriptor AppMetadataError = Error(
+        public static readonly DiagnosticDescriptor AppMetadataError = Warning(
             "ALTINNAPP0002",
             Category.Metadata,
             "Application metadata error",
@@ -43,7 +43,7 @@ public static class Diagnostics
         Create(id, title, messageFormat, category, DiagnosticSeverity.Warning);
 
     private static DiagnosticDescriptor Error(string id, string category, string title, string messageFormat) =>
-        Create(id, title, messageFormat, category, DiagnosticSeverity.Warning);
+        Create(id, title, messageFormat, category, DiagnosticSeverity.Error);
 
     private static DiagnosticDescriptor Create(
         string id,
