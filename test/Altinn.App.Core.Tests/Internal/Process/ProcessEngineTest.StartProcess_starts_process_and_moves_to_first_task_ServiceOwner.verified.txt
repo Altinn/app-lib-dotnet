@@ -1,23 +1,23 @@
 ﻿{
   Activities: [
     {
-      ActivityName: Process.HandleEvents,
+      Name: Process.HandleEvents,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Process.Start,
+      Name: Process.Start,
+      IdFormat: W3C,
+      Status: Ok,
       Tags: [
         {
           instance.guid: Guid_1
         }
       ],
-      IdFormat: W3C,
-      Status: Ok,
       Events: [
         {
           Name: change,
@@ -40,13 +40,13 @@
       ]
     },
     {
-      ActivityName: Process.StoreEvents,
+      Name: Process.StoreEvents,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
-      IdFormat: W3C
+      ]
     }
   ],
   Metrics: [

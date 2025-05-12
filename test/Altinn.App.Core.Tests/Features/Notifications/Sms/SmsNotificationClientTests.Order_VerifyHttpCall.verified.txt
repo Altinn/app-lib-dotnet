@@ -1,13 +1,13 @@
 ﻿{
   Activities: [
     {
-      ActivityName: Notifications.Order,
+      Name: Notifications.Order,
+      IdFormat: W3C,
       Tags: [
         {
           type: sms
         }
-      ],
-      IdFormat: W3C
+      ]
     }
   ],
   Metrics: [

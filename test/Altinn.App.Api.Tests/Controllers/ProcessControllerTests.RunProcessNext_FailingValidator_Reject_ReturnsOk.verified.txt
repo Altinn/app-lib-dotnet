@@ -1,7 +1,8 @@
 ﻿{
   Activities: [
     {
-      ActivityName: Authorization.Service.AuthorizeAction,
+      Name: Authorization.Service.AuthorizeAction,
+      IdFormat: W3C,
       Tags: [
         {
           authorization.action: reject
@@ -15,11 +16,12 @@
         {
           task.id: Task_1
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: PUT {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next,
+      Name: PUT {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next,
+      IdFormat: W3C,
+      Kind: Server,
       Tags: [
         {
           http.request.method: PUT
@@ -72,30 +74,30 @@
         {
           user.party.id: 500600
         }
-      ],
+      ]
+    },
+    {
+      Name: Process.End,
       IdFormat: W3C,
-      Kind: Server
-    },
-    {
-      ActivityName: Process.End,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Process.HandleEvents,
+      Name: Process.HandleEvents,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Process.Next,
+      Name: Process.Next,
+      IdFormat: W3C,
+      Status: Ok,
       Tags: [
         {
           instance.guid: Guid_1
@@ -104,8 +106,6 @@
           process.action: reject
         }
       ],
-      IdFormat: W3C,
-      Status: Ok,
       Events: [
         {
           Name: change,
@@ -133,98 +133,97 @@
       ]
     },
     {
-      ActivityName: Process.StoreEvents,
+      Name: Process.StoreEvents,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
+      ]
+    },
+    {
+      Name: ProcessClient.GetProcessDefinition,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessClient.GetProcessDefinition,
+      Name: ProcessReader.GetAllFlowElements,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetAllFlowElements,
+      Name: ProcessReader.GetAllFlowElements,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetAllFlowElements,
+      Name: ProcessReader.GetAltinnTaskExtension,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetAltinnTaskExtension,
+      Name: ProcessReader.GetEndEventIds,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetEndEventIds,
+      Name: ProcessReader.GetEndEvents,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetEndEvents,
+      Name: ProcessReader.GetEndEvents,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetEndEvents,
+      Name: ProcessReader.GetEndEvents,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetEndEvents,
+      Name: ProcessReader.GetExclusiveGateways,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetExclusiveGateways,
+      Name: ProcessReader.GetExclusiveGateways,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetExclusiveGateways,
+      Name: ProcessReader.GetFlowElement,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetFlowElement,
+      Name: ProcessReader.GetNextElements,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetNextElements,
+      Name: ProcessReader.GetProcessTaskIds,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetProcessTaskIds,
+      Name: ProcessReader.GetProcessTasks,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetProcessTasks,
+      Name: ProcessReader.GetProcessTasks,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetProcessTasks,
+      Name: ProcessReader.GetProcessTasks,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetProcessTasks,
+      Name: ProcessReader.GetSequenceFlows,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetSequenceFlows,
+      Name: ProcessReader.GetStartEvents,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetStartEvents,
+      Name: ProcessReader.GetStartEvents,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetStartEvents,
+      Name: ProcessReader.IsEndEvent,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.IsEndEvent,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: ProcessReader.IsProcessTask,
+      Name: ProcessReader.IsProcessTask,
       IdFormat: W3C
     }
-  ],
-  Metrics: []
+  ]
 }

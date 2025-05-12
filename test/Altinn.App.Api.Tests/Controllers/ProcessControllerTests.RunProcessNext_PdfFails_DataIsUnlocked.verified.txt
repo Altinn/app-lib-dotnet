@@ -1,87 +1,88 @@
 ﻿{
   Activities: [
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutModel,
+      Name: ApplicationMetadata.Service.GetLayoutModel,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutModel,
+      Name: ApplicationMetadata.Service.GetLayoutModel,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSet,
+      Name: ApplicationMetadata.Service.GetLayoutSet,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSet,
+      Name: ApplicationMetadata.Service.GetLayoutSet,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSet,
+      Name: ApplicationMetadata.Service.GetLayoutSet,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSet,
+      Name: ApplicationMetadata.Service.GetLayoutSet,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSet,
+      Name: ApplicationMetadata.Service.GetLayoutSet,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSets,
+      Name: ApplicationMetadata.Service.GetLayoutSets,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSets,
+      Name: ApplicationMetadata.Service.GetLayoutSets,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSets,
+      Name: ApplicationMetadata.Service.GetLayoutSets,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSets,
+      Name: ApplicationMetadata.Service.GetLayoutSets,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSets,
+      Name: ApplicationMetadata.Service.GetLayoutSets,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSetsForTask,
+      Name: ApplicationMetadata.Service.GetLayoutSetsForTask,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSetsForTask,
+      Name: ApplicationMetadata.Service.GetLayoutSetsForTask,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSettingsForSet,
+      Name: ApplicationMetadata.Service.GetLayoutSettingsForSet,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSettingsForSet,
+      Name: ApplicationMetadata.Service.GetLayoutSettingsForSet,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetTexts,
+      Name: ApplicationMetadata.Service.GetTexts,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetTexts,
+      Name: ApplicationMetadata.Service.GetTexts,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetValidationConfiguration,
+      Name: ApplicationMetadata.Service.GetValidationConfiguration,
       IdFormat: W3C
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetValidationConfiguration,
+      Name: ApplicationMetadata.Service.GetValidationConfiguration,
       IdFormat: W3C
     },
     {
-      ActivityName: Authorization.Service.AuthorizeAction,
+      Name: Authorization.Service.AuthorizeAction,
+      IdFormat: W3C,
       Tags: [
         {
           authorization.action: write
@@ -95,11 +96,13 @@
         {
           task.id: Task_1
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: PUT {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next,
+      Name: PUT {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next,
+      IdFormat: W3C,
+      Kind: Server,
+      Status: Error,
       Tags: [
         {
           http.request.method: PUT
@@ -158,17 +161,15 @@
         {
           user.party.id: 500600
         }
-      ],
-      IdFormat: W3C,
-      Status: Error,
-      Kind: Server
+      ]
     },
     {
-      ActivityName: PdfGeneratorClient.GeneratePdf,
+      Name: PdfGeneratorClient.GeneratePdf,
       IdFormat: W3C
     },
     {
-      ActivityName: PdfService.GenerateAndStorePdf,
+      Name: PdfService.GenerateAndStorePdf,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
@@ -176,29 +177,29 @@
         {
           task.id: Task_1
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Process.End,
+      Name: Process.End,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Process.HandleEvents,
+      Name: Process.HandleEvents,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Process.Next,
+      Name: Process.Next,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
@@ -206,103 +207,103 @@
         {
           process.action: write
         }
-      ],
+      ]
+    },
+    {
+      Name: ProcessClient.GetProcessDefinition,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessClient.GetProcessDefinition,
+      Name: ProcessReader.GetAllFlowElements,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetAllFlowElements,
+      Name: ProcessReader.GetEndEventIds,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetEndEventIds,
+      Name: ProcessReader.GetEndEvents,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetEndEvents,
+      Name: ProcessReader.GetEndEvents,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetEndEvents,
+      Name: ProcessReader.GetExclusiveGateways,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetExclusiveGateways,
+      Name: ProcessReader.GetNextElements,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetNextElements,
+      Name: ProcessReader.GetProcessTaskIds,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetProcessTaskIds,
+      Name: ProcessReader.GetProcessTasks,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetProcessTasks,
+      Name: ProcessReader.GetProcessTasks,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetProcessTasks,
+      Name: ProcessReader.GetSequenceFlows,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetSequenceFlows,
+      Name: ProcessReader.GetStartEvents,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.GetStartEvents,
+      Name: ProcessReader.IsEndEvent,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.IsEndEvent,
+      Name: ProcessReader.IsProcessTask,
       IdFormat: W3C
     },
     {
-      ActivityName: ProcessReader.IsProcessTask,
-      IdFormat: W3C
-    },
-    {
-      ActivityName: SerializationService.DeserializeXml,
+      Name: SerializationService.DeserializeXml,
+      IdFormat: W3C,
       Tags: [
         {
           Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: SerializationService.DeserializeXml,
+      Name: SerializationService.DeserializeXml,
+      IdFormat: W3C,
       Tags: [
         {
           Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: SerializationService.DeserializeXml,
+      Name: SerializationService.DeserializeXml,
+      IdFormat: W3C,
       Tags: [
         {
           Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: SerializationService.SerializeXml,
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
       Tags: [
         {
           Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -313,11 +314,11 @@
         {
           validator.type: RequiredLayoutValidator
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -328,11 +329,11 @@
         {
           validator.type: ExpressionValidator
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -343,11 +344,11 @@
         {
           validator.type: TaskValidatorWrapper
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -358,11 +359,11 @@
         {
           validator.type: DataElementValidatorWrapper
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -373,11 +374,11 @@
         {
           validator.type: FormDataValidatorWrapper
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -388,11 +389,11 @@
         {
           validator.type: FormDataValidatorWrapper
         }
-      ],
-      IdFormat: W3C
+      ]
     },
     {
-      ActivityName: Validation.ValidateInstanceAtTask,
+      Name: Validation.ValidateInstanceAtTask,
+      IdFormat: W3C,
       Tags: [
         {
           task.id: Task_1
@@ -400,9 +401,7 @@
         {
           validation.total_issue_count: 0
         }
-      ],
-      IdFormat: W3C
+      ]
     }
-  ],
-  Metrics: []
+  ]
 }
