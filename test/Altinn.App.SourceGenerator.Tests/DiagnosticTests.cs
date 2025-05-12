@@ -57,12 +57,28 @@ public class DiagnosticTests
                 "title": {},
                 "org": "ttd",
                 "partyTypesAllowed": {},
-                "dataTypes": [{
-                    "id": "form",
-                    "appLogic": {
-                        "classRef": "Altinn.App.SourceGenerator.Tests.Skjema"
+                "dataTypes": [
+                    {
+                        "id": "data-ref-pdf",
+                    },
+                    {
+                        "id": "data-ref",
+                        "appLogic": {}
+                    },
+                    {
+                        "id": "data-ref",
+                        "appLogic": {
+                            "classRef": null,
+                        }
+                    },
+                    null,
+                    {
+                        "id": "form",
+                        "appLogic": {
+                            "classRef": "Altinn.App.SourceGenerator.Tests.Skjema"
+                        }
                     }
-                }]
+                ]
             }
 
             """;
@@ -110,7 +126,7 @@ public class DiagnosticTests
     }
 
     [Fact]
-    public void RunJsonNoDataTypes()
+    public async Task RunJsonNoDataTypes()
     {
         var applicationMetadata = """
             {
@@ -121,10 +137,44 @@ public class DiagnosticTests
             """;
 
         var diagnostics = RunFormDataWrapper([Source], applicationMetadata);
+        await Verify(diagnostics);
+    }
+
+    [Fact]
+    public void RunJsonEmptyDataTypes()
+    {
+        var applicationMetadata = """
+            {
+                "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/application/application-metadata.schema.v1.json",
+                "id": "ttd/source-generator-test",
+                "dataTypes": []
+            }
+
+            """;
+
+        var diagnostics = RunFormDataWrapper([Source], applicationMetadata);
         Assert.Empty(diagnostics);
     }
 
-    static ImmutableArray<Diagnostic> RunFormDataWrapper(string[] syntax, string applicationMetadata)
+    [Fact]
+    public async Task NotJsonObject()
+    {
+        var applicationMetadata = "null";
+
+        var diagnostics = RunFormDataWrapper([Source], applicationMetadata);
+        await Verify(diagnostics);
+    }
+
+    [Fact]
+    public async Task ErrorReadingAppMetadata()
+    {
+        string? applicationMetadata = null;
+
+        var diagnostics = RunFormDataWrapper([Source], applicationMetadata);
+        await Verify(diagnostics);
+    }
+
+    static ImmutableArray<Diagnostic> RunFormDataWrapper(string[] syntax, string? applicationMetadata)
     {
         var currentAssembly = Assembly.GetAssembly(typeof(Skjema));
         // Get references so that the test compilation can reference system libraries

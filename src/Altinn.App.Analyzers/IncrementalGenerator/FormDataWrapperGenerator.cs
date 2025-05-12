@@ -40,90 +40,105 @@ public class FormDataWrapperGenerator : IIncrementalGenerator
             .AdditionalTextsProvider.Where(text =>
                 text.Path.Replace('\\', '/').EndsWith("config/applicationmetadata.json")
             )
-            .SelectMany<AdditionalText, ModelClassOrDiagnostic>(
-                (text, token) =>
-                {
-                    try
-                    {
-                        var textContent = text.GetText(token)?.ToString();
-                        List<ModelClassOrDiagnostic> rootClasses = [];
-                        if (textContent is null)
-                        {
-                            rootClasses.Add(
-                                new(
-                                    new EquatableDiagnostic(
-                                        Diagnostics.FormDataWrapperGenerator.AppMetadataError,
-                                        FileLocationHelper.GetLocation(text, 0, null),
-                                        ["Failed to read applicationmetadata.json"]
-                                    )
-                                )
-                            );
-                            return rootClasses;
-                        }
-                        var appMetadata = JsonValue.Parse(textContent);
-                        if (appMetadata.Type != JsonType.Object)
-                        {
-                            rootClasses.Add(
-                                new(
-                                    new EquatableDiagnostic(
-                                        Diagnostics.FormDataWrapperGenerator.AppMetadataError,
-                                        FileLocationHelper.GetLocation(text, appMetadata.Start, appMetadata.End),
-                                        ["applicationmetadata.json is not a valid JSON object"]
-                                    )
-                                )
-                            );
-                            return rootClasses;
-                        }
-
-                        var dataTypes = appMetadata.GetProperty("dataTypes");
-                        if (dataTypes?.Type != JsonType.Array)
-                        {
-                            return rootClasses;
-                        }
-                        foreach (var dataType in dataTypes.GetArrayValues())
-                        {
-                            if (dataType.Type != JsonType.Object)
-                            {
-                                continue;
-                            }
-                            var appLogic = dataType.GetProperty("appLogic");
-                            if (appLogic?.Type != JsonType.Object)
-                            {
-                                continue;
-                            }
-                            var classRef = appLogic.GetProperty("classRef");
-                            if (classRef?.Type != JsonType.String)
-                            {
-                                continue;
-                            }
-                            rootClasses.Add(
-                                new(
-                                    classRef.GetString(),
-                                    FileLocationHelper.GetLocation(text, classRef.Start, classRef.End)
-                                )
-                            );
-                        }
-                        return rootClasses;
-                    }
-                    catch (NanoJsonException e)
-                    {
-                        return
-                        [
-                            new(
-                                new EquatableDiagnostic(
-                                    Diagnostics.FormDataWrapperGenerator.AppMetadataError,
-                                    FileLocationHelper.GetLocation(text, e.StartIndex, e.EndIndex),
-                                    [e.Message]
-                                )
-                            ),
-                        ];
-                    }
-                }
-            );
+            .SelectMany(ParseModelClassOrDiagnostic);
 
         var modelPathNodesProvider = rootClasses.Combine(context.CompilationProvider).Select(CreateNodeThree);
 
         context.RegisterSourceOutput(modelPathNodesProvider, GenerateFromNode);
+    }
+
+    private static ImmutableArray<ModelClassOrDiagnostic> ParseModelClassOrDiagnostic(
+        AdditionalText text,
+        CancellationToken token
+    )
+    {
+        try
+        {
+            var textContent = text.GetText(token)?.ToString();
+            if (textContent is null)
+            {
+                return
+                [
+                    new(
+                        new EquatableDiagnostic(
+                            Diagnostics.FormDataWrapperGenerator.AppMetadataError,
+                            FileLocationHelper.GetLocation(text, 0, null),
+                            ["Failed to read applicationmetadata.json"]
+                        )
+                    ),
+                ];
+            }
+
+            var appMetadata = JsonValue.Parse(textContent);
+            if (appMetadata.Type != JsonType.Object)
+            {
+                return
+                [
+                    new(
+                        new EquatableDiagnostic(
+                            Diagnostics.FormDataWrapperGenerator.AppMetadataError,
+                            FileLocationHelper.GetLocation(text, appMetadata.Start, appMetadata.End),
+                            ["applicationmetadata.json is not a valid JSON object"]
+                        )
+                    ),
+                ];
+            }
+
+            var dataTypes = appMetadata.GetProperty("dataTypes");
+            if (dataTypes?.Type != JsonType.Array)
+            {
+                return
+                [
+                    new(
+                        new(
+                            Diagnostics.FormDataWrapperGenerator.AppMetadataError,
+                            FileLocationHelper.GetLocation(text, appMetadata.Start, appMetadata.End),
+                            ["the property dataTypes is not a valid JSON array"]
+                        )
+                    ),
+                ];
+            }
+
+            List<ModelClassOrDiagnostic> rootClasses = [];
+            foreach (var dataType in dataTypes.GetArrayValues())
+            {
+                if (dataType.Type != JsonType.Object)
+                {
+                    continue;
+                }
+
+                var appLogic = dataType.GetProperty("appLogic");
+                if (appLogic?.Type != JsonType.Object)
+                {
+                    continue;
+                }
+
+                var classRef = appLogic.GetProperty("classRef");
+                if (classRef?.Type != JsonType.String)
+                {
+                    continue;
+                }
+
+                rootClasses.Add(
+                    new(classRef.GetString(), FileLocationHelper.GetLocation(text, classRef.Start, classRef.End))
+                );
+            }
+
+            return [.. rootClasses];
+        }
+        catch (NanoJsonException e)
+        {
+            return
+            [
+                new(
+                    new EquatableDiagnostic(
+                        Diagnostics.FormDataWrapperGenerator.AppMetadataError,
+                        FileLocationHelper.GetLocation(text, e.StartIndex, e.EndIndex),
+                        [e.Message]
+                    )
+                ),
+            ];
+        }
     }
 
     private static Result<ModelPathNode> CreateNodeThree(
@@ -211,13 +226,7 @@ public class FormDataWrapperGenerator : IIncrementalGenerator
         }
         if (result is not { Value: { } node })
             return;
-        DebugTree = node;
         var sourceText = SourceTextGenerator.SourceTextGenerator.GenerateSourceText(node, "public");
         context.AddSource(node.Name + "FormDataWrapper.g.cs", sourceText);
     }
-
-    /// <summary>
-    /// Hack to be able to access the latest generated node tree in the tests.
-    /// </summary>
-    public ModelPathNode? DebugTree { get; set; }
 }
