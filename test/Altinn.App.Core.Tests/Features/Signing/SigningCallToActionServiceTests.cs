@@ -418,7 +418,7 @@ public class SigningCallToActionServiceTests
         );
         Assert.Null(capturedPayload.CorrespondenceRequest.Notification.SmsBody);
         Assert.Equal(
-            "Din signatur ventes for TestAppName. Åpne Altinn-innboksen din for å fortsette.<br /><br />Hvis du lurer på noe, kan du kontakte Service owner.",
+            "Din signatur ventes for TestAppName. Åpne Altinn-innboksen din for å fortsette.\n\nHvis du lurer på noe, kan du kontakte Service owner.",
             capturedPayload.CorrespondenceRequest.Notification.EmailBody
         );
         Assert.Equal(
