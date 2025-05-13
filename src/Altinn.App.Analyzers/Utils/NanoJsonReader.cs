@@ -103,11 +103,15 @@ public class JsonValue
             {
                 case JsonType.Array:
                     foreach (var _ in GetArrayValues())
-                        ;
+                    {
+                        // Iterate through all array values to find the end
+                    }
                     return _end ?? throw new InvalidOperationException("End was not set after reading array");
                 case JsonType.Object:
                     foreach (var _ in GetObjectValues())
-                        ;
+                    {
+                        // Iterate through all object values to find the end
+                    }
                     return _end ?? throw new InvalidOperationException("End was not set after reading object");
                 default:
                     // End should be set at parse time for other types

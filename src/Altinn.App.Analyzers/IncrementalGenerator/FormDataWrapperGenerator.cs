@@ -218,7 +218,7 @@ public class FormDataWrapperGenerator : IIncrementalGenerator
         return nodeProperties;
     }
 
-    private void GenerateFromNode(SourceProductionContext context, Result<ModelPathNode> result)
+    private static void GenerateFromNode(SourceProductionContext context, Result<ModelPathNode> result)
     {
         foreach (var diagnostic in result.Diagnostics)
         {

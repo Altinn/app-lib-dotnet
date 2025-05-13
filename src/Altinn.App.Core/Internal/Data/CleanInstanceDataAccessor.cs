@@ -58,9 +58,9 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
 
     public IReadOnlyCollection<DataType> DataTypes => _dataAccessor.DataTypes;
 
-    public async Task<object> GetFormData(DataElementIdentifier dataElementId)
+    public async Task<object> GetFormData(DataElementIdentifier dataElementIdentifier)
     {
-        return (await GetFormDataWrapper(dataElementId)).BackingData<object>();
+        return (await GetFormDataWrapper(dataElementIdentifier)).BackingData<object>();
     }
 
     public async Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier)
