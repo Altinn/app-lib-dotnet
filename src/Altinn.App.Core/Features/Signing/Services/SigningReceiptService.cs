@@ -66,21 +66,33 @@ internal sealed class SigningReceiptService(
             _dataClient
         );
 
-        return await _correspondenceClient.Send(
-            new SendCorrespondencePayload(
-                CorrespondenceRequestBuilder
-                    .Create()
-                    .WithResourceId(resource)
-                    .WithSender(senderOrgNumber)
-                    .WithSendersReference(instanceIdentifier.ToString() + SendersReferenceTail)
-                    .WithRecipient(recipient)
-                    .WithContent(content)
-                    .WithAttachments(attachments)
-                    .Build(),
-                CorrespondenceAuthorisation.Maskinporten
-            ),
-            ct
+        var request = new SendCorrespondencePayload(
+            CorrespondenceRequestBuilder
+                .Create()
+                .WithResourceId(resource)
+                .WithSender(senderOrgNumber)
+                .WithSendersReference(instanceIdentifier.ToString() + SendersReferenceTail)
+                .WithRecipient(recipient)
+                .WithContent(content)
+                .WithAttachments(attachments)
+                .Build(),
+            CorrespondenceAuthorisation.Maskinporten
         );
+        // TODO: Remove
+        _logger.LogInformation(
+            "Sending correspondence request with details: {Request}",
+            System.Text.Json.JsonSerializer.Serialize(request)
+        );
+
+        SendCorrespondenceResponse response = await _correspondenceClient.Send(request, ct);
+        // TODO: Remove
+        _logger.LogInformation(
+            "Correspondence request sent. Response: {Response}",
+            System.Text.Json.JsonSerializer.Serialize(response)
+        );
+        var correspondenceId = response?.Correspondences[0]?.CorrespondenceId ?? Guid.Empty;
+        _logger.LogInformation("Correspondence request sent. CorrespondenceId: {CorrespondenceId}", correspondenceId);
+        return response;
     }
 
     internal async Task<(
