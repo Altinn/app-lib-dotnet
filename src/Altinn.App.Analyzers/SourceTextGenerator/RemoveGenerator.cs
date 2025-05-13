@@ -115,18 +115,9 @@ internal static class RemoveGenerator
         );
         foreach (var child in modelPathNode.Properties)
         {
-            if (
-                child is
-                {
-                    CSharpName: "AltinnRowId",
-                    JsonName: "altinnRowId",
-                    TypeName: "global::System.Guid",
-                    Properties.Count: 0,
-                    ListType: null
-                }
-            )
+            if (child.IsAltinnRowId())
             {
-                // We altinnRowId isn't nullable, and it is set on its own schedule.
+                // altinnRowId isn't nullable, and it is set on its own schedule.
                 continue;
             }
 

@@ -19,7 +19,7 @@ internal class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
     {
         return _dataModel as T
             ?? throw new InvalidCastException(
-                $"Attempted to cast data model of type global::Altinn.App.SourceGenerator.Tests.Skjema to {typeof(T).FullName}"
+                $"Attempted to cast data model of type Altinn.App.SourceGenerator.Tests.Skjema to {typeof(T).FullName}"
             );
     }
 
@@ -28,7 +28,7 @@ internal class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
         _dataModel =
             dataModel as global::Altinn.App.SourceGenerator.Tests.Skjema
             ?? throw new ArgumentException(
-                $"Data model must be of type global::Altinn.App.SourceGenerator.Tests.Skjema, (was {dataModel.GetType().FullName})"
+                $"Data model must be of type Altinn.App.SourceGenerator.Tests.Skjema, (was {dataModel.GetType().FullName})"
             );
     }
 

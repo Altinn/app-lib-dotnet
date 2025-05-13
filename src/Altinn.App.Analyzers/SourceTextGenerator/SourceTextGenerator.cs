@@ -37,7 +37,7 @@ public static class SourceTextGenerator
                 {
                     return _dataModel as T
                         ?? throw new InvalidCastException(
-                            $"Attempted to cast data model of type {{rootNode.TypeName}} to {typeof(T).FullName}"
+                            $"Attempted to cast data model of type {{rootNode.FullName}} to {typeof(T).FullName}"
                         );
                 }
 
@@ -46,7 +46,7 @@ public static class SourceTextGenerator
                     _dataModel =
                         dataModel as {{rootNode.TypeName}}
                         ?? throw new ArgumentException(
-                            $"Data model must be of type {{rootNode.TypeName}}, (was {dataModel.GetType().FullName})"
+                            $"Data model must be of type {{rootNode.FullName}}, (was {dataModel.GetType().FullName})"
                         );
                 }
 
