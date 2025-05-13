@@ -357,7 +357,7 @@ internal sealed class SigningCallToActionService(
                 SmsBody = $"Your signature is requested for {appName}. Open your Altinn inbox to proceed.",
                 EmailSubject = $"{appName}: Task for signing",
                 EmailBody =
-                    $"Your signature is requested for {appName}. Open your Altinn inbox to proceed.<br /><br />If you have any questions, you can contact {appOwner}.",
+                    $"Your signature is requested for {appName}. Open your Altinn inbox to proceed.\n\nIf you have any questions, you can contact {appOwner}.",
             },
             LanguageConst.Nn => new DefaultTexts
             {
@@ -368,7 +368,7 @@ internal sealed class SigningCallToActionService(
                 SmsBody = $"Signaturen din vert venta for {appName}. Opne Altinn-innboksen din for å gå vidare.",
                 EmailSubject = $"{appName}: Oppgåve til signering",
                 EmailBody =
-                    $"Signaturen din vert venta for {appName}. Opne Altinn-innboksen din for å gå vidare.<br /><br />Om du lurer på noko, kan du kontakte {appOwner}.",
+                    $"Signaturen din vert venta for {appName}. Opne Altinn-innboksen din for å gå vidare.\n\nOm du lurer på noko, kan du kontakte {appOwner}.",
             },
             LanguageConst.Nb or _ => new DefaultTexts
             {
@@ -379,7 +379,7 @@ internal sealed class SigningCallToActionService(
                 SmsBody = $"Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.",
                 EmailSubject = $"{appName}: Oppgave til signering",
                 EmailBody =
-                    $"Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.<br /><br />Hvis du lurer på noe, kan du kontakte {appOwner}.",
+                    $"Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.\n\nHvis du lurer på noe, kan du kontakte {appOwner}.",
             },
         };
     }
