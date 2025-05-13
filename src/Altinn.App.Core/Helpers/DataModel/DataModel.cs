@@ -20,11 +20,15 @@ public class DataModel
     public DataModel(IInstanceDataAccessor dataAccessor)
     {
         _dataAccessor = dataAccessor;
-        foreach (var (dataType, dataElement) in dataAccessor.GetDataElementsWithFormData())
+        foreach (var (dataType, dataElement) in dataAccessor.GetDataElements())
         {
-            if (dataType is { MaxCount: 1 })
+            if (dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
             {
                 _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
+            }
+            else
+            {
+                _dataIdsByType.TryAdd(dataElement.DataType, null);
             }
         }
     }
@@ -44,7 +48,11 @@ public class DataModel
         DataElementIdentifier defaultDataElementIdentifier
     )
     {
-        if (key.DataType == null)
+        if (
+            key.DataType == null
+            || defaultDataElementIdentifier.DataTypeId == key.DataType
+            || _dataAccessor.GetDataType(defaultDataElementIdentifier).Id == key.DataType
+        )
         {
             return (defaultDataElementIdentifier, await _dataAccessor.GetFormData(defaultDataElementIdentifier));
         }
