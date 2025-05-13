@@ -39,6 +39,8 @@ internal sealed class SigningCallToActionService(
     private readonly Telemetry? _telemetry = telemetry;
     private readonly UrlHelper _urlHelper = new(settings);
 
+    private const string SendersReferenceTail = "/cta";
+
     public async Task<SendCorrespondenceResponse?> SendSignCallToAction(
         CommunicationConfig? communicationConfig,
         AppIdentifier appIdentifier,
@@ -106,7 +108,7 @@ internal sealed class SigningCallToActionService(
                 .Create()
                 .WithResourceId(resource)
                 .WithSender(serviceOwnerParty.OrgNumber)
-                .WithSendersReference(instanceIdentifier.ToString())
+                .WithSendersReference(instanceIdentifier.ToString() + SendersReferenceTail)
                 .WithRecipient(recipient)
                 .WithContent(correspondenceContent)
                 .WithNotificationIfConfigured(

@@ -156,7 +156,7 @@ public class SigningReceiptServiceTests
         Assert.NotNull(capturedPayload);
         Assert.Equal("app_ttd_receipt", capturedPayload!.CorrespondenceRequest.ResourceId);
         Assert.Equal(
-            "123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07",
+            "123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07/receipt",
             capturedPayload.CorrespondenceRequest.SendersReference
         );
         Assert.Equal("974760673", capturedPayload.CorrespondenceRequest.Sender.ToString());

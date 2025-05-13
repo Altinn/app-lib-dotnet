@@ -37,6 +37,8 @@ internal sealed class SigningReceiptService(
     private readonly ILogger<SigningReceiptService> _logger = logger;
     private readonly Telemetry? _telemetry = telemetry;
 
+    private const string SendersReferenceTail = "/receipt";
+
     public async Task<SendCorrespondenceResponse?> SendSignatureReceipt(
         InstanceIdentifier instanceIdentifier,
         Internal.Sign.Signee signee,
@@ -70,7 +72,7 @@ internal sealed class SigningReceiptService(
                     .Create()
                     .WithResourceId(resource)
                     .WithSender(senderOrgNumber)
-                    .WithSendersReference(instanceIdentifier.ToString())
+                    .WithSendersReference(instanceIdentifier.ToString() + SendersReferenceTail)
                     .WithRecipient(recipient)
                     .WithContent(content)
                     .WithAttachments(attachments)

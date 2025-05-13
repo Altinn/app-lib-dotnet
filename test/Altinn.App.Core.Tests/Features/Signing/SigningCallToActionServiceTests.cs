@@ -142,9 +142,14 @@ public class SigningCallToActionServiceTests
 
         // Assert
         Assert.NotNull(capturedPayload);
+        Assert.Equal("app_ttd_appname", capturedPayload!.CorrespondenceRequest.ResourceId);
         Assert.Equal(
             CorrespondenceNotificationChannel.Sms,
             capturedPayload.CorrespondenceRequest.Notification!.NotificationChannel
+        );
+        Assert.Equal(
+            "123/ab0cdeb5-dc5e-4faa-966b-d18bb932ca07/cta",
+            capturedPayload.CorrespondenceRequest.SendersReference
         );
         Assert.Equal("Custom sms content", capturedPayload.CorrespondenceRequest.Notification.SmsBody);
         Assert.Null(capturedPayload.CorrespondenceRequest.Notification.EmailBody);
