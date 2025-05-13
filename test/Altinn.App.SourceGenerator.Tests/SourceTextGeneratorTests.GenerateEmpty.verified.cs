@@ -19,7 +19,7 @@ internal class Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper
     {
         return _dataModel as T
             ?? throw new InvalidCastException(
-                $"Attempted to cast data model of type global::Altinn.App.SourceGenerator.Tests.Empty to {typeof(T).FullName}"
+                $"Attempted to cast data model of type Altinn.App.SourceGenerator.Tests.Empty to {typeof(T).FullName}"
             );
     }
 
@@ -28,7 +28,7 @@ internal class Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper
         _dataModel =
             dataModel as global::Altinn.App.SourceGenerator.Tests.Empty
             ?? throw new ArgumentException(
-                $"Data model must be of type global::Altinn.App.SourceGenerator.Tests.Empty, (was {dataModel.GetType().FullName})"
+                $"Data model must be of type Altinn.App.SourceGenerator.Tests.Empty, (was {dataModel.GetType().FullName})"
             );
     }
 

@@ -119,11 +119,6 @@ internal static class AltinnRowIdsGenerator
         }
     }
 
-    private static bool IsAltinnRowId(ModelPathNode c)
-    {
-        return c is { JsonName: "altinnRowId", CSharpName: "AltinnRowId", TypeName: "global::System.Guid" };
-    }
-
     private sealed record PropertyWithListChildren(
         ModelPathNode Node,
         List<PropertyWithListChildren> Children,
@@ -133,7 +128,7 @@ internal static class AltinnRowIdsGenerator
     private static PropertyWithListChildren? GetListProperties(ModelPathNode node)
     {
         var children = node.Properties.Select(GetListProperties).OfType<PropertyWithListChildren>().ToList();
-        var isAltinnRowId = IsAltinnRowId(node);
+        var isAltinnRowId = node.IsAltinnRowId();
         if (children.Count == 0 && !isAltinnRowId)
         {
             return null;
