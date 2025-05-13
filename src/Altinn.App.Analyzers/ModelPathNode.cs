@@ -41,6 +41,11 @@ public record ModelPathNode
             .Replace("global::", "");
 
     /// <summary>
+    /// The fully qualified type name, excluding nullable annotations and the "global::" prefix.
+    /// </summary>
+    public string FullName => TypeName.Replace("?", "").Replace("global::", "");
+
+    /// <summary>
     /// The name used in json to access this property. The [JsonPropertyName("")] value.
     /// </summary>
     public string JsonName { get; init; }
@@ -51,7 +56,7 @@ public record ModelPathNode
     public string CSharpName { get; init; }
 
     /// <summary>
-    /// The FullName of the type of the property or element of list.
+    /// The FullName for the type of the property or element of list including global::.
     /// </summary>
     public string TypeName { get; init; }
 
@@ -71,4 +76,12 @@ public record ModelPathNode
 
     private string _debugDisplayString =>
         $"{JsonName}{(ListType is null ? "" : "[]")} with {Properties.Count} children";
+
+    /// <summary>
+    /// Determines whether the current node represents an AltinnRowId.
+    /// </summary>
+    public bool IsAltinnRowId()
+    {
+        return this is { JsonName: "altinnRowId", CSharpName: "AltinnRowId", TypeName: "global::System.Guid" };
+    }
 };

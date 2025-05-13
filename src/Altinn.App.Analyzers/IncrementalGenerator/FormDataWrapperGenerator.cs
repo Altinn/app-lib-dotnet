@@ -42,7 +42,7 @@ public class FormDataWrapperGenerator : IIncrementalGenerator
             )
             .SelectMany(ParseModelClassOrDiagnostic);
 
-        var modelPathNodesProvider = rootClasses.Combine(context.CompilationProvider).Select(CreateNodeThree);
+        var modelPathNodesProvider = rootClasses.Combine(context.CompilationProvider).Select(CreateNodeTree);
 
         context.RegisterSourceOutput(modelPathNodesProvider, GenerateFromNode);
     }
@@ -141,7 +141,7 @@ public class FormDataWrapperGenerator : IIncrementalGenerator
         }
     }
 
-    private static Result<ModelPathNode> CreateNodeThree(
+    private static Result<ModelPathNode> CreateNodeTree(
         (ModelClassOrDiagnostic, Compilation) tuple,
         CancellationToken _
     )
