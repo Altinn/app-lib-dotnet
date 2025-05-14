@@ -405,6 +405,7 @@ public class SigningUserActionTests
             s => s.SignDataElements(It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))),
             Times.Once
         );
+        result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
     }
 
     [Fact]
