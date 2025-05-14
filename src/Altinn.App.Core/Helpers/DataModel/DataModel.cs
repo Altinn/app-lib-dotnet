@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Helpers.DataModel;
 public class DataModel
 {
     private readonly IInstanceDataAccessor _dataAccessor;
-    private readonly Dictionary<string, DataElementIdentifier?> _dataIdsByType = [];
+    private readonly Dictionary<string, DataElementIdentifier> _dataIdsByType = [];
 
     /// <summary>
     /// Constructor that wraps a POCO data model, and gives extra tool for working with the data
@@ -25,10 +25,6 @@ public class DataModel
             if (dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
             {
                 _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
-            }
-            else
-            {
-                _dataIdsByType.TryAdd(dataElement.DataType, null);
             }
         }
     }
@@ -59,13 +55,19 @@ public class DataModel
 
         if (_dataIdsByType.TryGetValue(key.DataType, out var dataElementId))
         {
-            if (dataElementId is null)
+            return (dataElementId, await _dataAccessor.GetFormData(dataElementId));
+        }
+        if (_dataAccessor.GetDataType(key.DataType) is { } dataType)
+        {
+            if (dataType.MaxCount != 1)
             {
                 throw new InvalidOperationException(
                     $"{key.DataType} has maxCount different from 1 in applicationmetadata.json or don't have a classRef in appLogic"
                 );
             }
-            return (dataElementId.Value, await _dataAccessor.GetFormData(dataElementId.Value));
+            throw new InvalidOperationException(
+                $"{key.DataType} has no classRef in applicationmetadata.json and can't be used as a data model in layouts"
+            );
         }
 
         throw new InvalidOperationException(
