@@ -155,7 +155,7 @@ public class ValidateController : ControllerBase
         }
 
         // Should this be a BadRequest instead?
-        // The element will likely not be validated at all if the taskId is not the same as the one in the element
+        // The element will likely not be validated at all if the taskId is not the same as the one in the dataType
         if (!taskId.Equals(dataType.TaskId, StringComparison.OrdinalIgnoreCase))
         {
             ValidationIssueWithSource message = new()
