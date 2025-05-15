@@ -155,6 +155,7 @@ public sealed class ValidationServiceTests : IDisposable
         _serviceCollection.AddSingleton<IValidatorFactory, ValidatorFactory>();
 
         _serviceCollection.AddSingleton(Microsoft.Extensions.Options.Options.Create(new GeneralSettings()));
+        _serviceCollection.AddSingleton(Microsoft.Extensions.Options.Options.Create(new AppSettings()));
 
         // NeverUsedValidators
         _serviceCollection.AddSingleton(_taskValidatorNeverMock.Object);
