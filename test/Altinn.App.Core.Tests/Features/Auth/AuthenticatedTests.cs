@@ -137,7 +137,7 @@ public class AuthenticatedTests
         var exp = jwtToken.Payload.Exp;
         Assert.NotNull(exp);
         var expiryDateTime = DateTimeOffset.FromUnixTimeSeconds(exp.Value);
-        // Assert.True(expiryDateTime < DateTimeOffset.UtcNow, "Tokens used for testing should be expired");
+        Assert.True(expiryDateTime < DateTimeOffset.UtcNow, "Tokens used for testing should be expired");
 
         if (!succeeds)
         {
