@@ -22,6 +22,7 @@ namespace Altinn.App.Core.Features.Signing.Services;
 internal sealed class SigningService(
     IHostEnvironment hostEnvironment,
     IAltinnPartyClient altinnPartyClient,
+    IAltinnCdnClient altinnCdnClient,
     ISigningDelegationService signingDelegationService,
     IAppMetadata appMetadata,
     ISigningCallToActionService signingCallToActionService,
@@ -46,6 +47,7 @@ internal sealed class SigningService(
     private readonly ISigneeContextsManager _signeeContextsManager = signeeContextsManager;
     private readonly ISignDocumentManager _signDocumentManager = signDocumentManager;
     private readonly IHostEnvironment _hostEnvironment = hostEnvironment;
+    private readonly IAltinnCdnClient _altinnCdnClient = altinnCdnClient;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ISigningCallToActionService _signingCallToActionService = signingCallToActionService;
     private const string ApplicationJsonContentType = "application/json";
@@ -279,7 +281,7 @@ internal sealed class SigningService(
         }
     }
 
-    private async Task<(Party serviceOwnerParty, bool success)> GetServiceOwnerParty(CancellationToken ct)
+    internal async Task<(Party serviceOwnerParty, bool success)> GetServiceOwnerParty(CancellationToken ct)
     {
         using var activity = telemetry?.StartGetServiceOwnerPartyActivity();
         Party serviceOwnerParty;
@@ -287,21 +289,13 @@ internal sealed class SigningService(
         {
             ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-            using var altinnCdnClient = new AltinnCdnClient();
-
-            AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs(ct);
+            AltinnCdnOrgs altinnCdnOrgs = await _altinnCdnClient.GetOrgs(ct);
 
             AltinnCdnOrgDetails? serviceOwnerDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(applicationMetadata.Org);
 
-            if (serviceOwnerDetails?.Orgnr == "ttd")
-            {
-                // TestDepartementet is often used in test environments, it does not have an organization number, so we use Digitaliseringsdirektoratet's orgnr instead.
-                serviceOwnerDetails.Orgnr = "991825827";
-            }
+            PartyLookup partyLookup = new() { OrgNo = serviceOwnerDetails?.Orgnr };
 
-            serviceOwnerParty = await altinnPartyClient.LookupParty(
-                new PartyLookup { OrgNo = serviceOwnerDetails?.Orgnr }
-            );
+            serviceOwnerParty = await altinnPartyClient.LookupParty(partyLookup);
         }
         catch (Exception e)
         {

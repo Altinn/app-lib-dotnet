@@ -1,7 +1,14 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.AltinnCdn;
+
+internal static class AltinnCdnClientDI
+{
+    internal static void AddAltinnCdnClient(this IServiceCollection services) =>
+        services.AddHttpClient<IAltinnCdnClient, AltinnCdnClient>();
+}
 
 internal sealed class AltinnCdnClient : IAltinnCdnClient
 {
