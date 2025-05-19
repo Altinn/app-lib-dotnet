@@ -1,12 +1,16 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Texts;
+using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
@@ -14,6 +18,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Moq;
+using ProtoBuf.Meta;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests;
@@ -36,6 +41,8 @@ public sealed class DataAccessorFixture
     public Mock<ITranslationService> TranslationServiceMock { get; } = new(MockBehavior.Strict);
 
     public FrontEndSettings FrontEndSettings { get; } = new();
+    public GeneralSettings GeneralSettings { get; } = new();
+    public AppSettings AppSettings { get; } = new();
     public ApplicationMetadata ApplicationMetadata { get; } = new($"{Org}/{App}") { DataTypes = [] };
 
     public Instance Instance = new()
@@ -45,23 +52,47 @@ public sealed class DataAccessorFixture
         Data = [],
     };
 
-    private readonly IServiceCollection _serviceCollection = new ServiceCollection();
-
-    public ServiceProvider BuildServiceProvider() => _serviceCollection.BuildServiceProvider();
+    public IServiceCollection ServiceCollection { get; } = new ServiceCollection();
 
     private DataAccessorFixture(ITestOutputHelper outputHelper)
     {
         AppMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(ApplicationMetadata);
-        _serviceCollection.AddSingleton(AppResourcesMock.Object);
-        _serviceCollection.AddSingleton(AppMetadataMock.Object);
-        _serviceCollection.AddSingleton(Options.Create(FrontEndSettings));
-        _serviceCollection.AddSingleton(AppModelMock.Object);
-        _serviceCollection.AddSingleton(DataClientMock.Object);
-        _serviceCollection.AddSingleton(TranslationServiceMock.Object);
-        _serviceCollection.AddSingleton(InstanceClientMock.Object);
-        _serviceCollection.AddSingleton<InstanceDataUnitOfWorkInitializer>();
-        _serviceCollection.AddSingleton<ModelSerializationService>();
-        _serviceCollection.AddFakeLoggingWithXunit(outputHelper);
+        ServiceCollection.AddSingleton(AppResourcesMock.Object);
+        ServiceCollection.AddSingleton(AppMetadataMock.Object);
+        ServiceCollection.AddSingleton(Options.Create(FrontEndSettings));
+        ServiceCollection.AddSingleton(Options.Create(GeneralSettings));
+        ServiceCollection.AddSingleton(Options.Create(AppSettings));
+        ServiceCollection.AddSingleton(AppModelMock.Object);
+        ServiceCollection.AddSingleton(DataClientMock.Object);
+        ServiceCollection.AddSingleton(TranslationServiceMock.Object);
+        ServiceCollection.AddSingleton(InstanceClientMock.Object);
+        ServiceCollection.AddSingleton<InstanceDataUnitOfWorkInitializer>();
+        ServiceCollection.AddSingleton<ModelSerializationService>();
+        ServiceCollection.AddFakeLoggingWithXunit(outputHelper);
+        ServiceCollection.AddTransient<IValidator, RequiredLayoutValidator>();
+        ServiceCollection.AddTransient<IValidatorFactory, ValidatorFactory>();
+        ServiceCollection.AddTransient<IValidationService, ValidationService>();
+        ServiceCollection.AddTransient<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
+        ServiceCollection.AddTransient<AppImplementationFactory>();
+        ServiceCollection.AddSingleton(TranslationServiceMock.Object);
+        ServiceCollection.AddFakeLoggingWithXunit(outputHelper);
+        AppResourcesMock
+            .Setup(ar => ar.GetLayoutSet())
+            .Returns(
+                new LayoutSets()
+                {
+                    // RequiredLayoutValidator checks to see if TaskId has a layout to see if it should run
+                    Sets = new()
+                    {
+                        new()
+                        {
+                            Id = "default",
+                            DataType = "fake",
+                            Tasks = new() { TaskId },
+                        },
+                    },
+                }
+            );
     }
 
     public static async Task<DataAccessorFixture> CreateAsync(
@@ -124,21 +155,27 @@ public sealed class DataAccessorFixture
         AppResourcesMock.Setup(ar => ar.GetLayoutModelForTask(TaskId)).Returns(layoutModel);
     }
 
-    public void AddFormData(object data)
+    public void AddFormData(object data, int? maxCount = null)
     {
         var fullName = data.GetType().FullName;
         var dataType = ApplicationMetadata.DataTypes.Find(dt => dt.AppLogic?.ClassRef == fullName);
-        if (dataType == null)
+
+        if (dataType == null && maxCount != null)
         {
             dataType = new DataType()
             {
                 Id = data.GetType().Name,
                 TaskId = TaskId,
+                MaxCount = maxCount.Value,
                 AppLogic = new() { ClassRef = fullName },
             };
             ApplicationMetadata.DataTypes.Add(dataType);
             AppModelMock.Setup(am => am.GetModelType(fullName!)).Returns(data.GetType());
             AppModelMock.Setup(am => am.Create(fullName!)).Returns(Activator.CreateInstance(data.GetType())!);
+        }
+        else if (dataType is null)
+        {
+            throw new ArgumentException($"Data type {fullName} not found in ApplicationMetadata");
         }
         var dataGuid = Guid.NewGuid();
         var dataElement = new DataElement() { Id = dataGuid.ToString(), DataType = dataType.Id };
