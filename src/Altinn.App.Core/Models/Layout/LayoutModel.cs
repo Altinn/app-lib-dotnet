@@ -188,7 +188,12 @@ public class LayoutModel
     {
         List<ComponentContext> children = [];
         var layoutSetId = subFormComponent.LayoutSetId;
-        var layout = _layoutsLookup[layoutSetId];
+        if (!_layoutsLookup.TryGetValue(layoutSetId, out var layout))
+        {
+            throw new InvalidOperationException(
+                $"Layout set {layoutSetId} not found. Valid layout sets are: {string.Join(", ", _layoutsLookup.Keys)}"
+            );
+        }
         var dataElementsForSubForm = dataModel.Instance.Data.Where(d => d.DataType == layout.DefaultDataType.Id);
         foreach (var dataElement in dataElementsForSubForm)
         {

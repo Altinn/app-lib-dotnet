@@ -71,7 +71,10 @@ public static class IInstanceDataAccessorExtensions
     {
         return dataAccessor.DataTypes.FirstOrDefault(dataType =>
                 dataTypeId.Equals(dataType.Id, StringComparison.Ordinal)
-            ) ?? throw new InvalidOperationException($"Data type {dataTypeId} not found in applicationmetadata.json");
+            )
+            ?? throw new InvalidOperationException(
+                $"Data type {dataTypeId} not found in applicationmetadata.json (found: {string.Join(", ", dataAccessor.DataTypes.Select(d => d.Id))})"
+            );
     }
 
     /// <summary>

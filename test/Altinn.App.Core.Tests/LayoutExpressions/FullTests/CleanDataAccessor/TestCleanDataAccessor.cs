@@ -3,11 +3,19 @@ using System.Text.Json.Serialization;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests.CleanDataAccessor;
 
 public class TestCleanDataAccessor
 {
+    private readonly ITestOutputHelper _outputHelper;
+
+    public TestCleanDataAccessor(ITestOutputHelper outputHelper)
+    {
+        _outputHelper = outputHelper;
+    }
+
     public record SubModel
     {
         public bool? HideSubPage { get; set; }
@@ -278,12 +286,13 @@ public class TestCleanDataAccessor
         Assert.Equivalent(expectedSub2, cleanSub2);
     }
 
-    private static async Task<(T1?, T2?[])> GetMainAndSubClean<T1, T2>(T1 data, T2[] subDatas)
+    private async Task<(T1?, T2?[])> GetMainAndSubClean<T1, T2>(T1 data, T2[] subDatas)
         where T1 : class
         where T2 : class
     {
         var fixture = await DataAccessorFixture.CreateAsync(
-            [new("mainLayout", typeof(T1), MaxCount: 1), new("subLayout", typeof(T2), MaxCount: 1)]
+            [new("mainLayout", typeof(T1), MaxCount: 1), new("subLayout", typeof(T2), MaxCount: 1)],
+            _outputHelper
         );
         fixture.AddFormData(data);
         foreach (var subData in subDatas)
