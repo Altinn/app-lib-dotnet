@@ -14,6 +14,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Moq;
+using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests;
 
@@ -48,7 +49,7 @@ public sealed class DataAccessorFixture
 
     public ServiceProvider BuildServiceProvider() => _serviceCollection.BuildServiceProvider();
 
-    private DataAccessorFixture()
+    private DataAccessorFixture(ITestOutputHelper outputHelper)
     {
         AppMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(ApplicationMetadata);
         _serviceCollection.AddSingleton(AppResourcesMock.Object);
@@ -60,14 +61,16 @@ public sealed class DataAccessorFixture
         _serviceCollection.AddSingleton(InstanceClientMock.Object);
         _serviceCollection.AddSingleton<InstanceDataUnitOfWorkInitializer>();
         _serviceCollection.AddSingleton<ModelSerializationService>();
+        _serviceCollection.AddFakeLoggingWithXunit(outputHelper);
     }
 
     public static async Task<DataAccessorFixture> CreateAsync(
         List<LayoutSetSpec> specs,
+        ITestOutputHelper outputHelper,
         [CallerFilePath] string callerFilePath = ""
     )
     {
-        var fixture = new DataAccessorFixture();
+        var fixture = new DataAccessorFixture(outputHelper);
         await fixture.AddLayouts(specs, callerFilePath);
         return fixture;
     }

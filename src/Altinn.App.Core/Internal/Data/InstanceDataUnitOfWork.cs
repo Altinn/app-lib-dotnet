@@ -173,9 +173,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     }
 
     /// <inheritdoc />
-    public DataType? GetDataType(string dataTypeId) => _appMetadata.DataTypes.Find(d => d.Id == dataTypeId);
-
-    /// <inheritdoc />
     public FormDataChange AddFormDataElement(string dataTypeId, object model)
     {
         ArgumentNullException.ThrowIfNull(model);
@@ -259,18 +256,9 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     /// <inheritdoc />
     public void RemoveDataElement(DataElementIdentifier dataElementIdentifier)
     {
-        var dataElement = Instance.Data.Find(d => d.Id == dataElementIdentifier.Id);
-        if (dataElement is null)
-        {
-            throw new InvalidOperationException(
-                $"Data element with id {dataElementIdentifier.Id} not found in instance"
-            );
-        }
-        var dataType =
-            GetDataType(dataElement.DataType)
-            ?? throw new InvalidOperationException(
-                $"Data element {dataElement.Id} has data type {dataElement.DataType}, but the data type is not found in app metadata"
-            );
+        var dataElement = GetDataElement(dataElementIdentifier);
+        var dataType = this.GetDataType(dataElement.DataType);
+
         if (_changesForDeletion.Any(c => c.DataElementIdentifier == dataElementIdentifier))
         {
             throw new InvalidOperationException(
