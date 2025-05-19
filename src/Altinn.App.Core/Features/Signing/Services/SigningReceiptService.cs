@@ -24,6 +24,7 @@ internal sealed class SigningReceiptService(
     ICorrespondenceClient correspondenceClient,
     IDataClient dataClient,
     IHostEnvironment hostEnvironment,
+    IHttpClientFactory httpClientFactory,
     IAppMetadata appMetadata,
     ITranslationService translationService,
     ILogger<SigningReceiptService> logger,
@@ -33,6 +34,7 @@ internal sealed class SigningReceiptService(
     private readonly ICorrespondenceClient _correspondenceClient = correspondenceClient;
     private readonly IDataClient _dataClient = dataClient;
     private readonly IHostEnvironment _hostEnvironment = hostEnvironment;
+    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ILogger<SigningReceiptService> _logger = logger;
     private readonly Telemetry? _telemetry = telemetry;
@@ -112,7 +114,8 @@ internal sealed class SigningReceiptService(
         }
 
         bool disposeClient = altinnCdnClient is null;
-        altinnCdnClient ??= new AltinnCdnClient();
+        using HttpClient client = _httpClientFactory.CreateClient();
+        altinnCdnClient ??= new AltinnCdnClient(client);
         try
         {
             AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs();

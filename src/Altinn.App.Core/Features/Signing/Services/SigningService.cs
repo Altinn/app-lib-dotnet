@@ -268,6 +268,7 @@ internal sealed class SigningService(
 
         try
         {
+            //TODO: add metric
             return await altinnPartyClient.LookupParty(
                 !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
                     ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
@@ -276,6 +277,7 @@ internal sealed class SigningService(
         }
         catch (Exception)
         {
+            //TODO: add metric
             _logger.LogError("Failed to look up party for instance owner.");
             throw new SigningException("Failed to lookup party information for instance owner.");
         }

@@ -25,6 +25,7 @@ public class SigningReceiptServiceTests
     static SigningReceiptService SetupService(
         Mock<ICorrespondenceClient>? correspondenceClientMockOverride = null,
         Mock<IHostEnvironment>? hostEnvironmentMockOverride = null,
+        Mock<IHttpClientFactory>? httpClientFactoryMockOverride = null,
         Mock<IDataClient>? dataClientMockOverride = null,
         Mock<IAppMetadata>? appMetadataMockOverride = null,
         ITranslationService? translationServiceOverride = null
@@ -34,12 +35,14 @@ public class SigningReceiptServiceTests
         Mock<IHostEnvironment> hostEnvironmentMock = hostEnvironmentMockOverride ?? new();
         Mock<IDataClient>? dataClientMock = dataClientMockOverride ?? new();
         Mock<IAppMetadata> appMetadataMock = appMetadataMockOverride ?? new();
+        Mock<IHttpClientFactory> httpClientFactoryMock = httpClientFactoryMockOverride ?? new(MockBehavior.Strict);
         Mock<ITranslationService> translationServiceMock = new();
         Mock<ILogger<SigningReceiptService>> loggerMock = new();
         return new SigningReceiptService(
             correspondenceClientMock.Object,
             dataClientMock.Object,
             hostEnvironmentMock.Object,
+            httpClientFactoryMock.Object,
             appMetadataMock.Object,
             translationServiceOverride ?? translationServiceMock.Object,
             loggerMock.Object
@@ -73,6 +76,11 @@ public class SigningReceiptServiceTests
 
         Mock<IHostEnvironment> hostEnvironmentMock = new();
         hostEnvironmentMock.Setup(m => m.EnvironmentName).Returns("tt02");
+
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        var httpClient = new HttpClient();
+        httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
         ApplicationMetadata applicationMetadata = new("org/app")
         {
             Title = new Dictionary<string, string> { { LanguageConst.Nb, "TestAppName" } },
@@ -121,6 +129,7 @@ public class SigningReceiptServiceTests
             correspondenceClientMockOverride: correspondenceClientMock,
             appMetadataMockOverride: appMetadataMock,
             hostEnvironmentMockOverride: hostEnvironmentMock,
+            httpClientFactoryMockOverride: httpClientFactoryMock,
             dataClientMockOverride: dataClientMock
         );
 
