@@ -81,7 +81,9 @@ partial class Telemetry
 
     internal static class ServiceOwnerPartyConst
     {
-        internal static readonly string MetricNameGetServiceOwnerParty = Metrics.CreateLibName("singing_get_service_owner_party");
+        internal static readonly string MetricNameGetServiceOwnerParty = Metrics.CreateLibName(
+            "singing_get_service_owner_party"
+        );
 
         [EnumExtensions]
         internal enum ServiceOwnerPartyResult
@@ -92,8 +94,8 @@ partial class Telemetry
             [Display(Name = "error")]
             Error,
         }
-
     }
+
     internal static class NotifySigneesConst
     {
         internal static readonly string MetricNameNotifySignees = Metrics.CreateLibName("signing_notify_signees");
