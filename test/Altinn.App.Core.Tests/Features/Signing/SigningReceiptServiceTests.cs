@@ -84,9 +84,7 @@ public class SigningReceiptServiceTests
                 new AltinnCdnOrgDetails
                 {
                     Name = new AltinnCdnOrgName { Nb = "Brønnøysundregistrene" },
-                    Logo = "https://altinncdn.no/orgs/digdir/digdir.png",
                     Orgnr = "974760673",
-                    Homepage = "https://www.digdir.no/",
                     Environments = ["tt02"],
                 }
             },
