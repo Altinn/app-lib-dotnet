@@ -1,0 +1,20 @@
+[
+  {
+    "value": "yes",
+    "label": "Yes",
+    "description": "Description for yes",
+    "helpText": "Help text for yes"
+  },
+  {
+    "value": "maybe",
+    "label": "Maybe",
+    "description": "Description for maybe",
+    "helpText": "Help text for maybe"
+  },
+  {
+    "value": "no",
+    "label": "No",
+    "description": "Description for no",
+    "helpText": "Help text for no"
+  }
+]

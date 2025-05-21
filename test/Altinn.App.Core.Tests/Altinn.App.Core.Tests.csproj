@@ -52,4 +52,11 @@
     <Content Include="secrets.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="Features\Options\AltinnCdnProvider\Testdata\numbers\en.json" />
+    <EmbeddedResource Include="Features\Options\AltinnCdnProvider\Testdata\numbers\en.json" />
+    <None Remove="Features\Options\AltinnCdnProvider\Testdata\yesNoMaybe\en.json" />
+    <EmbeddedResource Include="Features\Options\AltinnCdnProvider\Testdata\yesNoMaybe\en.json" />
+  </ItemGroup>
+
 </Project>
