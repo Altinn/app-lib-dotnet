@@ -25,8 +25,8 @@ public class SigningReceiptServiceTests
     static SigningReceiptService SetupService(
         Mock<ICorrespondenceClient>? correspondenceClientMockOverride = null,
         Mock<IHostEnvironment>? hostEnvironmentMockOverride = null,
-        Mock<IHttpClientFactory>? httpClientFactoryMockOverride = null,
         Mock<IDataClient>? dataClientMockOverride = null,
+        Mock<IAltinnCdnClient>? altinnCdnClientMockOverride = null,
         Mock<IAppMetadata>? appMetadataMockOverride = null,
         ITranslationService? translationServiceOverride = null
     )
@@ -35,14 +35,14 @@ public class SigningReceiptServiceTests
         Mock<IHostEnvironment> hostEnvironmentMock = hostEnvironmentMockOverride ?? new();
         Mock<IDataClient>? dataClientMock = dataClientMockOverride ?? new();
         Mock<IAppMetadata> appMetadataMock = appMetadataMockOverride ?? new();
-        Mock<IHttpClientFactory> httpClientFactoryMock = httpClientFactoryMockOverride ?? new(MockBehavior.Strict);
+        Mock<IAltinnCdnClient> altinnCdnClientMock = altinnCdnClientMockOverride ?? new();
         Mock<ITranslationService> translationServiceMock = new();
         Mock<ILogger<SigningReceiptService>> loggerMock = new();
         return new SigningReceiptService(
             correspondenceClientMock.Object,
             dataClientMock.Object,
             hostEnvironmentMock.Object,
-            httpClientFactoryMock.Object,
+            altinnCdnClientMock.Object,
             appMetadataMock.Object,
             translationServiceOverride ?? translationServiceMock.Object,
             loggerMock.Object
@@ -77,9 +77,26 @@ public class SigningReceiptServiceTests
         Mock<IHostEnvironment> hostEnvironmentMock = new();
         hostEnvironmentMock.Setup(m => m.EnvironmentName).Returns("tt02");
 
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        var httpClient = new HttpClient();
-        httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
+        var orgs = new Dictionary<string, AltinnCdnOrgDetails>
+        {
+            {
+                "brg",
+                new AltinnCdnOrgDetails
+                {
+                    Name = new AltinnCdnOrgName { Nb = "Brønnøysundregistrene" },
+                    Logo = "https://altinncdn.no/orgs/digdir/digdir.png",
+                    Orgnr = "974760673",
+                    Homepage = "https://www.digdir.no/",
+                    Environments = ["tt02"],
+                }
+            },
+        };
+
+        AltinnCdnOrgs altinnCdnOrgs = new() { Orgs = orgs };
+        Mock<IAltinnCdnClient> altinnCdnClientMock = new();
+        altinnCdnClientMock
+            .Setup(x => x.GetOrgs(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(altinnCdnOrgs));
 
         ApplicationMetadata applicationMetadata = new("org/app")
         {
@@ -127,9 +144,9 @@ public class SigningReceiptServiceTests
 
         SigningReceiptService service = SetupService(
             correspondenceClientMockOverride: correspondenceClientMock,
+            altinnCdnClientMockOverride: altinnCdnClientMock,
             appMetadataMockOverride: appMetadataMock,
             hostEnvironmentMockOverride: hostEnvironmentMock,
-            httpClientFactoryMockOverride: httpClientFactoryMock,
             dataClientMockOverride: dataClientMock
         );
 
@@ -208,7 +225,12 @@ public class SigningReceiptServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ConfigurationException>(() =>
-            service.GetCorrespondenceHeaders(recipientNin, applicationMetadata, correspondenceResources)
+            service.GetCorrespondenceHeaders(
+                recipientNin,
+                applicationMetadata,
+                correspondenceResources,
+                CancellationToken.None
+            )
         );
     }
 
@@ -236,7 +258,12 @@ public class SigningReceiptServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.GetCorrespondenceHeaders(recipientNin, applicationMetadata, correspondenceResources)
+            service.GetCorrespondenceHeaders(
+                recipientNin,
+                applicationMetadata,
+                correspondenceResources,
+                CancellationToken.None
+            )
         );
     }
 

@@ -24,7 +24,7 @@ internal sealed class SigningReceiptService(
     ICorrespondenceClient correspondenceClient,
     IDataClient dataClient,
     IHostEnvironment hostEnvironment,
-    IHttpClientFactory httpClientFactory,
+    IAltinnCdnClient altinnCdnClient,
     IAppMetadata appMetadata,
     ITranslationService translationService,
     ILogger<SigningReceiptService> logger,
@@ -34,7 +34,7 @@ internal sealed class SigningReceiptService(
     private readonly ICorrespondenceClient _correspondenceClient = correspondenceClient;
     private readonly IDataClient _dataClient = dataClient;
     private readonly IHostEnvironment _hostEnvironment = hostEnvironment;
-    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+    private readonly IAltinnCdnClient _altinnCdnClient = altinnCdnClient;
     private readonly IAppMetadata _appMetadata = appMetadata;
     private readonly ILogger<SigningReceiptService> _logger = logger;
     private readonly Telemetry? _telemetry = telemetry;
@@ -54,6 +54,7 @@ internal sealed class SigningReceiptService(
             signee.PersonNumber,
             applicationMetadata,
             correspondenceResources,
+            ct,
             context.AltinnCdnClient
         );
 
@@ -92,6 +93,7 @@ internal sealed class SigningReceiptService(
         string? recipientNin,
         ApplicationMetadata appMetadata,
         List<AltinnEnvironmentConfig>? correspondenceResources,
+        CancellationToken ct,
         IAltinnCdnClient? altinnCdnClient = null
     )
     {
@@ -113,31 +115,20 @@ internal sealed class SigningReceiptService(
             );
         }
 
-        bool disposeClient = altinnCdnClient is null;
-        using HttpClient client = _httpClientFactory.CreateClient();
-        altinnCdnClient ??= new AltinnCdnClient(client);
-        try
-        {
-            AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs();
-            AltinnCdnOrgDetails? senderDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org);
-            string? senderOrgNumber = senderDetails?.Orgnr;
+        altinnCdnClient ??= _altinnCdnClient;
 
-            if (senderDetails is null || string.IsNullOrEmpty(senderOrgNumber))
-            {
-                throw new InvalidOperationException(
-                    $"Error looking up sender's organization number from Altinn CDN, using key `{appMetadata.Org}`"
-                );
-            }
+        AltinnCdnOrgs altinnCdnOrgs = await altinnCdnClient.GetOrgs(ct);
+        AltinnCdnOrgDetails? senderDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org);
+        string? senderOrgNumber = senderDetails?.Orgnr;
 
-            return (resource, senderOrgNumber, senderDetails, recipient);
-        }
-        finally
+        if (senderDetails is null || string.IsNullOrEmpty(senderOrgNumber))
         {
-            if (disposeClient)
-            {
-                altinnCdnClient.Dispose();
-            }
+            throw new InvalidOperationException(
+                $"Error looking up sender's organization number from Altinn CDN, using key `{appMetadata.Org}`"
+            );
         }
+
+        return (resource, senderOrgNumber, senderDetails, recipient);
     }
 
     internal async Task<CorrespondenceContent> GetContent(
