@@ -120,18 +120,21 @@ internal sealed class SigningService(
                     );
                     signeeContext.SigneeState.CtaCorrespondenceId = response?.Correspondences.Single().CorrespondenceId;
                     signeeContext.SigneeState.HasBeenMessagedForCallToSign = true;
+                    telemetry?.RecordNotifySignees(Telemetry.NotifySigneesConst.NotifySigneesResult.Success);
                 }
                 catch (ConfigurationException e)
                 {
                     _logger.LogError(e, "Correspondence configuration error: {Exception}", e.Message);
                     signeeContext.SigneeState.HasBeenMessagedForCallToSign = false;
                     signeeContext.SigneeState.CallToSignFailedReason = $"Correspondence configuration error.";
+                    telemetry?.RecordNotifySignees(Telemetry.NotifySigneesConst.NotifySigneesResult.Error);
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "Correspondence send failed: {Exception}", e.Message);
                     signeeContext.SigneeState.HasBeenMessagedForCallToSign = false;
                     signeeContext.SigneeState.CallToSignFailedReason = $"Correspondence configuration error.";
+                    telemetry?.RecordNotifySignees(Telemetry.NotifySigneesConst.NotifySigneesResult.Error);
                 }
             }
         }
@@ -268,7 +271,6 @@ internal sealed class SigningService(
 
         try
         {
-            //TODO: add metric
             return await altinnPartyClient.LookupParty(
                 !string.IsNullOrEmpty(instanceOwner.OrganisationNumber)
                     ? new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
@@ -277,7 +279,6 @@ internal sealed class SigningService(
         }
         catch (Exception)
         {
-            //TODO: add metric
             _logger.LogError("Failed to look up party for instance owner.");
             throw new SigningException("Failed to lookup party information for instance owner.");
         }
@@ -290,18 +291,17 @@ internal sealed class SigningService(
         try
         {
             ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
-
             AltinnCdnOrgs altinnCdnOrgs = await _altinnCdnClient.GetOrgs(ct);
-
             AltinnCdnOrgDetails? serviceOwnerDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(applicationMetadata.Org);
-
             PartyLookup partyLookup = new() { OrgNo = serviceOwnerDetails?.Orgnr };
-
             serviceOwnerParty = await altinnPartyClient.LookupParty(partyLookup);
+
+            telemetry?.RecordGetServiceOwnerParty(Telemetry.ServiceOwnerPartyConst.ServiceOwnerPartyResult.Success);
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Failed to look up party for service owner.");
+            telemetry?.RecordGetServiceOwnerParty(Telemetry.ServiceOwnerPartyConst.ServiceOwnerPartyResult.Error);
             return (new Party(), false);
         }
 
