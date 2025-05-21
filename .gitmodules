@@ -1,0 +1,3 @@
+[submodule "app-localtest"]
+	path = app-localtest
+	url = git@github.com:Altinn/app-localtest.git
