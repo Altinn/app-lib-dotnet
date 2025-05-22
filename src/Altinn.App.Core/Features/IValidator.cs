@@ -37,7 +37,20 @@ public interface IValidator
     /// frontend that the issues from the validator can't be cached, because FE won't be informed when the issue is fixed.
     /// Issues from validators with NoIncrementalValidation will be shown once but prevent process/next from succeeding.
     /// </summary>
+    /// <remarks>
+    /// The default implementation returns <c>false</c>. Override this property in implementations if validation
+    /// needs to execute after hidden data removal.
+    /// </remarks>
     bool NoIncrementalValidation => false;
+
+    /// <summary>
+    /// Indicates whether the validator should execute after removing data elements marked as hidden.
+    /// </summary>
+    /// <remarks>
+    /// The default implementation returns <c>false</c>. Override this property in implementations if validation
+    /// needs to execute after hidden data removal.
+    /// </remarks>
+    bool ShouldRunAfterRemovingHiddenData => false;
 
     /// <summary>
     /// Run this validator and return all the issues this validator is aware of.
