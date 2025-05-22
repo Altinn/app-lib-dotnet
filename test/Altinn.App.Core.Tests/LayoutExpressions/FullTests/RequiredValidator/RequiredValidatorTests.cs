@@ -128,8 +128,6 @@ public class RequiredValidatorTests
             [new("mainLayout", typeof(Model), MaxCount: 1), new("subLayout", typeof(SubModel), MaxCount: 0)],
             _outputHelper
         );
-        // Ensure that we run validation with hidden data removed
-        fixture.AppSettings.RemoveHiddenData = true;
         fixture.AddFormData(data);
         foreach (var subData in subDatas)
         {
@@ -184,6 +182,8 @@ public class RequiredValidatorTests
     {
         public string TaskId { get; } = DataAccessorFixture.TaskId;
 
+        public bool ShouldRunAfterRemovingHiddenData => true;
+
         public async Task<List<ValidationIssue>> Validate(
             IInstanceDataAccessor dataAccessor,
             string taskId,
@@ -200,7 +200,7 @@ public class RequiredValidatorTests
                         new()
                         {
                             Severity = ValidationIssueSeverity.Error,
-                            Description = "ServerValidationHidden contains test",
+                            Description = $"ServerValidationHidden contains test in {model.GetType().Name}",
                         }
                     );
                 }
@@ -210,7 +210,7 @@ public class RequiredValidatorTests
                         new()
                         {
                             Severity = ValidationIssueSeverity.Error,
-                            Description = "ServerValidationNotTest contains test",
+                            Description = $"ServerValidationNotTest contains test in {model.GetType().Name}",
                         }
                     );
                 }

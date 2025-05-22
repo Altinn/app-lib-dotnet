@@ -64,7 +64,7 @@
       Issues: [
         {
           Severity: Error,
-          Description: ServerValidationNotTest contains test,
+          Description: ServerValidationNotTest contains test in Model,
           Source: Altinn.App.Core.Tests.LayoutExpressions.FullTests.RequiredValidator.RequiredValidatorTests+TestValidator-Task_1-access,
           NoIncrementalUpdates: false
         }
@@ -128,7 +128,7 @@
     },
     {
       Severity: Error,
-      Description: ServerValidationNotTest contains test,
+      Description: ServerValidationNotTest contains test in Model,
       Source: Altinn.App.Core.Tests.LayoutExpressions.FullTests.RequiredValidator.RequiredValidatorTests+TestValidator-Task_1-access,
       NoIncrementalUpdates: false
     }
