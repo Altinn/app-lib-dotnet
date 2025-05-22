@@ -147,7 +147,8 @@ public sealed class ValidationServiceTests : IDisposable
             null!,
             null!,
             DefaultTaskId,
-            DefaultLanguage
+            DefaultLanguage,
+            null
         );
         _serviceCollection.AddAppImplementationFactory();
         _serviceCollection.AddSingleton(_loggerMock.Object);
@@ -429,7 +430,8 @@ public sealed class ValidationServiceTests : IDisposable
             null!,
             null!,
             DefaultTaskId,
-            DefaultLanguage
+            DefaultLanguage,
+            null
         );
         var resultData = await validatorService.ValidateIncrementalFormData(
             dataAccessor,
@@ -512,7 +514,8 @@ public sealed class ValidationServiceTests : IDisposable
             null!,
             null!,
             DefaultTaskId,
-            DefaultLanguage
+            DefaultLanguage,
+            null
         );
 
         var taskResult = await validationService.ValidateInstanceAtTask(

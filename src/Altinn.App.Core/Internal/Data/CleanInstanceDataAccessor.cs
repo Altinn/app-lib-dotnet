@@ -19,6 +19,7 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
     private readonly RowRemovalOption _rowRemovalOption;
     private readonly string? _language;
     private readonly ITranslationService _translationService;
+    private readonly Telemetry? _telemetry;
 
     public CleanInstanceDataAccessor(
         IInstanceDataAccessor dataAccessor,
@@ -27,7 +28,8 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
         ITranslationService translationService,
         FrontEndSettings frontEndSettings,
         RowRemovalOption rowRemovalOption,
-        string? language
+        string? language,
+        Telemetry? telemetry
     )
     {
         _dataAccessor = dataAccessor;
@@ -36,6 +38,7 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
         _frontEndSettings = frontEndSettings;
         _rowRemovalOption = rowRemovalOption;
         _language = language;
+        _telemetry = telemetry;
 
         LayoutModel? layouts = taskId is not null ? appResources.GetLayoutModelForTask(taskId) : null;
         var state = new LayoutEvaluatorState(
@@ -46,7 +49,11 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
             gatewayAction: null,
             language
         );
-        _hiddenFieldsTask = new(() => LayoutEvaluator.GetHiddenFieldsForRemoval(state));
+        _hiddenFieldsTask = new(() =>
+        {
+            using var activity = telemetry?.StartRemoveHiddenDataForValidation();
+            return LayoutEvaluator.GetHiddenFieldsForRemoval(state);
+        });
         _translationService = translationService;
     }
 
@@ -110,7 +117,8 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
             _translationService,
             _frontEndSettings,
             rowRemovalOption,
-            _language
+            _language,
+            _telemetry
         );
     }
 

@@ -40,6 +40,8 @@ public sealed class DataAccessorFixture
 
     public Mock<ITranslationService> TranslationServiceMock { get; } = new(MockBehavior.Strict);
 
+    internal Mock<IDataElementAccessChecker> DataElementAccessCheckerMock { get; } = new(MockBehavior.Strict);
+
     public FrontEndSettings FrontEndSettings { get; } = new();
     public GeneralSettings GeneralSettings { get; } = new();
     public AppSettings AppSettings { get; } = new();
@@ -66,6 +68,7 @@ public sealed class DataAccessorFixture
         ServiceCollection.AddSingleton(DataClientMock.Object);
         ServiceCollection.AddSingleton(TranslationServiceMock.Object);
         ServiceCollection.AddSingleton(InstanceClientMock.Object);
+        ServiceCollection.AddSingleton(DataElementAccessCheckerMock.Object);
         ServiceCollection.AddSingleton<InstanceDataUnitOfWorkInitializer>();
         ServiceCollection.AddSingleton<ModelSerializationService>();
         ServiceCollection.AddFakeLoggingWithXunit(outputHelper);
