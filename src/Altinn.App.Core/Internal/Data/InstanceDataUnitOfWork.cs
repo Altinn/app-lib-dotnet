@@ -4,6 +4,7 @@ using System.Globalization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
@@ -30,9 +31,13 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     private readonly IInstanceClient _instanceClient;
     private readonly ApplicationMetadata _appMetadata;
     private readonly ModelSerializationService _modelSerializationService;
+    private readonly IAppResources _appResources;
+    private readonly IOptions<FrontEndSettings> _frontEndSettings;
+    private readonly string? _taskId;
+    private readonly string? _language;
 
-    // Cache for the most up to date form data (can be mutated or replaced with SetFormData(dataElementId, data))
-    private readonly DataElementCache<object> _formDataCache = new();
+    // Cache for the most up-to-date form data (can be mutated or replaced with SetFormData(dataElementId, data))
+    private readonly DataElementCache<IFormDataWrapper> _formDataCache = new();
 
     // Cache for the binary content of the file as currently in storage (updated on save)
     private readonly DataElementCache<ReadOnlyMemory<byte>> _binaryCache = new();
@@ -42,10 +47,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     // Form data not yet saved to storage (thus no dataElementId)
     private readonly ConcurrentBag<DataElementChange> _changesForCreation = [];
-
-    // The update functions returns updated data elements.
-    // We want to make sure that the data elements are updated in the instance object
-    private readonly ConcurrentBag<DataElement> _savedDataElements = [];
 
     public InstanceDataUnitOfWork(
         Instance instance,
@@ -67,16 +68,29 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         }
 
         Instance = instance;
+        DataTypes = appMetadata.DataTypes;
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _modelSerializationService = modelSerializationService;
+        _taskId = taskId;
+        _language = language;
+        _frontEndSettings = frontEndSettings;
+        _appResources = appResources;
         _instanceClient = instanceClient;
     }
 
     public Instance Instance { get; }
 
+    public IReadOnlyCollection<DataType> DataTypes { get; }
+
     /// <inheritdoc />
     public async Task<object> GetFormData(DataElementIdentifier dataElementIdentifier)
+    {
+        return (await GetFormDataWrapper(dataElementIdentifier)).BackingData<object>();
+    }
+
+    /// <inheritdoc />
+    public async Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier)
     {
         return await _formDataCache.GetOrCreate(
             dataElementIdentifier,
@@ -84,11 +98,38 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             {
                 var binaryData = await GetBinaryData(dataElementIdentifier);
 
-                return _modelSerializationService.DeserializeFromStorage(
-                    binaryData.Span,
-                    this.GetDataType(dataElementIdentifier)
+                return FormDataWrapperFactory.Create(
+                    _modelSerializationService.DeserializeFromStorage(
+                        binaryData.Span,
+                        this.GetDataType(dataElementIdentifier)
+                    )
                 );
             }
+        );
+    }
+
+    /// <inheritdoc />
+    public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)
+    {
+        return new CleanInstanceDataAccessor(
+            this,
+            _taskId,
+            _appResources,
+            _frontEndSettings.Value,
+            rowRemovalOption,
+            _language
+        );
+    }
+
+    public IInstanceDataAccessor GetPreviousDataAccessor()
+    {
+        return new PreviousDataAccessor(
+            this,
+            _taskId,
+            _appResources,
+            _modelSerializationService,
+            _frontEndSettings.Value,
+            _language
         );
     }
 
@@ -124,9 +165,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 $"Data element of id {dataElementIdentifier.Id} not found on instance with id {Instance.Id}"
             );
     }
-
-    /// <inheritdoc />
-    public DataType? GetDataType(string dataTypeId) => _appMetadata.DataTypes.Find(d => d.Id == dataTypeId);
 
     /// <inheritdoc />
     public FormDataChange AddFormDataElement(string dataTypeId, object model)
@@ -212,18 +250,9 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     /// <inheritdoc />
     public void RemoveDataElement(DataElementIdentifier dataElementIdentifier)
     {
-        var dataElement = Instance.Data.Find(d => d.Id == dataElementIdentifier.Id);
-        if (dataElement is null)
-        {
-            throw new InvalidOperationException(
-                $"Data element with id {dataElementIdentifier.Id} not found in instance"
-            );
-        }
-        var dataType =
-            GetDataType(dataElement.DataType)
-            ?? throw new InvalidOperationException(
-                $"Data element {dataElement.Id} has data type {dataElement.DataType}, but the data type is not found in app metadata"
-            );
+        var dataElement = GetDataElement(dataElementIdentifier);
+        var dataType = this.GetDataType(dataElement.DataType);
+
         if (_changesForDeletion.Any(c => c.DataElementIdentifier == dataElementIdentifier))
         {
             throw new InvalidOperationException(
@@ -298,7 +327,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             }
             var dataType = this.GetDataType(dataElementIdentifier);
 
-            if (!_formDataCache.TryGetCachedValue(dataElementIdentifier, out object? data))
+            if (!_formDataCache.TryGetCachedValue(dataElementIdentifier, out IFormDataWrapper? dataWrapper))
             {
                 // We don't support making updates to binary data elements (attachments) in IInstanceDataMutator
                 continue;
@@ -322,10 +351,13 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
             if (initializeAltinnRowId)
             {
-                ObjectUtils.InitializeAltinnRowId(data);
+                dataWrapper.InitializeAltinnRowIds();
             }
 
-            var (currentBinary, _) = _modelSerializationService.SerializeToStorage(data, dataType);
+            var (currentBinary, _) = _modelSerializationService.SerializeToStorage(
+                dataWrapper.BackingData<object>(),
+                dataType
+            );
 
             if (!currentBinary.Span.SequenceEqual(cachedBinary.Span))
             {
@@ -336,7 +368,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                         DataElement = dataElement,
                         ContentType = dataElement.ContentType,
                         DataType = dataType,
-                        CurrentFormData = data,
+                        CurrentFormData = dataWrapper.BackingData<object>(),
                         // For patch requests we could get the previous data from the patch, but it's not available here
                         // and deserializing twice is not a big deal
                         PreviousFormData = _modelSerializationService.DeserializeFromStorage(
@@ -380,7 +412,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         _binaryCache.Set(dataElement, bytes);
         if (change is FormDataChange formDataChange)
         {
-            _formDataCache.Set(dataElement, formDataChange.CurrentFormData);
+            _formDataCache.Set(dataElement, FormDataWrapperFactory.Create(formDataChange.CurrentFormData));
         }
         createdDataElements.TryAdd(change, dataElement);
     }
@@ -392,14 +424,13 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         ReadOnlyMemory<byte> bytes
     )
     {
-        var newDataElement = await _dataClient.UpdateBinaryData(
+        await _dataClient.UpdateBinaryData(
             new InstanceIdentifier(Instance),
             contentType,
             filename,
             dataElementIdentifier.Guid,
             new MemoryAsStream(bytes)
         );
-        _savedDataElements.Add(newDataElement);
     }
 
     internal async Task UpdateInstanceData(DataElementChanges changes)
@@ -453,14 +484,11 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         // update data elements on new elements
         foreach (var change in changes.AllChanges)
         {
-            if (change.DataElement is null)
-            {
-                change.DataElement = createdDataElements.TryGetValue(change, out var value)
-                    ? value
-                    : throw new InvalidOperationException(
-                        "DataElementChange without DataElement must be a new data element"
-                    );
-            }
+            change.DataElement ??= createdDataElements.TryGetValue(change, out var value)
+                ? value
+                : throw new InvalidOperationException(
+                    "DataElementChange without DataElement must be a new data element"
+                );
             if (change is FormDataChange formDataChange)
             {
                 //Update DataValues and presentation texts
@@ -514,20 +542,20 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     /// <summary>
     /// Add or replace existing data element data in the cache
     /// </summary>
-    internal void SetFormData(DataElementIdentifier dataElementIdentifier, object data)
+    internal void SetFormData(DataElementIdentifier dataElementIdentifier, IFormDataWrapper formDataWrapper)
     {
         var dataType = this.GetDataType(dataElementIdentifier);
         if (dataType.AppLogic?.ClassRef is not { } classRef)
         {
             throw new InvalidOperationException($"Data element {dataElementIdentifier.Id} don't have app logic");
         }
-        if (data.GetType().FullName != classRef)
+        if (formDataWrapper.BackingDataType.FullName != classRef)
         {
             throw new InvalidOperationException(
-                $"Data object registered for {dataElementIdentifier.Id} is not of type {classRef} as specified in application metadata for data type {dataType.Id}, but {data.GetType().FullName}"
+                $"Data object registered for {dataElementIdentifier.Id} is not of type {classRef} as specified in application metadata for data type {dataType.Id}, but {formDataWrapper.BackingDataType.FullName}"
             );
         }
-        _formDataCache.Set(dataElementIdentifier, data);
+        _formDataCache.Set(dataElementIdentifier, formDataWrapper);
     }
 
     private DataType GetDataTypeByString(string dataTypeString)
@@ -546,14 +574,14 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         var changes = GetDataElementChanges(initializeAltinnRowId: false);
         if (changes.AllChanges.Count != previousChanges.AllChanges.Count)
         {
-            throw new Exception("Number of data elements have changed by validators");
+            throw new InvalidOperationException("Number of data elements have changed by validators");
         }
 
         foreach (var previousChange in previousChanges.AllChanges)
         {
             var currentChange =
                 changes.AllChanges.FirstOrDefault(c => c.DataElement?.Id == previousChange.DataElement?.Id)
-                ?? throw new Exception("Number of data elements have changed by validators");
+                ?? throw new InvalidOperationException("Number of data elements have changed by validators");
 
             var equal = (currentChange, previousChange) switch
             {
@@ -564,11 +592,11 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 (BinaryDataChange current, BinaryDataChange previous) => current.CurrentBinaryData.Span.SequenceEqual(
                     previous.CurrentBinaryData.Span
                 ),
-                _ => throw new Exception("Data element type has changed by validators"),
+                _ => throw new InvalidOperationException("Data element type has changed by validators"),
             };
             if (!equal)
             {
-                throw new Exception(
+                throw new InvalidOperationException(
                     $"Data element {previousChange.DataType.Id} with id {previousChange.DataElement?.Id} has been changed by validators"
                 );
             }
