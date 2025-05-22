@@ -282,6 +282,7 @@ public class ExpressionsExclusiveGatewayTests
             null!,
             null!,
             TaskId,
+            null,
             null
         );
 

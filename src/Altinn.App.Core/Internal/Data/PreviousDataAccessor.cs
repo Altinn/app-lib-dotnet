@@ -19,6 +19,7 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
     private readonly FrontEndSettings _frontEndSettings;
     private readonly string? _language;
     private readonly ITranslationService _translationService;
+    private readonly Telemetry? _telemetry;
 
     public PreviousDataAccessor(
         IInstanceDataAccessor dataAccessor,
@@ -27,7 +28,8 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
         ITranslationService translationService,
         ModelSerializationService modelSerializationService,
         FrontEndSettings frontEndSettings,
-        string? language
+        string? language,
+        Telemetry? telemetry
     )
     {
         _dataAccessor = dataAccessor;
@@ -37,6 +39,7 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
         _modelSerializationService = modelSerializationService;
         _frontEndSettings = frontEndSettings;
         _language = language;
+        _telemetry = telemetry;
     }
 
     public Instance Instance => _dataAccessor.Instance;
@@ -67,7 +70,8 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
             _translationService,
             _frontEndSettings,
             rowRemovalOption,
-            _language
+            _language,
+            _telemetry
         );
     }
 
