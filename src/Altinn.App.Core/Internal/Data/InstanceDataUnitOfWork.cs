@@ -35,6 +35,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     private readonly IOptions<FrontEndSettings> _frontEndSettings;
     private readonly string? _taskId;
     private readonly string? _language;
+    private readonly Telemetry? _telemetry;
 
     // Cache for the most up-to-date form data (can be mutated or replaced with SetFormData(dataElementId, data))
     private readonly DataElementCache<IFormDataWrapper> _formDataCache = new();
@@ -57,7 +58,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         IAppResources appResources,
         IOptions<FrontEndSettings> frontEndSettings,
         string? taskId,
-        string? language
+        string? language,
+        Telemetry? telemetry
     )
     {
         if (instance.Id is not null)
@@ -77,6 +79,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         _frontEndSettings = frontEndSettings;
         _appResources = appResources;
         _instanceClient = instanceClient;
+        _telemetry = telemetry;
     }
 
     public Instance Instance { get; }
@@ -117,7 +120,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             _appResources,
             _frontEndSettings.Value,
             rowRemovalOption,
-            _language
+            _language,
+            _telemetry
         );
     }
 
@@ -129,7 +133,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             _appResources,
             _modelSerializationService,
             _frontEndSettings.Value,
-            _language
+            _language,
+            _telemetry
         );
     }
 
@@ -505,6 +510,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     internal async Task SaveChanges(DataElementChanges changes)
     {
+        using var activity = _telemetry?.StartSaveChanges(changes);
         if (HasAbandonIssues)
         {
             throw new InvalidOperationException("AbandonAllChanges has been called, and no changes should be saved");
@@ -571,6 +577,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     internal void VerifyDataElementsUnchangedSincePreviousChanges(DataElementChanges previousChanges)
     {
+        using var activity = _telemetry?.StartVerifyDataElementsUnchangedSincePreviousChanges();
         var changes = GetDataElementChanges(initializeAltinnRowId: false);
         if (changes.AllChanges.Count != previousChanges.AllChanges.Count)
         {

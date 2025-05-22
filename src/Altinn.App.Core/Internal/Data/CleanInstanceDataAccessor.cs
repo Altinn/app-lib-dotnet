@@ -17,6 +17,7 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
     private readonly FrontEndSettings _frontEndSettings;
     private readonly RowRemovalOption _rowRemovalOption;
     private readonly string? _language;
+    private readonly Telemetry? _telemetry;
 
     public CleanInstanceDataAccessor(
         IInstanceDataAccessor dataAccessor,
@@ -24,7 +25,8 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
         IAppResources appResources,
         FrontEndSettings frontEndSettings,
         RowRemovalOption rowRemovalOption,
-        string? language
+        string? language,
+        Telemetry? telemetry
     )
     {
         _dataAccessor = dataAccessor;
@@ -33,10 +35,21 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
         _frontEndSettings = frontEndSettings;
         _rowRemovalOption = rowRemovalOption;
         _language = language;
+        _telemetry = telemetry;
 
-        LayoutModel? layouts = taskId is not null ? appResources.GetLayoutModelForTask(taskId) : null;
-        var state = new LayoutEvaluatorState(dataAccessor, layouts, frontEndSettings, gatewayAction: null, language);
-        _hiddenFieldsTask = new(() => LayoutEvaluator.GetHiddenFieldsForRemoval(state));
+        _hiddenFieldsTask = new Lazy<Task<List<DataReference>>>(() =>
+        {
+            using var activity = telemetry?.StartRemoveHiddenDataForValidation();
+            LayoutModel? layouts = taskId is not null ? appResources.GetLayoutModelForTask(taskId) : null;
+            var state = new LayoutEvaluatorState(
+                dataAccessor,
+                layouts,
+                frontEndSettings,
+                gatewayAction: null,
+                language
+            );
+            return LayoutEvaluator.GetHiddenFieldsForRemoval(state);
+        });
     }
 
     private readonly DataElementCache<IFormDataWrapper> _cleanCache = new();
@@ -98,7 +111,8 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
             _appResources,
             _frontEndSettings,
             rowRemovalOption,
-            _language
+            _language,
+            _telemetry
         );
     }
 

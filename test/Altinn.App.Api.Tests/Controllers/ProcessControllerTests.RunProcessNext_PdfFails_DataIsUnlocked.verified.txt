@@ -99,6 +99,15 @@
       IdFormat: W3C
     },
     {
+      ActivityName: InstanceDataAccessor.SaveChanges,
+      Tags: [
+        {
+          numberOfChangedDataElements: 1
+        }
+      ],
+      IdFormat: W3C
+    },
+    {
       ActivityName: PUT {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next,
       Tags: [
         {
