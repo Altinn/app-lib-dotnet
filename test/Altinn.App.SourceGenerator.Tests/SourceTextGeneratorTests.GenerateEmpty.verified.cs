@@ -47,22 +47,22 @@ internal class Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper
         var pathOffset = 0;
 
         AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_Empty(
-            buffer,
             path,
+            pathOffset,
             rowIndexes,
-            ref bufferOffset,
-            ref pathOffset
+            buffer,
+            ref bufferOffset
         );
 
         return buffer[..bufferOffset];
     }
 
     private void AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_Empty(
-        Span<char> buffer,
         ReadOnlySpan<char> path,
+        int pathOffset,
         ReadOnlySpan<int> rowIndexes,
-        ref int bufferOffset,
-        ref int pathOffset
+        Span<char> buffer,
+        ref int bufferOffset
     )
     {
         if (bufferOffset > 0)

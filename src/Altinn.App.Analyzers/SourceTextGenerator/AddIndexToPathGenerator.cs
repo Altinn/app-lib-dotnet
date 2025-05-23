@@ -16,11 +16,11 @@ internal static class AddIndexToPathGenerator
                     var pathOffset = 0;
 
                     AddIndexToPathRecursive_{{rootNode.Name}}(
-                        buffer,
                         path,
+                        pathOffset,
                         rowIndexes,
-                        ref bufferOffset,
-                        ref pathOffset
+                        buffer,
+                        ref bufferOffset
                     );
 
                     return buffer[..bufferOffset];
@@ -42,11 +42,11 @@ internal static class AddIndexToPathGenerator
             $$"""
 
                 private void AddIndexToPathRecursive_{{node.Name}}(
-                    Span<char> buffer,
                     ReadOnlySpan<char> path,
+                    int pathOffset,
                     ReadOnlySpan<int> rowIndexes,
-                    ref int bufferOffset,
-                    ref int pathOffset
+                    Span<char> buffer,
+                    ref int bufferOffset
                 )
                 {
                     if (bufferOffset > 0)
@@ -105,14 +105,17 @@ internal static class AddIndexToPathGenerator
             }
             builder.Append(
                 $$"""
-                                AddIndexToPathRecursive_{{child.Name}}(
-                                    buffer,
-                                    path,
-                                    rowIndexes,
-                                    ref bufferOffset,
-                                    ref pathOffset
-                                );
-                                break;
+                                if (pathOffset != -1)
+                                {
+                                    AddIndexToPathRecursive_{{child.Name}}(
+                                        path,
+                                        pathOffset,
+                                        rowIndexes,
+                                        buffer,
+                                        ref bufferOffset
+                                    );
+                                }
+                                return;
 
                 """
             );
@@ -126,8 +129,7 @@ internal static class AddIndexToPathGenerator
                                 segment.CopyTo(buffer.Slice(bufferOffset));
                                 bufferOffset += {{child.JsonName.Length}};
                                 pathOffset += {{child.JsonName.Length}};
-
-                                break;
+                                return;
 
                 """
             );
