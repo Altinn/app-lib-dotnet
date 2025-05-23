@@ -143,22 +143,22 @@ internal class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
         var pathOffset = 0;
 
         AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_Skjema(
-            buffer,
             path,
+            pathOffset,
             rowIndexes,
-            ref bufferOffset,
-            ref pathOffset
+            buffer,
+            ref bufferOffset
         );
 
         return buffer[..bufferOffset];
     }
 
     private void AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_Skjema(
-        Span<char> buffer,
         ReadOnlySpan<char> path,
+        int pathOffset,
         ReadOnlySpan<int> rowIndexes,
-        ref int bufferOffset,
-        ref int pathOffset
+        Span<char> buffer,
+        ref int bufferOffset
     )
     {
         if (bufferOffset > 0)
@@ -196,37 +196,41 @@ internal class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
                     bufferOffset = 0;
                     return;
                 }
-                AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_SkjemaInnhold(
-                    buffer,
-                    path,
-                    rowIndexes,
-                    ref bufferOffset,
-                    ref pathOffset
-                );
-                break;
+                if (pathOffset != -1)
+                {
+                    AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_SkjemaInnhold(
+                        path,
+                        pathOffset,
+                        rowIndexes,
+                        buffer,
+                        ref bufferOffset
+                    );
+                }
+                return;
             case "eierAdresse":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 11;
-                AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_Adresse(
-                    buffer,
-                    path,
-                    rowIndexes,
-                    ref bufferOffset,
-                    ref pathOffset
-                );
-                break;
+                if (pathOffset != -1)
+                {
+                    AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_Adresse(
+                        path,
+                        pathOffset,
+                        rowIndexes,
+                        buffer,
+                        ref bufferOffset
+                    );
+                }
+                return;
             case "skjemanummer":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 12;
                 pathOffset += 12;
-
-                break;
+                return;
             case "skjemaversjon":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 13;
                 pathOffset += 13;
-
-                break;
+                return;
             default:
                 bufferOffset = 0;
                 return;
@@ -234,11 +238,11 @@ internal class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
     }
 
     private void AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_SkjemaInnhold(
-        Span<char> buffer,
         ReadOnlySpan<char> path,
+        int pathOffset,
         ReadOnlySpan<int> rowIndexes,
-        ref int bufferOffset,
-        ref int pathOffset
+        Span<char> buffer,
+        ref int bufferOffset
     )
     {
         if (bufferOffset > 0)
@@ -251,14 +255,17 @@ internal class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
             case "adresse":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 7;
-                AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_Adresse(
-                    buffer,
-                    path,
-                    rowIndexes,
-                    ref bufferOffset,
-                    ref pathOffset
-                );
-                break;
+                if (pathOffset != -1)
+                {
+                    AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_Adresse(
+                        path,
+                        pathOffset,
+                        rowIndexes,
+                        buffer,
+                        ref bufferOffset
+                    );
+                }
+                return;
             case "tidligere-adresse":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 17;
@@ -287,38 +294,37 @@ internal class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
                     bufferOffset = 0;
                     return;
                 }
-                AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_Adresse(
-                    buffer,
-                    path,
-                    rowIndexes,
-                    ref bufferOffset,
-                    ref pathOffset
-                );
-                break;
+                if (pathOffset != -1)
+                {
+                    AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_Adresse(
+                        path,
+                        pathOffset,
+                        rowIndexes,
+                        buffer,
+                        ref bufferOffset
+                    );
+                }
+                return;
             case "altinnRowId":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 11;
                 pathOffset += 11;
-
-                break;
+                return;
             case "navn":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 4;
                 pathOffset += 4;
-
-                break;
+                return;
             case "alder":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 5;
                 pathOffset += 5;
-
-                break;
+                return;
             case "deltar":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 6;
                 pathOffset += 6;
-
-                break;
+                return;
             default:
                 bufferOffset = 0;
                 return;
@@ -326,11 +332,11 @@ internal class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
     }
 
     private void AddIndexToPathRecursive_Altinn_App_SourceGenerator_Tests_Adresse(
-        Span<char> buffer,
         ReadOnlySpan<char> path,
+        int pathOffset,
         ReadOnlySpan<int> rowIndexes,
-        ref int bufferOffset,
-        ref int pathOffset
+        Span<char> buffer,
+        ref int bufferOffset
     )
     {
         if (bufferOffset > 0)
@@ -344,26 +350,22 @@ internal class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 11;
                 pathOffset += 11;
-
-                break;
+                return;
             case "gate":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 4;
                 pathOffset += 4;
-
-                break;
+                return;
             case "postnummer":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 10;
                 pathOffset += 10;
-
-                break;
+                return;
             case "poststed":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 8;
                 pathOffset += 8;
-
-                break;
+                return;
             default:
                 bufferOffset = 0;
                 return;

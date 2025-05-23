@@ -16,6 +16,7 @@ public class TestAddIndexToPath
         IFormDataWrapper wrapper = reflection
             ? new ReflectionFormDataWrapper(data)
             : new Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper(data);
+        Assert.Equal("skjemainnhold[214]", wrapper.AddIndexToPath("skjemainnhold", [214]));
         Assert.Equal("skjemainnhold[214].navn", wrapper.AddIndexToPath("skjemainnhold.navn", [214, 33]));
         Assert.Equal("skjemainnhold[214].alder", wrapper.AddIndexToPath("skjemainnhold.alder", [214]));
         Assert.Null(wrapper.AddIndexToPath("skjemainnhold.finnes-ikke", [214, 1]));
@@ -26,6 +27,10 @@ public class TestAddIndexToPath
         Assert.Equal(
             "skjemainnhold[0].tidligere-adresse[4].gate",
             wrapper.AddIndexToPath("skjemainnhold.tidligere-adresse.gate", [0, 4])
+        );
+        Assert.Equal(
+            "skjemainnhold[0].tidligere-adresse[4]",
+            wrapper.AddIndexToPath("skjemainnhold.tidligere-adresse", [0, 4])
         );
     }
 }
