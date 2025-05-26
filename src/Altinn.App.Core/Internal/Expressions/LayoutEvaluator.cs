@@ -44,7 +44,7 @@ public static class LayoutEvaluator
             );
         }
 
-        var isHidden = await context.IsHidden(state);
+        var isHidden = await context.IsHidden();
         if (context.Component is RepeatingGroupRowComponent or RepeatingGroupComponent)
         {
             if (context.Component.DataModelBindings.TryGetValue("group", out var groupBinding))
@@ -134,7 +134,7 @@ public static class LayoutEvaluator
     )
     {
         ArgumentNullException.ThrowIfNull(context.Component);
-        var hidden = await context.IsHidden(state);
+        var hidden = await context.IsHidden();
         if (!hidden)
         {
             foreach (var childContext in context.ChildContexts)

@@ -1,7 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
@@ -16,15 +15,15 @@ namespace Altinn.App.Core.Internal.Expressions;
 /// </summary>
 public class LayoutEvaluatorState
 {
-    private readonly DataModel _dataModel;
     private readonly LayoutModel? _componentModel;
     private readonly ITranslationService _translationService;
     private readonly FrontEndSettings _frontEndSettings;
-    private readonly Instance _instanceContext;
     private readonly string? _gatewayAction;
     private readonly string? _language;
     private readonly TimeZoneInfo? _timeZone;
-    private readonly Lazy<Task<List<ComponentContext>>?> _rootContext;
+    private List<ComponentContext>? _rootContext;
+    private readonly IInstanceDataAccessor _dataAccessor;
+    private readonly Dictionary<string, DataElementIdentifier> _dataIdsByType = [];
 
     /// <summary>
     /// Constructor for LayoutEvaluatorState. Usually called via <see cref="LayoutEvaluatorStateInitializer" /> that can be fetched from dependency injection.
@@ -46,27 +45,42 @@ public class LayoutEvaluatorState
         TimeZoneInfo? timeZone = null
     )
     {
-        _dataModel = new DataModel(dataAccessor);
+        foreach (var (dataType, dataElement) in dataAccessor.GetDataElements())
+        {
+            if (dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
+            {
+                _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
+            }
+        }
+        _dataAccessor = dataAccessor;
         _componentModel = componentModel;
         _translationService = translationService;
         _frontEndSettings = frontEndSettings;
-        _instanceContext = dataAccessor.Instance;
+        Instance = dataAccessor.Instance;
         _gatewayAction = gatewayAction;
         _language = language;
         _timeZone = timeZone;
-        _rootContext = new(() => _componentModel?.GenerateComponentContexts(_instanceContext, _dataModel));
     }
+
+    /// <summary>
+    /// Get the Instance object that is referenced for evaluation.
+    /// </summary>
+    public Instance Instance { get; }
 
     /// <summary>
     /// Get a hierarchy of the different contexts in the component model (remember to iterate <see cref="ComponentContext.ChildContexts" />)
     /// </summary>
     public async Task<List<ComponentContext>> GetComponentContexts()
     {
-        if (_rootContext.Value is null)
+        if (_rootContext is null)
         {
-            throw new InvalidOperationException("Component model not loaded");
+            if (_componentModel is null)
+            {
+                throw new InvalidOperationException("Component model not loaded");
+            }
+            _rootContext = await _componentModel.GenerateComponentContexts(this);
         }
-        return (await _rootContext.Value);
+        return _rootContext;
     }
 
     /// <summary>
@@ -165,7 +179,9 @@ public class LayoutEvaluatorState
         int[]? indexes
     )
     {
-        return await _dataModel.GetModelData(key, defaultDataElementIdentifier, indexes);
+        var elementIdentifier = ResolveDataElementIdentifier(key, defaultDataElementIdentifier);
+        var model = await _dataAccessor.GetFormDataWrapper(elementIdentifier);
+        return model.Get(key.Field, indexes);
     }
 
     /// <summary>
@@ -173,7 +189,8 @@ public class LayoutEvaluatorState
     /// </summary>
     public async Task<DataReference[]> GetResolvedKeys(DataReference reference)
     {
-        return await _dataModel.GetResolvedKeys(reference);
+        var data = await _dataAccessor.GetFormDataWrapper(reference.DataElementIdentifier);
+        return data.GetResolvedKeys(reference);
     }
 
     /// <summary>
@@ -181,7 +198,8 @@ public class LayoutEvaluatorState
     /// </summary>
     public async Task RemoveDataField(DataReference key, RowRemovalOption rowRemovalOption)
     {
-        await _dataModel.RemoveField(key, rowRemovalOption);
+        var dataWrapper = await _dataAccessor.GetFormDataWrapper(key.DataElementIdentifier);
+        dataWrapper.RemoveField(key.Field, rowRemovalOption);
     }
 
     /// <summary>
@@ -192,13 +210,13 @@ public class LayoutEvaluatorState
         // Instance context only supports a small subset of variables from the instance
         return key switch
         {
-            "instanceOwnerPartyId" => _instanceContext.InstanceOwner.PartyId,
-            "appId" => _instanceContext.AppId,
-            "instanceId" => _instanceContext.Id,
+            "instanceOwnerPartyId" => Instance.InstanceOwner.PartyId,
+            "appId" => Instance.AppId,
+            "instanceId" => Instance.Id,
             "instanceOwnerPartyType" => (
-                !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.OrganisationNumber) ? "org"
-                : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.PersonNumber) ? "person"
-                : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.Username) ? "selfIdentified"
+                !string.IsNullOrWhiteSpace(Instance.InstanceOwner.OrganisationNumber) ? "org"
+                : !string.IsNullOrWhiteSpace(Instance.InstanceOwner.PersonNumber) ? "person"
+                : !string.IsNullOrWhiteSpace(Instance.InstanceOwner.Username) ? "selfIdentified"
                 : "unknown"
             ),
             _ => throw new ExpressionEvaluatorTypeErrorException($"Unknown Instance context property {key}"),
@@ -210,7 +228,7 @@ public class LayoutEvaluatorState
     /// </summary>
     public int CountDataElements(string dataTypeId)
     {
-        return _instanceContext.Data.Count(d => d.DataType == dataTypeId);
+        return Instance.Data.Count(d => d.DataType == dataTypeId);
     }
 
     /// <summary>
@@ -232,7 +250,47 @@ public class LayoutEvaluatorState
     /// </example>
     public async Task<DataReference> AddInidicies(ModelBinding binding, ComponentContext context)
     {
-        return await _dataModel.AddIndexes(binding, context.DataElementIdentifier, context.RowIndices);
+        var dataElementId = ResolveDataElementIdentifier(binding, context.DataElementIdentifier);
+        var formDataWrapper = await _dataAccessor.GetFormDataWrapper(dataElementId);
+
+        var field = formDataWrapper.AddIndexToPath(binding.Field, context.RowIndices) ?? "";
+        return new DataReference() { Field = field, DataElementIdentifier = dataElementId };
+    }
+
+    private DataElementIdentifier ResolveDataElementIdentifier(
+        ModelBinding key,
+        DataElementIdentifier defaultDataElementIdentifier
+    )
+    {
+        if (
+            key.DataType == null
+            || defaultDataElementIdentifier.DataTypeId == key.DataType
+            || _dataAccessor.GetDataType(defaultDataElementIdentifier).Id == key.DataType
+        )
+        {
+            return defaultDataElementIdentifier;
+        }
+
+        if (_dataIdsByType.TryGetValue(key.DataType, out var dataElementId))
+        {
+            return dataElementId;
+        }
+        if (_dataAccessor.GetDataType(key.DataType) is { } dataType)
+        {
+            if (dataType.MaxCount != 1)
+            {
+                throw new InvalidOperationException(
+                    $"{key.DataType} has maxCount different from 1 in applicationmetadata.json or don't have a classRef in appLogic"
+                );
+            }
+            throw new InvalidOperationException(
+                $"{key.DataType} has no classRef in applicationmetadata.json and can't be used as a data model in layouts"
+            );
+        }
+
+        throw new InvalidOperationException(
+            $"Data model with type {key.DataType} not found in applicationmetadata.json"
+        );
     }
 
     /// <summary>
@@ -244,7 +302,17 @@ public class LayoutEvaluatorState
         int[]? indexes
     )
     {
-        return await _dataModel.AddIndexes(binding, dataElementIdentifier, indexes);
+        var dataElementId = ResolveDataElementIdentifier(binding, dataElementIdentifier);
+        var formDataWrapper = await _dataAccessor.GetFormDataWrapper(dataElementId);
+        return new DataReference()
+        {
+            DataElementIdentifier = dataElementId,
+            Field =
+                formDataWrapper.AddIndexToPath(binding.Field, indexes)
+                ?? throw new InvalidOperationException(
+                    $"Failed to add indexes to path {binding.Field} with indexes {indexes} on {dataElementId}"
+                ),
+        };
     }
 
     /// <summary>
@@ -252,7 +320,7 @@ public class LayoutEvaluatorState
     /// </summary>
     internal DataElementIdentifier GetDefaultDataElementId()
     {
-        return _componentModel?.GetDefaultDataElementId(_instanceContext)
+        return _componentModel?.GetDefaultDataElementId(Instance)
             ?? throw new InvalidOperationException("Component model not loaded");
     }
 
@@ -264,6 +332,17 @@ public class LayoutEvaluatorState
     public async Task<string> TranslateText(string textKey, ComponentContext context)
     {
         return await _translationService.TranslateTextKey(textKey, this, context) ?? textKey;
+    }
+
+    internal async Task<int?> GetModelDataCount(
+        ModelBinding groupBinding,
+        DataElementIdentifier defaultDataElementIdentifier,
+        int[]? indexes
+    )
+    {
+        var dataElementId = ResolveDataElementIdentifier(groupBinding, defaultDataElementIdentifier);
+        var model = await _dataAccessor.GetFormDataWrapper(dataElementId);
+        return model.GetRowCount(groupBinding.Field, indexes);
     }
 
     // /// <summary>

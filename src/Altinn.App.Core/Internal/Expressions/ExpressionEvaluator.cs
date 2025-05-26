@@ -72,7 +72,7 @@ public static class ExpressionEvaluator
     /// <summary>
     /// private implementation in order to change the types of positional arguments without breaking change.
     /// </summary>
-    private static async Task<ExpressionValue> EvaluateExpression_internal(
+    internal static async Task<ExpressionValue> EvaluateExpression_internal(
         LayoutEvaluatorState state,
         Expression expr,
         ComponentContext context,
@@ -268,7 +268,7 @@ public static class ExpressionEvaluator
         {
             throw new ArgumentException("component lookup requires the target component to have a simpleBinding");
         }
-        if (await targetContext.IsHidden(state))
+        if (await targetContext.IsHidden())
         {
             return ExpressionValue.Null;
         }
