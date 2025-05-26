@@ -1,4 +1,4 @@
-using Altinn.App.Core.Helpers.DataModel;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
@@ -47,17 +47,16 @@ public class LayoutModel
     /// Generate a list of <see cref="ComponentContext"/> for all components in the layout model
     /// taking repeating groups into account.
     /// </summary>
-    /// <param name="instance">The instance with data element information</param>
-    /// <param name="dataModel">The data model to use for repeating groups</param>
-    public async Task<List<ComponentContext>> GenerateComponentContexts(Instance instance, DataModel dataModel)
+    /// <param name="state">The layoutEvaluator state to generate contexts for</param>
+    public async Task<List<ComponentContext>> GenerateComponentContexts(LayoutEvaluatorState state)
     {
         var pageContexts = new List<ComponentContext>();
         foreach (var page in _defaultLayoutSet.Pages)
         {
-            var defaultElementId = _defaultLayoutSet.GetDefaultDataElementId(instance);
+            var defaultElementId = _defaultLayoutSet.GetDefaultDataElementId(state.Instance);
             if (defaultElementId is not null)
             {
-                pageContexts.Add(await GenerateComponentContextsRecurs(page, dataModel, defaultElementId.Value, []));
+                pageContexts.Add(await GenerateComponentContextsRecurs(page, state, defaultElementId.Value, []));
             }
         }
 
@@ -66,7 +65,7 @@ public class LayoutModel
 
     private async Task<ComponentContext> GenerateComponentContextsRecurs(
         BaseComponent component,
-        DataModel dataModel,
+        LayoutEvaluatorState state,
         DataElementIdentifier defaultDataElementIdentifier,
         int[]? indexes
     )
@@ -74,24 +73,25 @@ public class LayoutModel
         return component switch
         {
             SubFormComponent subFormComponent => await GenerateContextForSubComponent(
-                dataModel,
+                state,
                 subFormComponent,
                 defaultDataElementIdentifier
             ),
 
             RepeatingGroupComponent repeatingGroupComponent => await GenerateContextForRepeatingGroup(
-                dataModel,
+                state,
                 repeatingGroupComponent,
                 defaultDataElementIdentifier,
                 indexes
             ),
             GroupComponent groupComponent => await GenerateContextForGroup(
-                dataModel,
+                state,
                 groupComponent,
                 defaultDataElementIdentifier,
                 indexes
             ),
             _ => new ComponentContext(
+                state,
                 component,
                 indexes?.Length > 0 ? indexes : null,
                 defaultDataElementIdentifier,
@@ -101,7 +101,7 @@ public class LayoutModel
     }
 
     private async Task<ComponentContext> GenerateContextForGroup(
-        DataModel dataModel,
+        LayoutEvaluatorState state,
         GroupComponent groupComponent,
         DataElementIdentifier defaultDataElementIdentifier,
         int[]? indexes
@@ -110,12 +110,11 @@ public class LayoutModel
         List<ComponentContext> children = [];
         foreach (var child in groupComponent.Children)
         {
-            children.Add(
-                await GenerateComponentContextsRecurs(child, dataModel, defaultDataElementIdentifier, indexes)
-            );
+            children.Add(await GenerateComponentContextsRecurs(child, state, defaultDataElementIdentifier, indexes));
         }
 
         return new ComponentContext(
+            state,
             groupComponent,
             indexes?.Length > 0 ? indexes : null,
             defaultDataElementIdentifier,
@@ -124,7 +123,7 @@ public class LayoutModel
     }
 
     private async Task<ComponentContext> GenerateContextForRepeatingGroup(
-        DataModel dataModel,
+        LayoutEvaluatorState state,
         RepeatingGroupComponent repeatingGroupComponent,
         DataElementIdentifier defaultDataElementIdentifier,
         int[]? indexes
@@ -139,7 +138,7 @@ public class LayoutModel
                 repeatingGroupComponent.HiddenRow,
                 repeatingGroupComponent
             );
-            var rowLength = await dataModel.GetModelDataCount(groupBinding, defaultDataElementIdentifier, indexes) ?? 0;
+            var rowLength = await state.GetModelDataCount(groupBinding, defaultDataElementIdentifier, indexes) ?? 0;
             // We add rows in reverse order, so that we can remove them without affecting the indexes of the remaining rows
             foreach (var index in Enumerable.Range(0, rowLength).Reverse())
             {
@@ -152,17 +151,13 @@ public class LayoutModel
                 foreach (var child in repeatingGroupComponent.Children)
                 {
                     rowChildren.Add(
-                        await GenerateComponentContextsRecurs(
-                            child,
-                            dataModel,
-                            defaultDataElementIdentifier,
-                            subIndexes
-                        )
+                        await GenerateComponentContextsRecurs(child, state, defaultDataElementIdentifier, subIndexes)
                     );
                 }
 
                 children.Add(
                     new ComponentContext(
+                        state,
                         repeatingGroupRowComponent,
                         subIndexes,
                         defaultDataElementIdentifier,
@@ -173,6 +168,7 @@ public class LayoutModel
         }
 
         return new ComponentContext(
+            state,
             repeatingGroupComponent,
             indexes?.Length > 0 ? indexes : null,
             defaultDataElementIdentifier,
@@ -181,7 +177,7 @@ public class LayoutModel
     }
 
     private async Task<ComponentContext> GenerateContextForSubComponent(
-        DataModel dataModel,
+        LayoutEvaluatorState state,
         SubFormComponent subFormComponent,
         DataElementIdentifier defaultDataElementIdentifier
     )
@@ -194,17 +190,17 @@ public class LayoutModel
                 $"Layout set {layoutSetId} not found. Valid layout sets are: {string.Join(", ", _layoutsLookup.Keys)}"
             );
         }
-        var dataElementsForSubForm = dataModel.Instance.Data.Where(d => d.DataType == layout.DefaultDataType.Id);
+        var dataElementsForSubForm = state.Instance.Data.Where(d => d.DataType == layout.DefaultDataType.Id);
         foreach (var dataElement in dataElementsForSubForm)
         {
             foreach (var page in layout.Pages)
             {
                 // "Subform" does not support "hiddenRow", so we don't need to create a context for each data element/row
-                children.Add(await GenerateComponentContextsRecurs(page, dataModel, dataElement, indexes: null));
+                children.Add(await GenerateComponentContextsRecurs(page, state, dataElement, indexes: null));
             }
         }
 
-        return new ComponentContext(subFormComponent, null, defaultDataElementIdentifier, children);
+        return new ComponentContext(state, subFormComponent, null, defaultDataElementIdentifier, children);
     }
 
     internal DataElementIdentifier? GetDefaultDataElementId(Instance instance)

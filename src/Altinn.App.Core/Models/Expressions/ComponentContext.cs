@@ -16,12 +16,14 @@ public sealed class ComponentContext
     /// Constructor for ComponentContext
     /// </summary>
     public ComponentContext(
+        LayoutEvaluatorState state,
         BaseComponent? component,
         int[]? rowIndices,
         DataElementIdentifier dataElementIdentifier,
         List<ComponentContext>? childContexts = null
     )
     {
+        State = state;
         DataElementIdentifier = dataElementIdentifier;
         Component = component;
         RowIndices = rowIndices;
@@ -47,19 +49,19 @@ public sealed class ComponentContext
     /// <summary>
     /// Memoized way to check if the component is hidden
     /// </summary>
-    public async Task<bool> IsHidden(LayoutEvaluatorState state)
+    public async Task<bool> IsHidden()
     {
         if (_isHidden.HasValue)
         {
             return _isHidden.Value;
         }
-        if (Parent is not null && await Parent.IsHidden(state))
+        if (Parent is not null && await Parent.IsHidden())
         {
             _isHidden = true;
             return _isHidden.Value;
         }
 
-        _isHidden = await ExpressionEvaluator.EvaluateBooleanExpression(state, this, "hidden", false);
+        _isHidden = await ExpressionEvaluator.EvaluateBooleanExpression(State, this, "hidden", false);
         return _isHidden.Value;
     }
 
@@ -72,6 +74,11 @@ public sealed class ComponentContext
     /// Parent context or null, if this is a root context, or a context created without setting parent
     /// </summary>
     public ComponentContext? Parent { get; private set; }
+
+    /// <summary>
+    /// The LatoutEvaluatorState that this context is part of
+    /// </summary>
+    public LayoutEvaluatorState State { get; }
 
     /// <summary>
     /// The Id of the default data element in this context
@@ -105,16 +112,47 @@ public sealed class ComponentContext
     {
         private readonly ComponentContext _context;
 
+        public DebuggerProxy(ComponentContext context)
+        {
+            _context = context;
+        }
+
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
         public List<ComponentContext> ChildContexts => _context.ChildContexts;
         public BaseComponent? Component => _context.Component;
         public ComponentContext? Parent => _context.Parent;
         public bool? IsHidden => _context._isHidden;
         public Guid DataElementId => _context.DataElementIdentifier.Guid;
+        public int[]? RowIndices => _context.RowIndices;
 
-        public DebuggerProxy(ComponentContext context)
+        public DebuggerEvaluatedExpression HiddenExpression =>
+            new(_context.Component?.Hidden ?? new Expression("COMPONENT WAS NULL"), _context);
+
+        public class DebuggerEvaluatedExpression
         {
-            _context = context;
+            private readonly ComponentContext _context;
+            private readonly Expression _expression;
+
+            public DebuggerEvaluatedExpression(Expression expression, ComponentContext context)
+            {
+                _context = context;
+                _expression = expression;
+            }
+
+            public ExpressionFunction Function => _expression.Function;
+            public IEnumerable<DebuggerEvaluatedExpression>? Args =>
+                _expression.Args?.Select(e => new DebuggerEvaluatedExpression(e, _context));
+            public ExpressionValue EvaluationResult =>
+                _expression.IsFunctionExpression
+                    ? ExpressionEvaluator
+                        .EvaluateExpression_internal(_context.State, _expression, _context, null)
+                        .Result
+                    : _expression.ValueUnion;
+
+            public override string ToString()
+            {
+                return _expression.ToString();
+            }
         }
     }
 }
