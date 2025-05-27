@@ -61,6 +61,22 @@ public sealed class ComponentContext
             return _isHidden.Value;
         }
 
+        // If the data has already been cleaned, rows are set to null for validation
+        // but if the "hiddenRow" expression hides rows with specific values, the expression
+        // might not hide the row when the data is null.
+        //
+        // The only reason for a row to be null is that the data has been cleaned and the row was considered hidden
+        // so we just check the data and assume it was hidden.
+        if (Component is RepeatingGroupRowComponent rgc && rgc.DataModelBindings.TryGetValue("group", out var binding))
+        {
+            var data = await State.GetModelData(binding, DataElementIdentifier, RowIndices);
+            if (data is null)
+            {
+                _isHidden = true;
+                return _isHidden.Value;
+            }
+        }
+
         _isHidden = await ExpressionEvaluator.EvaluateBooleanExpression(State, this, "hidden", false);
         return _isHidden.Value;
     }
