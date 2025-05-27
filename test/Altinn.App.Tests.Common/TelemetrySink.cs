@@ -334,7 +334,7 @@ public class TelemetrySnapshot(
         ?.Select(m => new MetricInfo(
             m.Key.Name,
             m.Key.Meter,
-            m.Value.Where(m => m.Value != 0)
+            m.Value.Where(m => Math.Abs(m.Value) > double.Epsilon)
                 .Select(measurement => new MetricMeasurementInfo(
                     double.IsInteger(measurement.Value) ? measurement.Value : null,
                     measurement.Tags.OrderBy(t => t.Key).ToArray()
