@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices.Marshalling;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Exceptions;
@@ -94,6 +95,8 @@ internal sealed class SigningCallToActionService(
         string? smsBody = contentWrapper.SmsBody;
         Notification? notification = communicationConfig?.Notification;
 
+        _logger.LogInformation(@"Using email {email}", notification?.Email?.EmailAddress);
+
         if (serviceOwnerParty.OrgNumber == "ttd" && _hostEnvironment.IsProduction() is false)
         {
             // TestDepartementet is often used in test environments, but does not have an organization number
@@ -165,6 +168,10 @@ internal sealed class SigningCallToActionService(
                 .Build(),
             CorrespondenceAuthorisation.Maskinporten
         );
+
+        var reqAsJson = System.Text.Json.JsonSerializer.Serialize(request);
+        _logger.LogInformation("-----------------------------------------------");
+        _logger.LogInformation(reqAsJson);
 
         SendCorrespondenceResponse response = await _correspondenceClient.Send(request, ct);
         var correspondenceId = response?.Correspondences[0]?.CorrespondenceId ?? Guid.Empty;
