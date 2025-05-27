@@ -71,12 +71,31 @@
                 "id": "group1",
                 "type": "RepeatingGroup",
                 "hiddenRow": [
-                    "notEquals",
+                    "or",
                     [
-                        "dataModel",
-                        "Group.GroupNumber"
+                        "equals",
+                        [
+                            "dataModel",
+                            "Group.GroupNumber"
+                        ],
+                        -1
                     ],
-                    1
+                    [
+                        "equals",
+                        [
+                            "dataModel",
+                            "Group.GroupNumber"
+                        ],
+                        0
+                    ],
+                    [
+                        "equals",
+                        [
+                            "dataModel",
+                            "Group.GroupNumber"
+                        ],
+                        2
+                    ]
                 ],
                 "dataModelBindings": {
                     "group": "Group"
