@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices.Marshalling;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Exceptions;
