@@ -79,7 +79,7 @@ public sealed record TelemetrySink : IDisposable
         _activities.OrderBy(a => a.OperationName).ThenBy(a => a.StartTimeUtc).ToArray();
 
     public IReadOnlyDictionary<(string Name, string Meter), IReadOnlyList<MetricMeasurement>> CapturedMetrics =>
-        _metricValues;
+        _metricValues.ToDictionary();
 
     public TelemetrySnapshot GetSnapshot() => new(CapturedActivities, CapturedMetrics);
 
@@ -120,7 +120,7 @@ public sealed record TelemetrySink : IDisposable
         [CallerFilePath] string sourceFile = ""
     )
     {
-        TryFlush();
+        await TryFlush();
         var task = Verify(GetSnapshot(activities), settings: settings, sourceFile: sourceFile);
         if (configure is not null)
             task = configure(task);
@@ -133,14 +133,14 @@ public sealed record TelemetrySink : IDisposable
         [CallerFilePath] string sourceFile = ""
     )
     {
-        TryFlush();
+        await TryFlush();
         var task = Verify(GetSnapshot(), settings: settings, sourceFile: sourceFile);
         if (configure is not null)
             task = configure(task);
         await task;
     }
 
-    public void TryFlush()
+    private async Task TryFlush()
     {
         Assert.NotNull(_serviceProvider);
 
@@ -149,8 +149,9 @@ public sealed record TelemetrySink : IDisposable
         Assert.NotNull(meterProvider);
         Assert.NotNull(traceProvider);
 
-        _ = meterProvider.ForceFlush(25);
-        _ = traceProvider.ForceFlush(25);
+        Assert.True(meterProvider.ForceFlush(1_000));
+        Assert.True(traceProvider.ForceFlush(1_000));
+        await Task.Yield();
     }
 
     public TelemetrySink(
