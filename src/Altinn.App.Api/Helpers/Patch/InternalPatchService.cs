@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
@@ -117,7 +118,7 @@ public class InternalPatchService
 
             var newModel = newModelResult.Ok;
             // Reset dataAccessor to provide the patched model.
-            dataAccessor.SetFormData(dataElement, newModel);
+            dataAccessor.SetFormData(dataElementIdentifier, FormDataWrapperFactory.Create(newModel));
 
             changesAfterPatch.Add(
                 new FormDataChange
