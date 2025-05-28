@@ -149,6 +149,7 @@ public sealed record TelemetrySink : IDisposable
         Assert.NotNull(meterProvider);
         Assert.NotNull(traceProvider);
 
+        await Task.Yield();
         Assert.True(meterProvider.ForceFlush(1_000));
         Assert.True(traceProvider.ForceFlush(1_000));
         await Task.Yield();
