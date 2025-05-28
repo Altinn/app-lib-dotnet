@@ -342,10 +342,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     {
         this.OverrideServicesForThisTest = (services) =>
         {
-            services.AddTelemetrySink(
-                shouldAlsoListenToActivities: (sp, source) => source.Name == "Microsoft.AspNetCore",
-                activityFilter: this.ActivityFilter
-            );
+            services.AddTelemetrySink(additionalActivitySources: source => source.Name == "Microsoft.AspNetCore");
         };
 
         // Update data element
@@ -364,7 +361,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         _dataProcessorMock.VerifyNoOtherCalls();
 
-        await telemetry.SnapshotActivities();
+        await Verify(telemetry.GetSnapshot());
     }
 
     [Fact]

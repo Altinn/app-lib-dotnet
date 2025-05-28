@@ -197,10 +197,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     {
         this.OverrideServicesForThisTest = (services) =>
         {
-            services.AddTelemetrySink(
-                shouldAlsoListenToActivities: (sp, source) => source.Name == "Microsoft.AspNetCore",
-                activityFilter: this.ActivityFilter
-            );
+            services.AddTelemetrySink(additionalActivitySources: source => source.Name == "Microsoft.AspNetCore");
         };
 
         bool sendAsyncCalled = false;
@@ -239,7 +236,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         var unLockedInstance = JsonSerializer.Deserialize<DataElement>(unLockedInstanceString, JsonSerializerOptions)!;
         unLockedInstance.Locked.Should().BeFalse();
 
-        await telemetry.SnapshotActivities();
+        await Verify(telemetry.GetSnapshot());
     }
 
     [Fact]
@@ -271,10 +268,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         OverrideServicesForThisTest = (services) =>
         {
             services.AddSingleton(dataValidator.Object);
-            services.AddTelemetrySink(
-                shouldAlsoListenToActivities: (sp, source) => source.Name == "Microsoft.AspNetCore",
-                activityFilter: this.ActivityFilter
-            );
+            services.AddTelemetrySink(additionalActivitySources: source => source.Name == "Microsoft.AspNetCore");
         };
         using var client = GetRootedUserClient(Org, App, 1337, InstanceOwnerPartyId);
         var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{_instanceId}/process/next", null);
@@ -297,7 +291,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         instance.Process.CurrentTask.Should().NotBeNull();
         instance.Process.CurrentTask!.ElementId.Should().Be("Task_1");
 
-        await telemetry.SnapshotActivities();
+        await Verify(telemetry.GetSnapshot());
     }
 
     [Fact]
@@ -330,10 +324,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         OverrideServicesForThisTest = (services) =>
         {
             services.AddSingleton(dataValidator.Object);
-            services.AddTelemetrySink(
-                shouldAlsoListenToActivities: (sp, source) => source.Name == "Microsoft.AspNetCore",
-                activityFilter: this.ActivityFilter
-            );
+            services.AddTelemetrySink(additionalActivitySources: source => source.Name == "Microsoft.AspNetCore");
         };
 
         using var client = GetRootedUserClient(Org, App, 1337, InstanceOwnerPartyId);
@@ -366,7 +357,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         instance.Process.CurrentTask.Should().BeNull();
         instance.Process.EndEvent.Should().Be("EndEvent_1");
 
-        await telemetry.SnapshotActivities();
+        await Verify(telemetry.GetSnapshot());
     }
 
     [Fact]
