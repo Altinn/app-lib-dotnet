@@ -7,6 +7,11 @@ namespace Altinn.App.Core.Tests.LayoutExpressions.ExpressionEvaluatorTests;
 
 public class EqualTests(ITestOutputHelper outputHelper)
 {
+    private static readonly JsonSerializerOptions? _unsafeSerializerOptions = new()
+    {
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
     private static void AddIfEqual(TheoryData<object> data, object value, double origValue)
     {
         double newValue = Convert.ToDouble(value);
@@ -42,6 +47,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
             false,
             "",
             DateTime.Parse("2025-02-04T13:13:15.84473533+01:00"),
+            DateTimeOffset.Parse("2025-02-04T13:13:15.84473533+01:00"),
             DateOnly.FromDateTime(DateTime.Parse("2025-02-04T13:13:15.8447353+01:00")),
             TimeOnly.FromDateTime(DateTime.Parse("2025-02-04T13:13:15.8447353+01:00")),
             ((long)int.MaxValue) + 1,
@@ -60,7 +66,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
     public void ToStringForEquals_AgreesWithJsonSerializer(object? value)
     {
         // Verify that the EqualsToString method returns the same value as the JsonSerializer.
-        var json = JsonSerializer.Serialize(value);
+        var json = JsonSerializer.Serialize(value, _unsafeSerializerOptions);
 
         outputHelper.WriteLine($"Object of type {value?.GetType().FullName ?? "null"}:");
         outputHelper.WriteLine($"   value:{value}");
@@ -70,15 +76,14 @@ public class EqualTests(ITestOutputHelper outputHelper)
         outputHelper.WriteLine($"   expressionValue: {expressionValue}");
         // Verify that the EqualsToString method returns the same value as the JsonSerializer.
         var toStringForEquals = ExpressionEvaluator.ToStringForEquals(expressionValue);
-        if (value is string)
+
+        if (expressionValue.ValueKind == JsonValueKind.String && json[0] == '"' && json[^1] == '"')
         {
-            // Compare string to value
-            Assert.Equal(json, JsonSerializer.Serialize(toStringForEquals));
+            // If the value is a string, we need to remove the quotes from the JsonSerializer output
+            json = json[1..^1].Replace("\\\"", "\"");
         }
-        else
-        {
-            Assert.Equal(json, toStringForEquals);
-        }
+
+        Assert.Equal(json, toStringForEquals);
     }
 
     public static TheoryData<object> GetNonsenseValues =>
