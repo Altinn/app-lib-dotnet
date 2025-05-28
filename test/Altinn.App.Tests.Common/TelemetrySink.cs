@@ -60,8 +60,8 @@ public sealed record TelemetrySink : IDisposable
     private bool _waitForServerActivity = true;
     private readonly TaskCompletionSource _serverActivityTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    Func<TestId?, Activity, bool>? _activityFilter;
-    Func<TestId?, MetricMeasurement, bool>? _metricFilter;
+    private readonly Func<TestId?, Activity, bool>? _activityFilter;
+    private readonly Func<TestId?, MetricMeasurement, bool>? _metricFilter;
     private readonly TestId? _testId;
 
     public async Task WaitForServerActivity() => await _serverActivityTcs.Task;
