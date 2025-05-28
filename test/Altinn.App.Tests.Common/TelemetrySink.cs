@@ -7,8 +7,6 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
 
 namespace Altinn.App.Tests.Common;
 
@@ -120,7 +118,6 @@ public sealed record TelemetrySink : IDisposable
         [CallerFilePath] string sourceFile = ""
     )
     {
-        await TryFlush();
         var task = Verify(GetSnapshot(activities), settings: settings, sourceFile: sourceFile);
         if (configure is not null)
             task = configure(task);
@@ -133,26 +130,10 @@ public sealed record TelemetrySink : IDisposable
         [CallerFilePath] string sourceFile = ""
     )
     {
-        await TryFlush();
         var task = Verify(GetSnapshot(), settings: settings, sourceFile: sourceFile);
         if (configure is not null)
             task = configure(task);
         await task;
-    }
-
-    private async Task TryFlush()
-    {
-        Assert.NotNull(_serviceProvider);
-
-        var meterProvider = _serviceProvider.GetService<MeterProvider>();
-        var traceProvider = _serviceProvider.GetService<TracerProvider>();
-        Assert.NotNull(meterProvider);
-        Assert.NotNull(traceProvider);
-
-        await Task.Yield();
-        Assert.True(meterProvider.ForceFlush(1_000));
-        Assert.True(traceProvider.ForceFlush(1_000));
-        await Task.Yield();
     }
 
     public TelemetrySink(
