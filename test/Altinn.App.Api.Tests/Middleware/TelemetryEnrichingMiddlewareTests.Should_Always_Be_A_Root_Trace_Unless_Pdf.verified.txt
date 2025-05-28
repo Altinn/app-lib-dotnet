@@ -54,7 +54,7 @@
           user.party.id: Scrubbed
         }
       ],
-      HasParent: false
+      HasParent: true
     }
   ]
 }
