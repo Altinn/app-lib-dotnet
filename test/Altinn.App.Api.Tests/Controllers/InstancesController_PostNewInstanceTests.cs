@@ -158,6 +158,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         TestData.DeleteInstanceAndData(org, app, instanceId);
 
         var telemetry = this.Services.GetRequiredService<TelemetrySink>();
+        await Task.Delay(100); // For some reason metric telemetry is not captured immediately, waiting a bit
         await telemetry.Snapshot(settings => settings.UseTextForParameters(token.Type.ToString()));
     }
 
