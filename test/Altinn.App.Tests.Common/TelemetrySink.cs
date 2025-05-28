@@ -310,7 +310,7 @@ public class TelemetrySnapshot(
             a.Status,
             a.TagObjects.OrderBy(t => t.Key).ToArray(),
             a.Events.OrderBy(e => e.Name).ToArray(),
-            a.Parent is not null
+            a.ParentId is not null
         ))
         .ToArray();
     public readonly IReadOnlyList<MetricInfo>? Metrics = metrics
