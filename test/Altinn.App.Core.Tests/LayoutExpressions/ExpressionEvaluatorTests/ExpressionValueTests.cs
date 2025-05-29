@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
-using FluentAssertions;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.ExpressionEvaluatorTests;
 
