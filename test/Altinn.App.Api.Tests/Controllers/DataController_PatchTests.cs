@@ -342,7 +342,11 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     {
         this.OverrideServicesForThisTest = (services) =>
         {
-            services.AddTelemetrySink(additionalActivitySources: source => source.Name == "Microsoft.AspNetCore");
+            services.AddTelemetrySink(
+                additionalActivitySources: source => source.Name == "Microsoft.AspNetCore",
+                additionalMeters: source => source.Name == "Microsoft.AspNetCore.Hosting",
+                filterMetrics: metric => metric.Name == "http.server.request.duration"
+            );
         };
 
         // Update data element
@@ -361,6 +365,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         _dataProcessorMock.VerifyNoOtherCalls();
 
+        await telemetry.WaitForServerTelemetry();
         await Verify(telemetry.GetSnapshot());
     }
 
