@@ -34,9 +34,7 @@
         {
           TestId: Guid_2
         },
-        {
-          url.path: /tdd/permissive-app/instances/create
-        },
+        {Scrubbed},
         {
           url.scheme: http
         },
@@ -93,9 +91,7 @@
         {
           TestId: Guid_2
         },
-        {
-          url.path: /tdd/permissive-app/instances/5001337/85d5403b-b56e-4d91-bdc3-116f7dd30072/data/70ff9fde-0af5-4170-a279-fef3238998bd
-        },
+        {Scrubbed},
         {
           url.scheme: http
         },

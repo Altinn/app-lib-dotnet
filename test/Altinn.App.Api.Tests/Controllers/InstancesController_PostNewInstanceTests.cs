@@ -156,7 +156,9 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         TestData.DeleteInstanceAndData(org, app, instanceId);
 
         await telemetry.WaitForServerTelemetry(n: 2); // Two requests: create instance and read data element
-        await Verify(telemetry.GetSnapshot()).UseTextForParameters(token.Type.ToString());
+        await Verify(telemetry.GetSnapshot())
+            .ScrubInstance<KeyValuePair<string, object?>>(kvp => kvp.Key == "url.path")
+            .UseTextForParameters(token.Type.ToString());
     }
 
     [Fact]
