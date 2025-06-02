@@ -79,7 +79,7 @@ public class ExpressionValidatorTests
 
         var layout = new LayoutSetComponent(testCase.Layouts.Values.ToList(), "layout", dataType);
         var componentModel = new LayoutModel([layout], null);
-        var evaluatorState = new LayoutEvaluatorState(dataModel, componentModel, _frontendSettings.Value);
+        var evaluatorState = new LayoutEvaluatorState(dataModel, componentModel, null!, _frontendSettings.Value);
         _layoutInitializer
             .Setup(init =>
                 init.Init(It.IsAny<IInstanceDataAccessor>(), "Task_1", It.IsAny<string?>(), It.IsAny<string?>())
