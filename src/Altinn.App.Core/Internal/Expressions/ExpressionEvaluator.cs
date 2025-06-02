@@ -153,7 +153,6 @@ public static class ExpressionEvaluator
                     "Second argument must be \"not\" when providing 4 arguments in total"
                 );
         }
-        ;
     }
 
     private static string InstanceContext(LayoutEvaluatorState state, ExpressionValue[] args)

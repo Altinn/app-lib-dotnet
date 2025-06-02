@@ -60,14 +60,7 @@ internal class TranslationService : ITranslationService
             {
                 var replacement =
                     await EvaluateTextVariable(resourceElement, variable, state, context) ?? variable.DefaultValue;
-                if (replacement is not null)
-                {
-                    value = value.Replace("{" + index + "}", replacement);
-                }
-                else
-                {
-                    value = value.Replace("{" + index + "}", variable.Key);
-                }
+                value = value.Replace("{" + index + "}", replacement ?? variable.Key);
                 index++;
             }
         }
@@ -75,7 +68,7 @@ internal class TranslationService : ITranslationService
         return value;
     }
 
-    private readonly Regex _cleanPathRegex = new(@"\[\{\d+\}\]", RegexOptions.Compiled);
+    private readonly Regex _cleanPathRegex = new(@"\[\{\d+\}\]", RegexOptions.Compiled, TimeSpan.FromMilliseconds(10));
 
     private async Task<string?> EvaluateTextVariable(
         TextResourceElement resourceElement,
@@ -113,7 +106,7 @@ internal class TranslationService : ITranslationService
         }
 
         _logger.LogWarning(
-            "Text resource variable with dataSource '{DataSource}' is not supported. Only 'dataModel.*', instanceContext and applicationSettings is supported. In text resource with id = {textResourceId}",
+            "Text resource variable with dataSource '{DataSource}' is not supported. Only 'dataModel.*', instanceContext and applicationSettings is supported. In text resource with id = {TextResourceId}",
             variable.DataSource,
             resourceElement.Id
         );
