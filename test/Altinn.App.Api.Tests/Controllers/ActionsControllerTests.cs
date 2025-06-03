@@ -3,14 +3,15 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.task_action.config.models;
-using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.App.Core.Models.Validation;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,6 +56,10 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         TestData.DeleteInstanceAndData(org, app, 1337, guid);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Verify that [ResponseCache] attribute is being set by filter
+        Assert.NotNull(response.Headers.CacheControl);
+        Assert.Equal("no-store, no-cache", response.Headers.CacheControl.ToString());
     }
 
     [Fact]
@@ -545,6 +550,104 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         mutator?.Invoke(expected);
         actual.Should().BeEquivalentTo(expected);
     }
+
+    [Theory]
+    [MemberData(nameof(PartitionValidationIssuesByDataElement))]
+    public void TestPartitionCodeForCompatibility(List<ValidationSourcePair> validationIssues, string expectedJson)
+    {
+        var partitionedIssues = ActionsController.PartitionValidationIssuesByDataElement(validationIssues);
+        var json = JsonSerializer.Serialize(partitionedIssues);
+        Assert.Equal(expectedJson, json);
+    }
+
+    public static TheoryData<List<ValidationSourcePair>, string> PartitionValidationIssuesByDataElement =>
+        new()
+        {
+            { [new ValidationSourcePair("source", new List<ValidationIssueWithSource>())], """{"":{"source":[]}}""" },
+            {
+                [new ValidationSourcePair("source", []), new ValidationSourcePair("source2", [])],
+                """{"":{"source":[],"source2":[]}}"""
+            },
+            {
+                [
+                    new ValidationSourcePair(
+                        "source",
+                        [
+                            new()
+                            {
+                                DataElementId = "123445",
+                                Severity = ValidationIssueSeverity.Unspecified,
+                                Code = null,
+                                Description = null,
+                                Source = "null",
+                            },
+                        ]
+                    ),
+                ],
+                """{"123445":{"source":[{"severity":0,"dataElementId":"123445","field":null,"code":null,"description":null,"source":"null"}]}}"""
+            },
+            {
+                [
+                    new ValidationSourcePair(
+                        "source",
+                        [
+                            new()
+                            {
+                                DataElementId = "123445",
+                                Severity = ValidationIssueSeverity.Unspecified,
+                                Code = null,
+                                Description = null,
+                                Source = "null",
+                            },
+                        ]
+                    ),
+                    new ValidationSourcePair(
+                        "source2",
+                        [
+                            new()
+                            {
+                                DataElementId = "123445",
+                                Severity = ValidationIssueSeverity.Unspecified,
+                                Code = null,
+                                Description = null,
+                                Source = "null",
+                            },
+                        ]
+                    ),
+                ],
+                """{"123445":{"source":[{"severity":0,"dataElementId":"123445","field":null,"code":null,"description":null,"source":"null"}],"source2":[{"severity":0,"dataElementId":"123445","field":null,"code":null,"description":null,"source":"null"}]}}"""
+            },
+            {
+                [
+                    new ValidationSourcePair(
+                        "source",
+                        [
+                            new()
+                            {
+                                Severity = ValidationIssueSeverity.Unspecified,
+                                Code = null,
+                                Description = null,
+                                Source = "null",
+                            },
+                        ]
+                    ),
+                    new ValidationSourcePair(
+                        "source2",
+                        [
+                            new()
+                            {
+                                DataElementId = "123445",
+                                Severity = ValidationIssueSeverity.Unspecified,
+                                Code = null,
+                                Description = null,
+                                Source = "null",
+                            },
+                        ]
+                    ),
+                ],
+                """{"":{"source":[{"severity":0,"dataElementId":null,"field":null,"code":null,"description":null,"source":"null"}]},"123445":{"source2":[{"severity":0,"dataElementId":"123445","field":null,"code":null,"description":null,"source":"null"}]}}"""
+            },
+        };
 }
 
 public class FillAction : IUserAction
@@ -560,7 +663,7 @@ public class FillAction : IUserAction
         _dataClient = dataClient;
     }
 
-    public async Task<UserActionResult> HandleAction(UserActionContext context)
+    public async Task<UserActionResult> HandleAction(UserActionContext context, CancellationToken ct)
     {
         _logger.LogInformation("FillAction triggered, with button id: {buttonId}", context.ButtonId);
 
@@ -634,7 +737,7 @@ public class LookupAction : IUserAction
 {
     public string Id => "lookup";
 
-    public async Task<UserActionResult> HandleAction(UserActionContext context)
+    public async Task<UserActionResult> HandleAction(UserActionContext context, CancellationToken ct)
     {
         await Task.CompletedTask;
         if (context.UserId == 400)

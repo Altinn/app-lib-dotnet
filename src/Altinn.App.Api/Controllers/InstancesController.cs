@@ -22,6 +22,7 @@ using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.Validation;
@@ -45,7 +46,6 @@ namespace Altinn.App.Api.Controllers;
 /// You can create a new instance (POST), update it (PUT) and retrieve a specific instance (GET).
 /// </summary>
 [Authorize]
-[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 [AutoValidateAntiforgeryTokenIfAuthCookie]
 [Route("{org}/{app}/instances")]
 [ApiController]
@@ -55,7 +55,8 @@ public class InstancesController : ControllerBase
 
     private readonly IInstanceClient _instanceClient;
     private readonly IDataClient _dataClient;
-    private readonly IAltinnPartyClient _altinnPartyClientClient;
+    private readonly IAltinnPartyClient _altinnPartyClient;
+    private readonly IRegisterClient _registerClient;
     private readonly IEventsClient _eventsClient;
     private readonly IProfileClient _profileClient;
 
@@ -70,6 +71,7 @@ public class InstancesController : ControllerBase
     private readonly IHostEnvironment _env;
     private readonly ModelSerializationService _serializationService;
     private readonly InternalPatchService _patchService;
+    private readonly ITranslationService _translationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
@@ -79,7 +81,7 @@ public class InstancesController : ControllerBase
     /// </summary>
     public InstancesController(
         ILogger<InstancesController> logger,
-        IAltinnPartyClient altinnPartyClientClient,
+        IAltinnPartyClient altinnPartyClient,
         IInstanceClient instanceClient,
         IDataClient dataClient,
         IAppMetadata appMetadata,
@@ -94,6 +96,7 @@ public class InstancesController : ControllerBase
         IHostEnvironment env,
         ModelSerializationService serializationService,
         InternalPatchService patchService,
+        ITranslationService translationService,
         IServiceProvider serviceProvider
     )
     {
@@ -101,7 +104,8 @@ public class InstancesController : ControllerBase
         _instanceClient = instanceClient;
         _dataClient = dataClient;
         _appMetadata = appMetadata;
-        _altinnPartyClientClient = altinnPartyClientClient;
+        _altinnPartyClient = altinnPartyClient;
+        _registerClient = serviceProvider.GetRequiredService<IRegisterClient>();
         _appModel = appModel;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _pdp = pdp;
@@ -114,6 +118,7 @@ public class InstancesController : ControllerBase
         _env = env;
         _serializationService = serializationService;
         _patchService = patchService;
+        _translationService = translationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
@@ -124,17 +129,19 @@ public class InstancesController : ControllerBase
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
+    /// <param name="cancellationToken">cancellation token</param>
     /// <returns>the instance</returns>
     [Authorize]
     [HttpGet("{instanceOwnerPartyId:int}/{instanceGuid:guid}")]
     [Produces("application/json")]
-    [ProducesResponseType(typeof(Instance), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> Get(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
-        [FromRoute] Guid instanceGuid
+        [FromRoute] Guid instanceGuid,
+        CancellationToken cancellationToken
     )
     {
         EnforcementResult enforcementResult = await AuthorizeAction(
@@ -162,7 +169,11 @@ public class InstancesController : ControllerBase
                 await _instanceClient.UpdateReadStatus(instanceOwnerPartyId, instanceGuid, "read");
             }
 
-            return Ok(instance);
+            var instanceOwnerParty = await _registerClient.GetPartyUnchecked(instanceOwnerPartyId, cancellationToken);
+
+            var dto = InstanceResponse.From(instance, instanceOwnerParty);
+
+            return Ok(dto);
         }
         catch (Exception exception)
         {
@@ -184,10 +195,10 @@ public class InstancesController : ControllerBase
     [HttpPost]
     [DisableFormValueModelBinding]
     [Produces("application/json")]
-    [ProducesResponseType(typeof(Instance), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [RequestSizeLimit(RequestSizeLimit)]
-    public async Task<ActionResult<Instance>> Post(
+    public async Task<ActionResult<InstanceResponse>> Post(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromQuery] int? instanceOwnerPartyId,
@@ -310,6 +321,7 @@ public class InstancesController : ControllerBase
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
         if (validationResult != null && !validationResult.Valid)
         {
+            await TranslateValidationResult(validationResult, language);
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
@@ -382,7 +394,9 @@ public class InstancesController : ControllerBase
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
 
-        return Created(url, instance);
+        var dto = InstanceResponse.From(instance, party);
+
+        return Created(url, dto);
     }
 
     private ObjectResult? VerifyInstantiationPermissions(
@@ -414,17 +428,19 @@ public class InstancesController : ControllerBase
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instansiationInstance">instansiation information</param>
+    /// <param name="language">The currently active user language</param>
     /// <returns>The new instance</returns>
     [HttpPost("create")]
     [DisableFormValueModelBinding]
     [Produces("application/json")]
-    [ProducesResponseType(typeof(Instance), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [RequestSizeLimit(RequestSizeLimit)]
-    public async Task<ActionResult<Instance>> PostSimplified(
+    public async Task<ActionResult<InstanceResponse>> PostSimplified(
         [FromRoute] string org,
         [FromRoute] string app,
-        [FromBody] InstansiationInstance instansiationInstance
+        [FromBody] InstansiationInstance instansiationInstance,
+        [FromQuery] string? language = null
     )
     {
         if (string.IsNullOrEmpty(org))
@@ -522,6 +538,7 @@ public class InstancesController : ControllerBase
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
         if (validationResult != null && !validationResult.Valid)
         {
+            await TranslateValidationResult(validationResult, language);
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
@@ -593,7 +610,9 @@ public class InstancesController : ControllerBase
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
 
-        return Created(url, instance);
+        var dto = InstanceResponse.From(instance, party);
+
+        return Created(url, dto);
     }
 
     /// <summary>
@@ -604,6 +623,7 @@ public class InstancesController : ControllerBase
     /// <param name="app">Application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">Unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">Unique id to identify the instance</param>
+    /// <param name="language">The currently active user language</param>
     /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
     /// <remarks>
     /// The endpoint will return a redirect to the new instance if the copy operation was successful.
@@ -618,7 +638,8 @@ public class InstancesController : ControllerBase
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
-        [FromRoute] Guid instanceGuid
+        [FromRoute] Guid instanceGuid,
+        [FromQuery] string? language = null
     )
     {
         // This endpoint should be used exclusively by end users. Ideally from a browser as a request after clicking
@@ -677,6 +698,7 @@ public class InstancesController : ControllerBase
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(targetInstance);
         if (validationResult != null && !validationResult.Valid)
         {
+            await TranslateValidationResult(validationResult, language);
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
@@ -1067,8 +1089,9 @@ public class InstancesController : ControllerBase
         {
             try
             {
-                return await _altinnPartyClientClient.GetParty(
-                    int.Parse(instanceOwner.PartyId, CultureInfo.InvariantCulture)
+                return await _registerClient.GetPartyUnchecked(
+                    int.Parse(instanceOwner.PartyId, CultureInfo.InvariantCulture),
+                    this.HttpContext.RequestAborted
                 );
             }
             catch (Exception e) when (e is not ServiceException)
@@ -1090,14 +1113,12 @@ public class InstancesController : ControllerBase
                 if (!string.IsNullOrEmpty(instanceOwner.PersonNumber))
                 {
                     lookupNumber = "personNumber";
-                    return await _altinnPartyClientClient.LookupParty(
-                        new PartyLookup { Ssn = instanceOwner.PersonNumber }
-                    );
+                    return await _altinnPartyClient.LookupParty(new PartyLookup { Ssn = instanceOwner.PersonNumber });
                 }
                 else if (!string.IsNullOrEmpty(instanceOwner.OrganisationNumber))
                 {
                     lookupNumber = "organisationNumber";
-                    return await _altinnPartyClientClient.LookupParty(
+                    return await _altinnPartyClient.LookupParty(
                         new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
                     );
                 }
@@ -1312,6 +1333,20 @@ public class InstancesController : ControllerBase
                 Guid.Parse(instance.Id.Split("/")[1]),
                 new DataValues { Values = updatedValues }
             );
+        }
+    }
+
+    private async Task TranslateValidationResult(InstantiationValidationResult validationResult, string? language)
+    {
+        if (String.IsNullOrEmpty(validationResult.Message) && !String.IsNullOrEmpty(validationResult.CustomTextKey))
+        {
+            if (
+                await _translationService.TranslateTextKey(validationResult.CustomTextKey, language)
+                is string translated
+            )
+            {
+                validationResult.Message = translated;
+            }
         }
     }
 }

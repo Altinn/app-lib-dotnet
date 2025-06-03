@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Maskinporten.Constants;
@@ -37,16 +36,22 @@ public abstract class Authenticated
     public Scopes Scopes { get; }
 
     /// <summary>
+    /// The client ID from the token (from the client in ID-porten and Maskinporten)
+    /// </summary>
+    public string? ClientId { get; }
+
+    /// <summary>
     /// The JWT token
     /// </summary>
     public string Token { get; }
 
-    private Authenticated(TokenIssuer tokenIssuer, bool tokenIsExchanged, Scopes scopes, string token)
+    private Authenticated(ref ParseContext context)
     {
-        TokenIssuer = tokenIssuer;
-        TokenIsExchanged = tokenIsExchanged;
-        Scopes = scopes;
-        Token = token;
+        TokenIssuer = context.TokenIssuer;
+        TokenIsExchanged = context.IsExchanged;
+        Scopes = context.Scopes;
+        ClientId = context.ClientIdClaim.IsValidString(out var clientId) ? clientId : null;
+        Token = context.TokenStr;
     }
 
     /// <summary>
@@ -59,13 +64,12 @@ public abstract class Authenticated
     {
         string language = LanguageConst.Nb;
 
-        if (this is not User and not SelfIdentifiedUser)
+        if (this is not User)
             return language;
 
         var profile = this switch
         {
             User user => await user.LookupProfile(),
-            SelfIdentifiedUser selfIdentifiedUser => (await selfIdentifiedUser.LoadDetails()).Profile,
             _ => throw new InvalidOperationException($"Unexpected case: {this.GetType().Name}"),
         };
 
@@ -76,12 +80,12 @@ public abstract class Authenticated
     }
 
     /// <summary>
-    /// Type to indicate that the current request is not uathenticated.
+    /// Type to indicate that the current request is not authenticated.
     /// </summary>
     public sealed class None : Authenticated
     {
-        internal None(TokenIssuer tokenIssuer, bool tokenIsExchanged, Scopes scopes, string token)
-            : base(tokenIssuer, tokenIsExchanged, scopes, token) { }
+        internal None(ref ParseContext context)
+            : base(ref context) { }
     }
 
     /// <summary>
@@ -95,12 +99,22 @@ public abstract class Authenticated
         public int UserId { get; }
 
         /// <summary>
+        /// Username of the registered user, only relevant for self-identified/self-registered users.
+        /// E.g. BankID doesn't operate based on usernames, so this property would be null in that case.
+        /// </summary>
+        public string? Username { get; }
+
+        /// <summary>
         /// Party ID
         /// </summary>
         public int UserPartyId { get; }
 
         /// <summary>
         /// The party the user has selected through party selection
+        /// If the current request is related to an active instance, this value is not relevant.
+        /// The selected party ID is always whatever the user has selected in the party selection screen.
+        /// Party selection is used for instantiating new instances. The selected party ID becomes the instance owner party ID
+        /// when instantiating.
         /// </summary>
         public int SelectedPartyId { get; }
 
@@ -119,6 +133,11 @@ public abstract class Authenticated
         /// </summary>
         public bool InAltinnPortal { get; }
 
+        /// <summary>
+        /// True if the user is self-identified/self-registered.
+        /// </summary>
+        public bool IsSelfIdentified => AuthenticationLevel == 0;
+
         private Details? _extra;
         private readonly Func<int, Task<UserProfile?>> _getUserProfile;
         private readonly Func<int, Task<Party?>> _lookupParty;
@@ -128,34 +147,27 @@ public abstract class Authenticated
 
         internal User(
             int userId,
+            string? username,
             int userPartyId,
             int authenticationLevel,
             string authenticationMethod,
             int selectedPartyId,
-            bool inAltinnPortal,
-            TokenIssuer tokenIssuer,
-            bool tokenIsExchanged,
-            Scopes scopes,
-            string token,
-            Func<int, Task<UserProfile?>> getUserProfile,
-            Func<int, Task<Party?>> lookupParty,
-            Func<int, Task<List<Party>?>> getPartyList,
-            Func<int, int, Task<bool?>> validateSelectedParty,
-            ApplicationMetadata appMetadata
+            ref ParseContext context
         )
-            : base(tokenIssuer, tokenIsExchanged, scopes, token)
+            : base(ref context)
         {
             UserId = userId;
+            Username = username;
             UserPartyId = userPartyId;
             SelectedPartyId = selectedPartyId;
             AuthenticationLevel = authenticationLevel;
             AuthenticationMethod = authenticationMethod;
-            InAltinnPortal = inAltinnPortal;
-            _getUserProfile = getUserProfile;
-            _lookupParty = lookupParty;
-            _getPartyList = getPartyList;
-            _validateSelectedParty = validateSelectedParty;
-            _appMetadata = appMetadata;
+            InAltinnPortal = context.IsInAltinnPortal;
+            _getUserProfile = context.GetUserProfile;
+            _lookupParty = context.LookupUserParty;
+            _getPartyList = context.GetPartyList;
+            _validateSelectedParty = context.ValidateSelectedParty;
+            _appMetadata = context.AppMetadata;
         }
 
         /// <summary>
@@ -318,95 +330,6 @@ public abstract class Authenticated
     }
 
     /// <summary>
-    /// The logged in client is a user (e.g. Altinn portal/ID-porten) with auth level 0.
-    /// This means that the user has authenticated with a username/password, which can happen using
-    /// * Altinn "self registered users"
-    /// * ID-porten through Ansattporten ("low"), MinID self registered eID
-    /// These have limited access to Altinn and can only represent themselves.
-    /// </summary>
-    public sealed class SelfIdentifiedUser : Authenticated
-    {
-        /// <summary>
-        /// Username
-        /// </summary>
-        public string Username { get; }
-
-        /// <summary>
-        /// User ID
-        /// </summary>
-        public int UserId { get; }
-
-        /// <summary>
-        /// Party ID
-        /// </summary>
-        public int PartyId { get; }
-
-        /// <summary>
-        /// Method of authentication, e.g. "idporten" or "maskinporten"
-        /// </summary>
-        public string AuthenticationMethod { get; }
-
-        private Details? _extra;
-        private readonly Func<int, Task<UserProfile?>> _getUserProfile;
-        private readonly ApplicationMetadata _appMetadata;
-
-        internal SelfIdentifiedUser(
-            string username,
-            int userId,
-            int partyId,
-            string authenticationMethod,
-            TokenIssuer tokenIssuer,
-            bool tokenIsExchanged,
-            Scopes scopes,
-            string token,
-            Func<int, Task<UserProfile?>> getUserProfile,
-            ApplicationMetadata appMetadata
-        )
-            : base(tokenIssuer, tokenIsExchanged, scopes, token)
-        {
-            Username = username;
-            UserId = userId;
-            PartyId = partyId;
-            AuthenticationMethod = authenticationMethod;
-            // Since they are self-identified, they are always 0
-            AuthenticationLevel = 0;
-            _getUserProfile = getUserProfile;
-            _appMetadata = appMetadata;
-        }
-
-        /// <summary>
-        /// Authentication level
-        /// </summary>
-        public int AuthenticationLevel { get; }
-
-        /// <summary>
-        /// Detailed information about a logged in user
-        /// </summary>
-        public sealed record Details(Party Party, UserProfile Profile, bool RepresentsSelf, bool CanInstantiate);
-
-        /// <summary>
-        /// Load the details for the current user.
-        /// </summary>
-        /// <returns></returns>
-        public async Task<Details> LoadDetails()
-        {
-            if (_extra is not null)
-                return _extra;
-
-            var userProfile =
-                await _getUserProfile(UserId)
-                ?? throw new AuthenticationContextException(
-                    $"Could not get user profile for logged in self identified user: {UserId}"
-                );
-
-            var party = userProfile.Party;
-            var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, _appMetadata.PartyTypesAllowed);
-            _extra = new Details(party, userProfile, RepresentsSelf: true, canInstantiate);
-            return _extra;
-        }
-    }
-
-    /// <summary>
     /// The logged in client is an organisation (but they have not authenticated as an Altinn service owner).
     /// Authentication has been done through Maskinporten.
     /// </summary>
@@ -430,24 +353,14 @@ public abstract class Authenticated
         private readonly Func<string, Task<Party>> _lookupParty;
         private readonly ApplicationMetadata _appMetadata;
 
-        internal Org(
-            string orgNo,
-            int authenticationLevel,
-            string authenticationMethod,
-            TokenIssuer tokenIssuer,
-            bool tokenIsExchanged,
-            Scopes scopes,
-            string token,
-            Func<string, Task<Party>> lookupParty,
-            ApplicationMetadata appMetadata
-        )
-            : base(tokenIssuer, tokenIsExchanged, scopes, token)
+        internal Org(string orgNo, int authenticationLevel, string authenticationMethod, ref ParseContext context)
+            : base(ref context)
         {
             OrgNo = orgNo;
             AuthenticationLevel = authenticationLevel;
             AuthenticationMethod = authenticationMethod;
-            _lookupParty = lookupParty;
-            _appMetadata = appMetadata;
+            _lookupParty = context.LookupOrgParty;
+            _appMetadata = context.AppMetadata;
         }
 
         /// <summary>
@@ -504,19 +417,15 @@ public abstract class Authenticated
             string orgNo,
             int authenticationLevel,
             string authenticationMethod,
-            TokenIssuer tokenIssuer,
-            bool tokenIsExchanged,
-            Scopes scopes,
-            string token,
-            Func<string, Task<Party>> lookupParty
+            ref ParseContext context
         )
-            : base(tokenIssuer, tokenIsExchanged, scopes, token)
+            : base(ref context)
         {
             Name = name;
             OrgNo = orgNo;
             AuthenticationLevel = authenticationLevel;
             AuthenticationMethod = authenticationMethod;
-            _lookupParty = lookupParty;
+            _lookupParty = context.LookupOrgParty;
         }
 
         /// <summary>
@@ -583,14 +492,9 @@ public abstract class Authenticated
             string systemId,
             int? authenticationLevel,
             string? authenticationMethod,
-            TokenIssuer tokenIssuer,
-            bool tokenIsExchanged,
-            Scopes scopes,
-            string token,
-            Func<string, Task<Party>> lookupParty,
-            ApplicationMetadata appMetadata
+            ref ParseContext context
         )
-            : base(tokenIssuer, tokenIsExchanged, scopes, token)
+            : base(ref context)
         {
             SystemUserId = systemUserId;
             SystemUserOrgNr = systemUserOrgNr;
@@ -600,8 +504,8 @@ public abstract class Authenticated
             // If the token is not exchanged, we don't have these claims and so we default to what altinn-authentication currently does.
             AuthenticationLevel = authenticationLevel ?? 3;
             AuthenticationMethod = authenticationMethod ?? "maskinporten";
-            _lookupParty = lookupParty;
-            _appMetadata = appMetadata;
+            _lookupParty = context.LookupOrgParty;
+            _appMetadata = context.AppMetadata;
         }
 
         /// <summary>
@@ -628,69 +532,21 @@ public abstract class Authenticated
     // TODO: app token?
     // public sealed record App(string Token) : Authenticated;
 
-    internal static (TokenIssuer Issuer, bool IsExchanged) ResolveIssuer(
-        string? iss,
-        string? authMethod,
-        string? acr,
-        bool isInAltinnPortal
-    )
-    {
-        if (string.IsNullOrWhiteSpace(iss) && string.IsNullOrWhiteSpace(authMethod))
-            return (TokenIssuer.None, false);
-
-        // A token is exchanged if
-        // * issuer is altinn.no (either by verifying iss or that the urn:altinn:authenticatemethod claim is set)
-        // * scope does not contain altinn:portal/enduser (this is a special scope used only by altinn-authentication).
-        //   This should hold true as long as we know we only get tokens from Altinn Authentication or ID porten/Maskinporten directly (otherwise the scope ownership is unclear)
-        var isExchanged =
-            (
-                iss?.Contains("altinn.no", StringComparison.OrdinalIgnoreCase) is true
-                || !string.IsNullOrWhiteSpace(authMethod)
-            ) && !isInAltinnPortal;
-
-        // If we have the special scope, we know the login was done through Altinn portal directly
-        // In any other case we want the underlying authentication method (ID-porten, Maskinporten)
-        if (isInAltinnPortal)
-            return (TokenIssuer.Altinn, isExchanged);
-
-        if (iss is not null)
-        {
-            // If the issuer is not altinn.no, we know it is not exchanged and we can directly determine the issuer
-            if (iss.Contains("studio", StringComparison.OrdinalIgnoreCase))
-                return (TokenIssuer.AltinnStudio, isExchanged);
-            if (iss.Contains("idporten.no", StringComparison.OrdinalIgnoreCase))
-                return (TokenIssuer.IDporten, isExchanged);
-            if (iss.Contains("maskinporten.no", StringComparison.OrdinalIgnoreCase))
-                return (TokenIssuer.Maskinporten, isExchanged);
-        }
-        if (authMethod is not null)
-        {
-            // IdportenTestId is the authmetod when logging into altinn portal with test users, e.g. in a tt02 app
-            // though this case should already be handled by the portal/enduser scope check
-            if (authMethod.Equals("IdportenTestId", StringComparison.OrdinalIgnoreCase))
-                return (TokenIssuer.Altinn, isExchanged);
-
-            if (
-                authMethod.Equals("maskinporten", StringComparison.OrdinalIgnoreCase) // From altinn-authentication
-                || authMethod.Equals("systemuser", StringComparison.OrdinalIgnoreCase) // From AltinnTestTools
-                || authMethod.Equals("virksomhetsbruker", StringComparison.OrdinalIgnoreCase) // From altinn-authentication when using virksomhetsbruker
-            )
-            {
-                Debug.Assert(isExchanged, "When we have authMethod, the token should always be exchanged");
-                return (TokenIssuer.Maskinporten, isExchanged);
-            }
-        }
-
-        // IDportens authenticationlevel equivalent will only be present if the token originates from ID-porten
-        // We should already be handling the ID-porten through Altinn portal case (with the scope)
-        if (acr?.StartsWith("idporten", StringComparison.OrdinalIgnoreCase) ?? false)
-            return (TokenIssuer.IDporten, isExchanged);
-
-        return (TokenIssuer.Unknown, isExchanged);
-    }
+    internal delegate Authenticated Parser(
+        string tokenStr,
+        bool isAuthenticated,
+        ApplicationMetadata appMetadata,
+        Func<string?> getSelectedParty,
+        Func<int, Task<UserProfile?>> getUserProfile,
+        Func<int, Task<Party?>> lookupUserParty,
+        Func<string, Task<Party>> lookupOrgParty,
+        Func<int, Task<List<Party>?>> getPartyList,
+        Func<int, int, Task<bool?>> validateSelectedParty
+    );
 
     internal static Authenticated FromLocalTest(
         string tokenStr,
+        bool isAuthenticated,
         ApplicationMetadata appMetadata,
         Func<string?> getSelectedParty,
         Func<int, Task<UserProfile?>> getUserProfile,
@@ -700,99 +556,78 @@ public abstract class Authenticated
         Func<int, int, Task<bool?>> validateSelectedParty
     )
     {
-        if (string.IsNullOrWhiteSpace(tokenStr))
-            return new None(TokenIssuer.None, false, Scopes.None, tokenStr);
+        var context = new ParseContext(
+            tokenStr,
+            isAuthenticated,
+            appMetadata,
+            getSelectedParty,
+            getUserProfile,
+            lookupUserParty,
+            lookupOrgParty,
+            getPartyList,
+            validateSelectedParty
+        );
+        if (!context.IsAuthenticated)
+            return new None(ref context);
 
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(tokenStr);
-        var claims = token.Claims;
 
-        Claim? authLevelClaim = null;
-        Claim? orgClaim = null;
-        Claim? orgNoClaim = null;
-        Claim? userIdClaim = null;
-        Claim? usernameClaim = null;
-        Claim? partyIdClaim = null;
-        Claim? scopeClaim = null;
+        context.ReadClaims(token);
 
-        var tokenIssuer = TokenIssuer.Altinn;
-        var isExchanged = true;
-
-        foreach (var claim in claims)
-        {
-            TryAssign(claim, AltinnCoreClaimTypes.AuthenticationLevel, ref authLevelClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.Org, ref orgClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.OrgNumber, ref orgNoClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.PartyID, ref partyIdClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.UserId, ref userIdClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.UserName, ref usernameClaim);
-            TryAssign(claim, JwtClaimTypes.Scope, ref scopeClaim);
-        }
-
-        var scopes = new Scopes(scopeClaim?.Value);
+        context.TokenIssuer = context.OrgNoClaim.Exists ? TokenIssuer.Maskinporten : TokenIssuer.Altinn;
+        context.IsExchanged =
+            context.TokenIssuer == TokenIssuer.Maskinporten || context.TokenIssuer == TokenIssuer.IDporten;
+        context.Scopes = context.ScopeClaim.IsValidString(out var scopeClaimValue)
+            ? new Scopes(scopeClaimValue)
+            : new Scopes(null);
+        context.IsInAltinnPortal = context.UserIdClaim.Exists;
 
         int? partyId = null;
-        if (!string.IsNullOrWhiteSpace(partyIdClaim?.Value))
+        if (context.PartyIdClaim.Exists)
         {
-            if (!int.TryParse(partyIdClaim.Value, CultureInfo.InvariantCulture, out var partyIdClaimValue))
+            if (!context.PartyIdClaim.IsValidInt(out var partyIdClaimValue))
                 throw new AuthenticationContextException(
-                    $"Invalid party ID claim value for token: {partyIdClaim.Value}"
+                    $"Invalid party ID claim value for token: {context.PartyIdClaim.Value}"
                 );
             partyId = partyIdClaimValue;
         }
 
         int authLevel;
-        if (!string.IsNullOrWhiteSpace(orgClaim?.Value))
+        if (context.AuthorizationDetailsClaim.Exists)
         {
+            return NewSystemUser(ref context);
+        }
+        else if (context.OrgClaim.Exists)
+        {
+            if (!context.OrgClaim.IsValidString(out var orgClaimValue))
+                throw new AuthenticationContextException(
+                    $"Invlaid org claim for service owner token: {context.OrgClaim.Value}"
+                );
+
             // In this case the token should have a serviceowner scope,
             // due to the `urn:altinn:org` claim
-            if (string.IsNullOrWhiteSpace(orgNoClaim?.Value))
-                throw new AuthenticationContextException("Missing org number claim for service owner token");
+            if (!context.OrgNoClaim.IsValidString(out var orgNoClaimValue))
+                throw new AuthenticationContextException("Missing or invalid org number claim for service owner token");
 
-            ParseAuthLevel(authLevelClaim?.Value, out authLevel);
+            ParseAuthLevel(context.AuthLevelClaim, out authLevel);
 
-            return new ServiceOwner(
-                orgClaim.Value,
-                orgNoClaim.Value,
-                authLevel,
-                "localtest",
-                tokenIssuer,
-                isExchanged,
-                scopes,
-                tokenStr,
-                lookupOrgParty
-            );
+            return new ServiceOwner(orgClaimValue, orgNoClaimValue, authLevel, "localtest", ref context);
         }
 
-        if (string.IsNullOrWhiteSpace(userIdClaim?.Value))
+        if (!context.UserIdClaim.Exists)
             throw new AuthenticationContextException("Missing user ID claim for user token");
-        if (!int.TryParse(userIdClaim.Value, CultureInfo.InvariantCulture, out int userId))
+        if (!context.UserIdClaim.IsValidString(out var userIdStr))
             throw new AuthenticationContextException(
-                $"Invalid user ID claim value for user token: {userIdClaim.Value}"
+                $"Invalid user ID claim value for user token: {context.UserIdClaim.Value}"
             );
+        if (!int.TryParse(userIdStr, CultureInfo.InvariantCulture, out var userId))
+            throw new AuthenticationContextException($"Invalid user ID claim value for user token: {userIdStr}");
 
         if (partyId is null)
             throw new AuthenticationContextException("Missing party ID for user token");
 
-        ParseAuthLevel(authLevelClaim?.Value, out authLevel);
-        if (authLevel == 0)
-        {
-            if (string.IsNullOrWhiteSpace(usernameClaim?.Value))
-                throw new AuthenticationContextException("Missing username claim for self-identified user token");
-
-            return new SelfIdentifiedUser(
-                usernameClaim.Value,
-                userId,
-                partyId.Value,
-                "localtest",
-                tokenIssuer,
-                isExchanged,
-                scopes,
-                tokenStr,
-                getUserProfile,
-                appMetadata
-            );
-        }
+        ParseAuthLevel(context.AuthLevelClaim, out authLevel);
 
         int selectedPartyId = partyId.Value;
         if (getSelectedParty() is { } selectedPartyStr)
@@ -802,24 +637,158 @@ public abstract class Authenticated
 
             selectedPartyId = selectedParty;
         }
+        context.UsernameClaim.IsValidString(out var usernameClaimValue);
 
         return new User(
             userId,
+            usernameClaimValue,
             partyId.Value,
             authLevel,
             "localtest",
             selectedPartyId,
-            true,
-            tokenIssuer,
-            isExchanged,
-            scopes,
-            tokenStr,
-            getUserProfile,
-            lookupUserParty,
-            getPartyList,
-            validateSelectedParty,
-            appMetadata
+            ref context
         );
+    }
+
+    internal record struct ParseContext(
+        string TokenStr,
+        bool IsAuthenticated,
+        ApplicationMetadata AppMetadata,
+        Func<string?> GetSelectedParty,
+        Func<int, Task<UserProfile?>> GetUserProfile,
+        Func<int, Task<Party?>> LookupUserParty,
+        Func<string, Task<Party>> LookupOrgParty,
+        Func<int, Task<List<Party>?>> GetPartyList,
+        Func<int, int, Task<bool?>> ValidateSelectedParty
+    )
+    {
+        public TokenClaim IssuerClaim = default;
+        public TokenClaim ActualIssuerClaim = default;
+        public TokenClaim AuthLevelClaim = default;
+        public TokenClaim AuthMethodClaim = default;
+        public TokenClaim ScopeClaim = default;
+        public TokenClaim AcrClaim = default;
+        public TokenClaim OrgClaim = default;
+        public TokenClaim OrgNoClaim = default;
+        public TokenClaim PartyIdClaim = default;
+        public TokenClaim AuthorizationDetailsClaim = default;
+        public TokenClaim UserIdClaim = default;
+        public TokenClaim UsernameClaim = default;
+        public TokenClaim ConsumerClaim = default;
+        public TokenClaim ClientIdClaim = default;
+        public OrgClaim? ConsumerClaimValue = default;
+        public bool IsInAltinnPortal = false;
+        public Scopes Scopes = default;
+        public TokenIssuer TokenIssuer = TokenIssuer.None;
+        public bool IsExchanged = false;
+
+        public void ResolveIssuer()
+        {
+            if (!IssuerClaim.IsValidString(out var iss) & !AuthMethodClaim.IsValidString(out var authMethod))
+                return;
+
+            // A token is exchanged if
+            // * issuer is altinn.no (either by verifying iss or that the urn:altinn:authenticatemethod claim is set)
+            // * scope does not contain altinn:portal/enduser (this is a special scope used only by altinn-authentication).
+            //   This should hold true as long as we know we only get tokens from Altinn Authentication or ID porten/Maskinporten directly (otherwise the scope ownership is unclear)
+            IsExchanged =
+                (iss?.Contains("altinn.no", StringComparison.OrdinalIgnoreCase) is true || authMethod is not null)
+                && !IsInAltinnPortal;
+
+            // If we have the special scope, we know the login was done through Altinn portal directly
+            // In any other case we want the underlying authentication method (ID-porten, Maskinporten)
+            if (IsInAltinnPortal)
+            {
+                TokenIssuer = TokenIssuer.Altinn;
+                return;
+            }
+
+            if (iss is not null)
+            {
+                // If the issuer is not altinn.no, we know it is not exchanged and we can directly determine the issuer
+                if (iss.Contains("studio", StringComparison.OrdinalIgnoreCase))
+                {
+                    TokenIssuer = TokenIssuer.AltinnStudio;
+                    return;
+                }
+                if (iss.Contains("idporten.no", StringComparison.OrdinalIgnoreCase))
+                {
+                    TokenIssuer = TokenIssuer.IDporten;
+                    return;
+                }
+                if (iss.Contains("maskinporten.no", StringComparison.OrdinalIgnoreCase))
+                {
+                    TokenIssuer = TokenIssuer.Maskinporten;
+                    return;
+                }
+            }
+            if (authMethod is not null)
+            {
+                // IdportenTestId is the authmetod when logging into altinn portal with test users, e.g. in a tt02 app
+                // though this case should already be handled by the portal/enduser scope check
+                if (authMethod.Equals("IdportenTestId", StringComparison.OrdinalIgnoreCase))
+                {
+                    TokenIssuer = TokenIssuer.Altinn;
+                    return;
+                }
+
+                if (
+                    authMethod.Equals("maskinporten", StringComparison.OrdinalIgnoreCase) // From altinn-authentication
+                    || authMethod.Equals("systemuser", StringComparison.OrdinalIgnoreCase) // From AltinnTestTools
+                    || authMethod.Equals("virksomhetsbruker", StringComparison.OrdinalIgnoreCase) // From altinn-authentication when using virksomhetsbruker
+                )
+                {
+                    Debug.Assert(IsExchanged, "When we have authMethod, the token should always be exchanged");
+                    TokenIssuer = TokenIssuer.Maskinporten;
+                    return;
+                }
+            }
+
+            // IDportens authenticationlevel equivalent will only be present if the token originates from ID-porten
+            // We should already be handling the ID-porten through Altinn portal case (with the scope)
+            if (AcrClaim.IsValidString(out var acr) && acr.StartsWith("idporten", StringComparison.OrdinalIgnoreCase))
+            {
+                TokenIssuer = TokenIssuer.IDporten;
+                return;
+            }
+
+            TokenIssuer = TokenIssuer.Unknown;
+        }
+
+        public void ReadClaims(JwtSecurityToken token)
+        {
+            foreach (var claim in token.Payload)
+            {
+                TryAssign(claim, JwtClaimTypes.Issuer, ref IssuerClaim);
+                TryAssign(claim, "actual_iss", ref ActualIssuerClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.AuthenticationLevel, ref AuthLevelClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.AuthenticateMethod, ref AuthMethodClaim);
+                TryAssign(claim, JwtClaimTypes.Scope, ref ScopeClaim);
+                TryAssign(claim, "acr", ref AcrClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.Org, ref OrgClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.OrgNumber, ref OrgNoClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.PartyID, ref PartyIdClaim);
+                TryAssign(claim, "authorization_details", ref AuthorizationDetailsClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.UserId, ref UserIdClaim);
+                TryAssign(claim, AltinnCoreClaimTypes.UserName, ref UsernameClaim);
+                if (
+                    TryAssign(claim, "consumer", ref ConsumerClaim)
+                    && ConsumerClaim.Value is JsonElement consumerJsonClaim
+                )
+                    ConsumerClaimValue = JsonSerializer.Deserialize<OrgClaim>(consumerJsonClaim);
+                TryAssign(claim, "client_id", ref ClientIdClaim);
+            }
+        }
+
+        private static bool TryAssign(KeyValuePair<string, object> claim, string name, ref TokenClaim dest)
+        {
+            if (claim.Key.Equals(name, StringComparison.OrdinalIgnoreCase))
+            {
+                dest = new TokenClaim(claim.Key, claim.Value);
+                return true;
+            }
+            return false;
+        }
     }
 
     internal static Authenticated From(
@@ -834,194 +803,107 @@ public abstract class Authenticated
         Func<int, int, Task<bool?>> validateSelectedParty
     )
     {
+        var context = new ParseContext(
+            tokenStr,
+            isAuthenticated,
+            appMetadata,
+            getSelectedParty,
+            getUserProfile,
+            lookupUserParty,
+            lookupOrgParty,
+            getPartyList,
+            validateSelectedParty
+        );
         if (string.IsNullOrWhiteSpace(tokenStr))
-            return new None(TokenIssuer.None, false, Scopes.None, tokenStr);
+            return new None(ref context);
 
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(tokenStr);
-        var claims = token.Claims;
 
-        Claim? issuerClaim = null;
-        Claim? authLevelClaim = null;
-        Claim? authMethodClaim = null;
-        Claim? scopeClaim = null;
-        Claim? acrClaim = null;
-        Claim? orgClaim = null;
-        Claim? orgNoClaim = null;
-        Claim? partyIdClaim = null;
-        Claim? authorizationDetailsClaim = null;
-        Claim? userIdClaim = null;
-        Claim? usernameClaim = null;
-        Claim? consumerClaim = null;
-        OrgClaim? consumerClaimValue = null;
+        context.ReadClaims(token);
 
-        foreach (var claim in claims)
-        {
-            TryAssign(claim, JwtClaimTypes.Issuer, ref issuerClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.AuthenticationLevel, ref authLevelClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.AuthenticateMethod, ref authMethodClaim);
-            TryAssign(claim, JwtClaimTypes.Scope, ref scopeClaim);
-            TryAssign(claim, "acr", ref acrClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.Org, ref orgClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.OrgNumber, ref orgNoClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.PartyID, ref partyIdClaim);
-            TryAssign(claim, "authorization_details", ref authorizationDetailsClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.UserId, ref userIdClaim);
-            TryAssign(claim, AltinnCoreClaimTypes.UserName, ref usernameClaim);
-            if (TryAssign(claim, "consumer", ref consumerClaim))
-                consumerClaimValue = JsonSerializer.Deserialize<OrgClaim>(consumerClaim.Value);
-        }
+        context.Scopes = context.ScopeClaim.IsValidString(out var scopeClaimValue)
+            ? new Scopes(scopeClaimValue)
+            : new Scopes(null);
+        context.IsInAltinnPortal =
+            context.Scopes.HasScope("altinn:portal/enduser")
+            || (
+                context.ActualIssuerClaim.IsValidString(out var actualIssuer)
+                && actualIssuer == "altinn-test-tools"
+                && context.UserIdClaim.Exists
+            );
 
-        var scopes = new Scopes(scopeClaim?.Value);
-        var isInAltinnPortal = scopes.HasScope("altinn:portal/enduser");
-
-        var (tokenIssuer, isExchanged) = ResolveIssuer(
-            issuerClaim?.Value,
-            authMethodClaim?.Value,
-            acrClaim?.Value,
-            isInAltinnPortal
-        );
+        context.ResolveIssuer();
 
         if (!isAuthenticated)
-            return new None(tokenIssuer, isExchanged, scopes, tokenStr);
-
-        int? partyId = null;
-        if (!string.IsNullOrWhiteSpace(partyIdClaim?.Value))
-        {
-            if (!int.TryParse(partyIdClaim.Value, CultureInfo.InvariantCulture, out var partyIdClaimValue))
-                throw new AuthenticationContextException(
-                    $"Invalid party ID claim value for token: {partyIdClaim.Value}"
-                );
-            partyId = partyIdClaimValue;
-        }
+            return new None(ref context);
 
         int authLevel;
-        if (!string.IsNullOrWhiteSpace(authorizationDetailsClaim?.Value))
+        if (context.AuthorizationDetailsClaim.Exists)
         {
-            var authorizationDetails = JsonSerializer.Deserialize<AuthorizationDetailsClaim>(
-                authorizationDetailsClaim.Value
-            );
-            if (authorizationDetails is null)
-                throw new AuthenticationContextException(
-                    "Invalid authorization details claim value for systemuser token"
-                );
-            if (authorizationDetails is not SystemUserAuthorizationDetailsClaim systemUser)
-                throw new AuthenticationContextException(
-                    $"Unsupported authorization details claim value for systemuser token: {authorizationDetails.GetType().Name}"
-                );
-
-            if (systemUser is null)
-                throw new AuthenticationContextException(
-                    "Invalid system user authorization details claim value for systemuser token"
-                );
-            if (systemUser.SystemUserId is null || systemUser.SystemUserId.Count == 0)
-                throw new AuthenticationContextException("Missing system user ID claim for systemuser token");
-            if (string.IsNullOrWhiteSpace(systemUser.SystemId))
-                throw new AuthenticationContextException("Missing system ID claim for systemuser token");
-            if (systemUser.SystemUserOrg.Authority != "iso6523-actorid-upis")
-                throw new AuthenticationContextException(
-                    $"Unsupported organisation authority in systemuser token: {systemUser.SystemUserOrg.Authority}"
-                );
-            if (!OrganisationNumber.TryParse(systemUser.SystemUserOrg.Id, out var orgNr))
-                throw new AuthenticationContextException(
-                    $"Invalid system user organisation number in system user token: {systemUser.SystemUserOrg.Id}"
-                );
-            if (!OrganisationNumber.TryParse(consumerClaimValue?.Id, out var supplierOrgNr))
-                throw new AuthenticationContextException(
-                    $"Invalid organisation number in supplier organisation number claim for system user token: {consumerClaimValue?.Id}"
-                );
-
-            return new SystemUser(
-                systemUser.SystemUserId,
-                orgNr,
-                supplierOrgNr,
-                systemUser.SystemId,
-                int.TryParse(authLevelClaim?.Value, CultureInfo.InvariantCulture, out authLevel) ? authLevel : null,
-                !string.IsNullOrWhiteSpace(authMethodClaim?.Value) ? authMethodClaim.Value : null,
-                tokenIssuer,
-                isExchanged,
-                scopes,
-                tokenStr,
-                lookupOrgParty,
-                appMetadata
-            );
+            return NewSystemUser(ref context);
         }
-        else if (!string.IsNullOrWhiteSpace(orgClaim?.Value) && orgClaim.Value == appMetadata.Org)
+        else if (context.OrgClaim.Exists)
         {
-            // In this case the token should have a serviceowner scope,
-            // due to the `urn:altinn:org` claim
-            if (string.IsNullOrWhiteSpace(orgNoClaim?.Value))
-                throw new AuthenticationContextException("Missing org number claim for service owner token");
-            if (string.IsNullOrWhiteSpace(authMethodClaim?.Value))
-                throw new AuthenticationContextException("Missing authentication method claim for service owner token");
+            if (!context.OrgClaim.IsValidString(out var orgClaimValue))
+                throw new AuthenticationContextException(
+                    $"Invalid org claim for service owner token: {context.OrgClaim.Value}"
+                );
 
-            ParseAuthLevel(authLevelClaim?.Value, out authLevel);
+            if (orgClaimValue == appMetadata.Org)
+            {
+                // In this case the token should have a serviceowner scope,
+                // due to the `urn:altinn:org` claim
+                if (!context.OrgNoClaim.IsValidString(out var orgNoClaimValue))
+                    throw new AuthenticationContextException("Missing org number claim for service owner token");
+                if (!context.AuthMethodClaim.IsValidString(out var authMethodClaimValue))
+                    throw new AuthenticationContextException(
+                        "Missing or invalid authentication method claim for service owner token"
+                    );
 
-            return new ServiceOwner(
-                orgClaim.Value,
-                orgNoClaim.Value,
-                authLevel,
-                authMethodClaim.Value,
-                tokenIssuer,
-                isExchanged,
-                scopes,
-                tokenStr,
-                lookupOrgParty
-            );
+                ParseAuthLevel(context.AuthLevelClaim, out authLevel);
+
+                return new ServiceOwner(orgClaimValue, orgNoClaimValue, authLevel, authMethodClaimValue, ref context);
+            }
+            else
+            {
+                return NewOrg(ref context);
+            }
         }
-        else if (!string.IsNullOrWhiteSpace(orgNoClaim?.Value))
+        else if (context.OrgNoClaim.Exists)
         {
-            ParseAuthLevel(authLevelClaim?.Value, out authLevel);
-            if (string.IsNullOrWhiteSpace(authMethodClaim?.Value))
-                throw new AuthenticationContextException("Missing authentication method claim for org token");
-
-            return new Org(
-                orgNoClaim.Value,
-                authLevel,
-                authMethodClaim.Value,
-                tokenIssuer,
-                isExchanged,
-                scopes,
-                tokenStr,
-                lookupOrgParty,
-                appMetadata
-            );
+            return NewOrg(ref context);
         }
 
-        if (string.IsNullOrWhiteSpace(userIdClaim?.Value))
+        return NewUser(ref context);
+    }
+
+    static Authenticated.User NewUser(ref ParseContext context)
+    {
+        if (!context.UserIdClaim.Exists)
             throw new AuthenticationContextException("Missing user ID claim for user token");
-        if (!int.TryParse(userIdClaim.Value, CultureInfo.InvariantCulture, out int userId))
-            throw new AuthenticationContextException(
-                $"Invalid user ID claim value for user token: {userIdClaim.Value}"
-            );
 
-        if (partyId is null)
-            throw new AuthenticationContextException("Missing party ID for user token");
-        if (string.IsNullOrWhiteSpace(authMethodClaim?.Value))
-            throw new AuthenticationContextException("Missing authentication method claim for user token");
-
-        ParseAuthLevel(authLevelClaim?.Value, out authLevel);
-        if (authLevel == 0)
+        if (!context.UserIdClaim.IsValidInt(out var userId))
         {
-            if (string.IsNullOrWhiteSpace(usernameClaim?.Value))
-                throw new AuthenticationContextException("Missing username claim for self-identified user token");
-
-            return new SelfIdentifiedUser(
-                usernameClaim.Value,
-                userId,
-                partyId.Value,
-                authMethodClaim.Value,
-                tokenIssuer,
-                isExchanged,
-                scopes,
-                tokenStr,
-                getUserProfile,
-                appMetadata
+            throw new AuthenticationContextException(
+                $"Invalid user ID claim value for user token: {context.UserIdClaim.Value}"
             );
         }
+
+        if (!context.PartyIdClaim.Exists)
+            throw new AuthenticationContextException("Missing party ID for user token");
+        if (!context.PartyIdClaim.IsValidInt(out var partyId))
+            throw new AuthenticationContextException(
+                $"Invalid party ID claim value for user token: {context.PartyIdClaim.Value}"
+            );
+
+        if (!context.AuthMethodClaim.IsValidString(out var authMethodClaimValue))
+            throw new AuthenticationContextException("Missing or invalid authentication method claim for user token");
+
+        ParseAuthLevel(context.AuthLevelClaim, out var authLevel);
 
         int selectedPartyId = partyId.Value;
-        if (getSelectedParty() is { } selectedPartyStr)
+        if (context.GetSelectedParty() is { } selectedPartyStr)
         {
             if (!int.TryParse(selectedPartyStr, CultureInfo.InvariantCulture, out var selectedParty))
                 throw new AuthenticationContextException($"Invalid party ID in cookie: {selectedPartyStr}"); // TODO: maybe not throw?
@@ -1029,51 +911,170 @@ public abstract class Authenticated
             selectedPartyId = selectedParty;
         }
 
+        context.UsernameClaim.IsValidString(out var usernameClaimValue);
+
         return new User(
-            userId,
+            userId.Value,
+            usernameClaimValue,
             partyId.Value,
             authLevel,
-            authMethodClaim.Value,
+            authMethodClaimValue,
             selectedPartyId,
-            isInAltinnPortal,
-            tokenIssuer,
-            isExchanged,
-            scopes,
-            tokenStr,
-            getUserProfile,
-            lookupUserParty,
-            getPartyList,
-            validateSelectedParty,
-            appMetadata
+            ref context
         );
     }
 
-    private static void ParseAuthLevel(string? value, out int authLevel)
+    static Org NewOrg(ref ParseContext context)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new AuthenticationContextException($"Missing authentication level claim value for token");
-        if (!int.TryParse(value, CultureInfo.InvariantCulture, out authLevel))
-            throw new AuthenticationContextException($"Invalid authentication level claim value for token: {value}");
+        if (!context.OrgNoClaim.IsValidString(out var orgNoClaimValue))
+            throw new AuthenticationContextException("Invalid org number claim for org token");
+        ParseAuthLevel(context.AuthLevelClaim, out var authLevel);
+        if (!context.AuthMethodClaim.IsValidString(out var authMethodClaimValue))
+            throw new AuthenticationContextException("Missing or invalid authentication method claim for org token");
 
-        if (authLevel is < 0 or > 4)
-            throw new AuthenticationContextException(
-                $"Invalid authentication level claim value for token: {authLevel}"
-            );
+        return new Org(orgNoClaimValue, authLevel, authMethodClaimValue, ref context);
     }
 
-    private static bool TryAssign(Claim claim, string name, [NotNullWhen(true)] ref Claim? dest)
+    static SystemUser NewSystemUser(ref ParseContext context)
     {
-        if (claim.Type.Equals(name, StringComparison.OrdinalIgnoreCase))
+        if (!context.AuthorizationDetailsClaim.IsJson(out var json))
+            throw new AuthenticationContextException($"Invalid authorization details claim value for token: {json}");
+        var authorizationDetails = AuthorizationDetailsClaim.Parse(json.Value);
+        if (authorizationDetails is null)
+            throw new AuthenticationContextException("Invalid authorization details claim value for systemuser token");
+        if (authorizationDetails is not SystemUserAuthorizationDetailsClaim systemUser)
+            throw new AuthenticationContextException(
+                $"Unsupported authorization details claim value for systemuser token: {authorizationDetails.GetType().Name}"
+            );
+
+        if (systemUser is null)
+            throw new AuthenticationContextException(
+                "Invalid system user authorization details claim value for systemuser token"
+            );
+        if (systemUser.SystemUserId is null || systemUser.SystemUserId.Count == 0)
+            throw new AuthenticationContextException("Missing system user ID claim for systemuser token");
+        if (string.IsNullOrWhiteSpace(systemUser.SystemId))
+            throw new AuthenticationContextException("Missing system ID claim for systemuser token");
+        if (systemUser.SystemUserOrg.Authority != "iso6523-actorid-upis")
+            throw new AuthenticationContextException(
+                $"Unsupported organisation authority in systemuser token: {systemUser.SystemUserOrg.Authority}"
+            );
+        if (!OrganisationNumber.TryParse(systemUser.SystemUserOrg.Id, out var orgNr))
+            throw new AuthenticationContextException(
+                $"Invalid system user organisation number in system user token: {systemUser.SystemUserOrg.Id}"
+            );
+        if (!OrganisationNumber.TryParse(context.ConsumerClaimValue?.Id, out var supplierOrgNr))
+            throw new AuthenticationContextException(
+                $"Invalid organisation number in supplier organisation number claim for system user token: {context.ConsumerClaimValue?.Id}"
+            );
+
+        return new SystemUser(
+            systemUser.SystemUserId,
+            orgNr,
+            supplierOrgNr,
+            systemUser.SystemId,
+            context.AuthLevelClaim.IsValidInt(out var authLevelInt) ? authLevelInt : null,
+            context.AuthMethodClaim.IsValidString(out var authMethodClaimValue) ? authMethodClaimValue : null,
+            ref context
+        );
+    }
+
+    private static void ParseAuthLevel(TokenClaim claim, out int authLevel)
+    {
+        if (!claim.Exists)
+            throw new AuthenticationContextException($"Missing authentication level claim value for token");
+        if (!claim.IsValidInt(out var claimValue))
+            throw new AuthenticationContextException(
+                $"Invalid authentication level claim value for token: {claim.Value}"
+            );
+
+        if (claimValue is < 0 or > 4)
+            throw new AuthenticationContextException(
+                $"Invalid authentication level claim value for token: {claimValue}"
+            );
+
+        authLevel = claimValue.Value;
+    }
+
+    internal readonly record struct TokenClaim(string? Type, object? Value)
+    {
+        [MemberNotNullWhen(true, nameof(Type))]
+        public bool Exists => Type is not null;
+
+        [MemberNotNullWhen(true, nameof(Value))]
+        public bool IsValidString([NotNullWhen(true)] out string? str)
         {
-            dest = claim;
-            return true;
+            str = null;
+
+            if (Type is not null && Value is string stringValue && !string.IsNullOrWhiteSpace(stringValue))
+            {
+                str = stringValue;
+                return true;
+            }
+            return false;
         }
-        return false;
+
+        [MemberNotNullWhen(true, nameof(Value))]
+        public bool IsValidInt([NotNullWhen(true)] out int? integer)
+        {
+            integer = null;
+
+            if (Type is not null)
+            {
+                if (Value is int intValue)
+                {
+                    integer = intValue;
+                    return true;
+                }
+                // We parse tokens from various different sources:
+                // * altinn-authentication
+                // * localtest
+                // * AltinnTesTools
+                // * TestAuthentication (this repo)
+                // All of them have slight differences in how values encoded in the JWT payload,
+                // so that's why we are flexible here...
+                if (Value is string strValue && int.TryParse(strValue, CultureInfo.InvariantCulture, out intValue))
+                {
+                    integer = intValue;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        [MemberNotNullWhen(true, nameof(Value))]
+        public bool IsJson([NotNullWhen(true)] out JsonElement? json)
+        {
+            json = null;
+
+            if (Type is not null && Value is JsonElement jsonElement)
+            {
+                json = jsonElement;
+                return true;
+            }
+            return false;
+        }
     }
 
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(SystemUserAuthorizationDetailsClaim), typeDiscriminator: "urn:altinn:systemuser")]
-    internal record AuthorizationDetailsClaim();
+    internal record AuthorizationDetailsClaim()
+    {
+        public static AuthorizationDetailsClaim? Parse(JsonElement json)
+        {
+            return json.ValueKind switch
+            {
+                JsonValueKind.Object => JsonSerializer.Deserialize<AuthorizationDetailsClaim>(json),
+                JsonValueKind.Array when json.GetArrayLength() == 1 => JsonSerializer
+                    .Deserialize<AuthorizationDetailsClaim[]>(json)
+                    ?[0],
+                _ => throw new AuthenticationContextException(
+                    "Invalid authorization details claim value for systemuser token: " + json
+                ),
+            };
+        }
+    }
 
     internal sealed record SystemUserAuthorizationDetailsClaim(
         [property: JsonPropertyName("systemuser_id")] IReadOnlyList<Guid> SystemUserId,

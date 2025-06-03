@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Tests.Controllers.TestResources;
-using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
@@ -70,7 +69,7 @@ public class StatelessDataControllerTests
         string dataType = null!; // this is what we're testing
 
         // Act
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, "partyId:123");
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, "partyId:123", null);
 
         // Assert
         result
@@ -95,7 +94,7 @@ public class StatelessDataControllerTests
 
         // Act
         fixture.Mock<IAppResources>().Setup(x => x.GetClassRefForLogicDataType(dataType)).Returns(string.Empty);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, "partyId:123");
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, "partyId:123", null);
 
         // Assert
         result
@@ -206,7 +205,7 @@ public class StatelessDataControllerTests
             .Mock<IAppResources>()
             .Setup(x => x.GetClassRefForLogicDataType(dataType))
             .Returns(typeof(DummyModel).FullName!);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, string.Empty);
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, string.Empty, null);
 
         // Assert
         var response = result.Should().BeOfType<BadRequestObjectResult>().Which;
@@ -227,7 +226,6 @@ public class StatelessDataControllerTests
         using var fixture = SimpleFixture.Create();
         var statelessDataController = fixture.Controller;
         var dataType = "some-value";
-
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
         statelessDataController.ControllerContext.HttpContext.User = new ClaimsPrincipal(
@@ -242,7 +240,7 @@ public class StatelessDataControllerTests
             .Mock<IAppResources>()
             .Setup(x => x.GetClassRefForLogicDataType(dataType))
             .Returns(typeof(DummyModel).FullName!);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!);
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!, null);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>().Which.StatusCode.Should().Be(400);
@@ -261,7 +259,6 @@ public class StatelessDataControllerTests
         using var fixture = SimpleFixture.Create();
         var statelessDataController = fixture.Controller;
         var dataType = "some-value";
-
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
         statelessDataController.ControllerContext.HttpContext.User = TestAuthentication.GetUserPrincipal();
@@ -287,7 +284,7 @@ public class StatelessDataControllerTests
             .Mock<IAppResources>()
             .Setup(x => x.GetClassRefForLogicDataType(dataType))
             .Returns(typeof(DummyModel).FullName!);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!);
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!, null);
 
         // Assert
         result.Should().BeOfType<StatusCodeResult>().Which.StatusCode.Should().Be(403);
@@ -308,7 +305,6 @@ public class StatelessDataControllerTests
         var statelessDataController = fixture.Controller;
         var dataType = "some-value";
         var classRef = typeof(DummyModel).FullName!;
-
         statelessDataController.ControllerContext = new ControllerContext();
         statelessDataController.ControllerContext.HttpContext = new DefaultHttpContext();
         var auth = TestAuthentication.GetUserAuthentication();
@@ -330,7 +326,7 @@ public class StatelessDataControllerTests
 
         // Act
         fixture.Mock<IAppResources>().Setup(x => x.GetClassRefForLogicDataType(dataType)).Returns(classRef);
-        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!);
+        var result = await statelessDataController.Get("ttd", "demo-app", dataType, null!, null);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>().Which.StatusCode.Should().Be(200);

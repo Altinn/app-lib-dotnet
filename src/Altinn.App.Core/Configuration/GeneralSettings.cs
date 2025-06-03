@@ -41,6 +41,8 @@ public class GeneralSettings
 
     internal bool DisableAppConfigurationCache { get; set; }
 
+    internal bool IsTest { get; set; }
+
     /// <summary>
     /// The externally accesible base url for the app with trailing /
     /// </summary>
@@ -80,5 +82,19 @@ public class GeneralSettings
             return Environment.GetEnvironmentVariable("GeneralSettings__AltinnPartyCookieName")
                 ?? AltinnPartyCookieName;
         }
+    }
+}
+
+internal static class GeneralSettingsExtensions
+{
+    /// <summary>
+    /// Convenience method to get <see cref="GeneralSettings.ExternalAppBaseUrl" /> with segments replaced and trailing # and / as this is how the url is used in the app.
+    /// </summary>
+    /// <param name="settings">The general settings</param>
+    /// <param name="app">The app identifier</param>
+    /// <returns>The formatted url</returns>
+    public static string FormattedExternalAppBaseUrlWithTrailingPound(this GeneralSettings settings, AppIdentifier app)
+    {
+        return settings.FormattedExternalAppBaseUrl(app).TrimEnd('/') + "/#";
     }
 }

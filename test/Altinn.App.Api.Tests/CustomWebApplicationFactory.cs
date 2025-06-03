@@ -4,7 +4,6 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
@@ -27,7 +26,7 @@ namespace Altinn.App.Api.Tests;
 
 public class ApiTestBase
 {
-    protected static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions
+    internal static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
@@ -38,20 +37,6 @@ public class ApiTestBase
     private readonly WebApplicationFactory<Program> _factory;
 
     protected IServiceProvider Services { get; private set; }
-
-    protected readonly Func<TestId?, Activity, bool> ActivityFilter = static (thisTestId, activity) =>
-    {
-        Assert.NotNull(thisTestId);
-        var current = activity;
-        do
-        {
-            if (current.GetTagItem(nameof(TestId)) is Guid testId && testId == thisTestId.Value)
-                return true;
-            current = current.Parent;
-        } while (current is not null);
-
-        return false;
-    };
 
     protected ApiTestBase(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
     {
@@ -93,6 +78,11 @@ public class ApiTestBase
             if (activity is not null)
             {
                 activity.AddTag(nameof(TestId), _testId);
+            }
+            var metrics = httpContext.Features.Get<IHttpMetricsTagsFeature>();
+            if (metrics is not null)
+            {
+                metrics.Tags.Add(new KeyValuePair<string, object?>(nameof(TestId), _testId));
             }
             return _next(httpContext);
         }

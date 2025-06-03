@@ -3,12 +3,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
@@ -93,7 +93,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
             {
                 Id = SubformDataType,
                 TaskId = TaskId,
-                AppLogic = new ApplicationLogic() { ClassRef = _classRefSub, AllowInSubform = true },
+                AppLogic = new ApplicationLogic() { ClassRef = _classRefSub },
             },
         ],
     };
@@ -156,14 +156,17 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
                 "SubPage",
                 """
                 {
-                "$schema": "https://altinncdn.no/schemas/json/layout/layout.schema.v1.json",
+                "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/layout/layout.schema.v1.json",
                 "data": {
                   "layout": [
                     {
                       "id": "Name",
                       "type": "Input",
                       "dataModelBindings": {
-                        "simpleBinding": "Name"
+                        "simpleBinding": {
+                          "field": "Name",
+                          "dataType": "subform"
+                        }
                       },
                       "required": true
                     },
@@ -252,6 +255,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
 
     private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
+    private readonly Mock<ITranslationService> _translationServiceMock = new(MockBehavior.Loose);
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new(MockBehavior.Loose);
 
     private readonly IServiceCollection _services = new ServiceCollection();
@@ -280,6 +284,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
         _services.AddAppImplementationFactory();
         _services.AddSingleton(_appResourcesMock.Object);
         _services.AddSingleton(_appMetadataMock.Object);
+        _services.AddSingleton(_translationServiceMock.Object);
         _services.AddSingleton(_httpContextAccessorMock.Object);
         _services.AddSingleton(fixture.App.Services.GetRequiredService<IObjectModelValidator>());
         _services.AddSingleton(_generalSettings);

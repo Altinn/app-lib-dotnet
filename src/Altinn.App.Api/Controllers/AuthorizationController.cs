@@ -36,7 +36,6 @@ public class AuthorizationController : Controller
     /// </summary>
     /// <returns>Party id for selected party. If invalid, partyId for logged in user is returned.</returns>
     [Authorize]
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     [HttpGet("{org}/{app}/api/authorization/parties/current")]
     public async Task<ActionResult> GetCurrentParty(bool returnPartyObject = false)
     {
@@ -79,16 +78,6 @@ public class AuthorizationController : Controller
                     return Ok(reportee);
                 }
                 return Ok(reportee.PartyId);
-            }
-            case Authenticated.SelfIdentifiedUser selfIdentified:
-            {
-                var details = await selfIdentified.LoadDetails();
-                if (returnPartyObject)
-                {
-                    return Ok(details.Party);
-                }
-
-                return Ok(details.Party.PartyId);
             }
             case Authenticated.Org org:
             {

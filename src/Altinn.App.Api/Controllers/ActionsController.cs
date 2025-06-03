@@ -22,7 +22,6 @@ namespace Altinn.App.Api.Controllers;
 /// Controller that handles actions performed by users
 /// </summary>
 [AutoValidateAntiforgeryTokenIfAuthCookie]
-[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/actions")]
 public class ActionsController : ControllerBase
 {
@@ -61,6 +60,7 @@ public class ActionsController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="actionRequest">user action request</param>
+    /// <param name="ct">Cancellation token, populated by the framework</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns><see cref="UserActionResponse"/></returns>
     [HttpPost]
@@ -76,6 +76,7 @@ public class ActionsController : ControllerBase
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromBody] UserActionRequest actionRequest,
+        CancellationToken ct,
         [FromQuery] string? language = null
     )
     {
@@ -110,7 +111,6 @@ public class ActionsController : ControllerBase
         {
             case Authenticated.User:
             case Authenticated.SystemUser:
-            case Authenticated.SelfIdentifiedUser:
                 break;
             default:
                 return Unauthorized();
@@ -136,7 +136,8 @@ public class ActionsController : ControllerBase
             actionRequest.ButtonId,
             actionRequest.Metadata,
             language,
-            currentAuth
+            currentAuth,
+            actionRequest.OnBehalfOf
         );
         IUserAction? actionHandler = _userActionService.GetActionHandler(action);
         if (actionHandler is null)
@@ -154,7 +155,7 @@ public class ActionsController : ControllerBase
             );
         }
 
-        UserActionResult result = await actionHandler.HandleAction(userActionContext);
+        UserActionResult result = await actionHandler.HandleAction(userActionContext, ct);
 
         if (result.ResultType is ResultType.Failure)
         {
@@ -257,7 +258,7 @@ public class ActionsController : ControllerBase
         return PartitionValidationIssuesByDataElement(validationIssues);
     }
 
-    private static Dictionary<
+    internal static Dictionary<
         string,
         Dictionary<string, List<ValidationIssueWithSource>>
     > PartitionValidationIssuesByDataElement(List<ValidationSourcePair> validationIssues)
@@ -265,22 +266,43 @@ public class ActionsController : ControllerBase
         var updatedValidationIssues = new Dictionary<string, Dictionary<string, List<ValidationIssueWithSource>>>();
         foreach (var (validationSource, issuesFromSource) in validationIssues)
         {
+            // Ensure that the empty list is created for the validation source for the "" data element
+            if (issuesFromSource.Count == 0)
+            {
+                AddIssueToPartitionedResponse(updatedValidationIssues, null, validationSource);
+                continue;
+            }
+
             foreach (var issue in issuesFromSource)
             {
-                if (!updatedValidationIssues.TryGetValue(issue.DataElementId ?? "", out var elementIssues))
-                {
-                    elementIssues = [];
-                    updatedValidationIssues[issue.DataElementId ?? ""] = elementIssues;
-                }
-                if (!elementIssues.TryGetValue(validationSource, out var sourceIssues))
-                {
-                    sourceIssues = [];
-                    elementIssues[validationSource] = sourceIssues;
-                }
-                sourceIssues.Add(issue);
+                AddIssueToPartitionedResponse(updatedValidationIssues, issue, validationSource);
             }
         }
 
         return updatedValidationIssues;
+    }
+
+    private static void AddIssueToPartitionedResponse(
+        Dictionary<string, Dictionary<string, List<ValidationIssueWithSource>>> partitionedResponse,
+        ValidationIssueWithSource? issue,
+        string validationSource
+    )
+    {
+        if (!partitionedResponse.TryGetValue(issue?.DataElementId ?? "", out var elementIssues))
+        {
+            elementIssues = [];
+            partitionedResponse[issue?.DataElementId ?? ""] = elementIssues;
+        }
+
+        if (!elementIssues.TryGetValue(validationSource, out var sourceIssues))
+        {
+            sourceIssues = [];
+            elementIssues[validationSource] = sourceIssues;
+        }
+
+        if (issue is not null)
+        {
+            sourceIssues.Add(issue);
+        }
     }
 }

@@ -17,7 +17,7 @@ public class PrefillSI : IPrefill
 {
     private readonly ILogger _logger;
     private readonly IAppResources _appResourcesService;
-    private readonly IAltinnPartyClient _altinnPartyClientClient;
+    private readonly IAltinnPartyClient _altinnPartyClient;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly Telemetry? _telemetry;
     private static readonly string _erKey = "ER";
@@ -31,20 +31,20 @@ public class PrefillSI : IPrefill
     /// </summary>
     /// <param name="logger">The logger</param>
     /// <param name="appResourcesService">The app's resource service</param>
-    /// <param name="altinnPartyClientClient">The register client</param>
+    /// <param name="altinnPartyClient">The register client</param>
     /// <param name="authenticationContext">The authentication context</param>
     /// <param name="telemetry">Telemetry for traces and metrics.</param>
     public PrefillSI(
         ILogger<PrefillSI> logger,
         IAppResources appResourcesService,
-        IAltinnPartyClient altinnPartyClientClient,
+        IAltinnPartyClient altinnPartyClient,
         IAuthenticationContext authenticationContext,
         Telemetry? telemetry = null
     )
     {
         _logger = logger;
         _appResourcesService = appResourcesService;
-        _altinnPartyClientClient = altinnPartyClientClient;
+        _altinnPartyClient = altinnPartyClient;
         _authenticationContext = authenticationContext;
         _telemetry = telemetry;
     }
@@ -93,11 +93,10 @@ public class PrefillSI : IPrefill
         Party? party = currentAuth switch
         {
             Authenticated.User user when user.SelectedPartyId == partyIdNum => await user.LookupSelectedParty(),
-            Authenticated.SelfIdentifiedUser user when user.PartyId == partyIdNum => (await user.LoadDetails()).Party,
             Authenticated.SystemUser systemUser
                 when await systemUser.LoadDetails() is { } details && details.Party.PartyId == partyIdNum =>
                 details.Party,
-            _ => await _altinnPartyClientClient.GetParty(partyIdNum),
+            _ => await _altinnPartyClient.GetParty(partyIdNum),
         };
         if (party == null)
         {
@@ -123,12 +122,6 @@ public class PrefillSI : IPrefill
                     case Authenticated.User user:
                     {
                         var details = await user.LoadDetails(validateSelectedParty: false);
-                        userProfile = details.Profile;
-                        break;
-                    }
-                    case Authenticated.SelfIdentifiedUser user:
-                    {
-                        var details = await user.LoadDetails();
                         userProfile = details.Profile;
                         break;
                     }
@@ -299,14 +292,16 @@ public class PrefillSI : IPrefill
 
             if (string.IsNullOrEmpty(source))
             {
-                string errorMessage = $"Could not prefill, a source value was not set for target: {target}";
+                string errorMessage =
+                    $"Could not prefill, a source value was not set for target: {target.Replace(Environment.NewLine, "")}";
                 _logger.LogError(errorMessage);
                 throw new Exception(errorMessage);
             }
 
             if (string.IsNullOrEmpty(target))
             {
-                string errorMessage = $"Could not prefill, a target value was not set for source: {source}";
+                string errorMessage =
+                    $"Could not prefill, a target value was not set for source: {source.Replace(Environment.NewLine, "")}";
                 _logger.LogError(errorMessage);
                 throw new Exception(errorMessage);
             }
@@ -321,8 +316,6 @@ public class PrefillSI : IPrefill
                 sourceValue = JValue.CreateString(source);
             }
 
-            _logger.LogInformation($"Source: {source}, target: {target}");
-            _logger.LogInformation($"Value read from source object: {sourceValue}");
             string[] keys = target.Split(".");
 
             AssignValueToDataModel(keys, sourceValue, serviceModel, 0, continueOnError);

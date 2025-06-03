@@ -73,6 +73,8 @@ public sealed partial class Telemetry : IDisposable
             InitData(context);
             InitInstances(context);
             InitNotifications(context);
+            InitSigning(context);
+            InitSigningDelegation(context);
             InitProcesses(context);
             InitValidation(context);
             InitMaskinporten(context);
@@ -137,6 +139,11 @@ public sealed partial class Telemetry : IDisposable
         public static readonly string DataGuid = "data.guid";
 
         /// <summary>
+        /// Label for the type of the data.
+        /// </summary>
+        public static readonly string DataType = "data.type";
+
+        /// <summary>
         /// Label for the ID of the task.
         /// </summary>
         public static readonly string TaskId = "task.id";
@@ -180,6 +187,11 @@ public sealed partial class Telemetry : IDisposable
         /// Label for the authentication token isExchanged flag.
         /// </summary>
         public const string UserAuthenticationTokenIsExchanged = "user.authentication.token.isExchanged";
+
+        /// <summary>
+        /// Label for the authentication token clientId claim.
+        /// </summary>
+        public const string UserAuthenticationTokenClientId = "user.authentication.token.clientId";
 
         /// <summary>
         /// Label for the authentication token is issued from Altinn portal.

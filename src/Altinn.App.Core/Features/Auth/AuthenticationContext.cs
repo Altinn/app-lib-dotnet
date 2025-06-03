@@ -60,15 +60,16 @@ internal sealed class AuthenticationContext : IAuthenticationContext
             {
                 var appSettings = _appSettings.CurrentValue;
                 var generalSettings = _generalSettings.CurrentValue;
-                var token = JwtTokenUtil.GetTokenFromContext(httpContext, _appSettings.CurrentValue.RuntimeCookieName);
+                var token = JwtTokenUtil.GetTokenFromContext(httpContext, appSettings.RuntimeCookieName);
 
                 var isLocaltest =
-                    appSettings.OpenIdWellKnownEndpoint?.Contains("localhost:5101", StringComparison.OrdinalIgnoreCase)
-                    ?? false && generalSettings.HostName == "local.altinn.cloud";
+                    generalSettings.HostName.StartsWith("local.altinn.cloud", StringComparison.OrdinalIgnoreCase)
+                    && !generalSettings.IsTest;
                 if (isLocaltest)
                 {
                     authInfo = Authenticated.FromLocalTest(
                         tokenStr: token,
+                        isAuthenticated: !string.IsNullOrWhiteSpace(token),
                         _appConfigurationCache.ApplicationMetadata,
                         () => _httpContext.Request.Cookies[_generalSettings.CurrentValue.GetAltinnPartyCookieName],
                         _profileClient.GetUserProfile,

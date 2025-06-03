@@ -360,6 +360,8 @@ public static class TelemetryActivityExtensions
         activity.SetTag(Labels.UserAuthenticationType, currentAuth.GetType().Name);
         activity.SetTag(Labels.UserAuthenticationTokenIssuer, currentAuth.TokenIssuer);
         activity.SetTag(Labels.UserAuthenticationTokenIsExchanged, currentAuth.TokenIsExchanged);
+        if (currentAuth.ClientId is not null)
+            activity.SetTag(Labels.UserAuthenticationTokenClientId, currentAuth.ClientId);
         switch (currentAuth)
         {
             case Authenticated.None:
@@ -371,14 +373,6 @@ public static class TelemetryActivityExtensions
                 activity.SetAuthenticationMethod(auth.AuthenticationMethod);
                 activity.SetAuthenticationLevel(auth.AuthenticationLevel);
                 activity.SetTag(Labels.UserAuthenticationInAltinnPortal, auth.InAltinnPortal);
-                break;
-            }
-            case Authenticated.SelfIdentifiedUser auth:
-            {
-                activity.SetUserId(auth.UserId);
-                activity.SetUserPartyId(auth.PartyId);
-                activity.SetAuthenticationMethod(auth.AuthenticationMethod);
-                activity.SetAuthenticationLevel(auth.AuthenticationLevel);
                 break;
             }
             case Authenticated.Org auth:

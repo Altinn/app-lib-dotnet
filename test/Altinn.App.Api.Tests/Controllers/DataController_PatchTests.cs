@@ -9,8 +9,6 @@ using System.Text.Json.Serialization;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
-using Altinn.App.Api.Tests.Utils;
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
@@ -345,8 +343,9 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         this.OverrideServicesForThisTest = (services) =>
         {
             services.AddTelemetrySink(
-                shouldAlsoListenToActivities: (sp, source) => source.Name == "Microsoft.AspNetCore",
-                activityFilter: this.ActivityFilter
+                additionalActivitySources: source => source.Name == "Microsoft.AspNetCore",
+                additionalMeters: source => source.Name == "Microsoft.AspNetCore.Hosting",
+                filterMetrics: metric => metric.Name == "http.server.request.duration"
             );
         };
 
@@ -366,7 +365,8 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         _dataProcessorMock.VerifyNoOtherCalls();
 
-        await telemetry.SnapshotActivities();
+        await telemetry.WaitForServerTelemetry();
+        await Verify(telemetry.GetSnapshot());
     }
 
     [Fact]

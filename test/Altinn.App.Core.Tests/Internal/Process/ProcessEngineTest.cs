@@ -1,8 +1,5 @@
 using System.Globalization;
 using System.Security.Claims;
-using Altinn.App.Api.Tests.Utils;
-using Altinn.App.Common.Tests;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
@@ -14,7 +11,6 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
-using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
@@ -27,7 +23,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Moq;
 using Newtonsoft.Json;
 using Xunit.Abstractions;
@@ -126,8 +121,7 @@ public sealed class ProcessEngineTest
         using var fixture = Fixture.Create(withTelemetry: true, token: token);
         var instanceOwnerPartyId = token.Auth switch
         {
-            Authenticated.User auth when await auth.LoadDetails() is { } details => details.SelectedParty.PartyId,
-            Authenticated.SelfIdentifiedUser auth => auth.PartyId,
+            Authenticated.User auth => auth.SelectedPartyId,
             Authenticated.ServiceOwner => _instanceOwnerPartyId,
             Authenticated.SystemUser auth when await auth.LoadDetails() is { } details => details.Party.PartyId,
             _ => throw new NotImplementedException(),
@@ -176,11 +170,6 @@ public sealed class ProcessEngineTest
             {
                 UserId = auth.UserId,
                 NationalIdentityNumber = details.SelectedParty.SSN,
-                AuthenticationLevel = auth.AuthenticationLevel,
-            },
-            Authenticated.SelfIdentifiedUser auth => new()
-            {
-                UserId = auth.UserId,
                 AuthenticationLevel = auth.AuthenticationLevel,
             },
             Authenticated.ServiceOwner auth => new()
@@ -435,7 +424,7 @@ public sealed class ProcessEngineTest
     }
 
     [Fact]
-    public async Task Next_returns_unsuccessful_unauthorized_when_action_handler_returns_errortype_Unauthorized()
+    public async Task HandleUserAction_returns_successful_when_handler_succeeds()
     {
         var expectedInstance = new Instance()
         {
@@ -453,7 +442,67 @@ public sealed class ProcessEngineTest
         Mock<IUserAction> userActionMock = new Mock<IUserAction>(MockBehavior.Strict);
         userActionMock.Setup(u => u.Id).Returns("sign");
         userActionMock
-            .Setup(u => u.HandleAction(It.IsAny<UserActionContext>()))
+            .Setup(u => u.HandleAction(It.IsAny<UserActionContext>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserActionResult.SuccessResult());
+        using var fixture = Fixture.Create(updatedInstance: expectedInstance, userActions: [userActionMock.Object]);
+        fixture
+            .Mock<IAppMetadata>()
+            .Setup(x => x.GetApplicationMetadata())
+            .ReturnsAsync(new ApplicationMetadata("org/app"));
+        ProcessEngine processEngine = fixture.ProcessEngine;
+        Instance instance = new Instance()
+        {
+            Id = _instanceId,
+            AppId = "org/app",
+            InstanceOwner = new() { PartyId = "1337" },
+            Data = [],
+            Process = new ProcessState()
+            {
+                StartEvent = "StartEvent_1",
+                CurrentTask = new()
+                {
+                    ElementId = "Task_2",
+                    AltinnTaskType = "signing",
+                    Flow = 3,
+                    Validated = new() { CanCompleteTask = true },
+                },
+            },
+        };
+        ClaimsPrincipal user = new(
+            new ClaimsIdentity(new List<Claim>() { new(AltinnCoreClaimTypes.AuthenticationLevel, "2") })
+        );
+        ProcessNextRequest processNextRequest = new ProcessNextRequest()
+        {
+            Instance = instance,
+            User = user,
+            Action = "sign",
+            Language = null,
+        };
+        UserActionResult result = await processEngine.HandleUserAction(processNextRequest, CancellationToken.None);
+        result.Success.Should().BeTrue();
+        result.ErrorType.Should().Be(null);
+    }
+
+    [Fact]
+    public async Task HandleUserAction_returns_unsuccessful_unauthorized_when_action_handler_returns_errortype_Unauthorized()
+    {
+        var expectedInstance = new Instance()
+        {
+            Id = _instanceId,
+            AppId = "org/app",
+            InstanceOwner = new InstanceOwner() { PartyId = "1337" },
+            Data = [],
+            Process = new ProcessState()
+            {
+                CurrentTask = null,
+                StartEvent = "StartEvent_1",
+                EndEvent = "EndEvent_1",
+            },
+        };
+        Mock<IUserAction> userActionMock = new Mock<IUserAction>(MockBehavior.Strict);
+        userActionMock.Setup(u => u.Id).Returns("sign");
+        userActionMock
+            .Setup(u => u.HandleAction(It.IsAny<UserActionContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 UserActionResult.FailureResult(
                     error: new ActionError() { Code = "NoUserId", Message = "User id is missing in token" },
@@ -494,9 +543,8 @@ public sealed class ProcessEngineTest
             Action = "sign",
             Language = null,
         };
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
+        UserActionResult result = await processEngine.HandleUserAction(processNextRequest, CancellationToken.None);
         result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Be($"Action handler for action sign failed!");
         result.ErrorType.Should().Be(ProcessErrorType.Unauthorized);
     }
 
@@ -569,12 +617,6 @@ public sealed class ProcessEngineTest
         fixture.Mock<IProcessReader>().Verify(r => r.IsEndEvent("Task_2"), Times.Once);
         fixture.Mock<IProcessReader>().Verify(r => r.IsProcessTask("Task_2"), Times.Once);
         fixture.Mock<IProcessNavigator>().Verify(n => n.GetNextTask(It.IsAny<Instance>(), "Task_1", null), Times.Once);
-        fixture
-            .Mock<IProcessTaskCleaner>()
-            .Verify(
-                x => x.RemoveAllDataElementsGeneratedFromTask(It.IsAny<Instance>(), It.IsAny<string>()),
-                Times.Once
-            );
 
         var expectedInstanceEvents = new List<InstanceEvent>()
         {
@@ -1158,13 +1200,13 @@ public sealed class ProcessEngineTest
             Mock<IProcessNavigator> processNavigatorMock = new(MockBehavior.Strict);
             Mock<IProcessEventHandlerDelegator> processEventHandlingDelegatorMock = new();
             Mock<IProcessEventDispatcher> processEventDispatcherMock = new();
-            Mock<IProcessTaskCleaner> processTaskCleanerMock = new();
             Mock<IDataClient> dataClientMock = new(MockBehavior.Strict);
             Mock<IInstanceClient> instanceClientMock = new(MockBehavior.Strict);
             Mock<IAppModel> appModelMock = new(MockBehavior.Strict);
             Mock<IAppMetadata> appMetadataMock = new(MockBehavior.Strict);
             Mock<IAppResources> appResourcesMock = new(MockBehavior.Strict);
-            appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("org/app"));
+            var appMetadata = new ApplicationMetadata("org/app");
+            appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(appMetadata);
 
             Mock<IPdfServiceTask> pdfServiceTaskMock = new();
             pdfServiceTaskMock.Setup(p => p.Type).Returns("pdf");
@@ -1178,44 +1220,42 @@ public sealed class ProcessEngineTest
                         ?? TestAuthentication.GetUserAuthentication(
                             userId: 1337,
                             email: "test@example.com",
-                            ssn: "22927774937"
+                            ssn: "22927774937",
+                            applicationMetadata: appMetadata
                         )
                 );
             processNavigatorMock
                 .Setup(pn => pn.GetNextTask(It.IsAny<Instance>(), "StartEvent_1", It.IsAny<string?>()))
-                .ReturnsAsync(
-                    () =>
-                        new ProcessTask()
-                        {
-                            Id = "Task_1",
-                            Incoming = new List<string> { "Flow_1" },
-                            Outgoing = new List<string> { "Flow_2" },
-                            Name = "Utfylling",
-                            ExtensionElements = new() { TaskExtension = new() { TaskType = "data" } },
-                        }
+                .ReturnsAsync(() =>
+                    new ProcessTask()
+                    {
+                        Id = "Task_1",
+                        Incoming = new List<string> { "Flow_1" },
+                        Outgoing = new List<string> { "Flow_2" },
+                        Name = "Utfylling",
+                        ExtensionElements = new() { TaskExtension = new() { TaskType = "data" } },
+                    }
                 );
             processNavigatorMock
                 .Setup(pn => pn.GetNextTask(It.IsAny<Instance>(), "Task_1", It.IsAny<string?>()))
-                .ReturnsAsync(
-                    () =>
-                        new ProcessTask()
-                        {
-                            Id = "Task_2",
-                            Incoming = new List<string> { "Flow_2" },
-                            Outgoing = new List<string> { "Flow_3" },
-                            Name = "Bekreft",
-                            ExtensionElements = new() { TaskExtension = new() { TaskType = "confirmation" } },
-                        }
+                .ReturnsAsync(() =>
+                    new ProcessTask()
+                    {
+                        Id = "Task_2",
+                        Incoming = new List<string> { "Flow_2" },
+                        Outgoing = new List<string> { "Flow_3" },
+                        Name = "Bekreft",
+                        ExtensionElements = new() { TaskExtension = new() { TaskType = "confirmation" } },
+                    }
                 );
             processNavigatorMock
                 .Setup(pn => pn.GetNextTask(It.IsAny<Instance>(), "Task_2", It.IsAny<string?>()))
-                .ReturnsAsync(
-                    () =>
-                        new EndEvent()
-                        {
-                            Id = "EndEvent_1",
-                            Incoming = new List<string> { "Flow_3" },
-                        }
+                .ReturnsAsync(() =>
+                    new EndEvent()
+                    {
+                        Id = "EndEvent_1",
+                        Incoming = new List<string> { "Flow_3" },
+                    }
                 );
             if (updatedInstance is not null)
             {
@@ -1228,7 +1268,6 @@ public sealed class ProcessEngineTest
             services.TryAddTransient<IProcessNavigator>(_ => processNavigatorMock.Object);
             services.TryAddTransient<IProcessEventHandlerDelegator>(_ => processEventHandlingDelegatorMock.Object);
             services.TryAddTransient<IProcessEventDispatcher>(_ => processEventDispatcherMock.Object);
-            services.TryAddTransient<IProcessTaskCleaner>(_ => processTaskCleanerMock.Object);
             services.TryAddTransient<IDataClient>(_ => dataClientMock.Object);
             services.TryAddTransient<IInstanceClient>(_ => instanceClientMock.Object);
             services.TryAddTransient<IAppModel>(_ => appModelMock.Object);
