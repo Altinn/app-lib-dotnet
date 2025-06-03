@@ -284,7 +284,7 @@ public class PdfService : IPdfService
         DateTimeOffset now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, timeZone);
 
         string title = GetTitleText(textResource) ?? "Altinn";
-        string dateGenerated = now.ToString("G", new CultureInfo("nb-NO"));
+        string dateGenerated = now.ToString("G", GetCultureOrInvariant("nb-NO"));
         string altinnReferenceId = instance.Id.Split("/")[1].Split("-")[4];
 
         string footerTemplate =
@@ -306,5 +306,23 @@ public class PdfService : IPdfService
                 </div>
             </div>";
         return footerTemplate;
+    }
+
+    private static CultureInfo GetCultureOrInvariant(string? cultureName)
+    {
+        CultureInfo culture = CultureInfo.InvariantCulture;
+        if (cultureName is not null)
+        {
+            try
+            {
+                culture = new CultureInfo(cultureName);
+            }
+            catch (CultureNotFoundException)
+            {
+                // If the language is not recognized, we'll just use the invariant culture.
+            }
+        }
+
+        return culture;
     }
 }
