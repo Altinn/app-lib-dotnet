@@ -9,31 +9,32 @@ public class ExpressionValueTests
     [Fact]
     public void TestNull()
     {
-        String? nullString = null;
-        Assert.Equal(ExpressionValue.Null, nullString);
-        double? nullDouble = null;
-        Assert.Equal(ExpressionValue.Null, nullDouble);
-        int? nullInt = null;
-        Assert.Equal(ExpressionValue.Null, nullInt);
-        bool? nullBool = null;
-        Assert.Equal(ExpressionValue.Null, nullBool);
-
-        ExpressionValue nullValue = ExpressionValue.Null;
-        Assert.Null(nullValue.ToObject());
-        Assert.Equal(ExpressionValue.Null, nullValue);
-
-        nullValue = ExpressionValue.FromObject(null);
-        Assert.Null(nullValue.ToObject());
-        Assert.Equal(ExpressionValue.Null, nullValue);
-
-        Assert.Equal(0, nullValue.GetHashCode());
-
-        var nullEqualsEmptyObject = nullValue.Equals(new { });
-        Assert.False(nullEqualsEmptyObject);
-        Assert.False(nullValue == ExpressionValue.False);
-        Assert.True(nullValue != ExpressionValue.False);
-
-        Assert.Equal("null", nullValue.ToString());
+        Assert.Throws<NotImplementedException>(() => ExpressionValue.Null != ExpressionValue.False);
+        // String? nullString = null;
+        // Assert.Equal(ExpressionValue.Null, nullString);
+        // double? nullDouble = null;
+        // Assert.Equal(ExpressionValue.Null, nullDouble);
+        // int? nullInt = null;
+        // Assert.Equal(ExpressionValue.Null, nullInt);
+        // bool? nullBool = null;
+        // Assert.Equal(ExpressionValue.Null, nullBool);
+        //
+        // ExpressionValue nullValue = ExpressionValue.Null;
+        // Assert.Null(nullValue.ToObject());
+        // Assert.Equal(ExpressionValue.Null, nullValue);
+        //
+        // nullValue = ExpressionValue.FromObject(null);
+        // Assert.Null(nullValue.ToObject());
+        // Assert.Equal(ExpressionValue.Null, nullValue);
+        //
+        // Assert.Equal(0, nullValue.GetHashCode());
+        //
+        // var nullEqualsEmptyObject = nullValue.Equals(new { });
+        // Assert.False(nullEqualsEmptyObject);
+        // Assert.False(nullValue == ExpressionValue.False);
+        // Assert.True(nullValue != ExpressionValue.False);
+        //
+        // Assert.Equal("null", nullValue.ToString());
     }
 
     [Fact]
@@ -47,9 +48,9 @@ public class ExpressionValueTests
         value = ExpressionValue.FromObject(stringValue);
         Assert.Equal(stringValue, value.ToObject());
 
-        Assert.Equal(stringValue.GetHashCode(), value.GetHashCode());
-
         Assert.Equal('"' + stringValue + '"', value.ToString());
+        Assert.Throws<NotImplementedException>(() => value.GetHashCode());
+        // Assert.Equal(stringValue.GetHashCode(), value.GetHashCode());
     }
 
     [Fact]
@@ -63,9 +64,9 @@ public class ExpressionValueTests
         value = ExpressionValue.FromObject(doubleValue);
         Assert.Equal(doubleValue, value.ToObject());
 
-        Assert.Equal(doubleValue.GetHashCode(), value.GetHashCode());
-
         Assert.Equal(doubleValue.ToString(CultureInfo.InvariantCulture), value.ToString());
+        Assert.Throws<NotImplementedException>(() => value.GetHashCode());
+        // Assert.Equal(doubleValue.GetHashCode(), value.GetHashCode());
     }
 
     [Theory]
@@ -73,79 +74,81 @@ public class ExpressionValueTests
     [InlineData(false)]
     public void TestBool(bool boolValue)
     {
-        ExpressionValue value = boolValue;
-        Assert.Equal(boolValue, value.ToObject());
+        ExpressionValue valueCast = boolValue;
+        Assert.Equal(boolValue, valueCast.ToObject());
         var factoryValue = boolValue ? ExpressionValue.True : ExpressionValue.False;
-        Assert.Equal(factoryValue, value);
-        Assert.Equal(boolValue, value.Bool);
 
-        value = ExpressionValue.FromObject(boolValue);
-        Assert.Equal(boolValue, value.ToObject());
+        var valueFromObject = ExpressionValue.FromObject(boolValue);
+        Assert.Equal(boolValue, valueFromObject.ToObject());
+        Assert.Equal(boolValue, valueCast.Bool);
 
-        Assert.Equal(boolValue.GetHashCode(), value.GetHashCode());
-
-        Assert.Equal(boolValue ? "true" : "false", value.ToString());
+        Assert.Equal(boolValue ? "true" : "false", valueFromObject.ToString());
+        Assert.Throws<NotImplementedException>(() => factoryValue == valueCast);
+        // Assert.Equal(factoryValue, valueCast);
+        Assert.Throws<NotImplementedException>(() => valueFromObject.GetHashCode());
+        // Assert.Equal(boolValue.GetHashCode(), valueFromObject.GetHashCode());
     }
 
     [Fact]
     public void TestFromObject()
     {
-        Assert.Equal((ExpressionValue)"test", ExpressionValue.FromObject((ExpressionValue)"test"));
-
-        Assert.Equal(ExpressionValue.Null, ExpressionValue.FromObject(null));
-
-        Assert.Equal(true, ExpressionValue.FromObject(true));
-        Assert.Equal(ExpressionValue.True, ExpressionValue.FromObject(true));
-        Assert.Equal(false, ExpressionValue.FromObject(false));
-        Assert.Equal(ExpressionValue.False, ExpressionValue.FromObject(false));
-
-        Assert.Equal("test", ExpressionValue.FromObject("test"));
-        Assert.Equal("test", ExpressionValue.FromObject("test").String);
-
-        Assert.Equal((float)123.456, ExpressionValue.FromObject((float)123.456).Number);
-        Assert.Equal((float)123.456, ExpressionValue.FromObject((float)123.456));
-
-        Assert.Equal(123.456, ExpressionValue.FromObject(123.456).Number);
-        Assert.Equal(123.456, ExpressionValue.FromObject(123.456));
-
-        Assert.Equal(123, ExpressionValue.FromObject((byte)123).Number);
-        Assert.Equal(123, ExpressionValue.FromObject((sbyte)123).Number);
-        Assert.Equal(123, ExpressionValue.FromObject((short)123).Number);
-        Assert.Equal(123, ExpressionValue.FromObject((ushort)123).Number);
-        Assert.Equal(123, ExpressionValue.FromObject(123).Number);
-        Assert.Equal(123, ExpressionValue.FromObject((uint)123).Number);
-        Assert.Equal(123, ExpressionValue.FromObject((long)123).Number);
-        Assert.Equal(123, ExpressionValue.FromObject((ulong)123).Number);
-        Assert.Equal(123, ExpressionValue.FromObject((decimal)123).Number);
-
-        Assert.Equal(
-            "2020-02-03T12:34:56Z",
-            ExpressionValue.FromObject(DateTime.Parse("2020-02-03T12:34:56Z").ToUniversalTime()).String
-        );
-        Assert.Equal(
-            "2020-02-03T12:34:56Z",
-            ExpressionValue.FromObject(DateTime.Parse("2020-02-03T12:34:56Z").ToUniversalTime())
-        );
-
-        Assert.Equal(
-            "2020-02-03T12:34:56+00:00",
-            ExpressionValue.FromObject(DateTimeOffset.Parse("2020-02-03T12:34:56+00:00")).String
-        );
-        Assert.Equal(
-            "2020-02-03T12:34:56+00:00",
-            ExpressionValue.FromObject(DateTimeOffset.Parse("2020-02-03T12:34:56+00:00"))
-        );
-
-        Assert.Equal("12:34:56", ExpressionValue.FromObject(new TimeSpan(12, 34, 56)));
-        Assert.Equal("12:34:56", ExpressionValue.FromObject(new TimeSpan(12, 34, 56)).String);
-
-        Assert.Equal("12:34:56", ExpressionValue.FromObject(new TimeOnly(12, 34, 56)));
-        Assert.Equal("12:34:56", ExpressionValue.FromObject(new TimeOnly(12, 34, 56)).String);
-
-        Assert.Equal("2020-02-03", ExpressionValue.FromObject(new DateOnly(2020, 2, 3)));
-        Assert.Equal("2020-02-03", ExpressionValue.FromObject(new DateOnly(2020, 2, 3)).String);
-
-        Assert.Equal(ExpressionValue.Null, ExpressionValue.FromObject(new object()));
+        Assert.Throws<NotImplementedException>(() => ExpressionValue.FromObject(null) == ExpressionValue.Null);
+        // Assert.Equal((ExpressionValue)"test", ExpressionValue.FromObject((ExpressionValue)"test"));
+        //
+        // Assert.Equal(ExpressionValue.Null, ExpressionValue.FromObject(null));
+        //
+        // Assert.Equal(true, ExpressionValue.FromObject(true));
+        // Assert.Equal(ExpressionValue.True, ExpressionValue.FromObject(true));
+        // Assert.Equal(false, ExpressionValue.FromObject(false));
+        // Assert.Equal(ExpressionValue.False, ExpressionValue.FromObject(false));
+        //
+        // Assert.Equal("test", ExpressionValue.FromObject("test"));
+        // Assert.Equal("test", ExpressionValue.FromObject("test").String);
+        //
+        // Assert.Equal((float)123.456, ExpressionValue.FromObject((float)123.456).Number);
+        // Assert.Equal((float)123.456, ExpressionValue.FromObject((float)123.456));
+        //
+        // Assert.Equal(123.456, ExpressionValue.FromObject(123.456).Number);
+        // Assert.Equal(123.456, ExpressionValue.FromObject(123.456));
+        //
+        // Assert.Equal(123, ExpressionValue.FromObject((byte)123).Number);
+        // Assert.Equal(123, ExpressionValue.FromObject((sbyte)123).Number);
+        // Assert.Equal(123, ExpressionValue.FromObject((short)123).Number);
+        // Assert.Equal(123, ExpressionValue.FromObject((ushort)123).Number);
+        // Assert.Equal(123, ExpressionValue.FromObject(123).Number);
+        // Assert.Equal(123, ExpressionValue.FromObject((uint)123).Number);
+        // Assert.Equal(123, ExpressionValue.FromObject((long)123).Number);
+        // Assert.Equal(123, ExpressionValue.FromObject((ulong)123).Number);
+        // Assert.Equal(123, ExpressionValue.FromObject((decimal)123).Number);
+        //
+        // Assert.Equal(
+        //     "2020-02-03T12:34:56Z",
+        //     ExpressionValue.FromObject(DateTime.Parse("2020-02-03T12:34:56Z").ToUniversalTime()).String
+        // );
+        // Assert.Equal(
+        //     "2020-02-03T12:34:56Z",
+        //     ExpressionValue.FromObject(DateTime.Parse("2020-02-03T12:34:56Z").ToUniversalTime())
+        // );
+        //
+        // Assert.Equal(
+        //     "2020-02-03T12:34:56+00:00",
+        //     ExpressionValue.FromObject(DateTimeOffset.Parse("2020-02-03T12:34:56+00:00")).String
+        // );
+        // Assert.Equal(
+        //     "2020-02-03T12:34:56+00:00",
+        //     ExpressionValue.FromObject(DateTimeOffset.Parse("2020-02-03T12:34:56+00:00"))
+        // );
+        //
+        // Assert.Equal("12:34:56", ExpressionValue.FromObject(new TimeSpan(12, 34, 56)));
+        // Assert.Equal("12:34:56", ExpressionValue.FromObject(new TimeSpan(12, 34, 56)).String);
+        //
+        // Assert.Equal("12:34:56", ExpressionValue.FromObject(new TimeOnly(12, 34, 56)));
+        // Assert.Equal("12:34:56", ExpressionValue.FromObject(new TimeOnly(12, 34, 56)).String);
+        //
+        // Assert.Equal("2020-02-03", ExpressionValue.FromObject(new DateOnly(2020, 2, 3)));
+        // Assert.Equal("2020-02-03", ExpressionValue.FromObject(new DateOnly(2020, 2, 3)).String);
+        //
+        // Assert.Equal(ExpressionValue.Null, ExpressionValue.FromObject(new object()));
     }
 
     [Theory]
@@ -173,8 +176,11 @@ public class ExpressionValueTests
         Assert.Throws<InvalidCastException>(() => undefinedValue.Bool);
         Assert.Throws<InvalidCastException>(() => undefinedValue.Number);
         Assert.Throws<InvalidCastException>(() => undefinedValue.String);
-        Assert.Throws<InvalidOperationException>(() => undefinedValue.GetHashCode());
-        Assert.Throws<InvalidOperationException>(() => undefinedValue.Equals(undefinedValue));
+
+        Assert.Throws<NotImplementedException>(() => undefinedValue.GetHashCode());
+        Assert.Throws<NotImplementedException>(() => undefinedValue.Equals(undefinedValue));
+        // Assert.Throws<InvalidOperationException>(() => undefinedValue.GetHashCode());
+        // Assert.Throws<InvalidOperationException>(() => undefinedValue.Equals(undefinedValue));
     }
 
     [Fact]

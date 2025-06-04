@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -257,32 +258,60 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.True => "true",
             JsonValueKind.False => "false",
             JsonValueKind.String => JsonSerializer.Serialize(String, _unsafeSerializerOptionsForSerializingDates),
-            JsonValueKind.Number => JsonSerializer.Serialize(Number, _unsafeSerializerOptionsForSerializingDates),
+            JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
             // JsonValueKind.Object => JsonSerializer.Serialize(Object),
             // JsonValueKind.Array => JsonSerializer.Serialize(Array),
             _ => throw new InvalidOperationException("Invalid value kind"),
         };
 
+    /// <summary>
+    /// Get the value as a string that can be used for equality comparisons in ["equals"] expressions.
+    ///
+    /// Has special handeling for strings that are "true", "false", or "null" to make them equal to the primitive types
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public string? ToStringForEquals() =>
+        ValueKind switch
+        {
+            JsonValueKind.Null => null,
+            JsonValueKind.True => "true",
+            JsonValueKind.False => "false",
+            JsonValueKind.String => String switch
+            {
+                // Special case for "TruE" to be equal to true
+                { } sValue when sValue.Equals("true", StringComparison.OrdinalIgnoreCase) => "true",
+                { } sValue when sValue.Equals("false", StringComparison.OrdinalIgnoreCase) => "false",
+                { } sValue when sValue.Equals("null", StringComparison.OrdinalIgnoreCase) => null,
+                { } sValue => sValue,
+            },
+            JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
+            // JsonValueKind.Object => JsonSerializer.Serialize(Object),
+            // JsonValueKind.Array => JsonSerializer.Serialize(Array),
+            _ => throw new NotImplementedException($"ToStringForEquals not implemented for {ValueKind}"),
+        };
+
     /// <inheritdoc />
     public bool Equals(ExpressionValue other)
     {
+        throw new NotImplementedException("Equals is not used for ExpressionValue");
         // First compare value kinds
-        if (_valueKind != other._valueKind)
-            return false;
+        // if (_valueKind != other._valueKind)
+        //     return false;
 
-        // Then compare actual values based on the kind
-        return _valueKind switch
-        {
-            JsonValueKind.Null => true, // All null values are equal
-            JsonValueKind.True => true, // All true values are equal
-            JsonValueKind.False => true, // All false values are equal
-            JsonValueKind.String => _stringValue == other._stringValue,
-            // ReSharper disable once CompareOfFloatsByEqualityOperator
-            JsonValueKind.Number => _numberValue == other._numberValue,
-            // JsonValueKind.Object =>
-            // JsonValueKind.Array =>
-            _ => throw new InvalidOperationException("Invalid value kind"),
-        };
+        // // Then compare actual values based on the kind
+        // return _valueKind switch
+        // {
+        //     JsonValueKind.Null => true, // All null values are equal
+        //     JsonValueKind.True => true, // All true values are equal
+        //     JsonValueKind.False => true, // All false values are equal
+        //     JsonValueKind.String => _stringValue == other._stringValue,
+        //     // ReSharper disable once CompareOfFloatsByEqualityOperator
+        //     JsonValueKind.Number => _numberValue == other._numberValue,
+        //     // JsonValueKind.Object =>
+        //     // JsonValueKind.Array =>
+        //     _ => throw new InvalidOperationException("Invalid value kind"),
+        // };
     }
 
     /// <inheritdoc />
@@ -294,17 +323,18 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// <inheritdoc />
     public override int GetHashCode()
     {
-        return ValueKind switch
-        {
-            JsonValueKind.Null => 0,
-            JsonValueKind.True => 1,
-            JsonValueKind.False => 0,
-            JsonValueKind.String => _stringValue?.GetHashCode() ?? 0,
-            JsonValueKind.Number => _numberValue.GetHashCode(),
-            // JsonValueKind.Object =>
-            // JsonValueKind.Array =>
-            _ => throw new InvalidOperationException("Invalid value kind"),
-        };
+        throw new NotImplementedException("GetHashCode is not implemented for ExpressionValue");
+        // return ValueKind switch
+        // {
+        //     JsonValueKind.Null => 0,
+        //     JsonValueKind.True => 1,
+        //     JsonValueKind.False => 0,
+        //     JsonValueKind.String => _stringValue?.GetHashCode() ?? 0,
+        //     JsonValueKind.Number => _numberValue.GetHashCode(),
+        //     // JsonValueKind.Object =>
+        //     // JsonValueKind.Array =>
+        //     _ => throw new InvalidOperationException("Invalid value kind"),
+        // };
     }
 
     /// <summary>

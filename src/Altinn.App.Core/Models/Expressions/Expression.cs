@@ -120,21 +120,22 @@ public readonly struct Expression : IEquatable<Expression>
     /// <inheritdoc />
     public bool Equals(Expression other)
     {
-        // First compare function types
-        if (Function != other.Function)
-            return false;
-
-        // For function expressions, compare arguments
-        if (IsFunctionExpression)
-        {
-            if (other.Args == null || Args.Count != other.Args.Count)
-                return false;
-
-            return Args.SequenceEqual(other.Args);
-        }
-
-        // For value expressions, compare value unions
-        return ValueUnion.Equals(other.ValueUnion);
+        throw new NotImplementedException();
+        // // First compare function types
+        // if (Function != other.Function)
+        //     return false;
+        //
+        // // For function expressions, compare arguments
+        // if (IsFunctionExpression)
+        // {
+        //     if (other.Args == null || Args.Count != other.Args.Count)
+        //         return false;
+        //
+        //     return Args.SequenceEqual(other.Args);
+        // }
+        //
+        // // For value expressions, compare value unions
+        // return ValueUnion.Equals(other.ValueUnion);
     }
 
     /// <inheritdoc />
@@ -146,20 +147,21 @@ public readonly struct Expression : IEquatable<Expression>
     /// <inheritdoc />
     public override int GetHashCode()
     {
-        if (IsFunctionExpression)
-        {
-            var hash = Function.GetHashCode();
-            if (Args != null)
-            {
-                foreach (var arg in Args)
-                {
-                    hash = HashCode.Combine(hash, arg.GetHashCode());
-                }
-            }
-            return hash;
-        }
-
-        return ValueUnion.GetHashCode();
+        throw new NotImplementedException();
+        // if (IsFunctionExpression)
+        // {
+        //     var hash = Function.GetHashCode();
+        //     if (Args != null)
+        //     {
+        //         foreach (var arg in Args)
+        //         {
+        //             hash = HashCode.Combine(hash, arg.GetHashCode());
+        //         }
+        //     }
+        //     return hash;
+        // }
+        //
+        // return ValueUnion.GetHashCode();
     }
 
     /// <summary>

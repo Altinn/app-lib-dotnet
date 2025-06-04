@@ -75,7 +75,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
         var expressionValue = ExpressionValue.FromObject(value);
         outputHelper.WriteLine($"   expressionValue: {expressionValue}");
         // Verify that the EqualsToString method returns the same value as the JsonSerializer.
-        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(expressionValue);
+        var toStringForEquals = expressionValue.ToStringForEquals();
 
         if (expressionValue.ValueKind == JsonValueKind.String && json[0] == '"' && json[^1] == '"')
         {
@@ -112,7 +112,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
         var union = ExpressionValue.FromObject(value);
         outputHelper.WriteLine($"   union: {union}");
         // Verify that the EqualsToString method throws an exception for unsupported types.
-        Assert.Null(ExpressionEvaluator.ToStringForEquals(ExpressionValue.FromObject(value)));
+        Assert.Null(ExpressionValue.FromObject(value).ToStringForEquals());
     }
 
     [Theory]
@@ -130,7 +130,7 @@ public class EqualTests(ITestOutputHelper outputHelper)
     public void ToStringForEquals_SpecialCases(object? value, string? expected)
     {
         // Verify that the EqualsToString method returns the expected value for special cases.
-        var toStringForEquals = ExpressionEvaluator.ToStringForEquals(ExpressionValue.FromObject(value));
+        var toStringForEquals = ExpressionValue.FromObject(value).ToStringForEquals();
         Assert.Equal(expected, toStringForEquals);
     }
 }
