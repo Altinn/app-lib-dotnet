@@ -285,7 +285,7 @@ public class PdfService : IPdfService
 
         string title = GetTitleText(textResource) ?? "Altinn";
 
-        string dateGenerated = now.ToString("dd.MM.yyyy HH:mm:ss", new CultureInfo("nb-NO"));
+        string dateGenerated = now.ToString("dd.MM.yyyy HH:mm", new CultureInfo("nb-NO"));
         string altinnReferenceId = instance.Id.Split("/")[1].Split("-")[4];
 
         string footerTemplate =
