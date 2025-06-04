@@ -127,7 +127,7 @@ public class PdfService : IPdfService
 
         string? footerContent = null;
 
-        if (isPreview == true)
+        if (isPreview)
         {
             footerContent = GetPreviewFooter(textResource);
         }
