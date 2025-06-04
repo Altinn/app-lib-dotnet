@@ -134,7 +134,6 @@ public class PdfService : IPdfService
         else if (displayFooter)
         {
             footerContent = GetFooterContent(instance, textResource);
-            _logger.LogInformation($"Footer content: {footerContent}");
         }
 
         Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, footerContent, ct);
@@ -286,19 +285,7 @@ public class PdfService : IPdfService
 
         string title = GetTitleText(textResource) ?? "Altinn";
 
-        _logger.LogInformation("--------------------------------------------------------");
-        _logger.LogInformation($"Current culture: {CultureInfo.CurrentCulture.Name}");
-        _logger.LogInformation($"Current UI culture: {CultureInfo.CurrentUICulture.Name}");
-        _logger.LogInformation(
-            $"DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: {Environment.GetEnvironmentVariable("DOTNET_SYSTEM_GLOBALIZATION_INVARIANT")}"
-        );
-
-        _logger.LogInformation($"Successfully created nb-NO culture");
-
-        // string dateGenerated = now.ToString("G", nbCulture);
         string dateGenerated = now.ToString("dd.MM.yyyy HH:mm:ss", new CultureInfo("nb-NO"));
-        _logger.LogInformation($"Generated date with nb-NO culture: {dateGenerated}");
-
         string altinnReferenceId = instance.Id.Split("/")[1].Split("-")[4];
 
         string footerTemplate =
