@@ -284,7 +284,27 @@ public class PdfService : IPdfService
         DateTimeOffset now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, timeZone);
 
         string title = GetTitleText(textResource) ?? "Altinn";
-        string dateGenerated = now.ToString("G", GetCultureOrInvariant("nb-NO"));
+
+        _logger.LogInformation("--------------------------------------------------------");
+        _logger.LogInformation($"Current culture: {CultureInfo.CurrentCulture.Name}");
+        _logger.LogInformation($"Current UI culture: {CultureInfo.CurrentUICulture.Name}");
+        _logger.LogInformation(
+            $"DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: {Environment.GetEnvironmentVariable("DOTNET_SYSTEM_GLOBALIZATION_INVARIANT")}"
+        );
+
+        CultureInfo nbCulture;
+        try
+        {
+            nbCulture = new CultureInfo("nb-NO");
+            _logger.LogInformation($"Successfully created nb-NO culture");
+        }
+        catch (CultureNotFoundException ex)
+        {
+            _logger.LogError($"Failed to create nb-NO culture: {ex.Message}");
+            nbCulture = CultureInfo.InvariantCulture;
+        }
+
+        string dateGenerated = now.ToString("G", nbCulture);
         string altinnReferenceId = instance.Id.Split("/")[1].Split("-")[4];
 
         string footerTemplate =
@@ -306,23 +326,5 @@ public class PdfService : IPdfService
                 </div>
             </div>";
         return footerTemplate;
-    }
-
-    private static CultureInfo GetCultureOrInvariant(string? cultureName)
-    {
-        CultureInfo culture = CultureInfo.InvariantCulture;
-        if (cultureName is not null)
-        {
-            try
-            {
-                culture = new CultureInfo(cultureName);
-            }
-            catch (CultureNotFoundException)
-            {
-                // If the language is not recognized, we'll just use the invariant culture.
-            }
-        }
-
-        return culture;
     }
 }
