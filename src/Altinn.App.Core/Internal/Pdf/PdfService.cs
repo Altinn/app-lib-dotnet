@@ -292,17 +292,8 @@ public class PdfService : IPdfService
             $"DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: {Environment.GetEnvironmentVariable("DOTNET_SYSTEM_GLOBALIZATION_INVARIANT")}"
         );
 
-        CultureInfo nbCulture;
-        try
-        {
-            nbCulture = new CultureInfo("nb-NO");
-            _logger.LogInformation($"Successfully created nb-NO culture");
-        }
-        catch (CultureNotFoundException ex)
-        {
-            _logger.LogError($"Failed to create nb-NO culture: {ex.Message}");
-            nbCulture = CultureInfo.InvariantCulture;
-        }
+        CultureInfo nbCulture = new("nb-NO"); // Throws CulureNotFoundException if invariant globalization is not disabled.
+        _logger.LogInformation($"Successfully created nb-NO culture");
 
         string dateGenerated = now.ToString("G", nbCulture);
         string altinnReferenceId = instance.Id.Split("/")[1].Split("-")[4];
