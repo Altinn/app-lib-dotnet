@@ -134,6 +134,7 @@ public class PdfService : IPdfService
         else if (displayFooter)
         {
             footerContent = GetFooterContent(instance, textResource);
+            _logger.LogInformation($"Footer content: {footerContent}");
         }
 
         Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, footerContent, ct);
@@ -292,10 +293,12 @@ public class PdfService : IPdfService
             $"DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: {Environment.GetEnvironmentVariable("DOTNET_SYSTEM_GLOBALIZATION_INVARIANT")}"
         );
 
-        CultureInfo nbCulture = new("nb-NO"); // Throws CulureNotFoundException if invariant globalization is not disabled.
         _logger.LogInformation($"Successfully created nb-NO culture");
 
-        string dateGenerated = now.ToString("G", nbCulture);
+        // string dateGenerated = now.ToString("G", nbCulture);
+        string dateGenerated = now.ToString("dd.MM.yyyy HH:mm:ss", new CultureInfo("nb-NO"));
+        _logger.LogInformation($"Generated date with nb-NO culture: {dateGenerated}");
+
         string altinnReferenceId = instance.Id.Split("/")[1].Split("-")[4];
 
         string footerTemplate =
