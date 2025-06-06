@@ -198,9 +198,9 @@ internal class SigningUserAction : IUserAction
         return UserActionResult.SuccessResult();
     }
 
-    public async Task<UserActionResult> HandleAction(UserActionContext context)
+    public Task<UserActionResult> HandleAction(UserActionContext context)
     {
-        throw new NotImplementedException();
+        return Task.FromException<UserActionResult>(new NotImplementedException());
     }
 
     internal async Task<bool> HandleOnBehalfOf(
