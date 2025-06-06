@@ -1,8 +1,7 @@
-#nullable disable
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Services;
-using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models.Process;
@@ -17,7 +16,6 @@ namespace Altinn.App.Core.Tests.Features.Action;
 
 public class PaymentUserActionTests
 {
-    private readonly Mock<IDataService> _dataServiceMock = new();
     private readonly Mock<IPaymentService> _paymentServiceMock = new();
 
     [Fact]
@@ -49,7 +47,7 @@ public class PaymentUserActionTests
             .ReturnsAsync((paymentInformation, false));
 
         // Act
-        PaymentUserAction userAction = CreatePaymentUserAction();
+        IUserAction userAction = CreatePaymentUserAction();
         UserActionResult result = await userAction.HandleAction(userActionContext, CancellationToken.None);
 
         // Assert
@@ -75,7 +73,7 @@ public class PaymentUserActionTests
                 OrderLines = [],
                 Receiver = new PaymentReceiver(),
             },
-            PaymentDetails = new PaymentDetails { PaymentId = null, RedirectUrl = null },
+            PaymentDetails = new PaymentDetails { PaymentId = "null", RedirectUrl = null },
         };
 
         var userActionContext = new UserActionContext(instance, 1337);
@@ -87,7 +85,7 @@ public class PaymentUserActionTests
             .ReturnsAsync((paymentInformation, false));
 
         // Act
-        PaymentUserAction userAction = CreatePaymentUserAction();
+        IUserAction userAction = CreatePaymentUserAction();
         UserActionResult result = await userAction.HandleAction(userActionContext, CancellationToken.None);
 
         // Assert
@@ -123,7 +121,7 @@ public class PaymentUserActionTests
             .ReturnsAsync((paymentInformation, true));
 
         // Act
-        PaymentUserAction userAction = CreatePaymentUserAction();
+        IUserAction userAction = CreatePaymentUserAction();
         UserActionResult result = await userAction.HandleAction(userActionContext, CancellationToken.None);
 
         // Assert
@@ -137,7 +135,7 @@ public class PaymentUserActionTests
             );
     }
 
-    private PaymentUserAction CreatePaymentUserAction(string testBpmnFilename = "payment-task-process.bpmn")
+    private IUserAction CreatePaymentUserAction(string testBpmnFilename = "payment-task-process.bpmn")
     {
         IProcessReader processReader = ProcessTestUtils.SetupProcessReader(
             testBpmnFilename,
