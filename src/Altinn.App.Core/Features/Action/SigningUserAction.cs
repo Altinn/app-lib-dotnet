@@ -64,8 +64,10 @@ internal class SigningUserAction : IUserAction
     /// <inheritdoc />
     /// <exception cref="PlatformHttpException"></exception>
     /// <exception cref="ApplicationConfigException"></exception>
-    public async Task<UserActionResult> HandleAction(UserActionContext context, CancellationToken ct = default)
+    public async Task<UserActionResult> HandleAction(UserActionContext context)
     {
+        var ct = context.CancellationToken;
+
         if (context.Authentication is not Authenticated.User and not Authenticated.SystemUser)
         {
             return UserActionResult.FailureResult(
@@ -151,6 +153,14 @@ internal class SigningUserAction : IUserAction
                 error: new ActionError() { Code = "SignDataElementsFailed", Message = "Failed to sign data elements." },
                 errorType: ProcessErrorType.Internal
             );
+        }
+
+        int correspondenceResourcesCount = signatureConfiguration.CorrespondenceResources?.Count ?? 0;
+
+        if (correspondenceResourcesCount == 0)
+        {
+            _logger.LogWarning("No correspondence resources found. Skipping sending correspondence.");
+            return UserActionResult.SuccessResult();
         }
 
         ServiceResult<SendCorrespondenceResponse?, Exception> res = await CatchError(() =>

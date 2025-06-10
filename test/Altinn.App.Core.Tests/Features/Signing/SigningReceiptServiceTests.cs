@@ -15,17 +15,18 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.Features.Signing;
 
-public class SigningReceiptServiceTests
+public class SigningReceiptServiceTests(ITestOutputHelper output)
 {
-    static SigningReceiptService SetupService(
+    SigningReceiptService SetupService(
         Mock<ICorrespondenceClient>? correspondenceClientMockOverride = null,
         Mock<IHostEnvironment>? hostEnvironmentMockOverride = null,
         Mock<IDataClient>? dataClientMockOverride = null,
+        Mock<IAltinnCdnClient>? altinnCdnClientMockOverride = null,
         Mock<IAppMetadata>? appMetadataMockOverride = null,
         ITranslationService? translationServiceOverride = null
     )
@@ -34,15 +35,16 @@ public class SigningReceiptServiceTests
         Mock<IHostEnvironment> hostEnvironmentMock = hostEnvironmentMockOverride ?? new();
         Mock<IDataClient>? dataClientMock = dataClientMockOverride ?? new();
         Mock<IAppMetadata> appMetadataMock = appMetadataMockOverride ?? new();
+        Mock<IAltinnCdnClient> altinnCdnClientMock = altinnCdnClientMockOverride ?? new();
         Mock<ITranslationService> translationServiceMock = new();
-        Mock<ILogger<SigningReceiptService>> loggerMock = new();
         return new SigningReceiptService(
             correspondenceClientMock.Object,
             dataClientMock.Object,
             hostEnvironmentMock.Object,
+            altinnCdnClientMock.Object,
             appMetadataMock.Object,
             translationServiceOverride ?? translationServiceMock.Object,
-            loggerMock.Object
+            FakeLoggerXunit.Get<SigningReceiptService>(output)
         );
     }
 
@@ -73,6 +75,26 @@ public class SigningReceiptServiceTests
 
         Mock<IHostEnvironment> hostEnvironmentMock = new();
         hostEnvironmentMock.Setup(m => m.EnvironmentName).Returns("tt02");
+
+        var orgs = new Dictionary<string, AltinnCdnOrgDetails>
+        {
+            {
+                "brg",
+                new AltinnCdnOrgDetails
+                {
+                    Name = new AltinnCdnOrgName { Nb = "Brønnøysundregistrene" },
+                    Orgnr = "974760673",
+                    Environments = ["tt02"],
+                }
+            },
+        };
+
+        AltinnCdnOrgs altinnCdnOrgs = new() { Orgs = orgs };
+        Mock<IAltinnCdnClient> altinnCdnClientMock = new();
+        altinnCdnClientMock
+            .Setup(x => x.GetOrgs(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(altinnCdnOrgs));
+
         ApplicationMetadata applicationMetadata = new("org/app")
         {
             Title = new Dictionary<string, string> { { LanguageConst.Nb, "TestAppName" } },
@@ -119,6 +141,7 @@ public class SigningReceiptServiceTests
 
         SigningReceiptService service = SetupService(
             correspondenceClientMockOverride: correspondenceClientMock,
+            altinnCdnClientMockOverride: altinnCdnClientMock,
             appMetadataMockOverride: appMetadataMock,
             hostEnvironmentMockOverride: hostEnvironmentMock,
             dataClientMockOverride: dataClientMock
@@ -199,7 +222,12 @@ public class SigningReceiptServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ConfigurationException>(() =>
-            service.GetCorrespondenceHeaders(recipientNin, applicationMetadata, correspondenceResources)
+            service.GetCorrespondenceHeaders(
+                recipientNin,
+                applicationMetadata,
+                correspondenceResources,
+                CancellationToken.None
+            )
         );
     }
 
@@ -227,7 +255,12 @@ public class SigningReceiptServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.GetCorrespondenceHeaders(recipientNin, applicationMetadata, correspondenceResources)
+            service.GetCorrespondenceHeaders(
+                recipientNin,
+                applicationMetadata,
+                correspondenceResources,
+                CancellationToken.None
+            )
         );
     }
 
@@ -249,7 +282,11 @@ public class SigningReceiptServiceTests
         );
 
         AppIdentifier appIdentifier = new("org", "app");
-        TranslationService translationService = new(appIdentifier, appResourcesMock.Object);
+        TranslationService translationService = new(
+            appIdentifier,
+            appResourcesMock.Object,
+            FakeLoggerXunit.Get<TranslationService>(output)
+        );
 
         var service = SetupService(translationServiceOverride: translationService);
 
@@ -299,7 +336,11 @@ public class SigningReceiptServiceTests
             .ThrowsAsync(new Exception("Test exception"));
 
         AppIdentifier appIdentifier = new("org", "app");
-        TranslationService translationService = new(appIdentifier, appResourcesMock.Object);
+        TranslationService translationService = new(
+            appIdentifier,
+            appResourcesMock.Object,
+            FakeLoggerXunit.Get<TranslationService>(output)
+        );
 
         var service = SetupService(translationServiceOverride: translationService);
 

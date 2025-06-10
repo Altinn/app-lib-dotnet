@@ -154,8 +154,7 @@ public class SigningUserActionTests
 
         // Act
         var result = await fixture.SigningUserAction.HandleAction(
-            new UserActionContext(fixture.InstanceDataMutatorMock.Object, null),
-            CancellationToken.None
+            new UserActionContext(fixture.InstanceDataMutatorMock.Object, null)
         );
 
         // Assert
@@ -183,8 +182,7 @@ public class SigningUserActionTests
                 fixture.InstanceDataMutatorMock.Object,
                 1337,
                 authentication: TestAuthentication.GetUserAuthentication(1337)
-            ),
-            CancellationToken.None
+            )
         );
 
         // Assert
@@ -218,7 +216,7 @@ public class SigningUserActionTests
         // Act
 
         int dataElementCountBeforeSign = fixture.Instance.Data.Count;
-        var result = await fixture.SigningUserAction.HandleAction(userActionContext, CancellationToken.None);
+        var result = await fixture.SigningUserAction.HandleAction(userActionContext);
 
         // Assert
         Assert.Equal(JsonSerializer.Serialize(UserActionResult.SuccessResult()), JsonSerializer.Serialize(result));
@@ -241,7 +239,7 @@ public class SigningUserActionTests
         );
 
         // Act
-        var result = await fixture.SigningUserAction.HandleAction(userActionContext, CancellationToken.None);
+        var result = await fixture.SigningUserAction.HandleAction(userActionContext);
         var expected = UserActionResult.FailureResult(
             error: new ActionError() { Code = "SignDataElementsFailed", Message = "Failed to sign data elements." },
             errorType: ProcessErrorType.Internal
@@ -270,8 +268,7 @@ public class SigningUserActionTests
 
         // Act
         var result = await fixture.SigningUserAction.HandleAction(
-            new UserActionContext(fixture.InstanceDataMutatorMock.Object, 1337, authentication: token.Auth),
-            CancellationToken.None
+            new UserActionContext(fixture.InstanceDataMutatorMock.Object, 1337, authentication: token.Auth)
         );
 
         // Assert
@@ -359,8 +356,7 @@ public class SigningUserActionTests
                 fixture.InstanceDataMutatorMock.Object,
                 1337,
                 authentication: TestAuthentication.GetUserAuthentication(1337)
-            ),
-            CancellationToken.None
+            )
         );
 
         // Assert
@@ -377,6 +373,35 @@ public class SigningUserActionTests
         );
         result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
         signClientMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task HandleAction_returns_ok_if_no_correspondence_resource()
+    {
+        var fixture = Fixture.Create(testBpmnFilename: "signing-task-missing-correspondence.bpmn");
+
+        var instance = fixture.Instance;
+        var signClientMock = fixture.SignClient;
+        var userActionContext = new UserActionContext(
+            fixture.InstanceDataMutatorMock.Object,
+            1337,
+            authentication: TestAuthentication.GetUserAuthentication(1337)
+        );
+        // Act
+        var result = await fixture.SigningUserAction.HandleAction(userActionContext);
+        // Assert
+        SignatureContext expected = new(
+            new InstanceIdentifier(instance),
+            instance.Process.CurrentTask.ElementId,
+            "signature",
+            new Signee() { UserId = "1337", PersonNumber = "12345678901" },
+            new DataElementSignature("a499c3ef-e88a-436b-8650-1c43e5037ada")
+        );
+        signClientMock.Verify(
+            s => s.SignDataElements(It.Is<SignatureContext>(sc => AssertSigningContextAsExpected(sc, expected))),
+            Times.Once
+        );
+        result.Should().BeEquivalentTo(UserActionResult.SuccessResult());
     }
 
     [Fact]
@@ -403,7 +428,7 @@ public class SigningUserActionTests
 
         // Act
         await Assert.ThrowsAsync<ApplicationConfigException>(async () =>
-            await fixture.SigningUserAction.HandleAction(userActionContext, CancellationToken.None)
+            await fixture.SigningUserAction.HandleAction(userActionContext)
         );
         fixture.SignClient.VerifyNoOtherCalls();
     }
@@ -423,7 +448,7 @@ public class SigningUserActionTests
 
         // Act
         await Assert.ThrowsAsync<ApplicationConfigException>(async () =>
-            await fixture.SigningUserAction.HandleAction(userActionContext, CancellationToken.None)
+            await fixture.SigningUserAction.HandleAction(userActionContext)
         );
         signClientMock.VerifyNoOtherCalls();
     }
@@ -444,7 +469,7 @@ public class SigningUserActionTests
 
         // Act
         await Assert.ThrowsAsync<ApplicationConfigException>(async () =>
-            await fixture.SigningUserAction.HandleAction(userActionContext, CancellationToken.None)
+            await fixture.SigningUserAction.HandleAction(userActionContext)
         );
         signClientMock.VerifyNoOtherCalls();
     }
@@ -476,7 +501,7 @@ public class SigningUserActionTests
 
         // Act
         await Assert.ThrowsAsync<ApplicationConfigException>(async () =>
-            await userAction.HandleAction(userActionContext, CancellationToken.None)
+            await userAction.HandleAction(userActionContext)
         );
         signClientMock.VerifyNoOtherCalls();
     }
