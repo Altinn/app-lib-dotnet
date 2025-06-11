@@ -115,7 +115,7 @@ public class EformidlingServiceTaskLegacyTests
         _eFormidlingService.VerifyNoOtherCalls();
     }
 
-    public EformidlingServiceTaskLegacy GetEformidlingServiceTask(
+    private EformidlingServiceTaskLegacy GetEformidlingServiceTask(
         AppSettings? appSettings,
         IEFormidlingService? eFormidlingService = null
     )

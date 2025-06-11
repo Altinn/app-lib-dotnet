@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 /// Service task that generates PDFs for all connected data types that have the EnablePdfCreation flag set to true.
 /// </summary>
 /// <remarks>Planned to be replaced by <see cref="PdfServiceTask"/>, but kept for now for backwards compatability. Called inline in <see cref="EndTaskEventHandler"/>, instead of through the service task system.</remarks>
-public interface IPdfServiceTaskLegacy
+internal interface IPdfServiceTaskLegacy
 {
     /// <summary>
     /// Executes the service task.
@@ -19,7 +19,7 @@ public interface IPdfServiceTaskLegacy
 };
 
 /// <inheritdoc />
-public class PdfServiceTaskLegacy : IPdfServiceTaskLegacy
+internal class PdfServiceTaskLegacy : IPdfServiceTaskLegacy
 {
     private readonly IAppMetadata _appMetadata;
     private readonly IPdfService _pdfService;
