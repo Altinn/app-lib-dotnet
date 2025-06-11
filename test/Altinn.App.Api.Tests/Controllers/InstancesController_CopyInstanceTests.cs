@@ -256,7 +256,7 @@ public class InstancesController_CopyInstanceTests
 
         // Act
         var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
-        var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () =>
+        await Assert.ThrowsAsync<PlatformHttpException>(async () =>
             await controller.CopyInstance("ttd", "copy-instance", instanceOwnerPartyId, instanceGuid)
         );
 
