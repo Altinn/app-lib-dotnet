@@ -1,3 +1,4 @@
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
@@ -23,6 +24,17 @@ public interface IProcessEngine
     /// Method to handle user action
     /// </summary>
     Task<UserActionResult> HandleUserAction(ProcessNextRequest request, CancellationToken ct);
+
+    /// <summary>
+    /// Check if the Altinn task type is a service task
+    /// </summary>
+    bool IsServiceTask(string altinnTaskType);
+
+    /// <summary>
+    /// Method to handle service task
+    /// </summary>
+    /// <returns></returns>
+    Task<ServiceTaskResult> HandleServiceTask(string altinnTaskType, ProcessNextRequest request, CancellationToken ct);
 
     /// <summary>
     /// Handle process events and update storage

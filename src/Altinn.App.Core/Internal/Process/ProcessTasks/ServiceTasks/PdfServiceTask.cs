@@ -32,7 +32,7 @@ public class PdfServiceTask : IPdfServiceTask
     public string Type => "pdf";
 
     /// <inheritdoc/>
-    public async Task Execute(string taskId, Instance instance)
+    public async Task Execute(string taskId, Instance instance, CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Calling PdfService for PDF Service Task {TaskId}.", taskId);
         await _pdfService.GenerateAndStorePdf(instance, taskId, CancellationToken.None);

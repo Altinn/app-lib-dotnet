@@ -8,6 +8,7 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Enums;
@@ -173,6 +174,71 @@ public class ProcessEngine : IProcessEngine
         await cachedDataMutator.SaveChanges(changes);
 
         return actionResult;
+    }
+
+    /// <inheritdoc/>
+    public bool IsServiceTask(string altinnTaskType)
+    {
+        IEnumerable<IServiceTask> serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
+        return serviceTasks.Any(t => t.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <inheritdoc/>
+    public async Task<ServiceTaskResult> HandleServiceTask(
+        string altinnTaskType,
+        ProcessNextRequest request,
+        CancellationToken ct = default
+    )
+    {
+        Instance instance = request.Instance;
+
+        using Activity? activity = _telemetry?.StartProcessExecuteServiceTaskActivity(instance, altinnTaskType);
+
+        IEnumerable<IServiceTask> serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
+        IServiceTask? serviceTask = serviceTasks.FirstOrDefault(t =>
+            t.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase)
+        );
+
+        if (serviceTask is null)
+        {
+            return new ServiceTaskResult
+            {
+                Result = ServiceTaskResult.ResultType.Failure,
+                ErrorMessage = "No service task implementation found for altinnTaskType: " + altinnTaskType,
+                ErrorType = ProcessErrorType.Internal,
+            };
+        }
+
+        if (request.Action is not "write" && request.Action != altinnTaskType) // altinnTaskType is accepted to support custom service task types
+        {
+            var result = new ServiceTaskResult
+            {
+                Result = ServiceTaskResult.ResultType.Failure,
+                ErrorMessage =
+                    $"Server tasks ({altinnTaskType}) do not support running user actions! Received action param {request.Action}.",
+                ErrorType = ProcessErrorType.Conflict,
+            };
+
+            return result;
+        }
+
+        try
+        {
+            await serviceTask.Execute(instance.Process.CurrentTask.ElementId, instance, ct);
+
+            return new ServiceTaskResult { Result = ServiceTaskResult.ResultType.Success };
+        }
+        catch (Exception ex)
+        {
+            activity?.Errored(ex);
+
+            return new ServiceTaskResult()
+            {
+                Result = ServiceTaskResult.ResultType.Failure,
+                ErrorMessage = $"Server action {altinnTaskType} failed!",
+                ErrorType = ProcessErrorType.Internal,
+            };
+        }
     }
 
     /// <inheritdoc/>

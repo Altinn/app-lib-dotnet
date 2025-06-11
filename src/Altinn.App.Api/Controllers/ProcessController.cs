@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -368,19 +369,47 @@ public class ProcessController : ControllerBase
                 Language = language,
             };
 
-            if (processNext?.Action is not null)
+            // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
+            if (processNext?.Action is not "reject")
             {
-                UserActionResult userActionResult = await _processEngine.HandleUserAction(request, ct);
-                if (userActionResult.ResultType is ResultType.Failure)
+                if (_processEngine.IsServiceTask(altinnTaskType))
                 {
-                    var failedUserActionResult = new ProcessChangeResult()
-                    {
-                        Success = false,
-                        ErrorMessage = $"Action handler for action {request.Action} failed!",
-                        ErrorType = userActionResult.ErrorType,
-                    };
+                    ServiceTaskResult serviceActionResult = await _processEngine.HandleServiceTask(
+                        altinnTaskType,
+                        request,
+                        ct
+                    );
 
-                    return GetResultForError(failedUserActionResult);
+                    if (serviceActionResult.Result is ServiceTaskResult.ResultType.Failure)
+                    {
+                        var failedServiceTaskProcessChangeResult = new ProcessChangeResult()
+                        {
+                            Success = false,
+                            ErrorMessage = serviceActionResult.ErrorMessage,
+                            ErrorType = serviceActionResult.ErrorType,
+                        };
+
+                        return GetResultForError(failedServiceTaskProcessChangeResult);
+                    }
+                }
+                else
+                {
+                    if (processNext?.Action is not null)
+                    {
+                        UserActionResult userActionResult = await _processEngine.HandleUserAction(request, ct);
+
+                        if (userActionResult.ResultType is ResultType.Failure)
+                        {
+                            var failedUserActionProcessChangeResult = new ProcessChangeResult()
+                            {
+                                Success = false,
+                                ErrorMessage = $"Action handler for action {request.Action} failed!",
+                                ErrorType = userActionResult.ErrorType,
+                            };
+
+                            return GetResultForError(failedUserActionProcessChangeResult);
+                        }
+                    }
                 }
             }
 

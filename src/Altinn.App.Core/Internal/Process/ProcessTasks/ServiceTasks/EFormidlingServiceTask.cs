@@ -35,7 +35,7 @@ public class EFormidlingServiceTask : IEFormidlingServiceTask
     public string Type => "eFormidling";
 
     /// <inheritdoc/>
-    public async Task Execute(string taskId, Instance instance)
+    public async Task Execute(string taskId, Instance instance, CancellationToken cancellationToken = default)
     {
         if (_appSettings?.Value.EnableEFormidling is false)
         {
