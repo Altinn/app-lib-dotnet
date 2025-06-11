@@ -1,19 +1,16 @@
 using System.Globalization;
 using System.Net;
+using System.Security.Claims;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models.Process;
-using Altinn.App.Core.Models.UserAction;
-using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -36,12 +33,11 @@ public class ProcessController : ControllerBase
     private readonly ILogger<ProcessController> _logger;
     private readonly IInstanceClient _instanceClient;
     private readonly IProcessClient _processClient;
-    private readonly IValidationService _validationService;
     private readonly IAuthorizationService _authorization;
     private readonly IProcessEngine _processEngine;
     private readonly IProcessReader _processReader;
-    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
+    private readonly IProcessNextService _processNextService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -61,12 +57,11 @@ public class ProcessController : ControllerBase
         _logger = logger;
         _instanceClient = instanceClient;
         _processClient = processClient;
-        _validationService = validationService;
         _authorization = authorization;
         _processReader = processReader;
         _processEngine = processEngine;
-        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _processEngineAuthorizer = processEngineAuthorizer;
+        _processNextService = serviceProvider.GetRequiredService<IProcessNextService>();
     }
 
     /// <summary>
@@ -239,38 +234,6 @@ public class ProcessController : ControllerBase
         }
     }
 
-    private async Task<ProblemDetails?> GetValidationProblemDetails(
-        Instance instance,
-        string currentTaskId,
-        string? language
-    )
-    {
-        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, currentTaskId, language);
-
-        var validationIssues = await _validationService.ValidateInstanceAtTask(
-            dataAccessor,
-            currentTaskId, // run full validation
-            ignoredValidators: null,
-            onlyIncrementalValidators: null,
-            language: language
-        );
-        var success = validationIssues.TrueForAll(v => v.Severity != ValidationIssueSeverity.Error);
-
-        if (!success)
-        {
-            var errorCount = validationIssues.Count(v => v.Severity == ValidationIssueSeverity.Error);
-            return new ProblemDetails()
-            {
-                Detail = $"{errorCount} validation errors found for task {currentTaskId}",
-                Status = StatusCodes.Status409Conflict,
-                Title = "Validation failed for task",
-                Extensions = new Dictionary<string, object?>() { { "validationIssues", validationIssues } },
-            };
-        }
-
-        return null;
-    }
-
     /// <summary>
     /// Change the instance's process state to next process element in accordance with process definition.
     /// </summary>
@@ -300,140 +263,20 @@ public class ProcessController : ControllerBase
     {
         try
         {
-            Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-
-            string? currentTaskId = instance.Process.CurrentTask?.ElementId;
-
-            if (currentTaskId is null)
-            {
-                return Conflict(
-                    new ProblemDetails()
-                    {
-                        Status = StatusCodes.Status409Conflict,
-                        Title = "Process is not started. Use start!",
-                    }
-                );
-            }
-
-            if (instance.Process.Ended.HasValue)
-            {
-                return Conflict(
-                    new ProblemDetails() { Status = StatusCodes.Status409Conflict, Title = "Process is ended." }
-                );
-            }
-
-            string? altinnTaskType = instance.Process.CurrentTask?.AltinnTaskType;
-
-            if (altinnTaskType == null)
-            {
-                return Conflict(
-                    new ProblemDetails()
-                    {
-                        Status = StatusCodes.Status409Conflict,
-                        Title = "Instance does not have current altinn task type information!",
-                    }
-                );
-            }
-
-            bool authorized = await _processEngineAuthorizer.AuthorizeProcessNext(instance, processNext?.Action);
-
-            if (!authorized)
-            {
-                return StatusCode(
-                    403,
-                    new ProblemDetails()
-                    {
-                        Status = StatusCodes.Status403Forbidden,
-                        Detail =
-                            $"User is not authorized to perform process next. Task ID: {currentTaskId}. Task type: {altinnTaskType}. Action: {processNext?.Action ?? "none"}.",
-                        Title = "Unauthorized",
-                    }
-                );
-            }
-
-            _logger.LogDebug(
-                "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",
-                currentTaskId,
-                altinnTaskType,
-                LogSanitizer.Sanitize(processNext?.Action ?? "none")
+            var processNextParams = new ProcessNextParams
+            (
+                Org: org,
+                App: app,
+                InstanceOwnerPartyId: instanceOwnerPartyId,
+                InstanceGuid: instanceGuid,
+                User: User,
+                Action: processNext?.Action,
+                ActionOnBehalfOf: processNext?.ActionOnBehalfOf,
+                Language: language
             );
 
-            string checkedAction = processNext?.Action ?? ConvertTaskTypeToAction(altinnTaskType);
-
-            var request = new ProcessNextRequest()
-            {
-                Instance = instance,
-                User = User,
-                Action = checkedAction,
-                ActionOnBehalfOf = processNext?.ActionOnBehalfOf,
-                Language = language,
-            };
-
-            // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
-            if (processNext?.Action is not "reject")
-            {
-                if (_processEngine.IsServiceTask(altinnTaskType))
-                {
-                    ServiceTaskResult serviceActionResult = await _processEngine.HandleServiceTask(
-                        altinnTaskType,
-                        request,
-                        ct
-                    );
-
-                    if (serviceActionResult.Result is ServiceTaskResult.ResultType.Failure)
-                    {
-                        var failedServiceTaskProcessChangeResult = new ProcessChangeResult()
-                        {
-                            Success = false,
-                            ErrorMessage = serviceActionResult.ErrorMessage,
-                            ErrorType = serviceActionResult.ErrorType,
-                        };
-
-                        return GetResultForError(failedServiceTaskProcessChangeResult);
-                    }
-                }
-                else
-                {
-                    if (processNext?.Action is not null)
-                    {
-                        UserActionResult userActionResult = await _processEngine.HandleUserAction(request, ct);
-
-                        if (userActionResult.ResultType is ResultType.Failure)
-                        {
-                            var failedUserActionProcessChangeResult = new ProcessChangeResult()
-                            {
-                                Success = false,
-                                ErrorMessage = $"Action handler for action {request.Action} failed!",
-                                ErrorType = userActionResult.ErrorType,
-                            };
-
-                            return GetResultForError(failedUserActionProcessChangeResult);
-                        }
-                    }
-                }
-            }
-
-            // If the action is 'reject' the task is being abandoned, and we should skip validation, but only if reject has been allowed for the task in bpmn.
-            if (checkedAction == "reject" && _processReader.IsActionAllowedForTask(currentTaskId, checkedAction))
-            {
-                _logger.LogInformation(
-                    "Skipping validation during process next because the action is 'reject' and the task is being abandoned."
-                );
-            }
-            else
-            {
-                ProblemDetails? validationProblem = await GetValidationProblemDetails(
-                    instance,
-                    currentTaskId,
-                    language
-                );
-                if (validationProblem is not null)
-                {
-                    return Conflict(validationProblem);
-                }
-            }
-
-            ProcessChangeResult result = await _processEngine.Next(request);
+            (ProcessChangeResult result, Instance instance) =
+                await _processNextService.DoProcessNext(processNextParams, ct);
 
             if (!result.Success)
             {
