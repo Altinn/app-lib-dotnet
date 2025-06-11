@@ -110,6 +110,6 @@ public class MySigneesProvider(...) : ISigneeProvider
 
 -   Good, supports B1 (Logical of implementation for app developers) as most config is on the task definition, and the pattern for coupling ISigneeProvider to the Task is known from validation.
 -   Good, supports B2 (Logical implementation in Altinn Studio Designer) as the BPMN file would be updates as a user add configuration to the task. The implementation of ISigneeProvider is custom code and not expected to have designer support. A standard implementation of the interface has to be considered in another ADR.
-- Bad, does not support B3 (Avoid configuration spread for related properties) - does not allow an app developer to see the entire signature configuration of the task in the signature task definition.
-- Good, uses an established pattern (B4). With a different use case, a different pattern might be considered, though.
--   Good, B5 - does not force a 0..1 relationship between task and provider
+-   Bad, does not support B3 (Avoid configuration spread for related properties) - does not allow an app developer to see the entire signature configuration of the task in the signature task definition.
+-   Good, uses an established pattern (B4). With a different use case, a different pattern might be considered, though.
+-   Bad, B5 - does not force a 0..1 relationship between task and provider
