@@ -109,8 +109,8 @@ public class FiksArkivInstanceClientTest
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
         // Act
-        var record = await Record.ExceptionAsync(
-            () => fixture.FiksArkivInstanceClient.GetInstance(_defaultInstanceIdentifier)
+        var record = await Record.ExceptionAsync(() =>
+            fixture.FiksArkivInstanceClient.GetInstance(_defaultInstanceIdentifier)
         );
 
         // Assert
@@ -164,8 +164,8 @@ public class FiksArkivInstanceClientTest
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
         // Act
-        var record = await Record.ExceptionAsync(
-            () => fixture.FiksArkivInstanceClient.ProcessMoveNext(_defaultInstanceIdentifier)
+        var record = await Record.ExceptionAsync(() =>
+            fixture.FiksArkivInstanceClient.ProcessMoveNext(_defaultInstanceIdentifier)
         );
 
         // Assert
@@ -213,8 +213,8 @@ public class FiksArkivInstanceClientTest
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
         // Act
-        var record = await Record.ExceptionAsync(
-            () => fixture.FiksArkivInstanceClient.MarkInstanceComplete(_defaultInstanceIdentifier)
+        var record = await Record.ExceptionAsync(() =>
+            fixture.FiksArkivInstanceClient.MarkInstanceComplete(_defaultInstanceIdentifier)
         );
 
         // Assert
@@ -294,15 +294,14 @@ public class FiksArkivInstanceClientTest
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
         // Act
-        var record = await Record.ExceptionAsync(
-            () =>
-                fixture.FiksArkivInstanceClient.InsertBinaryData(
-                    _defaultInstanceIdentifier,
-                    dataType!,
-                    contentType!,
-                    filename!,
-                    Stream.Null
-                )
+        var record = await Record.ExceptionAsync(() =>
+            fixture.FiksArkivInstanceClient.InsertBinaryData(
+                _defaultInstanceIdentifier,
+                dataType!,
+                contentType!,
+                filename!,
+                Stream.Null
+            )
         );
 
         // Assert
