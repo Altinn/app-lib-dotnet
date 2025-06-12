@@ -3,6 +3,7 @@ using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Internal.AltinnCdn;
+using Moq;
 using Polly;
 using Polly.DependencyInjection;
 using Polly.Retry;
@@ -147,6 +148,9 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
+        fixture
+            .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
+            .Returns(new HttpClient(new Mock<HttpMessageHandler>().Object));
 
         // Act
         var fiksIOClient = fixture.FiksIOClient;
