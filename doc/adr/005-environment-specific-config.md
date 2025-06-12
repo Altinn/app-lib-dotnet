@@ -21,7 +21,7 @@ This ADR is written post-implementation, and aims to explain the different appro
 - B1: Consolidate signing-related configuration in one location
 - B2: Support environment-specific configuration where needed
 - B3: Maintain consistency with existing configuration patterns
-- B4: Optimize for developer experience and onboarding
+- B4: Optimize for developer experience
 - B5: Prepare for future where default resources may be automatically created
 
 ## Alternatives considered
