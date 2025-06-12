@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Deciders: Team Apps, Johannes Haukland
-- Date: 2025-01-15
+- Date: 2025-06-12
 
 ## Result
 
@@ -10,7 +10,7 @@
 
 ## Problem context
 
-When implementing signing functionality, the system needs to send correspondence (receipt messages) to users after signing is completed. This requires configuration of a correspondence resource ID that identifies which resource to use in the correspondence service.
+When implementing signing functionality, there are two use cases for correspondence. With user delegated signing, using correspondence is required after the conclusion of ADR-004. If users are to receive receipts, a correspondence resource is also needed.
 
 The challenge is that different environments (staging, production, etc.) may require different correspondence resource IDs, similar to how other integration points like Maskinporten and eFormidling require environment-specific configuration.
 
