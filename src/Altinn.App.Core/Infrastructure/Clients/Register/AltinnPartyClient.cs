@@ -102,19 +102,19 @@ public class AltinnPartyClient : IAltinnPartyClient
         string endpointUrl = "parties/lookup";
         string token = _userTokenProvider.GetUserToken();
 
-        StringContent content = new StringContent(JsonSerializerPermissive.Serialize(partyLookup));
+        StringContent content = new(JsonSerializerPermissive.Serialize(partyLookup));
         content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-        HttpRequestMessage request = new HttpRequestMessage
+        HttpRequestMessage request = new()
         {
             RequestUri = new Uri(endpointUrl, UriKind.Relative),
             Method = HttpMethod.Post,
             Content = content,
         };
 
-        request.Headers.Add("Authorization", "Bearer " + token);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
         request.Headers.Add(
-            "PlatformAccessToken",
+            General.PlatformAccessTokenHeaderName,
             _accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
         );
 

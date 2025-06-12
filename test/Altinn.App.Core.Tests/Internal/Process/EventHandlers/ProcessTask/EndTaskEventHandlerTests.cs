@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
@@ -32,6 +33,7 @@ public class EndTaskEventHandlerTests
             services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
             services.AddAppImplementationFactory();
 
+            services.AddSingleton(new Mock<IInstanceClient>().Object);
             services.AddSingleton(new Mock<IProcessTaskDataLocker>().Object);
             services.AddSingleton(new Mock<IProcessTaskFinalizer>().Object);
 
@@ -189,7 +191,7 @@ public class EndTaskEventHandlerTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await eteh.Execute(mockProcessTask.Object, taskId, instance)
         );
-        Assert.Equal("PdfServiceTask not found in serviceTasks", ex.Message);
+        Assert.Contains("PdfServiceTask not found in service tasks", ex.Message);
     }
 
     [Fact]
@@ -207,6 +209,6 @@ public class EndTaskEventHandlerTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await eteh.Execute(mockProcessTask.Object, taskId, instance)
         );
-        Assert.Equal("EformidlingServiceTask not found in serviceTasks", ex.Message);
+        Assert.Contains("eFormidlingServiceTask not found in service tasks", ex.Message);
     }
 }

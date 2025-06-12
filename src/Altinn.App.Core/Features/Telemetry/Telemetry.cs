@@ -79,6 +79,7 @@ public sealed partial class Telemetry : IDisposable
             InitValidation(context);
             InitMaskinporten(context);
             InitCorrespondence(context);
+            InitFiks(context);
 
             // NOTE: This Telemetry class is registered as a singleton
             // Metrics could be kept in fields of the respective objects that use them for instrumentation
@@ -217,6 +218,16 @@ public sealed partial class Telemetry : IDisposable
         /// Label for the Correspondence ID.
         /// </summary>
         public const string CorrespondenceId = "correspondence.id";
+
+        /// <summary>
+        /// Label for the Fiks Message ID.
+        /// </summary>
+        public const string FiksMessageId = "fiks.message.id";
+
+        /// <summary>
+        /// Label for the Fiks Message type.
+        /// </summary>
+        public const string FiksMessageType = "fiks.message.type";
     }
 
     internal static class InternalLabels
