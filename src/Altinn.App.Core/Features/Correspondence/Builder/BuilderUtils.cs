@@ -30,9 +30,9 @@ internal static class BuilderUtils
     internal static void RequireAtLeastOneOf<T1, T2>(
         T1? value1,
         T2? value2,
+        string? errorMessage = null,
         [CallerArgumentExpression(nameof(value1))] string? value1Name = null,
-        [CallerArgumentExpression(nameof(value2))] string? value2Name = null,
-        string? errorMessage = null
+        [CallerArgumentExpression(nameof(value2))] string? value2Name = null
     )
     {
         if (value1 is null && value2 is null)
@@ -45,9 +45,9 @@ internal static class BuilderUtils
     internal static void RequireExcactlyOneOf<T1, T2>(
         T1? value1,
         T2? value2,
+        string? errorMessage = null,
         [CallerArgumentExpression(nameof(value1))] string? value1Name = null,
-        [CallerArgumentExpression(nameof(value2))] string? value2Name = null,
-        string? errorMessage = null
+        [CallerArgumentExpression(nameof(value2))] string? value2Name = null
     )
     {
         if ((value1 is not null && value2 is not null) || (value1 is null && value2 is null))
