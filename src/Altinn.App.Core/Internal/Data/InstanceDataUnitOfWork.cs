@@ -8,6 +8,7 @@ using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
@@ -47,12 +48,14 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     // Form data not yet saved to storage (thus no dataElementId)
     private readonly ConcurrentBag<DataElementChange> _changesForCreation = [];
+    private readonly ITranslationService _translationService;
 
     public InstanceDataUnitOfWork(
         Instance instance,
         IDataClient dataClient,
         IInstanceClient instanceClient,
         ApplicationMetadata appMetadata,
+        ITranslationService translationService,
         ModelSerializationService modelSerializationService,
         IAppResources appResources,
         IOptions<FrontEndSettings> frontEndSettings,
@@ -71,6 +74,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         DataTypes = appMetadata.DataTypes;
         _dataClient = dataClient;
         _appMetadata = appMetadata;
+        _translationService = translationService;
         _modelSerializationService = modelSerializationService;
         _taskId = taskId;
         _language = language;
@@ -115,6 +119,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             this,
             _taskId,
             _appResources,
+            _translationService,
             _frontEndSettings.Value,
             rowRemovalOption,
             _language
@@ -127,6 +132,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             this,
             _taskId,
             _appResources,
+            _translationService,
             _modelSerializationService,
             _frontEndSettings.Value,
             _language

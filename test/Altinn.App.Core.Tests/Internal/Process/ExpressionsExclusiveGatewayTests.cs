@@ -277,6 +277,7 @@ public class ExpressionsExclusiveGatewayTests
             _dataClient.Object,
             _instanceClient.Object,
             appMetadata,
+            null!,
             modelSerializationService,
             null!,
             null!,
