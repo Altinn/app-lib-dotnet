@@ -1,5 +1,4 @@
 using System.Text;
-using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
@@ -103,47 +102,11 @@ public class CorrespondenceRequestTests
                 ReminderNotificationChannel = CorrespondenceNotificationChannel.SmsPreferred,
                 SendersReference = "senders-reference",
                 RequestedSendTime = DateTimeOffset.UtcNow,
-                CustomNotificationRecipients =
-                [
-                    new CorrespondenceNotificationRecipientWrapper()
-                    {
-                        RecipientToOverride = OrganisationOrPersonIdentifier.Create(
-                            TestHelpers.GetNationalIdentityNumber(2)
-                        ),
-                        CorrespondenceNotificationRecipients =
-                        [
-                            new CorrespondenceNotificationRecipient
-                            {
-                                EmailAddress = "email-address-1",
-                                IsReserved = false,
-                            },
-                            new CorrespondenceNotificationRecipient
-                            {
-                                MobileNumber = "mobile-number-1",
-                                IsReserved = true,
-                            },
-                        ],
-                    },
-                    new CorrespondenceNotificationRecipientWrapper()
-                    {
-                        RecipientToOverride = OrganisationOrPersonIdentifier.Create(
-                            TestHelpers.GetOrganisationNumber(1)
-                        ),
-                        CorrespondenceNotificationRecipients =
-                        [
-                            new CorrespondenceNotificationRecipient
-                            {
-                                OrganizationNumber = TestHelpers.GetOrganisationNumber(1),
-                                IsReserved = false,
-                            },
-                            new CorrespondenceNotificationRecipient
-                            {
-                                NationalIdentityNumber = TestHelpers.GetNationalIdentityNumber(2),
-                                IsReserved = true,
-                            },
-                        ],
-                    },
-                ],
+                CustomRecipient = new CorrespondenceNotificationRecipient
+                {
+                    EmailAddress = "email-address-1",
+                    OrganizationNumber = TestHelpers.GetOrganisationNumber(1),
+                },
             },
             ExistingAttachments = [Guid.NewGuid(), Guid.NewGuid()],
         };
@@ -205,17 +168,8 @@ public class CorrespondenceRequestTests
             ["Correspondence.Notification.ReminderNotificationChannel"] = correspondence.Notification.ReminderNotificationChannel,
             ["Correspondence.Notification.SendersReference"] = correspondence.Notification.SendersReference,
             ["Correspondence.Notification.RequestedSendTime"] = correspondence.Notification.RequestedSendTime,
-            ["Correspondence.Notification.CustomNotificationRecipients[0].RecipientToOverride"] = correspondence.Notification.CustomNotificationRecipients[0].RecipientToOverride,
-            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].EmailAddress"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[0].EmailAddress!,
-            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[0].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[0].IsReserved,
-            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].MobileNumber"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[1].MobileNumber!,
-            ["Correspondence.Notification.CustomNotificationRecipients[0].Recipients[1].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[0].CorrespondenceNotificationRecipients[1].IsReserved,
-            ["Correspondence.Notification.CustomNotificationRecipients[1].RecipientToOverride"] = correspondence.Notification.CustomNotificationRecipients[1].RecipientToOverride,
-            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].OrganizationNumber"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[0].OrganizationNumber,
-            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[0].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[0].IsReserved,
-            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].NationalIdentityNumber"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[1].NationalIdentityNumber,
-            ["Correspondence.Notification.CustomNotificationRecipients[1].Recipients[1].IsReserved"] = correspondence.Notification.CustomNotificationRecipients[1].CorrespondenceNotificationRecipients[1].IsReserved,
-
+            ["Correspondence.Notification.CustomRecipient.EmailAddress"] = correspondence.Notification.CustomRecipient.EmailAddress,
+            ["Correspondence.Notification.CustomRecipient.OrganizationNumber"] = correspondence.Notification.CustomRecipient.OrganizationNumber,
         };
 
         foreach (var (key, value) in expectedSerialisation)

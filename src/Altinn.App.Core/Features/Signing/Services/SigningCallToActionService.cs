@@ -92,6 +92,11 @@ internal sealed class SigningCallToActionService(
         string? emailBody = contentWrapper.EmailBody;
         string? emailSubject = contentWrapper.EmailSubject;
         string? smsBody = contentWrapper.SmsBody;
+        string? emailAddress = communicationConfig?.Notification?.Email?.EmailAddress;
+        string? mobileNumber = communicationConfig?.Notification?.Sms?.MobileNumber;
+        string? reminderEmailBody = contentWrapper.ReminderEmailBody;
+        string? reminderEmailSubject = contentWrapper.ReminderEmailSubject;
+        string? reminderSmsBody = contentWrapper.ReminderSmsBody;
         Notification? notification = communicationConfig?.Notification;
 
         if (serviceOwnerParty.OrgNumber == "ttd" && _hostEnvironment.IsProduction() is false)
@@ -112,53 +117,73 @@ internal sealed class SigningCallToActionService(
                 .WithNotificationIfConfigured(
                     GetNotificationChoice(notification) switch
                     {
-                        NotificationChoice.Email => new CorrespondenceNotification
-                        {
-                            NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
-                            NotificationChannel = CorrespondenceNotificationChannel.Email,
-                            EmailSubject = emailSubject,
-                            EmailBody = emailBody,
-                            SendersReference = instanceIdentifier.ToString(),
-                            CustomNotificationRecipients = OverrideRecipientIfConfigured(
-                                recipient,
-                                notification,
-                                NotificationChoice.Email
-                            ),
-                        },
-                        NotificationChoice.Sms => new CorrespondenceNotification
-                        {
-                            NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
-                            NotificationChannel = CorrespondenceNotificationChannel.Sms,
-                            SmsBody = smsBody,
-                            SendersReference = instanceIdentifier.ToString(),
-                            CustomNotificationRecipients = OverrideRecipientIfConfigured(
-                                recipient,
-                                notification,
-                                NotificationChoice.Sms
-                            ),
-                        },
-                        NotificationChoice.SmsAndEmail => new CorrespondenceNotification
-                        {
-                            NotificationTemplate = CorrespondenceNotificationTemplate.CustomMessage,
-                            NotificationChannel = CorrespondenceNotificationChannel.EmailPreferred,
-                            EmailSubject = emailSubject,
-                            EmailBody = emailBody,
-                            SmsBody = smsBody,
-                            SendersReference = instanceIdentifier.ToString(),
-                            CustomNotificationRecipients = OverrideRecipientIfConfigured(
-                                recipient,
-                                notification,
-                                NotificationChoice.SmsAndEmail
-                            ),
-                        },
-                        NotificationChoice.None => new CorrespondenceNotification
-                        {
-                            NotificationTemplate = CorrespondenceNotificationTemplate.GenericAltinnMessage,
-                            NotificationChannel = CorrespondenceNotificationChannel.Email,
-                            EmailSubject = emailSubject,
-                            EmailBody = emailBody,
-                            SendersReference = instanceIdentifier.ToString(),
-                        },
+                        NotificationChoice.Email => CorrespondenceNotificationBuilder
+                            .Create()
+                            .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
+                            .WithNotificationChannel(CorrespondenceNotificationChannel.Email)
+                            .WithEmailSubject(emailSubject)
+                            .WithEmailBody(emailBody)
+                            .WithSendersReference(instanceIdentifier.ToString())
+                            .WithRecipientOverride(
+                                CorrespondenceNotificationOverrideBuilder
+                                    .Create()
+                                    .WithEmailAddress(emailAddress)
+                                    .WithMobileNumber(mobileNumber)
+                                    .WithOrganisationOrPersonIdentifier(recipient)
+                                    .Build()
+                            )
+                            .WithSendReminder(communicationConfig?.ReminderNotification is not null)
+                            .WithReminderEmailBody(reminderEmailBody)
+                            .WithReminderEmailSubject(reminderEmailSubject)
+                            .WithReminderSmsBody(reminderSmsBody)
+                            .Build(),
+                        NotificationChoice.Sms => CorrespondenceNotificationBuilder
+                            .Create()
+                            .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
+                            .WithNotificationChannel(CorrespondenceNotificationChannel.Sms)
+                            .WithSmsBody(smsBody)
+                            .WithSendersReference(instanceIdentifier.ToString())
+                            .WithRecipientOverride(
+                                CorrespondenceNotificationOverrideBuilder
+                                    .Create()
+                                    .WithMobileNumber(notification?.Sms?.MobileNumber)
+                                    .WithOrganisationOrPersonIdentifier(recipient)
+                                    .Build()
+                            )
+                            .WithSendReminder(communicationConfig?.ReminderNotification is not null)
+                            .WithReminderEmailBody(reminderEmailBody)
+                            .WithReminderEmailSubject(reminderEmailSubject)
+                            .WithReminderSmsBody(reminderSmsBody)
+                            .Build(),
+                        NotificationChoice.SmsAndEmail => CorrespondenceNotificationBuilder
+                            .Create()
+                            .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
+                            .WithNotificationChannel(CorrespondenceNotificationChannel.EmailPreferred)
+                            .WithSmsBody(smsBody)
+                            .WithEmailSubject(emailSubject)
+                            .WithEmailBody(emailBody)
+                            .WithSendersReference(instanceIdentifier.ToString())
+                            .WithRecipientOverride(
+                                CorrespondenceNotificationOverrideBuilder
+                                    .Create()
+                                    .WithEmailAddress(notification?.Email?.EmailAddress)
+                                    .WithMobileNumber(notification?.Sms?.MobileNumber)
+                                    .WithOrganisationOrPersonIdentifier(recipient)
+                                    .Build()
+                            )
+                            .WithSendReminder(communicationConfig?.ReminderNotification is not null)
+                            .WithReminderEmailBody(reminderEmailBody)
+                            .WithReminderEmailSubject(reminderEmailSubject)
+                            .WithReminderSmsBody(reminderSmsBody)
+                            .Build(),
+                        NotificationChoice.None => CorrespondenceNotificationBuilder
+                            .Create()
+                            .WithNotificationTemplate(CorrespondenceNotificationTemplate.GenericAltinnMessage)
+                            .WithNotificationChannel(CorrespondenceNotificationChannel.Email)
+                            .WithEmailSubject(emailSubject)
+                            .WithEmailBody(emailBody)
+                            .WithSendersReference(instanceIdentifier.ToString())
+                            .Build(),
                         _ => null,
                     }
                 )
@@ -170,64 +195,6 @@ internal sealed class SigningCallToActionService(
         var correspondenceId = response?.Correspondences[0]?.CorrespondenceId ?? Guid.Empty;
         _logger.LogInformation("Correspondence request sent. CorrespondenceId: {CorrespondenceId}", correspondenceId);
         return response;
-    }
-
-    internal static List<CorrespondenceNotificationRecipientWrapper>? OverrideRecipientIfConfigured(
-        OrganisationOrPersonIdentifier recipient,
-        Notification? notification,
-        NotificationChoice notificationChoice
-    )
-    {
-        if (notification is null || notificationChoice == NotificationChoice.None)
-            return null;
-
-        return
-        [
-            new CorrespondenceNotificationRecipientWrapper
-            {
-                RecipientToOverride = recipient,
-                CorrespondenceNotificationRecipients =
-                [
-                    new CorrespondenceNotificationRecipient
-                    {
-                        EmailAddress = notificationChoice switch
-                        {
-                            NotificationChoice.Email => GetEmailOrThrow(notification),
-                            NotificationChoice.SmsAndEmail => notification.Email?.EmailAddress,
-                            NotificationChoice.Sms => null,
-                            _ => null,
-                        },
-                        MobileNumber = notificationChoice switch
-                        {
-                            NotificationChoice.Sms => GetMobileNumberOrThrow(notification),
-                            NotificationChoice.SmsAndEmail => notification.Sms?.MobileNumber,
-                            NotificationChoice.Email => null,
-                            _ => null,
-                        },
-                    },
-                ],
-            },
-        ];
-    }
-
-    internal static string GetEmailOrThrow(Notification notification)
-    {
-        if (notification.Email?.EmailAddress is null)
-        {
-            throw new InvalidOperationException("Email address is required for email notifications.");
-        }
-
-        return notification.Email.EmailAddress;
-    }
-
-    internal static string GetMobileNumberOrThrow(Notification notification)
-    {
-        if (notification.Sms?.MobileNumber is null)
-        {
-            throw new InvalidOperationException("Mobile number is required for sms notifications.");
-        }
-
-        return notification.Sms.MobileNumber;
     }
 
     internal static string GetLinkDisplayText(string language)
@@ -256,6 +223,9 @@ internal sealed class SigningCallToActionService(
         string? smsBody = null;
         string? emailBody = null;
         string? emailSubject = null;
+        string? reminderEmailBody = null;
+        string? reminderEmailSubject = null;
+        string? reminderSmsBody = null;
         string? appName = null;
 
         string appOwner = senderParty.Name ?? appMetadata.Org;
@@ -301,6 +271,18 @@ internal sealed class SigningCallToActionService(
                 communicationConfig?.Notification?.Email?.SubjectTextResourceKey,
                 language
             );
+            reminderEmailBody = await translationService.TranslateTextKeyLenient(
+                communicationConfig?.ReminderNotification?.Email?.BodyTextResourceKey,
+                language
+            );
+            reminderEmailSubject = await translationService.TranslateTextKeyLenient(
+                communicationConfig?.ReminderNotification?.Email?.SubjectTextResourceKey,
+                language
+            );
+            reminderSmsBody = await translationService.TranslateTextKeyLenient(
+                communicationConfig?.ReminderNotification?.Sms?.BodyTextResourceKey,
+                language
+            );
             appName = await translationService.TranslateFirstMatchingTextKey(language, "appName", "ServiceName");
         }
         catch (Exception e)
@@ -333,6 +315,9 @@ internal sealed class SigningCallToActionService(
             SmsBody = smsBody ?? defaults.SmsBody,
             EmailBody = emailBody ?? defaults.EmailBody,
             EmailSubject = emailSubject ?? defaults.Title,
+            ReminderEmailBody = reminderEmailBody ?? defaults.ReminderEmailBody,
+            ReminderEmailSubject = reminderEmailSubject ?? defaults.ReminderEmailSubject,
+            ReminderSmsBody = reminderSmsBody ?? defaults.ReminderSmsBody,
         };
         return contentWrapper;
     }
@@ -358,6 +343,11 @@ internal sealed class SigningCallToActionService(
                 EmailSubject = $"{appName}: Task for signing",
                 EmailBody =
                     $"Your signature is requested for {appName}. Open your Altinn inbox to proceed.\n\nIf you have any questions, you can contact {appOwner}.",
+                ReminderSmsBody =
+                    $"Reminder: Your signature is requested for {appName}. Open your Altinn inbox to proceed.",
+                ReminderEmailSubject = $"{appName}: Reminder for task for signing",
+                ReminderEmailBody =
+                    $"Reminder: Your signature is requested for {appName}. Open your Altinn inbox to proceed.\n\nIf you have any questions, you can contact {appOwner}.",
             },
             LanguageConst.Nn => new DefaultTexts
             {
@@ -369,6 +359,11 @@ internal sealed class SigningCallToActionService(
                 EmailSubject = $"{appName}: Oppgåve til signering",
                 EmailBody =
                     $"Signaturen din vert venta for {appName}. Opne Altinn-innboksen din for å gå vidare.\n\nOm du lurer på noko, kan du kontakte {appOwner}.",
+                ReminderSmsBody =
+                    $"Påminning: Signaturen din vert venta for {appName}. Opne Altinn-innboksen din for å gå vidare.",
+                ReminderEmailSubject = $"{appName}: Påminning om oppgåve til signering",
+                ReminderEmailBody =
+                    $"Påminning: Signaturen din vert venta for {appName}. Opne Altinn-innboksen din for å gå vidare.\n\nOm du lurer på noko, kan du kontakte {appOwner}.",
             },
             LanguageConst.Nb or _ => new DefaultTexts
             {
@@ -380,6 +375,11 @@ internal sealed class SigningCallToActionService(
                 EmailSubject = $"{appName}: Oppgave til signering",
                 EmailBody =
                     $"Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.\n\nHvis du lurer på noe, kan du kontakte {appOwner}.",
+                ReminderSmsBody =
+                    $"Påminnelse: Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.",
+                ReminderEmailSubject = $"{appName}: Påminnelse om oppgave til signering",
+                ReminderEmailBody =
+                    $"Påminnelse: Din signatur ventes for {appName}. Åpne Altinn-innboksen din for å fortsette.\n\nHvis du lurer på noe, kan du kontakte {appOwner}.",
             },
         };
     }

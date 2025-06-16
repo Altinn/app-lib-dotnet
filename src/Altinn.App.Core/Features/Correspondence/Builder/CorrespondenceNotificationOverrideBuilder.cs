@@ -4,75 +4,80 @@ using Altinn.App.Core.Models;
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
-/// Builder factory for creating <see cref="CorrespondenceNotificationRecipientWrapper"/> objects.
+/// Builder factory for creating <see cref="CorrespondenceNotificationRecipient"/> objects.
 /// </summary>
 public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotificationOverrideBuilder
 {
-    private OrganisationOrPersonIdentifier? _recipientToOverride;
-    private List<CorrespondenceNotificationRecipient>? _correspondenceNotificationRecipients;
+    private string? _emailAddress;
+    private string? _mobileNumber;
+    private NationalIdentityNumber? _nationalIdentityNumber;
+    private OrganisationNumber? _organizationNumber;
 
     private CorrespondenceNotificationOverrideBuilder() { }
 
     /// <summary>
     /// Creates a new <see cref="CorrespondenceNotificationOverrideBuilder"/> instance.
     /// </summary>
-    /// <returns>The builder instance</returns>
     public static ICorrespondenceNotificationOverrideBuilder Create() =>
         new CorrespondenceNotificationOverrideBuilder();
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(string recipientToOverride)
+    public ICorrespondenceNotificationOverrideBuilder WithEmailAddress(string? emailAddress)
     {
-        _recipientToOverride = OrganisationOrPersonIdentifier.Parse(recipientToOverride);
-        return this;
-    }
-
-    /// <inheritdoc />
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(OrganisationNumber recipientToOverride)
-    {
-        _recipientToOverride = OrganisationOrPersonIdentifier.Create(recipientToOverride);
-        return this;
-    }
-
-    /// <inheritdoc />
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(
-        NationalIdentityNumber recipientToOverride
-    )
-    {
-        _recipientToOverride = OrganisationOrPersonIdentifier.Create(recipientToOverride);
-        return this;
-    }
-
-    /// <inheritdoc />
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(
-        OrganisationOrPersonIdentifier recipientToOverride
-    )
-    {
-        _recipientToOverride = recipientToOverride;
+        _emailAddress = emailAddress;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationOverrideBuilder WithCorrespondenceNotificationRecipients(
-        List<CorrespondenceNotificationRecipient> correspondenceNotificationRecipients
-    )
+    public ICorrespondenceNotificationOverrideBuilder WithMobileNumber(string? mobileNumber)
     {
-        _correspondenceNotificationRecipients = correspondenceNotificationRecipients;
+        _mobileNumber = mobileNumber;
         return this;
     }
 
     /// <inheritdoc/>
-    public CorrespondenceNotificationRecipientWrapper Build()
+    public ICorrespondenceNotificationOverrideBuilder WithNationalIdentityNumber(
+        NationalIdentityNumber? nationalIdentityNumber
+    )
     {
-        BuilderUtils.NotNullOrEmpty(_recipientToOverride, "Recipient to override cannot be empty");
-        BuilderUtils.NotNullOrEmpty(
-            _correspondenceNotificationRecipients,
-            "Correspondence notification recipient cannot be empty"
-        );
-        return new CorrespondenceNotificationRecipientWrapper
+        _nationalIdentityNumber = nationalIdentityNumber;
+        return this;
+    }
+
+    /// <inheritdoc/>
+    public ICorrespondenceNotificationOverrideBuilder WithOrganizationNumber(OrganisationNumber? organizationNumber)
+    {
+        _organizationNumber = organizationNumber;
+        return this;
+    }
+
+    /// <inheritdoc/>
+    public ICorrespondenceNotificationOverrideBuilder WithOrganisationOrPersonIdentifier(
+        OrganisationOrPersonIdentifier? organisationOrPersonIdentifier
+    )
+    {
+        if (organisationOrPersonIdentifier is OrganisationOrPersonIdentifier.Organisation org)
         {
-            RecipientToOverride = _recipientToOverride,
-            CorrespondenceNotificationRecipients = _correspondenceNotificationRecipients,
+            _organizationNumber = org.Value;
+        }
+        else if (organisationOrPersonIdentifier is OrganisationOrPersonIdentifier.Person person)
+        {
+            _nationalIdentityNumber = person.Value;
+        }
+        return this;
+    }
+
+    /// <inheritdoc/>
+    public CorrespondenceNotificationRecipient Build()
+    {
+        BuilderUtils.RequireExcactlyOneOf(_organizationNumber, _nationalIdentityNumber);
+        BuilderUtils.RequireAtLeastOneOf(_emailAddress, _mobileNumber);
+        return new CorrespondenceNotificationRecipient
+        {
+            EmailAddress = _emailAddress,
+            MobileNumber = _mobileNumber,
+            NationalIdentityNumber = _nationalIdentityNumber,
+            OrganizationNumber = _organizationNumber,
         };
     }
 }

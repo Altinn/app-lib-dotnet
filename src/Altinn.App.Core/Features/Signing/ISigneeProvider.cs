@@ -103,8 +103,15 @@ public class CommunicationConfig
     /// <summary>
     /// Notification for when a party has been delegated the rights to sign.
     /// </summary>
+    /// <remarks> If not set, an email vil be sent with the information from the Kontakt- og reservasjonsregisteret (KRR).</remarks>
     [JsonPropertyName("notification")]
     public Notification? Notification { get; set; }
+
+    /// <summary>
+    /// Reminder notification for when a party has not signed within a week.
+    /// </summary>
+    [JsonPropertyName("reminderNotification")]
+    public Notification? ReminderNotification { get; set; }
 }
 
 /// <summary>

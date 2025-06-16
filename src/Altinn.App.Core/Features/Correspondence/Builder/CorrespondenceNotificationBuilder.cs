@@ -19,7 +19,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     private CorrespondenceNotificationChannel? _reminderNotificationChannel;
     private string? _sendersReference;
     private DateTimeOffset? _requestedSendTime;
-    private List<CorrespondenceNotificationRecipientWrapper>? _recipientToOverrideWrapper;
+    private CorrespondenceNotificationRecipient? _recipientOverride;
 
     private CorrespondenceNotificationBuilder() { }
 
@@ -129,11 +129,22 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
 
     /// <inheritdoc/>
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
-        CorrespondenceNotificationRecipientWrapper recipientToOverrideWrapper
+        CorrespondenceNotificationRecipient recipientOverride
     )
     {
-        _recipientToOverrideWrapper ??= [];
-        _recipientToOverrideWrapper.Add(recipientToOverrideWrapper);
+        _recipientOverride = recipientOverride;
+        return this;
+    }
+
+    public ICorrespondenceNotificationBuilder WithRecipientOverrideIfConfigured(
+        CorrespondenceNotificationRecipient? recipientOverride
+    )
+    {
+        if (recipientOverride is not null)
+        {
+            return WithRecipientOverride(recipientOverride);
+        }
+
         return this;
     }
 
@@ -156,7 +167,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
             ReminderNotificationChannel = _reminderNotificationChannel,
             SendersReference = _sendersReference,
             RequestedSendTime = _requestedSendTime,
-            CustomNotificationRecipients = _recipientToOverrideWrapper,
+            CustomRecipient = _recipientOverride,
         };
     }
 }

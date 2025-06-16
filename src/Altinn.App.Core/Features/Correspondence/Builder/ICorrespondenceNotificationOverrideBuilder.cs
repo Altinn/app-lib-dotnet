@@ -9,43 +9,41 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 public interface ICorrespondenceNotificationOverrideBuilder
 {
     /// <summary>
-    /// Sets the recipient to override for the correspondence notification.
+    /// Sets the organization number override for the recipient.
     /// </summary>
-    /// <param name="recipientToOverride">The recipient to override notifications for. Organization number / national identifier</param>
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(string recipientToOverride);
+    /// <param name="organizationNumber">The organization number to override</param>
+    public ICorrespondenceNotificationOverrideBuilder WithOrganizationNumber(OrganisationNumber? organizationNumber);
 
     /// <summary>
-    /// Sets the recipient to override for the correspondence notification.
+    /// Sets the national identity number override for the recipient.
     /// </summary>
-    /// <param name="recipientToOverride">The recipient to override notifications for.</param>
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(OrganisationNumber recipientToOverride);
-
-    /// <summary>
-    /// Sets the recipient to override for the correspondence notification.
-    /// </summary>
-    /// <param name="recipientToOverride">The recipient to override notifications for.</param>
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(
-        NationalIdentityNumber recipientToOverride
+    /// <param name="nationalIdentityNumber">The national identity number to override</param>
+    public ICorrespondenceNotificationOverrideBuilder WithNationalIdentityNumber(
+        NationalIdentityNumber? nationalIdentityNumber
     );
 
     /// <summary>
-    /// Sets the recipient to override for the correspondence notification.
+    /// Sets the email override for the recipient.
     /// </summary>
-    /// <param name="recipientToOverride">The recipient to override notifications for.</param>
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(
-        OrganisationOrPersonIdentifier recipientToOverride
+    /// <param name="emailAddress">The email address to override</param>
+    public ICorrespondenceNotificationOverrideBuilder WithEmailAddress(string? emailAddress);
+
+    /// <summary>
+    /// Sets the mobile number override for the recipient.
+    /// </summary>
+    /// <param name="mobileNumber">The mobile number to override</param>
+    public ICorrespondenceNotificationOverrideBuilder WithMobileNumber(string? mobileNumber);
+
+    /// <summary>
+    /// Sets the organisation or person identifier override for the recipient.
+    /// </summary>
+    /// <param name="organisationOrPersonIdentifier">The organization or person identifier</param>
+    public ICorrespondenceNotificationOverrideBuilder WithOrganisationOrPersonIdentifier(
+        OrganisationOrPersonIdentifier? organisationOrPersonIdentifier
     );
 
     /// <summary>
-    /// Sets the custom recipients to override the default recipient.
+    /// Builds the <see cref="CorrespondenceNotificationRecipient"/> object.
     /// </summary>
-    /// <param name="correspondenceNotificationRecipients">The custom recipients</param>
-    public ICorrespondenceNotificationOverrideBuilder WithCorrespondenceNotificationRecipients(
-        List<CorrespondenceNotificationRecipient> correspondenceNotificationRecipients
-    );
-
-    /// <summary>
-    /// Builds the <see cref="CorrespondenceNotificationRecipientWrapper"/> object.
-    /// </summary>
-    CorrespondenceNotificationRecipientWrapper Build();
+    CorrespondenceNotificationRecipient Build();
 }

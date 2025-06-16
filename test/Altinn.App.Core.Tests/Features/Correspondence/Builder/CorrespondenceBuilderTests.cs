@@ -176,16 +176,8 @@ public class CorrespondenceBuilderTests
                     .WithRecipientOverride(
                         CorrespondenceNotificationOverrideBuilder
                             .Create()
-                            .WithRecipientToOverride(data.recipient)
-                            .WithCorrespondenceNotificationRecipients(
-                                [
-                                    new CorrespondenceNotificationRecipient
-                                    {
-                                        OrganizationNumber = data.recipient.Value,
-                                        MobileNumber = data.notification.overrideMobileNumber,
-                                    },
-                                ]
-                            )
+                            .WithMobileNumber(data.notification.overrideMobileNumber)
+                            .WithOrganizationNumber(data.recipient.Value)
                             .Build()
                     )
             )
@@ -304,17 +296,11 @@ public class CorrespondenceBuilderTests
         correspondence
             .Notification.ReminderNotificationChannel.Should()
             .Be(data.notification.reminderNotificationChannel);
-        correspondence.Notification.CustomNotificationRecipients.Should().HaveCount(1);
-        correspondence
-            .Notification.CustomNotificationRecipients![0]
-            .CorrespondenceNotificationRecipients[0]
-            .OrganizationNumber.Should()
-            .Be(data.recipient.Value);
-        correspondence
-            .Notification.CustomNotificationRecipients![0]
-            .CorrespondenceNotificationRecipients[0]
-            .MobileNumber.Should()
-            .Be(data.notification.overrideMobileNumber);
+        correspondence.Notification.CustomRecipient.Should().NotBeNull();
+        correspondence.Notification.CustomRecipient!.OrganizationNumber.Should().NotBeNull();
+
+        correspondence.Notification.CustomRecipient.OrganizationNumber.Should().Be(data.recipient.Value);
+        correspondence.Notification.CustomRecipient.MobileNumber.Should().Be(data.notification.overrideMobileNumber);
 
         correspondence.ExistingAttachments.Should().BeEquivalentTo(data.existingAttachments);
 
