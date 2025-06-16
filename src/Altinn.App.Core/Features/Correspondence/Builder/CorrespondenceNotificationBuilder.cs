@@ -136,6 +136,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
         return this;
     }
 
+    /// <inheritdoc/>
     public ICorrespondenceNotificationBuilder WithRecipientOverrideIfConfigured(
         CorrespondenceNotificationRecipient? recipientOverride
     )
