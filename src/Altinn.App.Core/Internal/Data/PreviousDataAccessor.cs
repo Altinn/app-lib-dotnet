@@ -4,6 +4,7 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -17,11 +18,13 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
     private readonly ModelSerializationService _modelSerializationService;
     private readonly FrontEndSettings _frontEndSettings;
     private readonly string? _language;
+    private readonly ITranslationService _translationService;
 
     public PreviousDataAccessor(
         IInstanceDataAccessor dataAccessor,
         string? taskId,
         IAppResources appResources,
+        ITranslationService translationService,
         ModelSerializationService modelSerializationService,
         FrontEndSettings frontEndSettings,
         string? language
@@ -30,9 +33,10 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
         _dataAccessor = dataAccessor;
         _taskId = taskId;
         _appResources = appResources;
+        _translationService = translationService;
+        _modelSerializationService = modelSerializationService;
         _frontEndSettings = frontEndSettings;
         _language = language;
-        _modelSerializationService = modelSerializationService;
     }
 
     public Instance Instance => _dataAccessor.Instance;
@@ -60,6 +64,7 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
             this,
             _taskId,
             _appResources,
+            _translationService,
             _frontEndSettings,
             rowRemovalOption,
             _language

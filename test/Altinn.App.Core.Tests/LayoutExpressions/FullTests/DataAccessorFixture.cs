@@ -6,6 +6,7 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
@@ -31,6 +32,8 @@ public sealed class DataAccessorFixture
     public Mock<IDataClient> DataClientMock { get; } = new(MockBehavior.Strict);
     public Mock<IInstanceClient> InstanceClientMock { get; } = new(MockBehavior.Strict);
 
+    public Mock<ITranslationService> TranslationServiceMock { get; } = new(MockBehavior.Strict);
+
     public FrontEndSettings FrontEndSettings { get; } = new();
     public ApplicationMetadata ApplicationMetadata { get; } = new($"{Org}/{App}") { DataTypes = [] };
 
@@ -53,6 +56,7 @@ public sealed class DataAccessorFixture
         _serviceCollection.AddSingleton(Options.Create(FrontEndSettings));
         _serviceCollection.AddSingleton(AppModelMock.Object);
         _serviceCollection.AddSingleton(DataClientMock.Object);
+        _serviceCollection.AddSingleton(TranslationServiceMock.Object);
         _serviceCollection.AddSingleton(InstanceClientMock.Object);
         _serviceCollection.AddSingleton<InstanceDataUnitOfWorkInitializer>();
         _serviceCollection.AddSingleton<ModelSerializationService>();

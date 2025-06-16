@@ -3,6 +3,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
@@ -17,11 +18,13 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
     private readonly FrontEndSettings _frontEndSettings;
     private readonly RowRemovalOption _rowRemovalOption;
     private readonly string? _language;
+    private readonly ITranslationService _translationService;
 
     public CleanInstanceDataAccessor(
         IInstanceDataAccessor dataAccessor,
         string? taskId,
         IAppResources appResources,
+        ITranslationService translationService,
         FrontEndSettings frontEndSettings,
         RowRemovalOption rowRemovalOption,
         string? language
@@ -35,8 +38,16 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
         _language = language;
 
         LayoutModel? layouts = taskId is not null ? appResources.GetLayoutModelForTask(taskId) : null;
-        var state = new LayoutEvaluatorState(dataAccessor, layouts, frontEndSettings, gatewayAction: null, language);
+        var state = new LayoutEvaluatorState(
+            dataAccessor,
+            layouts,
+            translationService,
+            frontEndSettings,
+            gatewayAction: null,
+            language
+        );
         _hiddenFieldsTask = new(() => LayoutEvaluator.GetHiddenFieldsForRemoval(state));
+        _translationService = translationService;
     }
 
     private readonly DataElementCache<IFormDataWrapper> _cleanCache = new();
@@ -96,6 +107,7 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
             _dataAccessor,
             _taskId,
             _appResources,
+            _translationService,
             _frontEndSettings,
             rowRemovalOption,
             _language
