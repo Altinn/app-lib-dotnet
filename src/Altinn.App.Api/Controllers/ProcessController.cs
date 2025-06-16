@@ -1,16 +1,18 @@
 using System.Globalization;
 using System.Net;
-using System.Security.Claims;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models.Process;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -38,6 +40,8 @@ public class ProcessController : ControllerBase
     private readonly IProcessReader _processReader;
     private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
     private readonly IProcessNextService _processNextService;
+    private readonly IValidationService _validationService;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -61,6 +65,8 @@ public class ProcessController : ControllerBase
         _processReader = processReader;
         _processEngine = processEngine;
         _processEngineAuthorizer = processEngineAuthorizer;
+        _validationService = validationService;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _processNextService = serviceProvider.GetRequiredService<IProcessNextService>();
     }
 
@@ -263,8 +269,7 @@ public class ProcessController : ControllerBase
     {
         try
         {
-            var processNextParams = new ProcessNextParams
-            (
+            var processNextParams = new ProcessNextParams(
                 Org: org,
                 App: app,
                 InstanceOwnerPartyId: instanceOwnerPartyId,
@@ -275,13 +280,22 @@ public class ProcessController : ControllerBase
                 Language: language
             );
 
-            (ProcessChangeResult result, Instance instance) =
-                await _processNextService.DoProcessNext(processNextParams, ct);
+            ProcessChangeResult result;
+            Instance instance;
+            bool moveToNextTaskAutomatically;
 
-            if (!result.Success)
+            do
             {
-                return GetResultForError(result);
-            }
+                (result, instance) = await _processNextService.DoProcessNext(processNextParams, ct);
+                moveToNextTaskAutomatically = await ShouldMoveToNextTaskAutomatically(instance, ct);
+
+                if (!result.Success)
+                {
+                    return GetResultForError(result);
+                }
+
+                processNextParams = processNextParams with { Action = null, ActionOnBehalfOf = null };
+            } while (moveToNextTaskAutomatically);
 
             AppProcessState appProcessState = await ConvertAndAuthorizeActions(
                 instance,
@@ -298,52 +312,6 @@ public class ProcessController : ControllerBase
         catch (Exception exception)
         {
             return ExceptionResponse(exception, "Process next failed.");
-        }
-    }
-
-    private ActionResult<AppProcessState> GetResultForError(ProcessChangeResult result)
-    {
-        switch (result.ErrorType)
-        {
-            case ProcessErrorType.Conflict:
-                return Conflict(
-                    new ProblemDetails()
-                    {
-                        Detail = result.ErrorMessage,
-                        Status = StatusCodes.Status409Conflict,
-                        Title = "Conflict",
-                    }
-                );
-            case ProcessErrorType.Internal:
-                return StatusCode(
-                    500,
-                    new ProblemDetails()
-                    {
-                        Detail = result.ErrorMessage,
-                        Status = StatusCodes.Status500InternalServerError,
-                        Title = "Internal server error",
-                    }
-                );
-            case ProcessErrorType.Unauthorized:
-                return StatusCode(
-                    403,
-                    new ProblemDetails()
-                    {
-                        Detail = result.ErrorMessage,
-                        Status = StatusCodes.Status403Forbidden,
-                        Title = "Unauthorized",
-                    }
-                );
-            default:
-                return StatusCode(
-                    500,
-                    new ProblemDetails()
-                    {
-                        Detail = $"Unknown ProcessErrorType {result.ErrorType}",
-                        Status = StatusCodes.Status500InternalServerError,
-                        Title = "Internal server error",
-                    }
-                );
         }
     }
 
@@ -548,6 +516,73 @@ public class ProcessController : ControllerBase
         return appProcessState;
     }
 
+    private async Task<bool> ShouldMoveToNextTaskAutomatically(Instance instance, CancellationToken ct)
+    {
+        if (instance.Process.CurrentTask is null)
+        {
+            return false;
+        }
+
+        IServiceTask? serviceTask = _processEngine.CheckIfServiceTask(instance.Process.CurrentTask.AltinnTaskType);
+
+        if (serviceTask is not null)
+        {
+            return await serviceTask.MoveToNextTaskAfterExecution(instance.Process.CurrentTask.ElementId, instance, ct);
+        }
+
+        return false;
+    }
+
+    private ActionResult<AppProcessState> GetResultForError(ProcessChangeResult result)
+    {
+        switch (result.ErrorType)
+        {
+            case ProcessErrorType.Conflict:
+                return Conflict(
+                    new ProblemDetails()
+                    {
+                        Detail = result.ErrorMessage,
+                        Status = StatusCodes.Status409Conflict,
+                        Title = result.ErrorTitle,
+                        Extensions = new Dictionary<string, object?>
+                        {
+                            { "validationIssues", result.ValidationIssues },
+                        },
+                    }
+                );
+            case ProcessErrorType.Internal:
+                return StatusCode(
+                    500,
+                    new ProblemDetails()
+                    {
+                        Detail = result.ErrorMessage,
+                        Status = StatusCodes.Status500InternalServerError,
+                        Title = result.ErrorTitle ?? "Internal server error",
+                    }
+                );
+            case ProcessErrorType.Unauthorized:
+                return StatusCode(
+                    403,
+                    new ProblemDetails()
+                    {
+                        Detail = result.ErrorMessage,
+                        Status = StatusCodes.Status403Forbidden,
+                        Title = result.ErrorTitle ?? "Unauthorized",
+                    }
+                );
+            default:
+                return StatusCode(
+                    500,
+                    new ProblemDetails()
+                    {
+                        Detail = $"Unknown ProcessErrorType {result.ErrorType}",
+                        Status = StatusCodes.Status500InternalServerError,
+                        Title = result.ErrorTitle ?? "Internal server error",
+                    }
+                );
+        }
+    }
+
     private ObjectResult ExceptionResponse(Exception exception, string message)
     {
         _logger.LogError(exception, message);
@@ -587,6 +622,38 @@ public class ProcessController : ControllerBase
                 Title = message,
             }
         );
+    }
+
+    private async Task<ProblemDetails?> GetValidationProblemDetails(
+        Instance instance,
+        string currentTaskId,
+        string? language
+    )
+    {
+        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, currentTaskId, language);
+
+        var validationIssues = await _validationService.ValidateInstanceAtTask(
+            dataAccessor,
+            currentTaskId, // run full validation
+            ignoredValidators: null,
+            onlyIncrementalValidators: null,
+            language: language
+        );
+        var success = validationIssues.TrueForAll(v => v.Severity != ValidationIssueSeverity.Error);
+
+        if (!success)
+        {
+            var errorCount = validationIssues.Count(v => v.Severity == ValidationIssueSeverity.Error);
+            return new ProblemDetails()
+            {
+                Detail = $"{errorCount} validation errors found for task {currentTaskId}",
+                Status = StatusCodes.Status409Conflict,
+                Title = "Validation failed for task",
+                Extensions = new Dictionary<string, object?>() { { "validationIssues", validationIssues } },
+            };
+        }
+
+        return null;
     }
 
     private async Task<List<UserAction>> AuthorizeActions(List<AltinnAction> actions, Instance instance)

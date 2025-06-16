@@ -28,13 +28,17 @@ public interface IProcessEngine
     /// <summary>
     /// Check if the Altinn task type is a service task
     /// </summary>
-    bool IsServiceTask(string altinnTaskType);
+    IServiceTask? CheckIfServiceTask(string? altinnTaskType);
 
     /// <summary>
     /// Method to handle service task
     /// </summary>
     /// <returns></returns>
-    Task<ServiceTaskResult> HandleServiceTask(string altinnTaskType, ProcessNextRequest request, CancellationToken ct);
+    Task<ServiceTaskResult> HandleServiceTask(
+        IServiceTask serviceTask,
+        ProcessNextRequest request,
+        CancellationToken ct = default
+    );
 
     /// <summary>
     /// Handle process events and update storage

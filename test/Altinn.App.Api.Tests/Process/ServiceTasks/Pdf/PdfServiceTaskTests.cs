@@ -2,10 +2,13 @@
 using System.Text;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
+using Altinn.App.Core.EFormidling.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 using Argon;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.Process.ServiceTasks.Pdf;
@@ -22,30 +25,31 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
     public PdfServiceTaskTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper)
     {
+        var eFormidlingServiceMock = new Mock<IEFormidlingService>();
+        OverrideServicesForAllTests = (services) =>
+        {
+            services.AddSingleton(eFormidlingServiceMock.Object);
+        };
+
         TestData.DeleteInstanceAndData(Org, App, InstanceOwnerPartyId, _instanceGuid);
         TestData.PrepareInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
     }
 
     [Fact]
-    public async Task Can_Set_PdfServiceTask_As_CurrentTask()
+    public async Task Can_Reject_PdfServiceTask_If_It_Failed_And_Reject_Is_Configured()
     {
-        using HttpClient client = GetRootedUserClient(Org, App);
+        var sendAsyncCalled = false;
 
-        // Run process next
-        using HttpResponseMessage nextResponse = await client.PutAsync(
-            $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
-            null
-        );
+        // Mock HttpClient for the expected pdf service call
+        SendAsync = message =>
+        {
+            message.RequestUri!.PathAndQuery.Should().Be($"/pdf");
+            sendAsyncCalled = true;
 
-        string nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
-        OutputHelper.WriteLine(nextResponseContent);
+            // Simulate failing PDF service
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        };
 
-        nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
-    }
-
-    [Fact]
-    public async Task Can_Reject_PdfServiceTask_When_Reject_Configured()
-    {
         using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next to enter PDF task
@@ -57,10 +61,10 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
         string nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(nextResponseContent);
 
-        nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+        nextResponse.Should().HaveStatusCode(HttpStatusCode.InternalServerError);
+        sendAsyncCalled.Should().BeTrue();
 
         // Run process next with reject to return to data task
-
         var rejectProcessNext = new ProcessNext { Action = "reject" };
         using var rejectContent = new StringContent(
             JsonConvert.SerializeObject(rejectProcessNext),
@@ -103,30 +107,24 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
         using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next
-        using HttpResponseMessage firstNextResponse = await client.PutAsync(
+        using HttpResponseMessage processNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
-        firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        // Run process next again to actually execute the service task
-        using HttpResponseMessage secondNextResponse = await client.PutAsync(
-            $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
-            null
-        );
+        string responseAsString = await processNextResponse.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseAsString);
 
-        secondNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+        processNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
         sendAsyncCalled.Should().BeTrue();
 
-        // Check that the process has been moved to the next task
-        string nextResponseContent = await secondNextResponse.Content.ReadAsStringAsync();
-        OutputHelper.WriteLine(nextResponseContent);
-        var processState = JsonConvert.DeserializeObject<ProcessState>(nextResponseContent);
-        processState.CurrentTask.AltinnTaskType.Should().Be("eFormidling");
+        // Check that the process has been moved to the next task that is not a service task.
+        var processState = JsonConvert.DeserializeObject<ProcessState>(responseAsString);
+        processState.Ended.Should().NotBeNull();
     }
 
     [Fact]
-    public async Task Does_Not_Change_Task_When_Pdf_Fails()
+    public async Task CurrentTask_Is_ServiceTask_If_Execute_Fails()
     {
         var sendAsyncCalled = false;
 
@@ -143,25 +141,18 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
         using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next
-        using HttpResponseMessage firstNextResponse = await client.PutAsync(
+        using HttpResponseMessage processNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
-        firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        // Run process next again to actually execute the service task
-        using HttpResponseMessage secondNextResponse = await client.PutAsync(
-            $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
-            null
-        );
+        string responseAsString = await processNextResponse.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseAsString);
 
-        secondNextResponse.Should().HaveStatusCode(HttpStatusCode.InternalServerError);
+        processNextResponse.Should().HaveStatusCode(HttpStatusCode.InternalServerError);
         sendAsyncCalled.Should().BeTrue();
 
-        // Check that the process has been moved to the next task
-        string nextResponseContent = await secondNextResponse.Content.ReadAsStringAsync();
-        OutputHelper.WriteLine(nextResponseContent);
-        nextResponseContent
+        responseAsString
             .Should()
             .Be("{\"title\":\"Internal server error\",\"status\":500,\"detail\":\"Server action pdf failed!\"}");
 

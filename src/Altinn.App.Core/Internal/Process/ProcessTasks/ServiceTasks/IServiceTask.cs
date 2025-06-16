@@ -14,6 +14,23 @@ public interface IServiceTask : IProcessTask
     /// Executes the service task.
     /// </summary>
     public Task Execute(string taskId, Instance instance, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Method that is called to determine if the process should move to the next task after executing the service task, or wait for another process next call.
+    /// </summary>
+    /// <param name="taskId"></param>
+    /// <param name="instance"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public Task<bool> MoveToNextTaskAfterExecution(
+        string taskId,
+        Instance instance,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // The default implementation is to move to the next task after execution
+        return Task.FromResult(true);
+    }
 }
 
 /// <summary>

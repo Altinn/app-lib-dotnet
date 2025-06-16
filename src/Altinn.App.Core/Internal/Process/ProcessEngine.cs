@@ -177,45 +177,37 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public bool IsServiceTask(string altinnTaskType)
+    public IServiceTask? CheckIfServiceTask(string? altinnTaskType)
     {
+        if (altinnTaskType is null)
+            return null;
+
         IEnumerable<IServiceTask> serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
-        return serviceTasks.Any(t => t.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase));
+        IServiceTask? serviceTask = serviceTasks.FirstOrDefault(x =>
+            x.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase)
+        );
+
+        return serviceTask;
     }
 
     /// <inheritdoc/>
     public async Task<ServiceTaskResult> HandleServiceTask(
-        string altinnTaskType,
+        IServiceTask serviceTask,
         ProcessNextRequest request,
         CancellationToken ct = default
     )
     {
         Instance instance = request.Instance;
 
-        using Activity? activity = _telemetry?.StartProcessExecuteServiceTaskActivity(instance, altinnTaskType);
+        using Activity? activity = _telemetry?.StartProcessExecuteServiceTaskActivity(instance, serviceTask.Type);
 
-        IEnumerable<IServiceTask> serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
-        IServiceTask? serviceTask = serviceTasks.FirstOrDefault(t =>
-            t.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase)
-        );
-
-        if (serviceTask is null)
-        {
-            return new ServiceTaskResult
-            {
-                Result = ServiceTaskResult.ResultType.Failure,
-                ErrorMessage = "No service task implementation found for altinnTaskType: " + altinnTaskType,
-                ErrorType = ProcessErrorType.Internal,
-            };
-        }
-
-        if (request.Action is not "write" && request.Action != altinnTaskType) // altinnTaskType is accepted to support custom service task types
+        if (request.Action is not "write" && request.Action != serviceTask.Type) // serviceTask.Type is accepted to support custom service task types
         {
             var result = new ServiceTaskResult
             {
                 Result = ServiceTaskResult.ResultType.Failure,
                 ErrorMessage =
-                    $"Server tasks ({altinnTaskType}) do not support running user actions! Received action param {request.Action}.",
+                    $"Service tasks do not support running user actions! Received action param {request.Action}.",
                 ErrorType = ProcessErrorType.Conflict,
             };
 
@@ -235,7 +227,7 @@ public class ProcessEngine : IProcessEngine
             return new ServiceTaskResult()
             {
                 Result = ServiceTaskResult.ResultType.Failure,
-                ErrorMessage = $"Server action {altinnTaskType} failed!",
+                ErrorMessage = $"Server action {serviceTask.Type} failed!",
                 ErrorType = ProcessErrorType.Internal,
             };
         }

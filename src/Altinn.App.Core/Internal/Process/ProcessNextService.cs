@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models.Process;
@@ -18,21 +18,21 @@ internal interface IProcessNextService
     /// <summary>
     /// Run process next
     /// </summary>
-    Task<(ProcessChangeResult, Instance)> DoProcessNext(ProcessNextParams parameters,
-        CancellationToken ct = default);
+    Task<(ProcessChangeResult, Instance)> DoProcessNext(ProcessNextParams parameters, CancellationToken ct = default);
 }
 
 /// <summary>
 /// Service for running all logic related to the process next.
 /// </summary>
 internal class ProcessNextService(
-    InstanceClient instanceClient,
+    IInstanceClient instanceClient,
     IProcessEngine processEngine,
     IProcessReader processReader,
     IProcessEngineAuthorizer processEngineAuthorizer,
     IValidationService validationService,
     IServiceProvider serviceProvider,
-    ILogger<ProcessNextService> logger) : IProcessNextService
+    ILogger<ProcessNextService> logger
+) : IProcessNextService
 {
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer =
         serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
@@ -40,57 +40,75 @@ internal class ProcessNextService(
     /// <summary>
     /// Run process next
     /// </summary>
-    public async Task<(ProcessChangeResult, Instance)> DoProcessNext(ProcessNextParams parameters,
-        CancellationToken ct = default)
+    public async Task<(ProcessChangeResult, Instance)> DoProcessNext(
+        ProcessNextParams parameters,
+        CancellationToken ct = default
+    )
     {
-        Instance instance = await instanceClient.GetInstance(parameters.App, parameters.Org,
-            parameters.InstanceOwnerPartyId, parameters.InstanceGuid);
+        Instance instance = await instanceClient.GetInstance(
+            parameters.App,
+            parameters.Org,
+            parameters.InstanceOwnerPartyId,
+            parameters.InstanceGuid
+        );
 
         string? currentTaskId = instance.Process.CurrentTask?.ElementId;
 
         if (currentTaskId is null)
         {
-            return (new ProcessChangeResult
-            {
-                Success = false,
-                ErrorType = ProcessErrorType.Conflict,
-                ErrorMessage = "Process is not started. Use start!",
-            }, instance);
+            return (
+                new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorType = ProcessErrorType.Conflict,
+                    ErrorMessage = "Process is not started. Use start!",
+                },
+                instance
+            );
         }
 
         if (instance.Process.Ended.HasValue)
         {
-            return (new ProcessChangeResult
-            {
-                Success = false,
-                ErrorType = ProcessErrorType.Conflict,
-                ErrorMessage = "Process is ended.",
-            }, instance);
+            return (
+                new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorType = ProcessErrorType.Conflict,
+                    ErrorMessage = "Process is ended.",
+                },
+                instance
+            );
         }
 
         string? altinnTaskType = instance.Process.CurrentTask?.AltinnTaskType;
 
         if (altinnTaskType == null)
         {
-            return (new ProcessChangeResult
-            {
-                Success = false,
-                ErrorType = ProcessErrorType.Conflict,
-                ErrorMessage = "Instance does not have current altinn task type information!",
-            }, instance);
+            return (
+                new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorType = ProcessErrorType.Conflict,
+                    ErrorMessage = "Instance does not have current altinn task type information!",
+                },
+                instance
+            );
         }
 
         bool authorized = await processEngineAuthorizer.AuthorizeProcessNext(instance, parameters.Action);
 
         if (!authorized)
         {
-            return (new ProcessChangeResult
-            {
-                Success = false,
-                ErrorType = ProcessErrorType.Unauthorized,
-                ErrorMessage =
-                    $"User is not authorized to perform process next. Task ID: {currentTaskId}. Task type: {altinnTaskType}. Action: {parameters.Action ?? "none"}.",
-            }, instance);
+            return (
+                new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorType = ProcessErrorType.Unauthorized,
+                    ErrorMessage =
+                        $"User is not authorized to perform process next. Task ID: {currentTaskId}. Task type: {altinnTaskType}. Action: {parameters.Action ?? "none"}.",
+                },
+                instance
+            );
         }
 
         logger.LogDebug(
@@ -114,22 +132,22 @@ internal class ProcessNextService(
         // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
         if (parameters.Action is not "reject")
         {
-            if (processEngine.IsServiceTask(altinnTaskType))
+            IServiceTask? serviceTask = processEngine.CheckIfServiceTask(altinnTaskType);
+            if (serviceTask is not null)
             {
-                ServiceTaskResult serviceActionResult = await processEngine.HandleServiceTask(
-                    altinnTaskType,
-                    request,
-                    ct
-                );
+                ServiceTaskResult serviceActionResult = await processEngine.HandleServiceTask(serviceTask, request, ct);
 
                 if (serviceActionResult.Result is ServiceTaskResult.ResultType.Failure)
                 {
-                    return (new ProcessChangeResult()
-                    {
-                        Success = false,
-                        ErrorMessage = serviceActionResult.ErrorMessage,
-                        ErrorType = serviceActionResult.ErrorType,
-                    }, instance);
+                    return (
+                        new ProcessChangeResult()
+                        {
+                            Success = false,
+                            ErrorMessage = serviceActionResult.ErrorMessage,
+                            ErrorType = serviceActionResult.ErrorType,
+                        },
+                        instance
+                    );
                 }
             }
             else
@@ -140,12 +158,15 @@ internal class ProcessNextService(
 
                     if (userActionResult.ResultType is ResultType.Failure)
                     {
-                        return (new ProcessChangeResult()
-                        {
-                            Success = false,
-                            ErrorMessage = $"Action handler for action {request.Action} failed!",
-                            ErrorType = userActionResult.ErrorType,
-                        }, instance);
+                        return (
+                            new ProcessChangeResult()
+                            {
+                                Success = false,
+                                ErrorMessage = $"Action handler for action {request.Action} failed!",
+                                ErrorType = userActionResult.ErrorType,
+                            },
+                            instance
+                        );
                     }
                 }
             }
@@ -160,8 +181,11 @@ internal class ProcessNextService(
         }
         else
         {
-            InstanceDataUnitOfWork dataAccessor =
-                await _instanceDataUnitOfWorkInitializer.Init(instance, currentTaskId, parameters.Language);
+            InstanceDataUnitOfWork dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(
+                instance,
+                currentTaskId,
+                parameters.Language
+            );
 
             List<ValidationIssueWithSource> validationIssues = await validationService.ValidateInstanceAtTask(
                 dataAccessor,
@@ -175,14 +199,17 @@ internal class ProcessNextService(
 
             if (errorCount > 0)
             {
-                return (new ProcessChangeResult
-                {
-                    Success = false,
-                    ErrorType = ProcessErrorType.Conflict,
-                    ErrorTitle = "Validation errors found",
-                    ErrorMessage = $"{errorCount} validation errors found for task {currentTaskId}",
-                    ValidationIssues = validationIssues
-                }, instance);
+                return (
+                    new ProcessChangeResult
+                    {
+                        Success = false,
+                        ErrorType = ProcessErrorType.Conflict,
+                        ErrorTitle = "Validation errors found",
+                        ErrorMessage = $"{errorCount} validation errors found for task {currentTaskId}",
+                        ValidationIssues = validationIssues,
+                    },
+                    instance
+                );
             }
         }
 
@@ -220,4 +247,5 @@ internal sealed record ProcessNextParams(
     ClaimsPrincipal User,
     string? Language,
     string? Action,
-    string? ActionOnBehalfOf);
+    string? ActionOnBehalfOf
+);

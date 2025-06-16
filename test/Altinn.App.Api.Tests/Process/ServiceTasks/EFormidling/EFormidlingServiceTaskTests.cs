@@ -91,22 +91,14 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next to move from PdfServiceTask to EFormidlingServiceTask
-        using HttpResponseMessage firstNextResponse = await client.PutAsync(
+        using HttpResponseMessage processNextResponse = await client.PutAsync(
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
-        firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
-
-        // Run process next again to execute the EFormidlingServiceTask
-        using HttpResponseMessage secondNextResponse = await client.PutAsync(
-            $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
-            null
-        );
-
-        secondNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+        processNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
         // Check that the process has been moved to end task
-        string nextResponseContent = await secondNextResponse.Content.ReadAsStringAsync();
+        string nextResponseContent = await processNextResponse.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(nextResponseContent);
         var processState = JsonConvert.DeserializeObject<ProcessState>(nextResponseContent);
         processState.Ended.Should().NotBeNull();
@@ -131,6 +123,11 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
         };
 
+        // Setup eFormidling service to throw exception
+        _eFormidlingServiceMock
+            .Setup(x => x.SendEFormidlingShipment(It.IsAny<Instance>()))
+            .ThrowsAsync(new Exception());
+
         using HttpClient client = GetRootedUserClient(Org, App);
 
         // Run process next to move from PdfServiceTask to EFormidlingServiceTask
@@ -138,20 +135,8 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
-        firstNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        // Setup eFormidling service to throw exception
-        _eFormidlingServiceMock
-            .Setup(x => x.SendEFormidlingShipment(It.IsAny<Instance>()))
-            .ThrowsAsync(new Exception());
-
-        // Run process next again to execute the EFormidlingServiceTask
-        using HttpResponseMessage secondNextResponse = await client.PutAsync(
-            $"{Org}/{App}/instances/{_instanceId}/process/next?lang={Language}",
-            null
-        );
-
-        secondNextResponse.Should().HaveStatusCode(HttpStatusCode.InternalServerError);
+        firstNextResponse.Should().HaveStatusCode(HttpStatusCode.InternalServerError);
 
         // Check that the process is still in Task_3
         Instance instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);

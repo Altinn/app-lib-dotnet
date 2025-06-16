@@ -133,7 +133,7 @@
           problem.status: 409
         },
         {
-          problem.title: Validation failed for task
+          problem.title: Validation errors found
         },
         {
           server.address: localhost
