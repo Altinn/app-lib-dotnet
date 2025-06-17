@@ -71,7 +71,9 @@ public class DataModel
                     $"{key.DataType} has maxCount different from 1 in applicationmetadata.json or don't have a classRef in appLogic"
                 );
             }
-            return (dataElementId, await _dataAccessor.GetFormDataWrapper(dataElementId));
+            throw new InvalidOperationException(
+                $"{key.DataType} has no classRef in applicationmetadata.json and can't be used as a data model in layouts"
+            );
         }
 
         throw new InvalidOperationException(
