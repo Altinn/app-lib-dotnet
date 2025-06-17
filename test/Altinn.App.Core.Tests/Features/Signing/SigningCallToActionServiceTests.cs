@@ -3,6 +3,7 @@ using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing;
+using Altinn.App.Core.Features.Signing.Helpers;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Internal.App;
@@ -531,6 +532,7 @@ public class SigningCallToActionServiceTests(ITestOutputHelper output)
             },
         };
         AppIdentifier appIdentifier = new("org", "app");
+        InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
         TranslationService translationService = new(
             appIdentifier,
             mock.Object,
@@ -548,12 +550,12 @@ public class SigningCallToActionServiceTests(ITestOutputHelper output)
 
         // Act
         ContentWrapper res = await service.GetContent(
-            communicationConfig,
-            appIdentifier,
+            instanceIdentifier,
             applicationMetadata,
             sendersParty,
             instanceUrl,
-            language
+            language,
+            communicationConfig
         );
         string defaultEmailSubjectContains = "Task for signing";
         string defaultEmailBodyContains = "Your signature is requested for";
@@ -581,6 +583,7 @@ public class SigningCallToActionServiceTests(ITestOutputHelper output)
             },
         };
         AppIdentifier appIdentifier = new("org", "app");
+        InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
         TranslationService translationService = new(
             appIdentifier,
             mock.Object,
@@ -598,12 +601,12 @@ public class SigningCallToActionServiceTests(ITestOutputHelper output)
 
         // Act
         ContentWrapper res = await service.GetContent(
-            communicationConfig,
-            appIdentifier,
+            instanceIdentifier,
             applicationMetadata,
             sendersParty,
             instanceUrl,
-            language
+            language,
+            communicationConfig
         );
 
         // Assert
@@ -621,7 +624,7 @@ public class SigningCallToActionServiceTests(ITestOutputHelper output)
     public void GetLinkDisplayText(string language, string expected)
     {
         // Arrange & Act
-        string result = SigningCallToActionService.GetLinkDisplayText(language);
+        string result = SigningTextHelper.GetLinkDisplayText(language);
 
         // Assert
         Assert.Equal(expected, result);
@@ -640,107 +643,12 @@ public class SigningCallToActionServiceTests(ITestOutputHelper output)
         string appOwner = "appOwner";
 
         // Act
-        DefaultTexts result = SigningCallToActionService.GetDefaultTexts(instanceUrl, language, appName, appOwner);
+        DefaultTexts result = SigningTextHelper.GetDefaultTexts(instanceUrl, language, appName, appOwner);
 
         // Assert
         Assert.NotNull(result.SmsBody);
         Assert.NotNull(result.EmailBody);
         Assert.NotNull(result.EmailSubject);
         Assert.Contains(expectedBodyContains, result.Body);
-    }
-
-    [Fact]
-    public void GetNotificationChoice_EmailAndSms_ReturnsSmsAndEmail()
-    {
-        // Arrange
-        var notification = new Notification
-        {
-            Email = new Email { EmailAddress = "test@tester.no" },
-            Sms = new Sms { MobileNumber = "12345678" },
-        };
-
-        // Act
-        var result = SigningCallToActionService.GetNotificationChoice(notification);
-
-        // Assert
-        Assert.Equal(SigningCallToActionService.NotificationChoice.SmsAndEmail, result);
-    }
-
-    [Fact]
-    public void GetNotificationChoice_EmailOnly_ReturnsEmail()
-    {
-        // Arrange
-        var notification = new Notification { Email = new Email { EmailAddress = "test@tester.no" } };
-
-        // Act
-        var result = SigningCallToActionService.GetNotificationChoice(notification);
-
-        // Assert
-        Assert.Equal(SigningCallToActionService.NotificationChoice.Email, result);
-    }
-
-    [Fact]
-    public void GetNotificationChoice_SmsOnly_ReturnsSms()
-    {
-        // Arrange
-        var notification = new Notification { Sms = new Sms { MobileNumber = "12345678" } };
-
-        // Act
-        var result = SigningCallToActionService.GetNotificationChoice(notification);
-
-        // Assert
-        Assert.Equal(SigningCallToActionService.NotificationChoice.Sms, result);
-    }
-
-    [Fact]
-    public void GetNotificationChoice_NoNotification_ReturnsNone()
-    {
-        // Arrange
-        var notification = new Notification();
-
-        // Act
-        var result = SigningCallToActionService.GetNotificationChoice(notification);
-
-        // Assert
-        Assert.Equal(SigningCallToActionService.NotificationChoice.None, result);
-    }
-
-    [Fact]
-    public void GetNotificationChoice_NullNotification_ReturnsNone()
-    {
-        // Arrange
-        Notification? notification = null;
-
-        // Act
-        var result = SigningCallToActionService.GetNotificationChoice(notification);
-
-        // Assert
-        Assert.Equal(SigningCallToActionService.NotificationChoice.None, result);
-    }
-
-    [Fact]
-    public void GetNotificationChoice_SmsButNoMobileNumber_ReturnsNone()
-    {
-        // Arrange
-        var notification = new Notification { Sms = new Sms { BodyTextResourceKey = "sms_body" } };
-
-        // Act
-        var result = SigningCallToActionService.GetNotificationChoice(notification);
-
-        // Assert
-        Assert.Equal(SigningCallToActionService.NotificationChoice.None, result);
-    }
-
-    [Fact]
-    public void GetNotificationChoice_EmailButNoEmailAddress_ReturnsNone()
-    {
-        // Arrange
-        var notification = new Notification { Email = new Email { BodyTextResourceKey = "email_body" } };
-
-        // Act
-        var result = SigningCallToActionService.GetNotificationChoice(notification);
-
-        // Assert
-        Assert.Equal(SigningCallToActionService.NotificationChoice.None, result);
     }
 }
