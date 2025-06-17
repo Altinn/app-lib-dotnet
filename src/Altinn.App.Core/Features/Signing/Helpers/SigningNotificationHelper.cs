@@ -21,131 +21,119 @@ internal sealed class SigningNotificationHelper
         };
     }
 
-    internal static CorrespondenceNotification? CreateNotification(ContentWrapper contextWrapper)
+    internal static CorrespondenceNotification? CreateNotification(ContentWrapper cw)
     {
-        NotificationChoice? notificationChoice = contextWrapper.NotificationChoice;
-        var emailSubject = contextWrapper.EmailSubject;
-        var emailBody = contextWrapper.EmailBody;
-        var smsBody = contextWrapper.SmsBody;
-        var sendersReference = contextWrapper.SendersReference;
+        string? emailAddress = cw.Notification?.Email?.EmailAddress;
+        string? mobileNumber = cw.Notification?.Sms?.MobileNumber;
 
-        var emailAddress = contextWrapper.Notification?.Email?.EmailAddress;
-        var mobileNumber = contextWrapper.Notification?.Sms?.MobileNumber;
-
-        var recipient = contextWrapper.Recipient;
-        var reminderNotification = contextWrapper.ReminderNotification;
-        var reminderEmailBody = contextWrapper.ReminderEmailBody;
-        var reminderEmailSubject = contextWrapper.ReminderEmailSubject;
-        var reminderSmsBody = contextWrapper.ReminderSmsBody;
-
-        return notificationChoice switch
+        return cw.NotificationChoice switch
         {
             NotificationChoice.Email => CorrespondenceNotificationBuilder
                 .Create()
                 .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
                 .WithNotificationChannel(CorrespondenceNotificationChannel.Email)
-                .WithEmailSubject(emailSubject)
-                .WithEmailBody(emailBody)
-                .WithSendersReference(sendersReference)
+                .WithEmailSubject(cw.EmailSubject)
+                .WithEmailBody(cw.EmailBody)
+                .WithSendersReference(cw.SendersReference)
                 .WithRecipientOverride(
                     CorrespondenceNotificationOverrideBuilder
                         .Create()
                         .WithEmailAddress(emailAddress)
                         .WithMobileNumber(mobileNumber)
-                        .WithOrganisationOrPersonIdentifier(recipient)
+                        .WithOrganisationOrPersonIdentifier(cw.Recipient)
                         .Build()
                 )
-                .WithSendReminder(reminderNotification is not null)
-                .WithReminderEmailBody(reminderEmailBody)
-                .WithReminderEmailSubject(reminderEmailSubject)
-                .WithReminderSmsBody(reminderSmsBody)
+                .WithSendReminder(cw.ReminderNotification is not null)
+                .WithReminderEmailBody(cw.ReminderEmailBody)
+                .WithReminderEmailSubject(cw.ReminderEmailSubject)
+                .WithReminderSmsBody(cw.ReminderSmsBody)
                 .Build(),
             NotificationChoice.Sms => CorrespondenceNotificationBuilder
                 .Create()
                 .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
                 .WithNotificationChannel(CorrespondenceNotificationChannel.Sms)
-                .WithSmsBody(smsBody)
-                .WithSendersReference(sendersReference)
+                .WithSmsBody(cw.SmsBody)
+                .WithSendersReference(cw.SendersReference)
                 .WithRecipientOverride(
                     CorrespondenceNotificationOverrideBuilder
                         .Create()
                         .WithMobileNumber(mobileNumber)
-                        .WithOrganisationOrPersonIdentifier(recipient)
+                        .WithOrganisationOrPersonIdentifier(cw.Recipient)
                         .Build()
                 )
-                .WithSendReminder(reminderNotification is not null)
-                .WithReminderEmailBody(reminderEmailBody)
-                .WithReminderEmailSubject(reminderEmailSubject)
-                .WithReminderSmsBody(reminderSmsBody)
+                .WithSendReminder(cw.ReminderNotification is not null)
+                .WithReminderEmailBody(cw.ReminderEmailBody)
+                .WithReminderEmailSubject(cw.ReminderEmailSubject)
+                .WithReminderSmsBody(cw.ReminderSmsBody)
                 .Build(),
             NotificationChoice.SmsAndEmail => CorrespondenceNotificationBuilder
                 .Create()
                 .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
                 .WithNotificationChannel(CorrespondenceNotificationChannel.EmailPreferred)
-                .WithSmsBody(smsBody)
-                .WithEmailSubject(emailSubject)
-                .WithEmailBody(emailBody)
-                .WithSendersReference(sendersReference)
+                .WithSmsBody(cw.SmsBody)
+                .WithEmailSubject(cw.EmailSubject)
+                .WithEmailBody(cw.EmailBody)
+                .WithSendersReference(cw.SendersReference)
                 .WithRecipientOverride(
                     CorrespondenceNotificationOverrideBuilder
                         .Create()
                         .WithEmailAddress(emailAddress)
                         .WithMobileNumber(mobileNumber)
-                        .WithOrganisationOrPersonIdentifier(recipient)
+                        .WithOrganisationOrPersonIdentifier(cw.Recipient)
                         .Build()
                 )
-                .WithSendReminder(reminderNotification is not null)
-                .WithReminderEmailBody(reminderEmailBody)
-                .WithReminderEmailSubject(reminderEmailSubject)
-                .WithReminderSmsBody(reminderSmsBody)
+                .WithSendReminder(cw.ReminderNotification is not null)
+                .WithReminderEmailBody(cw.ReminderEmailBody)
+                .WithReminderEmailSubject(cw.ReminderEmailSubject)
+                .WithReminderSmsBody(cw.ReminderSmsBody)
                 .Build(),
             NotificationChoice.SmsPreferred => CorrespondenceNotificationBuilder
                 .Create()
                 .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
                 .WithNotificationChannel(CorrespondenceNotificationChannel.SmsPreferred)
-                .WithSmsBody(smsBody)
-                .WithEmailSubject(emailSubject)
-                .WithEmailBody(emailBody)
-                .WithSendersReference(sendersReference)
+                .WithSmsBody(cw.SmsBody)
+                .WithEmailSubject(cw.EmailSubject)
+                .WithEmailBody(cw.EmailBody)
+                .WithSendersReference(cw.SendersReference)
                 .WithRecipientOverride(
                     CorrespondenceNotificationOverrideBuilder
                         .Create()
                         .WithMobileNumber(mobileNumber)
-                        .WithOrganisationOrPersonIdentifier(recipient)
+                        .WithOrganisationOrPersonIdentifier(cw.Recipient)
                         .Build()
                 )
-                .WithSendReminder(reminderNotification is not null)
-                .WithReminderEmailBody(reminderEmailBody)
-                .WithReminderEmailSubject(reminderEmailSubject)
-                .WithReminderSmsBody(reminderSmsBody)
+                .WithSendReminder(cw.ReminderNotification is not null)
+                .WithReminderEmailBody(cw.ReminderEmailBody)
+                .WithReminderEmailSubject(cw.ReminderEmailSubject)
+                .WithReminderSmsBody(cw.ReminderSmsBody)
                 .Build(),
             NotificationChoice.EmailPreferred => CorrespondenceNotificationBuilder
                 .Create()
                 .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
                 .WithNotificationChannel(CorrespondenceNotificationChannel.EmailPreferred)
-                .WithSmsBody(smsBody)
-                .WithEmailSubject(emailSubject)
-                .WithEmailBody(emailBody)
-                .WithSendersReference(sendersReference)
+                .WithSmsBody(cw.SmsBody)
+                .WithEmailSubject(cw.EmailSubject)
+                .WithEmailBody(cw.EmailBody)
+                .WithSendersReference(cw.SendersReference)
                 .WithRecipientOverride(
                     CorrespondenceNotificationOverrideBuilder
                         .Create()
                         .WithEmailAddress(emailAddress)
-                        .WithOrganisationOrPersonIdentifier(recipient)
+                        .WithOrganisationOrPersonIdentifier(cw.Recipient)
                         .Build()
                 )
-                .WithSendReminder(reminderNotification is not null)
-                .WithReminderEmailBody(reminderEmailBody)
-                .WithReminderEmailSubject(reminderEmailSubject)
-                .WithReminderSmsBody(reminderSmsBody)
+                .WithSendReminder(cw.ReminderNotification is not null)
+                .WithReminderEmailBody(cw.ReminderEmailBody)
+                .WithReminderEmailSubject(cw.ReminderEmailSubject)
+                .WithReminderSmsBody(cw.ReminderSmsBody)
                 .Build(),
             NotificationChoice.None => CorrespondenceNotificationBuilder
                 .Create()
                 .WithNotificationTemplate(CorrespondenceNotificationTemplate.GenericAltinnMessage)
                 .WithNotificationChannel(CorrespondenceNotificationChannel.Email)
-                .WithEmailSubject(emailSubject)
-                .WithEmailBody(emailBody)
-                .WithSendersReference(sendersReference)
+                .WithEmailSubject(cw.EmailSubject)
+                .WithEmailBody(cw.EmailBody)
+                .WithSendersReference(cw.SendersReference)
                 .Build(),
             _ => null,
         };
