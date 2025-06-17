@@ -39,7 +39,6 @@ public class ProcessController : ControllerBase
     private readonly IProcessEngine _processEngine;
     private readonly IProcessReader _processReader;
     private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
-    private readonly IProcessNextService _processNextService;
     private readonly IValidationService _validationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
@@ -67,7 +66,6 @@ public class ProcessController : ControllerBase
         _processEngineAuthorizer = processEngineAuthorizer;
         _validationService = validationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
-        _processNextService = serviceProvider.GetRequiredService<IProcessNextService>();
     }
 
     /// <summary>
@@ -269,24 +267,26 @@ public class ProcessController : ControllerBase
     {
         try
         {
-            var processNextParams = new ProcessNextParams(
-                Org: org,
-                App: app,
-                InstanceOwnerPartyId: instanceOwnerPartyId,
-                InstanceGuid: instanceGuid,
-                User: User,
-                Action: processNext?.Action,
-                ActionOnBehalfOf: processNext?.ActionOnBehalfOf,
-                Language: language
-            );
-
-            ProcessChangeResult result;
             Instance instance;
+            ProcessChangeResult result;
+
             bool moveToNextTaskAutomatically;
+            bool firstIteration = true;
 
             do
             {
-                (result, instance) = await _processNextService.DoProcessNext(processNextParams, ct);
+                instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+
+                var processNextRequest = new ProcessNextRequest
+                {
+                    User = User,
+                    Instance = instance,
+                    Action = firstIteration ? processNext?.Action : null,
+                    ActionOnBehalfOf = firstIteration ? processNext?.ActionOnBehalfOf : null,
+                    Language = language,
+                };
+
+                result = await _processEngine.Next(processNextRequest, ct);
                 moveToNextTaskAutomatically = await ShouldMoveToNextTaskAutomatically(instance, ct);
 
                 if (!result.Success)
@@ -294,7 +294,7 @@ public class ProcessController : ControllerBase
                     return GetResultForError(result);
                 }
 
-                processNextParams = processNextParams with { Action = null, ActionOnBehalfOf = null };
+                firstIteration = false;
             } while (moveToNextTaskAutomatically);
 
             AppProcessState appProcessState = await ConvertAndAuthorizeActions(
@@ -401,14 +401,14 @@ public class ProcessController : ControllerBase
 
             try
             {
-                ProcessNextRequest request = new ProcessNextRequest()
+                ProcessNextRequest request = new()
                 {
                     Instance = instance,
                     User = User,
                     Action = ConvertTaskTypeToAction(instance.Process.CurrentTask.AltinnTaskType),
                     Language = language,
                 };
-                var result = await _processEngine.Next(request);
+                ProcessChangeResult result = await _processEngine.Next(request);
 
                 if (!result.Success)
                 {

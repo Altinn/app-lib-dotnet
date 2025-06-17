@@ -95,11 +95,12 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
             $"{Org}/{App}/instances/{_instanceId}/process/next?language={Language}",
             null
         );
+
+        string nextResponseContent = await processNextResponse.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(nextResponseContent);
         processNextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
 
         // Check that the process has been moved to end task
-        string nextResponseContent = await processNextResponse.Content.ReadAsStringAsync();
-        OutputHelper.WriteLine(nextResponseContent);
         var processState = JsonConvert.DeserializeObject<ProcessState>(nextResponseContent);
         processState.Ended.Should().NotBeNull();
     }
