@@ -5,7 +5,7 @@ using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
-using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Process.ProcessTasks.Common;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Enums;
@@ -13,6 +13,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Moq;
+using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.Internal.Process.ProcessTasks.Common;
 
@@ -27,7 +28,7 @@ public class ProcessTaskFinalizerTests
     private readonly IOptions<AppSettings> _appSettings = Options.Create(new AppSettings());
     private readonly ServiceCollection _services = new();
 
-    public ProcessTaskFinalizerTests()
+    public ProcessTaskFinalizerTests(ITestOutputHelper output)
     {
         _services.AddSingleton(_appSettings);
         _services.AddSingleton(_appMetadataMock.Object);
@@ -36,7 +37,10 @@ public class ProcessTaskFinalizerTests
         _services.AddSingleton(_appModelMock.Object);
         _services.AddSingleton(_appResourcesMock.Object);
         _services.AddSingleton(Options.Create(new FrontEndSettings()));
+        _services.AddFakeLoggingWithXunit(output);
         _services.AddTransient<IProcessTaskFinalizer, ProcessTaskFinalizer>();
+        _services.AddSingleton(new AppIdentifier("ttd", "test"));
+        _services.AddTransient<ITranslationService, TranslationService>();
         _services.AddTransient<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
         _services.AddTransient<InstanceDataUnitOfWorkInitializer>();
         _services.AddTransient<ModelSerializationService>();
