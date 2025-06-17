@@ -6,10 +6,30 @@ namespace Altinn.App.Core.Models.Process;
 /// <summary>
 /// Class that defines the request for moving the process to the next task
 /// </summary>
-public class ProcessNextRequest
+public sealed record ProcessNextRequest
 {
+    // /// <summary>
+    // /// Unique identifier of the organisation responsible for the app
+    // /// </summary>
+    // public required string Org { get; set; }
+    //
+    // /// <summary>
+    // /// Application identifier which is unique within an organisation
+    // /// </summary>
+    // public required string App { get; set; }
+    //
+    // /// <summary>
+    // /// Unique id of the party that is the owner of the instance
+    // /// </summary>
+    // public required int InstanceOwnerPartyId { get; set; }
+    //
+    // /// <summary>
+    // /// Unique id to identify the instance
+    // /// </summary>
+    // public required Guid InstanceGuid { get; set; }
+
     /// <summary>
-    /// The instance to be moved to the next task
+    /// The instance that is being processed
     /// </summary>
     public required Instance Instance { get; init; }
 
