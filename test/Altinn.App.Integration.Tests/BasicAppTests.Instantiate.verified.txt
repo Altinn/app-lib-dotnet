@@ -18,7 +18,7 @@
       no-store, no-cache
     ],
     Location: [
-      https://app:5005/ttd/basic/instances/501337/9ad2097b-8dc2-4016-9aa4-8c6df490c63b
+      https://app:5005/ttd/basic/instances/<partyId>/<instanceGuid>
     ],
     Transfer-Encoding: [
       chunked

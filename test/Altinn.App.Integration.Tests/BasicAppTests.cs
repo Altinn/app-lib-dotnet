@@ -60,6 +60,14 @@ public class BasicAppTests(ITestOutputHelper output, BasicAppFixture fixture)
             new InstansiationInstance { InstanceOwner = new InstanceOwner { PartyId = "501337" } }
         );
 
-        await response.Verify();
+        var instance = await response.Read<Instance>();
+        Assert.NotNull(instance);
+
+        await response.Verify(v =>
+        {
+            v = v.Replace(instance.InstanceOwner.PartyId, "<partyId>");
+            v = v.Replace(instance.Id.Split('/')[1], "<instanceGuid>");
+            return v;
+        });
     }
 }
