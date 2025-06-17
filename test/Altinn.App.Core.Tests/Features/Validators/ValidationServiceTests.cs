@@ -80,6 +80,7 @@ public class ValidationServiceTests : IAsyncLifetime
         }
 
         mock.SetupGet(v => v.NoIncrementalValidation).Returns(noIncrementalValidation);
+        mock.SetupGet(v => v.ShouldRunAfterRemovingHiddenData).Returns(false);
 
         _services.AddSingleton(mock.Object);
         return mock;
@@ -308,6 +309,8 @@ public class ValidationServiceTests : IAsyncLifetime
         {
             Name = "FormDataValidatorNoAppLogic",
         };
+        formDataValidatorNoAppLogicMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
+        formDataValidatorNoAppLogicMock.SetupGet(v => v.ShouldRunAfterRemovingHiddenData).Returns(false);
         formDataValidatorNoAppLogicMock
             .SetupGet(v => v.DataType)
             .Returns("dataTypeNoAppLogic")
@@ -323,6 +326,8 @@ public class ValidationServiceTests : IAsyncLifetime
         {
             Name = "FormDataValidatorWrongTask",
         };
+        formDataValidatorWrongTaskMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
+        formDataValidatorWrongTaskMock.SetupGet(v => v.ShouldRunAfterRemovingHiddenData).Returns(false);
         formDataValidatorWrongTaskMock
             .SetupGet(v => v.DataType)
             .Returns("dataTypeWrongTask")
@@ -342,6 +347,8 @@ public class ValidationServiceTests : IAsyncLifetime
         );
 
         var formDataValidatorMock = new Mock<IFormDataValidator>(MockBehavior.Strict) { Name = "FormDataValidator" };
+        formDataValidatorMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
+        formDataValidatorMock.SetupGet(v => v.ShouldRunAfterRemovingHiddenData).Returns(false);
         formDataValidatorMock.SetupGet(v => v.DataType).Returns("dataType").Verifiable(Times.AtLeastOnce);
         formDataValidatorMock
             .SetupGet(v => v.ValidationSource)
