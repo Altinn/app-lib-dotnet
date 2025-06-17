@@ -18,7 +18,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProtoBuf.Meta;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests;
