@@ -70,7 +70,7 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     /// <inheritdoc/>
     public CorrespondenceNotificationRecipient Build()
     {
-        BuilderUtils.RequireExcactlyOneOf(_organizationNumber, _nationalIdentityNumber);
+        BuilderUtils.RequireExactlyOneOf(_organizationNumber, _nationalIdentityNumber);
         BuilderUtils.RequireAtLeastOneOf(_emailAddress, _mobileNumber);
         return new CorrespondenceNotificationRecipient
         {
