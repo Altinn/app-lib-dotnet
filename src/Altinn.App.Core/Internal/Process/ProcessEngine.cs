@@ -8,11 +8,16 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
+using Altinn.App.Core.Internal.Validation;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -30,9 +35,12 @@ public class ProcessEngine : IProcessEngine
     private readonly IAuthenticationContext _authenticationContext;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
+    private readonly ILogger<ProcessEngine> _logger;
+    private readonly IValidationService _validationService;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ProcessEngine"/> class
+    /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
     /// </summary>
     public ProcessEngine(
         IProcessReader processReader,
@@ -42,6 +50,9 @@ public class ProcessEngine : IProcessEngine
         UserActionService userActionService,
         IAuthenticationContext authenticationContext,
         IServiceProvider serviceProvider,
+        IProcessEngineAuthorizer processEngineAuthorizer,
+        IValidationService validationService,
+        ILogger<ProcessEngine> logger,
         Telemetry? telemetry = null
     )
     {
@@ -52,6 +63,9 @@ public class ProcessEngine : IProcessEngine
         _userActionService = userActionService;
         _telemetry = telemetry;
         _authenticationContext = authenticationContext;
+        _processEngineAuthorizer = processEngineAuthorizer;
+        _validationService = validationService;
+        _logger = logger;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
@@ -127,17 +141,225 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<UserActionResult> HandleUserAction(ProcessNextRequest request, CancellationToken ct)
+    public async Task<ProcessChangeResult> Next(ProcessNextRequest request, CancellationToken ct = default)
     {
         Instance instance = request.Instance;
 
-        var currentAuth = _authenticationContext.Current;
+        using Activity? activity = _telemetry?.StartProcessNextActivity(instance, request.Action);
+
+        if (instance.Process is null)
+        {
+            var result = new ProcessChangeResult
+            {
+                Success = false,
+                ErrorType = ProcessErrorType.Conflict,
+                ErrorMessage = "The instance is missing process information.",
+            };
+            activity?.SetProcessChangeResult(result);
+            return result;
+        }
+
+        if (instance.Process?.Ended != null)
+        {
+            var result = new ProcessChangeResult
+            {
+                Success = false,
+                ErrorType = ProcessErrorType.Conflict,
+                ErrorMessage = "Process is ended.",
+            };
+            activity?.SetProcessChangeResult(result);
+            return result;
+        }
+
+        string? currentTaskId = instance.Process?.CurrentTask?.ElementId;
+        if (currentTaskId is null)
+        {
+            var result = new ProcessChangeResult
+            {
+                Success = false,
+                ErrorType = ProcessErrorType.Conflict,
+                ErrorMessage = "Process is not started. Use start!",
+            };
+            activity?.SetProcessChangeResult(result);
+            return result;
+        }
+
+        string? altinnTaskType = instance.Process?.CurrentTask?.AltinnTaskType;
+        if (altinnTaskType == null)
+        {
+            var result = new ProcessChangeResult
+            {
+                Success = false,
+                ErrorType = ProcessErrorType.Conflict,
+                ErrorMessage = "Instance does not have current altinn task type information!",
+            };
+            activity?.SetProcessChangeResult(result);
+            return result;
+        }
+
+        bool authorized = await _processEngineAuthorizer.AuthorizeProcessNext(instance, request.Action);
+
+        if (!authorized)
+        {
+            var result = new ProcessChangeResult
+            {
+                Success = false,
+                ErrorType = ProcessErrorType.Unauthorized,
+                ErrorMessage =
+                    $"User is not authorized to perform process next. Task ID: {currentTaskId}. Task type: {altinnTaskType}. Action: {request.Action ?? "none"}.",
+            };
+            activity?.SetProcessChangeResult(result);
+            return result;
+        }
+
+        _logger.LogDebug(
+            "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",
+            currentTaskId,
+            altinnTaskType,
+            LogSanitizer.Sanitize(request.Action ?? "none")
+        );
+
+        string checkedAction = request.Action ?? ConvertTaskTypeToAction(altinnTaskType);
+
+        // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
+        if (request.Action is not "reject")
+        {
+            IServiceTask? serviceTask = CheckIfServiceTask(altinnTaskType);
+            if (serviceTask is not null)
+            {
+                ServiceTaskResult serviceActionResult = await HandleServiceTask(
+                    instance,
+                    serviceTask,
+                    request with
+                    {
+                        Action = checkedAction,
+                    },
+                    ct
+                );
+
+                if (serviceActionResult.Result is ServiceTaskResult.ResultType.Failure)
+                {
+                    var result = new ProcessChangeResult()
+                    {
+                        Success = false,
+                        ErrorMessage = serviceActionResult.ErrorMessage,
+                        ErrorType = serviceActionResult.ErrorType,
+                    };
+                    activity?.SetProcessChangeResult(result);
+                    return result;
+                }
+            }
+            else
+            {
+                if (request.Action is not null)
+                {
+                    UserActionResult userActionResult = await HandleUserAction(instance, request, ct);
+
+                    if (userActionResult.ResultType is ResultType.Failure)
+                    {
+                        var result = new ProcessChangeResult()
+                        {
+                            Success = false,
+                            ErrorMessage = $"Action handler for action {request.Action} failed!",
+                            ErrorType = userActionResult.ErrorType,
+                        };
+                        activity?.SetProcessChangeResult(result);
+                        return result;
+                    }
+                }
+            }
+        }
+
+        // If the action is 'reject' the task is being abandoned, and we should skip validation, but only if reject has been allowed for the task in bpmn.
+        if (checkedAction == "reject" && _processReader.IsActionAllowedForTask(currentTaskId, checkedAction))
+        {
+            _logger.LogInformation(
+                "Skipping validation during process next because the action is 'reject' and the task is being abandoned."
+            );
+        }
+        else
+        {
+            InstanceDataUnitOfWork dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(
+                instance,
+                currentTaskId,
+                request.Language
+            );
+
+            List<ValidationIssueWithSource> validationIssues = await _validationService.ValidateInstanceAtTask(
+                dataAccessor,
+                currentTaskId, // run full validation
+                ignoredValidators: null,
+                onlyIncrementalValidators: null,
+                language: request.Language
+            );
+
+            int errorCount = validationIssues.Count(v => v.Severity == ValidationIssueSeverity.Error);
+
+            if (errorCount > 0)
+            {
+                var result = new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorType = ProcessErrorType.Conflict,
+                    ErrorTitle = "Validation failed for task",
+                    ErrorMessage = $"{errorCount} validation errors found for task {currentTaskId}",
+                    ValidationIssues = validationIssues,
+                };
+                activity?.SetProcessChangeResult(result);
+                return result;
+            }
+        }
+
+        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, request.Action);
+
+        if (moveToNextResult.IsEndEvent)
+        {
+            _telemetry?.ProcessEnded(moveToNextResult.ProcessStateChange);
+            await RunAppDefinedProcessEndHandlers(instance, moveToNextResult.ProcessStateChange?.Events);
+        }
+
+        var changeResult = new ProcessChangeResult()
+        {
+            Success = true,
+            ProcessStateChange = moveToNextResult.ProcessStateChange,
+        };
+
+        activity?.SetProcessChangeResult(changeResult);
+        return changeResult;
+    }
+
+    /// <inheritdoc/>
+    public IServiceTask? CheckIfServiceTask(string? altinnTaskType)
+    {
+        if (altinnTaskType is null)
+            return null;
+
+        IEnumerable<IServiceTask> serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
+        IServiceTask? serviceTask = serviceTasks.FirstOrDefault(x =>
+            x.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase)
+        );
+
+        return serviceTask;
+    }
+
+    /// <inheritdoc/>
+    private async Task<UserActionResult> HandleUserAction(
+        Instance instance,
+        ProcessNextRequest request,
+        CancellationToken ct
+    )
+    {
+        Authenticated currentAuth = _authenticationContext.Current;
         IUserAction? actionHandler = _userActionService.GetActionHandler(request.Action);
 
         if (actionHandler is null)
             return UserActionResult.SuccessResult();
 
-        var cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId: null, request.Language);
+        InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            taskId: null,
+            request.Language
+        );
 
         int? userId = currentAuth switch
         {
@@ -168,7 +390,7 @@ public class ProcessEngine : IProcessEngine
             );
         }
 
-        var changes = cachedDataMutator.GetDataElementChanges(initializeAltinnRowId: false);
+        DataElementChanges changes = cachedDataMutator.GetDataElementChanges(initializeAltinnRowId: false);
         await cachedDataMutator.UpdateInstanceData(changes);
         await cachedDataMutator.SaveChanges(changes);
 
@@ -176,40 +398,45 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<ProcessChangeResult> Next(ProcessNextRequest request)
+    private async Task<ServiceTaskResult> HandleServiceTask(
+        Instance instance,
+        IServiceTask serviceTask,
+        ProcessNextRequest request,
+        CancellationToken ct = default
+    )
     {
-        using var activity = _telemetry?.StartProcessNextActivity(request.Instance, request.Action);
+        using Activity? activity = _telemetry?.StartProcessExecuteServiceTaskActivity(instance, serviceTask.Type);
 
-        Instance instance = request.Instance;
-        string? currentElementId = instance.Process?.CurrentTask?.ElementId;
-
-        if (currentElementId == null)
+        if (request.Action is not "write" && request.Action != serviceTask.Type) // serviceTask.Type is accepted to support custom service task types
         {
-            var result = new ProcessChangeResult()
+            var result = new ServiceTaskResult
             {
-                Success = false,
-                ErrorMessage = $"Instance does not have current task information!",
+                Result = ServiceTaskResult.ResultType.Failure,
+                ErrorMessage =
+                    $"Service tasks do not support running user actions! Received action param {request.Action}.",
                 ErrorType = ProcessErrorType.Conflict,
             };
-            activity?.SetProcessChangeResult(result);
+
             return result;
         }
 
-        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, request.Action);
-
-        if (moveToNextResult.IsEndEvent)
+        try
         {
-            _telemetry?.ProcessEnded(moveToNextResult.ProcessStateChange);
-            await RunAppDefinedProcessEndHandlers(instance, moveToNextResult.ProcessStateChange?.Events);
+            await serviceTask.Execute(instance.Process.CurrentTask.ElementId, instance, ct);
+
+            return new ServiceTaskResult { Result = ServiceTaskResult.ResultType.Success };
         }
-
-        var changeResult = new ProcessChangeResult()
+        catch (Exception ex)
         {
-            Success = true,
-            ProcessStateChange = moveToNextResult.ProcessStateChange,
-        };
-        activity?.SetProcessChangeResult(changeResult);
-        return changeResult;
+            activity?.Errored(ex);
+
+            return new ServiceTaskResult()
+            {
+                Result = ServiceTaskResult.ResultType.Failure,
+                ErrorMessage = $"Service task {serviceTask.Type} failed!",
+                ErrorType = ProcessErrorType.Internal,
+            };
+        }
     }
 
     /// <inheritdoc/>
@@ -451,4 +678,23 @@ public class ProcessEngine : IProcessEngine
         [MemberNotNullWhen(true, nameof(ProcessStateChange))]
         public bool IsEndEvent => ProcessStateChange?.NewProcessState?.Ended is not null;
     };
+
+    private static string ConvertTaskTypeToAction(string actionOrTaskType)
+    {
+        switch (actionOrTaskType)
+        {
+            case "data":
+            case "feedback":
+            case "pdf":
+            case "eFormidling":
+                return "write";
+            case "confirmation":
+                return "confirm";
+            case "signing":
+                return "sign";
+            default:
+                // Not any known task type, so assume it is an action type
+                return actionOrTaskType;
+        }
+    }
 }
