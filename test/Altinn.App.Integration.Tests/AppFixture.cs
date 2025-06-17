@@ -289,7 +289,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             return JsonSerializer.Deserialize<T>(content, _jsonSerializerOptions);
         }
 
-        public SettingsTask Verify([CallerFilePath] string sourceFile = "")
+        public SettingsTask Verify(Func<string, string>? replacer = null, [CallerFilePath] string sourceFile = "")
         {
             var appPort = Fixture._appContainer.GetMappedPublicPort(AppPort).ToString();
             var localtestPort = Fixture._localtestContainer.GetMappedPublicPort(LocaltestPort).ToString();
@@ -297,8 +297,8 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .Verify(Response, sourceFile: sourceFile)
                 .AddExtraSettings(settings =>
                 {
-                    settings.Converters.Add(new HeadersConverter(appPort, localtestPort));
-                    settings.Converters.Add(new UriConverter(appPort, localtestPort));
+                    settings.Converters.Add(new HeadersConverter(appPort, localtestPort, replacer));
+                    settings.Converters.Add(new UriConverter(appPort, localtestPort, replacer));
                 });
             return ConfigureVerify(settings);
         }
@@ -306,10 +306,12 @@ public sealed partial class AppFixture : IAsyncDisposable
         public void Dispose() => Response.Dispose();
     }
 
-    private sealed class HeadersConverter(string appPort, string localtestPort) : WriteOnlyJsonConverter<HttpHeaders>
+    private sealed class HeadersConverter(string appPort, string localtestPort, Func<string, string>? replacer)
+        : WriteOnlyJsonConverter<HttpHeaders>
     {
         private readonly string _appPort = appPort;
         private readonly string _localtestPort = localtestPort;
+        private readonly Func<string, string>? _replacer = replacer;
 
         public override void Write(VerifyJsonWriter writer, HttpHeaders value)
         {
@@ -329,6 +331,8 @@ public sealed partial class AppFixture : IAsyncDisposable
                         foreach (var headerValue in kvp.Value)
                         {
                             string v = headerValue;
+                            if (_replacer is not null)
+                                v = _replacer(v);
                             v = v.Replace(_appPort, "APP_PORT");
                             v = v.Replace(_localtestPort, "LOCALTEST_PORT");
                             writer.WriteValue(v);
@@ -341,14 +345,18 @@ public sealed partial class AppFixture : IAsyncDisposable
         }
     }
 
-    private sealed class UriConverter(string appPort, string localtestPort) : WriteOnlyJsonConverter<Uri>
+    private sealed class UriConverter(string appPort, string localtestPort, Func<string, string>? replacer)
+        : WriteOnlyJsonConverter<Uri>
     {
         private readonly string _appPort = appPort;
         private readonly string _localtestPort = localtestPort;
+        private readonly Func<string, string>? _replacer = replacer;
 
         public override void Write(VerifyJsonWriter writer, Uri value)
         {
             var uri = value.ToString();
+            if (_replacer is not null)
+                uri = _replacer(uri);
             uri = uri.Replace(_appPort, "APP_PORT");
             uri = uri.Replace(_localtestPort, "LOCALTEST_PORT");
             writer.WriteValue(uri);
@@ -375,7 +383,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         var output = Path.Join(integrationTestsDirectory, "testapps", "_packages");
         var solutionDirectory = GetSolutionDir();
         var result = await Cli.Wrap("dotnet")
-            .WithArguments(["pack", "-c", "Release", "--no-restore", "--no-build", "--output", output])
+            .WithArguments(["pack", "-c", "Release", "--output", output])
             .WithWorkingDirectory(solutionDirectory)
             .ExecuteAsync();
         Assert.Equal(0, result.ExitCode);
