@@ -90,17 +90,10 @@ public abstract record MultipartCorrespondenceItem
 
     internal static void SerializeOverrideNotificationRecipients(
         MultipartFormDataContent content,
-        IReadOnlyList<CorrespondenceNotificationRecipient>? notificationRecipients,
-        int parentIndex
+        CorrespondenceNotificationRecipient notificationRecipient
     )
     {
-        if (IsEmptyCollection(notificationRecipients))
-            return;
-
-        for (int i = 0; i < notificationRecipients.Count; i++)
-        {
-            notificationRecipients[i].Serialise(content, i, parentIndex);
-        }
+        notificationRecipient.Serialise(content);
     }
 
     internal static void SerializeAttachmentItems(

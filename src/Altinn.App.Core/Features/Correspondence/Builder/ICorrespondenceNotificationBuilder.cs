@@ -99,18 +99,9 @@ public interface ICorrespondenceNotificationBuilder : ICorrespondenceNotificatio
     /// <summary>
     /// Sets the recipient override for the correspondence notification.
     /// </summary>
-    /// <param name="recipientOverrideBuilder">The recipient override builder.</param>
+    /// <param name="recipientOverride">The recipient override</param>
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
-        ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder
-    );
-
-    /// <summary>
-    /// Sets the recipient override for the correspondence notification.
-    /// </summary>
-    /// <param name="recipientToOverrideWrapper">Recipients to override.</param>
-    /// <returns></returns>
-    public ICorrespondenceNotificationBuilder WithRecipientOverride(
-        CorrespondenceNotificationRecipientWrapper recipientToOverrideWrapper
+        CorrespondenceNotificationRecipient recipientOverride
     );
 
     /// <summary>

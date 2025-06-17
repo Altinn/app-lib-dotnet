@@ -28,39 +28,21 @@ public sealed record CorrespondenceNotificationRecipient : MultipartCorresponden
     /// </summary>
     public NationalIdentityNumber? NationalIdentityNumber { get; init; }
 
-    /// <summary>
-    /// Boolean indicating if the recipient is reserved.
-    /// </summary>
-    public bool IsReserved { get; init; }
+    internal override void Serialise(MultipartFormDataContent content, int index) => Serialise(content);
 
-    internal override void Serialise(MultipartFormDataContent content, int index) => Serialise(content, index, 0);
-
-    internal void Serialise(MultipartFormDataContent content, int index, int parentIndex)
+    internal void Serialise(MultipartFormDataContent content)
     {
-        AddIfNotNull(
-            content,
-            EmailAddress,
-            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].EmailAddress"
-        );
-        AddIfNotNull(
-            content,
-            MobileNumber,
-            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].MobileNumber"
-        );
-        AddRequired(
-            content,
-            IsReserved.ToString(),
-            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].IsReserved"
-        );
+        AddIfNotNull(content, EmailAddress, $"Correspondence.Notification.CustomRecipient.EmailAddress");
+        AddIfNotNull(content, MobileNumber, $"Correspondence.Notification.CustomRecipient.MobileNumber");
         AddIfNotNull(
             content,
             OrganizationNumber?.ToUrnFormattedString(),
-            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].OrganizationNumber"
+            $"Correspondence.Notification.CustomRecipient.OrganizationNumber"
         );
         AddIfNotNull(
             content,
             NationalIdentityNumber?.ToUrnFormattedString(),
-            $"Correspondence.Notification.CustomNotificationRecipients[{parentIndex}].Recipients[{index}].NationalIdentityNumber"
+            $"Correspondence.Notification.CustomRecipient.NationalIdentityNumber"
         );
     }
 }
