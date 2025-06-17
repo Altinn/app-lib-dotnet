@@ -42,7 +42,7 @@ internal static class BuilderUtils
         }
     }
 
-    internal static void RequireExcactlyOneOf<T1, T2>(
+    internal static void RequireExactlyOneOf<T1, T2>(
         T1? value1,
         T2? value2,
         string? errorMessage = null,
