@@ -1,6 +1,6 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.Process.ProcessTasks;
+namespace Altinn.App.Core.Internal.Process.ProcessTasks.Common;
 
 /// <summary>
 /// Can be used to lock data elements connected to a process task

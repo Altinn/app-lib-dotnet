@@ -1,6 +1,6 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.Process.ProcessTasks;
+namespace Altinn.App.Core.Internal.Process.ProcessTasks.Common;
 
 /// <summary>
 /// Contains common logic to clean up process data

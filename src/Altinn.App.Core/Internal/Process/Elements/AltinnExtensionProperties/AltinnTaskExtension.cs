@@ -35,6 +35,12 @@ public class AltinnTaskExtension
     public AltinnPaymentConfiguration? PaymentConfiguration { get; set; } = new AltinnPaymentConfiguration();
 
     /// <summary>
+    /// Gets or sets the configuration for PDF
+    /// </summary>
+    [XmlElement("pdfConfig", Namespace = "http://altinn.no/process")]
+    public AltinnPdfConfiguration? PdfConfiguration { get; set; }
+
+    /// <summary>
     /// Retrieves a configuration item for given environment, in a predictable manner.
     /// Specific configurations (those specifying an environment) takes precedence over global configurations.
     /// </summary>
