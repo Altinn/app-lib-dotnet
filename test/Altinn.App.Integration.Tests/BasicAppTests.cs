@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Integration.Tests;
 
-public sealed class BasicAppFixture : IAsyncLifetime
+public sealed class BasicAppFixture : IAsyncDisposable
 {
     private AppFixture? _appFixture;
     private ITestOutputHelper? _output;
@@ -22,15 +22,13 @@ public sealed class BasicAppFixture : IAsyncLifetime
         _appFixture = await AppFixture.Create(_output, TestApps.Basic);
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_appFixture is null)
             return;
 
         await _appFixture.DisposeAsync();
     }
-
-    public Task InitializeAsync() => Task.CompletedTask;
 }
 
 public class BasicAppTests(ITestOutputHelper output, BasicAppFixture fixture)
@@ -46,7 +44,7 @@ public class BasicAppTests(ITestOutputHelper output, BasicAppFixture fixture)
         await _fixture.EnsureInitialized();
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public async Task DisposeAsync() => await _fixture.DisposeAsync();
 
     [Fact]
     public async Task Instantiate()
