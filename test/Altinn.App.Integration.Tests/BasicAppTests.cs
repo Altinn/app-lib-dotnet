@@ -4,52 +4,33 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Integration.Tests;
 
-public sealed class BasicAppFixture : IAsyncDisposable
-{
-    private AppFixture? _appFixture;
-    private ITestOutputHelper? _output;
-
-    public AppFixture Fixture => _appFixture ?? throw new InvalidOperationException("Fixture not initialized");
-
-    public void SetTestOutput(ITestOutputHelper output) => _output = output;
-
-    public async Task EnsureInitialized()
-    {
-        if (_appFixture is not null)
-            return;
-
-        Assert.NotNull(_output);
-        _appFixture = await AppFixture.Create(_output, TestApps.Basic);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_appFixture is null)
-            return;
-
-        await _appFixture.DisposeAsync();
-    }
-}
-
-public class BasicAppTests(ITestOutputHelper output, BasicAppFixture fixture)
-    : IClassFixture<BasicAppFixture>,
-        IAsyncLifetime
+public class BasicAppTests(ITestOutputHelper output) : IAsyncLifetime
 {
     private readonly ITestOutputHelper _output = output;
-    private readonly BasicAppFixture _fixture = fixture;
+    private AppFixture? _fixture;
+    public AppFixture Fixture
+    {
+        get
+        {
+            Assert.NotNull(_fixture);
+            return _fixture;
+        }
+    }
 
     public async Task InitializeAsync()
     {
-        _fixture.SetTestOutput(_output);
-        await _fixture.EnsureInitialized();
+        _fixture = await AppFixture.Create(_output, TestApps.Basic);
     }
 
-    public async Task DisposeAsync() => await _fixture.DisposeAsync();
+    public async Task DisposeAsync()
+    {
+        await Fixture.DisposeAsync();
+    }
 
     [Fact]
     public async Task Instantiate()
     {
-        var fixture = _fixture.Fixture;
+        var fixture = Fixture;
 
         var token = await fixture.Auth.GetUserToken(userId: 1337);
 
@@ -67,5 +48,35 @@ public class BasicAppTests(ITestOutputHelper output, BasicAppFixture fixture)
             v = v.Replace(instance.Id.Split('/')[1], "<instanceGuid>");
             return v;
         });
+    }
+
+    [Fact]
+    public async Task Instantiate_With_Prefill()
+    {
+        var fixture = Fixture;
+
+        var token = await fixture.Auth.GetUserToken(userId: 1337);
+
+        using var response = await fixture.Instances.PostSimplified(
+            token,
+            new InstansiationInstance
+            {
+                InstanceOwner = new InstanceOwner { PartyId = "501337" },
+                Prefill = new() { { "model.property1", "Testing" } },
+            }
+        );
+
+        var instance = await response.Read<Instance>();
+        Assert.NotNull(instance);
+
+        await response.Verify(
+            instance,
+            v =>
+            {
+                v = v.Replace(instance.InstanceOwner.PartyId, "<partyId>");
+                v = v.Replace(instance.Id.Split('/')[1], "<instanceGuid>");
+                return v;
+            }
+        );
     }
 }
