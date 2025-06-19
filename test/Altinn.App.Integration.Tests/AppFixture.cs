@@ -23,8 +23,8 @@ public sealed partial class AppFixture : IAsyncDisposable
 
     private static long _fixtureInstance = -1;
     private static readonly SemaphoreSlim _buildLock = new(1, 1);
-    private static bool _isBuilt;
-    private static Dictionary<string, bool> _isAppBuilt = new();
+    private static IFutureDockerImage? _localtestContainerImage;
+    private static Dictionary<string, IFutureDockerImage> _appContainerImages = new();
 
     private static long NextFixtureInstance() => Interlocked.Increment(ref _fixtureInstance);
 
@@ -33,9 +33,7 @@ public sealed partial class AppFixture : IAsyncDisposable
     private readonly TestOutputLogger _logger;
     private readonly string _app;
     private readonly INetwork _network;
-    private readonly IFutureDockerImage _localtestContainerImage;
     private readonly IContainer _localtestContainer;
-    private readonly IFutureDockerImage _appContainerImage;
     private readonly IContainer _appContainer;
 
     private HttpClient? _appClient;
@@ -67,18 +65,14 @@ public sealed partial class AppFixture : IAsyncDisposable
         TestOutputLogger logger,
         string app,
         INetwork network,
-        IFutureDockerImage localtestContainerImage,
         IContainer localtestContainer,
-        IFutureDockerImage appContainerImage,
         IContainer appContainer
     )
     {
         _logger = logger;
         _app = app;
         _network = network;
-        _localtestContainerImage = localtestContainerImage;
         _localtestContainer = localtestContainer;
-        _appContainerImage = appContainerImage;
         _appContainer = appContainer;
     }
 
@@ -94,13 +88,14 @@ public sealed partial class AppFixture : IAsyncDisposable
         await _buildLock.WaitAsync();
         try
         {
-            if (!_isBuilt)
+            localtestContainerImage = _localtestContainerImage;
+            if (localtestContainerImage is null)
             {
                 logger.LogInformation("Packing applib");
                 await PackLibraries();
 
                 logger.LogInformation("Building container images");
-                localtestContainerImage = new ImageFromDockerfileBuilder()
+                _localtestContainerImage = localtestContainerImage = new ImageFromDockerfileBuilder()
                     .WithName($"applib-localtest:latest")
                     .WithDockerfileDirectory(Path.Join(solutionDirectory, "app-localtest"))
                     .WithCleanUp(false)
@@ -108,32 +103,26 @@ public sealed partial class AppFixture : IAsyncDisposable
                     .Build();
 
                 await localtestContainerImage.CreateAsync();
-
-                _isBuilt = true;
             }
 
-            if (!_isAppBuilt.GetValueOrDefault(name))
+            if (!_appContainerImages.TryGetValue(name, out appContainerImage))
             {
                 logger.LogInformation("Building app container image");
 
                 CopyPackages(name);
 
-                appContainerImage = new ImageFromDockerfileBuilder()
+                _appContainerImages[name] = appContainerImage = new ImageFromDockerfileBuilder()
                     .WithName($"applib-{name}:latest")
                     .WithDockerfileDirectory(Directory.GetParent(appDirectory)!.FullName)
                     .WithCleanUp(false)
                     .WithLogger(testContainersLogger)
                     .Build();
                 await appContainerImage.CreateAsync();
-
-                _isAppBuilt[name] = true;
             }
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to build");
-            await TryDispose(logger, localtestContainerImage);
-            await TryDispose(logger, appContainerImage);
             throw;
         }
         finally
@@ -190,15 +179,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             await appContainer.StartAsync();
 
-            return new AppFixture(
-                logger,
-                name,
-                network,
-                localtestContainerImage,
-                localtestContainer,
-                appContainerImage,
-                appContainer
-            );
+            return new AppFixture(logger, name, network, localtestContainer, appContainer);
         }
         catch (Exception ex)
         {
@@ -207,8 +188,6 @@ public sealed partial class AppFixture : IAsyncDisposable
             await TryDispose(logger, appContainer);
             await TryDispose(logger, localtestContainer);
             await TryDispose(logger, network);
-            await TryDispose(logger, appContainerImage);
-            await TryDispose(logger, localtestContainerImage);
             throw;
         }
     }
@@ -229,8 +208,6 @@ public sealed partial class AppFixture : IAsyncDisposable
         await TryDispose(_appContainer);
         await TryDispose(_localtestContainer);
         await TryDispose(_network);
-        await TryDispose(_appContainerImage);
-        await TryDispose(_localtestContainerImage);
     }
 
     private async Task TryDispose(IAsyncDisposable? disposable) => await TryDispose(_logger, disposable);
@@ -294,6 +271,24 @@ public sealed partial class AppFixture : IAsyncDisposable
             var localtestPort = Fixture._localtestContainer.GetMappedPublicPort(LocaltestPort).ToString();
             var settings = Verifier
                 .Verify(Response, sourceFile: sourceFile)
+                .AddExtraSettings(settings =>
+                {
+                    settings.Converters.Add(new HeadersConverter(appPort, localtestPort, replacer));
+                    settings.Converters.Add(new UriConverter(appPort, localtestPort, replacer));
+                });
+            return ConfigureVerify(settings);
+        }
+
+        public SettingsTask Verify<T>(
+            T readResponse,
+            Func<string, string>? replacer = null,
+            [CallerFilePath] string sourceFile = ""
+        )
+        {
+            var appPort = Fixture._appContainer.GetMappedPublicPort(AppPort).ToString();
+            var localtestPort = Fixture._localtestContainer.GetMappedPublicPort(LocaltestPort).ToString();
+            var settings = Verifier
+                .Verify(new { Response = readResponse, HttpResponse = Response }, sourceFile: sourceFile)
                 .AddExtraSettings(settings =>
                 {
                     settings.Converters.Add(new HeadersConverter(appPort, localtestPort, replacer));
