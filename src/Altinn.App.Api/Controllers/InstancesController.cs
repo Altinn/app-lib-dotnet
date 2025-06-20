@@ -1024,6 +1024,60 @@ public class InstancesController : ControllerBase
                 await UpdateDataValuesOnInstance(application.DataFields, targetInstance, dt.Id, data);
             }
         }
+
+        // Copy binary data elements (files/attachments)
+        List<DataType> binaryDataTypes = application
+            .DataTypes.Where(dt => dt.AppLogic?.ClassRef == null)
+            .Where(dt =>
+                dt.TaskId != null
+                && dt.TaskId.Equals(targetInstance.Process.CurrentTask.ElementId, StringComparison.Ordinal)
+            )
+            .ToList();
+
+        foreach (DataElement de in sourceInstance.Data)
+        {
+            if (excludedDataTypes != null && excludedDataTypes.Contains(de.DataType))
+            {
+                continue;
+            }
+
+            if (binaryDataTypes.Any(dt => dt.Id.Equals(de.DataType, StringComparison.Ordinal)))
+            {
+                try
+                {
+                    // Get binary data from source instance
+                    var binaryData = await _dataClient.GetDataBytes(
+                        org,
+                        app,
+                        instanceOwnerPartyId,
+                        sourceInstanceGuid,
+                        Guid.Parse(de.Id)
+                    );
+
+                    // Insert binary data to target instance
+                    using (var stream = new MemoryStream(binaryData))
+                    {
+                        await _dataClient.InsertBinaryData(
+                            targetInstance.Id,
+                            de.DataType,
+                            de.ContentType,
+                            de.Filename,
+                            stream
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Failed to copy binary data element {DataElementId} of type {DataType}",
+                        de.Id,
+                        de.DataType
+                    );
+                    // Continue with next data element - don't fail entire operation
+                }
+            }
+        }
     }
 
     private ActionResult ExceptionResponse(Exception exception, string message)
