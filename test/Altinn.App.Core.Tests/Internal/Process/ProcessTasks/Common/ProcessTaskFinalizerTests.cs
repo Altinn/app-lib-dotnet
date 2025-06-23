@@ -63,6 +63,7 @@ public class ProcessTaskFinalizerTests
                 new DataElement
                 {
                     Id = Guid.NewGuid().ToString(),
+                    DataType = "dataType",
                     References = [new Reference { ValueType = ReferenceType.Task, Value = "EndEvent" }],
                 },
             ],
@@ -70,7 +71,7 @@ public class ProcessTaskFinalizerTests
 
         var applicationMetadata = new ApplicationMetadata(instance.AppId)
         {
-            DataTypes = [new DataType { TaskId = instance.Process.CurrentTask.ElementId }],
+            DataTypes = [new DataType { Id = "dataType", TaskId = instance.Process.CurrentTask.ElementId }],
         };
 
         _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
