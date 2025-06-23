@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Models;
 
@@ -70,14 +71,27 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     /// <inheritdoc/>
     public CorrespondenceNotificationRecipient Build()
     {
-        BuilderUtils.RequireExactlyOneOf(_organizationNumber, _nationalIdentityNumber);
-        BuilderUtils.RequireAtLeastOneOf(_emailAddress, _mobileNumber);
-        return new CorrespondenceNotificationRecipient
+        if (_emailAddress is not null || _mobileNumber is not null)
         {
-            EmailAddress = _emailAddress,
-            MobileNumber = _mobileNumber,
-            NationalIdentityNumber = _nationalIdentityNumber,
-            OrganizationNumber = _organizationNumber,
-        };
+            return new CorrespondenceNotificationRecipient
+            {
+                EmailAddress = _emailAddress,
+                MobileNumber = _mobileNumber,
+            };
+        }
+        else if (_nationalIdentityNumber is not null)
+        {
+            return new CorrespondenceNotificationRecipient { NationalIdentityNumber = _nationalIdentityNumber };
+        }
+        else if (_organizationNumber is not null)
+        {
+            return new CorrespondenceNotificationRecipient { OrganizationNumber = _organizationNumber };
+        }
+        else
+        {
+            throw new CorrespondenceArgumentException(
+                "At least one of EmailAddress, MobileNumber, NationalIdentityNumber, or OrganizationNumber must be provided."
+            );
+        }
     }
 }

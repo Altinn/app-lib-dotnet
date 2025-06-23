@@ -3,6 +3,7 @@ using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing;
+using Altinn.App.Core.Features.Signing.Enums;
 using Altinn.App.Core.Features.Signing.Helpers;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
@@ -119,6 +120,7 @@ public class SigningCallToActionServiceTests(ITestOutputHelper output)
             {
                 Sms = new Sms { MobileNumber = "12345678", BodyTextResourceKey = smsContentTextResourceKey },
             },
+            NotificationChoice = NotificationChoice.Sms,
         };
 
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
@@ -320,6 +322,7 @@ public class SigningCallToActionServiceTests(ITestOutputHelper output)
                     SubjectTextResourceKey = "signing.email_subject",
                 },
             },
+            NotificationChoice = NotificationChoice.EmailPreferred,
         };
         InstanceIdentifier instanceIdentifier = new(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07"));
 

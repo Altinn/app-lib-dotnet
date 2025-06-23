@@ -1,6 +1,5 @@
 using System.Text;
 using Altinn.App.Core.Features.Correspondence.Builder;
-using Altinn.App.Core.Features.Correspondence.Extensions;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
@@ -85,7 +84,6 @@ public class CorrespondenceBuilderTests
                 reminderEmailSubject = "reminder-email-subject-1",
                 reminderEmailBody = "reminder-email-body-1",
                 reminderSmsBody = "reminder-sms-body-1",
-                overrideMobileNumber = "12345678",
                 requestedSendTime = DateTimeOffset.Now.AddDays(1),
                 sendersReference = "notification-senders-ref-1",
                 sendReminder = true,
@@ -176,7 +174,6 @@ public class CorrespondenceBuilderTests
                     .WithRecipientOverride(
                         CorrespondenceNotificationOverrideBuilder
                             .Create()
-                            .WithMobileNumber(data.notification.overrideMobileNumber)
                             .WithOrganizationNumber(data.recipient.Value)
                             .Build()
                     )
@@ -300,7 +297,6 @@ public class CorrespondenceBuilderTests
         correspondence.Notification.CustomRecipient!.OrganizationNumber.Should().NotBeNull();
 
         correspondence.Notification.CustomRecipient.OrganizationNumber.Should().Be(data.recipient.Value);
-        correspondence.Notification.CustomRecipient.MobileNumber.Should().Be(data.notification.overrideMobileNumber);
 
         correspondence.ExistingAttachments.Should().BeEquivalentTo(data.existingAttachments);
 

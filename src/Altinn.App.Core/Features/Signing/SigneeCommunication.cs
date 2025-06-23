@@ -71,7 +71,7 @@ public class Notification
     public Sms? Sms { get; set; }
 
     /// <summary>
-    /// Email notification configuration. If not null, an email will be sent.
+    /// Override the email notification configuration.
     /// </summary>
     [JsonPropertyName("email")]
     public Email? Email { get; set; }
@@ -83,13 +83,13 @@ public class Notification
 public class Sms
 {
     /// <summary>
-    /// The mobile number to send the sms to. If not set, the registry mobile number will be used.
+    /// Override the mobile number to send the sms to. If not set, the registry mobile number will be used.
     /// </summary>
     [JsonPropertyName("mobileNumber")]
     public string? MobileNumber { get; set; }
 
     /// <summary>
-    /// The body of the sms. If not set, a default will be used.
+    /// Override the body of the sms. If not set, a default will be used.
     /// </summary>
     [JsonPropertyName("bodyTextResourceKey")]
     public string? BodyTextResourceKey { get; set; }
@@ -106,19 +106,19 @@ public class Sms
 public class Email
 {
     /// <summary>
-    /// The email address to send the email to. If not set, the registry email address will be used for organizations. For persons, no email will be sent.
+    /// Override the email address to send the email to. If not set, the registry email address will be used for organizations. For persons, no email will be sent.
     /// </summary>
     [JsonPropertyName("emailAddress")]
     public string? EmailAddress { get; set; }
 
     /// <summary>
-    /// The subject. If not set, a default will be used.
+    /// Override the subject. If not set, a default will be used.
     /// </summary>
     [JsonPropertyName("subjectTextResourceKey")]
     public string? SubjectTextResourceKey { get; set; }
 
     /// <summary>
-    /// The body. If not set, a default will be used. Replaces "$instanceUrl$" with the Url.
+    /// Override the body. If not set, a default will be used. Replaces "$instanceUrl$" with the Url.
     /// </summary>
     [JsonPropertyName("bodyTextResourceKey")]
     public string? BodyTextResourceKey { get; set; }
