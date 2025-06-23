@@ -1,0 +1,289 @@
+﻿{
+  ActionsToAuthorize: [
+    Altinn.App.Api.Controllers.ActionsController.Perform (Altinn.App.Api),
+    Altinn.App.Api.Controllers.DataController.Create (Altinn.App.Api),
+    Altinn.App.Api.Controllers.DataController.Delete (Altinn.App.Api),
+    Altinn.App.Api.Controllers.DataController.Get (Altinn.App.Api),
+    Altinn.App.Api.Controllers.DataController.PatchFormData (Altinn.App.Api),
+    Altinn.App.Api.Controllers.DataController.PatchFormDataMultiple (Altinn.App.Api),
+    Altinn.App.Api.Controllers.DataController.Post (Altinn.App.Api),
+    Altinn.App.Api.Controllers.DataController.Put (Altinn.App.Api),
+    Altinn.App.Api.Controllers.DataTagsController.Add (Altinn.App.Api),
+    Altinn.App.Api.Controllers.DataTagsController.Delete (Altinn.App.Api),
+    Altinn.App.Api.Controllers.DataTagsController.Get (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ExternalApiController.Get (Altinn.App.Api),
+    Altinn.App.Api.Controllers.FileScanController.GetFileScanResults (Altinn.App.Api),
+    Altinn.App.Api.Controllers.InstancesController.AddCompleteConfirmation (Altinn.App.Api),
+    Altinn.App.Api.Controllers.InstancesController.CopyInstance (Altinn.App.Api),
+    Altinn.App.Api.Controllers.InstancesController.DeleteInstance (Altinn.App.Api),
+    Altinn.App.Api.Controllers.InstancesController.Get (Altinn.App.Api),
+    Altinn.App.Api.Controllers.InstancesController.GetActiveInstances (Altinn.App.Api),
+    Altinn.App.Api.Controllers.InstancesController.Post (Altinn.App.Api),
+    Altinn.App.Api.Controllers.InstancesController.PostSimplified (Altinn.App.Api),
+    Altinn.App.Api.Controllers.InstancesController.UpdateSubstatus (Altinn.App.Api),
+    Altinn.App.Api.Controllers.PagesController.GetPageOrder (Altinn.App.Api),
+    Altinn.App.Api.Controllers.PaymentController.GetOrderDetails (Altinn.App.Api),
+    Altinn.App.Api.Controllers.PaymentController.GetPaymentInformation (Altinn.App.Api),
+    Altinn.App.Api.Controllers.PdfController.GetPdfFormat (Altinn.App.Api),
+    Altinn.App.Api.Controllers.PdfController.GetPdfPreview (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ProcessController.CompleteProcess (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ProcessController.GetNextElements (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ProcessController.GetProcessHistory (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ProcessController.GetProcessState (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ProcessController.NextElement (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ProcessController.StartProcess (Altinn.App.Api),
+    Altinn.App.Api.Controllers.SigningController.GetAuthorizedOrganizations (Altinn.App.Api),
+    Altinn.App.Api.Controllers.SigningController.GetDataElements (Altinn.App.Api),
+    Altinn.App.Api.Controllers.SigningController.GetSigneesState (Altinn.App.Api),
+    Altinn.App.Api.Controllers.StatelessDataController.Get (Altinn.App.Api),
+    Altinn.App.Api.Controllers.StatelessDataController.Post (Altinn.App.Api),
+    Altinn.App.Api.Controllers.UserDefinedMetadataController.Get (Altinn.App.Api),
+    Altinn.App.Api.Controllers.UserDefinedMetadataController.Update (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ValidateController.ValidateData (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ValidateController.ValidateInstance (Altinn.App.Api)
+  ],
+  ScopesToAuthorize: {
+    Altinn.App.Api.Controllers.ActionsController.Perform (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.DataController.Create (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.DataController.Delete (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.DataController.Get (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.DataController.PatchFormData (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.DataController.PatchFormDataMultiple (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.DataController.Post (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.DataController.Put (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.DataTagsController.Add (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.DataTagsController.Delete (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.DataTagsController.Get (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.ExternalApiController.Get (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.FileScanController.GetFileScanResults (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.InstancesController.AddCompleteConfirmation (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.InstancesController.CopyInstance (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.InstancesController.DeleteInstance (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.InstancesController.Get (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.InstancesController.GetActiveInstances (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.InstancesController.Post (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.InstancesController.PostSimplified (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.InstancesController.UpdateSubstatus (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.PagesController.GetPageOrder (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.PaymentController.GetOrderDetails (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.PaymentController.GetPaymentInformation (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.PdfController.GetPdfFormat (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.PdfController.GetPdfPreview (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.ProcessController.CompleteProcess (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.ProcessController.GetNextElements (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.ProcessController.GetProcessHistory (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.ProcessController.GetProcessState (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.ProcessController.NextElement (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.ProcessController.StartProcess (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.SigningController.GetAuthorizedOrganizations (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.SigningController.GetDataElements (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.SigningController.GetSigneesState (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.StatelessDataController.Get (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.StatelessDataController.Post (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.UserDefinedMetadataController.Get (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.UserDefinedMetadataController.Update (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.write,
+      tdd:contributer-restriction.instances.write
+    ],
+    Altinn.App.Api.Controllers.ValidateController.ValidateData (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ],
+    Altinn.App.Api.Controllers.ValidateController.ValidateInstance (Altinn.App.Api): [
+      altinn:portal/enduser,
+      altinn:serviceowner/instances.read,
+      tdd:contributer-restriction.instances.read
+    ]
+  },
+  IgnoredActions: [
+    Altinn.App.Api.Controllers.AccountController.Login (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ApplicationLanguageController.GetLanguages (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ApplicationMetadataController.GetAction (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ApplicationMetadataController.GetPolicy (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ApplicationMetadataController.GetProcess (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ApplicationSettingsController.GetAction (Altinn.App.Api),
+    Altinn.App.Api.Controllers.AuthenticationController.InvalidateCookie (Altinn.App.Api),
+    Altinn.App.Api.Controllers.AuthenticationController.KeepAlive (Altinn.App.Api),
+    Altinn.App.Api.Controllers.AuthorizationController.GetCurrentParty (Altinn.App.Api),
+    Altinn.App.Api.Controllers.AuthorizationController.ValidateSelectedParty (Altinn.App.Api),
+    Altinn.App.Api.Controllers.CustomOpenApiController.Index (Altinn.App.Api),
+    Altinn.App.Api.Controllers.DataListsController.Get (Altinn.App.Api),
+    Altinn.App.Api.Controllers.EventsReceiverController.Post (Altinn.App.Api),
+    Altinn.App.Api.Controllers.HomeController.Index (Altinn.App.Api),
+    Altinn.App.Api.Controllers.HomeController.SetQueryParams (Altinn.App.Api),
+    Altinn.App.Api.Controllers.LookupOrganisationController.LookUpOrganisation (Altinn.App.Api),
+    Altinn.App.Api.Controllers.LookupPersonController.LookupPerson (Altinn.App.Api),
+    Altinn.App.Api.Controllers.OptionsController.Get (Altinn.App.Api),
+    Altinn.App.Api.Controllers.PartiesController.Get (Altinn.App.Api),
+    Altinn.App.Api.Controllers.PartiesController.UpdateSelectedParty (Altinn.App.Api),
+    Altinn.App.Api.Controllers.PartiesController.ValidateInstantiation (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ProfileController.GetUser (Altinn.App.Api),
+    Altinn.App.Api.Controllers.RedirectController.ValidateUrl (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ResourceController.GetFooterLayout (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ResourceController.GetLayouts (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ResourceController.GetLayoutSets (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ResourceController.GetLayoutSettings (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ResourceController.GetModelJsonSchema (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ResourceController.GetRuleConfiguration (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ResourceController.GetRulehandler (Altinn.App.Api),
+    Altinn.App.Api.Controllers.ResourceController.GetValidationConfiguration (Altinn.App.Api),
+    Altinn.App.Api.Controllers.StatelessDataController.GetAnonymous (Altinn.App.Api),
+    Altinn.App.Api.Controllers.StatelessDataController.PostAnonymous (Altinn.App.Api),
+    Altinn.App.Api.Controllers.StatelessPagesController.GetPageOrder (Altinn.App.Api),
+    Altinn.App.Api.Controllers.TextsController.Get (Altinn.App.Api)
+  ]
+}

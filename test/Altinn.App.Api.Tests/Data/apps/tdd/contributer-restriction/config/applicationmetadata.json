@@ -125,5 +125,9 @@
             "taskId": "Task_1",
             "actionRequiredToWrite": "customWriteAction"
         }
-    ]
+    ],
+    "apiScopes": {
+        "read": "tdd:contributer-restriction.instances.read",
+        "write": "tdd:contributer-restriction.instances.write"
+    }
 }
