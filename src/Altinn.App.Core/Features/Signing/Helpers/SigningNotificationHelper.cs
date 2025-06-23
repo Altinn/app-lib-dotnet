@@ -11,13 +11,13 @@ internal sealed class SigningNotificationHelper
     {
         return notificationChoice switch
         {
-            NotificationChoice.None => "No notification",
+            NotificationChoice.None => "Default - Email",
             NotificationChoice.Email => "Email",
             NotificationChoice.Sms => "SMS",
             NotificationChoice.SmsAndEmail => "SMS and Email",
             NotificationChoice.SmsPreferred => "SMS preferred",
             NotificationChoice.EmailPreferred => "Email preferred",
-            _ => "Default - Email",
+            _ => "Notification choice not set",
         };
     }
 
