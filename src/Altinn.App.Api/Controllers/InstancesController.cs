@@ -951,7 +951,13 @@ public class InstancesController : ControllerBase
         string[] sourceSplit = sourceInstance.Id.Split("/");
         Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
 
-        List<DataType> dts = application.DataTypes.Where(dt => dt.AppLogic?.ClassRef != null).ToList();
+        List<DataType> dts = application
+            .DataTypes.Where(dt => dt.AppLogic?.ClassRef != null)
+            .Where(dt =>
+                dt.TaskId != null
+                && dt.TaskId.Equals(targetInstance.Process.CurrentTask.ElementId, StringComparison.Ordinal)
+            )
+            .ToList();
         List<string> excludedDataTypes = application.CopyInstanceSettings.ExcludedDataTypes;
 
         foreach (DataElement de in sourceInstance.Data)
@@ -1019,6 +1025,11 @@ public class InstancesController : ControllerBase
             }
         }
 
+        if (application.CopyInstanceSettings?.IncludeAttachments is null or false)
+        {
+            return;
+        }
+
         // Copy binary data elements (files/attachments)
         List<DataType> binaryDataTypes = application
             .DataTypes.Where(dt => dt.AppLogic?.ClassRef == null)
@@ -1068,7 +1079,6 @@ public class InstancesController : ControllerBase
                         de.Id,
                         de.DataType
                     );
-                    // Continue with next data element - don't fail entire operation
                 }
             }
         }
