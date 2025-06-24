@@ -477,10 +477,10 @@ public class InstancesController_CopyInstanceTests
             .Setup(hc => hc.User)
             .Returns(TestAuthentication.GetUserPrincipal(1337, InstanceOwnerPartyId));
         fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
-        fixture
-            .Mock<IAppMetadata>()
-            .Setup(a => a.GetApplicationMetadata())
-            .ReturnsAsync(CreateApplicationMetadata(Org, AppName, true));
+        // Create app metadata with IncludeAttachments = true to enable binary data copying
+        var appMetadata = CreateApplicationMetadata(Org, AppName, true);
+        appMetadata.CopyInstanceSettings.IncludeAttachments = true;
+        fixture.Mock<IAppMetadata>().Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         fixture
             .Mock<IPDP>()
             .Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
@@ -832,10 +832,10 @@ public class InstancesController_CopyInstanceTests
             .Setup(hc => hc.User)
             .Returns(TestAuthentication.GetUserPrincipal(1337, InstanceOwnerPartyId));
         fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
-        fixture
-            .Mock<IAppMetadata>()
-            .Setup(a => a.GetApplicationMetadata())
-            .ReturnsAsync(CreateApplicationMetadata(Org, AppName, true));
+        // Create app metadata with IncludeAttachments = true to enable binary data copying
+        var appMetadata = CreateApplicationMetadata(Org, AppName, true);
+        appMetadata.CopyInstanceSettings.IncludeAttachments = true;
+        fixture.Mock<IAppMetadata>().Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         fixture
             .Mock<IPDP>()
             .Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
@@ -966,6 +966,160 @@ public class InstancesController_CopyInstanceTests
     }
 
     [Fact]
+    public async Task CopyInstance_IncludeAttachmentsIsTrue_CopiesBinaryData()
+    {
+        // Arrange
+        using var fixture = InstancesControllerFixture.Create();
+        const string Org = "ttd";
+        const string AppName = "copy-instance";
+        const int InstanceOwnerPartyId = 343234;
+        Guid instanceGuid = Guid.NewGuid();
+        Guid binaryDataGuid = Guid.NewGuid();
+        const string binaryDataTypeId = "attachment";
+
+        var binaryDataBytes = System.Text.Encoding.UTF8.GetBytes("Binary content");
+
+        Instance instance = new()
+        {
+            Id = $"{InstanceOwnerPartyId}/{instanceGuid}",
+            AppId = $"{Org}/{AppName}",
+            InstanceOwner = new InstanceOwner() { PartyId = InstanceOwnerPartyId.ToString() },
+            Status = new InstanceStatus() { IsArchived = true },
+            Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
+            Data = new List<DataElement>
+            {
+                // Only binary data element - no form data
+                new DataElement
+                {
+                    Id = binaryDataGuid.ToString(),
+                    DataType = binaryDataTypeId,
+                    ContentType = "application/pdf",
+                    Filename = "test.pdf",
+                    Size = binaryDataBytes.Length,
+                },
+            },
+        };
+        InstantiationValidationResult? instantiationValidationResult = new() { Valid = true };
+
+        // Create app metadata with IncludeAttachments = true
+        var appMetadata = CreateApplicationMetadata(Org, AppName, true);
+        appMetadata.CopyInstanceSettings.IncludeAttachments = true;
+
+        fixture
+            .Mock<HttpContext>()
+            .Setup(hc => hc.User)
+            .Returns(TestAuthentication.GetUserPrincipal(1337, InstanceOwnerPartyId));
+        fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
+        fixture.Mock<IAppMetadata>().Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
+        fixture
+            .Mock<IPDP>()
+            .Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
+            .ReturnsAsync(CreateXacmlResponse("Permit"));
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.CreateInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Instance>()))
+            .ReturnsAsync(instance);
+        fixture.Mock<IInstanceClient>().Setup(i => i.GetInstance(It.IsAny<Instance>())).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstantiationValidator>()
+            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .ReturnsAsync(instantiationValidationResult);
+        fixture
+            .Mock<IProcessEngine>()
+            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
+        fixture
+            .Mock<IProcessEngine>()
+            .Setup(p =>
+                p.HandleEventsAndUpdateStorage(
+                    It.IsAny<Instance>(),
+                    It.IsAny<Dictionary<string, string>>(),
+                    It.IsAny<List<InstanceEvent>>()
+                )
+            );
+
+        // Binary data mocks (should be called)
+        fixture
+            .Mock<IDataClient>()
+            .Setup(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
+            .ReturnsAsync(binaryDataBytes);
+        fixture
+            .Mock<IDataClient>()
+            .Setup(p =>
+                p.InsertBinaryData(
+                    It.IsAny<string>(),
+                    binaryDataTypeId,
+                    "application/pdf",
+                    "test.pdf",
+                    It.IsAny<Stream>(),
+                    It.IsAny<string>()
+                )
+            )
+            .ReturnsAsync(new DataElement());
+
+        // Act
+        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
+        ActionResult actual = await controller.CopyInstance(Org, AppName, InstanceOwnerPartyId, instanceGuid);
+
+        // Assert
+        Assert.IsType<RedirectResult>(actual);
+
+        // Verify binary data was copied
+        fixture
+            .Mock<IDataClient>()
+            .Verify(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
+        fixture
+            .Mock<IDataClient>()
+            .Verify(
+                p =>
+                    p.InsertBinaryData(
+                        It.IsAny<string>(),
+                        binaryDataTypeId,
+                        "application/pdf",
+                        "test.pdf",
+                        It.IsAny<Stream>(),
+                        It.IsAny<string>()
+                    ),
+                Times.Once
+            );
+
+        // No form data calls should have been made
+        fixture
+            .Mock<IDataClient>()
+            .Verify(
+                p =>
+                    p.GetFormData(
+                        It.IsAny<Guid>(),
+                        It.IsAny<Type?>()!,
+                        It.IsAny<string>(),
+                        It.IsAny<string>(),
+                        It.IsAny<int>(),
+                        It.IsAny<Guid>()
+                    ),
+                Times.Never
+            );
+        fixture
+            .Mock<IDataClient>()
+            .Verify(
+                p =>
+                    p.InsertFormData(
+                        It.IsAny<object>(),
+                        It.IsAny<Guid>(),
+                        It.IsAny<Type?>()!,
+                        It.IsAny<string>(),
+                        It.IsAny<string>(),
+                        It.IsAny<int>(),
+                        It.IsAny<string>()
+                    ),
+                Times.Never
+            );
+    }
+
+    [Fact]
     public async Task CopyInstance_OnlyBinaryData_CopiesBinaryDataOnly()
     {
         // Arrange
@@ -1067,10 +1221,10 @@ public class InstancesController_CopyInstanceTests
         // Assert
         Assert.IsType<RedirectResult>(actual);
 
-        // Verify binary data was copied
+        // Verify binary data was NOT copied (IncludeAttachments is null by default)
         fixture
             .Mock<IDataClient>()
-            .Verify(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
+            .Verify(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Never);
         fixture
             .Mock<IDataClient>()
             .Verify(
@@ -1083,7 +1237,7 @@ public class InstancesController_CopyInstanceTests
                         It.IsAny<Stream>(),
                         It.IsAny<string>()
                     ),
-                Times.Once
+                Times.Never
             );
 
         // No form data calls should have been made
@@ -1116,13 +1270,6 @@ public class InstancesController_CopyInstanceTests
                     ),
                 Times.Never
             );
-
-        // fixture.VerifyNoOtherCalls(
-        //     verifyDataClient: false,
-        //     verifyAppModel: false,
-        //     verifyInstantiationProcessor: false,
-        //     verifyPrefill: false
-        // );
     }
 
     private static ApplicationMetadata CreateApplicationMetadata(string org, string app, bool enableCopyInstance)
