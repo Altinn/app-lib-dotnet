@@ -951,13 +951,7 @@ public class InstancesController : ControllerBase
         string[] sourceSplit = sourceInstance.Id.Split("/");
         Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
 
-        List<DataType> dts = application
-            .DataTypes.Where(dt => dt.AppLogic?.ClassRef != null)
-            .Where(dt =>
-                dt.TaskId != null
-                && dt.TaskId.Equals(targetInstance.Process.CurrentTask.ElementId, StringComparison.Ordinal)
-            )
-            .ToList();
+        List<DataType> dts = application.DataTypes.Where(dt => dt.AppLogic?.ClassRef != null).ToList();
         List<string> excludedDataTypes = application.CopyInstanceSettings.ExcludedDataTypes;
 
         foreach (DataElement de in sourceInstance.Data)
