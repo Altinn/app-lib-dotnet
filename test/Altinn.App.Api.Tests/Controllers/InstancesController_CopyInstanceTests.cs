@@ -423,13 +423,6 @@ public class InstancesController_CopyInstanceTests
         fixture.Mock<IInstanceClient>().VerifyAll();
         fixture.Mock<IProcessEngine>().VerifyAll();
         fixture.Mock<IInstantiationValidator>().VerifyAll();
-
-        // fixture.VerifyNoOtherCalls(
-        //     verifyDataClient: false,
-        //     verifyAppModel: false,
-        //     verifyInstantiationProcessor: false,
-        //     verifyPrefill: false
-        // );
     }
 
     [Fact]
@@ -534,7 +527,6 @@ public class InstancesController_CopyInstanceTests
             )
             .ReturnsAsync(new DataElement());
 
-        // Binary data mocks - these will be called when binary copying is implemented
         fixture
             .Mock<IDataClient>()
             .Setup(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
@@ -601,15 +593,6 @@ public class InstancesController_CopyInstanceTests
                     ),
                 Times.Once
             );
-
-        // Let's check if binary data methods were called before verifying no other calls
-        // Remove this to see all calls made during test execution
-        // fixture.VerifyNoOtherCalls(
-        //     verifyDataClient: false,
-        //     verifyAppModel: false,
-        //     verifyInstantiationProcessor: false,
-        //     verifyPrefill: false
-        // );
     }
 
     [Fact]
@@ -780,13 +763,6 @@ public class InstancesController_CopyInstanceTests
                     ),
                 Times.Never
             );
-
-        // fixture.VerifyNoOtherCalls(
-        //     verifyDataClient: false,
-        //     verifyAppModel: false,
-        //     verifyInstantiationProcessor: false,
-        //     verifyPrefill: false
-        // );
     }
 
     [Fact]
@@ -956,13 +932,6 @@ public class InstancesController_CopyInstanceTests
                     ),
                 Times.Never
             ); // Should not be called due to failure
-
-        // fixture.VerifyNoOtherCalls(
-        //     verifyDataClient: false,
-        //     verifyAppModel: false,
-        //     verifyInstantiationProcessor: false,
-        //     verifyPrefill: false
-        // );
     }
 
     [Fact]
@@ -1120,7 +1089,7 @@ public class InstancesController_CopyInstanceTests
     }
 
     [Fact]
-    public async Task CopyInstance_OnlyBinaryData_CopiesBinaryDataOnly()
+    public async Task CopyInstance_OnlyBinaryData_NotCopiedByDefault()
     {
         // Arrange
         using var fixture = InstancesControllerFixture.Create();
