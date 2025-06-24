@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Exceptions;
@@ -110,6 +111,11 @@ internal sealed class SigningCallToActionService(
                 .Build(),
             CorrespondenceAuthorisation.Maskinporten
         );
+
+#pragma warning disable CA1869 // Cache and reuse 'JsonSerializerOptions' instances
+        var requestJson = JsonSerializer.Serialize(request, new JsonSerializerOptions { WriteIndented = true });
+#pragma warning restore CA1869 // Cache and reuse 'JsonSerializerOptions' instances
+        _logger.LogInformation("Correspondence request: {RequestJson}", requestJson);
 
         SendCorrespondenceResponse response = await _correspondenceClient.Send(request, ct);
         var correspondenceId = response?.Correspondences[0]?.CorrespondenceId ?? Guid.Empty;
