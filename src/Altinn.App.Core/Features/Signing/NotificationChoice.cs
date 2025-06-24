@@ -1,4 +1,4 @@
-namespace Altinn.App.Core.Features.Signing.Enums;
+namespace Altinn.App.Core.Features.Signing;
 
 /// <summary>
 /// Enumeration representing the choice of notification method for a signee.

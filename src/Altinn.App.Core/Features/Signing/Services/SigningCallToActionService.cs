@@ -218,6 +218,12 @@ internal sealed class SigningCallToActionService(
         }
 
         var defaults = SigningTextHelper.GetDefaultTexts(instanceUrl, language, appName, appOwner);
+
+        NotificationChoice? notificationChoice =
+            (communicationConfig?.NotificationChoice is null or NotificationChoice.None)
+                ? SigningNotificationHelper.GetNotificationChoiceIfNotSet(communicationConfig?.Notification)
+                : communicationConfig?.NotificationChoice;
+
         ContentWrapper contentWrapper = new()
         {
             CorrespondenceContent = new CorrespondenceContent()
@@ -227,7 +233,7 @@ internal sealed class SigningCallToActionService(
                 Summary = correspondenceSummary ?? defaults.Summary,
                 Body = correspondenceBody ?? defaults.Body,
             },
-            NotificationChoice = communicationConfig?.NotificationChoice,
+            NotificationChoice = notificationChoice,
             Notification = communicationConfig?.Notification,
             ReminderNotification = communicationConfig?.ReminderNotification,
             SendersReference = instanceIdentifier.ToString(),

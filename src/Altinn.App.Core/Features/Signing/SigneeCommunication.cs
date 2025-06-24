@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Altinn.App.Core.Features.Signing.Enums;
 
 namespace Altinn.App.Core.Features.Signing;
 

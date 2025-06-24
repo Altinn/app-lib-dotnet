@@ -1,5 +1,4 @@
 using Altinn.App.Core.Features.Correspondence.Models;
-using Altinn.App.Core.Features.Signing.Enums;
 using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Signing.Models;
