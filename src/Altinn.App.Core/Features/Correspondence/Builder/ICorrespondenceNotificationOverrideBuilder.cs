@@ -8,7 +8,6 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 /// </summary>
 public interface ICorrespondenceNotificationOverrideBuilder
 {
-
     /// <summary>
     /// Sets the recipient to override for the correspondence notification.
     /// </summary>
@@ -34,9 +33,7 @@ public interface ICorrespondenceNotificationOverrideBuilder
     [Obsolete(
         "This method is deprecated and will be removed in a future version. Use WithOrganizationNumber/WithNationalIdentityNumber/WithEmailAddress/WithMobileNumber instead."
     )]
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(
-        NationalIdentityNumber nin
-    );
+    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(NationalIdentityNumber nin);
 
     /// <summary>
     /// Sets the recipient to override for the correspondence notification.

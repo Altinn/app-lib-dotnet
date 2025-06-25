@@ -74,14 +74,32 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     )]
     public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(string identifierAsString)
     {
-        var identifier = OrganisationOrPersonIdentifier.Parse(identifierAsString);
+        OrganisationOrPersonIdentifier identifier;
+
+        try
+        {
+            identifier = OrganisationOrPersonIdentifier.Parse(identifierAsString);
+        }
+        catch (FormatException ex)
+        {
+            throw new CorrespondenceArgumentException("Failed to parse identifier, invalid format.", ex);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new CorrespondenceArgumentException("Failed to parse identifier, null or empty value.", ex);
+        }
+
         return identifier switch
         {
-            OrganisationOrPersonIdentifier.Organisation organizationNumber => WithOrganizationNumber(organizationNumber),
-            OrganisationOrPersonIdentifier.Person nathionalIdentityNumber => WithNationalIdentityNumber(nathionalIdentityNumber),
+            OrganisationOrPersonIdentifier.Organisation organizationNumber => WithOrganizationNumber(
+                organizationNumber
+            ),
+            OrganisationOrPersonIdentifier.Person nathionalIdentityNumber => WithNationalIdentityNumber(
+                nathionalIdentityNumber
+            ),
             _ => throw new CorrespondenceArgumentException(
-                                "Recipient identifier must be either an organization or a person."
-                            ),
+                "Parse succeeded, but identifier is neither an organization nor a person."
+            ),
         };
     }
 
@@ -114,8 +132,8 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
             OrganisationOrPersonIdentifier.Organisation org => WithOrganizationNumber(org),
             OrganisationOrPersonIdentifier.Person person => WithNationalIdentityNumber(person),
             _ => throw new CorrespondenceArgumentException(
-                                "Recipient identifier must be either an organization or a person."
-                            ),
+                "Recipient identifier must be either an organization or a person."
+            ),
         };
     }
 
@@ -123,9 +141,13 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     [Obsolete(
         "This method is deprecated and will be removed in a future version. Use WithOrganizationNumber/WithNationalIdentityNumber/WithEmailAddress/WithMobileNumber instead."
     )]
-    public ICorrespondenceNotificationOverrideBuilder WithCorrespondenceNotificationRecipients(List<CorrespondenceNotificationRecipient> correspondenceNotificationRecipients)
+    public ICorrespondenceNotificationOverrideBuilder WithCorrespondenceNotificationRecipients(
+        List<CorrespondenceNotificationRecipient> correspondenceNotificationRecipients
+    )
     {
-        var firstRecipient = correspondenceNotificationRecipients.FirstOrDefault() ?? throw new CorrespondenceArgumentException("At least one recipient must be provided.");
+        var firstRecipient =
+            correspondenceNotificationRecipients.FirstOrDefault()
+            ?? throw new CorrespondenceArgumentException("At least one recipient must be provided.");
 
         _emailAddress = firstRecipient.EmailAddress;
         _mobileNumber = firstRecipient.MobileNumber;
