@@ -47,6 +47,14 @@ public abstract record MultipartCorrespondenceItem
             content.Add(new StringContent(value), name);
     }
 
+    internal static void OverrideIfAlreadyExists(MultipartFormDataContent content, string? value, string name)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            content.ReplaceByName(new StringContent(value), name);
+        }
+    }
+
     internal static void AddIfNotNull(MultipartFormDataContent content, DateTimeOffset? value, string name)
     {
         if (value is null)

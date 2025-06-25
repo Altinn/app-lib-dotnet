@@ -116,13 +116,8 @@ public class CorrespondenceRequestTests_Obsolete
                             {
                                 EmailAddress = "email-address-1",
                                 OrganizationNumber = TestHelpers.GetOrganisationNumber(0),
-                                IsReserved = false,
                             },
-                            new CorrespondenceNotificationRecipient
-                            {
-                                MobileNumber = "mobile-number-1",
-                                IsReserved = true,
-                            },
+                            new CorrespondenceNotificationRecipient { MobileNumber = "mobile-number-1" },
                         ],
                     },
                     new CorrespondenceNotificationRecipientWrapper()
@@ -135,12 +130,10 @@ public class CorrespondenceRequestTests_Obsolete
                             new CorrespondenceNotificationRecipient
                             {
                                 OrganizationNumber = TestHelpers.GetOrganisationNumber(1),
-                                IsReserved = false,
                             },
                             new CorrespondenceNotificationRecipient
                             {
                                 NationalIdentityNumber = TestHelpers.GetNationalIdentityNumber(2),
-                                IsReserved = true,
                             },
                         ],
                     },

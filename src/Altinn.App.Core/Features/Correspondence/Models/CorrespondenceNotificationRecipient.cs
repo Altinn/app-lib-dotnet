@@ -32,7 +32,7 @@ public sealed record CorrespondenceNotificationRecipient : MultipartCorresponden
     /// Boolean indicating if the recipient is reserved.
     /// </summary>
     [Obsolete(
-        "This property is deprecated and will be removed in a future version. It has no effect. Reservations are deduced in the correspondence service."
+        "This property is deprecated and will be removed in a future version. Use Correspondence.IgnoreReservation instead."
     )]
     public bool IsReserved { get; init; }
 
@@ -52,5 +52,11 @@ public sealed record CorrespondenceNotificationRecipient : MultipartCorresponden
             NationalIdentityNumber?.ToUrnFormattedString(),
             $"Correspondence.Notification.CustomRecipient.NationalIdentityNumber"
         );
+#pragma warning disable CS0618 // Type or member is obsolete
+        if (IsReserved)
+        {
+            OverrideIfAlreadyExists(content, IsReserved.ToString(), $"Correspondence.IgnoreReservation");
+        }
+#pragma warning restore CS0618 // Type or member is obsolete
     }
 }
