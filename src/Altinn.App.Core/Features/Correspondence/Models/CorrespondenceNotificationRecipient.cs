@@ -28,6 +28,14 @@ public sealed record CorrespondenceNotificationRecipient : MultipartCorresponden
     /// </summary>
     public NationalIdentityNumber? NationalIdentityNumber { get; init; }
 
+    /// <summary>
+    /// Boolean indicating if the recipient is reserved.
+    /// </summary>
+    [Obsolete(
+        "This property is deprecated and will be removed in a future version. It has no effect. Reservations are deduced in the correspondence service."
+    )]
+    public bool IsReserved { get; init; }
+
     internal override void Serialise(MultipartFormDataContent content, int index) => Serialise(content);
 
     internal void Serialise(MultipartFormDataContent content)
