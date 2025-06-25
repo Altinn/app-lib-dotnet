@@ -1100,13 +1100,12 @@ public class InstancesController : ControllerBase
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(
+                    _logger.LogWarning(
                         ex,
-                        "Unexpected error occurred while copying binary data element {DataElementId} of type {DataType}",
+                        "Failed to copy binary data element {DataElementId} of type {DataType}",
                         de.Id,
                         de.DataType
                     );
-                    throw;
                 }
             }
         }
