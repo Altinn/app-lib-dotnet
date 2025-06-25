@@ -1071,14 +1071,42 @@ public class InstancesController : ControllerBase
                         );
                     }
                 }
-                catch (Exception ex)
+                catch (HttpRequestException ex)
                 {
                     _logger.LogWarning(
                         ex,
-                        "Failed to copy binary data element {DataElementId} of type {DataType}",
+                        "HTTP request failed while copying binary data element {DataElementId} of type {DataType}",
                         de.Id,
                         de.DataType
                     );
+                }
+                catch (FormatException ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Invalid format encountered while processing binary data element {DataElementId} of type {DataType}",
+                        de.Id,
+                        de.DataType
+                    );
+                }
+                catch (ArgumentException ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Invalid argument encountered while processing binary data element {DataElementId} of type {DataType}",
+                        de.Id,
+                        de.DataType
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Unexpected error occurred while copying binary data element {DataElementId} of type {DataType}",
+                        de.Id,
+                        de.DataType
+                    );
+                    throw;
                 }
             }
         }
