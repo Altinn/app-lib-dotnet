@@ -529,8 +529,8 @@ public class InstancesController_CopyInstanceTests
 
         fixture
             .Mock<IDataClient>()
-            .Setup(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
-            .ReturnsAsync(binaryDataBytes);
+            .Setup(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
+            .ReturnsAsync(new MemoryStream(binaryDataBytes));
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
@@ -578,7 +578,7 @@ public class InstancesController_CopyInstanceTests
         // Verify binary data was copied (this should FAIL until we implement it)
         fixture
             .Mock<IDataClient>()
-            .Verify(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
+            .Verify(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
         fixture
             .Mock<IDataClient>()
             .Verify(
@@ -699,8 +699,8 @@ public class InstancesController_CopyInstanceTests
         // Binary data mocks (should NOT be called - type is excluded)
         fixture
             .Mock<IDataClient>()
-            .Setup(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
-            .ReturnsAsync(binaryDataBytes);
+            .Setup(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
+            .ReturnsAsync(new MemoryStream(binaryDataBytes));
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
@@ -748,7 +748,10 @@ public class InstancesController_CopyInstanceTests
         // Verify binary data was NOT copied (excluded type)
         fixture
             .Mock<IDataClient>()
-            .Verify(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Never);
+            .Verify(
+                p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid),
+                Times.Never
+            );
         fixture
             .Mock<IDataClient>()
             .Verify(
@@ -865,10 +868,10 @@ public class InstancesController_CopyInstanceTests
             )
             .ReturnsAsync(new DataElement());
 
-        // Binary data mocks (should fail on GetDataBytes)
+        // Binary data mocks (should fail on GetBinaryData)
         fixture
             .Mock<IDataClient>()
-            .Setup(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
+            .Setup(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
             .ThrowsAsync(new Exception("Simulated binary data retrieval failure"));
         fixture
             .Mock<IDataClient>()
@@ -917,7 +920,7 @@ public class InstancesController_CopyInstanceTests
         // Verify binary data copy was attempted but failed
         fixture
             .Mock<IDataClient>()
-            .Verify(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
+            .Verify(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
         fixture
             .Mock<IDataClient>()
             .Verify(
@@ -1014,8 +1017,8 @@ public class InstancesController_CopyInstanceTests
         // Binary data mocks (should be called)
         fixture
             .Mock<IDataClient>()
-            .Setup(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
-            .ReturnsAsync(binaryDataBytes);
+            .Setup(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
+            .ReturnsAsync(new MemoryStream(binaryDataBytes));
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
@@ -1040,7 +1043,7 @@ public class InstancesController_CopyInstanceTests
         // Verify binary data was copied
         fixture
             .Mock<IDataClient>()
-            .Verify(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
+            .Verify(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
         fixture
             .Mock<IDataClient>()
             .Verify(
@@ -1167,8 +1170,8 @@ public class InstancesController_CopyInstanceTests
         // Binary data mocks (should be called)
         fixture
             .Mock<IDataClient>()
-            .Setup(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
-            .ReturnsAsync(binaryDataBytes);
+            .Setup(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
+            .ReturnsAsync(new MemoryStream(binaryDataBytes));
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
@@ -1193,7 +1196,10 @@ public class InstancesController_CopyInstanceTests
         // Verify binary data was NOT copied (IncludeAttachments is null by default)
         fixture
             .Mock<IDataClient>()
-            .Verify(p => p.GetDataBytes(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Never);
+            .Verify(
+                p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid),
+                Times.Never
+            );
         fixture
             .Mock<IDataClient>()
             .Verify(

@@ -1031,6 +1031,8 @@ public class InstancesController : ControllerBase
         }
 
         // Copy binary data elements (files/attachments)
+        // Error handling strategy: Continue processing other attachments even if individual ones fail
+        // This ensures partial success rather than complete failure when some attachments cannot be copied
         List<DataType> binaryDataTypes = application
             .DataTypes.Where(dt => dt.AppLogic?.ClassRef == null)
             .Where(dt =>
@@ -1050,8 +1052,8 @@ public class InstancesController : ControllerBase
             {
                 try
                 {
-                    // Get binary data from source instance
-                    var binaryData = await _dataClient.GetDataBytes(
+                    // Get binary data from source instance as stream (more efficient than bytes)
+                    using var binaryDataStream = await _dataClient.GetBinaryData(
                         org,
                         app,
                         instanceOwnerPartyId,
@@ -1060,49 +1062,19 @@ public class InstancesController : ControllerBase
                     );
 
                     // Insert binary data to target instance
-                    using (var stream = new MemoryStream(binaryData))
-                    {
-                        await _dataClient.InsertBinaryData(
-                            targetInstance.Id,
-                            de.DataType,
-                            de.ContentType,
-                            de.Filename,
-                            stream
-                        );
-                    }
-                }
-                catch (HttpRequestException ex)
-                {
-                    _logger.LogWarning(
-                        ex,
-                        "HTTP request failed while copying binary data element {DataElementId} of type {DataType}",
-                        de.Id,
-                        de.DataType
-                    );
-                }
-                catch (FormatException ex)
-                {
-                    _logger.LogWarning(
-                        ex,
-                        "Invalid format encountered while processing binary data element {DataElementId} of type {DataType}",
-                        de.Id,
-                        de.DataType
-                    );
-                }
-                catch (ArgumentException ex)
-                {
-                    _logger.LogWarning(
-                        ex,
-                        "Invalid argument encountered while processing binary data element {DataElementId} of type {DataType}",
-                        de.Id,
-                        de.DataType
+                    await _dataClient.InsertBinaryData(
+                        targetInstance.Id,
+                        de.DataType,
+                        de.ContentType,
+                        de.Filename,
+                        binaryDataStream
                     );
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning(
                         ex,
-                        "Failed to copy binary data element {DataElementId} of type {DataType}",
+                        "Failed to copy binary data element {DataElementId} of type {DataType}. Continuing with other attachments.",
                         de.Id,
                         de.DataType
                     );
