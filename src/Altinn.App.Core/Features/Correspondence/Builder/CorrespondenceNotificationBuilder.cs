@@ -21,6 +21,9 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     private DateTimeOffset? _requestedSendTime;
     private CorrespondenceNotificationRecipient? _recipientOverride;
 
+    [Obsolete]
+    private List<CorrespondenceNotificationRecipientWrapper>? _recipientToOverrideWrapper;
+
     private CorrespondenceNotificationBuilder() { }
 
     /// <summary>
@@ -170,5 +173,16 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
             RequestedSendTime = _requestedSendTime,
             CustomRecipient = _recipientOverride,
         };
+    }
+
+    /// <inheritdoc/>
+    [Obsolete("Use WithRecipientOverride(CorrespondenceNotificationRecipient recipientOverride) instead.")]
+    public ICorrespondenceNotificationBuilder WithRecipientOverride(
+        CorrespondenceNotificationRecipientWrapper recipientToOverrideWrapper
+    )
+    {
+        _recipientToOverrideWrapper ??= [];
+        _recipientToOverrideWrapper.Add(recipientToOverrideWrapper);
+        return this;
     }
 }
