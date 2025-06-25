@@ -1025,7 +1025,7 @@ public class InstancesController : ControllerBase
             }
         }
 
-        if (application.CopyInstanceSettings?.IncludeAttachments is null or false)
+        if (application.CopyInstanceSettings?.IncludeAttachments != true)
         {
             return;
         }
