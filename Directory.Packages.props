@@ -61,7 +61,7 @@
     <!-- Transitive dependecies for JWTCookieAuthentication -->
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.7.0" />
     <PackageVersion Include="Microsoft.Rest.ClientRuntime" Version="2.3.24" />
-    <PackageVersion Include="Microsoft.Rest.ClientRuntime.Azure" Version="3.3.19" />
+    <PackageVersion Include="Microsoft.Rest.ClientRuntime.Azure" Version="4.0.3" />
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <!-- End JWTCookieAuthentication deps -->
   </ItemGroup>
