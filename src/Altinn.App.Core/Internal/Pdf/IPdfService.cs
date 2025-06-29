@@ -17,6 +17,21 @@ public interface IPdfService
     Task GenerateAndStorePdf(Instance instance, string taskId, CancellationToken ct);
 
     /// <summary>
+    /// Generate a PDF of what the user can currently see from the given instance of an app. Saves the PDF
+    /// to storage as a new binary file associated with the predefined PDF data type in most apps.
+    /// </summary>
+    /// <param name="instance">The instance details.</param>
+    /// <param name="taskId">The task id for witch the pdf is generated</param>
+    /// <param name="fileNameTextResourceElementId">A text resource element id for the file name of the PDF. If no text resource is found, the literal value will be used. If null, a default file name will be used.</param>
+    /// <param name="ct">Cancellation token for when a request should be stopped before it's completed.</param>
+    Task GenerateAndStorePdf(
+        Instance instance,
+        string taskId,
+        string? fileNameTextResourceElementId,
+        CancellationToken ct = default
+    );
+
+    /// <summary>
     /// Generate a PDF of what the user can currently see from the given instance of an app.
     /// </summary>
     /// <param name="instance">The instance details.</param>
