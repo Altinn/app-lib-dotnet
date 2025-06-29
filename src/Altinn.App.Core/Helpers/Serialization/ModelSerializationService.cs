@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Json;
 using System.Xml;
@@ -38,7 +39,10 @@ public class ModelSerializationService
     /// <param name="data">The binary data</param>
     /// <param name="dataType">The data type used to get content type and the classRef for the object to be returned</param>
     /// <returns>The model specified in </returns>
-    public object DeserializeFromStorage(ReadOnlySpan<byte> data, DataType dataType)
+    public object DeserializeFromStorage(
+        ReadOnlySpan<byte> data,
+        Altinn.Platform.Storage.Interface.Models.DataType dataType
+    )
     {
         var type = GetModelTypeForDataType(dataType);
 
@@ -53,7 +57,10 @@ public class ModelSerializationService
     /// <param name="dataType">The data type</param>
     /// <returns>the binary data and the content type (currently only application/xml, but likely also json in the future)</returns>
     /// <exception cref="InvalidOperationException">If the classRef in dataType does not match type of the model</exception>
-    public (ReadOnlyMemory<byte> data, string contentType) SerializeToStorage(object model, DataType dataType)
+    public (ReadOnlyMemory<byte> data, string contentType) SerializeToStorage(
+        object model,
+        Altinn.Platform.Storage.Interface.Models.DataType dataType
+    )
     {
         var type = GetModelTypeForDataType(dataType);
         if (type != model.GetType())
@@ -113,7 +120,7 @@ public class ModelSerializationService
     public async Task<ServiceResult<object, ProblemDetails>> DeserializeSingleFromStream(
         Stream body,
         string? contentType,
-        DataType dataType
+        Altinn.Platform.Storage.Interface.Models.DataType dataType
     )
     {
         using var memoryStream = new MemoryStream();
@@ -137,6 +144,15 @@ public class ModelSerializationService
                 {
                     Title = "Failed to deserialize XML",
                     Detail = e.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                };
+            }
+            catch (InvalidOperationException e) when (e.InnerException is XmlException xmlEx)
+            {
+                return new ProblemDetails()
+                {
+                    Title = "Failed to deserialize XML",
+                    Detail = xmlEx.Message,
                     Status = StatusCodes.Status400BadRequest,
                 };
             }
@@ -164,6 +180,24 @@ public class ModelSerializationService
                 Title = "Unsupported content type",
                 Detail = $"Content type {contentType} is not supported for deserialization",
                 Status = StatusCodes.Status415UnsupportedMediaType,
+            };
+        }
+
+        // Validate the deserialized model to catch missing required fields early
+        var validationResults = new List<ValidationResult>();
+        var validationContext = new ValidationContext(model);
+        if (!Validator.TryValidateObject(model, validationContext, validationResults, validateAllProperties: true))
+        {
+            var errorMessages = validationResults
+                .Where(vr => vr != ValidationResult.Success)
+                .Select(vr => vr.ErrorMessage ?? "Validation error")
+                .ToArray();
+
+            return new ProblemDetails()
+            {
+                Title = "Data validation failed",
+                Detail = $"The provided data does not meet validation requirements: {string.Join("; ", errorMessages)}",
+                Status = StatusCodes.Status400BadRequest,
             };
         }
 
@@ -216,7 +250,7 @@ public class ModelSerializationService
         }
     }
 
-    private Type GetModelTypeForDataType(DataType dataType)
+    private Type GetModelTypeForDataType(Altinn.Platform.Storage.Interface.Models.DataType dataType)
     {
         if (dataType.AppLogic?.ClassRef is not { } classRef)
         {
@@ -290,7 +324,7 @@ public class ModelSerializationService
     /// <summary>
     /// Initialize an empty object of the specified type
     /// </summary>
-    public object GetEmpty(DataType dataType)
+    public object GetEmpty(Altinn.Platform.Storage.Interface.Models.DataType dataType)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dataType?.AppLogic?.ClassRef);
         return _appModel.Create(dataType.AppLogic.ClassRef);
