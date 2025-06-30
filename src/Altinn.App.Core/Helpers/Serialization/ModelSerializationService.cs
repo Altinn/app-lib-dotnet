@@ -7,7 +7,6 @@ using System.Xml.Serialization;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Models.Result;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
