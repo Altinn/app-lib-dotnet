@@ -47,10 +47,18 @@ public class ModelSerializationServiceTests
             </testModel>
             """;
 
-        var stream = new MemoryStream(Encoding.UTF8.GetBytes(xmlContent));
+        using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(xmlContent)))
+        {
+            // Act
+            var result = await service.DeserializeSingleFromStream(stream, "application/xml", dataType);
 
-        // Act
-        var result = await service.DeserializeSingleFromStream(stream, "application/xml", dataType);
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Error.Should().NotBeNull();
+            result.Error!.Status.Should().Be(StatusCodes.Status400BadRequest);
+            result.Error.Title.Should().Be("Data validation failed");
+            result.Error.Detail.Should().Contain("RequiredField is required");
+        }
 
         // Assert
         result.Success.Should().BeFalse();
