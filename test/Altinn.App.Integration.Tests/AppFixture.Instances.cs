@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Api.Models;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Integration.Tests;
 
@@ -34,5 +35,7 @@ public partial class AppFixture : IAsyncDisposable
             var response = await client.SendAsync(request);
             return new ApiResponse(_fixture, response);
         }
+
+        public async Task Download(string token, Instance instance) { }
     }
 }
