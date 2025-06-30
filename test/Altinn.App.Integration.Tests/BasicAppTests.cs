@@ -42,12 +42,7 @@ public class BasicAppTests(ITestOutputHelper output) : IAsyncLifetime
         var instance = await response.Read<Instance>();
         Assert.NotNull(instance);
 
-        await response.Verify(v =>
-        {
-            v = v.Replace(instance.InstanceOwner.PartyId, "<partyId>");
-            v = v.Replace(instance.Id.Split('/')[1], "<instanceGuid>");
-            return v;
-        });
+        await response.Verify(instance);
     }
 
     [Fact]
@@ -69,14 +64,6 @@ public class BasicAppTests(ITestOutputHelper output) : IAsyncLifetime
         var instance = await response.Read<Instance>();
         Assert.NotNull(instance);
 
-        await response.Verify(
-            instance,
-            v =>
-            {
-                v = v.Replace(instance.InstanceOwner.PartyId, "<partyId>");
-                v = v.Replace(instance.Id.Split('/')[1], "<instanceGuid>");
-                return v;
-            }
-        );
+        await response.Verify(instance);
     }
 }

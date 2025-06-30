@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using Altinn.Platform.Storage.Interface.Models;
 using CliWrap;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
@@ -273,6 +274,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .Verify(Response, sourceFile: sourceFile)
                 .AddExtraSettings(settings =>
                 {
+                    settings.Converters.Add(new StringConverter(appPort, localtestPort, replacer));
                     settings.Converters.Add(new HeadersConverter(appPort, localtestPort, replacer));
                     settings.Converters.Add(new UriConverter(appPort, localtestPort, replacer));
                 });
@@ -291,13 +293,62 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .Verify(new { Response = readResponse, HttpResponse = Response }, sourceFile: sourceFile)
                 .AddExtraSettings(settings =>
                 {
+                    settings.Converters.Add(new StringConverter(appPort, localtestPort, replacer));
                     settings.Converters.Add(new HeadersConverter(appPort, localtestPort, replacer));
                     settings.Converters.Add(new UriConverter(appPort, localtestPort, replacer));
                 });
             return ConfigureVerify(settings);
         }
 
+        public SettingsTask Verify(
+            Instance instance,
+            Func<string, string>? replacer = null,
+            [CallerFilePath] string sourceFile = ""
+        )
+        {
+            var appPort = Fixture._appContainer.GetMappedPublicPort(AppPort).ToString();
+            var localtestPort = Fixture._localtestContainer.GetMappedPublicPort(LocaltestPort).ToString();
+            Func<string, string> finalReplacer = v =>
+            {
+                v = v.Replace(instance.InstanceOwner.PartyId, "<partyId>");
+                v = v.Replace(instance.Id.Split('/')[1], "<instanceGuid>");
+                foreach (var dataElement in instance.Data)
+                {
+                    v = v.Replace(dataElement.Id, "<dataElementId>");
+                }
+                if (replacer is not null)
+                    return replacer(v);
+                return v;
+            };
+            var settings = Verifier
+                .Verify(new { Instance = instance, HttpResponse = Response }, sourceFile: sourceFile)
+                .AddExtraSettings(settings =>
+                {
+                    settings.Converters.Add(new StringConverter(appPort, localtestPort, finalReplacer));
+                    settings.Converters.Add(new HeadersConverter(appPort, localtestPort, finalReplacer));
+                    settings.Converters.Add(new UriConverter(appPort, localtestPort, finalReplacer));
+                });
+            return ConfigureVerify(settings);
+        }
+
         public void Dispose() => Response.Dispose();
+    }
+
+    private sealed class StringConverter(string appPort, string localtestPort, Func<string, string>? replacer)
+        : WriteOnlyJsonConverter<string>
+    {
+        private readonly string _appPort = appPort;
+        private readonly string _localtestPort = localtestPort;
+        private readonly Func<string, string>? _replacer = replacer;
+
+        public override void Write(VerifyJsonWriter writer, string value)
+        {
+            if (_replacer is not null)
+                value = _replacer(value);
+            value = value.Replace(_appPort, "APP_PORT");
+            value = value.Replace(_localtestPort, "LOCALTEST_PORT");
+            writer.WriteValue(value);
+        }
     }
 
     private sealed class HeadersConverter(string appPort, string localtestPort, Func<string, string>? replacer)
