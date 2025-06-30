@@ -1050,33 +1050,21 @@ public class InstancesController : ControllerBase
 
             if (binaryDataTypes.Any(dt => dt.Id.Equals(de.DataType, StringComparison.Ordinal)))
             {
-                try
-                {
-                    using var binaryDataStream = await _dataClient.GetBinaryData(
-                        org,
-                        app,
-                        instanceOwnerPartyId,
-                        sourceInstanceGuid,
-                        Guid.Parse(de.Id)
-                    );
+                using var binaryDataStream = await _dataClient.GetBinaryData(
+                    org,
+                    app,
+                    instanceOwnerPartyId,
+                    sourceInstanceGuid,
+                    Guid.Parse(de.Id)
+                );
 
-                    await _dataClient.InsertBinaryData(
-                        targetInstance.Id,
-                        de.DataType,
-                        de.ContentType,
-                        de.Filename,
-                        binaryDataStream
-                    );
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(
-                        ex,
-                        "Failed to copy binary data element {DataElementId} of type {DataType}. Continuing with other attachments.",
-                        de.Id,
-                        de.DataType
-                    );
-                }
+                await _dataClient.InsertBinaryData(
+                    targetInstance.Id,
+                    de.DataType,
+                    de.ContentType,
+                    de.Filename,
+                    binaryDataStream
+                );
             }
         }
     }
