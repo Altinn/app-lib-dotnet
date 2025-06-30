@@ -220,13 +220,14 @@ public class ProcessEngine : IProcessEngine
         );
 
         string checkedAction = request.Action ?? ConvertTaskTypeToAction(altinnTaskType);
-
+        var isServiceTask = false;
         // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
         if (request.Action is not "reject")
         {
             IServiceTask? serviceTask = CheckIfServiceTask(altinnTaskType);
             if (serviceTask is not null)
             {
+                isServiceTask = true;
                 ServiceTaskResult serviceActionResult = await HandleServiceTask(
                     instance,
                     serviceTask,
@@ -276,6 +277,10 @@ public class ProcessEngine : IProcessEngine
             _logger.LogInformation(
                 "Skipping validation during process next because the action is 'reject' and the task is being abandoned."
             );
+        }
+        else if (isServiceTask)
+        {
+            _logger.LogInformation("Skipping validation during process next because the task is a service task.");
         }
         else
         {
