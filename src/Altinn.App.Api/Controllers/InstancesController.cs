@@ -1052,7 +1052,6 @@ public class InstancesController : ControllerBase
             {
                 try
                 {
-                    // Get binary data from source instance as stream (more efficient than bytes)
                     using var binaryDataStream = await _dataClient.GetBinaryData(
                         org,
                         app,
@@ -1061,7 +1060,6 @@ public class InstancesController : ControllerBase
                         Guid.Parse(de.Id)
                     );
 
-                    // Insert binary data to target instance
                     await _dataClient.InsertBinaryData(
                         targetInstance.Id,
                         de.DataType,
