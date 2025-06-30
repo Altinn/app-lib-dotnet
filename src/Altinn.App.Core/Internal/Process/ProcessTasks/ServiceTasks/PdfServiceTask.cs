@@ -40,24 +40,6 @@ public class PdfServiceTask : IPdfServiceTask
         _logger.LogDebug("Successfully called PdfService for PDF Service Task {TaskId}.", taskId);
     }
 
-    /// <inheritdoc />
-    public Task Start(string taskId, Instance instance)
-    {
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public Task End(string taskId, Instance instance)
-    {
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public Task Abandon(string taskId, Instance instance)
-    {
-        return Task.CompletedTask;
-    }
-
     private ValidAltinnPdfConfiguration GetValidAltinnPdfConfiguration(string taskId)
     {
         AltinnTaskExtension? altinnTaskExtension = _processReader.GetAltinnTaskExtension(taskId);

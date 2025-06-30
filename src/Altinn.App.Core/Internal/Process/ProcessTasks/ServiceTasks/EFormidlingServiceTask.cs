@@ -56,22 +56,4 @@ public class EFormidlingServiceTask : IEFormidlingServiceTask
         await _eFormidlingService.SendEFormidlingShipment(instance);
         _logger.LogDebug("Successfully called eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
     }
-
-    /// <inheritdoc/>
-    public Task Start(string taskId, Instance instance)
-    {
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc/>
-    public Task End(string taskId, Instance instance)
-    {
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc/>
-    public Task Abandon(string taskId, Instance instance)
-    {
-        return Task.CompletedTask;
-    }
 }
