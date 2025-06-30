@@ -19,8 +19,7 @@ Feel free to query existing issues before creating a new one.
 * Clone the repo
 * Ensure .NET SDK is install (see `global.json` for  version)
 * Ensure a container runtime is installed (e.g. Docker)
-* `git submodule init`
-* `git submodule update --remote --merge`
+* `git submodule update --init`
 * `dotnet test`
 
 ## Contributing Changes
