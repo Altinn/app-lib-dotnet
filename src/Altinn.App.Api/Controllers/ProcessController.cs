@@ -287,7 +287,7 @@ public class ProcessController : ControllerBase
                 };
 
                 result = await _processEngine.Next(processNextRequest, ct);
-                moveToNextTaskAutomatically = await ShouldMoveToNextTaskAutomatically(instance, ct);
+                moveToNextTaskAutomatically = IsServiceTask(instance);
 
                 if (!result.Success)
                 {
@@ -516,7 +516,7 @@ public class ProcessController : ControllerBase
         return appProcessState;
     }
 
-    private async Task<bool> ShouldMoveToNextTaskAutomatically(Instance instance, CancellationToken ct)
+    private bool IsServiceTask(Instance instance)
     {
         if (instance.Process.CurrentTask is null)
         {
@@ -524,13 +524,7 @@ public class ProcessController : ControllerBase
         }
 
         IServiceTask? serviceTask = _processEngine.CheckIfServiceTask(instance.Process.CurrentTask.AltinnTaskType);
-
-        if (serviceTask is not null)
-        {
-            return await serviceTask.MoveToNextTaskAfterExecution(instance.Process.CurrentTask.ElementId, instance, ct);
-        }
-
-        return false;
+        return serviceTask is not null;
     }
 
     private ActionResult<AppProcessState> GetResultForError(ProcessChangeResult result)

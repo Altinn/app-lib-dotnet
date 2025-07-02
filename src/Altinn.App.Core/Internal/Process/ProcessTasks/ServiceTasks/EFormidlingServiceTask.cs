@@ -35,14 +35,17 @@ public class EFormidlingServiceTask : IEFormidlingServiceTask
     public string Type => "eFormidling";
 
     /// <inheritdoc/>
-    public async Task Execute(string taskId, Instance instance, CancellationToken cancellationToken = default)
+    public async Task<ServiceTaskResult> Execute(ServiceTaskParameters parameters)
     {
+        string taskId = parameters.InstanceDataMutator.Instance.Process.CurrentTask.ElementId;
+        Instance instance = parameters.InstanceDataMutator.Instance;
+
         if (_appSettings?.Value.EnableEFormidling is false)
         {
             _logger.LogWarning(
                 "EFormidling has been added as a service task in the BPMN process definition but is not enabled in appsettings.json. No eFormidling shipment will be sent, but the service task will be completed."
             );
-            return;
+            return new ServiceTaskSuccessResult();
         }
 
         if (_eFormidlingService is null)
@@ -55,5 +58,7 @@ public class EFormidlingServiceTask : IEFormidlingServiceTask
         _logger.LogDebug("Calling eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
         await _eFormidlingService.SendEFormidlingShipment(instance);
         _logger.LogDebug("Successfully called eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
+
+        return new ServiceTaskSuccessResult();
     }
 }

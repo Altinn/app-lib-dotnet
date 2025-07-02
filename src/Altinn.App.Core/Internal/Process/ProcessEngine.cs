@@ -238,14 +238,9 @@ public class ProcessEngine : IProcessEngine
                     ct
                 );
 
-                if (serviceActionResult.Result is ServiceTaskResult.ResultType.Failure)
+                if (serviceActionResult is ServiceTaskFailedResult failedServiceTask)
                 {
-                    var result = new ProcessChangeResult()
-                    {
-                        Success = false,
-                        ErrorMessage = serviceActionResult.ErrorMessage,
-                        ErrorType = serviceActionResult.ErrorType,
-                    };
+                    ProcessChangeResult result = failedServiceTask.ToProcessChangeResult();
                     activity?.SetProcessChangeResult(result);
                     return result;
                 }
@@ -334,6 +329,24 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
+    public async Task<Instance> HandleEventsAndUpdateStorage(
+        Instance instance,
+        Dictionary<string, string>? prefill,
+        List<InstanceEvent>? events
+    )
+    {
+        using (var activity = _telemetry?.StartProcessHandleEventsActivity(instance))
+        {
+            await _processEventHandlerDelegator.HandleEvents(instance, prefill, events);
+        }
+
+        using (var activity = _telemetry?.StartProcessStoreEventsActivity(instance))
+        {
+            return await _processEventDispatcher.DispatchToStorage(instance, events);
+        }
+    }
+
+    /// <inheritdoc/>
     public IServiceTask? CheckIfServiceTask(string? altinnTaskType)
     {
         if (altinnTaskType is null)
@@ -347,7 +360,6 @@ public class ProcessEngine : IProcessEngine
         return serviceTask;
     }
 
-    /// <inheritdoc/>
     private async Task<UserActionResult> HandleUserAction(
         Instance instance,
         ProcessNextRequest request,
@@ -402,7 +414,6 @@ public class ProcessEngine : IProcessEngine
         return actionResult;
     }
 
-    /// <inheritdoc/>
     private async Task<ServiceTaskResult> HandleServiceTask(
         Instance instance,
         IServiceTask serviceTask,
@@ -414,9 +425,9 @@ public class ProcessEngine : IProcessEngine
 
         if (request.Action is not "write" && request.Action != serviceTask.Type) // serviceTask.Type is accepted to support custom service task types
         {
-            var result = new ServiceTaskResult
+            var result = new ServiceTaskFailedResult()
             {
-                Result = ServiceTaskResult.ResultType.Failure,
+                ErrorTitle = "User action not supported!",
                 ErrorMessage =
                     $"Service tasks do not support running user actions! Received action param {request.Action}.",
                 ErrorType = ProcessErrorType.Conflict,
@@ -427,37 +438,28 @@ public class ProcessEngine : IProcessEngine
 
         try
         {
-            await serviceTask.Execute(instance.Process.CurrentTask.ElementId, instance, ct);
+            ServiceTaskParameters parameters = new()
+            {
+                InstanceDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
+                    instance,
+                    instance.Process?.CurrentTask?.ElementId,
+                    request.Language
+                ),
+                CancellationToken = ct,
+            };
 
-            return new ServiceTaskResult { Result = ServiceTaskResult.ResultType.Success };
+            return await serviceTask.Execute(parameters);
         }
         catch (Exception ex)
         {
             activity?.Errored(ex);
 
-            return new ServiceTaskResult()
+            return new ServiceTaskFailedResult()
             {
-                Result = ServiceTaskResult.ResultType.Failure,
-                ErrorMessage = $"Service task {serviceTask.Type} failed!",
+                ErrorTitle = "Service task failed!",
+                ErrorMessage = $"Service task {serviceTask.Type} failed with an exception!",
                 ErrorType = ProcessErrorType.Internal,
             };
-        }
-    }
-
-    /// <inheritdoc/>
-    public async Task<Instance> HandleEventsAndUpdateStorage(
-        Instance instance,
-        Dictionary<string, string>? prefill,
-        List<InstanceEvent>? events
-    )
-    {
-        using (var activity = _telemetry?.StartProcessHandleEventsActivity(instance))
-        {
-            await _processEventHandlerDelegator.HandleEvents(instance, prefill, events);
-        }
-        using (var activity = _telemetry?.StartProcessStoreEventsActivity(instance))
-        {
-            return await _processEventDispatcher.DispatchToStorage(instance, events);
         }
     }
 
