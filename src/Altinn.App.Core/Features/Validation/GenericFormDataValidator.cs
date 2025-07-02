@@ -58,13 +58,15 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
     /// <param name="description">Optional description if you want to provide a user friendly message that don't rely on the translation system</param>
     /// <param name="code">optional short code for the type of issue</param>
     /// <param name="customTextParams">List of parameters to replace after looking up the translation. Zero indexed {0}</param>
+    /// <param name="customTextParameters">Dictionary of parameters to replace after looking up the translation.</param>
     protected void CreateValidationIssue<T>(
         Expression<Func<TModel, T>> selector,
         string textKey,
         ValidationIssueSeverity severity = ValidationIssueSeverity.Error,
         string? description = null,
         string? code = null,
-        List<string>? customTextParams = null
+        List<string>? customTextParams = null,
+        Dictionary<string, string>? customTextParameters = null
     )
     {
         Debug.Assert(_validationIssues.Value is not null);
@@ -75,7 +77,10 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
                 Description = description ?? textKey,
                 Code = code ?? textKey,
                 CustomTextKey = textKey,
+#pragma warning disable CS0618 // Type or member is obsolete
                 CustomTextParams = customTextParams,
+#pragma warning restore CS0618 // Type or member is obsolete
+                CustomTextParameters = customTextParameters,
                 Severity = severity,
             }
         );
