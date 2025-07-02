@@ -429,10 +429,11 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_WithBinaryData_CopiesBothFormAndBinaryData()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
+        const int instanceOwnerPartyId = 343234;
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
+        using var fixture = InstancesControllerFixture.Create(auth);
         const string Org = "ttd";
         const string AppName = "copy-instance";
-        const int InstanceOwnerPartyId = 343234;
         Guid instanceGuid = Guid.NewGuid();
         Guid formDataGuid = Guid.NewGuid();
         Guid binaryDataGuid = Guid.NewGuid();
@@ -443,9 +444,9 @@ public class InstancesController_CopyInstanceTests
 
         Instance instance = new()
         {
-            Id = $"{InstanceOwnerPartyId}/{instanceGuid}",
+            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
             AppId = $"{Org}/{AppName}",
-            InstanceOwner = new InstanceOwner() { PartyId = InstanceOwnerPartyId.ToString() },
+            InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() },
             Status = new InstanceStatus() { IsArchived = true },
             Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
             Data = new List<DataElement>
@@ -468,7 +469,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<HttpContext>()
             .Setup(hc => hc.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, InstanceOwnerPartyId));
+            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
         fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
         // Create app metadata with IncludeAttachments = true to enable binary data copying
         var appMetadata = CreateApplicationMetadata(Org, AppName, true);
@@ -509,7 +510,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
-                p.GetFormData(instanceGuid, It.IsAny<Type?>()!, Org, AppName, InstanceOwnerPartyId, formDataGuid)
+                p.GetFormData(instanceGuid, It.IsAny<Type?>()!, Org, AppName, instanceOwnerPartyId, formDataGuid)
             )
             .ReturnsAsync(new { test = "test" });
         fixture
@@ -521,7 +522,7 @@ public class InstancesController_CopyInstanceTests
                     It.IsAny<Type?>()!,
                     Org,
                     AppName,
-                    InstanceOwnerPartyId,
+                    instanceOwnerPartyId,
                     formDataTypeId
                 )
             )
@@ -529,7 +530,7 @@ public class InstancesController_CopyInstanceTests
 
         fixture
             .Mock<IDataClient>()
-            .Setup(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
+            .Setup(p => p.GetBinaryData(Org, AppName, instanceOwnerPartyId, instanceGuid, binaryDataGuid))
             .ReturnsAsync(new MemoryStream(binaryDataBytes));
         fixture
             .Mock<IDataClient>()
@@ -547,7 +548,7 @@ public class InstancesController_CopyInstanceTests
 
         // Act
         var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
-        ActionResult actual = await controller.CopyInstance(Org, AppName, InstanceOwnerPartyId, instanceGuid);
+        ActionResult actual = await controller.CopyInstance(Org, AppName, instanceOwnerPartyId, instanceGuid);
 
         // Assert
         Assert.IsType<RedirectResult>(actual);
@@ -556,7 +557,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IDataClient>()
             .Verify(
-                p => p.GetFormData(instanceGuid, It.IsAny<Type?>()!, Org, AppName, InstanceOwnerPartyId, formDataGuid),
+                p => p.GetFormData(instanceGuid, It.IsAny<Type?>()!, Org, AppName, instanceOwnerPartyId, formDataGuid),
                 Times.Once
             );
         fixture
@@ -569,7 +570,7 @@ public class InstancesController_CopyInstanceTests
                         It.IsAny<Type?>()!,
                         Org,
                         AppName,
-                        InstanceOwnerPartyId,
+                        instanceOwnerPartyId,
                         formDataTypeId
                     ),
                 Times.Once
@@ -578,7 +579,7 @@ public class InstancesController_CopyInstanceTests
         // Verify binary data was copied (this should FAIL until we implement it)
         fixture
             .Mock<IDataClient>()
-            .Verify(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
+            .Verify(p => p.GetBinaryData(Org, AppName, instanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
         fixture
             .Mock<IDataClient>()
             .Verify(
@@ -599,10 +600,11 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_WithExcludedBinaryDataType_SkipsExcludedType()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
+        const int instanceOwnerPartyId = 343234;
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
+        using var fixture = InstancesControllerFixture.Create(auth);
         const string Org = "ttd";
         const string AppName = "copy-instance";
-        const int InstanceOwnerPartyId = 343234;
         Guid instanceGuid = Guid.NewGuid();
         Guid formDataGuid = Guid.NewGuid();
         Guid binaryDataGuid = Guid.NewGuid();
@@ -613,9 +615,9 @@ public class InstancesController_CopyInstanceTests
 
         Instance instance = new()
         {
-            Id = $"{InstanceOwnerPartyId}/{instanceGuid}",
+            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
             AppId = $"{Org}/{AppName}",
-            InstanceOwner = new InstanceOwner() { PartyId = InstanceOwnerPartyId.ToString() },
+            InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() },
             Status = new InstanceStatus() { IsArchived = true },
             Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
             Data = new List<DataElement>
@@ -640,7 +642,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<HttpContext>()
             .Setup(hc => hc.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, InstanceOwnerPartyId));
+            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
         fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
         fixture.Mock<IAppMetadata>().Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         fixture
@@ -678,7 +680,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
-                p.GetFormData(instanceGuid, It.IsAny<Type?>()!, Org, AppName, InstanceOwnerPartyId, formDataGuid)
+                p.GetFormData(instanceGuid, It.IsAny<Type?>()!, Org, AppName, instanceOwnerPartyId, formDataGuid)
             )
             .ReturnsAsync(new { test = "test" });
         fixture
@@ -690,7 +692,7 @@ public class InstancesController_CopyInstanceTests
                     It.IsAny<Type?>()!,
                     Org,
                     AppName,
-                    InstanceOwnerPartyId,
+                    instanceOwnerPartyId,
                     formDataTypeId
                 )
             )
@@ -699,7 +701,7 @@ public class InstancesController_CopyInstanceTests
         // Binary data mocks (should NOT be called - type is excluded)
         fixture
             .Mock<IDataClient>()
-            .Setup(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
+            .Setup(p => p.GetBinaryData(Org, AppName, instanceOwnerPartyId, instanceGuid, binaryDataGuid))
             .ReturnsAsync(new MemoryStream(binaryDataBytes));
         fixture
             .Mock<IDataClient>()
@@ -717,7 +719,7 @@ public class InstancesController_CopyInstanceTests
 
         // Act
         var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
-        ActionResult actual = await controller.CopyInstance(Org, AppName, InstanceOwnerPartyId, instanceGuid);
+        ActionResult actual = await controller.CopyInstance(Org, AppName, instanceOwnerPartyId, instanceGuid);
 
         // Assert
         Assert.IsType<RedirectResult>(actual);
@@ -726,7 +728,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IDataClient>()
             .Verify(
-                p => p.GetFormData(instanceGuid, It.IsAny<Type?>()!, Org, AppName, InstanceOwnerPartyId, formDataGuid),
+                p => p.GetFormData(instanceGuid, It.IsAny<Type?>()!, Org, AppName, instanceOwnerPartyId, formDataGuid),
                 Times.Once
             );
         fixture
@@ -739,7 +741,7 @@ public class InstancesController_CopyInstanceTests
                         It.IsAny<Type?>()!,
                         Org,
                         AppName,
-                        InstanceOwnerPartyId,
+                        instanceOwnerPartyId,
                         formDataTypeId
                     ),
                 Times.Once
@@ -749,7 +751,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IDataClient>()
             .Verify(
-                p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid),
+                p => p.GetBinaryData(Org, AppName, instanceOwnerPartyId, instanceGuid, binaryDataGuid),
                 Times.Never
             );
         fixture
@@ -772,10 +774,11 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_IncludeAttachmentsIsTrue_CopiesBinaryData()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
+        const int instanceOwnerPartyId = 343234;
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
+        using var fixture = InstancesControllerFixture.Create(auth);
         const string Org = "ttd";
         const string AppName = "copy-instance";
-        const int InstanceOwnerPartyId = 343234;
         Guid instanceGuid = Guid.NewGuid();
         Guid binaryDataGuid = Guid.NewGuid();
         const string binaryDataTypeId = "attachment";
@@ -784,9 +787,9 @@ public class InstancesController_CopyInstanceTests
 
         Instance instance = new()
         {
-            Id = $"{InstanceOwnerPartyId}/{instanceGuid}",
+            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
             AppId = $"{Org}/{AppName}",
-            InstanceOwner = new InstanceOwner() { PartyId = InstanceOwnerPartyId.ToString() },
+            InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() },
             Status = new InstanceStatus() { IsArchived = true },
             Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
             Data = new List<DataElement>
@@ -811,7 +814,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<HttpContext>()
             .Setup(hc => hc.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, InstanceOwnerPartyId));
+            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
         fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
         fixture.Mock<IAppMetadata>().Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
         fixture
@@ -848,7 +851,7 @@ public class InstancesController_CopyInstanceTests
         // Binary data mocks (should be called)
         fixture
             .Mock<IDataClient>()
-            .Setup(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
+            .Setup(p => p.GetBinaryData(Org, AppName, instanceOwnerPartyId, instanceGuid, binaryDataGuid))
             .ReturnsAsync(new MemoryStream(binaryDataBytes));
         fixture
             .Mock<IDataClient>()
@@ -866,7 +869,7 @@ public class InstancesController_CopyInstanceTests
 
         // Act
         var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
-        ActionResult actual = await controller.CopyInstance(Org, AppName, InstanceOwnerPartyId, instanceGuid);
+        ActionResult actual = await controller.CopyInstance(Org, AppName, instanceOwnerPartyId, instanceGuid);
 
         // Assert
         Assert.IsType<RedirectResult>(actual);
@@ -874,7 +877,7 @@ public class InstancesController_CopyInstanceTests
         // Verify binary data was copied
         fixture
             .Mock<IDataClient>()
-            .Verify(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
+            .Verify(p => p.GetBinaryData(Org, AppName, instanceOwnerPartyId, instanceGuid, binaryDataGuid), Times.Once);
         fixture
             .Mock<IDataClient>()
             .Verify(
@@ -926,10 +929,11 @@ public class InstancesController_CopyInstanceTests
     public async Task CopyInstance_OnlyBinaryData_NotCopiedByDefault()
     {
         // Arrange
-        using var fixture = InstancesControllerFixture.Create();
+        const int instanceOwnerPartyId = 343234;
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
+        using var fixture = InstancesControllerFixture.Create(auth);
         const string Org = "ttd";
         const string AppName = "copy-instance";
-        const int InstanceOwnerPartyId = 343234;
         Guid instanceGuid = Guid.NewGuid();
         Guid binaryDataGuid = Guid.NewGuid();
         const string binaryDataTypeId = "attachment";
@@ -938,9 +942,9 @@ public class InstancesController_CopyInstanceTests
 
         Instance instance = new()
         {
-            Id = $"{InstanceOwnerPartyId}/{instanceGuid}",
+            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
             AppId = $"{Org}/{AppName}",
-            InstanceOwner = new InstanceOwner() { PartyId = InstanceOwnerPartyId.ToString() },
+            InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() },
             Status = new InstanceStatus() { IsArchived = true },
             Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
             Data = new List<DataElement>
@@ -961,7 +965,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<HttpContext>()
             .Setup(hc => hc.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, InstanceOwnerPartyId));
+            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
         fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
         fixture
             .Mock<IAppMetadata>()
@@ -1001,7 +1005,7 @@ public class InstancesController_CopyInstanceTests
         // Binary data mocks (should be called)
         fixture
             .Mock<IDataClient>()
-            .Setup(p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid))
+            .Setup(p => p.GetBinaryData(Org, AppName, instanceOwnerPartyId, instanceGuid, binaryDataGuid))
             .ReturnsAsync(new MemoryStream(binaryDataBytes));
         fixture
             .Mock<IDataClient>()
@@ -1019,7 +1023,7 @@ public class InstancesController_CopyInstanceTests
 
         // Act
         var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
-        ActionResult actual = await controller.CopyInstance(Org, AppName, InstanceOwnerPartyId, instanceGuid);
+        ActionResult actual = await controller.CopyInstance(Org, AppName, instanceOwnerPartyId, instanceGuid);
 
         // Assert
         Assert.IsType<RedirectResult>(actual);
@@ -1028,7 +1032,7 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IDataClient>()
             .Verify(
-                p => p.GetBinaryData(Org, AppName, InstanceOwnerPartyId, instanceGuid, binaryDataGuid),
+                p => p.GetBinaryData(Org, AppName, instanceOwnerPartyId, instanceGuid, binaryDataGuid),
                 Times.Never
             );
         fixture
