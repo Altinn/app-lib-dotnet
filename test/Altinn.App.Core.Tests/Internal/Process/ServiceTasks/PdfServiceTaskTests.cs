@@ -1,4 +1,5 @@
-﻿using Altinn.App.Core.Internal.Pdf;
+﻿using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
@@ -36,15 +37,28 @@ public class PdfServiceTaskTests
     public async Task Execute_Should_Call_GenerateAndStorePdf()
     {
         // Arrange
-        var instance = new Instance();
-        var taskId = "taskId";
+        var instance = new Instance
+        {
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "taskId" } },
+        };
+
+        var instanceMutatorMock = new Mock<IInstanceDataMutator>();
+        instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
+
+        var parameters = new ServiceTaskParameters { InstanceDataMutator = instanceMutatorMock.Object };
 
         // Act
-        await _serviceTask.Execute(taskId, instance);
+        await _serviceTask.Execute(parameters);
 
         // Assert
         _pdfServiceMock.Verify(
-            x => x.GenerateAndStorePdf(instance, taskId, FileName, It.IsAny<CancellationToken>()),
+            x =>
+                x.GenerateAndStorePdf(
+                    instance,
+                    instance.Process.CurrentTask.ElementId,
+                    FileName,
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }

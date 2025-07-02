@@ -1,6 +1,5 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models.Process;
-using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 
@@ -13,60 +12,66 @@ public interface IServiceTask : IProcessTask
     /// <summary>
     /// Executes the service task.
     /// </summary>
-    /// TODO: Fortsette å ta in taskId og instance, som de andre metodene, eller hoppe over på IInstanceDataAccessor?
-    public Task Execute(string taskId, Instance instance, CancellationToken cancellationToken = default);
+    public Task<ServiceTaskResult> Execute(ServiceTaskParameters parameters);
+}
+
+/// <summary>
+/// This class represents the parameters for executing a service task.
+/// </summary>
+public sealed record ServiceTaskParameters
+{
+    /// <summary>
+    /// An instance data mutator that can be used to read and modify the instance data during the service task execution.
+    /// </summary>
+    public required IInstanceDataMutator InstanceDataMutator { get; init; }
 
     /// <summary>
-    /// Method that is called to determine if the process should move to the next task after executing the service task, or wait for another process next call.
+    /// Cancellation token for the operation.
     /// </summary>
-    /// <param name="taskId"></param>
-    /// <param name="instance"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public Task<bool> MoveToNextTaskAfterExecution(
-        string taskId,
-        Instance instance,
-        CancellationToken cancellationToken = default
-    )
-    {
-        // The default implementation is to move to the next task after execution
-        return Task.FromResult(true);
-    }
+    public CancellationToken CancellationToken { get; init; } = CancellationToken.None;
 }
 
 /// <summary>
 /// This class represents the result of executing a service task.
 /// </summary>
-public class ServiceTaskResult
+public abstract class ServiceTaskResult { }
+
+/// <summary>
+/// This class represents a successful result of executing a service task.
+/// </summary>
+public sealed class ServiceTaskSuccessResult : ServiceTaskResult { }
+
+/// <summary>
+/// This class represents a failed result of executing a service task.
+/// </summary>
+public sealed class ServiceTaskFailedResult : ServiceTaskResult
 {
     /// <summary>
-    /// The result of the service task execution.
+    /// Gets or sets the error title if the service task execution failed.
     /// </summary>
-    public ResultType Result { get; set; }
+    public required string ErrorTitle { get; init; }
 
     /// <summary>
-    /// Error type to return when the service task was not successful
+    /// Gets or sets the error message if the service task execution failed.
     /// </summary>
-    public ProcessErrorType? ErrorType { get; set; }
+    public required string ErrorMessage { get; init; }
 
     /// <summary>
-    /// Error message to return when the service task was not successful
+    /// Gets or sets the error type if the service task execution failed.
     /// </summary>
-    public string? ErrorMessage { get; set; }
+    public required ProcessErrorType ErrorType { get; init; }
 
     /// <summary>
-    /// An enum representing the status of the service task execution.
+    /// Converts the service task failed result to an unsuccessful process change result.
     /// </summary>
-    public enum ResultType
+    public ProcessChangeResult ToProcessChangeResult()
     {
-        /// <summary>
-        /// The service task was executed successfully.
-        /// </summary>
-        Success,
-
-        /// <summary>
-        /// The service task failed to execute.
-        /// </summary>
-        Failure,
+        return new ProcessChangeResult
+        {
+            Success = false,
+            ErrorTitle = ErrorTitle,
+            ErrorMessage = ErrorMessage,
+            ErrorType = ErrorType,
+        };
     }
 }

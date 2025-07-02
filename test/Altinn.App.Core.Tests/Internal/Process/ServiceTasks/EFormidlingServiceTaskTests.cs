@@ -1,5 +1,6 @@
 ﻿using Altinn.App.Core.Configuration;
 using Altinn.App.Core.EFormidling.Interface;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
@@ -30,12 +31,17 @@ public class EFormidlingServiceTaskTests
     public async Task Execute_Should_LogWarning_When_EFormidlingDisabled()
     {
         // Arrange
-        var instance = new Instance();
+        Instance instance = GetInstance();
         var appSettings = new AppSettings { EnableEFormidling = false };
         _appSettingsMock.Setup(x => x.Value).Returns(appSettings);
 
+        var instanceMutatorMock = new Mock<IInstanceDataMutator>();
+        instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
+
+        var parameters = new ServiceTaskParameters { InstanceDataMutator = instanceMutatorMock.Object };
+
         // Act
-        await _serviceTask.Execute("taskId", instance);
+        await _serviceTask.Execute(parameters);
 
         // Assert
         _loggerMock.Verify(
@@ -61,29 +67,48 @@ public class EFormidlingServiceTaskTests
     public async Task Execute_Should_ThrowException_When_EFormidlingServiceIsNull()
     {
         // Arrange
-        var instance = new Instance();
+        Instance instance = GetInstance();
 
         var appSettings = new AppSettings { EnableEFormidling = true };
         _appSettingsMock.Setup(x => x.Value).Returns(appSettings);
 
         var serviceTask = new EFormidlingServiceTask(_loggerMock.Object, null, _appSettingsMock.Object);
 
+        var instanceMutatorMock = new Mock<IInstanceDataMutator>();
+        instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
+
+        var parameters = new ServiceTaskParameters { InstanceDataMutator = instanceMutatorMock.Object };
+
         // Act & Assert
-        await Assert.ThrowsAsync<ProcessException>(() => serviceTask.Execute("taskId", instance));
+        await Assert.ThrowsAsync<ProcessException>(() => serviceTask.Execute(parameters));
     }
 
     [Fact]
     public async Task Execute_Should_Call_SendEFormidlingShipment_When_EFormidlingEnabled()
     {
         // Arrange
-        var instance = new Instance();
+        Instance instance = GetInstance();
+
         var appSettings = new AppSettings { EnableEFormidling = true };
         _appSettingsMock.Setup(x => x.Value).Returns(appSettings);
 
+        var instanceMutatorMock = new Mock<IInstanceDataMutator>();
+        instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
+
+        var parameters = new ServiceTaskParameters { InstanceDataMutator = instanceMutatorMock.Object };
+
         // Act
-        await _serviceTask.Execute("taskId", instance);
+        await _serviceTask.Execute(parameters);
 
         // Assert
         _eFormidlingServiceMock.Verify(x => x.SendEFormidlingShipment(instance), Times.Once);
+    }
+
+    private static Instance GetInstance()
+    {
+        return new Instance
+        {
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "taskId" } },
+        };
     }
 }

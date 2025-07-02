@@ -154,7 +154,9 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
 
         responseAsString
             .Should()
-            .Be("{\"title\":\"Internal server error\",\"status\":500,\"detail\":\"Service task pdf failed!\"}");
+            .Be(
+                "{\"title\":\"Service task failed!\",\"status\":500,\"detail\":\"Service task pdf failed with an exception!\"}"
+            );
 
         // Double check that process did not move to the next task
         Instance instance = await TestData.GetInstance(Org, App, InstanceOwnerPartyId, _instanceGuid);
