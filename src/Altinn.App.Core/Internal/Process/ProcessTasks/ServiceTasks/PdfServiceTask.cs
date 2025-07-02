@@ -30,14 +30,19 @@ public class PdfServiceTask : IPdfServiceTask
     public string Type => "pdf";
 
     /// <inheritdoc/>
-    public async Task Execute(string taskId, Instance instance, CancellationToken cancellationToken = default)
+    public async Task<ServiceTaskResult> Execute(ServiceTaskParameters parameters)
     {
+        string taskId = parameters.InstanceDataMutator.Instance.Process.CurrentTask.ElementId;
+        Instance instance = parameters.InstanceDataMutator.Instance;
+
         _logger.LogDebug("Calling PdfService for PDF Service Task {TaskId}.", taskId);
 
         ValidAltinnPdfConfiguration config = GetValidAltinnPdfConfiguration(taskId);
-        await _pdfService.GenerateAndStorePdf(instance, taskId, config.Filename, cancellationToken);
+        await _pdfService.GenerateAndStorePdf(instance, taskId, config.Filename, parameters.CancellationToken);
 
         _logger.LogDebug("Successfully called PdfService for PDF Service Task {TaskId}.", taskId);
+
+        return new ServiceTaskSuccessResult();
     }
 
     private ValidAltinnPdfConfiguration GetValidAltinnPdfConfiguration(string taskId)
