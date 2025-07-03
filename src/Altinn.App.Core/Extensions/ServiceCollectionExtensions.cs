@@ -18,7 +18,6 @@ using Altinn.App.Core.Features.Pdf;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
-using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.Authentication;
@@ -181,7 +180,7 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IAppModel, DefaultAppModel>();
         services.TryAddTransient<DataListsFactory>();
         services.TryAddTransient<InstanceDataListsFactory>();
-        services.TryAddTransient<DataElementAccessChecker>();
+        services.TryAddTransient<IDataElementAccessChecker, DataElementAccessChecker>();
         services.TryAddTransient<IDataListsService, DataListsService>();
         services.TryAddTransient<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
         services.TryAddTransient<LayoutEvaluatorStateInitializer>();

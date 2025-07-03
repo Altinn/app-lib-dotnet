@@ -1,4 +1,4 @@
-using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
@@ -12,13 +12,13 @@ internal class DataElementValidatorWrapper : IValidator
 {
     private readonly IDataElementValidator _dataElementValidator;
     private readonly string _taskId;
-    private readonly DataElementAccessChecker _dataElementAccessChecker;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     public DataElementValidatorWrapper(
         /* altinn:injection:ignore */
         IDataElementValidator dataElementValidator,
         string taskId,
-        DataElementAccessChecker dataElementAccessChecker
+        IDataElementAccessChecker dataElementAccessChecker
     )
     {
         _dataElementValidator = dataElementValidator;

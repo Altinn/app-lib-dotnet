@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
@@ -28,7 +28,7 @@ public class ExpressionValidator : IValidator
     private readonly IAppResources _appResourceService;
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IAppMetadata _appMetadata;
-    private readonly DataElementAccessChecker _dataElementAccessChecker;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     /// <summary>
     /// Constructor for the expression validator
@@ -45,7 +45,7 @@ public class ExpressionValidator : IValidator
         _appResourceService = appResourceService;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _appMetadata = appMetadata;
-        _dataElementAccessChecker = serviceProvider.GetRequiredService<DataElementAccessChecker>();
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
 
     /// <summary>

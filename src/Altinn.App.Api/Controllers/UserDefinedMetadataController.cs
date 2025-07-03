@@ -3,7 +3,6 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.Auth;
-using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
@@ -29,7 +28,7 @@ public class UserDefinedMetadataController : ControllerBase
     private readonly IDataClient _dataClient;
     private readonly IAppMetadata _appMetadata;
     private readonly IAuthenticationContext _authenticationContext;
-    private readonly DataElementAccessChecker _dataElementAccessChecker;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     /// <summary>
     /// Initialize a new instance of <see cref="UserDefinedMetadataController"/> with the given services.
@@ -51,7 +50,7 @@ public class UserDefinedMetadataController : ControllerBase
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _authenticationContext = authenticationContext;
-        _dataElementAccessChecker = serviceProvider.GetRequiredService<DataElementAccessChecker>();
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
 
     /// <summary>

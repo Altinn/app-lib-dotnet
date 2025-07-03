@@ -55,7 +55,7 @@ public class DataController : ControllerBase
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly AppImplementationFactory _appImplementationFactory;
-    private readonly DataElementAccessChecker _dataElementAccessChecker;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -93,7 +93,7 @@ public class DataController : ControllerBase
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
-        _dataElementAccessChecker = serviceProvider.GetRequiredService<DataElementAccessChecker>();
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
 
     /// <summary>

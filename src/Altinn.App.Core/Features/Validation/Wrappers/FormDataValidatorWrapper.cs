@@ -1,4 +1,4 @@
-using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Validation.Wrappers;
@@ -13,13 +13,13 @@ internal class FormDataValidatorWrapper : IValidator
 {
     private readonly IFormDataValidator _formDataValidator;
     private readonly string _taskId;
-    private readonly DataElementAccessChecker _dataElementAccessChecker;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     public FormDataValidatorWrapper(
         /* altinn:injection:ignore */
         IFormDataValidator formDataValidator,
         string taskId,
-        DataElementAccessChecker dataElementAccessChecker
+        IDataElementAccessChecker dataElementAccessChecker
     )
     {
         _formDataValidator = formDataValidator;

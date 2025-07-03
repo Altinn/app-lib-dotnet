@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Models;
@@ -6,7 +7,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Altinn.App.Core.Helpers;
+namespace Altinn.App.Core.Internal.Data;
 
 /// <summary>
 /// Helper class for validating if a user is a valid contributor to a data type.
@@ -14,7 +15,7 @@ namespace Altinn.App.Core.Helpers;
 /// <remarks>
 /// The concept of inline authorization of valid contributors is not widely used and is likely not the best approach for doing authorization on the data type level, but there is no support for it yet in the policy based authorization, so keeping for now.
 /// </remarks>
-internal class DataElementAccessChecker
+internal class DataElementAccessChecker : IDataElementAccessChecker
 {
     private readonly IAuthorizationService _authorizationService;
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -34,11 +35,6 @@ internal class DataElementAccessChecker
         _appMetadata = appMetadata;
     }
 
-    /// <summary>
-    /// Checks if the user has access to read a data element of a given data type on an instance.
-    /// </summary>
-    /// <remarks>The current request <see cref="HttpContext.User"/> is used to determine read access</remarks>
-    /// <returns>null for success or ProblemDetails that can be an error response in the Apis</returns>
     public async Task<ProblemDetails?> GetReaderProblem(Instance instance, DataType dataType)
     {
         if (await HasRequiredActionAuthorization(instance, dataType.ActionRequiredToRead) is false)
@@ -54,11 +50,6 @@ internal class DataElementAccessChecker
         return null;
     }
 
-    /// <summary>
-    /// Checks if the user has access to read a given data element on an instance.
-    /// </summary>
-    /// <remarks>The current request <see cref="HttpContext.User"/> is used to determine read access</remarks>
-    /// <returns>null for success or ProblemDetails that can be an error response in the Apis</returns>
     public async Task<ProblemDetails?> GetReaderProblem(Instance instance, DataElement dataElement)
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
@@ -69,10 +60,6 @@ internal class DataElementAccessChecker
         return await GetReaderProblem(instance, dataType);
     }
 
-    /// <summary>
-    /// Convenience alias for <see cref="GetReaderProblem(Instance,DataType)"/>.
-    /// Determines if the current request user can access the given data type
-    /// </summary>
     public async Task<bool> CanRead(Instance instance, DataType dataType) =>
         await GetReaderProblem(instance, dataType) is null;
 
@@ -138,10 +125,6 @@ internal class DataElementAccessChecker
         return null;
     }
 
-    /// <summary>
-    /// Checks if the user has access to create a data element of a given data type on an instance.
-    /// </summary>
-    /// <returns>null for success or ProblemDetails that can be an error response in the Apis</returns>
     public async Task<ProblemDetails?> GetCreateProblem(
         Instance instance,
         DataType dataType,
@@ -195,10 +178,6 @@ internal class DataElementAccessChecker
         return null;
     }
 
-    /// <summary>
-    /// Checks if the user has access to mutate a data element of a given data type on an instance.
-    /// </summary>
-    /// <returns>null for success or ProblemDetails that can be an error response in the Apis</returns>
     public async Task<ProblemDetails?> GetUpdateProblem(
         Instance instance,
         DataType dataType,
@@ -215,10 +194,6 @@ internal class DataElementAccessChecker
         return null;
     }
 
-    /// <summary>
-    /// Checks if the user has access to delete a data element of a given data type on an instance.
-    /// </summary>
-    /// <returns>null for success or ProblemDetails that can be an error response in the Apis</returns>
     public async Task<ProblemDetails?> GetDeleteProblem(
         Instance instance,
         DataType dataType,

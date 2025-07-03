@@ -1,4 +1,4 @@
-using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Data;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Api.Extensions;
@@ -11,7 +11,7 @@ internal static class InstanceExtensions
     /// </summary>
     public static async Task<Instance> WithOnlyAccessibleDataElements(
         this Instance instance,
-        DataElementAccessChecker dataElementAccessChecker
+        IDataElementAccessChecker dataElementAccessChecker
     )
     {
         List<DataElement> filteredDataElements = [];

@@ -20,7 +20,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IOptions<AppSettings> _appSettings;
-    private readonly DataElementAccessChecker _dataElementAccessChecker;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessTaskFinalizer"/> class.
@@ -36,7 +36,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         _appMetadata = appMetadata;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
-        _dataElementAccessChecker = serviceProvider.GetRequiredService<DataElementAccessChecker>();
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
         _appSettings = appSettings;
         _appModel = appModel;
     }

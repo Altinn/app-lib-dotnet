@@ -75,7 +75,7 @@ public class InstancesController : ControllerBase
     private readonly ITranslationService _translationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAuthenticationContext _authenticationContext;
-    private readonly DataElementAccessChecker _dataElementAccessChecker;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
     /// <summary>
@@ -124,7 +124,7 @@ public class InstancesController : ControllerBase
         _translationService = translationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
-        _dataElementAccessChecker = serviceProvider.GetRequiredService<DataElementAccessChecker>();
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
 
     /// <summary>
