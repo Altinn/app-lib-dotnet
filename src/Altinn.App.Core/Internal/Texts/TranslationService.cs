@@ -131,7 +131,7 @@ internal class TranslationService : ITranslationService
         }
 
         _logger.LogWarning(
-            "Text resource variable with dataSource '{DataSource}' is not supported. Only 'dataModel.*', instanceContext and applicationSettings is supported. In text resource with id = {TextResourceId}",
+            "Text resource variable with dataSource '{DataSource}' is not supported. Only 'dataModel.*', instanceContext, applicationSettings, and customTextParameters is supported. In text resource with id = {TextResourceId}",
             variable.DataSource,
             resourceElement.Id
         );
