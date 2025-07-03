@@ -100,8 +100,7 @@ public class InstancesController : ControllerBase
         ModelSerializationService serializationService,
         InternalPatchService patchService,
         ITranslationService translationService,
-        IServiceProvider serviceProvider,
-        IAuthenticationContext authenticationContext
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
