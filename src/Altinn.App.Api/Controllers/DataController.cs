@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using Altinn.App.Api.Extensions;
-using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;

@@ -1,5 +1,4 @@
 using System.Net.Mime;
-using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;

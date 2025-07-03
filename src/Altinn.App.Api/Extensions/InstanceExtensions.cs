@@ -1,5 +1,3 @@
-using Altinn.App.Api.Helpers;
-using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.Platform.Storage.Interface.Models;
 
