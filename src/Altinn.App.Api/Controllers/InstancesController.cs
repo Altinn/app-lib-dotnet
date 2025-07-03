@@ -11,6 +11,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -73,6 +74,7 @@ public class InstancesController : ControllerBase
     private readonly InternalPatchService _patchService;
     private readonly ITranslationService _translationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly DataElementAccessChecker _dataElementAccessChecker;
 
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
@@ -86,6 +88,7 @@ public class InstancesController : ControllerBase
         IDataClient dataClient,
         IAppMetadata appMetadata,
         IAppModel appModel,
+        IAuthenticationContext authenticationContext,
         IPDP pdp,
         IEventsClient eventsClient,
         IOptions<AppSettings> appSettings,
@@ -120,6 +123,7 @@ public class InstancesController : ControllerBase
         _patchService = patchService;
         _translationService = translationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<DataElementAccessChecker>();
     }
 
     /// <summary>
@@ -171,7 +175,10 @@ public class InstancesController : ControllerBase
 
             var instanceOwnerParty = await _registerClient.GetPartyUnchecked(instanceOwnerPartyId, cancellationToken);
 
-            var dto = InstanceResponse.From(instance, instanceOwnerParty);
+            var dto = InstanceResponse.From(
+                await instance.WithOnlyAccessibleDataElements(_dataElementAccessChecker),
+                instanceOwnerParty
+            );
 
             return Ok(dto);
         }

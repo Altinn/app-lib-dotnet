@@ -4,6 +4,7 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
@@ -29,6 +30,7 @@ public class UserDefinedMetadataController : ControllerBase
     private readonly IDataClient _dataClient;
     private readonly IAppMetadata _appMetadata;
     private readonly IAuthenticationContext _authenticationContext;
+    private readonly DataElementAccessChecker _dataElementAccessChecker;
 
     /// <summary>
     /// Initialize a new instance of <see cref="UserDefinedMetadataController"/> with the given services.
@@ -37,17 +39,20 @@ public class UserDefinedMetadataController : ControllerBase
     /// <param name="dataClient">A client that can be used to send data requests to storage.</param>
     /// <param name="appMetadata">The app metadata service</param>
     /// <param name="authenticationContext">The authentication context service</param>
+    /// <param name="serviceProvider">The service provider</param>
     public UserDefinedMetadataController(
         IInstanceClient instanceClient,
         IDataClient dataClient,
         IAppMetadata appMetadata,
-        IAuthenticationContext authenticationContext
+        IAuthenticationContext authenticationContext,
+        IServiceProvider serviceProvider
     )
     {
         _instanceClient = instanceClient;
         _dataClient = dataClient;
         _appMetadata = appMetadata;
         _authenticationContext = authenticationContext;
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<DataElementAccessChecker>();
     }
 
     /// <summary>
@@ -141,7 +146,11 @@ public class UserDefinedMetadataController : ControllerBase
         }
 
         if (
-            DataElementAccessChecker.GetUpdateProblem(instance, dataTypeFromMetadata, _authenticationContext.Current) is
+            await _dataElementAccessChecker.GetUpdateProblem(
+                instance,
+                dataTypeFromMetadata,
+                _authenticationContext.Current
+            ) is
             { } problem
         )
         {

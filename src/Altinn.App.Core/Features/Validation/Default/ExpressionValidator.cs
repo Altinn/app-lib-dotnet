@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
@@ -7,6 +8,7 @@ using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Validation.Default;
@@ -26,6 +28,7 @@ public class ExpressionValidator : IValidator
     private readonly IAppResources _appResourceService;
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IAppMetadata _appMetadata;
+    private readonly DataElementAccessChecker _dataElementAccessChecker;
 
     /// <summary>
     /// Constructor for the expression validator
@@ -34,13 +37,15 @@ public class ExpressionValidator : IValidator
         ILogger<ExpressionValidator> logger,
         IAppResources appResourceService,
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
-        IAppMetadata appMetadata
+        IAppMetadata appMetadata,
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
         _appResourceService = appResourceService;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _appMetadata = appMetadata;
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<DataElementAccessChecker>();
     }
 
     /// <summary>
@@ -84,6 +89,11 @@ public class ExpressionValidator : IValidator
         var validationIssues = new List<ValidationIssue>();
         foreach (var (dataType, dataElement) in dataAccessor.GetDataElementsForTask(taskId))
         {
+            if (await _dataElementAccessChecker.CanRead(dataAccessor.Instance, dataType) is false)
+            {
+                continue;
+            }
+
             var validationConfig = _appResourceService.GetValidationConfiguration(dataType.Id);
             if (!string.IsNullOrEmpty(validationConfig))
             {
