@@ -287,13 +287,13 @@ public class ProcessController : ControllerBase
                 };
 
                 result = await _processEngine.ProcessNext(processNextRequest, ct);
-                moveToNextTaskAutomatically = IsServiceTask(instance);
 
                 if (!result.Success)
                 {
                     return GetResultForError(result);
                 }
 
+                moveToNextTaskAutomatically = IsServiceTask(instance);
                 firstIteration = false;
             } while (moveToNextTaskAutomatically);
 
