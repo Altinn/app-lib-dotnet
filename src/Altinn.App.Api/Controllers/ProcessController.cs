@@ -496,17 +496,19 @@ public class ProcessController : ControllerBase
                 appProcessState.CurrentTask.HasReadAccess = authDecisions.Single(a => a.Id == "read").Authorized;
                 appProcessState.CurrentTask.HasWriteAccess = authDecisions.Single(a => a.Id == "write").Authorized;
                 appProcessState.CurrentTask.UserActions = authDecisions;
+                appProcessState.CurrentTask.ElementType = processTask.ElementType();
             }
         }
 
         var processTasks = new List<AppProcessTaskTypeInfo>();
-        foreach (var processElement in _processReader.GetAllFlowElements().OfType<ProcessTask>())
+        foreach (ProcessTask processElement in _processReader.GetAllFlowElements().OfType<ProcessTask>())
         {
             processTasks.Add(
                 new AppProcessTaskTypeInfo
                 {
                     ElementId = processElement.Id,
                     AltinnTaskType = processElement.ExtensionElements?.TaskExtension?.TaskType,
+                    ElementType = processElement.ElementType(),
                 }
             );
         }
