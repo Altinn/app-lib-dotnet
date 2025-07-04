@@ -402,7 +402,10 @@ public class InstancesController : ControllerBase
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
 
-        var dto = InstanceResponse.From(instance, party);
+        var dto = InstanceResponse.From(
+            await instance.WithOnlyAccessibleDataElements(_dataElementAccessChecker),
+            party
+        );
 
         return Created(url, dto);
     }
