@@ -147,55 +147,19 @@ public class ProcessEngine : IProcessEngine
 
         using Activity? activity = _telemetry?.StartProcessNextActivity(instance, request.Action);
 
-        if (instance.Process is null)
+        if (
+            !TryGetCurrentTaskIdAndAltinnTaskType(
+                instance,
+                out CurrentTaskIdAndAltinnTaskType? currentTaskIdAndAltinnTaskType,
+                out ProcessChangeResult? invalidProcessStateError
+            )
+        )
         {
-            var result = new ProcessChangeResult
-            {
-                Success = false,
-                ErrorType = ProcessErrorType.Conflict,
-                ErrorMessage = "The instance is missing process information.",
-            };
-            activity?.SetProcessChangeResult(result);
-            return result;
+            activity?.SetProcessChangeResult(invalidProcessStateError);
+            return invalidProcessStateError;
         }
 
-        if (instance.Process?.Ended != null)
-        {
-            var result = new ProcessChangeResult
-            {
-                Success = false,
-                ErrorType = ProcessErrorType.Conflict,
-                ErrorMessage = "Process is ended.",
-            };
-            activity?.SetProcessChangeResult(result);
-            return result;
-        }
-
-        string? currentTaskId = instance.Process?.CurrentTask?.ElementId;
-        if (currentTaskId is null)
-        {
-            var result = new ProcessChangeResult
-            {
-                Success = false,
-                ErrorType = ProcessErrorType.Conflict,
-                ErrorMessage = "Process is not started. Use start!",
-            };
-            activity?.SetProcessChangeResult(result);
-            return result;
-        }
-
-        string? altinnTaskType = instance.Process?.CurrentTask?.AltinnTaskType;
-        if (altinnTaskType == null)
-        {
-            var result = new ProcessChangeResult
-            {
-                Success = false,
-                ErrorType = ProcessErrorType.Conflict,
-                ErrorMessage = "Instance does not have current altinn task type information!",
-            };
-            activity?.SetProcessChangeResult(result);
-            return result;
-        }
+        (string currentTaskId, string altinnTaskType) = currentTaskIdAndAltinnTaskType;
 
         bool authorized = await _processEngineAuthorizer.AuthorizeProcessNext(instance, request.Action);
 
@@ -710,4 +674,65 @@ public class ProcessEngine : IProcessEngine
                 return actionOrTaskType;
         }
     }
+
+    private static bool TryGetCurrentTaskIdAndAltinnTaskType(
+        Instance instance,
+        [NotNullWhen(true)] out CurrentTaskIdAndAltinnTaskType? state,
+        [NotNullWhen(false)] out ProcessChangeResult? error
+    )
+    {
+        state = null; // allowed because the method may return false
+        error = null;
+
+        ProcessState? process = instance.Process;
+
+        if (process is null)
+        {
+            error = new ProcessChangeResult
+            {
+                Success = false,
+                ErrorType = ProcessErrorType.Conflict,
+                ErrorMessage = "The instance is missing process information.",
+            };
+            return false;
+        }
+
+        if (process.Ended is not null)
+        {
+            error = new ProcessChangeResult
+            {
+                Success = false,
+                ErrorType = ProcessErrorType.Conflict,
+                ErrorMessage = "Process is ended.",
+            };
+            return false;
+        }
+
+        if (process.CurrentTask?.ElementId is not string taskId)
+        {
+            error = new ProcessChangeResult
+            {
+                Success = false,
+                ErrorType = ProcessErrorType.Conflict,
+                ErrorMessage = "Process is not started. Use start!",
+            };
+            return false;
+        }
+
+        if (process.CurrentTask.AltinnTaskType is not string taskType)
+        {
+            error = new ProcessChangeResult
+            {
+                Success = false,
+                ErrorType = ProcessErrorType.Conflict,
+                ErrorMessage = "Instance does not have current altinn task type information!",
+            };
+            return false;
+        }
+
+        state = new CurrentTaskIdAndAltinnTaskType(taskId, taskType);
+        return true;
+    }
+
+    private sealed record CurrentTaskIdAndAltinnTaskType(string CurrentTaskId, string AltinnTaskType);
 }
