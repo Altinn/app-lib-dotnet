@@ -35,6 +35,7 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
         _appMetadata = appMetadata;
     }
 
+    /// <inheritdoc />
     public async Task<ProblemDetails?> GetReaderProblem(Instance instance, DataType dataType)
     {
         if (await HasRequiredActionAuthorization(instance, dataType.ActionRequiredToRead) is false)
@@ -50,16 +51,19 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
         return null;
     }
 
+    /// <inheritdoc />
     public async Task<ProblemDetails?> GetReaderProblem(Instance instance, DataElement dataElement)
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        DataType dataType = appMetadata.DataTypes.Single(x =>
-            x.Id.Equals(dataElement.DataType, StringComparison.OrdinalIgnoreCase)
-        );
+        DataType dataType =
+            appMetadata.DataTypes.FirstOrDefault(x =>
+                x.Id.Equals(dataElement.DataType, StringComparison.OrdinalIgnoreCase)
+            ) ?? throw new ArgumentException($"Unknown data type {dataElement.DataType}");
 
         return await GetReaderProblem(instance, dataType);
     }
 
+    /// <inheritdoc />
     public async Task<bool> CanRead(Instance instance, DataType dataType) =>
         await GetReaderProblem(instance, dataType) is null;
 
@@ -87,12 +91,6 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
     {
         auth ??= _authenticationContext.Current;
 
-        if (await GetReaderProblem(instance, dataType) is { } readProblem)
-        {
-            return readProblem;
-        }
-
-        // TODO: This compounds the requirements, meaning the user needs both read and write access to mutate. This may or may not be desired...
         if (await HasRequiredActionAuthorization(instance, dataType.ActionRequiredToWrite) is false)
         {
             return new ProblemDetails
@@ -125,6 +123,7 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
         return null;
     }
 
+    /// <inheritdoc />
     public async Task<ProblemDetails?> GetCreateProblem(
         Instance instance,
         DataType dataType,
@@ -178,6 +177,7 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
         return null;
     }
 
+    /// <inheritdoc />
     public async Task<ProblemDetails?> GetUpdateProblem(
         Instance instance,
         DataType dataType,
@@ -194,6 +194,7 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
         return null;
     }
 
+    /// <inheritdoc />
     public async Task<ProblemDetails?> GetDeleteProblem(
         Instance instance,
         DataType dataType,
