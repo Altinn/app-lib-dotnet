@@ -113,7 +113,7 @@ public class ProcessEngine : IProcessEngine
         // start process
         ProcessStateChange? startChange = await ProcessStart(processStartRequest.Instance, validStartElement);
         InstanceEvent? startEvent = startChange?.Events?[0].CopyValues();
-        ProcessStateChange? nextChange = await ProcessNext(processStartRequest.Instance);
+        ProcessStateChange? nextChange = await MoveProcessStateToNextAndGenerateEvents(processStartRequest.Instance);
         InstanceEvent? goToNextEvent = nextChange?.Events?[0].CopyValues();
         List<InstanceEvent> events = [];
         if (startEvent is not null)
@@ -141,7 +141,7 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<ProcessChangeResult> Next(ProcessNextRequest request, CancellationToken ct = default)
+    public async Task<ProcessChangeResult> ProcessNext(ProcessNextRequest request, CancellationToken ct = default)
     {
         Instance instance = request.Instance;
 
@@ -256,7 +256,7 @@ public class ProcessEngine : IProcessEngine
                         var result = new ProcessChangeResult()
                         {
                             Success = false,
-                            ErrorMessage = $"Action handler for action {request.Action} failed!",
+                            ErrorMessage = $"Action handler for action {LogSanitizer.Sanitize(request.Action)} failed!",
                             ErrorType = userActionResult.ErrorType,
                         };
                         activity?.SetProcessChangeResult(result);
@@ -500,7 +500,10 @@ public class ProcessEngine : IProcessEngine
     /// <summary>
     /// Moves instance's process to nextElement id. Returns the instance together with process events.
     /// </summary>
-    private async Task<ProcessStateChange?> ProcessNext(Instance instance, string? action = null)
+    private async Task<ProcessStateChange?> MoveProcessStateToNextAndGenerateEvents(
+        Instance instance,
+        string? action = null
+    )
     {
         if (instance.Process == null)
         {
@@ -515,13 +518,16 @@ public class ProcessEngine : IProcessEngine
                 CurrentTask = instance.Process.CurrentTask,
                 StartEvent = instance.Process.StartEvent,
             },
-            Events = await MoveProcessToNext(instance, action),
+            Events = await GenerateEventsAndUpdateProcessState(instance, action),
             NewProcessState = instance.Process,
         };
         return result;
     }
 
-    private async Task<List<InstanceEvent>> MoveProcessToNext(Instance instance, string? action = null)
+    private async Task<List<InstanceEvent>> GenerateEventsAndUpdateProcessState(
+        Instance instance,
+        string? action = null
+    )
     {
         List<InstanceEvent> events = [];
 
@@ -649,7 +655,7 @@ public class ProcessEngine : IProcessEngine
 
     private async Task<MoveToNextResult> HandleMoveToNext(Instance instance, string? action)
     {
-        ProcessStateChange? processStateChange = await ProcessNext(instance, action);
+        ProcessStateChange? processStateChange = await MoveProcessStateToNextAndGenerateEvents(instance, action);
 
         if (processStateChange is null)
         {

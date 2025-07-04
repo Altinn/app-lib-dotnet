@@ -286,7 +286,7 @@ public class ProcessController : ControllerBase
                     Language = language,
                 };
 
-                result = await _processEngine.Next(processNextRequest, ct);
+                result = await _processEngine.ProcessNext(processNextRequest, ct);
                 moveToNextTaskAutomatically = IsServiceTask(instance);
 
                 if (!result.Success)
@@ -408,7 +408,7 @@ public class ProcessController : ControllerBase
                     Action = ConvertTaskTypeToAction(instance.Process.CurrentTask.AltinnTaskType),
                     Language = language,
                 };
-                ProcessChangeResult result = await _processEngine.Next(request);
+                ProcessChangeResult result = await _processEngine.ProcessNext(request);
 
                 if (!result.Success)
                 {

@@ -398,7 +398,7 @@ public sealed class ProcessEngineTest
             User = null!,
             Language = null,
         };
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
+        ProcessChangeResult result = await processEngine.ProcessNext(processNextRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("The instance is missing process information.");
         result.ErrorType.Should().Be(ProcessErrorType.Conflict);
@@ -422,7 +422,7 @@ public sealed class ProcessEngineTest
             Action = null,
             Language = null,
         };
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
+        ProcessChangeResult result = await processEngine.ProcessNext(processNextRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("Process is not started. Use start!");
         result.ErrorType.Should().Be(ProcessErrorType.Conflict);
@@ -449,7 +449,7 @@ public sealed class ProcessEngineTest
             Action = null,
             Language = null,
         };
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
+        ProcessChangeResult result = await processEngine.ProcessNext(processNextRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("Instance does not have current altinn task type information!");
         result.ErrorType.Should().Be(ProcessErrorType.Conflict);
@@ -517,7 +517,7 @@ public sealed class ProcessEngineTest
             Language = null,
         };
 
-        ProcessChangeResult result = await processEngine.Next(processNextRequest, CancellationToken.None);
+        ProcessChangeResult result = await processEngine.ProcessNext(processNextRequest, CancellationToken.None);
         result.Success.Should().BeTrue();
         result.ErrorType.Should().Be(null);
     }
@@ -589,7 +589,7 @@ public sealed class ProcessEngineTest
             Language = null,
         };
 
-        ProcessChangeResult result = await processEngine.Next(processNextRequest, CancellationToken.None);
+        ProcessChangeResult result = await processEngine.ProcessNext(processNextRequest, CancellationToken.None);
         result.Success.Should().BeFalse();
         result.ErrorType.Should().Be(ProcessErrorType.Unauthorized);
     }
@@ -665,7 +665,7 @@ public sealed class ProcessEngineTest
             Language = null,
         };
 
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
+        ProcessChangeResult result = await processEngine.ProcessNext(processNextRequest);
         fixture.Mock<IProcessReader>().Verify(r => r.IsProcessTask("Task_1"), Times.Once);
         fixture.Mock<IProcessReader>().Verify(r => r.IsEndEvent("Task_2"), Times.Once);
         fixture.Mock<IProcessReader>().Verify(r => r.IsProcessTask("Task_2"), Times.Once);
@@ -824,7 +824,7 @@ public sealed class ProcessEngineTest
             Action = "reject",
             Language = null,
         };
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
+        ProcessChangeResult result = await processEngine.ProcessNext(processNextRequest);
         fixture.Mock<IProcessReader>().Verify(r => r.IsProcessTask("Task_1"), Times.Once);
         fixture.Mock<IProcessReader>().Verify(r => r.IsEndEvent("Task_2"), Times.Once);
         fixture.Mock<IProcessReader>().Verify(r => r.IsProcessTask("Task_2"), Times.Once);
@@ -997,7 +997,7 @@ public sealed class ProcessEngineTest
             Instance = instance,
         };
 
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
+        ProcessChangeResult result = await processEngine.ProcessNext(processNextRequest);
         fixture.Mock<IProcessReader>().Verify(r => r.IsProcessTask("Task_2"), Times.Once);
         fixture.Mock<IProcessReader>().Verify(r => r.IsEndEvent("EndEvent_1"), Times.Once);
         fixture.Mock<IProcessNavigator>().Verify(n => n.GetNextTask(It.IsAny<Instance>(), "Task_2", null), Times.Once);
