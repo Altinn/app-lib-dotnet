@@ -17,7 +17,7 @@ public interface IProcessEngine
     /// <summary>
     /// Method to move process to next task/event
     /// </summary>
-    Task<ProcessChangeResult> Next(ProcessNextRequest request, CancellationToken ct = default);
+    Task<ProcessChangeResult> ProcessNext(ProcessNextRequest request, CancellationToken ct = default);
 
     /// <summary>
     /// Check if the Altinn task type is a service task
