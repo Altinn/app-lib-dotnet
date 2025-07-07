@@ -98,8 +98,18 @@ internal class TranslationService : ITranslationService
     )
     {
         // Do replacements for
-        if (variable.DataSource.StartsWith("dataModel.", StringComparison.Ordinal) && state != null && context != null)
+        if (variable.DataSource.StartsWith("dataModel.", StringComparison.Ordinal))
         {
+            if (state == null || context == null)
+            {
+                _logger.LogWarning(
+                    "Text resource variable with dataSource '{DataSource}' is not supported in this context. In text resource with id = {TextResourceId}",
+                    variable.DataSource,
+                    resourceElement.Id
+                );
+                return null;
+            }
+
             var dataModelName = variable.DataSource.Substring("dataModel.".Length);
 
             // For compatibility with docs, we allow {[0]} indexes in the path, even though we don't need them
@@ -115,19 +125,39 @@ internal class TranslationService : ITranslationService
             return await state.GetModelData(binding, context.DataElementIdentifier, context.RowIndices) as string;
         }
 
-        if (variable.DataSource == "instanceContext" && state != null)
+        if (variable.DataSource == "instanceContext")
         {
+            if (state == null)
+            {
+                _logger.LogWarning(
+                    "Text resource variable with dataSource '{DataSource}' is not supported in this context. In text resource with id = {TextResourceId}",
+                    variable.DataSource,
+                    resourceElement.Id
+                );
+                return null;
+            }
+
             return state.GetInstanceContext(variable.Key);
         }
 
-        if (variable.DataSource == "applicationSettings" && state != null)
+        if (variable.DataSource == "applicationSettings")
         {
+            if (state == null)
+            {
+                _logger.LogWarning(
+                    "Text resource variable with dataSource '{DataSource}' is not supported in this context. In text resource with id = {TextResourceId}",
+                    variable.DataSource,
+                    resourceElement.Id
+                );
+                return null;
+            }
+
             return state.GetFrontendSetting(variable.Key);
         }
 
-        if (variable.DataSource == "customTextParameters" && customTextParameters != null)
+        if (variable.DataSource == "customTextParameters")
         {
-            return customTextParameters.GetValueOrDefault(variable.Key);
+            return customTextParameters?.GetValueOrDefault(variable.Key);
         }
 
         _logger.LogWarning(
