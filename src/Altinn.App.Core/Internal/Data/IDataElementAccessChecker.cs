@@ -23,9 +23,27 @@ internal interface IDataElementAccessChecker
 
     /// <summary>
     /// Convenience alias for <see cref="GetReaderProblem(Instance,DataType)"/>.
-    /// Determines if the current request user can access the given data type
+    /// Determines if the current request user can read the given data type
     /// </summary>
     Task<bool> CanRead(Instance instance, DataType dataType);
+
+    /// <summary>
+    /// Convenience alias for <see cref="GetCreateProblem"/>.
+    /// Determines if the current request user can create the given data type
+    /// </summary>
+    Task<bool> CanCreate(Instance instance, DataType dataType);
+
+    /// <summary>
+    /// Convenience alias for <see cref="GetUpdateProblem"/>.
+    /// Determines if the current request user can update/write the given data type
+    /// </summary>
+    Task<bool> CanUpdate(Instance instance, DataType dataType);
+
+    /// <summary>
+    /// Convenience alias for <see cref="GetDeleteProblem"/>.
+    /// Determines if the current request user can delete the given data element and type
+    /// </summary>
+    Task<bool> CanDelete(Instance instance, DataType dataType, Guid dataElementId);
 
     /// <summary>
     /// Checks if the user has access to create a data element of a given data type on an instance.

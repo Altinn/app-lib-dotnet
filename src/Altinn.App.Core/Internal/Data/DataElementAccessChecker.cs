@@ -36,6 +36,22 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
     }
 
     /// <inheritdoc />
+    public async Task<bool> CanRead(Instance instance, DataType dataType) =>
+        await GetReaderProblem(instance, dataType) is null;
+
+    /// <inheritdoc />
+    public async Task<bool> CanCreate(Instance instance, DataType dataType) =>
+        await GetCreateProblem(instance, dataType) is null;
+
+    /// <inheritdoc />
+    public async Task<bool> CanUpdate(Instance instance, DataType dataType) =>
+        await GetUpdateProblem(instance, dataType) is null;
+
+    /// <inheritdoc />
+    public async Task<bool> CanDelete(Instance instance, DataType dataType, Guid dataElementId) =>
+        await GetDeleteProblem(instance, dataType, dataElementId) is null;
+
+    /// <inheritdoc />
     public async Task<ProblemDetails?> GetReaderProblem(Instance instance, DataType dataType)
     {
         if (await HasRequiredActionAuthorization(instance, dataType.ActionRequiredToRead) is false)
@@ -61,25 +77,6 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
             ) ?? throw new ArgumentException($"Unknown data type {dataElement.DataType}");
 
         return await GetReaderProblem(instance, dataType);
-    }
-
-    /// <inheritdoc />
-    public async Task<bool> CanRead(Instance instance, DataType dataType) =>
-        await GetReaderProblem(instance, dataType) is null;
-
-    private async Task<bool> HasRequiredActionAuthorization(Instance instance, string requiredAction)
-    {
-        if (string.IsNullOrWhiteSpace(requiredAction))
-        {
-            return true;
-        }
-
-        return await _authorizationService.AuthorizeAction(
-            new AppIdentifier(instance),
-            new InstanceIdentifier(instance),
-            _httpContextAccessor.HttpContext?.User ?? throw new InvalidOperationException("No HTTP context available"),
-            requiredAction
-        );
     }
 
     // Common checks for create, update and delete
@@ -237,5 +234,20 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
     private static bool InstanceIsActive(Instance i)
     {
         return i?.Status?.Archived is null && i?.Status?.SoftDeleted is null && i?.Status?.HardDeleted is null;
+    }
+
+    private async Task<bool> HasRequiredActionAuthorization(Instance instance, string requiredAction)
+    {
+        if (string.IsNullOrWhiteSpace(requiredAction))
+        {
+            return true;
+        }
+
+        return await _authorizationService.AuthorizeAction(
+            new AppIdentifier(instance),
+            new InstanceIdentifier(instance),
+            _httpContextAccessor.HttpContext?.User ?? throw new InvalidOperationException("No HTTP context available"),
+            requiredAction
+        );
     }
 }
