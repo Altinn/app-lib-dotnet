@@ -13,6 +13,16 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Infrastructure.Clients.AccessManagement;
 
+/// <summary>
+/// Client for interacting with the Access Management API.
+/// This client is responsible for delegating and revoking rights for app instances.
+/// </summary>
+/// <param name="logger">The logger.</param>
+/// <param name="httpClient">The httpClient.</param>
+/// <param name="appMetadata">The application metadata.</param>
+/// <param name="accessTokenGenerator">The access token generator.</param>
+/// <param name="platformSettings">The platform settings.</param>
+/// <param name="telemetry">Telemetry.</param>
 public sealed class AccessManagementClient(
     ILogger<AccessManagementClient> logger,
     HttpClient httpClient,
@@ -24,6 +34,14 @@ public sealed class AccessManagementClient(
 {
     private const string ApplicationJsonMediaType = "application/json";
 
+    /// <summary>
+    /// Delegates rights to a user for a set of resources for a specific app instance.
+    /// </summary>
+    /// <param name="delegation">The delegation request.</param>
+    /// <param name="ct">Cancellationtoken.</param>
+    /// <returns>DelegationResponse</returns>
+    /// <exception cref="HttpRequestException"></exception>
+    /// <exception cref="JsonException"></exception>
     public async Task<DelegationResponse> DelegateRights(DelegationRequest delegation, CancellationToken ct)
     {
         using var activity = telemetry?.StartAppInstanceDelegationActivity();
@@ -89,6 +107,14 @@ public sealed class AccessManagementClient(
         }
     }
 
+    /// <summary>
+    /// Revokes rights from a user for a set of resources for a specific app instance.
+    /// </summary>
+    /// <param name="delegation"></param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    /// <exception cref="HttpRequestException"></exception>
+    /// <exception cref="JsonException"></exception>
     public async Task<DelegationResponse> RevokeRights(DelegationRequest delegation, CancellationToken ct)
     {
         using var activity = telemetry?.StartAppInstanceRevokeActivity();
