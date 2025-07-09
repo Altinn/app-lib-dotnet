@@ -40,16 +40,24 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
         await GetReaderProblem(instance, dataType) is null;
 
     /// <inheritdoc />
-    public async Task<bool> CanCreate(Instance instance, DataType dataType) =>
-        await GetCreateProblem(instance, dataType) is null;
+    public async Task<bool> CanCreate(
+        Instance instance,
+        DataType dataType,
+        Authenticated? auth = null,
+        long? contentLength = null
+    ) => await GetCreateProblem(instance, dataType, auth, contentLength) is null;
 
     /// <inheritdoc />
-    public async Task<bool> CanUpdate(Instance instance, DataType dataType) =>
-        await GetUpdateProblem(instance, dataType) is null;
+    public async Task<bool> CanUpdate(Instance instance, DataType dataType, Authenticated? auth = null) =>
+        await GetUpdateProblem(instance, dataType, auth) is null;
 
     /// <inheritdoc />
-    public async Task<bool> CanDelete(Instance instance, DataType dataType, Guid dataElementId) =>
-        await GetDeleteProblem(instance, dataType, dataElementId) is null;
+    public async Task<bool> CanDelete(
+        Instance instance,
+        DataType dataType,
+        Guid dataElementId,
+        Authenticated? auth = null
+    ) => await GetDeleteProblem(instance, dataType, dataElementId, auth) is null;
 
     /// <inheritdoc />
     public async Task<ProblemDetails?> GetReaderProblem(Instance instance, DataType dataType)

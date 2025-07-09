@@ -157,45 +157,54 @@ public class DataElementAccessCheckerTest
     }
 
     [Theory]
-    [InlineData("invalidOrg", false)]
-    [InlineData("validOrg", true)]
-    public async Task Mutators_EnforceAllowedContributors(string authOrg, bool expectSuccess)
+    [InlineData("invalidOrg", false, ExpectedTestOutcome.Failure)]
+    [InlineData("invalidOrg", true, ExpectedTestOutcome.Failure)]
+    [InlineData("validOrg", false, ExpectedTestOutcome.Success)]
+    [InlineData("validOrg", true, ExpectedTestOutcome.Success)]
+    public async Task Mutators_EnforceAllowedContributors(
+        string authOrg,
+        bool sendAuthArg,
+        ExpectedTestOutcome expectedOutcome
+    )
     {
         // Arrange
         var fixture = Fixture.Create();
         var instance = fixture.Data.DefaultInstance;
         var dataType = fixture.Data.DataTypeA;
-        var auth = TestAuthentication.GetServiceOwnerAuthentication(org: authOrg);
+        var authentication = TestAuthentication.GetServiceOwnerAuthentication(org: authOrg);
+        var authArg = sendAuthArg ? authentication : null;
 
         dataType.AllowedContributors = ["org:validOrg"];
-        fixture.Mocks.AuthenticationContextMock.Setup(x => x.Current).Returns(auth);
+        fixture.Mocks.AuthenticationContextMock.Setup(x => x.Current).Returns(authentication);
 
         // Act
-        var createResult = await fixture.DataElementAccessChecker.GetCreateProblem(instance, dataType, auth);
-        var updateResult = await fixture.DataElementAccessChecker.GetUpdateProblem(instance, dataType, auth);
+        var createResult = await fixture.DataElementAccessChecker.GetCreateProblem(instance, dataType, authArg);
+        var updateResult = await fixture.DataElementAccessChecker.GetUpdateProblem(instance, dataType, authArg);
         var deleteResult = await fixture.DataElementAccessChecker.GetDeleteProblem(
             instance,
             dataType,
             Guid.Empty,
-            auth
+            authArg
         );
-        var canCreate = await fixture.DataElementAccessChecker.CanCreate(instance, dataType);
-        var canUpdate = await fixture.DataElementAccessChecker.CanUpdate(instance, dataType);
-        var canDelete = await fixture.DataElementAccessChecker.CanDelete(instance, dataType, Guid.Empty);
+        var canCreate = await fixture.DataElementAccessChecker.CanCreate(instance, dataType, authArg);
+        var canUpdate = await fixture.DataElementAccessChecker.CanUpdate(instance, dataType, authArg);
+        var canDelete = await fixture.DataElementAccessChecker.CanDelete(instance, dataType, Guid.Empty, authArg);
 
         // Assert
-        Assert.Equal(expectSuccess, canCreate);
-        Assert.Equal(expectSuccess, canUpdate);
-        Assert.Equal(expectSuccess, canDelete);
-
-        if (expectSuccess)
+        if (expectedOutcome == ExpectedTestOutcome.Success)
         {
+            Assert.True(canCreate);
+            Assert.True(canUpdate);
+            Assert.True(canDelete);
             Assert.Null(createResult);
             Assert.Null(updateResult);
             Assert.Null(deleteResult);
         }
         else
         {
+            Assert.False(canCreate);
+            Assert.False(canUpdate);
+            Assert.False(canDelete);
             Assert.NotNull(createResult);
             Assert.NotNull(updateResult);
             Assert.NotNull(deleteResult);
@@ -233,19 +242,86 @@ public class DataElementAccessCheckerTest
     [Fact]
     public async Task GetCreateProblem_VerifiesMaxSize()
     {
-        // TODO
+        // Arrange
+        var fixture = Fixture.Create();
+        var instance = fixture.Data.DefaultInstance;
+        var dataType = fixture.Data.DataTypeA;
+
+        dataType.MaxSize = 1024;
+
+        // Act
+        var createResult = await fixture.DataElementAccessChecker.GetCreateProblem(
+            instance,
+            dataType,
+            contentLength: 2048
+        );
+        var canCreate = await fixture.DataElementAccessChecker.CanCreate(instance, dataType, contentLength: 2048);
+
+        // Assert
+        Assert.NotNull(createResult);
+
+        Assert.Equal(StatusCodes.Status400BadRequest, createResult.Status!.Value);
+        Assert.Equal("Max Size Exceeded", createResult.Title);
+
+        Assert.False(canCreate);
     }
 
     [Fact]
     public async Task GetCreateProblem_EnforcesDisallowUserCreate()
     {
-        // TODO
+        // Arrange
+        var fixture = Fixture.Create();
+        var instance = fixture.Data.DefaultInstance;
+        var dataType = fixture.Data.DataTypeA;
+        var authentication = TestAuthentication.GetUserAuthentication();
+
+        dataType.AppLogic = new ApplicationLogic { DisallowUserCreate = true };
+
+        // Act
+        var createResult = await fixture.DataElementAccessChecker.GetCreateProblem(instance, dataType, authentication);
+        var canCreate = await fixture.DataElementAccessChecker.CanCreate(instance, dataType, authentication);
+
+        // Assert
+        Assert.NotNull(createResult);
+
+        Assert.Equal(StatusCodes.Status400BadRequest, createResult.Status!.Value);
+        Assert.Equal("User Create Disallowed", createResult.Title);
+
+        Assert.False(canCreate);
     }
 
     [Fact]
     public async Task GetDeleteProblem_EnforcesDisallowUserDelete()
     {
-        // TODO
+        // Arrange
+        var fixture = Fixture.Create();
+        var instance = fixture.Data.DefaultInstance;
+        var dataType = fixture.Data.DataTypeA;
+        var authentication = TestAuthentication.GetUserAuthentication();
+
+        dataType.AppLogic = new ApplicationLogic { DisallowUserDelete = true };
+
+        // Act
+        var deleteResult = await fixture.DataElementAccessChecker.GetDeleteProblem(
+            instance,
+            dataType,
+            Guid.Empty,
+            authentication
+        );
+        var canDelete = await fixture.DataElementAccessChecker.CanDelete(
+            instance,
+            dataType,
+            Guid.Empty,
+            authentication
+        );
+
+        // Assert
+        Assert.NotNull(deleteResult);
+
+        Assert.Equal(StatusCodes.Status400BadRequest, deleteResult.Status!.Value);
+        Assert.Equal("User Delete Disallowed", deleteResult.Title);
+
+        Assert.False(canDelete);
     }
 
     private sealed record Fixture
@@ -320,5 +396,11 @@ public class DataElementAccessCheckerTest
                 };
             }
         }
+    }
+
+    public enum ExpectedTestOutcome
+    {
+        Failure,
+        Success,
     }
 }
