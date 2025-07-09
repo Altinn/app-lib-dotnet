@@ -27,6 +27,8 @@ internal sealed class AccessManagementClient(
     Telemetry? telemetry = null
 ) : IAccessManagementClient
 {
+    private const string ApplicationJsonMediaType = "application/json";
+
     public async Task<DelegationResponse> DelegateRights(DelegationRequest delegation, CancellationToken ct)
     {
         using var activity = telemetry?.StartAppInstanceDelegationActivity();
@@ -46,12 +48,12 @@ internal sealed class AccessManagementClient(
                 delegation.From?.Value,
                 delegation.ResourceId
             );
-
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {
-                Content = new StringContent(body, new MediaTypeHeaderValue("application/json")),
+                Content = new StringContent(body, new MediaTypeHeaderValue(ApplicationJsonMediaType)),
             };
-            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
+            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
             httpRequestMessage.Headers.Add(
                 "PlatformAccessToken",
                 accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
@@ -83,8 +85,7 @@ internal sealed class AccessManagementClient(
                         httpContent,
                         e
                     );
-            logger.LogError(ex, "Error when processing access management request.");
-
+            logger.LogError(e, "Error when processing access management request.");
             throw ex;
         }
         finally
@@ -115,9 +116,9 @@ internal sealed class AccessManagementClient(
 
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {
-                Content = new StringContent(body, new MediaTypeHeaderValue("application/json")),
+                Content = new StringContent(body, new MediaTypeHeaderValue(ApplicationJsonMediaType)),
             };
-            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
             httpRequestMessage.Headers.Add(
                 "PlatformAccessToken",
                 accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
@@ -148,8 +149,7 @@ internal sealed class AccessManagementClient(
                         httpContent,
                         e
                     );
-            logger.LogError(ex, "Error when processing access management request.");
-
+            logger.LogError(e, "Error when processing access management request.");
             throw ex;
         }
         finally
