@@ -20,6 +20,7 @@ using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Implementation;
+using Altinn.App.Core.Infrastructure.Clients.AccessManagement;
 using Altinn.App.Core.Infrastructure.Clients.Authentication;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
 using Altinn.App.Core.Infrastructure.Clients.Events;
