@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.AccessManagement.Exceptions;
 using Altinn.App.Core.Internal.AccessManagement.Helpers;
 using Altinn.App.Core.Internal.AccessManagement.Models;
@@ -10,15 +11,9 @@ using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Internal.AccessManagement;
+namespace Altinn.App.Core.Infrastructure.Clients.AccessManagement;
 
-internal interface IAccessManagementClient
-{
-    public Task<DelegationResponse> DelegateRights(DelegationRequest delegation, CancellationToken ct);
-    public Task<DelegationResponse> RevokeRights(DelegationRequest delegation, CancellationToken ct);
-}
-
-internal sealed class AccessManagementClient(
+public sealed class AccessManagementClient(
     ILogger<AccessManagementClient> logger,
     HttpClient httpClient,
     IAppMetadata appMetadata,
