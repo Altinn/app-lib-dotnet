@@ -66,7 +66,6 @@ public sealed class AccessManagementClient(
                 Content = new StringContent(body, new MediaTypeHeaderValue(ApplicationJsonMediaType)),
             };
             httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
-            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
             httpRequestMessage.Headers.Add(
                 "PlatformAccessToken",
                 accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
