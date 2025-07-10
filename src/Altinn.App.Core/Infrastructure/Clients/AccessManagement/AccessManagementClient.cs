@@ -61,29 +61,11 @@ public sealed class AccessManagementClient(
                 delegation.From?.Value,
                 delegation.ResourceId
             );
-            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
-            {
-                Content = new StringContent(body, new MediaTypeHeaderValue(ApplicationJsonMediaType)),
-            };
-            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
-            httpRequestMessage.Headers.Add(
-                "PlatformAccessToken",
-                accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
-            );
 
+            using HttpRequestMessage httpRequestMessage = CreateRequestMessage(application, uri, body);
             httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct);
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
-            DelegationResponse? response;
-            if (!httpResponseMessage.IsSuccessStatusCode)
-            {
-                throw new HttpRequestException("Got error status code for access management request.");
-            }
-            response = JsonSerializer.Deserialize<DelegationResponse>(httpContent);
-            if (response is null)
-            {
-                throw new JsonException("Couldn't deserialize access management response.");
-            }
-            return response;
+            return GetResponseOrThrow(httpResponseMessage, httpContent);
         }
         catch (Exception e)
         {
@@ -134,28 +116,10 @@ public sealed class AccessManagementClient(
                 delegation.ResourceId
             );
 
-            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
-            {
-                Content = new StringContent(body, new MediaTypeHeaderValue(ApplicationJsonMediaType)),
-            };
-            httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
-            httpRequestMessage.Headers.Add(
-                "PlatformAccessToken",
-                accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
-            );
-
+            using HttpRequestMessage httpRequestMessage = CreateRequestMessage(application, uri, body);
             httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct);
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
-            DelegationResponse? response;
-            if (!httpResponseMessage.IsSuccessStatusCode)
-            {
-                throw new HttpRequestException("Got error status code for access management request.");
-            }
-
-            response = JsonSerializer.Deserialize<DelegationResponse>(httpContent);
-            if (response is null)
-                throw new JsonException("Couldn't deserialize access management response.");
-            return response;
+            return GetResponseOrThrow(httpResponseMessage, httpContent);
         }
         catch (Exception e)
         {
@@ -176,5 +140,29 @@ public sealed class AccessManagementClient(
         {
             httpResponseMessage?.Dispose();
         }
+    }
+
+    private static DelegationResponse GetResponseOrThrow(HttpResponseMessage httpResponseMessage, string httpContent)
+    {
+        if (!httpResponseMessage.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException("Got error status code for access management request.");
+        }
+        DelegationResponse? response = JsonSerializer.Deserialize<DelegationResponse>(httpContent);
+        return response ?? throw new JsonException("Couldn't deserialize access management response.");
+    }
+
+    private HttpRequestMessage CreateRequestMessage(Models.ApplicationMetadata application, string uri, string body)
+    {
+        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = new StringContent(body, new MediaTypeHeaderValue(ApplicationJsonMediaType)),
+        };
+        httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
+        httpRequestMessage.Headers.Add(
+            "PlatformAccessToken",
+            accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
+        );
+        return httpRequestMessage;
     }
 }
