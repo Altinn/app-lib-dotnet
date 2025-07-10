@@ -62,17 +62,8 @@ internal sealed class AccessManagementClient(
         }
         catch (Exception e)
         {
-            var ex =
-                e is AccessManagementRequestException
-                    ? e
-                    : new AccessManagementRequestException(
-                        $"Something went wrong when processing the access management request.",
-                        null,
-                        httpResponseMessage?.StatusCode,
-                        httpContent,
-                        e
-                    );
-            logger.LogError(e, "Error when processing access management request.");
+            AccessManagementRequestException ex = CreateAccessManagementException(httpResponseMessage, httpContent, e);
+            logger.LogError(e, "Error when processing access management delegate request.");
             throw ex;
         }
         finally
@@ -109,17 +100,8 @@ internal sealed class AccessManagementClient(
         }
         catch (Exception e)
         {
-            var ex =
-                e is AccessManagementRequestException
-                    ? e
-                    : new AccessManagementRequestException(
-                        $"Something went wrong when processing the access management request.",
-                        null,
-                        httpResponseMessage?.StatusCode,
-                        httpContent,
-                        e
-                    );
-            logger.LogError(e, "Error when processing access management request.");
+            AccessManagementRequestException ex = CreateAccessManagementException(httpResponseMessage, httpContent, e);
+            logger.LogError(e, "Error when processing access management revoke request.");
             throw ex;
         }
         finally
@@ -150,5 +132,18 @@ internal sealed class AccessManagementClient(
             accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
         );
         return httpRequestMessage;
+    }
+
+    private static AccessManagementRequestException CreateAccessManagementException(HttpResponseMessage? httpResponseMessage, string? httpContent, Exception e)
+    {
+        return e is AccessManagementRequestException exception
+                ? exception
+                : new AccessManagementRequestException(
+                    $"Something went wrong when processing the access management request.",
+                    null,
+                    httpResponseMessage?.StatusCode,
+                    httpContent,
+                    e
+                );
     }
 }
