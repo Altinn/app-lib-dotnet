@@ -1,12 +1,9 @@
-namespace Altinn.App.Core.Tests.Internal.AccessManagement;
-
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features.AccessManagement;
 using Altinn.App.Core.Infrastructure.Clients.AccessManagement;
-using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.AccessManagement.Exceptions;
 using Altinn.App.Core.Internal.AccessManagement.Models;
 using Altinn.App.Core.Internal.AccessManagement.Models.Shared;
@@ -20,6 +17,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
+
+namespace Altinn.App.Core.Tests.Internal.AccessManagement;
 
 public class AccessManagementClientTests
 {
