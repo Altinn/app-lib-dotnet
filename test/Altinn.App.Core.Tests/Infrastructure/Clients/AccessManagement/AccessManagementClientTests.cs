@@ -18,7 +18,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 
-namespace Altinn.App.Core.Tests.Internal.AccessManagement;
+namespace Altinn.App.Core.Tests.Infrastructure.Clients.AccessManagement;
 
 public class AccessManagementClientTests
 {
