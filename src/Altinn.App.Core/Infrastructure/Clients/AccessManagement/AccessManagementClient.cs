@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Internal.AccessManagement;
+using Altinn.App.Core.Features.AccessManagement;
 using Altinn.App.Core.Internal.AccessManagement.Exceptions;
 using Altinn.App.Core.Internal.AccessManagement.Helpers;
 using Altinn.App.Core.Internal.AccessManagement.Models;
@@ -23,7 +23,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.AccessManagement;
 /// <param name="accessTokenGenerator">The access token generator.</param>
 /// <param name="platformSettings">The platform settings.</param>
 /// <param name="telemetry">Telemetry.</param>
-public sealed class AccessManagementClient(
+internal sealed class AccessManagementClient(
     ILogger<AccessManagementClient> logger,
     HttpClient httpClient,
     IAppMetadata appMetadata,
@@ -34,15 +34,8 @@ public sealed class AccessManagementClient(
 {
     private const string ApplicationJsonMediaType = "application/json";
 
-    /// <summary>
-    /// Delegates rights to a user for a set of resources for a specific app instance.
-    /// </summary>
-    /// <param name="delegation">The delegation request.</param>
-    /// <param name="ct">Cancellationtoken.</param>
-    /// <returns>DelegationResponse</returns>
-    /// <exception cref="HttpRequestException"></exception>
-    /// <exception cref="JsonException"></exception>
-    public async Task<DelegationResponse> DelegateRights(DelegationRequest delegation, CancellationToken ct)
+    /// <inheritdoc />
+    public async Task<DelegationResponse> DelegateRights(DelegationRequest delegation, CancellationToken ct = default)
     {
         using var activity = telemetry?.StartAppInstanceDelegationActivity();
 
@@ -88,15 +81,8 @@ public sealed class AccessManagementClient(
         }
     }
 
-    /// <summary>
-    /// Revokes rights from a user for a set of resources for a specific app instance.
-    /// </summary>
-    /// <param name="delegation">The delegation request.</param>
-    /// <param name="ct">Cancellationtoken.</param>
-    /// <returns>DelegationResponse</returns>
-    /// <exception cref="HttpRequestException"></exception>
-    /// <exception cref="JsonException"></exception>
-    public async Task<DelegationResponse> RevokeRights(DelegationRequest delegation, CancellationToken ct)
+    /// <inheritdoc />
+    public async Task<DelegationResponse> RevokeRights(DelegationRequest delegation, CancellationToken ct = default)
     {
         using var activity = telemetry?.StartAppInstanceRevokeActivity();
 
