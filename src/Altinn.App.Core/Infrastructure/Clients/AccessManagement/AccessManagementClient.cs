@@ -134,16 +134,20 @@ internal sealed class AccessManagementClient(
         return httpRequestMessage;
     }
 
-    private static AccessManagementRequestException CreateAccessManagementException(HttpResponseMessage? httpResponseMessage, string? httpContent, Exception e)
+    private static AccessManagementRequestException CreateAccessManagementException(
+        HttpResponseMessage? httpResponseMessage,
+        string? httpContent,
+        Exception e
+    )
     {
         return e is AccessManagementRequestException exception
-                ? exception
-                : new AccessManagementRequestException(
-                    $"Something went wrong when processing the access management request.",
-                    null,
-                    httpResponseMessage?.StatusCode,
-                    httpContent,
-                    e
-                );
+            ? exception
+            : new AccessManagementRequestException(
+                $"Something went wrong when processing the access management request.",
+                null,
+                httpResponseMessage?.StatusCode,
+                httpContent,
+                e
+            );
     }
 }
