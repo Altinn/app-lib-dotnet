@@ -110,9 +110,9 @@ public sealed class AccessManagementClient(
     /// <summary>
     /// Revokes rights from a user for a set of resources for a specific app instance.
     /// </summary>
-    /// <param name="delegation"></param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
+    /// <param name="delegation">The delegation request.</param>
+    /// <param name="ct">Cancellationtoken.</param>
+    /// <returns>DelegationResponse</returns>
     /// <exception cref="HttpRequestException"></exception>
     /// <exception cref="JsonException"></exception>
     public async Task<DelegationResponse> RevokeRights(DelegationRequest delegation, CancellationToken ct)
