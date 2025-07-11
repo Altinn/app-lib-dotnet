@@ -56,19 +56,17 @@ internal sealed class AccessManagementClient(
             );
 
             using HttpRequestMessage httpRequestMessage = CreateRequestMessage(application, uri, body);
-            httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct);
-            httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
-            return GetResponseOrThrow(httpResponseMessage, httpContent);
+            using (httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct))
+            {
+                httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
+                return GetResponseOrThrow(httpResponseMessage, httpContent);
+            }
         }
         catch (Exception e)
         {
             AccessManagementRequestException ex = CreateAccessManagementException(httpResponseMessage, httpContent, e);
             logger.LogError(e, "Error when processing access management delegate request.");
             throw ex;
-        }
-        finally
-        {
-            httpResponseMessage?.Dispose();
         }
     }
 
@@ -94,19 +92,17 @@ internal sealed class AccessManagementClient(
             );
 
             using HttpRequestMessage httpRequestMessage = CreateRequestMessage(application, uri, body);
-            httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct);
-            httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
-            return GetResponseOrThrow(httpResponseMessage, httpContent);
+            using (httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, ct))
+            {
+                httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
+                return GetResponseOrThrow(httpResponseMessage, httpContent);
+            }
         }
         catch (Exception e)
         {
             AccessManagementRequestException ex = CreateAccessManagementException(httpResponseMessage, httpContent, e);
             logger.LogError(e, "Error when processing access management revoke request.");
             throw ex;
-        }
-        finally
-        {
-            httpResponseMessage?.Dispose();
         }
     }
 
