@@ -155,16 +155,15 @@ internal sealed class AccessManagementClient(
         };
         httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
         var token = accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App);
-        httpRequestMessage.Headers.Add(
-            "PlatformAccessToken",
-            token
-        );
+        httpRequestMessage.Headers.Add("PlatformAccessToken", token);
 
         Console.WriteLine($"===== OUTGOING DELEGATION REQUEST =====");
         Console.WriteLine($"App: {application.Org}/{application.AppIdentifier.App}");
         Console.WriteLine($"URL: {uri}");
         Console.WriteLine($"Method: {httpRequestMessage.Method}");
-        Console.WriteLine($"Headers: {string.Join(", ", httpRequestMessage.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"))}");
+        Console.WriteLine(
+            $"Headers: {string.Join(", ", httpRequestMessage.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"))}"
+        );
         Console.WriteLine($"Body: {body}");
         Console.WriteLine($"Token (first 50 chars): {token?.Substring(0, Math.Min(50, token?.Length ?? 0))}...");
         Console.WriteLine($"=====================================");
