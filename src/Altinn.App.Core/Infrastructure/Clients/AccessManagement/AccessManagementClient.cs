@@ -106,42 +106,36 @@ internal sealed class AccessManagementClient(
         }
     }
 
-    private DelegationResponse GetResponseOrThrow(HttpResponseMessage httpResponseMessage, string httpContent)
+    private static DelegationResponse GetResponseOrThrow(HttpResponseMessage httpResponseMessage, string httpContent)
     {
         if (!httpResponseMessage.IsSuccessStatusCode)
         {
-            logger.LogInformation($"===== ACCESS MANAGEMENT API ERROR =====");
-            logger.LogInformation($"Status Code: {httpResponseMessage.StatusCode}");
-            logger.LogInformation($"Response Headers: {httpResponseMessage.Headers}");
-            logger.LogInformation($"Response Body: {httpContent}");
+            string errorDetails = "Unknown error";
             try
             {
                 var problemDetails = JsonSerializer.Deserialize<JsonElement>(httpContent);
-                logger.LogInformation($"===== PARSED PROBLEM DETAILS =====");
 
-                if (problemDetails.TryGetProperty("title", out var title))
-                    logger.LogInformation($"Title: {title.GetString()}");
                 if (problemDetails.TryGetProperty("detail", out var detail))
-                    logger.LogInformation($"Detail: {detail.GetString()}");
-                if (problemDetails.TryGetProperty("type", out var type))
-                    logger.LogInformation($"Type: {type.GetString()}");
-                if (problemDetails.TryGetProperty("status", out var status))
-                    logger.LogInformation($"Status: {status.GetInt32()}");
-                if (problemDetails.TryGetProperty("instance", out var instance))
-                    logger.LogInformation($"Instance: {instance.GetString()}");
-                if (problemDetails.TryGetProperty("errors", out var errors))
-                    logger.LogInformation($"Errors: {errors.GetRawText()}");
-                if (problemDetails.TryGetProperty("traceId", out var traceId))
-                    logger.LogInformation($"TraceId: {traceId.GetString()}");
-
-                logger.LogInformation($"=================================");
+                {
+                    errorDetails = detail.GetString() ?? errorDetails;
+                }
+                if (problemDetails.TryGetProperty("validationErrors", out var errors))
+                {
+                    errorDetails += $" ValidationErrors: {errors.GetRawText()}";
+                }
+                if (problemDetails.TryGetProperty("code", out var code))
+                {
+                    errorDetails += $" Code: {code.GetString()}";
+                }
             }
             catch (Exception ex)
             {
-                logger.LogInformation($"Failed to parse ProblemDetails: {ex.Message}");
+                errorDetails = $"Failed to parse error details: {ex.Message}";
             }
-            logger.LogInformation($"========================================");
-            throw new HttpRequestException("Got error status code for access management request.");
+
+            throw new HttpRequestException(
+                $"Access Management API error ({httpResponseMessage.StatusCode}): {errorDetails}. Full response: {httpContent}"
+            );
         }
         DelegationResponse? response = JsonSerializer.Deserialize<DelegationResponse>(httpContent);
         return response ?? throw new JsonException("Couldn't deserialize access management response.");
@@ -156,17 +150,6 @@ internal sealed class AccessManagementClient(
         httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
         var token = accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App);
         httpRequestMessage.Headers.Add("PlatformAccessToken", token);
-
-        Console.WriteLine($"===== OUTGOING DELEGATION REQUEST =====");
-        Console.WriteLine($"App: {application.Org}/{application.AppIdentifier.App}");
-        Console.WriteLine($"URL: {uri}");
-        Console.WriteLine($"Method: {httpRequestMessage.Method}");
-        Console.WriteLine(
-            $"Headers: {string.Join(", ", httpRequestMessage.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"))}"
-        );
-        Console.WriteLine($"Body: {body}");
-        Console.WriteLine($"Token (first 50 chars): {token?.Substring(0, Math.Min(50, token?.Length ?? 0))}...");
-        Console.WriteLine($"=====================================");
 
         return httpRequestMessage;
     }
