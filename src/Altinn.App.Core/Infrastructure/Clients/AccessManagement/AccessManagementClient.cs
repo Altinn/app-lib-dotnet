@@ -106,10 +106,41 @@ internal sealed class AccessManagementClient(
         }
     }
 
-    private static DelegationResponse GetResponseOrThrow(HttpResponseMessage httpResponseMessage, string httpContent)
+    private DelegationResponse GetResponseOrThrow(HttpResponseMessage httpResponseMessage, string httpContent)
     {
         if (!httpResponseMessage.IsSuccessStatusCode)
         {
+            logger.LogInformation($"===== ACCESS MANAGEMENT API ERROR =====");
+            logger.LogInformation($"Status Code: {httpResponseMessage.StatusCode}");
+            logger.LogInformation($"Response Headers: {httpResponseMessage.Headers}");
+            logger.LogInformation($"Response Body: {httpContent}");
+            try
+            {
+                var problemDetails = JsonSerializer.Deserialize<JsonElement>(httpContent);
+                logger.LogInformation($"===== PARSED PROBLEM DETAILS =====");
+
+                if (problemDetails.TryGetProperty("title", out var title))
+                    logger.LogInformation($"Title: {title.GetString()}");
+                if (problemDetails.TryGetProperty("detail", out var detail))
+                    logger.LogInformation($"Detail: {detail.GetString()}");
+                if (problemDetails.TryGetProperty("type", out var type))
+                    logger.LogInformation($"Type: {type.GetString()}");
+                if (problemDetails.TryGetProperty("status", out var status))
+                    logger.LogInformation($"Status: {status.GetInt32()}");
+                if (problemDetails.TryGetProperty("instance", out var instance))
+                    logger.LogInformation($"Instance: {instance.GetString()}");
+                if (problemDetails.TryGetProperty("errors", out var errors))
+                    logger.LogInformation($"Errors: {errors.GetRawText()}");
+                if (problemDetails.TryGetProperty("traceId", out var traceId))
+                    logger.LogInformation($"TraceId: {traceId.GetString()}");
+
+                logger.LogInformation($"=================================");
+            }
+            catch (Exception ex)
+            {
+                logger.LogInformation($"Failed to parse ProblemDetails: {ex.Message}");
+            }
+            logger.LogInformation($"========================================");
             throw new HttpRequestException("Got error status code for access management request.");
         }
         DelegationResponse? response = JsonSerializer.Deserialize<DelegationResponse>(httpContent);
@@ -123,10 +154,21 @@ internal sealed class AccessManagementClient(
             Content = new StringContent(body, new MediaTypeHeaderValue(ApplicationJsonMediaType)),
         };
         httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
+        var token = accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App);
         httpRequestMessage.Headers.Add(
             "PlatformAccessToken",
-            accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
+            token
         );
+
+        Console.WriteLine($"===== OUTGOING DELEGATION REQUEST =====");
+        Console.WriteLine($"App: {application.Org}/{application.AppIdentifier.App}");
+        Console.WriteLine($"URL: {uri}");
+        Console.WriteLine($"Method: {httpRequestMessage.Method}");
+        Console.WriteLine($"Headers: {string.Join(", ", httpRequestMessage.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"))}");
+        Console.WriteLine($"Body: {body}");
+        Console.WriteLine($"Token (first 50 chars): {token?.Substring(0, Math.Min(50, token?.Length ?? 0))}...");
+        Console.WriteLine($"=====================================");
+
         return httpRequestMessage;
     }
 
