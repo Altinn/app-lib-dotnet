@@ -124,7 +124,7 @@ internal sealed class AccessManagementClient(
         };
         httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(ApplicationJsonMediaType));
         httpRequestMessage.Headers.Add(
-            "PlatformAccessToken",
+            Constants.General.PlatformAccessTokenHeaderName,
             accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
         );
         return httpRequestMessage;
