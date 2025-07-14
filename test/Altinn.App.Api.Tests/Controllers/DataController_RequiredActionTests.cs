@@ -1,12 +1,13 @@
 using System.Net;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
-using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using FluentAssertions;
 using Json.Patch;
 using Json.Pointer;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -18,18 +19,13 @@ namespace Altinn.App.Api.Tests.Controllers;
 
 public class DataController_RequiredActionTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
-    private readonly Mock<IDataProcessor> _dataProcessor = new();
-    const string OrgId = "tdd";
-    const string AppId = "contributer-restriction";
+    private const string OrgId = "tdd";
+    private const string AppId = "contributer-restriction";
+    private const int InstanceOwnerPartyId = 501337;
+    private const int UserId = 1337;
 
     public DataController_RequiredActionTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
-        : base(factory, outputHelper)
-    {
-        OverrideServicesForAllTests = (services) =>
-        {
-            services.AddSingleton(_dataProcessor.Object);
-        };
-    }
+        : base(factory, outputHelper) { }
 
     [Theory]
     [InlineData("userInteractionUnspecified", false, HttpStatusCode.OK)]
@@ -46,7 +42,7 @@ public class DataController_RequiredActionTests : ApiTestBase, IClassFixture<Web
         using var instance = await CreateAppInstance(instantiateAsOrg);
 
         /* Create a datamodel so we have something to delete */
-        using var systemClient = GetRootedOrgClient(OrgId, AppId, serviceOwnerOrg: OrgId);
+        using var systemClient = GetRootedOrgClient();
         var createResponse = await systemClient.PostAsync(
             $"/{instance.Org}/{instance.App}/instances/{instance.Id}/data?dataType={dataModelId}",
             null
@@ -108,7 +104,7 @@ public class DataController_RequiredActionTests : ApiTestBase, IClassFixture<Web
         using var instance = await CreateAppInstance(instantiateAsOrg);
 
         /* Create a datamodel so we have something to delete */
-        using var systemClient = GetRootedOrgClient(OrgId, AppId, serviceOwnerOrg: OrgId);
+        using var systemClient = GetRootedOrgClient();
         var createResponse = await systemClient.PostAsync(
             $"/{instance.Org}/{instance.App}/instances/{instance.Id}/data?dataType={dataModelId}",
             null
@@ -150,7 +146,7 @@ public class DataController_RequiredActionTests : ApiTestBase, IClassFixture<Web
         using var instance = await CreateAppInstance(instantiateAsOrg);
 
         /* Create a datamodel so we have something to delete */
-        using var systemClient = GetRootedOrgClient(OrgId, AppId, serviceOwnerOrg: OrgId);
+        using var systemClient = GetRootedOrgClient();
         var createResponse = await systemClient.PostAsync(
             $"/{instance.Org}/{instance.App}/instances/{instance.Id}/data?dataType={dataModelId}",
             new StringContent("""{"melding":{"name": "Ola Olsen"}}""", Encoding.UTF8, "application/json")
@@ -198,7 +194,7 @@ public class DataController_RequiredActionTests : ApiTestBase, IClassFixture<Web
         using var instance = await CreateAppInstance(instantiateAsOrg);
 
         /* Create a datamodel so we have something to delete */
-        using var systemClient = GetRootedOrgClient(OrgId, AppId, serviceOwnerOrg: OrgId);
+        using var systemClient = GetRootedOrgClient();
         var createResponse = await systemClient.PostAsync(
             $"/{instance.Org}/{instance.App}/instances/{instance.Id}/data?dataType={dataModelId}",
             null
@@ -219,16 +215,12 @@ public class DataController_RequiredActionTests : ApiTestBase, IClassFixture<Web
         TestData.DeleteInstanceAndData(OrgId, AppId, instance.Id);
     }
 
-    private async Task<AppInstance> CreateAppInstance(bool actAsOrg)
+    private async Task<AppInstance> CreateAppInstance(bool hasOrgAuthorization)
     {
-        var instanceOwnerPartyId = 501337;
-        var userId = 1337;
-        HttpClient client = actAsOrg
-            ? GetRootedOrgClient(OrgId, AppId, serviceOwnerOrg: OrgId)
-            : GetRootedUserClient(OrgId, AppId, userId, instanceOwnerPartyId);
+        HttpClient client = hasOrgAuthorization ? GetRootedOrgClient() : GetRootedUserClient();
 
         var response = await client.PostAsync(
-            $"{OrgId}/{AppId}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}",
+            $"{OrgId}/{AppId}/instances/?instanceOwnerPartyId={InstanceOwnerPartyId}",
             null
         );
         var createResponseParsed = await VerifyStatusAndDeserialize<Instance>(response, HttpStatusCode.Created);
@@ -239,5 +231,49 @@ public class DataController_RequiredActionTests : ApiTestBase, IClassFixture<Web
     private record AppInstance(string Id, string Org, string App, HttpClient AuthenticatedClient) : IDisposable
     {
         public void Dispose() => AuthenticatedClient.Dispose();
+    }
+
+    private HttpClient GetRootedOrgClient() =>
+        GetRootedOrgClient(
+            OrgId,
+            AppId,
+            serviceOwnerOrg: OrgId,
+            configureServices: services => SetupAuthorizationMock(services, true)
+        );
+
+    private HttpClient GetRootedUserClient() =>
+        GetRootedUserClient(
+            OrgId,
+            AppId,
+            UserId,
+            InstanceOwnerPartyId,
+            configureServices: services => SetupAuthorizationMock(services, false)
+        );
+
+    private static void SetupAuthorizationMock(IServiceCollection services, bool hasOrgAuthorization)
+    {
+        var authorizationClientMock = new Mock<IAuthorizationClient>();
+        authorizationClientMock
+            .Setup(x =>
+                x.AuthorizeAction(
+                    It.IsAny<AppIdentifier>(),
+                    It.IsAny<InstanceIdentifier>(),
+                    It.IsAny<ClaimsPrincipal>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string?>()
+                )
+            )
+            .ReturnsAsync(
+                (AppIdentifier app, InstanceIdentifier instance, ClaimsPrincipal user, string action, string? org) =>
+                    action switch
+                    {
+                        null => true,
+                        "customReadAction" => hasOrgAuthorization,
+                        "customWriteAction" => hasOrgAuthorization,
+                        _ => throw new NotImplementedException($"Action '{action}' is not implemented in the mock."),
+                    }
+            );
+
+        services.AddSingleton(authorizationClientMock.Object);
     }
 }

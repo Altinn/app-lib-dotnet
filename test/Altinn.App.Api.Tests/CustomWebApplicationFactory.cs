@@ -93,10 +93,11 @@ public class ApiTestBase
         string app,
         int userId = TestAuthentication.DefaultUserId,
         int partyId = TestAuthentication.DefaultUserPartyId,
-        int authenticationLevel = TestAuthentication.DefaultUserAuthenticationLevel
+        int authenticationLevel = TestAuthentication.DefaultUserAuthenticationLevel,
+        Action<IServiceCollection>? configureServices = null
     )
     {
-        var client = GetRootedClient(org, app);
+        var client = GetRootedClient(org, app, configureServices: configureServices);
         string token = TestAuthentication.GetUserToken(userId, partyId, authenticationLevel);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
@@ -107,10 +108,11 @@ public class ApiTestBase
         string app,
         string orgNumber = TestAuthentication.DefaultOrgNumber,
         string scope = TestAuthentication.DefaultServiceOwnerScope,
-        string serviceOwnerOrg = TestAuthentication.DefaultOrg
+        string serviceOwnerOrg = TestAuthentication.DefaultOrg,
+        Action<IServiceCollection>? configureServices = null
     )
     {
-        var client = GetRootedClient(org, app);
+        var client = GetRootedClient(org, app, configureServices: configureServices);
         string token = TestAuthentication.GetServiceOwnerToken(orgNumber, org: serviceOwnerOrg, scope: scope);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
@@ -120,7 +122,12 @@ public class ApiTestBase
     /// Gets a client that adds appsettings from the specified org/app
     /// test application under TestData/Apps to the service collection.
     /// </summary>
-    public HttpClient GetRootedClient(string org, string app, bool includeTraceContext = false)
+    public HttpClient GetRootedClient(
+        string org,
+        string app,
+        bool includeTraceContext = false,
+        Action<IServiceCollection>? configureServices = null
+    )
     {
         string appRootPath = TestData.GetApplicationDirectory(org, app);
         string appSettingsPath = Path.Join(appRootPath, "appsettings.json");
@@ -141,6 +148,8 @@ public class ApiTestBase
             builder.ConfigureTestServices(services => OverrideServicesForAllTests(services));
             builder.ConfigureTestServices(OverrideServicesForThisTest);
             builder.ConfigureTestServices(ConfigureFakeHttpClientHandler);
+            builder.ConfigureTestServices(services => configureServices?.Invoke(services));
+
             // Mock IHostEnvironment to return the environment name we want to test
             if (OverrideEnvironment is not null)
             {
