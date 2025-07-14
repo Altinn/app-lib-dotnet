@@ -114,21 +114,9 @@ internal sealed class AccessManagementClient(
             try
             {
                 var problemDetails = JsonSerializer.Deserialize<JsonElement>(httpContent);
-
-                if (problemDetails.TryGetProperty("detail", out var detail))
-                {
-                    errorDetails = detail.GetString() ?? errorDetails;
-                }
-                if (problemDetails.TryGetProperty("validationErrors", out var errors))
-                {
-                    errorDetails += $" ValidationErrors: {errors.GetRawText()}";
-                }
-                if (problemDetails.TryGetProperty("code", out var code))
-                {
-                    errorDetails += $" Code: {code.GetString()}";
-                }
+                errorDetails = FormatErrorDetails(errorDetails, problemDetails);
             }
-            catch (Exception ex)
+            catch (JsonException ex)
             {
                 errorDetails = $"Failed to parse error details: {ex.Message}";
             }
@@ -152,6 +140,24 @@ internal sealed class AccessManagementClient(
         httpRequestMessage.Headers.Add("PlatformAccessToken", token);
 
         return httpRequestMessage;
+    }
+
+    internal static string FormatErrorDetails(string errorDetails, JsonElement problemDetails)
+    {
+        if (problemDetails.TryGetProperty("detail", out var detail))
+        {
+            errorDetails = detail.GetString() ?? errorDetails;
+        }
+        if (problemDetails.TryGetProperty("validationErrors", out var errors))
+        {
+            errorDetails += $" ValidationErrors: {errors.GetRawText()}";
+        }
+        if (problemDetails.TryGetProperty("code", out var code))
+        {
+            errorDetails += $" Code: {code.GetString()}";
+        }
+
+        return errorDetails;
     }
 
     private static AccessManagementRequestException CreateAccessManagementException(
