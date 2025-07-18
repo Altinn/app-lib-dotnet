@@ -31,11 +31,6 @@ public static class General
     public const string SubscriptionKeyHeaderName = "Ocp-Apim-Subscription-Key";
 
     /// <summary>
-    /// Header name for eFormidling Integration Point access token
-    /// </summary>
-    public const string PlatformAccessTokenHeaderName = "PlatformAccessToken";
-
-    /// <summary>
     /// The name of the eFormidling Integration Point token header
     /// </summary>
     public const string EFormidlingAccessTokenHeaderName = "AltinnIntegrationPointToken";
