@@ -111,7 +111,7 @@ public class AltinnPartyClient : IAltinnPartyClient
             Content = content,
         };
 
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        request.Headers.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
         request.Headers.Add(
             General.PlatformAccessTokenHeaderName,

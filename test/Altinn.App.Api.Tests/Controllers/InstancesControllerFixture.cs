@@ -6,7 +6,9 @@ using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -44,7 +46,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
         Dictionary<string, string>? prefill = null
     )
     {
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
         prefill ??= new();
 
@@ -103,7 +105,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
 
     public void Dispose() => (ServiceProvider as IDisposable)?.Dispose();
 
-    internal static InstancesControllerFixture Create()
+    internal static InstancesControllerFixture Create(Authenticated? auth = null)
     {
         var services = new ServiceCollection();
         services.AddLogging(logging => logging.AddProvider(NullLoggerProvider.Instance));
@@ -135,6 +137,11 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
         services.AddTransient<InternalPatchService>();
         services.AddTransient<ModelSerializationService>();
         services.AddTransient<InstanceDataUnitOfWorkInitializer>();
+
+        Mock<IAuthenticationContext> authenticationContextMock = new();
+        services.AddSingleton(authenticationContextMock.Object);
+        if (auth is not null)
+            authenticationContextMock.Setup(m => m.Current).Returns(auth);
 
         services.AddTransient(sp =>
         {

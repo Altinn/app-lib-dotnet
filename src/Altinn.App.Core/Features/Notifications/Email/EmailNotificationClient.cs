@@ -55,7 +55,7 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
             httpRequestMessage.Content = new StringContent(body, new MediaTypeHeaderValue("application/json"));
             httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             httpRequestMessage.Headers.Add(
-                General.PlatformAccessTokenHeaderName,
+                Constants.General.PlatformAccessTokenHeaderName,
                 _accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
             );
 

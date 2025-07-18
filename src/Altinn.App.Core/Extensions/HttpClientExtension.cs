@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using Altinn.App.Core.Constants;
 
 namespace Altinn.App.Core.Extensions;
 
@@ -26,11 +25,14 @@ public static class HttpClientExtension
     )
     {
         HttpRequestMessage request = new(HttpMethod.Post, requestUri);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authorizationToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            Constants.AuthorizationSchemes.Bearer,
+            authorizationToken
+        );
         request.Content = content;
         if (!string.IsNullOrEmpty(platformAccessToken))
         {
-            request.Headers.Add(General.PlatformAccessTokenHeaderName, platformAccessToken);
+            request.Headers.Add(Constants.General.PlatformAccessTokenHeaderName, platformAccessToken);
         }
 
         return httpClient.SendAsync(request, CancellationToken.None);
@@ -54,11 +56,14 @@ public static class HttpClientExtension
     )
     {
         HttpRequestMessage request = new(HttpMethod.Put, requestUri);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authorizationToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            Constants.AuthorizationSchemes.Bearer,
+            authorizationToken
+        );
         request.Content = content;
         if (!string.IsNullOrEmpty(platformAccessToken))
         {
-            request.Headers.Add(General.PlatformAccessTokenHeaderName, platformAccessToken);
+            request.Headers.Add(Constants.General.PlatformAccessTokenHeaderName, platformAccessToken);
         }
 
         return httpClient.SendAsync(request, CancellationToken.None);
@@ -80,10 +85,13 @@ public static class HttpClientExtension
     )
     {
         HttpRequestMessage request = new(HttpMethod.Get, requestUri);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authorizationToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            Constants.AuthorizationSchemes.Bearer,
+            authorizationToken
+        );
         if (!string.IsNullOrEmpty(platformAccessToken))
         {
-            request.Headers.Add(General.PlatformAccessTokenHeaderName, platformAccessToken);
+            request.Headers.Add(Constants.General.PlatformAccessTokenHeaderName, platformAccessToken);
         }
 
         return httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
@@ -105,10 +113,13 @@ public static class HttpClientExtension
     )
     {
         HttpRequestMessage request = new(HttpMethod.Delete, requestUri);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authorizationToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            Constants.AuthorizationSchemes.Bearer,
+            authorizationToken
+        );
         if (!string.IsNullOrEmpty(platformAccessToken))
         {
-            request.Headers.Add(General.PlatformAccessTokenHeaderName, platformAccessToken);
+            request.Headers.Add(Constants.General.PlatformAccessTokenHeaderName, platformAccessToken);
         }
 
         return httpClient.SendAsync(request, CancellationToken.None);

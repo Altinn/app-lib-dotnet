@@ -11,6 +11,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -73,7 +74,7 @@ public class InstancesController : ControllerBase
     private readonly InternalPatchService _patchService;
     private readonly ITranslationService _translationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
-
+    private readonly IAuthenticationContext _authenticationContext;
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
     /// <summary>
@@ -97,7 +98,8 @@ public class InstancesController : ControllerBase
         ModelSerializationService serializationService,
         InternalPatchService patchService,
         ITranslationService translationService,
-        IServiceProvider serviceProvider
+        IServiceProvider serviceProvider,
+        IAuthenticationContext authenticationContext
     )
     {
         _logger = logger;
@@ -120,6 +122,7 @@ public class InstancesController : ControllerBase
         _patchService = patchService;
         _translationService = translationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _authenticationContext = authenticationContext;
     }
 
     /// <summary>
@@ -617,7 +620,8 @@ public class InstancesController : ControllerBase
 
     /// <summary>
     /// This method handles the copy endpoint for when a user wants to create a copy of an existing instance.
-    /// The endpoint will primarily be accessed directly by a user clicking the copy button for an archived instance.
+    /// The endpoint will primarily be accessed directly by a user clicking the copy button for an archived instance
+    /// from the message box in the Altinn 2 portal/Altinn 3 arbeidsflate.
     /// </summary>
     /// <param name="org">Unique identifier of the organisation responsible for the app</param>
     /// <param name="app">Application identifier which is unique within an organisation</param>
@@ -628,9 +632,13 @@ public class InstancesController : ControllerBase
     /// <remarks>
     /// The endpoint will return a redirect to the new instance if the copy operation was successful.
     /// </remarks>
-    [Obsolete("This endpoint will be removed in a future release of the app template packages.")]
     [ApiExplorerSettings(IgnoreApi = true)]
     [Authorize]
+    // The URL contains "legacy", but it is not really legacy.
+    // Originally it was thought of as tech debt to do mutation like this in a GET endpoint,
+    // but after further consideration, it was decided to keep it as is.
+    // A related topic is the fact that Altinn tokens are "global" and not scoped to a specific app.
+    // Since it now would be a breaking change to rename or remove, it still has "legacy" as part of the name.
     [HttpGet("/{org}/{app}/legacy/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/copy")]
     [ProducesResponseType(typeof(Instance), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -643,9 +651,9 @@ public class InstancesController : ControllerBase
     )
     {
         // This endpoint should be used exclusively by end users. Ideally from a browser as a request after clicking
-        // a button in the message box, but for now we simply just exclude app owner(s).
-        string? orgClaim = User.GetOrg();
-        if (orgClaim is not null)
+        // a button in the message box.
+        var auth = _authenticationContext.Current;
+        if (auth is not Authenticated.User)
         {
             return Forbid();
         }
@@ -1022,6 +1030,49 @@ public class InstancesController : ControllerBase
 
                 await UpdatePresentationTextsOnInstance(application.PresentationFields, targetInstance, dt.Id, data);
                 await UpdateDataValuesOnInstance(application.DataFields, targetInstance, dt.Id, data);
+            }
+        }
+
+        if (application.CopyInstanceSettings?.IncludeAttachments != true)
+        {
+            return;
+        }
+
+        // Copy binary data elements (files/attachments)
+        // Error handling strategy: Continue processing other attachments even if individual ones fail
+        // This ensures partial success rather than complete failure when some attachments cannot be copied
+        List<DataType> binaryDataTypes = application
+            .DataTypes.Where(dt => dt.AppLogic?.ClassRef == null)
+            .Where(dt =>
+                dt.TaskId != null
+                && dt.TaskId.Equals(targetInstance.Process.CurrentTask.ElementId, StringComparison.Ordinal)
+            )
+            .ToList();
+
+        foreach (DataElement de in sourceInstance.Data)
+        {
+            if (excludedDataTypes != null && excludedDataTypes.Contains(de.DataType))
+            {
+                continue;
+            }
+
+            if (binaryDataTypes.Any(dt => dt.Id.Equals(de.DataType, StringComparison.Ordinal)))
+            {
+                using var binaryDataStream = await _dataClient.GetBinaryData(
+                    org,
+                    app,
+                    instanceOwnerPartyId,
+                    sourceInstanceGuid,
+                    Guid.Parse(de.Id)
+                );
+
+                await _dataClient.InsertBinaryData(
+                    targetInstance.Id,
+                    de.DataType,
+                    de.ContentType,
+                    de.Filename,
+                    binaryDataStream
+                );
             }
         }
     }
