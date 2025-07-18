@@ -57,13 +57,16 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             ? receiptConfig.Filename
             : $"{receiptConfig.DataType}.json";
 
-        await _fiksArkivInstanceClient.InsertBinaryData(
-            instanceIdentifier,
-            receiptConfig.DataType,
-            "application/json",
-            filename,
-            new MemoryStream(receiptBytes)
-        );
+        using (var memoryStream = new MemoryStream(receiptBytes))
+        {
+            await _fiksArkivInstanceClient.InsertBinaryData(
+                instanceIdentifier,
+                receiptConfig.DataType,
+                "application/json",
+                filename,
+                memoryStream
+            );
+        }
 
         // Move the instance process forward if configured
         if (_fiksArkivSettings.AutoSend?.SuccessHandling?.MoveToNextTask is true)
