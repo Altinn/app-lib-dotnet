@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Constants;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.Common.AccessTokenClient.Services;
