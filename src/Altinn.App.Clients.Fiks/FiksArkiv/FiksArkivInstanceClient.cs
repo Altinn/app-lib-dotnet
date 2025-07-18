@@ -81,9 +81,10 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         try
         {
             using HttpClient client = await GetAuthenticatedClient();
+            using StringContent actionPayload = GetProcessNextAction(action);
             using HttpResponseMessage response = await client.PutAsync(
                 $"instances/{instanceIdentifier}/process/next",
-                GetProcessNextAction(action)
+                actionPayload
             );
 
             await EnsureSuccessStatusCode(response);
@@ -104,9 +105,10 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         try
         {
             using HttpClient client = await GetAuthenticatedClient();
+            using StringContent emptyPayload = new(string.Empty);
             using HttpResponseMessage response = await client.PostAsync(
                 $"instances/{instanceIdentifier}/complete",
-                new StringContent(string.Empty)
+                emptyPayload
             );
 
             await EnsureSuccessStatusCode(response);
@@ -144,7 +146,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             if (!string.IsNullOrEmpty(generatedFromTask))
                 url += $"&generatedFromTask={generatedFromTask}";
 
-            StreamContent content = new(stream);
+            using StreamContent content = new(stream);
             content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
             content.Headers.ContentDisposition = new ContentDispositionHeaderValue(DispositionTypeNames.Attachment)
             {
@@ -230,7 +232,10 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         client.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            AuthorizationSchemes.Bearer,
+            bearerToken
+        );
         client.DefaultRequestHeaders.Add(
             General.PlatformAccessTokenHeaderName,
             _accessTokenGenerator.GenerateAccessToken(appMetadata.AppIdentifier.Org, appMetadata.AppIdentifier.App)
