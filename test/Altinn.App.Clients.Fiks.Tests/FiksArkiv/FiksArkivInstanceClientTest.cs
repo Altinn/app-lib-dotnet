@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
@@ -129,11 +130,12 @@ public class FiksArkivInstanceClientTest
         var expectedPayload = await FiksArkivInstanceClient.GetProcessNextAction(action).ReadAsStringAsync();
         var appMetadata = await fixture.AppMetadata.GetApplicationMetadata();
 
-        List<HttpRequestMessage> requests = [];
+        List<CapturedHttpRequest<string>> requests = [];
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(
             HttpStatusCode.OK,
             contentFactory: request => IsTokenRequest(request) ? LocaltestToken : null,
-            requestCallback: request => requests.Add(request)
+            requestCallback: request =>
+                requests.Add(new CapturedHttpRequest<string>(request, GetRequestContent(request.Content).Result))
         );
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
@@ -141,16 +143,16 @@ public class FiksArkivInstanceClientTest
         await fixture.FiksArkivInstanceClient.ProcessMoveNext(_defaultInstanceIdentifier, action);
 
         // Assert
-        HttpRequestMessage processNextRequest = requests.Last();
+        CapturedHttpRequest<string> processNextRequest = requests.Last();
 
         Assert.True(action is null ? expectedPayload == string.Empty : expectedPayload.Contains(action));
-        Assert.True(expectedPayload == await GetRequestContent(processNextRequest));
+        Assert.True(expectedPayload == processNextRequest.Content);
 
-        Assert.Equal(HttpMethod.Put, processNextRequest.Method);
-        Assert.Equal($"Bearer {LocaltestToken}", processNextRequest.Headers.Authorization!.ToString());
+        Assert.Equal(HttpMethod.Put, processNextRequest.Request.Method);
+        Assert.Equal($"Bearer {LocaltestToken}", processNextRequest.Request.Headers.Authorization!.ToString());
         Assert.Equal(
             $"http://local.altinn.cloud/{appMetadata.AppIdentifier}/instances/{_defaultInstanceIdentifier}/process/next",
-            processNextRequest.RequestUri!.ToString()
+            processNextRequest.Request.RequestUri!.ToString()
         );
     }
 
@@ -238,11 +240,19 @@ public class FiksArkivInstanceClientTest
             Filename = "filename.txt",
         };
 
-        List<HttpRequestMessage> requests = [];
+        // List<HttpRequestMessage> requests = [];
+        List<CapturedHttpRequest<byte[]>> requests = [];
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(
             HttpStatusCode.OK,
             contentFactory: request => IsTokenRequest(request) ? LocaltestToken : JsonSerializer.Serialize(dataElement),
-            requestCallback: request => requests.Add(request)
+            requestCallback: request =>
+                requests.Add(
+                    new CapturedHttpRequest<byte[]>(
+                        request,
+                        request.Content?.ReadAsByteArrayAsync().Result,
+                        request.Content?.Headers
+                    )
+                )
         );
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
@@ -262,15 +272,15 @@ public class FiksArkivInstanceClientTest
         Assert.Equal(dataElement.ContentType, result.ContentType);
         Assert.Equal(dataElement.Filename, result.Filename);
 
-        HttpRequestMessage insertBinaryDataRequest = requests.Last();
-        Assert.Equal(HttpMethod.Post, insertBinaryDataRequest.Method);
-        Assert.Equal(dataElement.ContentType, insertBinaryDataRequest.Content?.Headers.ContentType?.MediaType);
-        Assert.Equal(dataElement.Filename, insertBinaryDataRequest.Content?.Headers.ContentDisposition?.FileName);
-        Assert.Equal(data, await insertBinaryDataRequest.Content!.ReadAsByteArrayAsync());
-        Assert.Equal($"Bearer {LocaltestToken}", insertBinaryDataRequest.Headers.Authorization!.ToString());
+        var insertBinaryDataRequest = requests.Last();
+        Assert.Equal(HttpMethod.Post, insertBinaryDataRequest.Request.Method);
+        Assert.Equal(dataElement.ContentType, insertBinaryDataRequest.ContentHeaders!.ContentType?.MediaType);
+        Assert.Equal(dataElement.Filename, insertBinaryDataRequest.ContentHeaders.ContentDisposition?.FileName);
+        Assert.Equal(data, insertBinaryDataRequest.Content);
+        Assert.Equal($"Bearer {LocaltestToken}", insertBinaryDataRequest.Request.Headers.Authorization!.ToString());
         Assert.Equal(
             $"http://local.altinn.cloud/{appMetadata.AppIdentifier}/instances/{_defaultInstanceIdentifier}/data?dataType={dataElement.DataType}",
-            insertBinaryDataRequest.RequestUri!.ToString()
+            insertBinaryDataRequest.Request.RequestUri!.ToString()
         );
     }
 
@@ -310,11 +320,17 @@ public class FiksArkivInstanceClientTest
             Assert.Equal(statusCode, ex.Response.StatusCode);
     }
 
-    private static async Task<string> GetRequestContent(HttpRequestMessage request)
+    private static async Task<string> GetRequestContent(HttpContent? potentialContent)
     {
-        return request.Content is not null ? await request.Content.ReadAsStringAsync() : string.Empty;
+        return potentialContent is not null ? await potentialContent.ReadAsStringAsync() : string.Empty;
     }
 
     private static bool IsTokenRequest(HttpRequestMessage request) =>
         request.RequestUri!.AbsolutePath.Equals("/Home/GetTestOrgToken");
+
+    private sealed record CapturedHttpRequest<TContent>(
+        HttpRequestMessage Request,
+        TContent? Content = default,
+        HttpContentHeaders? ContentHeaders = null
+    );
 }
