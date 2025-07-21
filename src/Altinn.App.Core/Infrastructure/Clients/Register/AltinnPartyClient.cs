@@ -49,14 +49,14 @@ public class AltinnPartyClient : IAltinnPartyClient
     )
     {
         _logger = logger;
-        httpClient.BaseAddress = new Uri(platformSettings.Value.ApiRegisterEndpoint);
-        httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.Value.SubscriptionKey);
-        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _client = httpClient;
         _appMetadata = appMetadata;
         _userTokenProvider = userTokenProvider;
         _accessTokenGenerator = accessTokenGenerator;
         _telemetry = telemetry;
+        _client = httpClient;
+        _client.BaseAddress = new Uri(platformSettings.Value.ApiRegisterEndpoint);
+        _client.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.Value.SubscriptionKey);
+        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
     }
 
     /// <inheritdoc/>
@@ -107,7 +107,6 @@ public class AltinnPartyClient : IAltinnPartyClient
 
         using StringContent content = new(JsonSerializerPermissive.Serialize(partyLookup));
         content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-
         using HttpResponseMessage response = await _client.PostAsync(
             token,
             endpointUrl,
