@@ -24,7 +24,7 @@ public static class HttpClientBuilderExtensions
         params string[] additionalScopes
     )
     {
-        return builder.AddMaskinportenHttpMessageHandler(scope, additionalScopes, TokenAuthorities.Maskinporten);
+        return builder.AddMaskinportenHttpMessageHandler(scope, additionalScopes, TokenAuthority.Maskinporten);
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ public static class HttpClientBuilderExtensions
         params string[] additionalScopes
     )
     {
-        return builder.AddMaskinportenHttpMessageHandler(scope, additionalScopes, TokenAuthorities.AltinnTokenExchange);
+        return builder.AddMaskinportenHttpMessageHandler(scope, additionalScopes, TokenAuthority.AltinnTokenExchange);
     }
 
     /// <inheritdoc cref="UseMaskinportenAuthorization"/>
