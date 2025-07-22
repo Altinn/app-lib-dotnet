@@ -1,5 +1,5 @@
 # Build stage
-FROM mcr.microsoft.com/dotnet/sdk:8.0@sha256:57c3bf930db9ac075c9019b83fdfc77c474b11b874120b84bc97fa65f33662dd AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0@sha256:4763fe4aeb0c5f0dec72fe29678329113f9ee5d4f092a86a5a5044c0bb18e974 AS build
 WORKDIR /app-root-dir
 
 COPY AppLibDotnet.sln .
