@@ -169,7 +169,6 @@ jobs:
               });
 
               // Assign the person who merged the original PR
-              // Another comment that shouldn't be here
               const mergedBy = '${{ github.event.pull_request.merged_by.login }}';
               if (mergedBy && mergedBy !== 'null') {
                 try {
