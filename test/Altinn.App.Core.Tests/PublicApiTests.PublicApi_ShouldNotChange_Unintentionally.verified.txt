@@ -1968,7 +1968,7 @@ namespace Altinn.App.Core.Features.Validation.Default
     }
     public class ExpressionValidator : Altinn.App.Core.Features.IValidator
     {
-        public ExpressionValidator(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Features.Validation.Default.ExpressionValidator> logger, Altinn.App.Core.Internal.App.IAppResources appResourceService, Altinn.App.Core.Internal.Expressions.ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer, Altinn.App.Core.Internal.App.IAppMetadata appMetadata) { }
+        public ExpressionValidator(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Features.Validation.Default.ExpressionValidator> logger, Altinn.App.Core.Internal.App.IAppResources appResourceService, Altinn.App.Core.Internal.Expressions.ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, System.IServiceProvider serviceProvider) { }
         public string TaskId { get; }
         public string ValidationSource { get; }
         public System.Threading.Tasks.Task<bool> HasRelevantChanges(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, string taskId, Altinn.App.Core.Models.DataElementChanges changes) { }

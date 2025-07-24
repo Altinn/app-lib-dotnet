@@ -246,6 +246,7 @@ namespace Altinn.App.Api.Controllers
                     Altinn.App.Core.Internal.Data.IDataClient dataClient,
                     Altinn.App.Core.Internal.App.IAppMetadata appMetadata,
                     Altinn.App.Core.Internal.AppModel.IAppModel appModel,
+                    Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext,
                     Altinn.Common.PEP.Interfaces.IPDP pdp,
                     Altinn.App.Core.Internal.Events.IEventsClient eventsClient,
                     Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings> appSettings,
@@ -257,8 +258,7 @@ namespace Altinn.App.Api.Controllers
                     Altinn.App.Core.Helpers.Serialization.ModelSerializationService serializationService,
                     Altinn.App.Api.Helpers.Patch.InternalPatchService patchService,
                     Altinn.App.Core.Internal.Texts.ITranslationService translationService,
-                    System.IServiceProvider serviceProvider,
-                    Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext) { }
+                    System.IServiceProvider serviceProvider) { }
         [Microsoft.AspNetCore.Authorization.Authorize(Policy="InstanceComplete")]
         [Microsoft.AspNetCore.Mvc.HttpPost("{instanceOwnerPartyId:int}/{instanceGuid:guid}/complete")]
         [Microsoft.AspNetCore.Mvc.Produces("application/json", new string[0])]
@@ -601,7 +601,7 @@ namespace Altinn.App.Api.Controllers
         "id:guid}/user-defined-metadata")]
     public class UserDefinedMetadataController : Microsoft.AspNetCore.Mvc.ControllerBase
     {
-        public UserDefinedMetadataController(Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Altinn.App.Core.Internal.Data.IDataClient dataClient, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext) { }
+        public UserDefinedMetadataController(Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Altinn.App.Core.Internal.Data.IDataClient dataClient, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext, System.IServiceProvider serviceProvider) { }
         [Microsoft.AspNetCore.Authorization.Authorize(Policy="InstanceRead")]
         [Microsoft.AspNetCore.Mvc.HttpGet]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Altinn.App.Api.Models.UserDefinedMetadataDto), 200)]
