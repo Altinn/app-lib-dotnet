@@ -125,8 +125,8 @@ public class AuthorizationController : Controller
     /// <param name="partyId">The partyId</param>
     /// <returns>Boolean indicating if the selected party is valid.</returns>
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest, "text/plain")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError, "text/plain")]
     [Authorize]
     [HttpGet]
     public async Task<IActionResult> ValidateSelectedParty(int userId, int partyId)

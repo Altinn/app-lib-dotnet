@@ -36,9 +36,9 @@ public class ExternalApiController : ControllerBase
     [HttpGet]
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest, "text/plain")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError, "text/plain")]
     [Route("{externalApiId}")]
     public async Task<IActionResult> Get(
         [FromRoute] int instanceOwnerPartyId,

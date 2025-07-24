@@ -71,7 +71,7 @@ public class ActionsController : ControllerBase
     [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict, "text/plain")]
     [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status401Unauthorized)]

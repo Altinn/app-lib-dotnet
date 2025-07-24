@@ -27,7 +27,7 @@ public class ProfileController : Controller
     /// Method that returns the user information about the user that is logged in
     /// </summary>
     [ProducesResponseType(typeof(UserProfile), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest, "text/plain")]
     [Authorize]
     [HttpGet("user")]
     public async Task<ActionResult> GetUser()
