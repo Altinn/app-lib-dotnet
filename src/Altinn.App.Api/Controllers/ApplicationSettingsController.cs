@@ -1,4 +1,5 @@
 #nullable disable
+using System.Net;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +33,7 @@ public class ApplicationSettingsController : ControllerBase
     /// <summary>
     /// Returns the application settings
     /// </summary>
+    [ProducesResponseType(typeof(FrontEndSettings), (int)HttpStatusCode.OK)]
     [HttpGet("{org}/{app}/api/v1/applicationsettings")]
     public IActionResult GetAction(string org, string app)
     {

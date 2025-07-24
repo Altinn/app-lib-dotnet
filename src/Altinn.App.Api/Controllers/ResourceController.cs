@@ -1,3 +1,4 @@
+using System.Net;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +27,7 @@ public class ResourceController : ControllerBase
     /// </summary>
     /// <param name="id">Unique identifier of the model to fetch json schema for.</param>
     /// <returns>The model json schema.</returns>
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
     [HttpGet]
     [Route("{org}/{app}/api/jsonschema/{id}")]
     public ActionResult GetModelJsonSchema([FromRoute] string id)
@@ -40,6 +42,7 @@ public class ResourceController : ControllerBase
     /// <param name="app">Application identifier which is unique within an organisation.</param>
     /// <returns>A collection of FormLayout objects in JSON format.</returns>
     /// </summary>
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
     [HttpGet]
     [Route("{org}/{app}/api/layouts")]
     public ActionResult GetLayouts(string org, string app)
@@ -55,6 +58,7 @@ public class ResourceController : ControllerBase
     /// <param name="app">Application identifier which is unique within an organisation.</param>
     /// <param name="id">The layoutset id</param>
     /// <returns>A collection of FormLayout objects in JSON format.</returns>
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
     [HttpGet]
     [Route("{org}/{app}/api/layouts/{id}")]
     public ActionResult GetLayouts(string org, string app, string id)
@@ -69,6 +73,7 @@ public class ResourceController : ControllerBase
     /// <param name="org">The application owner short name</param>
     /// <param name="app">The application name</param>
     /// <returns>The settings in the form of a string.</returns>
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
     [HttpGet]
     [Route("{org}/{app}/api/layoutsettings")]
     public ActionResult GetLayoutSettings(string org, string app)
@@ -84,6 +89,7 @@ public class ResourceController : ControllerBase
     /// <param name="app">The application name</param>
     /// <param name="id">The layoutset id</param>
     /// <returns>The settings in the form of a string.</returns>
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
     [HttpGet]
     [Route("{org}/{app}/api/layoutsettings/{id}")]
     public ActionResult GetLayoutSettings(string org, string app, string id)
@@ -98,6 +104,7 @@ public class ResourceController : ControllerBase
     /// <param name="org">The application owner short name</param>
     /// <param name="app">The application name</param>
     /// <returns>The settings in the form of a string.</returns>
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
     [HttpGet]
     [Route("{org}/{app}/api/layoutsets")]
     public ActionResult GetLayoutSets(string org, string app)
@@ -113,6 +120,8 @@ public class ResourceController : ControllerBase
     /// <param name="id">The layoutset id</param>
     /// <returns>A collection of FormLayout objects in JSON format.</returns>
     /// </summary>
+    [ProducesResponseType(typeof(FileContentResult), (int)HttpStatusCode.OK)]
+    [ProducesResponseType((int)HttpStatusCode.NoContent)]
     [HttpGet]
     [Route("{org}/{app}/api/rulehandler/{id}")]
     public ActionResult GetRulehandler(string org, string app, string id)
@@ -133,6 +142,8 @@ public class ResourceController : ControllerBase
     /// <param name="app">The application name</param>
     /// <param name="id">The layoutset id</param>
     /// <returns>The settings in the form of a string.</returns>
+    [ProducesResponseType(typeof(FileContentResult), (int)HttpStatusCode.OK)]
+    [ProducesResponseType((int)HttpStatusCode.NoContent)]
     [HttpGet]
     [Route("{org}/{app}/api/ruleconfiguration/{id}")]
     public ActionResult GetRuleConfiguration(string org, string app, string id)
@@ -152,6 +163,8 @@ public class ResourceController : ControllerBase
     /// <param name="org">The application owner short name</param>
     /// <param name="app">The application name</param>
     /// <returns>The footer layout in the form of a string.</returns>
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+    [ProducesResponseType((int)HttpStatusCode.NoContent)]
     [HttpGet]
     [Route("{org}/{app}/api/v1/footer")]
     public async Task<ActionResult> GetFooterLayout(string org, string app)
@@ -172,6 +185,7 @@ public class ResourceController : ControllerBase
     /// <param name="app">The application name</param>
     /// <param name="dataTypeId">Unique identifier of the model to fetch validations for.</param>
     /// <returns>The validation configuration file as json.</returns>
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
     [HttpGet]
     [Route("{org}/{app}/api/validationconfig/{dataTypeId}")]
     public ActionResult GetValidationConfiguration(string org, string app, string dataTypeId)
