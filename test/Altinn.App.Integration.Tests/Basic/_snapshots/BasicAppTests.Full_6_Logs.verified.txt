@@ -16,6 +16,8 @@
 [basic/default] [INFO] IDataElementValidator.ValidateDataElement
 [basic/default] [INFO] IFormDataValidator.ValidateFormData
 [basic/default] [INFO] IProcessTaskEnd.End
+fail: Altinn.App.Core.Infrastructure.Clients.Storage.InstanceClient[0]
+      Could not update read status for instance 501337/cc5b2fb7-eaa2-4d48-8eeb-8ea8e8502155. Request failed with status code Forbidden
 [basic/default] [INFO] IDataProcessor.ProcessDataRead
 [basic/default] [INFO] IExternalApiClient.GetExternalApiDataAsync
 [basic/default] [INFO] IProcessEnd.End

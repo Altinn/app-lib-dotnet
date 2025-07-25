@@ -11,7 +11,7 @@
     StatusCode: OK,
     ReasonPhrase: OK,
     Headers: {
-      Date: {Scrubbed},
+      Date: <date>,
       Server: [
         Kestrel
       ],
@@ -43,7 +43,7 @@
       Method: {
         Method: GET
       },
-      RequestUri: http://local.altinn.cloud:LOCALTEST_PORT/ttd/basic/api/v1/applicationmetadata,
+      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/api/v1/applicationmetadata,
       Headers: {}
     },
     IsSuccessStatusCode: true

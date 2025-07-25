@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using DiffEngine;
 
 namespace Altinn.App.Integration.Tests;
 
@@ -10,6 +11,8 @@ internal static class ModuleInitializer
         Verifier.DerivePathInfo(
             (file, _, type, method) => new(Path.Join(Path.GetDirectoryName(file), "_snapshots"), type.Name, method.Name)
         );
+        if (BuildServerDetector.Detected && BuildServerDetector.IsWsl)
+            BuildServerDetector.Detected = false; // WSL is not a build server
         VerifierSettings.AutoVerify(includeBuildServer: false);
         VerifyAspNetCore.Initialize();
     }

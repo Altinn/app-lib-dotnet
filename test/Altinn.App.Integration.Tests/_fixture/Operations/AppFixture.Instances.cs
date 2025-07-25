@@ -264,7 +264,7 @@ internal sealed record InstanceDownload(ReadApiResponse<Instance> Instance, IRea
                     {
                         // Special handling for PDF data types
                         var contentLength = binary.Data.Response.Content.Headers.ContentLength!.Value.ToString();
-                        finalScrubber = v => scrubber(v.Replace(contentLength, "<content-length>"));
+                        finalScrubber = v => scrubber(v.Replace(contentLength, "<contentLength>"));
                         binary.Data.IncludeBodyInSnapshot = false; // Avoid non-determnistic PDF snapshots
                     }
 

@@ -11,7 +11,7 @@
     StatusCode: Created,
     ReasonPhrase: Created,
     Headers: {
-      Date: {Scrubbed},
+      Date: <date>,
       Server: [
         Kestrel
       ],
@@ -56,9 +56,11 @@
       Method: {
         Method: POST
       },
-      RequestUri: http://local.altinn.cloud:LOCALTEST_PORT/ttd/basic/instances/create,
+      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/instances/create,
       Headers: {
-        Authorization: {Scrubbed}
+        Authorization: [
+          Bearer <token>
+        ]
       }
     },
     IsSuccessStatusCode: true

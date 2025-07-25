@@ -139,8 +139,8 @@ public sealed partial class AppFixture
         {
             if (_scrubber is not null)
                 value = _scrubber(value);
-            value = value.Replace(_appPort, "APP_PORT");
-            value = value.Replace(_localtestPort, "LOCALTEST_PORT");
+            value = value.Replace(_appPort, "<appPort>");
+            value = value.Replace(_localtestPort, "<localtestPort>");
             writer.WriteValue(value);
         }
     }
@@ -162,8 +162,19 @@ public sealed partial class AppFixture
                 switch (kvp.Key)
                 {
                     case "Date":
+                        writer.WriteValue("<date>");
+                        break;
                     case "Authorization":
-                        writer.WriteValue("{Scrubbed}");
+                        writer.WriteStartArray();
+                        foreach (var headerValue in kvp.Value)
+                        {
+                            var firstWhitespaceIndex = headerValue.IndexOf(' ');
+                            if (firstWhitespaceIndex != -1)
+                                writer.WriteValue($"{headerValue[..firstWhitespaceIndex]} <token>");
+                            else
+                                writer.WriteValue("<token>");
+                        }
+                        writer.WriteEndArray();
                         break;
                     default:
                         writer.WriteStartArray();
@@ -172,8 +183,8 @@ public sealed partial class AppFixture
                             string v = headerValue;
                             if (_scrubber is not null)
                                 v = _scrubber(v);
-                            v = v.Replace(_appPort, "APP_PORT");
-                            v = v.Replace(_localtestPort, "LOCALTEST_PORT");
+                            v = v.Replace(_appPort, "<appPort>");
+                            v = v.Replace(_localtestPort, "<localtestPort>");
                             writer.WriteValue(v);
                         }
                         writer.WriteEndArray();
@@ -196,8 +207,8 @@ public sealed partial class AppFixture
             var uri = value.ToString();
             if (_scrubber is not null)
                 uri = _scrubber(uri);
-            uri = uri.Replace(_appPort, "APP_PORT");
-            uri = uri.Replace(_localtestPort, "LOCALTEST_PORT");
+            uri = uri.Replace(_appPort, "<appPort>");
+            uri = uri.Replace(_localtestPort, "<localtestPort>");
             writer.WriteValue(uri);
         }
     }

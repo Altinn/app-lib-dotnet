@@ -11,7 +11,7 @@
     StatusCode: OK,
     ReasonPhrase: OK,
     Headers: {
-      Date: {Scrubbed},
+      Date: <date>,
       Server: [
         Kestrel
       ],
@@ -53,9 +53,11 @@
       Method: {
         Method: PATCH
       },
-      RequestUri: http://local.altinn.cloud:LOCALTEST_PORT/ttd/basic/instances/501337/<instanceGuid>/data,
+      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/instances/501337/<instanceGuid>/data,
       Headers: {
-        Authorization: {Scrubbed}
+        Authorization: [
+          Bearer <token>
+        ]
       }
     },
     IsSuccessStatusCode: true

@@ -4,7 +4,7 @@
     Content: {
       Headers: {
         Content-Length: [
-          <content-length>
+          <contentLength>
         ],
         Content-Type: [
           application/pdf
@@ -17,7 +17,7 @@
     StatusCode: OK,
     ReasonPhrase: OK,
     Headers: {
-      Date: {Scrubbed},
+      Date: <date>,
       Server: [
         Kestrel
       ],
@@ -46,9 +46,11 @@
       Method: {
         Method: GET
       },
-      RequestUri: http://local.altinn.cloud:LOCALTEST_PORT/ttd/basic/instances/501337/<instanceGuid>/data/<dataElementId[1]>,
+      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/instances/501337/<instanceGuid>/data/<dataElementId[1]>,
       Headers: {
-        Authorization: {Scrubbed},
+        Authorization: [
+          Bearer <token>
+        ],
         Accept: [
           application/octet-stream
         ]
