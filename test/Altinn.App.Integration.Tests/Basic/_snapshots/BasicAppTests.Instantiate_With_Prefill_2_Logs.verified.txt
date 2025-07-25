@@ -1,0 +1,8 @@
+﻿[basic/default] [INFO] Checking for scenario config overrides...
+[basic/default] [INFO] Waiting for port configuration at /App/port-config/ports.json...
+[basic/default] [INFO] Port configuration loaded
+[basic/default] [INFO] Starting application with scenario: default
+[basic/default] [INFO] IInstantiationValidator.Validate
+[basic/default] [INFO] IProcessTaskStart.Start
+[basic/default] [INFO] IInstantiationProcessor.DataCreation
+[basic/default] [INFO] IDataProcessor.ProcessDataRead
