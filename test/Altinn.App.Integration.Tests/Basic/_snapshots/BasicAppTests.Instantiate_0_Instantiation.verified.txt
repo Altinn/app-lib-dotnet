@@ -60,6 +60,9 @@
       Headers: {
         Authorization: [
           Bearer <token>
+        ],
+        User-Agent: [
+          Altinn.App.Integration.Tests
         ]
       }
     },

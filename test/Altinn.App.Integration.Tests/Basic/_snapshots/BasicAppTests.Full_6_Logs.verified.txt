@@ -2,23 +2,35 @@
 [basic/default] [INFO] Waiting for port configuration at /App/port-config/ports.json...
 [basic/default] [INFO] Port configuration loaded
 [basic/default] [INFO] Starting application with scenario: default
+[basic/default] [INFO] ### Request: Instances.PostSimplified - User: User/1337/501337/SophieDDG, AuthLevel: 2, AuthMethod: localtest
 [basic/default] [INFO] IInstantiationValidator.Validate
 [basic/default] [INFO] IProcessTaskStart.Start
 [basic/default] [INFO] IInstantiationProcessor.DataCreation
+[basic/default] [INFO] ### Response: Instances.PostSimplified - 200
+[basic/default] [INFO] ### Request: Data.PatchFormDataMultiple - User: User/1337/501337/SophieDDG, AuthLevel: 2, AuthMethod: localtest
 [basic/default] [INFO] IDataProcessor.ProcessDataWrite
 [basic/default] [INFO] IDataWriteProcessor.ProcessDataWrite
 [basic/default] [INFO] IValidator.HasRelevantChanges
 [basic/default] [INFO] IValidator.Validate
 [basic/default] [INFO] IFormDataValidator.HasRelevantChanges
 [basic/default] [INFO] IFormDataValidator.ValidateFormData
+[basic/default] [INFO] ### Response: Data.PatchFormDataMultiple - 200
+[basic/default] [INFO] ### Request: Process.NextElement - User: User/1337/501337/SophieDDG, AuthLevel: 2, AuthMethod: localtest
 [basic/default] [INFO] IValidator.Validate
 [basic/default] [INFO] ITaskValidator.ValidateTask
 [basic/default] [INFO] IDataElementValidator.ValidateDataElement
 [basic/default] [INFO] IFormDataValidator.ValidateFormData
 [basic/default] [INFO] IProcessTaskEnd.End
-fail: Altinn.App.Core.Infrastructure.Clients.Storage.InstanceClient[0]
-      Could not update read status for instance 501337/cc5b2fb7-eaa2-4d48-8eeb-8ea8e8502155. Request failed with status code Forbidden
 [basic/default] [INFO] IDataProcessor.ProcessDataRead
 [basic/default] [INFO] IExternalApiClient.GetExternalApiDataAsync
 [basic/default] [INFO] IProcessEnd.End
+[basic/default] [INFO] ### Response: Process.NextElement - 200
+[basic/default] [INFO] ### Request: Instances.Get - User: User/1337/501337/SophieDDG, AuthLevel: 2, AuthMethod: localtest
+[basic/default] [INFO] ### Response: Instances.Get - 200
+[basic/default] [INFO] ### Request: ApplicationMetadata.GetAction - User: None/none, AuthLevel: 0, AuthMethod: none
+[basic/default] [INFO] ### Response: ApplicationMetadata.GetAction - 200
+[basic/default] [INFO] ### Request: Data.Get - User: User/1337/501337/SophieDDG, AuthLevel: 2, AuthMethod: localtest
 [basic/default] [INFO] IDataProcessor.ProcessDataRead
+[basic/default] [INFO] ### Response: Data.Get - 200
+[basic/default] [INFO] ### Request: Data.Get - User: User/1337/501337/SophieDDG, AuthLevel: 2, AuthMethod: localtest
+[basic/default] [INFO] ### Response: Data.Get - 200

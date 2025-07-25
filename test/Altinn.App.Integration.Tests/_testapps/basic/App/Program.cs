@@ -287,5 +287,8 @@ void Configure()
     }
     app.UseAltinnAppCommonConfiguration();
 
+    // #########################################################################
+    // Custom middleware not included in app template
     app.MapGet("/health", () => "Healthy");
+    // #########################################################################
 }

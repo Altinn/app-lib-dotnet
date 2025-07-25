@@ -5,3 +5,5 @@
 [basic/subunit-only] [INFO] Waiting for port configuration at /App/port-config/ports.json...
 [basic/subunit-only] [INFO] Port configuration loaded
 [basic/subunit-only] [INFO] Starting application with scenario: default
+[basic/subunit-only] [INFO] ### Request: ApplicationMetadata.GetAction - User: None/none, AuthLevel: 0, AuthMethod: none
+[basic/subunit-only] [INFO] ### Response: ApplicationMetadata.GetAction - 200

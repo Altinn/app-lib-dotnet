@@ -50,6 +50,9 @@
         ],
         Accept: [
           application/json
+        ],
+        User-Agent: [
+          Altinn.App.Integration.Tests
         ]
       }
     },

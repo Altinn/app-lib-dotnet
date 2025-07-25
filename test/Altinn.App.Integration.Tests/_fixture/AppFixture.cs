@@ -591,11 +591,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             var portConfigFile = Path.Combine(portConfigDirectory, "ports.json");
 
             await File.WriteAllTextAsync(portConfigFile, portConfigJson);
-            logger.LogInformation(
-                "Wrote port configuration to {PortConfigFile}: {PortConfig}",
-                portConfigFile,
-                portConfigJson
-            );
+            logger.LogInformation("Wrote port configuration to {PortConfigFile}", portConfigFile);
         }
         catch (Exception ex)
         {
@@ -752,6 +748,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                     $"http://local.altinn.cloud:{_localtestContainer.GetMappedPublicPort(LocaltestPort)}"
                 ),
             };
+            _appClient.DefaultRequestHeaders.Add("User-Agent", "Altinn.App.Integration.Tests");
 
             // Add frontendVersion cookie with the app's external URL
             var appExternalUrl = GetAppExternalUrl();
@@ -770,6 +767,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             {
                 BaseAddress = new Uri($"http://localhost:{_localtestContainer.GetMappedPublicPort(LocaltestPort)}"),
             };
+            _localtestClient.DefaultRequestHeaders.Add("User-Agent", "Altinn.App.Integration.Tests");
         }
 
         return _localtestClient;

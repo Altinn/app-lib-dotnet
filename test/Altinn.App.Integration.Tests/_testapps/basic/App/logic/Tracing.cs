@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.ExternalApi;
 using Altinn.App.Core.Features.FileAnalysis;
 using Altinn.App.Core.Features.Options;
@@ -18,6 +19,9 @@ using Altinn.App.Core.Models.Validation;
 using Altinn.Common.EFormidlingClient.Models.SBD;
 using Altinn.Platform.Storage.Interface.Models;
 using BasicApp;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
 
 #nullable enable
@@ -31,6 +35,11 @@ internal static class TracingDI
         // These services simply log their execution to the snapshot logger so
         // that we can trace the execution flow in the snapshots (what executes and when/in what order).
         // This makes refactoring internals and keeping track of behavior easier/possible.
+
+        // Logs requests and user information
+        services.Configure<MvcOptions>(options => options.Filters.Add<TracingActionFilter>());
+
+        // App implementable services from Altinn.App.Core
         services.AddSingleton<IAppOptionsProvider, AppOptionsProvider>();
         services.AddSingleton<IDataElementValidator, DataElementValidator>();
         services.AddSingleton<IDataListProvider, DataListProvider>();
@@ -60,6 +69,58 @@ internal static class TracingDI
         services.AddSingleton<IEventSecretCodeProvider, EventSecretCodeProvider>();
         services.AddSingleton<IUserActionAuthorizerProvider, UserActionAuthorizerProvider>();
         return services;
+    }
+}
+
+internal sealed class TracingActionFilter : IActionFilter
+{
+    public void OnActionExecuting(ActionExecutingContext context)
+    {
+        var userAgent = context.HttpContext.Request.Headers["User-Agent"].ToString();
+        if (userAgent != "Altinn.App.Integration.Tests")
+            return;
+        string userInfo = "";
+        try
+        {
+            var authenticationContext =
+                context.HttpContext.RequestServices.GetRequiredService<IAuthenticationContext>();
+            var auth = authenticationContext.Current;
+            var (identifier, authLevel, authMethod) = auth switch
+            {
+                Authenticated.None => ("none", 0, "none"),
+                Authenticated.User u => (
+                    $"{u.UserId}/{u.UserPartyId}{(!string.IsNullOrWhiteSpace(u.Username) ? $"/{u.Username}" : "")}",
+                    u.AuthenticationLevel,
+                    u.AuthenticationMethod
+                ),
+                Authenticated.Org o => ($"{o.OrgNo}", o.AuthenticationLevel, o.AuthenticationMethod),
+                Authenticated.ServiceOwner so => ($"{so.OrgNo}", so.AuthenticationLevel, so.AuthenticationMethod),
+                Authenticated.SystemUser su => (
+                    $"{su.SystemUserOrgNr}/{su.SystemUserId}",
+                    su.AuthenticationLevel,
+                    su.AuthenticationMethod
+                ),
+                _ => ("unknown", 0, "unknown"),
+            };
+            userInfo = $"User: {auth?.GetType().Name}/{identifier}, AuthLevel: {authLevel}, AuthMethod: {authMethod}";
+        }
+        catch (Exception ex)
+        {
+            SnapshotLogger.LogError($"### Error processing user information in request: {ex}");
+        }
+        var action = (ControllerActionDescriptor)context.ActionDescriptor;
+        SnapshotLogger.LogInfo($"### Request: {action.ControllerName}.{action.ActionName} - " + userInfo);
+    }
+
+    public void OnActionExecuted(ActionExecutedContext context)
+    {
+        var userAgent = context.HttpContext.Request.Headers["User-Agent"].ToString();
+        if (userAgent != "Altinn.App.Integration.Tests")
+            return;
+        var action = (ControllerActionDescriptor)context.ActionDescriptor;
+        SnapshotLogger.LogInfo(
+            $"### Response: {action.ControllerName}.{action.ActionName} - {context.HttpContext.Response.StatusCode}"
+        );
     }
 }
 

@@ -44,7 +44,11 @@
         Method: GET
       },
       RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/api/v1/applicationmetadata,
-      Headers: {}
+      Headers: {
+        User-Agent: [
+          Altinn.App.Integration.Tests
+        ]
+      }
     },
     IsSuccessStatusCode: true
   },

@@ -53,6 +53,9 @@
         ],
         Accept: [
           application/octet-stream
+        ],
+        User-Agent: [
+          Altinn.App.Integration.Tests
         ]
       }
     },
