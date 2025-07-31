@@ -88,14 +88,13 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     {
         string formattedScopes = FormattedScopes(scopes);
         string cacheKey = $"{_maskinportenCacheKeySalt}_{formattedScopes}";
-        DateTimeOffset referenceTime = _timeProvider.GetUtcNow();
 
         _logger.LogDebug("Retrieving Maskinporten token for scopes: {Scopes}", formattedScopes);
         using var activity = _telemetry?.StartGetAccessTokenActivity(Variant, Settings.ClientId, formattedScopes);
 
         var result = await _tokenCache.GetOrCreateAsync(
             cacheKey,
-            (Self: this, FormattedScopes: formattedScopes, ReferenceTime: referenceTime),
+            (Self: this, FormattedScopes: formattedScopes),
             static async (state, cancellationToken) =>
             {
                 state.Self._logger.LogDebug("Token is not in cache, generating new");
