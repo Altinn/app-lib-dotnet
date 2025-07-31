@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
-using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Maskinporten.Models;
@@ -104,7 +103,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
 
     /// <summary>
     /// <para>Retrieves a token from the cache, or creates a new one if it does not exist.</para>
-    /// Based on the supplied <see cref="authority"/>, either <see cref="MaskinportenTokenFactory"/> or <see cref="AltinnTokenFactory"/>
+    /// Based on the supplied <see cref="TokenAuthority"/>, either <see cref="MaskinportenTokenFactory"/> or <see cref="AltinnTokenFactory"/>
     /// will be invoked to create new tokens.
     /// </summary>
     internal async Task<TokenCacheEntry> GetOrCreateTokenFromCache(
