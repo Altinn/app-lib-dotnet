@@ -156,11 +156,14 @@ internal sealed class MaskinportenClient : IMaskinportenClient
 
         var result = await _tokenCache.GetOrCreateAsync(
             cacheKey,
-            (Self: this, Scopes: scopes),
+            (Self: this, FormattedScopes: formattedScopes),
             static async (state, cancellationToken) =>
             {
                 state.Self._logger.LogDebug("Token is not in cache, generating new");
-                JwtToken maskinportenToken = await state.Self.GetAccessToken(state.Scopes, cancellationToken);
+                JwtToken maskinportenToken = await state.Self.GetAccessToken(
+                    [state.FormattedScopes],
+                    cancellationToken
+                );
                 JwtToken altinnToken = await state.Self.HandleMaskinportenAltinnTokenExchange(
                     maskinportenToken,
                     cancellationToken
