@@ -98,7 +98,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         CancellationToken cancellationToken = default
     )
     {
-        var result = await GetOrCreateTokenFromCache(TokenAuthority.Maskinporten, scopes, cancellationToken);
+        var result = await GetOrCreateTokenFromCache(TokenAuthority.AltinnTokenExchange, scopes, cancellationToken);
         return result.Token;
     }
 
