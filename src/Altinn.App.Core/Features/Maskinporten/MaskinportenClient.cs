@@ -362,14 +362,6 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     }
 
     /// <summary>
-    /// Formats a list of scopes according to the expected formatting (space-delimited).
-    /// See <a href="https://docs.digdir.no/docs/Maskinporten/maskinporten_guide_apikonsument#5-be-om-token">the docs</a> for more information.
-    /// </summary>
-    /// <param name="scopes">A collection of scopes.</param>
-    /// <returns>A single string containing the supplied scopes.</returns>
-    internal static string GetFormattedScopes(IEnumerable<string> scopes) => string.Join(" ", scopes);
-
-    /// <summary>
     /// Generates a cache key for the supplied authority and scopes, in the format of `{salt}_{formattedScopes}`.
     /// </summary>
     internal string GetCacheKey(TokenAuthority authority, string formattedScopes)
@@ -384,19 +376,19 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         return $"{salt}_{formattedScopes}";
     }
 
-    private TimeSpan GetTokenExpiryWithMargin(JwtToken token)
-    {
-        return token.ExpiresAt - _timeProvider.GetUtcNow() - TokenExpirationMargin;
-    }
+    /// <summary>
+    /// Formats a list of scopes according to the expected formatting (space-delimited).
+    /// See <a href="https://docs.digdir.no/docs/Maskinporten/maskinporten_guide_apikonsument#5-be-om-token">the docs</a> for more information.
+    /// </summary>
+    /// <param name="scopes">A collection of scopes.</param>
+    /// <returns>A single string containing the supplied scopes.</returns>
+    internal static string GetFormattedScopes(IEnumerable<string> scopes) => string.Join(" ", scopes);
 
-    private static HybridCacheEntryOptions CacheExpiryFactory(TimeSpan localExpiry, TimeSpan? overallExpiry = null)
-    {
-        return new HybridCacheEntryOptions
-        {
-            LocalCacheExpiration = localExpiry,
-            Expiration = overallExpiry ?? localExpiry,
-        };
-    }
+    private TimeSpan GetTokenExpiryWithMargin(JwtToken token) =>
+        token.ExpiresAt - _timeProvider.GetUtcNow() - TokenExpirationMargin;
+
+    private static HybridCacheEntryOptions CacheExpiryFactory(TimeSpan localExpiry, TimeSpan? overallExpiry = null) =>
+        new() { LocalCacheExpiration = localExpiry, Expiration = overallExpiry ?? localExpiry };
 
     /// <summary>
     /// This method simply forwards the activity request to the telemetry service and returns the resulting instance.
