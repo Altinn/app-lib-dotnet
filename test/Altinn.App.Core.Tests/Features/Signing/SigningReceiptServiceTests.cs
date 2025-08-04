@@ -1,4 +1,3 @@
-using System.IO;
 using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Correspondence;
@@ -435,10 +434,7 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
         CorrespondenceAttachment attachment = attachments.First();
         Assert.Equal("signed.pdf", attachment.Filename);
         Assert.Equal(signedElement.Id, attachment.SendersReference);
-
-        using var ms = new MemoryStream();
-        attachment.Data.CopyTo(ms);
-        Assert.Equal(new byte[] { 1, 2, 3 }, ms.ToArray());
+        Assert.Equal(new byte[] { 1, 2, 3 }, attachment.Data);
     }
 
     [Fact]
