@@ -43,13 +43,13 @@ public class CorrespondenceRequestTests_Obsolete
                     {
                         Filename = "filename-1",
                         SendersReference = "senders-reference-1",
-                        Data = "data"u8.ToArray(),
+                        Data = new MemoryStream("data"u8.ToArray()),
                     },
                     new CorrespondenceAttachment
                     {
                         Filename = "filename-2",
                         SendersReference = "senders-reference-2",
-                        Data = "data"u8.ToArray(),
+                        Data = new MemoryStream("data"u8.ToArray()),
                         DataLocationType = CorrespondenceDataLocationType.NewCorrespondenceAttachment,
                         IsEncrypted = true,
                     },
