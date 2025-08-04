@@ -22,6 +22,7 @@ using BasicApp;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 #nullable enable
@@ -118,8 +119,10 @@ internal sealed class TracingActionFilter : IActionFilter
         if (userAgent != "Altinn.App.Integration.Tests")
             return;
         var action = (ControllerActionDescriptor)context.ActionDescriptor;
+        var result = context.Result;
+        var statusCode = (result as IStatusCodeActionResult)?.StatusCode;
         SnapshotLogger.LogInfo(
-            $"### Response: {action.ControllerName}.{action.ActionName} - {context.HttpContext.Response.StatusCode}"
+            $"### Response: {action.ControllerName}.{action.ActionName} - {result?.GetType().Name}, StatusCode: {statusCode}"
         );
     }
 }

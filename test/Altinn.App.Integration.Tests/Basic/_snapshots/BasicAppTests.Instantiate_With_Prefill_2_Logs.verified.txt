@@ -6,11 +6,11 @@
 [basic/default] [INFO] IInstantiationValidator.Validate
 [basic/default] [INFO] IProcessTaskStart.Start
 [basic/default] [INFO] IInstantiationProcessor.DataCreation
-[basic/default] [INFO] ### Response: Instances.PostSimplified - 200
+[basic/default] [INFO] ### Response: Instances.PostSimplified - CreatedResult, StatusCode: 201
 [basic/default] [INFO] ### Request: Instances.Get - User: User/1337/501337/SophieDDG, AuthLevel: 2, AuthMethod: localtest
-[basic/default] [INFO] ### Response: Instances.Get - 200
+[basic/default] [INFO] ### Response: Instances.Get - OkObjectResult, StatusCode: 200
 [basic/default] [INFO] ### Request: ApplicationMetadata.GetAction - User: None/none, AuthLevel: 0, AuthMethod: none
-[basic/default] [INFO] ### Response: ApplicationMetadata.GetAction - 200
+[basic/default] [INFO] ### Response: ApplicationMetadata.GetAction - OkObjectResult, StatusCode: 200
 [basic/default] [INFO] ### Request: Data.Get - User: User/1337/501337/SophieDDG, AuthLevel: 2, AuthMethod: localtest
 [basic/default] [INFO] IDataProcessor.ProcessDataRead
-[basic/default] [INFO] ### Response: Data.Get - 200
+[basic/default] [INFO] ### Response: Data.Get - OkObjectResult, StatusCode: 200

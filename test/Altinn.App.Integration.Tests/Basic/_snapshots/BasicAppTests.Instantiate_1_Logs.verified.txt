@@ -6,4 +6,4 @@
 [basic/default] [INFO] IInstantiationValidator.Validate
 [basic/default] [INFO] IProcessTaskStart.Start
 [basic/default] [INFO] IInstantiationProcessor.DataCreation
-[basic/default] [INFO] ### Response: Instances.PostSimplified - 200
+[basic/default] [INFO] ### Response: Instances.PostSimplified - CreatedResult, StatusCode: 201
