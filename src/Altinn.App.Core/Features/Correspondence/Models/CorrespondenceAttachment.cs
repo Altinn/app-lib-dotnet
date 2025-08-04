@@ -29,7 +29,7 @@ public sealed record CorrespondenceAttachment : MultipartCorrespondenceItem
     /// <summary>
     /// The data content.
     /// </summary>
-    public required ReadOnlyMemory<byte> Data { get; init; }
+    public required Stream Data { get; init; }
 
     internal void Serialise(MultipartFormDataContent content, int index, string? filenameOverride = null)
     {
@@ -40,7 +40,7 @@ public sealed record CorrespondenceAttachment : MultipartCorrespondenceItem
         AddRequired(content, actualFilename, $"{prefix}.Filename");
         AddRequired(content, SendersReference, $"{prefix}.SendersReference");
         AddRequired(content, DataLocationType.ToString(), $"{prefix}.DataLocationType");
-        AddRequired(content, Data, "Attachments", actualFilename); // NOTE: No prefix!
+        AddRequired(content, Data, "Attachments", actualFilename);
         AddIfNotNull(content, IsEncrypted?.ToString(), $"{prefix}.IsEncrypted");
     }
 }
