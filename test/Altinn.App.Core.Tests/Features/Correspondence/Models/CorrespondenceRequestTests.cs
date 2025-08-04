@@ -42,13 +42,13 @@ public class CorrespondenceRequestTests
                     {
                         Filename = "filename-1",
                         SendersReference = "senders-reference-1",
-                        Data = "data"u8.ToArray(),
+                        Data = new MemoryStream("data"u8.ToArray()),
                     },
                     new CorrespondenceAttachment
                     {
                         Filename = "filename-2",
                         SendersReference = "senders-reference-2",
-                        Data = "data"u8.ToArray(),
+                        Data = new MemoryStream("data"u8.ToArray()),
                         DataLocationType = CorrespondenceDataLocationType.NewCorrespondenceAttachment,
                         IsEncrypted = true,
                     },
@@ -212,13 +212,13 @@ public class CorrespondenceRequestTests
                     {
                         Filename = "filename-1",
                         SendersReference = "senders-reference-1",
-                        Data = "data"u8.ToArray(),
+                        Data = new MemoryStream("data"u8.ToArray()),
                     },
                     new CorrespondenceAttachment
                     {
                         Filename = "filename-2",
                         SendersReference = "senders-reference-2",
-                        Data = "data"u8.ToArray(),
+                        Data = new MemoryStream("data"u8.ToArray()),
                         DataLocationType = CorrespondenceDataLocationType.NewCorrespondenceAttachment,
                         IsEncrypted = true,
                     },
@@ -376,13 +376,13 @@ public class CorrespondenceRequestTests
                     {
                         Filename = clashingFilename,
                         SendersReference = "senders-reference-1",
-                        Data = Encoding.UTF8.GetBytes("data-1"),
+                        Data = new MemoryStream(Encoding.UTF8.GetBytes("data-1")),
                     },
                     new CorrespondenceAttachment
                     {
                         Filename = clashingFilename,
                         SendersReference = "senders-reference-2",
-                        Data = Encoding.UTF8.GetBytes("data-2"),
+                        Data = new MemoryStream(Encoding.UTF8.GetBytes("data-2")),
                     },
                 ],
             },
@@ -400,7 +400,7 @@ public class CorrespondenceRequestTests
     public void Serialise_ClashingFilenames_ShouldUseReferenceComparison()
     {
         // Arrange
-        ReadOnlyMemory<byte> data = Encoding.UTF8.GetBytes("data");
+        var data = new MemoryStream(Encoding.UTF8.GetBytes("data"));
         List<CorrespondenceAttachment> identicalAttachments =
         [
             new CorrespondenceAttachment
