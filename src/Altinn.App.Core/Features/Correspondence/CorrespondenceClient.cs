@@ -191,11 +191,11 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     )
     {
         using HttpClient client = _httpClientFactory.CreateClient();
-
+        
         // Configure HttpClient for large file uploads
         client.Timeout = TimeSpan.FromMinutes(30);
         client.DefaultRequestHeaders.ExpectContinue = false;
-
+        
         using HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
         string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
