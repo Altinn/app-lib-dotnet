@@ -288,7 +288,7 @@ public class MaskinportenClientTests
 
     [Theory]
     [MemberData(nameof(Variants))]
-    public async Task TokenCache_ReusesObjects_DoesNotSerialize(string variant)
+    public async Task TokenCache_Returns_SameInstanceForIdenticalRequests(string variant)
     {
         // Arrange
         await using var fixture = Fixture.Create();
