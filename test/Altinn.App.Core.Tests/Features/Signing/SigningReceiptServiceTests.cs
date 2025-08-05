@@ -433,7 +433,7 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
         // Assert
         Assert.Single(attachments);
         var attachment = attachments.First() as CorrespondenceAttachment;
-        Assert.Equal("signed.pdf", attachment.Filename);
+        Assert.Equal("signed.pdf", attachment!.Filename);
         Assert.Equal(signedElement.Id, attachment.SendersReference);
         Assert.Equal(new byte[] { 1, 2, 3 }, attachment.Data);
     }

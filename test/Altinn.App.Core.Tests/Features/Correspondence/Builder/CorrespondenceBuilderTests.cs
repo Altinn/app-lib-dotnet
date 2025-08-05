@@ -274,7 +274,7 @@ public class CorrespondenceBuilderTests
             correspondence.Content.Attachments[i].SendersReference.Should().Be(data.attachments[i].sendersReference);
             correspondence.Content.Attachments[i].DataLocationType.Should().Be(data.attachments[i].dataLocationType);
             var attachment = correspondence.Content.Attachments[i] as CorrespondenceAttachment;
-            Encoding.UTF8.GetString(attachment.Data.Span).Should().Be(data.attachments[i].data);
+            Encoding.UTF8.GetString(attachment!.Data.Span).Should().Be(data.attachments[i].data);
         }
 
         correspondence.Notification.NotificationTemplate.Should().Be(data.notification.template);
