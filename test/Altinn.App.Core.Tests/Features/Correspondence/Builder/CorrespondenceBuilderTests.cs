@@ -275,10 +275,7 @@ public class CorrespondenceBuilderTests
             correspondence.Content.Attachments[i].DataLocationType.Should().Be(data.attachments[i].dataLocationType);
             var byteArray = new byte[correspondence.Content.Attachments[i].Data.Length];
             correspondence.Content.Attachments[i].Data.ReadExactly(byteArray);
-            Encoding
-                .UTF8.GetString(byteArray)
-                .Should()
-                .Be(data.attachments[i].data);
+            Encoding.UTF8.GetString(byteArray).Should().Be(data.attachments[i].data);
         }
 
         correspondence.Notification.NotificationTemplate.Should().Be(data.notification.template);
