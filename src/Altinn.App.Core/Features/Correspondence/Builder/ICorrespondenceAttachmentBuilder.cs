@@ -36,6 +36,12 @@ public interface ICorrespondenceAttachmentBuilderData
     /// </summary>
     /// <param name="data">The data</param>
     ICorrespondenceAttachmentBuilder WithData(ReadOnlyMemory<byte> data);
+
+    /// <summary>
+    /// Sets the data content of the attachment.
+    /// </summary>
+    /// <param name="data">The data</param>
+    ICorrespondenceAttachmentBuilder WithData(Stream data);
 }
 
 /// <summary>
