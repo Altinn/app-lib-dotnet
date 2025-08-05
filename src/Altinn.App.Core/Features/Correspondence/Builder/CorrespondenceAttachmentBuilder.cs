@@ -9,7 +9,8 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
 {
     private string? _filename;
     private string? _sendersReference;
-    private Stream? _data;
+    private ReadOnlyMemory<byte>? _data;
+    private Stream? _streamedData;
     private bool? _isEncrypted;
     private CorrespondenceDataLocationType _dataLocationType =
         CorrespondenceDataLocationType.ExistingCorrespondenceAttachment;
@@ -40,16 +41,14 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilder WithData(ReadOnlyMemory<byte> data)
     {
-        BuilderUtils.NotNullOrEmpty(data, "Data cannot be empty");
-        var memStream = new MemoryStream(data.ToArray());
-        _data = memStream;
+        _data = data;
         return this;
     }
 
     /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilder WithData(Stream data)
     {
-        _data = data;
+        _streamedData = data;
         return this;
     }
 
@@ -68,19 +67,34 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
     }
 
     /// <inheritdoc/>
-    public CorrespondenceAttachment Build()
+    public CorrespondenceBaseAttachment Build()
     {
         BuilderUtils.NotNullOrEmpty(_filename);
         BuilderUtils.NotNullOrEmpty(_sendersReference);
-        BuilderUtils.NotNullOrEmpty(_data);
+        BuilderUtils.RequireExactlyOneOf(_data, _streamedData);
 
-        return new CorrespondenceAttachment
+        if (_streamedData is not null)
         {
-            Filename = _filename,
-            SendersReference = _sendersReference,
-            Data = _data,
-            IsEncrypted = _isEncrypted,
-            DataLocationType = _dataLocationType,
-        };
+            return new CorrespondenceStreamedAttachment
+            {
+                Filename = _filename,
+                SendersReference = _sendersReference,
+                Data = _streamedData,
+                IsEncrypted = _isEncrypted,
+                DataLocationType = _dataLocationType,
+            };
+        }
+        else
+        {
+            BuilderUtils.NotNullOrEmpty(_data);
+            return new CorrespondenceAttachment
+            {
+                Filename = _filename,
+                SendersReference = _sendersReference,
+                Data = _data.Value,
+                IsEncrypted = _isEncrypted,
+                DataLocationType = _dataLocationType,
+            };
+        }
     }
 }

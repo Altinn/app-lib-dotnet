@@ -68,5 +68,5 @@ public interface ICorrespondenceAttachmentBuilder
     /// <summary>
     /// Builds the correspondence attachment.
     /// </summary>
-    CorrespondenceAttachment Build();
+    CorrespondenceBaseAttachment Build();
 }

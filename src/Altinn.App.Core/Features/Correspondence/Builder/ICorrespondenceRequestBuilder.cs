@@ -270,8 +270,8 @@ public interface ICorrespondenceRequestBuilder
     /// <p>Adds an attachment to the correspondence.</p>
     /// <p>This method respects any existing attachments already stored in <see cref="CorrespondenceContent.Attachments"/>.</p>
     /// </summary>
-    /// <param name="attachment">A <see cref="CorrespondenceAttachment"/> item</param>
-    ICorrespondenceRequestBuilder WithAttachment(CorrespondenceAttachment attachment);
+    /// <param name="attachment">A <see cref="CorrespondenceBaseAttachment"/> item</param>
+    ICorrespondenceRequestBuilder WithAttachment(CorrespondenceBaseAttachment attachment);
 
     /// <summary>
     /// <p>Adds an attachment to the correspondence.</p>
@@ -284,8 +284,8 @@ public interface ICorrespondenceRequestBuilder
     /// <p>Adds attachments to the correspondence.</p>
     /// <p>This method respects any existing attachments already stored in <see cref="CorrespondenceContent.Attachments"/>.</p>
     /// </summary>
-    /// <param name="attachments">A List of <see cref="CorrespondenceAttachment"/> items</param>
-    ICorrespondenceRequestBuilder WithAttachments(IEnumerable<CorrespondenceAttachment> attachments);
+    /// <param name="attachments">A List of <see cref="CorrespondenceBaseAttachment"/> items</param>
+    ICorrespondenceRequestBuilder WithAttachments(IEnumerable<CorrespondenceBaseAttachment> attachments);
 
     /// <summary>
     /// Builds the <see cref="CorrespondenceRequest"/> instance.

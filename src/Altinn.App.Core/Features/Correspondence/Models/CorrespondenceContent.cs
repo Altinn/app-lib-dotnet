@@ -30,7 +30,7 @@ public sealed record CorrespondenceContent : MultipartCorrespondenceItem
     /// <summary>
     /// File attachments to associate with this correspondence.
     /// </summary>
-    public IReadOnlyList<CorrespondenceAttachment>? Attachments { get; init; }
+    public IReadOnlyList<CorrespondenceBaseAttachment>? Attachments { get; init; }
 
     internal void Serialise(MultipartFormDataContent content)
     {

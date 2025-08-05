@@ -103,7 +103,6 @@ public static class HttpClientExtension
         return await httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
     }
 
-
     /// <summary>
     /// Extension that add authorization header to request
     /// </summary>

@@ -12,7 +12,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     private OrganisationNumber? _sender;
     private string? _sendersReference;
     private CorrespondenceContent? _content;
-    private List<CorrespondenceAttachment>? _contentAttachments;
+    private List<CorrespondenceBaseAttachment>? _contentAttachments;
     private DateTimeOffset? _allowSystemDeleteAfter;
     private DateTimeOffset? _dueDateTime;
     private List<OrganisationOrPersonIdentifier>? _recipients;
@@ -288,7 +288,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilder WithAttachment(CorrespondenceAttachment attachment)
+    public ICorrespondenceRequestBuilder WithAttachment(CorrespondenceBaseAttachment attachment)
     {
         return WithAttachments([attachment]);
     }
@@ -300,7 +300,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilder WithAttachments(IEnumerable<CorrespondenceAttachment> attachments)
+    public ICorrespondenceRequestBuilder WithAttachments(IEnumerable<CorrespondenceBaseAttachment> attachments)
     {
         _contentAttachments ??= [];
         _contentAttachments.AddRange(attachments);
