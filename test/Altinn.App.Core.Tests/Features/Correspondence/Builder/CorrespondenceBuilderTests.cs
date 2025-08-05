@@ -199,7 +199,7 @@ public class CorrespondenceBuilderTests
                 {
                     Filename = data.attachments[1].filename,
                     SendersReference = data.attachments[1].sendersReference,
-                    Data = Encoding.UTF8.GetBytes(data.attachments[1].data),
+                    Data = new MemoryStream(Encoding.UTF8.GetBytes(data.attachments[1].data)),
                     DataLocationType = data.attachments[1].dataLocationType,
                     IsEncrypted = data.attachments[1].isEncrypted,
                 }
@@ -210,7 +210,7 @@ public class CorrespondenceBuilderTests
                     {
                         Filename = data.attachments[2].filename,
                         SendersReference = data.attachments[2].sendersReference,
-                        Data = Encoding.UTF8.GetBytes(data.attachments[2].data),
+                        Data = new MemoryStream(Encoding.UTF8.GetBytes(data.attachments[2].data)),
                         DataLocationType = data.attachments[2].dataLocationType,
                         IsEncrypted = data.attachments[2].isEncrypted,
                     },
@@ -273,8 +273,10 @@ public class CorrespondenceBuilderTests
             correspondence.Content.Attachments[i].IsEncrypted.Should().Be(data.attachments[i].isEncrypted);
             correspondence.Content.Attachments[i].SendersReference.Should().Be(data.attachments[i].sendersReference);
             correspondence.Content.Attachments[i].DataLocationType.Should().Be(data.attachments[i].dataLocationType);
+            var byteArray = new byte[correspondence.Content.Attachments[i].Data.Length];
+            correspondence.Content.Attachments[i].Data.ReadExactly(byteArray);
             Encoding
-                .UTF8.GetString(correspondence.Content.Attachments[i].Data.Span)
+                .UTF8.GetString(byteArray)
                 .Should()
                 .Be(data.attachments[i].data);
         }

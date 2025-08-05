@@ -434,7 +434,9 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
         CorrespondenceAttachment attachment = attachments.First();
         Assert.Equal("signed.pdf", attachment.Filename);
         Assert.Equal(signedElement.Id, attachment.SendersReference);
-        Assert.Equal(new byte[] { 1, 2, 3 }, attachment.Data);
+        var byteArray = new byte[3];
+        attachment.Data.ReadExactly(byteArray);
+        Assert.Equal(new byte[] { 1, 2, 3 }, byteArray);
     }
 
     [Fact]
