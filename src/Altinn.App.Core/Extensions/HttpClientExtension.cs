@@ -100,7 +100,7 @@ public static class HttpClientExtension
             request.Headers.Add(Constants.General.PlatformAccessTokenHeaderName, platformAccessToken);
         }
 
-        return await httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
+        return await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None);
     }
 
     /// <summary>
