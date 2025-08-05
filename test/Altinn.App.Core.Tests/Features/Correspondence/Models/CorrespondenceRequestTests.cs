@@ -407,7 +407,7 @@ public class CorrespondenceRequestTests
             {
                 Filename = "filename",
                 SendersReference = "senders-reference",
-                Data = new MemoryStream(data.ToArray(),
+                Data = new MemoryStream(data.ToArray()),
             },
             new CorrespondenceAttachment
             {
