@@ -547,6 +547,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     }
     public interface ICorrespondenceAttachmentBuilderData
     {
+        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.IO.Stream data);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.ReadOnlyMemory<byte> data);
     }
     public interface ICorrespondenceAttachmentBuilderFilename
