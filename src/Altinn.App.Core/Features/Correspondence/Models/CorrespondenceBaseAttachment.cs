@@ -1,11 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
+/// <summary>
+/// Represents a base attachment of a correspondence.
+/// </summary>
 public abstract record CorrespondenceBaseAttachment : MultipartCorrespondenceItem
 {
     /// <summary>

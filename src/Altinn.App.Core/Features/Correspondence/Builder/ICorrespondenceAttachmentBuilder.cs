@@ -3,7 +3,7 @@ using Altinn.App.Core.Features.Correspondence.Models;
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceAttachment.Filename"/> step.
+/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceBaseAttachment.Filename"/> step.
 /// </summary>
 public interface ICorrespondenceAttachmentBuilderFilename
 {
@@ -15,7 +15,7 @@ public interface ICorrespondenceAttachmentBuilderFilename
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceAttachment.SendersReference"/> step.
+/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceBaseAttachment.SendersReference"/> step.
 /// </summary>
 public interface ICorrespondenceAttachmentBuilderSendersReference
 {
