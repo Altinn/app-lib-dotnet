@@ -179,7 +179,7 @@ public class DataClient : IDataClient
 
         string token = _userTokenProvider.GetUserToken();
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetStreamingAsync(token, apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
