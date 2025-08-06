@@ -3253,8 +3253,6 @@ namespace Altinn.App.Core.Internal.Process.Elements
         public AppProcessElementInfo(Altinn.Platform.Storage.Interface.Models.ProcessElementInfo processElementInfo) { }
         [System.Text.Json.Serialization.JsonPropertyName("actions")]
         public System.Collections.Generic.Dictionary<string, bool>? Actions { get; set; }
-        [System.Text.Json.Serialization.JsonPropertyName("elementType")]
-        public string? ElementType { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("read")]
         public bool HasReadAccess { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("write")]
@@ -3276,8 +3274,6 @@ namespace Altinn.App.Core.Internal.Process.Elements
         public string? AltinnTaskType { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("elementId")]
         public string? ElementId { get; set; }
-        [System.Text.Json.Serialization.JsonPropertyName("elementType")]
-        public string? ElementType { get; set; }
     }
     [System.Xml.Serialization.XmlRoot("definitions", Namespace="http://www.omg.org/spec/BPMN/20100524/MODEL")]
     [System.Xml.Serialization.XmlType(Namespace="http://www.omg.org/spec/BPMN/20100524/MODEL")]

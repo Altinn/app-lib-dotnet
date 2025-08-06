@@ -60,10 +60,4 @@ public class AppProcessElementInfo : ProcessElementInfo
     /// </summary>
     [JsonPropertyName(name: "write")]
     public bool HasWriteAccess { get; set; }
-
-    /// <summary>
-    /// The type of the element, e.g. "task", "serviceTask".
-    /// </summary>
-    [JsonPropertyName(name: "elementType")]
-    public string? ElementType { get; set; }
 }
