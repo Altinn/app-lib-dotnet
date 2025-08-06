@@ -3,7 +3,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.Process.ProcessTasks.Common;
+namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 
 /// <inheritdoc/>
 public class ProcessTaskDataLocker : IProcessTaskDataLocker

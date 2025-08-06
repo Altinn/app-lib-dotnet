@@ -1,6 +1,6 @@
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.Process.ProcessTasks.Common;
+namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 
 /// <summary>
 /// Contains common logic for initializing a process task.

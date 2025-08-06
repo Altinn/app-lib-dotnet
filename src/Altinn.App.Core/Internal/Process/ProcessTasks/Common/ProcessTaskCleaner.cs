@@ -4,7 +4,7 @@ using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Altinn.App.Core.Internal.Process.ProcessTasks.Common;
+namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 
 internal sealed class ProcessTaskCleaner : IProcessTaskCleaner
 {

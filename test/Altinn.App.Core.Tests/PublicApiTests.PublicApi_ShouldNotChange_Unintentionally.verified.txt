@@ -3409,7 +3409,7 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask
     }
     public class EndTaskEventHandler : Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask.IEndTaskEventHandler
     {
-        public EndTaskEventHandler(Altinn.App.Core.Internal.Process.ProcessTasks.Common.IProcessTaskDataLocker processTaskDataLocker, Altinn.App.Core.Internal.Process.ProcessTasks.Common.IProcessTaskFinalizer processTaskFinisher, System.IServiceProvider serviceProvider, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask.EndTaskEventHandler> logger) { }
+        public EndTaskEventHandler(Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskDataLocker processTaskDataLocker, Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskFinalizer processTaskFinisher, System.IServiceProvider serviceProvider, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask.EndTaskEventHandler> logger) { }
         public System.Threading.Tasks.Task Execute(Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask processTask, string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
     }
     public interface IAbandonTaskEventHandler
@@ -3426,7 +3426,7 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask
     }
     public class StartTaskEventHandler : Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask.IStartTaskEventHandler
     {
-        public StartTaskEventHandler(Altinn.App.Core.Internal.Process.ProcessTasks.Common.IProcessTaskDataLocker processTaskDataLocker, Altinn.App.Core.Internal.Process.ProcessTasks.Common.IProcessTaskInitializer processTaskInitializer, System.IServiceProvider serviceProvider) { }
+        public StartTaskEventHandler(Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskDataLocker processTaskDataLocker, Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskInitializer processTaskInitializer, System.IServiceProvider serviceProvider) { }
         public System.Threading.Tasks.Task Execute(Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask processTask, string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill) { }
     }
 }
@@ -3552,42 +3552,6 @@ namespace Altinn.App.Core.Internal.Process
         AbandonCurrentMoveToNext = 2,
     }
 }
-namespace Altinn.App.Core.Internal.Process.ProcessTasks.Common
-{
-    public interface IProcessTaskCleaner
-    {
-        System.Threading.Tasks.Task RemoveAllDataElementsGeneratedFromTask(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId);
-    }
-    public interface IProcessTaskDataLocker
-    {
-        System.Threading.Tasks.Task Lock(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
-        System.Threading.Tasks.Task Unlock(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
-    }
-    public interface IProcessTaskFinalizer
-    {
-        System.Threading.Tasks.Task Finalize(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
-    }
-    public interface IProcessTaskInitializer
-    {
-        System.Threading.Tasks.Task Initialize(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill);
-    }
-    public class ProcessTaskDataLocker : Altinn.App.Core.Internal.Process.ProcessTasks.Common.IProcessTaskDataLocker
-    {
-        public ProcessTaskDataLocker(Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.Data.IDataClient dataClient) { }
-        public System.Threading.Tasks.Task Lock(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
-        public System.Threading.Tasks.Task Unlock(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
-    }
-    public class ProcessTaskFinalizer : Altinn.App.Core.Internal.Process.ProcessTasks.Common.IProcessTaskFinalizer
-    {
-        public ProcessTaskFinalizer(Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.AppModel.IAppModel appModel, Altinn.App.Core.Internal.Expressions.ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer, System.IServiceProvider serviceProvider, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings> appSettings) { }
-        public System.Threading.Tasks.Task Finalize(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
-    }
-    public class ProcessTaskInitializer : Altinn.App.Core.Internal.Process.ProcessTasks.Common.IProcessTaskInitializer
-    {
-        public ProcessTaskInitializer(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessTasks.Common.ProcessTaskInitializer> logger, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.Data.IDataClient dataClient, Altinn.App.Core.Internal.Prefill.IPrefill prefillService, Altinn.App.Core.Internal.AppModel.IAppModel appModel, System.IServiceProvider serviceProvider, Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Altinn.App.Core.Internal.Process.ProcessTasks.Common.IProcessTaskCleaner processTaskCleaner) { }
-        public System.Threading.Tasks.Task Initialize(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill) { }
-    }
-}
 namespace Altinn.App.Core.Internal.Process.ProcessTasks
 {
     public class ConfirmationProcessTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask
@@ -3621,6 +3585,23 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         System.Threading.Tasks.Task End(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
         System.Threading.Tasks.Task Start(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
     }
+    public interface IProcessTaskCleaner
+    {
+        System.Threading.Tasks.Task RemoveAllDataElementsGeneratedFromTask(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId);
+    }
+    public interface IProcessTaskDataLocker
+    {
+        System.Threading.Tasks.Task Lock(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
+        System.Threading.Tasks.Task Unlock(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
+    }
+    public interface IProcessTaskFinalizer
+    {
+        System.Threading.Tasks.Task Finalize(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
+    }
+    public interface IProcessTaskInitializer
+    {
+        System.Threading.Tasks.Task Initialize(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill);
+    }
     public class NullTypeProcessTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask
     {
         public NullTypeProcessTask() { }
@@ -3628,6 +3609,22 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
         public System.Threading.Tasks.Task Abandon(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
         public System.Threading.Tasks.Task End(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
         public System.Threading.Tasks.Task Start(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
+    }
+    public class ProcessTaskDataLocker : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskDataLocker
+    {
+        public ProcessTaskDataLocker(Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.Data.IDataClient dataClient) { }
+        public System.Threading.Tasks.Task Lock(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
+        public System.Threading.Tasks.Task Unlock(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
+    }
+    public class ProcessTaskFinalizer : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskFinalizer
+    {
+        public ProcessTaskFinalizer(Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.AppModel.IAppModel appModel, Altinn.App.Core.Internal.Expressions.ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer, System.IServiceProvider serviceProvider, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings> appSettings) { }
+        public System.Threading.Tasks.Task Finalize(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
+    }
+    public class ProcessTaskInitializer : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskInitializer
+    {
+        public ProcessTaskInitializer(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessTasks.ProcessTaskInitializer> logger, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.Data.IDataClient dataClient, Altinn.App.Core.Internal.Prefill.IPrefill prefillService, Altinn.App.Core.Internal.AppModel.IAppModel appModel, System.IServiceProvider serviceProvider, Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskCleaner processTaskCleaner) { }
+        public System.Threading.Tasks.Task Initialize(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill) { }
     }
 }
 namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks
