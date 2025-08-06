@@ -27,7 +27,7 @@ public interface ICorrespondenceAttachmentBuilderSendersReference
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceAttachment.Data"/> step.
+/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceAttachmentInMemory.Data"/> and <see cref="CorrespondenceStreamedAttachment.Data"/> step.
 /// </summary>
 public interface ICorrespondenceAttachmentBuilderData
 {

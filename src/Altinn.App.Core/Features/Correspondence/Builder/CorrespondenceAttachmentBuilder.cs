@@ -92,7 +92,7 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
             {
                 Filename = _filename,
                 SendersReference = _sendersReference,
-                Data = _data!.Value,
+                Data = _data.Value,
                 IsEncrypted = _isEncrypted,
                 DataLocationType = _dataLocationType,
             };
