@@ -3454,7 +3454,7 @@ namespace Altinn.App.Core.Internal.Process
         Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.IServiceTask? CheckIfServiceTask(string? altinnTaskType);
         System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> GenerateProcessStartEvents(Altinn.App.Core.Models.Process.ProcessStartRequest processStartRequest);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> HandleEventsAndUpdateStorage(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events);
-        System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> ProcessNext(Altinn.App.Core.Models.Process.ProcessNextRequest request, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Next(Altinn.App.Core.Models.Process.ProcessNextRequest request, System.Threading.CancellationToken ct = default);
     }
     public interface IProcessEngineAuthorizer
     {
@@ -3500,7 +3500,7 @@ namespace Altinn.App.Core.Internal.Process
         public Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.IServiceTask? CheckIfServiceTask(string? altinnTaskType) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> GenerateProcessStartEvents(Altinn.App.Core.Models.Process.ProcessStartRequest processStartRequest) { }
         public System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> HandleEventsAndUpdateStorage(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events) { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> ProcessNext(Altinn.App.Core.Models.Process.ProcessNextRequest request, System.Threading.CancellationToken ct = default) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Next(Altinn.App.Core.Models.Process.ProcessNextRequest request, System.Threading.CancellationToken ct = default) { }
     }
     public class ProcessEventDispatcher : Altinn.App.Core.Internal.Process.IProcessEventDispatcher
     {
