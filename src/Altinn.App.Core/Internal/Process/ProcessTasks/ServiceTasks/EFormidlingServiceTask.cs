@@ -35,10 +35,10 @@ public class EFormidlingServiceTask : IEFormidlingServiceTask
     public string Type => "eFormidling";
 
     /// <inheritdoc/>
-    public async Task<ServiceTaskResult> Execute(ServiceTaskParameters parameters)
+    public async Task<ServiceTaskResult> Execute(ServiceTaskContext context)
     {
-        string taskId = parameters.InstanceDataMutator.Instance.Process.CurrentTask.ElementId;
-        Instance instance = parameters.InstanceDataMutator.Instance;
+        string taskId = context.InstanceDataMutator.Instance.Process.CurrentTask.ElementId;
+        Instance instance = context.InstanceDataMutator.Instance;
 
         if (_appSettings?.Value.EnableEFormidling is false)
         {

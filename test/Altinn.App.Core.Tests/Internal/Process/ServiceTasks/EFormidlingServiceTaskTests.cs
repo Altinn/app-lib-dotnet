@@ -38,7 +38,7 @@ public class EFormidlingServiceTaskTests
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
         instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
 
-        var parameters = new ServiceTaskParameters { InstanceDataMutator = instanceMutatorMock.Object };
+        var parameters = new ServiceTaskContext { InstanceDataMutator = instanceMutatorMock.Object };
 
         // Act
         await _serviceTask.Execute(parameters);
@@ -77,7 +77,7 @@ public class EFormidlingServiceTaskTests
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
         instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
 
-        var parameters = new ServiceTaskParameters { InstanceDataMutator = instanceMutatorMock.Object };
+        var parameters = new ServiceTaskContext { InstanceDataMutator = instanceMutatorMock.Object };
 
         // Act & Assert
         await Assert.ThrowsAsync<ProcessException>(() => serviceTask.Execute(parameters));
@@ -95,7 +95,7 @@ public class EFormidlingServiceTaskTests
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
         instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
 
-        var parameters = new ServiceTaskParameters { InstanceDataMutator = instanceMutatorMock.Object };
+        var parameters = new ServiceTaskContext { InstanceDataMutator = instanceMutatorMock.Object };
 
         // Act
         await _serviceTask.Execute(parameters);
