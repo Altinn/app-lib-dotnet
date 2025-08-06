@@ -183,7 +183,7 @@ public class DataClient : IDataClient
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadAsStreamAsync();
+            return new ResponseStreamWrapper(response, await response.Content.ReadAsStreamAsync());
         }
         else if (response.StatusCode == HttpStatusCode.NotFound)
         {
