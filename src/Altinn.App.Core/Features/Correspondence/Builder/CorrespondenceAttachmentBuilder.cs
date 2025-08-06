@@ -3,7 +3,7 @@ using Altinn.App.Core.Features.Correspondence.Models;
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
-/// Builder factory for creating <see cref="CorrespondenceAttachmentInMemory"/> objects.
+/// Builder factory for creating <see cref="CorrespondenceAttachment"/> objects.
 /// </summary>
 public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
 {
@@ -75,6 +75,7 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
 
         if (_streamedData is not null)
         {
+            BuilderUtils.NotNullOrEmpty(_streamedData);
             return new CorrespondenceStreamedAttachment
             {
                 Filename = _filename,
@@ -91,7 +92,7 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
             {
                 Filename = _filename,
                 SendersReference = _sendersReference,
-                Data = _data.Value,
+                Data = _data!.Value,
                 IsEncrypted = _isEncrypted,
                 DataLocationType = _dataLocationType,
             };
