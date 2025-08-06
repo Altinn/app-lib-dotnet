@@ -3,24 +3,24 @@ namespace Altinn.App.Core.Helpers;
 /// <summary>
 /// A wrapper stream that ensures proper disposal of an HttpResponseMessage along with its content stream.
 /// </summary>
-public class ResponseStreamWrapper : Stream
+public class ResponseWrapperStream : Stream
 {
     private readonly HttpResponseMessage _response;
     private readonly Stream _innerStream;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ResponseStreamWrapper"/> class.
+    /// Initializes a new instance of the <see cref="ResponseWrapperStream"/> class.
     /// </summary>
     /// <param name="response">The HTTP response message to be disposed when the stream is disposed.</param>
     /// <param name="innerStream">The inner stream to wrap and delegate operations to.</param>
-    public ResponseStreamWrapper(HttpResponseMessage response, Stream innerStream)
+    public ResponseWrapperStream(HttpResponseMessage response, Stream innerStream)
     {
         _response = response;
         _innerStream = innerStream;
     }
 
     /// <summary>
-    /// Releases the unmanaged resources used by the <see cref="ResponseStreamWrapper"/> and optionally releases the managed resources.
+    /// Releases the unmanaged resources used by the <see cref="ResponseWrapperStream"/> and optionally releases the managed resources.
     /// </summary>
     /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
     protected override void Dispose(bool disposing)

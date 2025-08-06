@@ -2142,9 +2142,9 @@ namespace Altinn.App.Core.Helpers
         public static string? GetValidNextElementOrError(string? proposedElementId, System.Collections.Generic.List<string> possibleNextElements, out Altinn.App.Core.Helpers.ProcessError? nextElementError) { }
         public static string? GetValidStartEventOrError(string? proposedStartEvent, System.Collections.Generic.List<string> possibleStartEvents, out Altinn.App.Core.Helpers.ProcessError? startEventError) { }
     }
-    public class ResponseStreamWrapper : System.IO.Stream
+    public class ResponseWrapperStream : System.IO.Stream
     {
-        public ResponseStreamWrapper(System.Net.Http.HttpResponseMessage response, System.IO.Stream innerStream) { }
+        public ResponseWrapperStream(System.Net.Http.HttpResponseMessage response, System.IO.Stream innerStream) { }
         public override bool CanRead { get; }
         public override bool CanSeek { get; }
         public override bool CanWrite { get; }
