@@ -22,6 +22,7 @@ public sealed record ServiceTaskContext
     /// <summary>
     /// An instance data mutator that can be used to read and modify the instance data during the service task execution.
     /// </summary>
+    /// <remarks>Changes are saved after Execute returns a successful result. Keep in mind that data elements from previous tasks are locked.</remarks>
     public required IInstanceDataMutator InstanceDataMutator { get; init; }
 
     /// <summary>
