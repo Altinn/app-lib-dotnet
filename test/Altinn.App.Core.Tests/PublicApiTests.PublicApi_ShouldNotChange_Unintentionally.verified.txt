@@ -428,7 +428,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
 {
     public class CorrespondenceAttachmentBuilder : Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderData, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderFilename, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderSendersReference
     {
-        public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceBaseAttachment Build() { }
+        public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment Build() { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.IO.Stream data) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.ReadOnlyMemory<byte> data) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithDataLocationType(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceDataLocationType dataLocationType) { }
@@ -505,8 +505,8 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceRequest Build() { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAllowSystemDeleteAfter(System.DateTimeOffset allowSystemDeleteAfter) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder builder) { }
-        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceBaseAttachment attachment) { }
-        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachments(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceBaseAttachment> attachments) { }
+        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment attachment) { }
+        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachments(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment> attachments) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithContent(Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceContentBuilder builder) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithContent(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceContent content) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithContent(Altinn.App.Core.Models.LanguageCode<Altinn.App.Core.Models.Iso6391> language, string title, string summary, string body) { }
@@ -542,7 +542,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     }
     public interface ICorrespondenceAttachmentBuilder : Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderData, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderFilename, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderSendersReference
     {
-        Altinn.App.Core.Features.Correspondence.Models.CorrespondenceBaseAttachment Build();
+        Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment Build();
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithDataLocationType(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceDataLocationType dataLocationType);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithIsEncrypted(bool isEncrypted);
     }
@@ -638,8 +638,8 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
         Altinn.App.Core.Features.Correspondence.Models.CorrespondenceRequest Build();
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAllowSystemDeleteAfter(System.DateTimeOffset allowSystemDeleteAfter);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder builder);
-        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceBaseAttachment attachment);
-        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachments(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceBaseAttachment> attachments);
+        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment attachment);
+        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachments(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment> attachments);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithDueDateTime(System.DateTimeOffset dueDateTime);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithExistingAttachment(System.Guid existingAttachment);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithExistingAttachments(System.Collections.Generic.IEnumerable<System.Guid> existingAttachments);
@@ -724,9 +724,17 @@ namespace Altinn.App.Core.Features.Correspondence
 }
 namespace Altinn.App.Core.Features.Correspondence.Models
 {
-    public class CorrespondenceAttachment : Altinn.App.Core.Features.Correspondence.Models.CorrespondenceBaseAttachment, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>
+    public abstract class CorrespondenceAttachment : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>
     {
-        public CorrespondenceAttachment() { }
+        protected CorrespondenceAttachment() { }
+        public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceDataLocationType DataLocationType { get; init; }
+        public required string Filename { get; init; }
+        public bool? IsEncrypted { get; init; }
+        public required string SendersReference { get; init; }
+    }
+    public class CorrespondenceAttachmentInMemory : Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachmentInMemory>
+    {
+        public CorrespondenceAttachmentInMemory() { }
         public required System.ReadOnlyMemory<byte> Data { get; init; }
     }
     public sealed class CorrespondenceAttachmentResponse : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachmentResponse>
@@ -770,18 +778,10 @@ namespace Altinn.App.Core.Features.Correspondence.Models
     {
         Maskinporten = 0,
     }
-    public abstract class CorrespondenceBaseAttachment : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceBaseAttachment>
-    {
-        protected CorrespondenceBaseAttachment() { }
-        public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceDataLocationType DataLocationType { get; init; }
-        public required string Filename { get; init; }
-        public bool? IsEncrypted { get; init; }
-        public required string SendersReference { get; init; }
-    }
     public sealed class CorrespondenceContent : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceContent>
     {
         public CorrespondenceContent() { }
-        public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceBaseAttachment>? Attachments { get; init; }
+        public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>? Attachments { get; init; }
         public required string Body { get; init; }
         public required Altinn.App.Core.Models.LanguageCode<Altinn.App.Core.Models.Iso6391> Language { get; init; }
         public required string Summary { get; init; }
@@ -1049,7 +1049,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         [System.Text.Json.Serialization.JsonPropertyName("statusText")]
         public required string StatusText { get; init; }
     }
-    public class CorrespondenceStreamedAttachment : Altinn.App.Core.Features.Correspondence.Models.CorrespondenceBaseAttachment, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceStreamedAttachment>
+    public class CorrespondenceStreamedAttachment : Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceStreamedAttachment>
     {
         public CorrespondenceStreamedAttachment() { }
         public required System.IO.Stream Data { get; init; }

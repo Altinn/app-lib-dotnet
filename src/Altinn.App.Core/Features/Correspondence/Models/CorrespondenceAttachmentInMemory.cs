@@ -1,15 +1,14 @@
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
-/// Represents an attachment to a correspondence with streaming data support.
-/// Inherits from CorrespondenceAttachment and provides a Stream-based data property.
+/// Represents an attachment to a correspondence.
 /// </summary>
-public record CorrespondenceStreamedAttachment : CorrespondenceAttachment
+public record CorrespondenceAttachmentInMemory : CorrespondenceAttachment
 {
     /// <summary>
-    /// The data content as a stream.
+    /// The data content.
     /// </summary>
-    public required Stream Data { get; init; }
+    public required ReadOnlyMemory<byte> Data { get; init; }
 
     internal override void Serialise(MultipartFormDataContent content, int index, string? filenameOverride = null)
     {

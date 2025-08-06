@@ -3,7 +3,7 @@ using Altinn.App.Core.Features.Correspondence.Models;
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
-/// Builder factory for creating <see cref="CorrespondenceAttachment"/> objects.
+/// Builder factory for creating <see cref="CorrespondenceAttachmentInMemory"/> objects.
 /// </summary>
 public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
 {
@@ -67,7 +67,7 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
     }
 
     /// <inheritdoc/>
-    public CorrespondenceBaseAttachment Build()
+    public CorrespondenceAttachment Build()
     {
         BuilderUtils.NotNullOrEmpty(_filename);
         BuilderUtils.NotNullOrEmpty(_sendersReference);
@@ -87,7 +87,7 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
         else
         {
             BuilderUtils.NotNullOrEmpty(_data);
-            return new CorrespondenceAttachment
+            return new CorrespondenceAttachmentInMemory
             {
                 Filename = _filename,
                 SendersReference = _sendersReference,

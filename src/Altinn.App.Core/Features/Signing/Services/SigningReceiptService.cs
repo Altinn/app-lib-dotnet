@@ -59,7 +59,7 @@ internal sealed class SigningReceiptService(
         );
 
         CorrespondenceContent content = await GetContent(context, applicationMetadata, senderDetails);
-        IEnumerable<CorrespondenceBaseAttachment> attachments = await GetCorrespondenceAttachments(
+        IEnumerable<CorrespondenceAttachment> attachments = await GetCorrespondenceAttachments(
             instanceIdentifier,
             dataElementSignatures,
             applicationMetadata,
@@ -186,7 +186,7 @@ internal sealed class SigningReceiptService(
         return content;
     }
 
-    internal static async Task<IEnumerable<CorrespondenceBaseAttachment>> GetCorrespondenceAttachments(
+    internal static async Task<IEnumerable<CorrespondenceAttachment>> GetCorrespondenceAttachments(
         InstanceIdentifier instanceIdentifier,
         IEnumerable<DataElementSignature> dataElementSignatures,
         ApplicationMetadata appMetadata,
@@ -194,7 +194,7 @@ internal sealed class SigningReceiptService(
         IDataClient dataClient
     )
     {
-        List<CorrespondenceBaseAttachment> attachments = [];
+        List<CorrespondenceAttachment> attachments = [];
         IEnumerable<DataElement> signedElements = context.Instance.Data.Where(IsSignedDataElement);
 
         foreach (DataElement element in signedElements)

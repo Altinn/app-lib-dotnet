@@ -124,7 +124,7 @@ public abstract record MultipartCorrespondenceItem
 
     internal static void SerializeAttachmentItems(
         MultipartFormDataContent content,
-        IReadOnlyList<CorrespondenceBaseAttachment>? attachments
+        IReadOnlyList<CorrespondenceAttachment>? attachments
     )
     {
         if (IsEmptyCollection(attachments))
@@ -140,11 +140,11 @@ public abstract record MultipartCorrespondenceItem
         }
     }
 
-    internal static Dictionary<CorrespondenceBaseAttachment, string> CalculateFilenameOverrides(
-        IEnumerable<CorrespondenceBaseAttachment> attachments
+    internal static Dictionary<CorrespondenceAttachment, string> CalculateFilenameOverrides(
+        IEnumerable<CorrespondenceAttachment> attachments
     )
     {
-        var overrides = new Dictionary<CorrespondenceBaseAttachment, string>(ReferenceEqualityComparer.Instance);
+        var overrides = new Dictionary<CorrespondenceAttachment, string>(ReferenceEqualityComparer.Instance);
         var hasDuplicateFilenames = attachments
             .GroupBy(x => x.Filename.ToLowerInvariant())
             .Where(x => x.Count() > 1)

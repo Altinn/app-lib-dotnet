@@ -421,18 +421,17 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
             .ReturnsAsync([1, 2, 3]);
 
         // Act
-        IEnumerable<CorrespondenceBaseAttachment> attachments =
-            await SigningReceiptService.GetCorrespondenceAttachments(
-                instanceIdentifier,
-                dataElementSignatures,
-                appMetadata,
-                context,
-                dataClientMock.Object
-            );
+        IEnumerable<CorrespondenceAttachment> attachments = await SigningReceiptService.GetCorrespondenceAttachments(
+            instanceIdentifier,
+            dataElementSignatures,
+            appMetadata,
+            context,
+            dataClientMock.Object
+        );
 
         // Assert
         Assert.Single(attachments);
-        var attachment = attachments.First() as CorrespondenceAttachment;
+        var attachment = attachments.First() as CorrespondenceAttachmentInMemory;
         Assert.Equal("signed.pdf", attachment!.Filename);
         Assert.Equal(signedElement.Id, attachment.SendersReference);
         Assert.Equal(new byte[] { 1, 2, 3 }, attachment.Data);

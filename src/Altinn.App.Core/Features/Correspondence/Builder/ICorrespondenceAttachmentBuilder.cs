@@ -3,7 +3,7 @@ using Altinn.App.Core.Features.Correspondence.Models;
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceBaseAttachment.Filename"/> step.
+/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceAttachment.Filename"/> step.
 /// </summary>
 public interface ICorrespondenceAttachmentBuilderFilename
 {
@@ -15,7 +15,7 @@ public interface ICorrespondenceAttachmentBuilderFilename
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceBaseAttachment.SendersReference"/> step.
+/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceAttachment.SendersReference"/> step.
 /// </summary>
 public interface ICorrespondenceAttachmentBuilderSendersReference
 {
@@ -27,7 +27,7 @@ public interface ICorrespondenceAttachmentBuilderSendersReference
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceAttachment.Data"/> step.
+/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceAttachmentInMemory.Data"/> step.
 /// </summary>
 public interface ICorrespondenceAttachmentBuilderData
 {
@@ -68,5 +68,5 @@ public interface ICorrespondenceAttachmentBuilder
     /// <summary>
     /// Builds the correspondence attachment.
     /// </summary>
-    CorrespondenceBaseAttachment Build();
+    CorrespondenceAttachment Build();
 }

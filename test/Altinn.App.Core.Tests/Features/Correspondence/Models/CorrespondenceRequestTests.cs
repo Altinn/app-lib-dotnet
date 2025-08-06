@@ -38,13 +38,13 @@ public class CorrespondenceRequestTests
                 Language = LanguageCode<Iso6391>.Parse("no"),
                 Attachments =
                 [
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = "filename-1",
                         SendersReference = "senders-reference-1",
                         Data = "data"u8.ToArray(),
                     },
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = "filename-2",
                         SendersReference = "senders-reference-2",
@@ -208,13 +208,13 @@ public class CorrespondenceRequestTests
                 Language = LanguageCode<Iso6391>.Parse("no"),
                 Attachments =
                 [
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = "filename-1",
                         SendersReference = "senders-reference-1",
                         Data = "data"u8.ToArray(),
                     },
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = "filename-2",
                         SendersReference = "senders-reference-2",
@@ -372,13 +372,13 @@ public class CorrespondenceRequestTests
                 Language = LanguageCode<Iso6391>.Parse("no"),
                 Attachments =
                 [
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = clashingFilename,
                         SendersReference = "senders-reference-1",
                         Data = Encoding.UTF8.GetBytes("data-1"),
                     },
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = clashingFilename,
                         SendersReference = "senders-reference-2",
@@ -401,21 +401,21 @@ public class CorrespondenceRequestTests
     {
         // Arrange
         ReadOnlyMemory<byte> data = Encoding.UTF8.GetBytes("data");
-        List<CorrespondenceAttachment> identicalAttachments =
+        List<CorrespondenceAttachmentInMemory> identicalAttachments =
         [
-            new CorrespondenceAttachment
+            new CorrespondenceAttachmentInMemory
             {
                 Filename = "filename",
                 SendersReference = "senders-reference",
                 Data = data.ToArray(),
             },
-            new CorrespondenceAttachment
+            new CorrespondenceAttachmentInMemory
             {
                 Filename = "filename",
                 SendersReference = "senders-reference",
                 Data = data.ToArray(),
             },
-            new CorrespondenceAttachment
+            new CorrespondenceAttachmentInMemory
             {
                 Filename = "filename",
                 SendersReference = "senders-reference",

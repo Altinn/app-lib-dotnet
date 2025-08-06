@@ -1,25 +1,33 @@
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
-/// Represents an attachment to a correspondence.
+/// Represents a base attachment of a correspondence.
 /// </summary>
-public record CorrespondenceAttachment : CorrespondenceBaseAttachment
+public abstract record CorrespondenceAttachment : MultipartCorrespondenceItem
 {
     /// <summary>
-    /// The data content.
+    /// The filename of the attachment.
     /// </summary>
-    public required ReadOnlyMemory<byte> Data { get; init; }
+    public required string Filename { get; init; }
 
-    internal override void Serialise(MultipartFormDataContent content, int index, string? filenameOverride = null)
-    {
-        const string typePrefix = "Correspondence.Content.Attachments";
-        string prefix = $"{typePrefix}[{index}]";
-        string actualFilename = filenameOverride ?? Filename;
+    /// <summary>
+    /// A value indicating whether the attachment is encrypted or not.
+    /// </summary>
+    public bool? IsEncrypted { get; init; }
 
-        AddRequired(content, actualFilename, $"{prefix}.Filename");
-        AddRequired(content, SendersReference, $"{prefix}.SendersReference");
-        AddRequired(content, DataLocationType.ToString(), $"{prefix}.DataLocationType");
-        AddRequired(content, Data, "Attachments", actualFilename);
-        AddIfNotNull(content, IsEncrypted?.ToString(), $"{prefix}.IsEncrypted");
-    }
+    /// <summary>
+    /// A reference value given to the attachment by the creator.
+    /// </summary>
+    public required string SendersReference { get; init; }
+
+    /// <summary>
+    /// Specifies the storage location of the attachment data.
+    /// </summary>
+    public CorrespondenceDataLocationType DataLocationType { get; init; } =
+        CorrespondenceDataLocationType.ExistingCorrespondenceAttachment;
+
+    /// <summary>
+    /// Serialise method
+    /// </summary>
+    internal abstract void Serialise(MultipartFormDataContent content, int index, string? filenameOverride = null);
 }
