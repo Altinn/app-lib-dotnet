@@ -192,7 +192,7 @@ public class ProcessEngine : IProcessEngine
             if (serviceTask is not null)
             {
                 isServiceTask = true;
-                ServiceTaskResult serviceActionResult = await HandleServiceTask(
+                ProcessChangeResult serviceTaskProcessChangeResult = await HandleServiceTask(
                     instance,
                     serviceTask,
                     request with
@@ -202,11 +202,10 @@ public class ProcessEngine : IProcessEngine
                     ct
                 );
 
-                if (serviceActionResult is ServiceTaskFailedResult failedServiceTask)
+                if (!serviceTaskProcessChangeResult.Success)
                 {
-                    ProcessChangeResult result = failedServiceTask.ToProcessChangeResult();
-                    activity?.SetProcessChangeResult(result);
-                    return result;
+                    activity?.SetProcessChangeResult(serviceTaskProcessChangeResult);
+                    return serviceTaskProcessChangeResult;
                 }
             }
             else
@@ -378,7 +377,7 @@ public class ProcessEngine : IProcessEngine
         return actionResult;
     }
 
-    private async Task<ServiceTaskResult> HandleServiceTask(
+    private async Task<ProcessChangeResult> HandleServiceTask(
         Instance instance,
         IServiceTask serviceTask,
         ProcessNextRequest request,
@@ -389,7 +388,7 @@ public class ProcessEngine : IProcessEngine
 
         if (request.Action is not "write" && request.Action != serviceTask.Type) // serviceTask.Type is accepted to support custom service task types
         {
-            var result = new ServiceTaskFailedResult()
+            var result = new ProcessChangeResult()
             {
                 ErrorTitle = "User action not supported!",
                 ErrorMessage =
@@ -402,24 +401,47 @@ public class ProcessEngine : IProcessEngine
 
         try
         {
-            ServiceTaskParameters parameters = new()
-            {
-                InstanceDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
-                    instance,
-                    instance.Process?.CurrentTask?.ElementId,
-                    request.Language
-                ),
-                CancellationToken = ct,
-            };
+            InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
+                instance,
+                instance.Process?.CurrentTask?.ElementId,
+                request.Language
+            );
 
-            return await serviceTask.Execute(parameters);
+            ServiceTaskContext context = new() { InstanceDataMutator = cachedDataMutator, CancellationToken = ct };
+
+            ServiceTaskResult result = await serviceTask.Execute(context);
+
+            if (result is ServiceTaskFailedResult)
+            {
+                return new ProcessChangeResult()
+                {
+                    Success = false,
+                    ErrorTitle = "Service task failed!",
+                    ErrorMessage = $"Service task {serviceTask.Type} returned a failed result!",
+                    ErrorType = ProcessErrorType.Internal,
+                };
+            }
+
+            if (cachedDataMutator.HasAbandonIssues)
+            {
+                throw new Exception(
+                    "Abandon issues found in data elements. Abandon issues should be handled by the service task."
+                );
+            }
+
+            DataElementChanges changes = cachedDataMutator.GetDataElementChanges(initializeAltinnRowId: false);
+            await cachedDataMutator.UpdateInstanceData(changes);
+            await cachedDataMutator.SaveChanges(changes);
+
+            return new ProcessChangeResult { Success = true };
         }
         catch (Exception ex)
         {
             activity?.Errored(ex);
 
-            return new ServiceTaskFailedResult()
+            return new ProcessChangeResult()
             {
+                Success = false,
                 ErrorTitle = "Service task failed!",
                 ErrorMessage = $"Service task {serviceTask.Type} failed with an exception!",
                 ErrorType = ProcessErrorType.Internal,

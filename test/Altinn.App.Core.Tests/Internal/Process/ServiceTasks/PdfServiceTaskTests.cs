@@ -45,7 +45,7 @@ public class PdfServiceTaskTests
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
         instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
 
-        var parameters = new ServiceTaskParameters { InstanceDataMutator = instanceMutatorMock.Object };
+        var parameters = new ServiceTaskContext { InstanceDataMutator = instanceMutatorMock.Object };
 
         // Act
         await _serviceTask.Execute(parameters);

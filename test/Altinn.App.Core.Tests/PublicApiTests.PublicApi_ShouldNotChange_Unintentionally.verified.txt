@@ -3640,31 +3640,27 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks
     {
         public EFormidlingServiceTask(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.EFormidlingServiceTask> logger, Altinn.App.Core.EFormidling.Interface.IEFormidlingService? eFormidlingService = null, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings>? appSettings = null) { }
         public string Type { get; }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskParameters parameters) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext context) { }
     }
     public interface IServiceTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask
     {
-        System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskParameters parameters);
+        System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext context);
     }
     public class PdfServiceTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask, Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.IServiceTask
     {
         public PdfServiceTask(Altinn.App.Core.Internal.Pdf.IPdfService pdfService, Altinn.App.Core.Internal.Process.IProcessReader processReader, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.PdfServiceTask> logger) { }
         public string Type { get; }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskParameters parameters) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext context) { }
+    }
+    public sealed class ServiceTaskContext : System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext>
+    {
+        public ServiceTaskContext() { }
+        public System.Threading.CancellationToken CancellationToken { get; init; }
+        public required Altinn.App.Core.Features.IInstanceDataMutator InstanceDataMutator { get; init; }
     }
     public sealed class ServiceTaskFailedResult : Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult
     {
         public ServiceTaskFailedResult() { }
-        public required string ErrorMessage { get; init; }
-        public required string ErrorTitle { get; init; }
-        public required Altinn.App.Core.Models.Process.ProcessErrorType ErrorType { get; init; }
-        public Altinn.App.Core.Models.Process.ProcessChangeResult ToProcessChangeResult() { }
-    }
-    public sealed class ServiceTaskParameters : System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskParameters>
-    {
-        public ServiceTaskParameters() { }
-        public System.Threading.CancellationToken CancellationToken { get; init; }
-        public required Altinn.App.Core.Features.IInstanceDataMutator InstanceDataMutator { get; init; }
     }
     public abstract class ServiceTaskResult
     {
