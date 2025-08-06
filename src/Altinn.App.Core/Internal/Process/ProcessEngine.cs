@@ -413,6 +413,8 @@ public class ProcessEngine : IProcessEngine
 
             if (result is ServiceTaskFailedResult)
             {
+                _logger.LogError("Service task {ServiceTaskType} returned a failed result.", serviceTask.Type);
+
                 return new ProcessChangeResult()
                 {
                     Success = false,
@@ -438,6 +440,7 @@ public class ProcessEngine : IProcessEngine
         catch (Exception ex)
         {
             activity?.Errored(ex);
+            _logger.LogError(ex, "Service task {ServiceTaskType} returned a failed result.", serviceTask.Type);
 
             return new ProcessChangeResult()
             {
