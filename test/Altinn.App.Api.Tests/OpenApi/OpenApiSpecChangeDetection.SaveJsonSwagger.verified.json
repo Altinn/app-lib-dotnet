@@ -6937,10 +6937,6 @@
           },
           "write": {
             "type": "boolean"
-          },
-          "elementType": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6987,10 +6983,6 @@
             "nullable": true
           },
           "elementId": {
-            "type": "string",
-            "nullable": true
-          },
-          "elementType": {
             "type": "string",
             "nullable": true
           }
