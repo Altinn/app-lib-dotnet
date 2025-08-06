@@ -3,11 +3,17 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Represents an attachment to a correspondence with streaming data support.
 /// Inherits from CorrespondenceAttachment and provides a Stream-based data property.
+/// Is more efficient if the attachment is large in size.
+/// The stream must be open (not disposed) until the correspondence is sent.
+/// The caller is responsible for disposing the stream after the correspondence has been sent.
 /// </summary>
 public record CorrespondenceStreamedAttachment : CorrespondenceAttachment
 {
     /// <summary>
     /// The data content as a stream.
+    /// Is more efficient if the attachment is large in size.
+    /// The stream must be open (not disposed) until the correspondence is sent.
+    /// The caller is responsible for disposing the stream after the correspondence has been sent.
     /// </summary>
     public required Stream Data { get; init; }
 

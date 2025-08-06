@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Helpers;
 /// <summary>
 /// A wrapper stream that ensures proper disposal of an HttpResponseMessage along with its content stream.
 /// </summary>
-public class ResponseWrapperStream : Stream
+internal sealed class ResponseWrapperStream : Stream
 {
     private readonly HttpResponseMessage _response;
     private readonly Stream _innerStream;
