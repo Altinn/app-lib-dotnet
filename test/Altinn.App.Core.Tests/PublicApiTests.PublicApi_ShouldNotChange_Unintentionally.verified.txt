@@ -724,6 +724,14 @@ namespace Altinn.App.Core.Features.Correspondence
 }
 namespace Altinn.App.Core.Features.Correspondence.Models
 {
+    public sealed class AttachmentPayload : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.AttachmentPayload>
+    {
+        public AttachmentPayload() { }
+        public string? DisplayName { get; set; }
+        public string? FileName { get; set; }
+        public bool IsEncrypted { get; set; }
+        public string SendersReference { get; set; }
+    }
     public abstract class CorrespondenceAttachment : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>
     {
         protected CorrespondenceAttachment() { }
@@ -1129,6 +1137,19 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public System.Collections.Generic.IReadOnlyList<System.Guid>? AttachmentIds { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("correspondences")]
         public required System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceDetailsResponse> Correspondences { get; init; }
+    }
+}
+namespace Altinn.App.Core.Features.Correspondence.Models.Response
+{
+    public class AttachmentOverview
+    {
+        public AttachmentOverview() { }
+        public System.Guid AttachmentId { get; set; }
+        public System.Collections.Generic.List<System.Guid> CorrespondenceIds { get; set; }
+        public string DataType { get; set; }
+        public string Status { get; set; }
+        public System.DateTimeOffset StatusChanged { get; set; }
+        public string StatusText { get; set; }
     }
 }
 namespace Altinn.App.Core.Features.DataLists
