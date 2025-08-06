@@ -141,7 +141,7 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<ProcessChangeResult> ProcessNext(ProcessNextRequest request, CancellationToken ct = default)
+    public async Task<ProcessChangeResult> Next(ProcessNextRequest request, CancellationToken ct = default)
     {
         Instance instance = request.Instance;
 
