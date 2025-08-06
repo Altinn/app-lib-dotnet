@@ -10,7 +10,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Internal.Process.ProcessTasks.Common;
+namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 
 /// <inheritdoc/>
 public class ProcessTaskFinalizer : IProcessTaskFinalizer
