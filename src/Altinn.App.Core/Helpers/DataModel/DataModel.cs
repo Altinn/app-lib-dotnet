@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Helpers.DataModel;
 public class DataModel
 {
     private readonly IInstanceDataAccessor _dataAccessor;
-    private readonly Dictionary<string, DataElementIdentifier> _dataIdsByType = [];
+    private readonly Lazy<Dictionary<string, DataElementIdentifier>> _dataIdsByType;
 
     /// <summary>
     /// Constructor that wraps a POCO data model, and gives extra tool for working with the data
@@ -20,19 +20,23 @@ public class DataModel
     public DataModel(IInstanceDataAccessor dataAccessor)
     {
         _dataAccessor = dataAccessor;
-        foreach (var (dataType, dataElement) in dataAccessor.GetDataElements())
-        {
-            if (dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
-            {
-                _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
-            }
-        }
+        _dataIdsByType = new Lazy<Dictionary<string, DataElementIdentifier>>(() =>
+            dataAccessor
+                .GetDataElements()
+                .Where(tuple => tuple.dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
+                .ToDictionary(tuple => tuple.dataElement.DataType, tuple => (DataElementIdentifier)tuple.dataElement)
+        );
     }
 
     /// <summary>
     /// Get access to the instance object
     /// </summary>
     public Instance Instance => _dataAccessor.Instance;
+
+    /// <summary>
+    /// Provides access to the instance data accessor for handling instance-related data operations.
+    /// </summary>
+    public IInstanceDataAccessor InstanceDataAccessor => _dataAccessor;
 
     private async Task<object> ServiceModel(ModelBinding key, DataElementIdentifier defaultDataElementIdentifier)
     {
@@ -53,7 +57,7 @@ public class DataModel
             return (defaultDataElementIdentifier, await _dataAccessor.GetFormData(defaultDataElementIdentifier));
         }
 
-        if (_dataIdsByType.TryGetValue(key.DataType, out var dataElementId))
+        if (_dataIdsByType.Value.TryGetValue(key.DataType, out var dataElementId))
         {
             return (dataElementId, await _dataAccessor.GetFormData(dataElementId));
         }

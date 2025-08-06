@@ -6,7 +6,6 @@ using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
-using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Expressions;
@@ -54,7 +53,7 @@ public class LayoutEvaluatorState
         _gatewayAction = gatewayAction;
         _language = language;
         _timeZone = timeZone;
-        _rootContext = new(() => _componentModel?.GenerateComponentContexts(_instanceContext, _dataModel));
+        _rootContext = new(() => _componentModel?.GenerateComponentContexts(dataAccessor));
     }
 
     /// <summary>
@@ -90,10 +89,10 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Get component from componentModel
     /// </summary>
-    public BaseComponent GetComponent(string pageName, string componentId)
+    [Obsolete("You need to get a context not a commponent", true)]
+    public void GetComponent(string pageName, string componentId)
     {
-        return _componentModel?.GetComponent(pageName, componentId)
-            ?? throw new InvalidOperationException("Component model not loaded");
+        throw new NotSupportedException("GetComponent is not supported, use GetComponentContext instead.");
     }
 
     /// <summary>

@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Layout;
-using Altinn.App.Core.Models.Layout.Components;
+using Altinn.App.Core.Models.Layout.Components.Base;
 
 namespace Altinn.App.Core.Models.Expressions;
 
