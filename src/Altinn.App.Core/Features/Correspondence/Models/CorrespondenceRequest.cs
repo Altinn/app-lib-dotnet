@@ -308,7 +308,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     /// <summary>
     /// Existing attachments that should be added to the correspondence.
     /// </summary>
-    public IReadOnlyList<Guid>? ExistingAttachments { get; init; }
+    public IReadOnlyList<Guid>? ExistingAttachments { get; set; }
 
     /// <summary>
     /// Serialises the entire <see cref="CorrespondenceRequest"/> object to a provided <see cref="MultipartFormDataContent"/> instance.
