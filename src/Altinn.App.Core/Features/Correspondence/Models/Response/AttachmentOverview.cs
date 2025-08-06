@@ -1,27 +1,34 @@
 namespace Altinn.App.Core.Features.Correspondence.Models.Response;
 
-/// <summary>
-/// Status of an attachment
-/// </summary>
-internal sealed record AttachmentOverview
+public class AttachmentOverview
 {
     /// <summary>
     /// Unique Id for this attachment
     /// </summary>
-    internal required Guid AttachmentId { get; set; }
+    public Guid AttachmentId { get; set; }
 
     /// <summary>
     /// Current attachment status
     /// </summary>
-    internal required string Status { get; set; }
+    public string Status { get; set; }
 
     /// <summary>
     /// Current attachment status text description
     /// </summary>
-    internal required string StatusText { get; set; }
+    public string StatusText { get; set; }
 
     /// <summary>
     /// Timestamp for when the Current Attachment Status was changed
     /// </summary>
-    internal required DateTimeOffset StatusChanged { get; set; }
+    public DateTimeOffset StatusChanged { get; set; }
+
+    /// <summary>
+    /// List of correspondences that are using this attachment
+    /// </summary>
+    public List<Guid> CorrespondenceIds { get; set; }
+
+    /// <summary>
+    /// The attachment data type in MIME format
+    /// </summary>
+    public string DataType { get; set; }
 }

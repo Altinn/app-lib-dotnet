@@ -53,7 +53,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         try
         {
             if (
-                payload.CorrespondenceRequest.Content.Attachments?.Count > 0
+                payload.CorrespondenceRequest.Content.Attachments.Count > 0
                 && payload.CorrespondenceRequest.Content.Attachments.All(a => a is CorrespondenceStreamedAttachment)
             )
             {
@@ -81,17 +81,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                         initializeAttachmentRequest,
                         cancellationToken
                     );
-                    var initializeAttachmentContent = initializeAttachmentRequest.Content;
-                    if (initializeAttachmentContent is null)
-                    {
-                        throw new CorrespondenceRequestException(
-                            "Attachment initialization request did not return content.",
-                            null,
-                            HttpStatusCode.InternalServerError,
-                            "No content returned from attachment initialization"
-                        );
-                    }
-                    var attachmentId = await initializeAttachmentContent.ReadAsStringAsync(cancellationToken);
+                    var attachmentId = await initializeAttachmentRequest.Content.ReadAsStringAsync(cancellationToken);
                     attachmentId = attachmentId.Trim('"');
                     var attachmentDataContent = new StreamContent(attachment.Data);
                     attachmentDataContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
@@ -165,31 +155,39 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         {
             await Task.Delay(TimeSpan.FromSeconds(delaySeconds), cancellationToken);
 
-            var statusResponse = await AuthenticatedHttpRequestFactory(
-                method: HttpMethod.Get,
-                uri: GetUri($"attachment/{attachmentId}"),
-                content: null,
-                payload: payload
+            try
+            {
+                var statusResponse = await AuthenticatedHttpRequestFactory(
+                    method: HttpMethod.Get,
+                    uri: GetUri($"attachment/{attachmentId}"),
+                    content: null,
+                    payload: payload
+                );
+
+                var statusContent = await statusResponse.Content.ReadFromJsonAsync<AttachmentOverview>(
+                    cancellationToken
+                );
+                if (statusContent.Status == "Published")
+                {
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                if (attempt == maxAttempts)
+                {
+                    // Handle or rethrow the exception after all attempts failed
+                    throw;
+                }
+            }
+            throw new CorrespondenceRequestException(
+                $"Failure when uploading attachment. Attachment was not published in time. ",
+                null,
+                HttpStatusCode.InternalServerError,
+                "Polling failed"
             );
-            var pollContent = statusResponse.Content;
-
-            if (pollContent is null)
-            {
-                break;
-            }
-
-            var statusContent = await pollContent.ReadFromJsonAsync<AttachmentOverview>(cancellationToken);
-            if (statusContent?.Status == "Published")
-            {
-                return;
-            }
         }
-        throw new CorrespondenceRequestException(
-            $"Failure when uploading attachment. Attachment was not published in time.",
-            null,
-            HttpStatusCode.InternalServerError,
-            "Polling failed"
-        );
     }
 
     /// <inheritdoc/>
