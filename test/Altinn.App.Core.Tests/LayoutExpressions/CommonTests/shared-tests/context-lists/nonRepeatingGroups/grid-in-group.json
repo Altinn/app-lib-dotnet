@@ -1,5 +1,5 @@
 {
-  "name": "Group Layout with two rows",
+  "name": "Grid component in repeating group with two rows",
   "layouts": {
     "Page1": {
       "data": {
@@ -14,11 +14,33 @@
             "dataModelBindings": {
               "group": "gruppe1"
             },
-            "children": ["comp3", "comp4"]
+            "children": ["comp3"]
           },
           {
             "id": "comp3",
-            "type": "Input",
+            "type": "Grid",
+            "rows": [
+              {
+                "cells": [
+                  {
+                    "text": "Group row 0"
+                  },
+                  {
+                    "component": "comp4"
+                  }
+                ]
+              },
+              {
+                "cells": [
+                  {
+                    "text": "Group row 1"
+                  },
+                  {
+                    "labelFrom": "comp4"
+                  }
+                ]
+              }
+            ],
             "dataModelBindings": {
               "simpleBinding": "gruppe1.comp3binding"
             }
@@ -28,26 +50,6 @@
             "type": "Input",
             "dataModelBindings": {
               "simpleBinding": "gruppe1.comp4binding"
-            }
-          }
-        ]
-      }
-    },
-    "Page2": {
-      "data": {
-        "layout": [
-          {
-            "id": "comp5",
-            "type": "Input",
-            "dataModelBindings": {
-              "simpleBinding": "asdf"
-            }
-          },
-          {
-            "id": "comp6",
-            "type": "Input",
-            "dataModelBindings": {
-              "simpleBinding": "asdf"
             }
           }
         ]
@@ -70,38 +72,28 @@
             {
               "component": "comp3",
               "rowIndices": [0],
-              "currentLayout": "Page1"
-            },
-            {
-              "component": "comp4",
-              "rowIndices": [0],
-              "currentLayout": "Page1"
+              "currentLayout": "Page1",
+              "children":[
+                {
+                  "component": "comp4",
+                  "rowIndices": [0],
+                  "currentLayout": "Page1"
+                }
+              ]
             },
             {
               "component": "comp3",
               "rowIndices": [1],
-              "currentLayout": "Page1"
-            },
-            {
-              "component": "comp4",
-              "rowIndices": [1],
-              "currentLayout": "Page1"
+              "currentLayout": "Page1",
+              "children":[
+                {
+                  "component": "comp4",
+                  "rowIndices": [1],
+                  "currentLayout": "Page1"
+                }
+              ]
             }
           ]
-        }
-      ]
-    },
-    {
-      "component": "Page2",
-      "currentLayout": "Page2",
-      "children": [
-        {
-          "component": "comp5",
-          "currentLayout": "Page2"
-        },
-        {
-          "component": "comp6",
-          "currentLayout": "Page2"
         }
       ]
     }

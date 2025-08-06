@@ -131,8 +131,8 @@ public sealed class DataAccessorFixture
                     var pageText = await File.ReadAllTextAsync(
                         Path.Join(directory, spec.LayoutSetName, $"{pageName}.json")
                     );
-                    PageComponentConverter.SetAsyncLocalPageName(spec.LayoutSetName, pageName!);
-                    var pageComponent = JsonSerializer.Deserialize<PageComponent>(pageText)!;
+                    using var document = JsonDocument.Parse(pageText);
+                    var pageComponent = new PageComponent(document.RootElement, pageName!, spec.LayoutSetName);
                     return pageComponent;
                 })
             );
