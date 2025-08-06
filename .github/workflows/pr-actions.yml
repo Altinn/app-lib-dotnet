@@ -10,16 +10,17 @@ jobs:
     env:
       DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: false
     steps:
-      - name: Check if PR is from fork
+      - name: Check if comment author is a contributor
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pr_owner=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRepositoryOwner | jq -r '.headRepositoryOwner.login')
-          if [ "$pr_owner" != "Altinn" ]; then
-            echo "PR is from a fork ($pr_owner), skipping job"
+          comment_author="${{ github.event.comment.user.login }}"
+          if gh api repos/${{ github.repository }}/collaborators/$comment_author --silent; then
+            echo "Comment author ($comment_author) is a contributor, continuing"
+          else
+            echo "Comment author ($comment_author) is not a contributor, skipping job"
             exit 1
           fi
-          echo "PR is from the same repository, continuing"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
