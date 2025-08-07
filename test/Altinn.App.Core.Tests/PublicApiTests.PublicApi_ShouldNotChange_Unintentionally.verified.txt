@@ -781,7 +781,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
     public sealed class CorrespondenceContent : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceContent>
     {
         public CorrespondenceContent() { }
-        public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>? Attachments { get; init; }
+        public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>? Attachments { get; set; }
         public required string Body { get; init; }
         public required Altinn.App.Core.Models.LanguageCode<Altinn.App.Core.Models.Iso6391> Language { get; init; }
         public required string Summary { get; init; }
