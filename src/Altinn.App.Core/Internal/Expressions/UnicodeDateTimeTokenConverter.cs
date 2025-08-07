@@ -168,7 +168,7 @@ internal static partial class UnicodeDateTimeTokenConverter
         RegexOptions.CultureInvariant,
         matchTimeoutMilliseconds: 100
     )]
-    private static partial Regex DateVerificationRegex();
+    internal static partial Regex DateVerificationRegex();
 
     public static DateTimeOffset? Parse(string rawString, out bool hasTimeZone)
     {
