@@ -167,6 +167,11 @@ public class CorrespondenceClientTests
             ),
         };
 
+        mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
+        mockHttpClient
+            .Setup(c => c.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(responseMessage);
+
         // Act
         var result = await fixture.CorrespondenceClient.Send(payload);
 
