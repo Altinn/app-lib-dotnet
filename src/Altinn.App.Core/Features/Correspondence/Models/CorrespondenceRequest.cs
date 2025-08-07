@@ -328,7 +328,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
         AddIfNotNull(content, IgnoreReservation?.ToString(), "Correspondence.IgnoreReservation");
         AddIfNotNull(content, IsConfirmationNeeded?.ToString(), "Correspondence.IsConfirmationNeeded");
         AddDictionaryItems(content, PropertyList, x => x, key => $"Correspondence.PropertyList.{key}");
-        AddListItems(content, ExistingAttachments, x => x.ToString(), i => $"Correspondence.ExistingAttachments[{i}]");
+        AddListItems(content, ExistingAttachments, x => x.ToString(), i => $"ExistingAttachments[{i}]");
         AddListItems(content, Recipients, x => x.ToUrnFormattedString(), i => $"Recipients[{i}]");
 
         Content.Serialise(content);

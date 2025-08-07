@@ -109,6 +109,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                     );
                     if (Guid.TryParse(attachmentId, out var guidId))
                     {
+                        premadeAttachments.Add(guidId);
                         pollingJobs.Add(PollAttachmentStatus(guidId, payload, cancellationToken));
                     }
                 }
