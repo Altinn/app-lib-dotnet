@@ -380,17 +380,44 @@ public sealed class ProcessEngineTest
         result.Success.Should().BeTrue();
     }
 
-    [Fact]
-    public async Task Next_returns_unsuccessful_when_process_null()
+    public static TheoryData<ProcessState?, string> InvalidProcessStatesData =>
+        new()
+        {
+            { null, "The instance is missing process information." },
+            {
+                new ProcessState { Ended = new DateTime() },
+                "Process is ended."
+            },
+            {
+                new ProcessState { CurrentTask = null },
+                "Process is not started. Use start!"
+            },
+            {
+                new ProcessState
+                {
+                    CurrentTask = new ProcessElementInfo { ElementId = "elementId", AltinnTaskType = null },
+                },
+                "Instance does not have current altinn task type information!"
+            },
+        };
+
+    [Theory]
+    [MemberData(nameof(InvalidProcessStatesData))]
+    public async Task Next_returns_unsuccessful_for_invalid_process_states(
+        ProcessState? processState,
+        string expectedErrorMessage
+    )
     {
         using var fixture = Fixture.Create();
         ProcessEngine processEngine = fixture.ProcessEngine;
+
         var instance = new Instance()
         {
             Id = _instanceId,
             AppId = "org/app",
-            Process = null,
+            Process = processState,
         };
+
         var processNextRequest = new ProcessNextRequest()
         {
             Instance = instance,
@@ -398,60 +425,10 @@ public sealed class ProcessEngineTest
             User = null!,
             Language = null,
         };
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Be("The instance is missing process information.");
-        result.ErrorType.Should().Be(ProcessErrorType.Conflict);
-    }
 
-    [Fact]
-    public async Task Next_returns_unsuccessful_when_process_currenttask_null()
-    {
-        using var fixture = Fixture.Create();
-        ProcessEngine processEngine = fixture.ProcessEngine;
-        Instance instance = new Instance()
-        {
-            Id = _instanceId,
-            AppId = "org/app",
-            Process = new ProcessState() { CurrentTask = null },
-        };
-        ProcessNextRequest processNextRequest = new ProcessNextRequest()
-        {
-            Instance = instance,
-            User = null!,
-            Action = null,
-            Language = null,
-        };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Be("Process is not started. Use start!");
-        result.ErrorType.Should().Be(ProcessErrorType.Conflict);
-    }
-
-    [Fact]
-    public async Task Next_returns_unsuccessful_when_process_altinnTaskType_null()
-    {
-        using var fixture = Fixture.Create();
-        ProcessEngine processEngine = fixture.ProcessEngine;
-        Instance instance = new Instance()
-        {
-            Id = _instanceId,
-            AppId = "org/app",
-            Process = new ProcessState()
-            {
-                CurrentTask = new ProcessElementInfo { ElementId = "elementId", AltinnTaskType = null },
-            },
-        };
-        ProcessNextRequest processNextRequest = new ProcessNextRequest()
-        {
-            Instance = instance,
-            User = null!,
-            Action = null,
-            Language = null,
-        };
-        ProcessChangeResult result = await processEngine.Next(processNextRequest);
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Be("Instance does not have current altinn task type information!");
+        result.ErrorMessage.Should().Be(expectedErrorMessage);
         result.ErrorType.Should().Be(ProcessErrorType.Conflict);
     }
 
