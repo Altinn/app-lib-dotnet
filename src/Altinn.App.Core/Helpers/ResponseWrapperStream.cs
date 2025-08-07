@@ -7,7 +7,6 @@ internal sealed class ResponseWrapperStream : Stream
 {
     private readonly HttpResponseMessage _response;
     private readonly Stream _innerStream;
-    private readonly long? _length;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResponseWrapperStream"/> class.
@@ -15,11 +14,10 @@ internal sealed class ResponseWrapperStream : Stream
     /// <param name="response">The HTTP response message to be disposed when the stream is disposed.</param>
     /// <param name="innerStream">The inner stream to wrap and delegate operations to.</param>
     /// <param name="length">The length of the stream.</param>
-    public ResponseWrapperStream(HttpResponseMessage response, Stream innerStream, long? length)
+    public ResponseWrapperStream(HttpResponseMessage response, Stream innerStream)
     {
         _response = response;
         _innerStream = innerStream;
-        _length = length;
     }
 
     /// <summary>
@@ -45,7 +43,7 @@ internal sealed class ResponseWrapperStream : Stream
     /// <summary>
     /// Gets a value indicating whether the current stream supports seeking.
     /// </summary>
-    public override bool CanSeek => _length is not null || _innerStream.CanSeek;
+    public override bool CanSeek => _innerStream.CanSeek;
 
     /// <summary>
     /// Gets a value indicating whether the current stream supports writing.
@@ -56,7 +54,7 @@ internal sealed class ResponseWrapperStream : Stream
     /// Gets the length in bytes of the stream.
     /// </summary>
     /// <exception cref="NotSupportedException">The stream does not support seeking.</exception>
-    public override long Length => _length ?? _innerStream.Length;
+    public override long Length => _innerStream.Length;
 
     /// <summary>
     /// Gets or sets the position within the current stream.

@@ -187,7 +187,7 @@ public class DataClient : IDataClient
             try
             {
                 stream = await response.Content.ReadAsStreamAsync();
-                return new ResponseWrapperStream(response, stream, response.Content.Headers.ContentLength);
+                return new ResponseWrapperStream(response, stream);
             }
             catch (Exception)
             {
