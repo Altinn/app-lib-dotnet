@@ -4,7 +4,6 @@ using System.Text.RegularExpressions;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
-using Altinn.App.Core.Models.Layout.Components;
 
 namespace Altinn.App.Core.Internal.Expressions;
 
@@ -14,7 +13,7 @@ namespace Altinn.App.Core.Internal.Expressions;
 public static class ExpressionEvaluator
 {
     /// <summary>
-    /// Shortcut for evaluating a boolean expression on a given property on a <see cref="BaseComponent" />
+    /// Shortcut for evaluating a boolean expression on a given property on a <see cref="Models.Layout.Components.Base.BaseComponent" />
     /// </summary>
     public static async Task<bool> EvaluateBooleanExpression(
         LayoutEvaluatorState state,
@@ -72,7 +71,7 @@ public static class ExpressionEvaluator
     /// <summary>
     /// private implementation in order to change the types of positional arguments without breaking change.
     /// </summary>
-    private static async Task<ExpressionValue> EvaluateExpression_internal(
+    internal static async Task<ExpressionValue> EvaluateExpression_internal(
         LayoutEvaluatorState state,
         Expression expr,
         ComponentContext context,
@@ -259,16 +258,16 @@ public static class ExpressionEvaluator
             throw new ArgumentException($"Unable to find component with identifier {componentId}{rowIndexInfo}");
         }
 
-        if (targetContext.Component is GroupComponent)
+        if (targetContext.ChildContexts.Count > 0)
         {
-            throw new NotImplementedException("Component lookup for components in groups not implemented");
+            throw new NotImplementedException("Component lookup for components that are groups is not implemented");
         }
 
         if (targetContext.Component?.DataModelBindings.TryGetValue("simpleBinding", out var binding) != true)
         {
             throw new ArgumentException("component lookup requires the target component to have a simpleBinding");
         }
-        if (await targetContext.IsHidden(state))
+        if (await targetContext.IsHidden())
         {
             return ExpressionValue.Null;
         }

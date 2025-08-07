@@ -33,6 +33,12 @@ internal class FormDataValidatorWrapper : IValidator
     /// <inheritdoc />
     public string ValidationSource => _formDataValidator.ValidationSource;
 
+    /// <inheritdoc />
+    public bool ShouldRunAfterRemovingHiddenData => _formDataValidator.ShouldRunAfterRemovingHiddenData;
+
+    /// <inheritdoc />
+    public bool NoIncrementalValidation => _formDataValidator.NoIncrementalValidation;
+
     /// <summary>
     /// Run all legacy <see cref="IDataElementValidator"/> instances for the given <see cref="DataType"/>.
     /// </summary>
