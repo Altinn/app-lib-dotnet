@@ -129,19 +129,6 @@ public sealed partial class AppFixture
         }
     }
 
-    // A scrubber function that replaces information part of an instance that is not stable across test runs
-    internal static Func<string, string> InstanceScrubber(Instance instance) =>
-        v =>
-        {
-            v = v.Replace(instance.Id.Split('/')[1], "<instanceGuid>");
-            for (int i = 0; i < instance.Data.Count; i++)
-                v = v.Replace(instance.Data[i].Id, $"<dataElementId[{i}]>");
-            return v;
-        };
-
-    internal static Func<string, string> InstanceScrubber(ReadApiResponse<Instance> readResponse) =>
-        readResponse.Data.Model is not null ? InstanceScrubber(readResponse.Data.Model) : v => v;
-
     private sealed class StringConverter(string appPort, string localtestPort, Func<string, string>? scrubber)
         : WriteOnlyJsonConverter<string>
     {

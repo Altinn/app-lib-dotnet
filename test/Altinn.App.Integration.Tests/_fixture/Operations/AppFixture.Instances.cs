@@ -240,7 +240,7 @@ internal sealed record InstanceDownload(ReadApiResponse<Instance> Instance, IRea
         [CallerFilePath] string sourceFile = ""
     )
     {
-        var scrubber = InstanceScrubber(Instance);
+        var scrubber = Scrubbers.InstanceScrubber(Instance);
         await verifier
             .Verify(
                 Instance,

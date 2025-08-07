@@ -27,7 +27,7 @@ public class BasicAppTests(ITestOutputHelper _output)
         await verifier.Verify(
             readResponse,
             snapshotName: "Instantiation",
-            scrubber: AppFixture.InstanceScrubber(readResponse)
+            scrubber: Scrubbers.InstanceScrubber(readResponse)
         );
 
         await verifier.Verify(await fixture.GetSnapshotAppLogs(), snapshotName: "Logs");
@@ -77,12 +77,12 @@ public class BasicAppTests(ITestOutputHelper _output)
         await verifier.Verify(
             readInstantiationResponse,
             snapshotName: "Instantiation",
-            scrubber: AppFixture.InstanceScrubber(readInstantiationResponse)
+            scrubber: Scrubbers.InstanceScrubber(readInstantiationResponse)
         );
 
         var instance = readInstantiationResponse.Data.Model;
         Assert.NotNull(instance);
-        var scrubber = AppFixture.InstanceScrubber(instance);
+        var scrubber = Scrubbers.InstanceScrubber(instance);
 
         var dataElement = instance.Data.First(d => d.DataType == "model");
         using var patchResponse = await fixture.Instances.PatchFormData(
