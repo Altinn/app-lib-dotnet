@@ -94,7 +94,21 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                         );
                     }
                     var attachmentId = initializeAttachmentContent.Trim('"');
-                    var attachmentDataContent = new StreamContent(attachment.Data);
+                    HttpContent attachmentDataContent;
+                    if (attachment.Data.CanSeek)
+                    {
+                        // Seekable stream - set position and length
+                        attachment.Data.Position = 0;
+                        attachmentDataContent = new StreamContent(attachment.Data);
+                        attachmentDataContent.Headers.ContentLength = attachment.Data.Length;
+                    }
+                    else
+                    {
+                        // Non-seekable stream - buffer it
+                        using var memoryStream = new MemoryStream();
+                        await attachment.Data.CopyToAsync(memoryStream, cancellationToken);
+                        attachmentDataContent = new ByteArrayContent(memoryStream.ToArray());
+                    }
                     attachmentDataContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                     var uploadAttachmentRequest = await AuthenticatedHttpRequestFactory(
                         method: HttpMethod.Post,
