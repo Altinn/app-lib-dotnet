@@ -56,7 +56,7 @@
     <PackageVersion Include="Verify.AspNetCore" Version="4.0.0" />
     <PackageVersion Include="Verify.Xunit" Version="30.4.0" />
     <PackageVersion Include="Verify.Http" Version="6.6.0" />
-    <PackageVersion Include="WireMock.Net" Version="1.8.13" />
+    <PackageVersion Include="WireMock.Net" Version="1.8.17" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.assert" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.1" />
