@@ -1,10 +1,8 @@
 using System.Net;
-using System.Text.Json;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
-using Altinn.App.Core.Features.Correspondence.Models.Response;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.App.Core.Models;
@@ -257,7 +255,7 @@ public class CorrespondenceClientTests
             .Setup(c =>
                 c.SendAsync(
                     It.Is<HttpRequestMessage>(
-                        (request) => request.RequestUri.LocalPath == "/correspondence/api/v1/attachment"
+                        (request) => request.RequestUri!.LocalPath == "/correspondence/api/v1/attachment"
                     ),
                     It.IsAny<CancellationToken>()
                 )
@@ -278,7 +276,7 @@ public class CorrespondenceClientTests
                 c.SendAsync(
                     It.Is<HttpRequestMessage>(
                         (request) =>
-                            request.RequestUri.LocalPath.Contains("attachment/") && request.Method == HttpMethod.Get
+                            request.RequestUri!.LocalPath.Contains("attachment/") && request.Method == HttpMethod.Get
                     ),
                     It.IsAny<CancellationToken>()
                 )
