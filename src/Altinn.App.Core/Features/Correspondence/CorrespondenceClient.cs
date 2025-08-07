@@ -115,6 +115,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                 }
                 await Task.WhenAll(pollingJobs);
                 payload.CorrespondenceRequest.ExistingAttachments = premadeAttachments;
+                payload.CorrespondenceRequest.Content.Attachments = [];
             }
             using MultipartFormDataContent content = payload.CorrespondenceRequest.Serialise();
             using HttpRequestMessage request = await AuthenticatedHttpRequestFactory(
