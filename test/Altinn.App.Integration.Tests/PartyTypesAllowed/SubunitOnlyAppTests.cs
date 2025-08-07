@@ -28,7 +28,7 @@ public class SubunitOnlyAppTests(ITestOutputHelper _output)
             data,
             parameters: new { partyId },
             snapshotName: "Instance",
-            scrubber: AppFixture.InstanceScrubber(data)
+            scrubber: Scrubbers.InstanceScrubber(data)
         );
 
         await verifier.Verify(await fixture.GetSnapshotAppLogs(), parameters: new { partyId }, snapshotName: "Logs");
