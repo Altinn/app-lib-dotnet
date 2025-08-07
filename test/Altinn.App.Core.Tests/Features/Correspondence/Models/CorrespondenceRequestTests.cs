@@ -38,13 +38,13 @@ public class CorrespondenceRequestTests
                 Language = LanguageCode<Iso6391>.Parse("no"),
                 Attachments =
                 [
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = "filename-1",
                         SendersReference = "senders-reference-1",
                         Data = "data"u8.ToArray(),
                     },
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = "filename-2",
                         SendersReference = "senders-reference-2",
@@ -120,6 +120,8 @@ public class CorrespondenceRequestTests
         {
             ["Recipients[0]"] = correspondence.Recipients[0].ToUrnFormattedString(),
             ["Recipients[1]"] = correspondence.Recipients[1].ToUrnFormattedString(),
+            ["ExistingAttachments[0]"] = correspondence.ExistingAttachments[0],
+            ["ExistingAttachments[1]"] = correspondence.ExistingAttachments[1],
             ["Correspondence.ResourceId"] = correspondence.ResourceId,
             ["Correspondence.Sender"] = correspondence.Sender.ToUrnFormattedString(),
             ["Correspondence.SendersReference"] = correspondence.SendersReference,
@@ -154,8 +156,6 @@ public class CorrespondenceRequestTests
             ["Correspondence.ReplyOptions[0].LinkText"] = correspondence.ReplyOptions[0].LinkText!,
             ["Correspondence.ReplyOptions[1].LinkUrl"] = correspondence.ReplyOptions[1].LinkUrl,
             ["Correspondence.ReplyOptions[1].LinkText"] = correspondence.ReplyOptions[1].LinkText!,
-            ["Correspondence.ExistingAttachments[0]"] = correspondence.ExistingAttachments[0],
-            ["Correspondence.ExistingAttachments[1]"] = correspondence.ExistingAttachments[1],
             ["Correspondence.Notification.NotificationTemplate"] = correspondence.Notification.NotificationTemplate,
             ["Correspondence.Notification.EmailSubject"] = correspondence.Notification.EmailSubject,
             ["Correspondence.Notification.EmailBody"] = correspondence.Notification.EmailBody,
@@ -208,13 +208,13 @@ public class CorrespondenceRequestTests
                 Language = LanguageCode<Iso6391>.Parse("no"),
                 Attachments =
                 [
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = "filename-1",
                         SendersReference = "senders-reference-1",
                         Data = "data"u8.ToArray(),
                     },
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = "filename-2",
                         SendersReference = "senders-reference-2",
@@ -292,6 +292,8 @@ public class CorrespondenceRequestTests
         {
             ["Recipients[0]"] = correspondence.Recipients[0].ToUrnFormattedString(),
             ["Recipients[1]"] = correspondence.Recipients[1].ToUrnFormattedString(),
+            ["ExistingAttachments[0]"] = correspondence.ExistingAttachments[0],
+            ["ExistingAttachments[1]"] = correspondence.ExistingAttachments[1],
             ["Correspondence.ResourceId"] = correspondence.ResourceId,
             ["Correspondence.Sender"] = correspondence.Sender.ToUrnFormattedString(),
             ["Correspondence.SendersReference"] = correspondence.SendersReference,
@@ -325,8 +327,6 @@ public class CorrespondenceRequestTests
             ["Correspondence.ReplyOptions[0].LinkText"] = correspondence.ReplyOptions[0].LinkText!,
             ["Correspondence.ReplyOptions[1].LinkUrl"] = correspondence.ReplyOptions[1].LinkUrl,
             ["Correspondence.ReplyOptions[1].LinkText"] = correspondence.ReplyOptions[1].LinkText!,
-            ["Correspondence.ExistingAttachments[0]"] = correspondence.ExistingAttachments[0],
-            ["Correspondence.ExistingAttachments[1]"] = correspondence.ExistingAttachments[1],
             ["Correspondence.Notification.NotificationTemplate"] = correspondence.Notification.NotificationTemplate,
             ["Correspondence.Notification.EmailSubject"] = correspondence.Notification.EmailSubject,
             ["Correspondence.Notification.EmailBody"] = correspondence.Notification.EmailBody,
@@ -372,13 +372,13 @@ public class CorrespondenceRequestTests
                 Language = LanguageCode<Iso6391>.Parse("no"),
                 Attachments =
                 [
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = clashingFilename,
                         SendersReference = "senders-reference-1",
                         Data = Encoding.UTF8.GetBytes("data-1"),
                     },
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = clashingFilename,
                         SendersReference = "senders-reference-2",
@@ -401,25 +401,25 @@ public class CorrespondenceRequestTests
     {
         // Arrange
         ReadOnlyMemory<byte> data = Encoding.UTF8.GetBytes("data");
-        List<CorrespondenceAttachment> identicalAttachments =
+        List<CorrespondenceAttachmentInMemory> identicalAttachments =
         [
-            new CorrespondenceAttachment
+            new CorrespondenceAttachmentInMemory
             {
                 Filename = "filename",
                 SendersReference = "senders-reference",
-                Data = data,
+                Data = data.ToArray(),
             },
-            new CorrespondenceAttachment
+            new CorrespondenceAttachmentInMemory
             {
                 Filename = "filename",
                 SendersReference = "senders-reference",
-                Data = data,
+                Data = data.ToArray(),
             },
-            new CorrespondenceAttachment
+            new CorrespondenceAttachmentInMemory
             {
                 Filename = "filename",
                 SendersReference = "senders-reference",
-                Data = data,
+                Data = data.ToArray(),
             },
         ];
         var clonedAttachment = identicalAttachments[^1];

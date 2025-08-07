@@ -195,7 +195,7 @@ public class CorrespondenceBuilderTests
                     .WithIsEncrypted(data.attachments[0].isEncrypted)
             )
             .WithAttachment(
-                new CorrespondenceAttachment
+                new CorrespondenceAttachmentInMemory
                 {
                     Filename = data.attachments[1].filename,
                     SendersReference = data.attachments[1].sendersReference,
@@ -206,7 +206,7 @@ public class CorrespondenceBuilderTests
             )
             .WithAttachments(
                 [
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = data.attachments[2].filename,
                         SendersReference = data.attachments[2].sendersReference,
@@ -273,10 +273,8 @@ public class CorrespondenceBuilderTests
             correspondence.Content.Attachments[i].IsEncrypted.Should().Be(data.attachments[i].isEncrypted);
             correspondence.Content.Attachments[i].SendersReference.Should().Be(data.attachments[i].sendersReference);
             correspondence.Content.Attachments[i].DataLocationType.Should().Be(data.attachments[i].dataLocationType);
-            Encoding
-                .UTF8.GetString(correspondence.Content.Attachments[i].Data.Span)
-                .Should()
-                .Be(data.attachments[i].data);
+            var attachment = correspondence.Content.Attachments[i] as CorrespondenceAttachmentInMemory;
+            Encoding.UTF8.GetString(attachment!.Data.Span).Should().Be(data.attachments[i].data);
         }
 
         correspondence.Notification.NotificationTemplate.Should().Be(data.notification.template);

@@ -232,6 +232,7 @@ namespace Altinn.App.Core.Extensions
     {
         public static System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> DeleteAsync(this System.Net.Http.HttpClient httpClient, string authorizationToken, string requestUri, string? platformAccessToken = null) { }
         public static System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> GetAsync(this System.Net.Http.HttpClient httpClient, string authorizationToken, string requestUri, string? platformAccessToken = null) { }
+        public static System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> GetStreamingAsync(this System.Net.Http.HttpClient httpClient, string authorizationToken, string requestUri, string? platformAccessToken = null) { }
         public static System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> PostAsync(this System.Net.Http.HttpClient httpClient, string authorizationToken, string requestUri, System.Net.Http.HttpContent? content, string? platformAccessToken = null) { }
         public static System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> PutAsync(this System.Net.Http.HttpClient httpClient, string authorizationToken, string requestUri, System.Net.Http.HttpContent? content, string? platformAccessToken = null) { }
     }
@@ -428,6 +429,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     public class CorrespondenceAttachmentBuilder : Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderData, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderFilename, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderSendersReference
     {
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment Build() { }
+        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.IO.Stream data) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.ReadOnlyMemory<byte> data) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithDataLocationType(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceDataLocationType dataLocationType) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderSendersReference WithFilename(string filename) { }
@@ -546,6 +548,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     }
     public interface ICorrespondenceAttachmentBuilderData
     {
+        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.IO.Stream data);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.ReadOnlyMemory<byte> data);
     }
     public interface ICorrespondenceAttachmentBuilderFilename
@@ -721,14 +724,18 @@ namespace Altinn.App.Core.Features.Correspondence
 }
 namespace Altinn.App.Core.Features.Correspondence.Models
 {
-    public sealed class CorrespondenceAttachment : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>
+    public abstract class CorrespondenceAttachment : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>
     {
-        public CorrespondenceAttachment() { }
-        public required System.ReadOnlyMemory<byte> Data { get; init; }
+        protected CorrespondenceAttachment() { }
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceDataLocationType DataLocationType { get; init; }
         public required string Filename { get; init; }
         public bool? IsEncrypted { get; init; }
         public required string SendersReference { get; init; }
+    }
+    public class CorrespondenceAttachmentInMemory : Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachmentInMemory>
+    {
+        public CorrespondenceAttachmentInMemory() { }
+        public required System.ReadOnlyMemory<byte> Data { get; init; }
     }
     public sealed class CorrespondenceAttachmentResponse : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachmentResponse>
     {
@@ -774,7 +781,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
     public sealed class CorrespondenceContent : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceContent>
     {
         public CorrespondenceContent() { }
-        public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>? Attachments { get; init; }
+        public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>? Attachments { get; set; }
         public required string Body { get; init; }
         public required Altinn.App.Core.Models.LanguageCode<Altinn.App.Core.Models.Iso6391> Language { get; init; }
         public required string Summary { get; init; }
@@ -1002,7 +1009,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public required System.DateTimeOffset? AllowSystemDeleteAfter { get; init; }
         public required Altinn.App.Core.Features.Correspondence.Models.CorrespondenceContent Content { get; init; }
         public System.DateTimeOffset? DueDateTime { get; init; }
-        public System.Collections.Generic.IReadOnlyList<System.Guid>? ExistingAttachments { get; init; }
+        public System.Collections.Generic.IReadOnlyList<System.Guid>? ExistingAttachments { get; set; }
         public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceExternalReference>? ExternalReferences { get; init; }
         public bool? IgnoreReservation { get; init; }
         public bool? IsConfirmationNeeded { get; init; }
@@ -1041,6 +1048,11 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public System.DateTimeOffset StatusChanged { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("statusText")]
         public required string StatusText { get; init; }
+    }
+    public class CorrespondenceStreamedAttachment : Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceStreamedAttachment>
+    {
+        public CorrespondenceStreamedAttachment() { }
+        public required System.IO.Stream Data { get; init; }
     }
     public sealed class GetCorrespondenceStatusPayload : Altinn.App.Core.Features.Correspondence.Models.CorrespondencePayloadBase, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.GetCorrespondenceStatusPayload>
     {
