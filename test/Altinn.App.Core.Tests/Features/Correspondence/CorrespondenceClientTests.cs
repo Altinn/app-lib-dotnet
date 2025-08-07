@@ -1,8 +1,10 @@
 using System.Net;
+using System.Text.Json;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
 using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
+using Altinn.App.Core.Features.Correspondence.Models.Response;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.App.Core.Models;
@@ -85,6 +87,41 @@ public class CorrespondenceClientTests
                 : new SendCorrespondencePayload(request, authorisation.Value);
         }
 
+        public static SendCorrespondencePayload SendStreamed(
+            Func<Task<JwtToken>>? tokenFactory = default,
+            CorrespondenceAuthorisation? authorisation = default
+        )
+        {
+            var request = CorrespondenceRequestBuilder
+                .Create()
+                .WithResourceId("resource-id")
+                .WithSender(OrganisationNumber.Parse("991825827"))
+                .WithSendersReference("senders-ref")
+                .WithRecipient(OrganisationOrPersonIdentifier.Parse("213872702"))
+                .WithContent(
+                    CorrespondenceContentBuilder
+                        .Create()
+                        .WithLanguage(LanguageCode<Iso6391>.Parse("en"))
+                        .WithTitle("message-title")
+                        .WithSummary("message-summary")
+                        .WithBody("message-body")
+                )
+                .WithAttachment(
+                    CorrespondenceAttachmentBuilder
+                        .Create()
+                        .WithFilename("attachment.txt")
+                        .WithSendersReference("attachment-ref")
+                        .WithData(
+                            new MemoryStream(System.Text.Encoding.UTF8.GetBytes("This is a test attachment content."))
+                        )
+                )
+                .Build();
+
+            return authorisation is null
+                ? new SendCorrespondencePayload(request, tokenFactory ?? _defaultTokenFactory)
+                : new SendCorrespondencePayload(request, authorisation.Value);
+        }
+
         public static GetCorrespondenceStatusPayload GetStatus(
             Func<Task<JwtToken>>? tokenFactory = default,
             CorrespondenceAuthorisation? authorisation = default
@@ -132,10 +169,137 @@ public class CorrespondenceClientTests
             ),
         };
 
+        // Act
+        var result = await fixture.CorrespondenceClient.Send(payload);
+
+        // Assert
+        Assert.NotNull(result);
+        result.AttachmentIds.Should().ContainSingle("25b87c22-e7cc-4c07-95eb-9afa32e3ee7b");
+        result.Correspondences.Should().HaveCount(1);
+        result.Correspondences[0].CorrespondenceId.Should().Be("cf7a4a9f-45ce-46b9-b110-4f263b395842");
+    }
+
+    [Fact]
+    public async Task SendStreamed_SuccessfulResponse_ReturnsCorrectResponse()
+    {
+        // Arrange
+        await using var fixture = Fixture.Create();
+        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
+        var mockHttpClient = new Mock<HttpClient>();
+
+        var payload = PayloadFactory.SendStreamed();
+        var correspondenceInitializeResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                """
+                {
+                    "correspondences": [
+                        {
+                            "correspondenceId": "cf7a4a9f-45ce-46b9-b110-4f263b395842",
+                            "status": "Initialized",
+                            "recipient": "0192:213872702",
+                            "notifications": [
+                                {
+                                    "orderId": "05119865-6d46-415c-a2d7-65b9cd173e13",
+                                    "isReminder": false,
+                                    "status": "Success"
+                                }
+                            ]
+                        }
+                    ],
+                    "attachmentIds": [
+                        "25b87c22-e7cc-4c07-95eb-9afa32e3ee7b"
+                    ]
+                }
+                """
+            ),
+        };
+
         mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
         mockHttpClient
-            .Setup(c => c.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(responseMessage);
+            .Setup(c =>
+                c.SendAsync(
+                    It.Is<HttpRequestMessage>(
+                        (request) => request.RequestUri!.LocalPath == "/correspondence/api/v1/correspondence/upload"
+                    ),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(correspondenceInitializeResponse);
+        mockHttpClient
+            .Setup(c =>
+                c.SendAsync(
+                    It.Is<HttpRequestMessage>(
+                        (request) =>
+                            request.RequestUri!.LocalPath.Contains("attachment")
+                            && request.RequestUri!.LocalPath.Contains("upload")
+                    ),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        """
+                        {
+                            "attachmentId": "25b87c22-e7cc-4c07-95eb-9afa32e3ee7b",
+                            "status": "UploadProcessing",
+                            "statusText": "UploadProcessing",
+                            "statusChanged": "2025-08-07T07:22:05.488878+00:00"
+                        }
+                        """
+                    ),
+                }
+            );
+
+        mockHttpClient
+            .Setup(c =>
+                c.SendAsync(
+                    It.Is<HttpRequestMessage>(
+                        (request) => request.RequestUri.LocalPath == "/correspondence/api/v1/attachment"
+                    ),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        """
+                        "25b87c22-e7cc-4c07-95eb-9afa32e3ee7b"
+                        """
+                    ),
+                }
+            );
+
+        mockHttpClient
+            .Setup(c =>
+                c.SendAsync(
+                    It.Is<HttpRequestMessage>(
+                        (request) =>
+                            request.RequestUri.LocalPath.Contains("attachment/") && request.Method == HttpMethod.Get
+                    ),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        """
+                        {
+                            "attachmentId": "25b87c22-e7cc-4c07-95eb-9afa32e3ee7b",
+                            "status": "Published",
+                            "statusText": "Published",
+                            "statusChanged": "2025-08-07T07:23:05.488878+00:00"
+                        }
+                        """
+                    ),
+                }
+            );
+
+        mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
 
         // Act
         var result = await fixture.CorrespondenceClient.Send(payload);

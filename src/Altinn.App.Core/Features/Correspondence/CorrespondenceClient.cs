@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
@@ -80,11 +79,11 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                         ),
                         payload: payload
                     );
-                    var initializeAttachmentResponse = await HandleServerCommunication<SendCorrespondenceResponse>(
+                    var initializeAttachmentResponse = await HandleServerCommunication<string>(
                         initializeAttachmentRequest,
                         cancellationToken
                     );
-                    var initializeAttachmentContent = initializeAttachmentRequest.Content;
+                    var initializeAttachmentContent = initializeAttachmentResponse;
                     if (initializeAttachmentContent is null)
                     {
                         throw new CorrespondenceRequestException(
@@ -94,17 +93,16 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                             "No content returned from attachment initialization"
                         );
                     }
-                    var attachmentId = await initializeAttachmentContent.ReadAsStringAsync(cancellationToken);
-                    attachmentId = attachmentId.Trim('"');
+                    var attachmentId = initializeAttachmentContent.Trim('"');
                     var attachmentDataContent = new StreamContent(attachment.Data);
                     attachmentDataContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                     var uploadAttachmentRequest = await AuthenticatedHttpRequestFactory(
                         method: HttpMethod.Post,
-                        uri: GetUri("attachment/upload"),
+                        uri: GetUri($"attachment/{attachmentId}/upload"),
                         content: attachmentDataContent,
                         payload: payload
                     );
-                    var uploadAttachmentResponse = await HandleServerCommunication<SendCorrespondenceResponse>(
+                    var uploadAttachmentResponse = await HandleServerCommunication<AttachmentOverview>(
                         uploadAttachmentRequest,
                         cancellationToken
                     );
@@ -168,21 +166,19 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         {
             await Task.Delay(TimeSpan.FromSeconds(delaySeconds), cancellationToken);
 
-            var statusResponse = await AuthenticatedHttpRequestFactory(
+            var statusRequest = await AuthenticatedHttpRequestFactory(
                 method: HttpMethod.Get,
                 uri: GetUri($"attachment/{attachmentId}"),
                 content: null,
                 payload: payload
             );
-            var pollContent = statusResponse.Content;
+            var statusResponse = await HandleServerCommunication<AttachmentOverview>(statusRequest, cancellationToken);
 
-            if (pollContent is null)
+            if (statusResponse is null)
             {
                 break;
             }
-
-            var statusContent = await pollContent.ReadFromJsonAsync<AttachmentOverview>(cancellationToken);
-            if (statusContent?.Status == "Published")
+            if (statusResponse.Status == "Published")
             {
                 return;
             }
