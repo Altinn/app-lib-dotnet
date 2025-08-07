@@ -4371,7 +4371,7 @@ namespace Altinn.App.Core.Models.Layout.Components.Base
     }
     public abstract class NoReferenceComponent : Altinn.App.Core.Models.Layout.Components.Base.BaseComponent
     {
-        public NoReferenceComponent(System.Text.Json.JsonElement componentElement, string pageId, string layoutId) { }
+        protected NoReferenceComponent(System.Text.Json.JsonElement componentElement, string pageId, string layoutId) { }
         public override void ClaimChildren(System.Collections.Generic.Dictionary<string, Altinn.App.Core.Models.Layout.Components.Base.BaseComponent> unclaimedComponents, System.Collections.Generic.Dictionary<string, string> claimedComponents) { }
         public override System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext> GetContext(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.DataElementIdentifier defaultDataElementIdentifier, int[]? rowIndexes, System.Collections.Generic.Dictionary<string, Altinn.App.Core.Models.Layout.LayoutSetComponent> layoutsLookup) { }
     }
@@ -4383,7 +4383,7 @@ namespace Altinn.App.Core.Models.Layout.Components.Base
     }
     public abstract class RepeatingReferenceComponent : Altinn.App.Core.Models.Layout.Components.Base.BaseComponent
     {
-        public RepeatingReferenceComponent(System.Text.Json.JsonElement componentElement, string pageId, string layoutId) { }
+        protected RepeatingReferenceComponent(System.Text.Json.JsonElement componentElement, string pageId, string layoutId) { }
         public abstract Altinn.App.Core.Models.Layout.ModelBinding GroupModelBinding { get; }
         public abstract Altinn.App.Core.Models.Expressions.Expression HiddenRow { get; }
         public abstract System.Collections.Generic.IReadOnlyList<string> NonRepeatingChildReferences { get; }

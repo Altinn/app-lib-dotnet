@@ -309,7 +309,7 @@ public class LayoutEvaluatorState
             Field =
                 formDataWrapper.AddIndexToPath(binding.Field, indexes)
                 ?? throw new InvalidOperationException(
-                    $"Failed to add indexes to path {binding.Field} with indexes {indexes} on {dataElementId}"
+                    $"Failed to add indexes to path {binding.Field} with indexes {(indexes == null ? "null" : string.Join(", ", indexes))} on {dataElementId}"
                 ),
         };
     }

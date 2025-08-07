@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Models.Layout.Components.Base;
 public abstract class NoReferenceComponent : BaseComponent
 {
     /// <inheritdoc />
-    public NoReferenceComponent(JsonElement componentElement, string pageId, string layoutId)
+    protected NoReferenceComponent(JsonElement componentElement, string pageId, string layoutId)
         : base(componentElement, pageId, layoutId) { }
 
     /// <summary>

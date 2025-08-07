@@ -197,7 +197,7 @@ public abstract class BaseComponent
     {
         if (!element.TryGetProperty("textResourceBindings", out JsonElement textResourceBindingsElement))
         {
-            return new Dictionary<string, Expression>();
+            return [];
         }
         if (textResourceBindingsElement.ValueKind != JsonValueKind.Object)
         {
@@ -206,8 +206,7 @@ public abstract class BaseComponent
             );
         }
 
-        return textResourceBindingsElement.Deserialize<Dictionary<string, Expression>>()
-            ?? new Dictionary<string, Expression>();
+        return textResourceBindingsElement.Deserialize<Dictionary<string, Expression>>() ?? [];
     }
 
     /// <summary>

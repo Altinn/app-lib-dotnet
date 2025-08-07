@@ -19,7 +19,7 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
         var text = Analyzers.SourceTextGenerator.SourceTextGenerator.GenerateSourceText(rootNode, "internal");
         outputHelper.WriteLine(AddLineNumbers(text));
 
-        await Verify(text, extension: "cs").AutoVerify((v) => false);
+        await Verify(text, extension: "cs");
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
         var text = Analyzers.SourceTextGenerator.SourceTextGenerator.GenerateSourceText(rootNode, "internal");
         outputHelper.WriteLine(AddLineNumbers(text));
 
-        await Verify(text, extension: "cs").AutoVerify((v) => false);
+        await Verify(text, extension: "cs");
     }
 
     private string AddLineNumbers(string text)

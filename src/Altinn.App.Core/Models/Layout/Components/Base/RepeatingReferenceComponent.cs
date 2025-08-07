@@ -15,7 +15,7 @@ public abstract class RepeatingReferenceComponent : BaseComponent
     /// <summary>
     /// Initializes a new instance of the <see cref="RepeatingReferenceComponent"/> class
     /// </summary>
-    public RepeatingReferenceComponent(JsonElement componentElement, string pageId, string layoutId)
+    protected RepeatingReferenceComponent(JsonElement componentElement, string pageId, string layoutId)
         : base(componentElement, pageId, layoutId) { }
 
     /// <summary>
