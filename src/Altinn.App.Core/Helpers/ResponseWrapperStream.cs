@@ -14,6 +14,7 @@ internal sealed class ResponseWrapperStream : Stream
     /// </summary>
     /// <param name="response">The HTTP response message to be disposed when the stream is disposed.</param>
     /// <param name="innerStream">The inner stream to wrap and delegate operations to.</param>
+    /// <param name="length">The length of the stream.</param>
     public ResponseWrapperStream(HttpResponseMessage response, Stream innerStream, long? length)
     {
         _response = response;
