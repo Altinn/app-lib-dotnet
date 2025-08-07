@@ -1,12 +1,17 @@
+using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Net.Mail;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
+using Altinn.App.Core.Features.Correspondence.Models.Response;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Notifications.Email;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -50,6 +55,70 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
 
         try
         {
+            if (
+                payload.CorrespondenceRequest.Content.Attachments?.Count > 0
+                && payload.CorrespondenceRequest.Content.Attachments.All(a => a is CorrespondenceStreamedAttachment)
+            )
+            {
+                var pollingJobs = new List<Task>();
+                var premadeAttachments = new List<Guid>();
+                foreach (
+                    CorrespondenceStreamedAttachment attachment in payload.CorrespondenceRequest.Content.Attachments
+                )
+                {
+                    var initializeAttachmentPayload = new AttachmentPayload
+                    {
+                        DisplayName = attachment.Filename,
+                        FileName = attachment.Filename,
+                        IsEncrypted = attachment.IsEncrypted ?? false,
+                        ResourceId = payload.CorrespondenceRequest.ResourceId,
+                        SendersReference = payload.CorrespondenceRequest.SendersReference + " - " + attachment.Filename,
+                    };
+                    var initializeAttachmentRequest = await AuthenticatedHttpRequestFactory(
+                        method: HttpMethod.Post,
+                        uri: GetUri("attachment"),
+                        content: new StringContent(
+                            JsonSerializer.Serialize(initializeAttachmentPayload),
+                            new MediaTypeHeaderValue("application/json")
+                        ),
+                        payload: payload
+                    );
+                    var initializeAttachmentResponse = await HandleServerCommunication<SendCorrespondenceResponse>(
+                        initializeAttachmentRequest,
+                        cancellationToken
+                    );
+                    var initializeAttachmentContent = initializeAttachmentRequest.Content;
+                    if (initializeAttachmentContent is null)
+                    {
+                        throw new CorrespondenceRequestException(
+                            "Attachment initialization request did not return content.",
+                            null,
+                            HttpStatusCode.InternalServerError,
+                            "No content returned from attachment initialization"
+                        );
+                    }
+                    var attachmentId = await initializeAttachmentContent.ReadAsStringAsync(cancellationToken);
+                    attachmentId = attachmentId.Trim('"');
+                    var attachmentDataContent = new StreamContent(attachment.Data);
+                    attachmentDataContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                    var uploadAttachmentRequest = await AuthenticatedHttpRequestFactory(
+                        method: HttpMethod.Post,
+                        uri: GetUri("attachment/upload"),
+                        content: attachmentDataContent,
+                        payload: payload
+                    );
+                    var uploadAttachmentResponse = await HandleServerCommunication<SendCorrespondenceResponse>(
+                        uploadAttachmentRequest,
+                        cancellationToken
+                    );
+                    if (Guid.TryParse(attachmentId, out var guidId))
+                    {
+                        pollingJobs.Add(PollAttachmentStatus(guidId, payload, cancellationToken));
+                    }
+                }
+                await Task.WhenAll(pollingJobs);
+                payload.CorrespondenceRequest.ExistingAttachments = premadeAttachments;
+            }
             using MultipartFormDataContent content = payload.CorrespondenceRequest.Serialise();
             using HttpRequestMessage request = await AuthenticatedHttpRequestFactory(
                 method: HttpMethod.Post,
@@ -86,6 +155,47 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
             _telemetry?.RecordCorrespondenceOrder(CorrespondenceResult.Error);
             throw new CorrespondenceRequestException($"Failed to send correspondence: {e}", e);
         }
+    }
+
+    /// <inheritdoc />
+    private async Task PollAttachmentStatus(
+        Guid attachmentId,
+        CorrespondencePayloadBase payload,
+        CancellationToken cancellationToken
+    )
+    {
+        const int maxAttempts = 3;
+        const int delaySeconds = 5;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(delaySeconds), cancellationToken);
+
+            var statusResponse = await AuthenticatedHttpRequestFactory(
+                method: HttpMethod.Get,
+                uri: GetUri($"attachment/{attachmentId}"),
+                content: null,
+                payload: payload
+            );
+            var pollContent = statusResponse.Content;
+
+            if (pollContent is null)
+            {
+                break;
+            }
+
+            var statusContent = await pollContent.ReadFromJsonAsync<AttachmentOverview>(cancellationToken);
+            if (statusContent?.Status == "Published")
+            {
+                return;
+            }
+        }
+        throw new CorrespondenceRequestException(
+            $"Failure when uploading attachment. Attachment was not published in time.",
+            null,
+            HttpStatusCode.InternalServerError,
+            "Polling failed"
+        );
     }
 
     /// <inheritdoc/>

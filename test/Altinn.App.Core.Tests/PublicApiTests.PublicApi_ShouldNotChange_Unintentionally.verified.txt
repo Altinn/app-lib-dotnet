@@ -1009,7 +1009,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public required System.DateTimeOffset? AllowSystemDeleteAfter { get; init; }
         public required Altinn.App.Core.Features.Correspondence.Models.CorrespondenceContent Content { get; init; }
         public System.DateTimeOffset? DueDateTime { get; init; }
-        public System.Collections.Generic.IReadOnlyList<System.Guid>? ExistingAttachments { get; init; }
+        public System.Collections.Generic.IReadOnlyList<System.Guid>? ExistingAttachments { get; set; }
         public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceExternalReference>? ExternalReferences { get; init; }
         public bool? IgnoreReservation { get; init; }
         public bool? IsConfirmationNeeded { get; init; }
