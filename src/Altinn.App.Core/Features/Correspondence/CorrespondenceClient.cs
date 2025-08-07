@@ -1,7 +1,9 @@
+using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Net.Mail;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
@@ -9,6 +11,7 @@ using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Correspondence.Models.Response;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Notifications.Email;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
