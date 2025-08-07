@@ -39,13 +39,13 @@ public class CorrespondenceRequestTests_Obsolete
                 Language = LanguageCode<Iso6391>.Parse("no"),
                 Attachments =
                 [
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = "filename-1",
                         SendersReference = "senders-reference-1",
                         Data = "data"u8.ToArray(),
                     },
-                    new CorrespondenceAttachment
+                    new CorrespondenceAttachmentInMemory
                     {
                         Filename = "filename-2",
                         SendersReference = "senders-reference-2",

@@ -331,7 +331,7 @@ public class DataClientTests
             $"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}",
             UriKind.RelativeOrAbsolute
         );
-        var response = await dataClient.GetBinaryData(
+        using var response = await dataClient.GetBinaryData(
             "ttd",
             "app",
             instanceIdentifier.InstanceOwnerPartyId,
@@ -367,7 +367,7 @@ public class DataClientTests
             $"{apiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}",
             UriKind.RelativeOrAbsolute
         );
-        var response = await dataClient.GetBinaryData(
+        using var response = await dataClient.GetBinaryData(
             "ttd",
             "app",
             instanceIdentifier.InstanceOwnerPartyId,
@@ -396,14 +396,15 @@ public class DataClientTests
             }
         );
         var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () =>
-            await dataClient.GetBinaryData(
+        {
+            using var _ = await dataClient.GetBinaryData(
                 "ttd",
                 "app",
                 instanceIdentifier.InstanceOwnerPartyId,
                 instanceIdentifier.InstanceGuid,
                 dataGuid
-            )
-        );
+            );
+        });
         invocations.Should().Be(1);
         actual.Should().NotBeNull();
         actual.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
