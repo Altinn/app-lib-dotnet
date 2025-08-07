@@ -355,9 +355,7 @@ public class TestFunctions
         }
         else if (componentModel is not null)
         {
-            context = (
-                await componentModel.GenerateComponentContexts(test.Instance, new DataModel(dataAccessor))
-            ).First();
+            context = (await componentModel.GenerateComponentContexts(state)).First();
         }
 
         if (test.ExpectsFailure is not null && test.ParsingException is not null)

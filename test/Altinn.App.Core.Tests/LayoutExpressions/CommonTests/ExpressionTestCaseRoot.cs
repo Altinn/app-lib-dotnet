@@ -125,6 +125,7 @@ public class ComponentContextForTestSpec
     {
         var component = model?.GetComponent(CurrentPageName, ComponentId);
         return new ComponentContext(
+            state,
             component,
             RowIndices,
             // TODO: get from data model, but currently not important for tests

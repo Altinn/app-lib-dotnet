@@ -44,13 +44,20 @@ public static class LayoutEvaluator
             );
         }
 
-        var isHidden = await context.IsHidden(state);
+        var isHidden = await context.IsHidden();
         if (context.Component is RepeatingGroupRowComponent or RepeatingGroupComponent)
         {
             if (context.Component.DataModelBindings.TryGetValue("group", out var groupBinding))
             {
                 var indexedBinding = await state.AddInidicies(groupBinding, context);
-                (isHidden ? hiddenModelBindings : nonHiddenModelBindings).Add(indexedBinding);
+                if (isHidden)
+                {
+                    hiddenModelBindings.Add(indexedBinding);
+                }
+                else
+                {
+                    nonHiddenModelBindings.Add(indexedBinding);
+                }
             }
 
             if (isHidden)
@@ -127,7 +134,7 @@ public static class LayoutEvaluator
     )
     {
         ArgumentNullException.ThrowIfNull(context.Component);
-        var hidden = await context.IsHidden(state);
+        var hidden = await context.IsHidden();
         if (!hidden)
         {
             foreach (var childContext in context.ChildContexts)
