@@ -1,5 +1,5 @@
 {
-  "name": "Group Layout with one row",
+  "name": "Simple grid with rows and columns",
   "layouts": {
     "Page1": {
       "data": {
@@ -10,11 +10,29 @@
           },
           {
             "id": "group1",
-            "type": "RepeatingGroup",
-            "dataModelBindings": {
-              "group": "gruppe1"
-            },
-            "children": ["comp3", "comp4"]
+            "type": "Grid",
+            "rows": [
+              {
+                "cells": [
+                  {
+                    "text": "Group row 0"
+                  },
+                  {
+                    "component": "comp3"
+                  }
+                ]
+              },
+              {
+                "cells": [
+                  {
+                    "text": "Group row 1"
+                  },
+                  {
+                    "component": "comp4"
+                  }
+                ]
+              }
+            ]
           },
           {
             "id": "comp3",
@@ -28,26 +46,6 @@
             "type": "Input",
             "dataModelBindings": {
               "simpleBinding": "gruppe1.comp4binding"
-            }
-          }
-        ]
-      }
-    },
-    "Page2": {
-      "data": {
-        "layout": [
-          {
-            "id": "comp5",
-            "type": "Input",
-            "dataModelBindings": {
-              "simpleBinding": "asdf"
-            }
-          },
-          {
-            "id": "comp6",
-            "type": "Input",
-            "dataModelBindings": {
-              "simpleBinding": "asdf"
             }
           }
         ]
@@ -69,34 +67,15 @@
           "children": [
             {
               "component": "comp3",
-              "rowIndices": [0],
               "currentLayout": "Page1"
             },
             {
               "component": "comp4",
-              "rowIndices": [0],
               "currentLayout": "Page1"
             }
           ]
         }
       ]
-    },
-    {
-      "component": "Page2",
-      "currentLayout": "Page2",
-      "children": [
-        {
-          "component": "comp5",
-          "currentLayout": "Page2"
-        },
-        {
-          "component": "comp6",
-          "currentLayout": "Page2"
-        }
-      ]
     }
-  ],
-  "dataModel": {
-    "gruppe1": [{ "altinnRowId": "row0", "comp3binding": "123", "comp4binding": "dadda" }]
-  }
+  ]
 }
