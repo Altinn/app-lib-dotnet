@@ -11,6 +11,7 @@ using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.AuthenticationMethod;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +24,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 /// <summary>
 /// A client for handling actions on data in Altinn Platform.
 /// </summary>
-public class DataClient : IDataClient
+internal class DataClient : IDataClient
 {
     private readonly PlatformSettings _platformSettings;
     private readonly ILogger _logger;
@@ -33,7 +34,7 @@ public class DataClient : IDataClient
     private readonly Telemetry? _telemetry;
     private readonly HttpClient _client;
 
-    private readonly AuthenticationMethod _defaultAuthenticationMethod = AuthenticationMethod.CurrentUser();
+    private readonly AuthenticationMethod _defaultAuthenticationMethod = StorageAuthenticationMethod.CurrentUser();
 
     /// <summary>
     /// Initializes a new data of the <see cref="DataClient"/> class.
@@ -65,14 +66,21 @@ public class DataClient : IDataClient
         string app,
         int instanceOwnerPartyId,
         string dataType,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
         where T : notnull
     {
         using var activity = _telemetry?.StartInsertFormDataActivity(instanceGuid, instanceOwnerPartyId);
         Instance instance = new() { Id = $"{instanceOwnerPartyId}/{instanceGuid}" };
-        return await InsertFormData(instance, dataType, dataToSerialize, type, cancellationToken: cancellationToken);
+        return await InsertFormData(
+            instance,
+            dataType,
+            dataToSerialize,
+            type,
+            storageAuthenticationMethod,
+            cancellationToken
+        );
     }
 
     /// <inheritdoc />
@@ -81,7 +89,7 @@ public class DataClient : IDataClient
         string dataTypeString,
         T dataToSerialize,
         Type type,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
         where T : notnull
@@ -90,7 +98,7 @@ public class DataClient : IDataClient
         string apiUrl = $"instances/{instance.Id}/data?dataType={dataTypeString}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -132,7 +140,7 @@ public class DataClient : IDataClient
         string app,
         int instanceOwnerPartyId,
         Guid dataId,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
         where T : notnull
@@ -142,7 +150,7 @@ public class DataClient : IDataClient
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -174,7 +182,7 @@ public class DataClient : IDataClient
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataId,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -183,7 +191,7 @@ public class DataClient : IDataClient
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -211,7 +219,7 @@ public class DataClient : IDataClient
         string app,
         int instanceOwnerPartyId,
         Guid dataId,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -220,7 +228,7 @@ public class DataClient : IDataClient
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -252,7 +260,7 @@ public class DataClient : IDataClient
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataId,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -261,7 +269,7 @@ public class DataClient : IDataClient
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -281,7 +289,7 @@ public class DataClient : IDataClient
         string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -290,7 +298,7 @@ public class DataClient : IDataClient
         string apiUrl = $"instances/{instanceIdentifier}/dataelements";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -371,7 +379,7 @@ public class DataClient : IDataClient
         Guid instanceGuid,
         Guid dataGuid,
         bool delay,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -380,7 +388,7 @@ public class DataClient : IDataClient
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataGuid}?delay={delay}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -405,7 +413,7 @@ public class DataClient : IDataClient
         Guid instanceGuid,
         string dataType,
         HttpRequest request,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -415,7 +423,7 @@ public class DataClient : IDataClient
             $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data?dataType={dataType}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -445,7 +453,7 @@ public class DataClient : IDataClient
         string? filename,
         Stream stream,
         string? generatedFromTask = null,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -457,7 +465,7 @@ public class DataClient : IDataClient
         }
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -497,7 +505,7 @@ public class DataClient : IDataClient
         Guid instanceGuid,
         Guid dataGuid,
         HttpRequest request,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -506,7 +514,7 @@ public class DataClient : IDataClient
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -536,7 +544,7 @@ public class DataClient : IDataClient
         string? filename,
         Guid dataGuid,
         Stream stream,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -544,7 +552,7 @@ public class DataClient : IDataClient
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -577,7 +585,7 @@ public class DataClient : IDataClient
     public async Task<DataElement> Update(
         Instance instance,
         DataElement dataElement,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -585,7 +593,7 @@ public class DataClient : IDataClient
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instance.Id}/dataelements/{dataElement.Id}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -609,7 +617,7 @@ public class DataClient : IDataClient
     public async Task<DataElement> LockDataElement(
         InstanceIdentifier instanceIdentifier,
         Guid dataGuid,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -617,7 +625,7 @@ public class DataClient : IDataClient
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
@@ -649,7 +657,7 @@ public class DataClient : IDataClient
     public async Task<DataElement> UnlockDataElement(
         InstanceIdentifier instanceIdentifier,
         Guid dataGuid,
-        AuthenticationMethod? authenticationMethod = null,
+        StorageAuthenticationMethod? storageAuthenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -657,7 +665,7 @@ public class DataClient : IDataClient
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
+            storageAuthenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 

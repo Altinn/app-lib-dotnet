@@ -5,6 +5,7 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.AuthenticationMethod;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage;
