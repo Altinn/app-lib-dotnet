@@ -2,27 +2,12 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Internal;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.AuthenticationMethod;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Infrastructure.Clients.Storage;
-
-/// <summary>
-/// Resolves authentication tokens based on the specified authentication method.
-/// </summary>
-internal interface IAuthenticationTokenResolver
-{
-    /// <summary>
-    /// Retrieves an access token based on the specified authentication method.
-    /// </summary>
-    Task<JwtToken> GetAccessToken(
-        AuthenticationMethod authenticationMethod,
-        CancellationToken cancellationToken = default
-    );
-}
+namespace Altinn.App.Core.Internal.Auth;
 
 /// <inheritdoc />
 internal class AuthenticationTokenResolver : IAuthenticationTokenResolver
