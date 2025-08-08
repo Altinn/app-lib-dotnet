@@ -46,7 +46,7 @@ internal class AuthenticationTokenResolver : IAuthenticationTokenResolver
         return authenticationMethod switch
         {
             AuthenticationMethod.UserToken => GetCurrentUserToken(),
-            AuthenticationMethod.AltinnToken request when _isDev => await GetLocalTestToken(request, cancellationToken),
+            AuthenticationMethod.AltinnToken request when _isDev => await GetLocaltestToken(request, cancellationToken),
             AuthenticationMethod.AltinnToken request => await GetAltinnToken(request, cancellationToken),
             AuthenticationMethod.MaskinportenToken request => await GetMaskinportenToken(request, cancellationToken),
             AuthenticationMethod.CustomToken request => await request.TokenProvider.Invoke(),
@@ -70,7 +70,7 @@ internal class AuthenticationTokenResolver : IAuthenticationTokenResolver
         return JwtToken.Parse(token);
     }
 
-    private async Task<JwtToken> GetLocalTestToken(
+    private async Task<JwtToken> GetLocaltestToken(
         AuthenticationMethod.AltinnToken request,
         CancellationToken cancellationToken
     )

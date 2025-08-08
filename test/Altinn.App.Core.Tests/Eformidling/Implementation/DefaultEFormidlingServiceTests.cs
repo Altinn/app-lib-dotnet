@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.AuthenticationMethod;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Common.EFormidlingClient;
 using Altinn.Common.EFormidlingClient.Models.SBD;
@@ -165,7 +166,9 @@ public class DefaultEFormidlingServiceTests
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<Guid>()
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(Stream.Null);

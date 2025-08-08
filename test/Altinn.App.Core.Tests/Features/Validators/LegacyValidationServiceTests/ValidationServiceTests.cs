@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.AuthenticationMethod;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
@@ -285,7 +286,15 @@ public sealed class ValidationServiceTests : IDisposable
     {
         _dataClientMock
             .Setup(d =>
-                d.GetDataBytes(DefaultOrg, DefaultApp, DefaultPartyId, _defaultInstanceId, _defaultDataElementId)
+                d.GetDataBytes(
+                    DefaultOrg,
+                    DefaultApp,
+                    DefaultPartyId,
+                    _defaultInstanceId,
+                    _defaultDataElementId,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
             )
             .ReturnsAsync(_modelSerialization.SerializeToXml(data).ToArray())
             .Verifiable(Times.AtLeastOnce);

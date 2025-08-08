@@ -12,6 +12,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.AuthenticationMethod;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
@@ -87,7 +88,9 @@ public sealed class PatchServiceTests : IDisposable
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<Stream>()
+                    It.IsAny<Stream>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(_dataElement)
@@ -316,7 +319,9 @@ public sealed class PatchServiceTests : IDisposable
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<Guid>()
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(_modelSerializationService.SerializeToXml(oldModel).ToArray())

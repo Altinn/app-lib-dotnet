@@ -7,6 +7,7 @@ using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
+using Altinn.App.Core.Models.AuthenticationMethod;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Hosting;
@@ -85,7 +86,9 @@ public class PaymentProcessTaskTests
                 "application/pdf",
                 "Betalingskvittering.pdf",
                 It.IsAny<Stream>(),
-                taskId
+                taskId,
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
     }
@@ -118,7 +121,9 @@ public class PaymentProcessTaskTests
                     "application/pdf",
                     "Betalingskvittering.pdf",
                     It.IsAny<Stream>(),
-                    taskId
+                    taskId,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 ),
             Times.Never
         );
@@ -149,7 +154,9 @@ public class PaymentProcessTaskTests
                     "application/pdf",
                     "Betalingskvittering.pdf",
                     It.IsAny<Stream>(),
-                    taskId
+                    taskId,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 ),
             Times.Never
         );
