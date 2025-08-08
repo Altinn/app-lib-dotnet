@@ -10,12 +10,6 @@ namespace Altinn.App.Core.Models.AuthenticationMethod;
 /// </remarks>
 public abstract record AuthenticationMethod
 {
-    private static readonly string[] _serviceOwnerScopes =
-    [
-        "altinn:serviceowner/instances.read",
-        "altinn:serviceowner/instances.write",
-    ];
-
     /// <inheritdoc cref="AuthenticationMethod.UserToken"/>
     internal static UserToken CurrentUser() => new();
 
@@ -39,6 +33,14 @@ public abstract record AuthenticationMethod
 
     /// <inheritdoc cref="AuthenticationMethod.CustomToken"/>
     internal static CustomToken Custom(Func<Task<JwtToken>> tokenProvider) => new(tokenProvider);
+
+    private static readonly string[] _serviceOwnerScopes =
+    [
+        "altinn:serviceowner/instances.read",
+        "altinn:serviceowner/instances.write",
+    ];
+
+    private AuthenticationMethod() { }
 
     /// <summary>
     /// Indicates that an operation should be authenticated using the current user's token
