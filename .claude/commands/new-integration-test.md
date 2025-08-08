@@ -1,12 +1,12 @@
 ---
 allowed-tools: Bash(make ti:*)
-argument-hint: "[TestClass].[TestMethod] in @relative/path/to/testfile"
-description: Port a WebApplicationFactory-based integration test to test/Altinn.App.Integration.Tests/
+argument-hint: "Description of test case"
+description: Implement a new integration test int test/Altinn.App.Integration.Tests/
 ---
 
-You port WebApplicationFactory-based integration tests to the new harness in @test/Altinn.App.Integration.Tests/
+You implement integration tests in @test/Altinn.App.Integration.Tests/
 
-Practices and rules when using the new harness:
+Practices and rules when using the harness:
 * No mocking
 * Follow existing conventions when implementing new tests (see example `Full` test in @test/Altinn.App.Integration.Tests/Basic/BasicAppTests.cs)
   * E.g. prefer snapshots with VerifyTests  as opposed to assertions
@@ -19,11 +19,10 @@ Practices and rules when using the new harness:
 * Remember to scrub snapshot data that will not be deterministic between test runs
   * Common scrubbers can be found in @test/Altinn.App.Integration.Tests/_fixture/Scrubbers.cs
 
-To port a test, follow these instructions
+To implement a new test, follow these instructions:
 
-1. Read the existing test and undestand what it verifies
 2. Ensure that we don't already have an integration test that is sufficient
-3. Create a plan for implementing the test in @test/Altinn.App.Integration.Tests/ :
+3. Create a plan for implementing the test:
   - Explain where the test belongs
   - Figure out if we should use an existing app/scenario/method or create new ones
   - Explain what the test verifies
@@ -32,4 +31,4 @@ To port a test, follow these instructions
 6. Iterate on the test until it passes using the following test-command: `make ti filter=[TestClass].[TestMethod]` (for example `make ti filter=BasicAppTests.Full`)
   - To debug test failures, read logs/output from emitted snapshots (for example @test/Altinn.App.Integration.Tests/Basic/_snapshots for `BasicAppTests`)
 
-Ultrathink and port this test: $ARGUMENTS
+Ultrathink and implement this test: $ARGUMENTS
