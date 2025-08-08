@@ -32,6 +32,9 @@ public abstract record AuthenticationMethod
     public static MaskinportenToken Maskinporten(string scope, params string[] additionalScopes) =>
         new([scope, .. additionalScopes]);
 
+    /// <inheritdoc cref="AuthenticationMethod.MaskinportenToken"/>
+    public static MaskinportenToken Maskinporten(IEnumerable<string> scopes) => new([.. scopes]);
+
     /// <inheritdoc cref="AuthenticationMethod.CustomToken"/>
     public static CustomToken Custom(Func<Task<JwtToken>> tokenProvider) => new(tokenProvider);
 
