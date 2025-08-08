@@ -11,11 +11,14 @@ internal sealed class ScopedVerifier
 {
     private int _index = 0;
     private readonly AppFixture _fixture;
+    private object? _testCase;
 
     internal ScopedVerifier(AppFixture fixture)
     {
         _fixture = fixture;
     }
+
+    public void UseTestCase(object testCase) => _testCase = testCase;
 
     public SettingsTask Verify<T>(
         AppFixture.ReadApiResponse<T> response,
@@ -79,19 +82,20 @@ internal sealed class ScopedVerifier
         }
     }
 
-    private static string BuildParameterString(int index, object? parameters, string? snapshotName)
+    private string BuildParameterString(int index, object? parameters, string? snapshotName)
     {
-        var parts = new List<string> { index.ToString() };
+        var parts = new List<string>(1);
 
-        if (parameters != null)
-        {
+        if (_testCase is not null)
+            parts.Add(FormatParameters(_testCase));
+
+        parts.Add(index.ToString());
+
+        if (parameters is not null)
             parts.Add(FormatParameters(parameters));
-        }
 
         if (!string.IsNullOrEmpty(snapshotName))
-        {
             parts.Add(snapshotName);
-        }
 
         return string.Join("_", parts);
     }
