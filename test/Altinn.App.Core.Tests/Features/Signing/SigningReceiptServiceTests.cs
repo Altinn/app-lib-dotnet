@@ -12,6 +12,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.AuthenticationMethod;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
@@ -134,7 +135,9 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
                     It.Is<string>(app => app == applicationMetadata.AppIdentifier.App),
                     It.Is<int>(party => party == instanceIdentifier.InstanceOwnerPartyId),
                     It.Is<Guid>(guid => guid == instanceIdentifier.InstanceGuid),
-                    It.Is<Guid>(id => id == Guid.Parse(signedElement.Id))
+                    It.Is<Guid>(id => id == Guid.Parse(signedElement.Id)),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync([1, 2, 3]);
@@ -415,7 +418,9 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
                     It.Is<string>(app => app == appMetadata.AppIdentifier.App),
                     It.Is<int>(party => party == instanceIdentifier.InstanceOwnerPartyId),
                     It.Is<Guid>(guid => guid == instanceIdentifier.InstanceGuid),
-                    It.Is<Guid>(id => id == Guid.Parse(signedElement.Id))
+                    It.Is<Guid>(id => id == Guid.Parse(signedElement.Id)),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync([1, 2, 3]);

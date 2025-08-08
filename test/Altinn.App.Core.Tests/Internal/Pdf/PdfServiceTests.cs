@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Models.AuthenticationMethod;
 using Altinn.App.Core.Tests.TestUtils;
 using Altinn.App.PlatformServices.Tests.Helpers;
 using Altinn.App.PlatformServices.Tests.Mocks;
@@ -185,7 +186,9 @@ public class PdfServiceTests
                     It.Is<string>(s => s == "application/pdf"),
                     It.Is<string>(s => s == "not-really-an-app.pdf"),
                     It.IsAny<Stream>(),
-                    It.Is<string>(s => s == "Task_1")
+                    It.Is<string>(s => s == "Task_1"),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 ),
             Times.Once
         );
@@ -251,7 +254,9 @@ public class PdfServiceTests
                     It.Is<string>(s => s == "application/pdf"),
                     It.Is<string>(s => s == "not-really-an-app.pdf"),
                     It.IsAny<Stream>(),
-                    It.Is<string>(s => s == "Task_1")
+                    It.Is<string>(s => s == "Task_1"),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 ),
             Times.Once
         );
