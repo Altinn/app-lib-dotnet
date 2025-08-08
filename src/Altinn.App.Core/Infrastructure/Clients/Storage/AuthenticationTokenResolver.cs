@@ -1,11 +1,10 @@
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Models;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage;
@@ -13,7 +12,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 /// <summary>
 /// Resolves authentication tokens based on the specified authentication method.
 /// </summary>
-public interface IAuthenticationTokenResolver
+internal interface IAuthenticationTokenResolver
 {
     /// <summary>
     /// Retrieves an access token based on the specified authentication method.
@@ -24,31 +23,32 @@ public interface IAuthenticationTokenResolver
     );
 }
 
+/// <inheritdoc />
 internal class AuthenticationTokenResolver : IAuthenticationTokenResolver
 {
-    private readonly IUserTokenProvider _userTokenProvider;
     private readonly IMaskinportenClient _maskinportenClient;
     private readonly IAppMetadata _appMetadata;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IOptionsMonitor<PlatformSettings> _platformSettings;
+    private readonly IAuthenticationContext _authenticationContext;
 
     private readonly bool _isDev;
+    private readonly string _localtestBaseUrl;
 
     public AuthenticationTokenResolver(
         IHttpClientFactory httpClientFactory,
-        IUserTokenProvider userTokenProvider,
         IMaskinportenClient maskinportenClient,
         IAppMetadata appMetadata,
-        IHostEnvironment hostEnvironment,
-        IOptionsMonitor<PlatformSettings> platformSettings
+        IAuthenticationContext authenticationContext,
+        IOptions<PlatformSettings> platformSettings,
+        IOptions<GeneralSettings> generalSettings
     )
     {
-        _userTokenProvider = userTokenProvider;
         _maskinportenClient = maskinportenClient;
         _appMetadata = appMetadata;
         _httpClientFactory = httpClientFactory;
-        _platformSettings = platformSettings;
-        _isDev = hostEnvironment.IsDevelopment();
+        _authenticationContext = authenticationContext;
+        _isDev = LocaltestValidation.IsLocaltest(generalSettings.Value);
+        _localtestBaseUrl = LocaltestValidation.GetLocaltestBaseUrl(platformSettings.Value);
     }
 
     /// <inheritdoc />
@@ -80,7 +80,7 @@ internal class AuthenticationTokenResolver : IAuthenticationTokenResolver
 
     private JwtToken GetCurrentUserToken()
     {
-        var token = _userTokenProvider.GetUserToken();
+        var token = _authenticationContext.Current.Token;
         return JwtToken.Parse(token);
     }
 
@@ -91,24 +91,18 @@ internal class AuthenticationTokenResolver : IAuthenticationTokenResolver
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         string formattedScopes = MaskinportenClient.GetFormattedScopes(request.Scopes);
-        string baseUrl = LocaltestValidation.GetLocaltestBaseUrl(_platformSettings.CurrentValue);
         string url =
-            $"{baseUrl}/Home/GetTestOrgToken?org={appMetadata.Org}&orgNumber=991825827&authenticationLevel=3&scopes={Uri.EscapeDataString(formattedScopes)}";
+            $"{_localtestBaseUrl}/Home/GetTestOrgToken?org={appMetadata.Org}&orgNumber=991825827&authenticationLevel=3&scopes={Uri.EscapeDataString(formattedScopes)}";
 
         using var client = _httpClientFactory.CreateClient();
-        using var response = await client.GetAsync(url, cancellationToken);
+        var response = await client.GetAsync(url, cancellationToken);
 
-        await EnsureSuccessStatusCode(response);
+        if (!response.IsSuccessStatusCode)
+            throw await PlatformHttpException.CreateAsync(response);
 
         string token = await response.Content.ReadAsStringAsync(cancellationToken);
+        response.Dispose(); // Disposing manually because PlatformHttpException pathway requires the response to be retained
+
         return JwtToken.Parse(token);
-    }
-
-    private static async Task EnsureSuccessStatusCode(HttpResponseMessage response)
-    {
-        if (response.IsSuccessStatusCode)
-            return;
-
-        throw await PlatformHttpException.CreateAsync(response);
     }
 }

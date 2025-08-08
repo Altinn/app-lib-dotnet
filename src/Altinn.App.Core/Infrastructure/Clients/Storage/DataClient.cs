@@ -13,6 +13,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -37,35 +38,22 @@ public class DataClient : IDataClient
     /// <summary>
     /// Initializes a new data of the <see cref="DataClient"/> class.
     /// </summary>
-    /// <param name="platformSettings">The platform settings</param>
-    /// <param name="logger">The logger</param>
-    /// <param name="httpClient">A HttpClient from the built in HttpClient factory.</param>
-    /// <param name="authenticationTokenResolver">Token resolver for http requests</param>
-    /// <param name="appMetadata">ApplicationMetadata provider</param>
-    /// <param name="modelSerializationService">Serialization service for data models</param>
-    /// <param name="telemetry">Telemetry for traces and metrics.</param>
-    public DataClient(
-        IOptions<PlatformSettings> platformSettings,
-        ILogger<DataClient> logger,
-        HttpClient httpClient,
-        IAuthenticationTokenResolver authenticationTokenResolver,
-        IAppMetadata appMetadata,
-        ModelSerializationService modelSerializationService,
-        Telemetry? telemetry = null
-    )
+    /// <param name="httpClient">A HttpClient from the built-in HttpClient factory.</param>
+    /// <param name="serviceProvider">The service provider</param>
+    public DataClient(HttpClient httpClient, IServiceProvider serviceProvider)
     {
-        _platformSettings = platformSettings.Value;
-        _logger = logger;
+        _authenticationTokenResolver = serviceProvider.GetRequiredService<IAuthenticationTokenResolver>();
+        _appMetadata = serviceProvider.GetRequiredService<IAppMetadata>();
+        _modelSerializationService = serviceProvider.GetRequiredService<ModelSerializationService>();
+        _platformSettings = serviceProvider.GetRequiredService<IOptions<PlatformSettings>>().Value;
+        _logger = serviceProvider.GetRequiredService<ILogger<DataClient>>();
+        _telemetry = serviceProvider.GetService<Telemetry>();
 
         httpClient.BaseAddress = new Uri(_platformSettings.ApiStorageEndpoint);
         httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         _client = httpClient;
-        _authenticationTokenResolver = authenticationTokenResolver;
-        _appMetadata = appMetadata;
-        _modelSerializationService = modelSerializationService;
-        _telemetry = telemetry;
     }
 
     /// <inheritdoc />

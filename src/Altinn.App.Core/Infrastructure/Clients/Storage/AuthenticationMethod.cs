@@ -1,6 +1,5 @@
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Models;
-using Microsoft.AspNetCore.Http;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 
@@ -37,8 +36,7 @@ public abstract record AuthenticationMethod
     public static CustomToken Custom(Func<Task<JwtToken>> tokenProvider) => new(tokenProvider);
 
     /// <summary>
-    /// Indicates that an operation should be authenticated using the current user's token,
-    /// provided by the <see cref="HttpContext"/>.
+    /// Indicates that an operation should be authenticated using the current user's token
     /// </summary>
     public sealed record UserToken : AuthenticationMethod
     {
