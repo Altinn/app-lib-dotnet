@@ -1,9 +1,9 @@
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
-/// Represents an attachment to a correspondence.
+/// Represents a base attachment of a correspondence.
 /// </summary>
-public sealed record CorrespondenceAttachment : MultipartCorrespondenceItem
+public abstract record CorrespondenceAttachment : MultipartCorrespondenceItem
 {
     /// <summary>
     /// The filename of the attachment.
@@ -27,20 +27,7 @@ public sealed record CorrespondenceAttachment : MultipartCorrespondenceItem
         CorrespondenceDataLocationType.ExistingCorrespondenceAttachment;
 
     /// <summary>
-    /// The data content.
+    /// Serialise method
     /// </summary>
-    public required ReadOnlyMemory<byte> Data { get; init; }
-
-    internal void Serialise(MultipartFormDataContent content, int index, string? filenameOverride = null)
-    {
-        const string typePrefix = "Correspondence.Content.Attachments";
-        string prefix = $"{typePrefix}[{index}]";
-        string actualFilename = filenameOverride ?? Filename;
-
-        AddRequired(content, actualFilename, $"{prefix}.Filename");
-        AddRequired(content, SendersReference, $"{prefix}.SendersReference");
-        AddRequired(content, DataLocationType.ToString(), $"{prefix}.DataLocationType");
-        AddRequired(content, Data, "Attachments", actualFilename); // NOTE: No prefix!
-        AddIfNotNull(content, IsEncrypted?.ToString(), $"{prefix}.IsEncrypted");
-    }
+    internal abstract void Serialise(MultipartFormDataContent content, int index, string? filenameOverride = null);
 }

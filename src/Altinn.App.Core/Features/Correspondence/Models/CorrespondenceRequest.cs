@@ -41,6 +41,13 @@ public abstract record MultipartCorrespondenceItem
         content.Add(new ReadOnlyMemoryContent(data), name, filename);
     }
 
+    internal static void AddRequired(MultipartFormDataContent content, Stream data, string name, string filename)
+    {
+        if (data is null)
+            throw new CorrespondenceArgumentException($"Required value is missing: {name}");
+        content.Add(new StreamContent(data), name, filename);
+    }
+
     internal static void AddIfNotNull(MultipartFormDataContent content, string? value, string name)
     {
         if (!string.IsNullOrWhiteSpace(value))
@@ -301,7 +308,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     /// <summary>
     /// Existing attachments that should be added to the correspondence.
     /// </summary>
-    public IReadOnlyList<Guid>? ExistingAttachments { get; init; }
+    public IReadOnlyList<Guid>? ExistingAttachments { get; set; }
 
     /// <summary>
     /// Serialises the entire <see cref="CorrespondenceRequest"/> object to a provided <see cref="MultipartFormDataContent"/> instance.
@@ -321,7 +328,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
         AddIfNotNull(content, IgnoreReservation?.ToString(), "Correspondence.IgnoreReservation");
         AddIfNotNull(content, IsConfirmationNeeded?.ToString(), "Correspondence.IsConfirmationNeeded");
         AddDictionaryItems(content, PropertyList, x => x, key => $"Correspondence.PropertyList.{key}");
-        AddListItems(content, ExistingAttachments, x => x.ToString(), i => $"Correspondence.ExistingAttachments[{i}]");
+        AddListItems(content, ExistingAttachments, x => x.ToString(), i => $"ExistingAttachments[{i}]");
         AddListItems(content, Recipients, x => x.ToUrnFormattedString(), i => $"Recipients[{i}]");
 
         Content.Serialise(content);

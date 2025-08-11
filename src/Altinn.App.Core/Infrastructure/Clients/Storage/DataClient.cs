@@ -60,6 +60,7 @@ public class DataClient : IDataClient
         httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
+        httpClient.Timeout = TimeSpan.FromMinutes(30);
         _client = httpClient;
         _userTokenProvider = userTokenProvider;
         _appMetadata = appMetadata;
@@ -179,14 +180,25 @@ public class DataClient : IDataClient
 
         string token = _userTokenProvider.GetUserToken();
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetStreamingAsync(token, apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadAsStreamAsync();
+            Stream? stream = null;
+            try
+            {
+                stream = await response.Content.ReadAsStreamAsync();
+                return new ResponseWrapperStream(response, stream);
+            }
+            catch (Exception)
+            {
+                response.Dispose();
+                throw;
+            }
         }
         else if (response.StatusCode == HttpStatusCode.NotFound)
         {
+            response.Dispose();
 #nullable disable
             return null;
 #nullable restore
