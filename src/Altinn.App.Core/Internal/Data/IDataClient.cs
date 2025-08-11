@@ -21,7 +21,7 @@ public interface IDataClient
     /// <param name="app">Application identifier which is unique within an organisation.</param>
     /// <param name="instanceOwnerPartyId">The instance owner id</param>
     /// <param name="dataType">The data type to create, must be a valid data type defined in application metadata</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     Task<DataElement> InsertFormData<T>(
         T dataToSerialize,
@@ -31,7 +31,7 @@ public interface IDataClient
         string app,
         int instanceOwnerPartyId,
         string dataType,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
         where T : notnull;
@@ -44,7 +44,7 @@ public interface IDataClient
     /// <param name="dataTypeString">The data type with requirements</param>
     /// <param name="dataToSerialize">The data element instance</param>
     /// <param name="type">The class type describing the data</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     /// <returns>The data element metadata</returns>
     Task<DataElement> InsertFormData<T>(
@@ -52,7 +52,7 @@ public interface IDataClient
         string dataTypeString,
         T dataToSerialize,
         Type type,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
         where T : notnull;
@@ -68,7 +68,7 @@ public interface IDataClient
     /// <param name="app">Application identifier which is unique within an organisation.</param>
     /// <param name="instanceOwnerPartyId">The instance owner id</param>
     /// <param name="dataId">the data id</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     //TODO: [Obsolete in v9 in favour of a version that gets the dataType so we can support json and xml]
     Task<DataElement> UpdateData<T>(
@@ -79,7 +79,7 @@ public interface IDataClient
         string app,
         int instanceOwnerPartyId,
         Guid dataId,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
         where T : notnull;
@@ -93,7 +93,7 @@ public interface IDataClient
     /// <param name="app">Application identifier which is unique within an organisation.</param>
     /// <param name="instanceOwnerPartyId">The instance owner id</param>
     /// <param name="dataId">the data id</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     Task<object> GetFormData(
         Guid instanceGuid,
@@ -102,7 +102,7 @@ public interface IDataClient
         string app,
         int instanceOwnerPartyId,
         Guid dataId,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 
@@ -114,7 +114,7 @@ public interface IDataClient
     /// <param name="instanceOwnerPartyId">The instance owner id</param>
     /// <param name="instanceGuid">The instance id</param>
     /// <param name="dataId">the data id</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     Task<Stream> GetBinaryData(
         string org,
@@ -122,7 +122,7 @@ public interface IDataClient
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataId,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 
@@ -134,7 +134,7 @@ public interface IDataClient
     /// <param name="instanceOwnerPartyId">The instance owner id</param>
     /// <param name="instanceGuid">The instance id</param>
     /// <param name="dataId">the data id</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     /// <returns>The raw HttpResponseMessage from the call to platform</returns>
     Task<byte[]> GetDataBytes(
@@ -143,7 +143,7 @@ public interface IDataClient
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataId,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 
@@ -154,7 +154,7 @@ public interface IDataClient
     /// <param name="app">Application identifier which is unique within an organisation.</param>
     /// <param name="instanceOwnerPartyId">The instance owner id</param>
     /// <param name="instanceGuid">The instance id</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     /// <returns>A list with attachments metadata ordered by attachmentType</returns>
     Task<List<AttachmentList>> GetBinaryDataList(
@@ -162,7 +162,7 @@ public interface IDataClient
         string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 
@@ -186,7 +186,7 @@ public interface IDataClient
     /// <param name="instanceGuid">The instance id</param>
     /// <param name="dataGuid">The attachment id</param>
     /// <param name="delay">A boolean indicating whether or not the delete should be executed immediately or delayed</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     Task<bool> DeleteData(
         string org,
@@ -195,7 +195,7 @@ public interface IDataClient
         Guid instanceGuid,
         Guid dataGuid,
         bool delay,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 
@@ -208,7 +208,7 @@ public interface IDataClient
     /// <param name="instanceGuid">The instance id</param>
     /// <param name="dataType">The data type to create, must be a valid data type defined in application metadata</param>
     /// <param name="request">Http request containing the attachment to be saved</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     Task<DataElement> InsertBinaryData(
         string org,
@@ -217,7 +217,7 @@ public interface IDataClient
         Guid instanceGuid,
         string dataType,
         HttpRequest request,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 
@@ -230,7 +230,7 @@ public interface IDataClient
     /// <param name="instanceGuid">The instance id</param>
     /// <param name="dataGuid">The data id</param>
     /// <param name="request">Http request containing the attachment to be saved</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     [Obsolete(
         message: "Deprecated please use UpdateBinaryData(InstanceIdentifier, string, string, Guid, Stream) instead",
@@ -243,7 +243,7 @@ public interface IDataClient
         Guid instanceGuid,
         Guid dataGuid,
         HttpRequest request,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 
@@ -255,7 +255,7 @@ public interface IDataClient
     /// <param name="filename">Filename of the updated binary data</param>
     /// <param name="dataGuid">Guid of the data element to update</param>
     /// <param name="stream">Updated binary data</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     Task<DataElement> UpdateBinaryData(
         InstanceIdentifier instanceIdentifier,
@@ -263,7 +263,7 @@ public interface IDataClient
         string? filename,
         Guid dataGuid,
         Stream stream,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 
@@ -276,7 +276,7 @@ public interface IDataClient
     /// <param name="filename">filename</param>
     /// <param name="stream">the stream to stream</param>
     /// <param name="generatedFromTask">Optional field to set what task the binary data was generated from</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     Task<DataElement> InsertBinaryData(
         string instanceId,
@@ -285,7 +285,7 @@ public interface IDataClient
         string? filename,
         Stream stream,
         string? generatedFromTask = null,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 
@@ -294,13 +294,13 @@ public interface IDataClient
     /// </summary>
     /// <param name="instance">The instance which is not updated</param>
     /// <param name="dataElement">The data element with values to update</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     /// <returns>the updated data element</returns>
     Task<DataElement> Update(
         Instance instance,
         DataElement dataElement,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 
@@ -309,12 +309,12 @@ public interface IDataClient
     /// </summary>
     /// <param name="instanceIdentifier">InstanceIdentifier identifying the instance containing the DataElement to lock</param>
     /// <param name="dataGuid">Id of the DataElement to lock</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     Task<DataElement> LockDataElement(
         InstanceIdentifier instanceIdentifier,
         Guid dataGuid,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 
@@ -323,12 +323,12 @@ public interface IDataClient
     /// </summary>
     /// <param name="instanceIdentifier">InstanceIdentifier identifying the instance containing the DataElement to unlock</param>
     /// <param name="dataGuid">Id of the DataElement to unlock</param>
-    /// <param name="storageAuthenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     Task<DataElement> UnlockDataElement(
         InstanceIdentifier instanceIdentifier,
         Guid dataGuid,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     );
 }

@@ -59,7 +59,7 @@ public class DataClientMock : IDataClient
         Guid instanceGuid,
         Guid dataGuid,
         bool delay,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -114,7 +114,7 @@ public class DataClientMock : IDataClient
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataId,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -125,7 +125,7 @@ public class DataClientMock : IDataClient
                 instanceOwnerPartyId,
                 instanceGuid,
                 dataId,
-                storageAuthenticationMethod,
+                authenticationMethod,
                 cancellationToken
             )
         );
@@ -137,7 +137,7 @@ public class DataClientMock : IDataClient
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataId,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -151,7 +151,7 @@ public class DataClientMock : IDataClient
         string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -185,7 +185,7 @@ public class DataClientMock : IDataClient
         string app,
         int instanceOwnerPartyId,
         Guid dataId,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -214,7 +214,7 @@ public class DataClientMock : IDataClient
         string dataTypeString,
         T dataToSerialize,
         Type type,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
         where T : notnull
@@ -232,7 +232,7 @@ public class DataClientMock : IDataClient
             app,
             instanceOwnerId,
             dataTypeString,
-            storageAuthenticationMethod,
+            authenticationMethod,
             cancellationToken
         );
     }
@@ -245,7 +245,7 @@ public class DataClientMock : IDataClient
         string app,
         int instanceOwnerPartyId,
         string dataTypeString,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
         where T : notnull
@@ -283,7 +283,7 @@ public class DataClientMock : IDataClient
         string app,
         int instanceOwnerPartyId,
         Guid dataGuid,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
         where T : notnull
@@ -329,7 +329,7 @@ public class DataClientMock : IDataClient
         Guid instanceGuid,
         string dataType,
         HttpRequest request,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -373,7 +373,7 @@ public class DataClientMock : IDataClient
         string? filename,
         Guid dataGuid,
         Stream stream,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -427,7 +427,7 @@ public class DataClientMock : IDataClient
         string? filename,
         Stream stream,
         string? generatedFromTask = null,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -481,7 +481,7 @@ public class DataClientMock : IDataClient
         Guid instanceGuid,
         Guid dataGuid,
         HttpRequest request,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -491,7 +491,7 @@ public class DataClientMock : IDataClient
     public async Task<DataElement> Update(
         Instance instance,
         DataElement dataElement,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -507,7 +507,7 @@ public class DataClientMock : IDataClient
     public async Task<DataElement> LockDataElement(
         InstanceIdentifier instanceIdentifier,
         Guid dataGuid,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -530,7 +530,7 @@ public class DataClientMock : IDataClient
     public async Task<DataElement> UnlockDataElement(
         InstanceIdentifier instanceIdentifier,
         Guid dataGuid,
-        StorageAuthenticationMethod? storageAuthenticationMethod = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
