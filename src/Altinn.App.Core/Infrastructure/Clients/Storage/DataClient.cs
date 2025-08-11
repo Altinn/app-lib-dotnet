@@ -60,6 +60,7 @@ public class DataClient : IDataClient
         httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
+        httpClient.Timeout = TimeSpan.FromMinutes(30);
         _client = httpClient;
         _userTokenProvider = userTokenProvider;
         _appMetadata = appMetadata;
