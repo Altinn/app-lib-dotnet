@@ -1211,7 +1211,7 @@ public class DataClientTests
 
             foreach (var authMethod in AuthenticationMethods)
             {
-                if (authMethod.ToString() == targetMethod)
+                if (authMethod?.ToString() == targetMethod)
                 {
                     _inner = authMethod;
                     return;
