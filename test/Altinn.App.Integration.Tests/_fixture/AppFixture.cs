@@ -10,6 +10,7 @@ using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Images;
 using DotNet.Testcontainers.Networks;
 using Microsoft.Extensions.Logging;
+using TestApp.Shared;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Integration.Tests;
@@ -56,15 +57,16 @@ public sealed partial class AppFixture : IAsyncDisposable
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
 
     private readonly TestOutputLogger _logger;
-    private readonly long _currentFixtureInstance;
+    private long _currentFixtureInstance;
     private readonly string _app;
     private readonly string _scenario;
     private readonly INetwork _network;
     private readonly IContainer _localtestContainer;
     private readonly IContainer _appContainer;
-    private readonly string _portConfigDirectory;
+    private readonly string _fixtureConfigDirectory;
+    private readonly bool _isClassFixture;
 
-    internal ScopedVerifier ScopedVerifier { get; }
+    internal ScopedVerifier ScopedVerifier { get; private set; }
 
     private HttpClient? _appClient;
     private HttpClient? _localtestClient;
@@ -96,9 +98,6 @@ public sealed partial class AppFixture : IAsyncDisposable
             { "PlatformSettings__ApiPdf2Endpoint", pdfServiceUrl },
             { "PlatformSettings__ApiNotificationEndpoint", $"{_localtestUrl}/notifications/api/v1/" },
             { "PlatformSettings__ApiCorrespondenceEndpoint", $"{_localtestUrl}/correspondence/api/v1/" },
-            { "TEST_FIXTURE_INSTANCE", $"{fixtureInstance:00}" },
-            { "TEST_APP_NAME", name },
-            { "TEST_APP_SCENARIO", scenario },
         };
     }
 
@@ -110,7 +109,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         INetwork network,
         IContainer localtestContainer,
         IContainer appContainer,
-        string portConfigDirectory
+        string fixtureConfigDirectory,
+        bool isClassFixture
     )
     {
         _logger = logger;
@@ -120,7 +120,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         _network = network;
         _localtestContainer = localtestContainer;
         _appContainer = appContainer;
-        _portConfigDirectory = portConfigDirectory;
+        _fixtureConfigDirectory = fixtureConfigDirectory;
+        _isClassFixture = isClassFixture;
         ScopedVerifier = new ScopedVerifier(this);
     }
 
@@ -369,7 +370,8 @@ public sealed partial class AppFixture : IAsyncDisposable
             logger.LogInformation("Building app container image");
 
             var appDirectory = GetAppDir(name);
-            CopyPackages(name);
+            SyncPackages(name);
+            SyncShared(name);
 
             var appBuilder = new ImageFromDockerfileBuilder()
                 .WithName($"applib-{name}:latest")
@@ -441,7 +443,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         INetwork network,
         IContainer localtestContainer,
         IContainer appContainer,
-        string portConfigDirectory
+        string fixtureConfigDirectory
     )> InitializeContainers(
         long fixtureInstance,
         string name,
@@ -455,12 +457,12 @@ public sealed partial class AppFixture : IAsyncDisposable
         var timer = Stopwatch.StartNew();
         var scenarioDirectory = GetScenarioDir(name, scenario);
 
-        // Create port configuration directory
-        var portConfigDirectory = Path.Combine(Path.GetTempPath(), $"applib-fixture-{fixtureInstance:00}-ports");
-        if (Directory.Exists(portConfigDirectory))
-            Directory.Delete(portConfigDirectory, true);
-        Directory.CreateDirectory(portConfigDirectory);
-        logger.LogInformation("Created port config directory: {PortConfigDirectory}", portConfigDirectory);
+        // Create fixture configuration directory
+        var fixtureConfigDirectory = Path.Combine(Path.GetTempPath(), $"applib-fixture-{fixtureInstance:00}-config");
+        if (Directory.Exists(fixtureConfigDirectory))
+            Directory.Delete(fixtureConfigDirectory, true);
+        Directory.CreateDirectory(fixtureConfigDirectory);
+        logger.LogInformation("Created fixture config directory: {FixtureConfigDirectory}", fixtureConfigDirectory);
 
         INetwork? network = null;
         IContainer? localtestContainer = null;
@@ -523,12 +525,12 @@ public sealed partial class AppFixture : IAsyncDisposable
                 appContainerBuilder = appContainerBuilder.WithBindMount(scenarioDirectory, "/App/scenario-overrides");
             }
 
-            // Mount port configuration directory
+            // Mount fixture configuration directory
             // Since we select random host ports for app containers we can't know in advance what the port will be
             // As soon as the container reaches the `Starting` state the port is available and mapped
-            // and so we use a volume as the means for injecting the port information.
+            // and so we use a volume as the means for injecting the fixture configuration.
             // The app starts with a fs watcher to retrieve the information efficiently
-            appContainerBuilder = appContainerBuilder.WithBindMount(portConfigDirectory, "/App/port-config");
+            appContainerBuilder = appContainerBuilder.WithBindMount(fixtureConfigDirectory, "/App/fixture-config");
             appContainer = appContainerBuilder.Build();
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             appContainer.Starting += (sender, args) =>
@@ -540,13 +542,20 @@ public sealed partial class AppFixture : IAsyncDisposable
             var localtestStartup = localtestContainer.StartAsync();
             var appStartup = appContainer.StartAsync();
 
-            // When the `Starting` event is raise we can proceed by writing port configuration to the mounted volume
+            // When the `Starting` event is raise we can proceed by writing fixture configuration to the mounted volume
             await tcs.Task;
-            await WritePortConfiguration(appContainer, portConfigDirectory, logger);
+            await WriteFixtureConfiguration(
+                name,
+                scenario,
+                appContainer,
+                fixtureConfigDirectory,
+                fixtureInstance,
+                logger
+            );
 
             await Task.WhenAll(localtestStartup, appStartup);
             logger.LogInformation("Built fixture in {ElapsedSeconds} s", timer.Elapsed.TotalSeconds.ToString("0.0"));
-            return (network, localtestContainer, appContainer, portConfigDirectory);
+            return (network, localtestContainer, appContainer, fixtureConfigDirectory);
         }
         catch (Exception ex)
         {
@@ -569,42 +578,56 @@ public sealed partial class AppFixture : IAsyncDisposable
         }
     }
 
-    private static async Task WritePortConfiguration(
+    private static async Task WriteFixtureConfiguration(
+        string name,
+        string scenario,
         IContainer appContainer,
-        string portConfigDirectory,
+        string fixtureConfigDirectory,
+        long fixtureInstance,
         TestOutputLogger logger
     )
     {
         try
         {
             var appPort = appContainer.GetMappedPublicPort(AppPort);
-            var portConfig = new
-            {
-                externalAppPort = appPort,
-                externalAppBaseUrl = $"http://local.altinn.cloud:{appPort}/{{org}}/{{app}}/",
-            };
+            var fixtureConfig = new FixtureConfiguration(
+                name,
+                scenario,
+                fixtureInstance,
+                appPort,
+                $"http://local.altinn.cloud:{appPort}/{{org}}/{{app}}/"
+            );
 
-            var portConfigJson = JsonSerializer.Serialize(
-                portConfig,
+            var configJson = JsonSerializer.Serialize(
+                fixtureConfig,
                 new JsonSerializerOptions { WriteIndented = true }
             );
-            var portConfigFile = Path.Combine(portConfigDirectory, "ports.json");
+            var configFile = Path.Combine(fixtureConfigDirectory, "config.json");
 
-            await File.WriteAllTextAsync(portConfigFile, portConfigJson);
-            logger.LogInformation("Wrote port configuration to {PortConfigFile}", portConfigFile);
+            await File.WriteAllTextAsync(configFile, configJson);
+            logger.LogInformation("Wrote fixture configuration to {ConfigFile}", configFile);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to write port configuration to {PortConfigDirectory}", portConfigDirectory);
+            logger.LogError(
+                ex,
+                "Failed to write fixture configuration to {FixtureConfigDirectory}",
+                fixtureConfigDirectory
+            );
             throw;
         }
     }
 
-    public static async Task<AppFixture> Create(ITestOutputHelper output, string name, string scenario = "default")
+    public static async Task<AppFixture> Create(
+        ITestOutputHelper output,
+        string app = TestApps.Basic,
+        string scenario = "default",
+        bool isClassFixture = false
+    )
     {
         var fixtureInstance = NextFixtureInstance();
-        var testContainersLogger = new TestOutputLogger(output, fixtureInstance, name, scenario, true);
-        var logger = new TestOutputLogger(output, fixtureInstance, name, scenario, false);
+        var testContainersLogger = new TestOutputLogger(output, fixtureInstance, app, scenario, true);
+        var logger = new TestOutputLogger(output, fixtureInstance, app, scenario, false);
 
         try
         {
@@ -618,7 +641,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             var localtestImageTask = EnsureLocaltestImageBuilt(logger, testContainersLogger);
             var pdfServiceTask = EnsurePdfServiceStarted(logger, testContainersLogger);
             await EnsureLibrariesPacked();
-            var appImageTask = EnsureAppImageBuilt(name, logger, testContainersLogger);
+            var appImageTask = EnsureAppImageBuilt(app, logger, testContainersLogger);
 
             await Task.WhenAll(localtestImageTask, pdfServiceTask, appImageTask);
             var localtestContainerImage = await localtestImageTask;
@@ -626,9 +649,9 @@ public sealed partial class AppFixture : IAsyncDisposable
             await pdfServiceTask; // We don't capture and dispose this anywhere. Testcontainers will take care of it
 
             // Initialize containers (including network creation and PDF service)
-            var (network, localtestContainer, appContainer, portConfigDirectory) = await InitializeContainers(
+            var (network, localtestContainer, appContainer, fixtureConfigDirectory) = await InitializeContainers(
                 fixtureInstance,
-                name,
+                app,
                 scenario,
                 localtestContainerImage,
                 appContainerImage,
@@ -639,12 +662,13 @@ public sealed partial class AppFixture : IAsyncDisposable
             return new AppFixture(
                 logger,
                 fixtureInstance,
-                name,
+                app,
                 scenario,
                 network,
                 localtestContainer,
                 appContainer,
-                portConfigDirectory
+                fixtureConfigDirectory,
+                isClassFixture
             );
         }
         catch (Exception ex)
@@ -652,6 +676,50 @@ public sealed partial class AppFixture : IAsyncDisposable
             logger.LogError(ex, "Failed to create fixture");
             throw;
         }
+    }
+
+    public async Task ResetBetweenTestsAsync(ITestOutputHelper? output = null)
+    {
+        Assert.True(_isClassFixture);
+
+        _currentFixtureInstance = NextFixtureInstance();
+
+        // Update logger with new test output helper and fixture instance
+        if (output != null)
+        {
+            _logger.UpdateOutput(output, _currentFixtureInstance);
+        }
+
+        // Update fixture configuration in the container with new fixture instance
+        await WriteFixtureConfiguration(
+            _app,
+            _scenario,
+            _appContainer,
+            _fixtureConfigDirectory,
+            _currentFixtureInstance,
+            _logger
+        );
+
+        // Reset error state
+        TestErrored = false;
+
+        // Dispose and reset HTTP clients to clear cookies, headers, and cached state
+        if (_localtestClient is not null)
+        {
+            _localtestClient.Dispose();
+            _localtestClient = null;
+        }
+        if (_appClient is not null)
+        {
+            _appClient.Dispose();
+            _appClient = null;
+        }
+
+        // Recreate ScopedVerifier to reset index counter and test case state
+        ScopedVerifier = new ScopedVerifier(this);
+
+        // Note: We intentionally keep containers running as they are expensive to restart
+        // and provide good isolation between tests through the HTTP layer
     }
 
     public async ValueTask DisposeAsync()
@@ -667,7 +735,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             _appClient = null;
         }
 
-        if (TestErrored)
+        if (TestErrored && !_isClassFixture)
         {
             // TestErrored is set to true for test/snapshot failures.
             // When this happens we might not reach the stage of the test where
@@ -685,26 +753,32 @@ public sealed partial class AppFixture : IAsyncDisposable
         await TryDispose(_localtestContainer);
         await TryDispose(_network);
 
-        // Clean up port config directory
-        if (Directory.Exists(_portConfigDirectory))
+        // Clean up fixture config directory
+        if (Directory.Exists(_fixtureConfigDirectory))
         {
             try
             {
-                Directory.Delete(_portConfigDirectory, true);
+                Directory.Delete(_fixtureConfigDirectory, true);
             }
             catch (Exception ex)
             {
                 // Log but don't throw - cleanup is best effort
                 _logger.LogWarning(
                     ex,
-                    "Failed to clean up port config directory {PortConfigDirectory}",
-                    _portConfigDirectory
+                    "Failed to clean up fixture config directory {FixtureConfigDirectory}",
+                    _fixtureConfigDirectory
                 );
             }
         }
     }
 
-    private static async Task LogContainerLogs(ILogger logger, IContainer? localtestContainer, IContainer? appContainer)
+    internal Task LogContainerLogs() => LogContainerLogs(_logger, _localtestContainer, _appContainer);
+
+    internal static async Task LogContainerLogs(
+        ILogger logger,
+        IContainer? localtestContainer,
+        IContainer? appContainer
+    )
     {
         if (localtestContainer is not null)
         {
@@ -831,28 +905,67 @@ public sealed partial class AppFixture : IAsyncDisposable
     private static async Task PackLibraries()
     {
         var output = Path.Join(_projectDirectory, "_testapps", "_packages");
+        if (Directory.Exists(output))
+            Directory.Delete(output, true);
+        Directory.CreateDirectory(output);
         var solutionDirectory = GetSolutionDir();
         var result = await Cli.Wrap("dotnet")
-            .WithArguments(["pack", "-c", "Release", "--output", output])
+            .WithArguments(
+                [
+                    "pack",
+                    "-c",
+                    "Release",
+                    // Ensure deterministic builds, also sets ContinuousIntegrationBuild through our src/Directory.Build.props
+                    "-p:Deterministic=true",
+                    // Embed symbols in the nupkg
+                    "-p:DebugType=embedded",
+                    // Don't generate additional snupkg-files which are not determistic and will mess with the Docker cache
+                    "-p:IncludeSymbols=false",
+                    "--output",
+                    output,
+                ]
+            )
             .WithWorkingDirectory(solutionDirectory)
             .ExecuteAsync();
         Assert.Equal(0, result.ExitCode);
+
+        var nupkgFiles = Directory.GetFiles(output, "*.nupkg");
+        Assert.NotEmpty(nupkgFiles);
+        await Task.WhenAll(
+            nupkgFiles.Select(async nupkgFile =>
+                await Cli.Wrap("dotnet").WithArguments(["NupkgDeterministicator", nupkgFile]).ExecuteAsync()
+            )
+        );
     }
 
-    private static void CopyPackages(string name)
+    private static void SyncPackages(string name)
     {
         var appDirectory = GetAppDir(name);
         var packagesDirectory = Path.Join(_projectDirectory, "_testapps", "_packages");
         var appPackagesDirectory = Path.Join(appDirectory, "..", "_packages");
         if (Directory.Exists(appPackagesDirectory))
-        {
             Directory.Delete(appPackagesDirectory, true);
-        }
         Directory.CreateDirectory(appPackagesDirectory);
         foreach (var file in Directory.GetFiles(packagesDirectory))
         {
             var fileName = Path.GetFileName(file);
             var destFile = Path.Combine(appPackagesDirectory, fileName);
+            File.Copy(file, destFile);
+        }
+    }
+
+    private static void SyncShared(string name)
+    {
+        var appDirectory = GetAppDir(name);
+        var sharedDirectory = Path.Join(_projectDirectory, "_testapps", "_shared");
+        var appSharedDirectory = Path.Join(appDirectory, "..", "_shared");
+        if (Directory.Exists(appSharedDirectory))
+            Directory.Delete(appSharedDirectory, true);
+        Directory.CreateDirectory(appSharedDirectory);
+        foreach (var file in Directory.GetFiles(sharedDirectory))
+        {
+            var fileName = Path.GetFileName(file);
+            var destFile = Path.Combine(appSharedDirectory, fileName);
             File.Copy(file, destFile);
         }
     }

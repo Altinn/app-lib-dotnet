@@ -2,6 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine@sha256:0f31419f1f4f6687dd29f8c12c13
 
 COPY NuGet.config .
 COPY _packages _packages/
+COPY _shared _shared/
 WORKDIR /App
 COPY /App/App.csproj .
 RUN dotnet restore App.csproj

@@ -68,10 +68,10 @@
   Response: {
     ValidationIssues: [
       {
-        Source: Altinn.App.Logic.Validator-Task_1
+        Source: TestApp.Shared.Validator-Task_1
       },
       {
-        Source: Altinn.App.Logic.FormDataValidator-*
+        Source: TestApp.Shared.FormDataValidator-*
       },
       {
         Source: DataAnnotations

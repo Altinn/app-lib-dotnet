@@ -47,7 +47,20 @@ internal sealed class TestOutputLogger(
     bool _forTestContainers
 ) : Logger
 {
-    private readonly ITestOutputHelper? _output = output;
+    private ITestOutputHelper? _output = output;
+    private long _currentFixtureInstance = _fixtureInstance;
+
+    /// <summary>
+    /// Updates the output helper for a new test method
+    /// </summary>
+    public void UpdateOutput(ITestOutputHelper? output, long? fixtureInstance = null)
+    {
+        _output = output;
+        if (fixtureInstance.HasValue)
+        {
+            _currentFixtureInstance = fixtureInstance.Value;
+        }
+    }
 
     protected override void Log<TState>(TState state, Exception? exception, Func<TState, Exception?, string?> formatter)
     {
@@ -57,7 +70,7 @@ internal sealed class TestOutputLogger(
         }
 
         var message = GetMessage(state, exception, formatter);
-        var prefix = $"{_fixtureInstance:00}/{_name}/{_scenario}";
+        var prefix = $"{_currentFixtureInstance:00}/{_name}/{_scenario}";
         if (_forTestContainers)
             _output.WriteLine($"[{prefix}/testcontainers] {message}");
         else

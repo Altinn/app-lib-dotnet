@@ -18,7 +18,6 @@ using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Common.EFormidlingClient.Models.SBD;
 using Altinn.Platform.Storage.Interface.Models;
-using BasicApp;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -27,7 +26,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 #nullable enable
 
-namespace Altinn.App.Logic;
+namespace TestApp.Shared;
 
 internal static class TracingDI
 {
