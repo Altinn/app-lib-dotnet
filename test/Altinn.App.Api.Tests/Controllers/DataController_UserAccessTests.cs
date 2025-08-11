@@ -1,29 +1,19 @@
 using System.Net;
 using Altinn.App.Api.Tests.Data;
-using Altinn.App.Core.Features;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Moq;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
 public class DataController_UserAccessTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
-    private readonly Mock<IDataProcessor> _dataProcessor = new();
     const string OrgId = "tdd";
     const string AppId = "contributer-restriction";
 
     public DataController_UserAccessTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
-        : base(factory, outputHelper)
-    {
-        OverrideServicesForAllTests = (services) =>
-        {
-            services.AddSingleton(_dataProcessor.Object);
-        };
-    }
+        : base(factory, outputHelper) { }
 
     [Theory]
     [InlineData("userInteractionUnspecified", false, HttpStatusCode.Created)]
@@ -54,7 +44,7 @@ public class DataController_UserAccessTests : ApiTestBase, IClassFixture<WebAppl
     [Theory]
     [InlineData("userInteractionUnspecified", false, HttpStatusCode.OK)]
     [InlineData("userInteractionUnspecified", true, HttpStatusCode.OK)]
-    [InlineData("disallowUserDelete", false, HttpStatusCode.OK)]
+    [InlineData("disallowUserDelete", false, HttpStatusCode.BadRequest)]
     [InlineData("disallowUserDelete", true, HttpStatusCode.OK)]
     public async Task DeleteDataElement_ImplementsAndValidates_AllowUserDeleteProperty(
         string dataModelId,

@@ -6,6 +6,7 @@ using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
@@ -45,7 +46,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
         Dictionary<string, string>? prefill = null
     )
     {
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
         prefill ??= new();
 
@@ -128,6 +129,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
         services.AddSingleton(new Mock<IHostEnvironment>().Object);
         services.AddSingleton(new Mock<IValidationService>().Object);
         services.AddSingleton(new Mock<ITranslationService>().Object);
+        services.AddSingleton(new Mock<IDataElementAccessChecker>().Object);
         services.AddSingleton(new Mock<IAppResources>(MockBehavior.Strict).Object);
 
         var httpContextMock = new Mock<HttpContext>();
