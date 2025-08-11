@@ -112,7 +112,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task InsertBinaryData_MethodProduceValidPlatformRequest_with_generatedFrom_query_params(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         // Arrange
@@ -163,7 +163,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task GetFormData_MethodProduceValidPlatformRequest_ReturnedFormIsValid(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         // Arrange
@@ -259,7 +259,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task UpdateBinaryData_put_updated_data_and_Return_DataElement(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -378,7 +378,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task GetBinaryData_returns_stream_of_binary_data(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -426,7 +426,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task GetBinaryData_returns_empty_stream_when_storage_returns_notfound(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -502,7 +502,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task GetBinaryDataList_returns_AttachemtList_when_DataElements_found(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -680,7 +680,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task DeleteData_returns_true_when_data_was_deleted_with_delay_true(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -726,7 +726,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task UpdateData_serializes_and_updates_formdata(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         ExampleModel exampleModel = new ExampleModel() { Name = "Test", Age = 22 };
@@ -810,7 +810,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task UpdateData_throws_platformhttpexception_if_platform_request_fails(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         object exampleModel = new ExampleModel() { Name = "Test", Age = 22 };
@@ -861,7 +861,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task LockDataElement_calls_lock_endpoint_in_storage_and_returns_updated_DataElement(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -907,7 +907,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task LockDataElement_throws_platformhttpexception_if_platform_request_fails(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -949,7 +949,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task UnlockDataElement_calls_lock_endpoint_in_storage_and_returns_updated_DataElement(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -995,7 +995,7 @@ public class DataClientTests
     [Theory]
     [MemberData(nameof(AuthenticationMethods))]
     public async Task UnlockDataElement_throws_platformhttpexception_if_platform_request_fails(
-        StorageAuthenticationMethodWrapper authenticationMethod
+        StorageAuthenticationMethodWrapper? authenticationMethod
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
