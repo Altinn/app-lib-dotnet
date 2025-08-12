@@ -31,30 +31,35 @@ namespace Altinn.App.Core.Tests.Infrastructure.Clients.Storage;
 
 public class DataClientTests
 {
+    [Obsolete("Called by the de-serializer; should only be called by deriving classes for de-serialization purposes")]
+    public DataClientTests() { }
+
     private const string ApiStorageEndpoint = "https://local.platform.altinn.no/api/storage/";
     private static readonly ApplicationMetadata _appMetadata = new("test-org/test-app");
+    private static readonly GeneralSettings _generalSettings = new() { HostName = "tt02.altinn.no" };
+    private static readonly PlatformSettings _platformSettings = new() { ApiStorageEndpoint = ApiStorageEndpoint };
     private static readonly Authenticated _defaultAuth = TestAuthentication.GetUserAuthentication();
 
     private static readonly TestTokens _testTokens = new(
-        JwtToken.Parse(_defaultAuth.Token),
-        JwtToken.Parse(TestAuthentication.GetServiceOwnerToken()),
-        TestAuthentication.GetMaskinportenToken("scope1").AccessToken,
-        TestAuthentication.GetMaskinportenToken("scope2").AccessToken
+        UserToken: JwtToken.Parse(_defaultAuth.Token),
+        ServiceOwnerToken: JwtToken.Parse(TestAuthentication.GetServiceOwnerToken()),
+        CustomToken: TestAuthentication.GetMaskinportenToken("scope").AccessToken
     );
 
-    public static TheoryData<StorageAuthenticationMethodWrapper?> AuthenticationMethods =>
-        new(
+    public static TheoryData<AuthenticationTestCase?> AuthenticationTestCases =>
+        [
             null,
-            StorageAuthenticationMethod.CurrentUser(),
-            StorageAuthenticationMethod.ServiceOwner(),
-            StorageAuthenticationMethod.Custom(() => Task.FromResult(_testTokens.CustomToken))
-        );
+            new(StorageAuthenticationMethod.CurrentUser(), _testTokens.UserToken),
+            new(StorageAuthenticationMethod.ServiceOwner(), _testTokens.ServiceOwnerToken),
+            new(
+                StorageAuthenticationMethod.Custom(() => Task.FromResult(_testTokens.CustomToken)),
+                _testTokens.CustomToken
+            ),
+        ];
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
-    public async Task InsertBinaryData_MethodProduceValidPlatformRequest(
-        StorageAuthenticationMethodWrapper? authenticationMethod
-    )
+    [MemberData(nameof(AuthenticationTestCases))]
+    public async Task InsertBinaryData_MethodProduceValidPlatformRequest(AuthenticationTestCase? testCase)
     {
         // Arrange
         HttpRequestMessage? platformRequest = null;
@@ -86,7 +91,7 @@ public class DataClientTests
             "application/pdf",
             "a cats story.pdf",
             stream,
-            authenticationMethod: authenticationMethod
+            authenticationMethod: testCase?.AuthenticationMethod
         );
 
         // Assert
@@ -98,21 +103,21 @@ public class DataClientTests
             HttpMethod.Post,
             "\"a cats story.pdf\"",
             "application/pdf",
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
+            expectedAuth: testCase?.ExpectedToken
         );
 
         VerifySettings verifySettings = new();
         verifySettings.UseMethodName(
-            $"{nameof(InsertBinaryData_MethodProduceValidPlatformRequest)}_{authenticationMethod?.ToString() ?? "DefaultAuth"}"
+            $"{nameof(InsertBinaryData_MethodProduceValidPlatformRequest)}_{testCase?.ToString() ?? "DefaultAuth"}"
         );
 
         await Verify(telemetrySink.GetSnapshot(), verifySettings);
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
+    [MemberData(nameof(AuthenticationTestCases))]
     public async Task InsertBinaryData_MethodProduceValidPlatformRequest_with_generatedFrom_query_params(
-        StorageAuthenticationMethodWrapper? authenticationMethod
+        AuthenticationTestCase? testCase
     )
     {
         // Arrange
@@ -144,7 +149,7 @@ public class DataClientTests
             "a cats story.pdf",
             stream,
             "Task_1",
-            authenticationMethod: authenticationMethod
+            authenticationMethod: testCase?.AuthenticationMethod
         );
 
         // Assert
@@ -156,14 +161,14 @@ public class DataClientTests
             HttpMethod.Post,
             "\"a cats story.pdf\"",
             "application/pdf",
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
+            expectedAuth: testCase?.ExpectedToken
         );
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
+    [MemberData(nameof(AuthenticationTestCases))]
     public async Task GetFormData_MethodProduceValidPlatformRequest_ReturnedFormIsValid(
-        StorageAuthenticationMethodWrapper? authenticationMethod
+        AuthenticationTestCase? testCase
     )
     {
         // Arrange
@@ -208,7 +213,7 @@ public class DataClientTests
             "app",
             323413,
             dataElementGuid,
-            authenticationMethod: authenticationMethod
+            authenticationMethod: testCase?.AuthenticationMethod
         );
 
         // Assert
@@ -218,12 +223,7 @@ public class DataClientTests
         Assert.NotNull(actual!.Foretakgrp8820.EnhetNavnEndringdatadef31);
 
         Assert.NotNull(platformRequest);
-        AssertHttpRequest(
-            platformRequest,
-            expectedUri,
-            HttpMethod.Get,
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
-        );
+        AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
     }
 
     [Fact]
@@ -257,10 +257,8 @@ public class DataClientTests
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
-    public async Task UpdateBinaryData_put_updated_data_and_Return_DataElement(
-        StorageAuthenticationMethodWrapper? authenticationMethod
-    )
+    [MemberData(nameof(AuthenticationTestCases))]
+    public async Task UpdateBinaryData_put_updated_data_and_Return_DataElement(AuthenticationTestCase? testCase)
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
         var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
@@ -298,7 +296,7 @@ public class DataClientTests
             "test.json",
             dataGuid,
             new MemoryStream(),
-            authenticationMethod: authenticationMethod
+            authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
         platformRequest?.Should().NotBeNull();
@@ -308,7 +306,7 @@ public class DataClientTests
             HttpMethod.Put,
             "test.json",
             "application/json",
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
+            expectedAuth: testCase?.ExpectedToken
         );
         result.Should().BeEquivalentTo(expectedDataelement);
     }
@@ -376,10 +374,8 @@ public class DataClientTests
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
-    public async Task GetBinaryData_returns_stream_of_binary_data(
-        StorageAuthenticationMethodWrapper? authenticationMethod
-    )
+    [MemberData(nameof(AuthenticationTestCases))]
+    public async Task GetBinaryData_returns_stream_of_binary_data(AuthenticationTestCase? testCase)
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
         var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
@@ -407,16 +403,11 @@ public class DataClientTests
             instanceIdentifier.InstanceOwnerPartyId,
             instanceIdentifier.InstanceGuid,
             dataGuid,
-            authenticationMethod: authenticationMethod
+            authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
         platformRequest?.Should().NotBeNull();
-        AssertHttpRequest(
-            platformRequest!,
-            expectedUri,
-            HttpMethod.Get,
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
-        );
+        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
         using StreamReader streamReader = new StreamReader(response);
         var responseString = await streamReader.ReadToEndAsync();
 
@@ -424,10 +415,8 @@ public class DataClientTests
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
-    public async Task GetBinaryData_returns_empty_stream_when_storage_returns_notfound(
-        StorageAuthenticationMethodWrapper? authenticationMethod
-    )
+    [MemberData(nameof(AuthenticationTestCases))]
+    public async Task GetBinaryData_returns_empty_stream_when_storage_returns_notfound(AuthenticationTestCase? testCase)
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
         var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
@@ -455,17 +444,12 @@ public class DataClientTests
             instanceIdentifier.InstanceOwnerPartyId,
             instanceIdentifier.InstanceGuid,
             dataGuid,
-            authenticationMethod: authenticationMethod
+            authenticationMethod: testCase?.AuthenticationMethod
         );
         response.Should().BeNull();
         invocations.Should().Be(1);
         platformRequest?.Should().NotBeNull();
-        AssertHttpRequest(
-            platformRequest!,
-            expectedUri,
-            HttpMethod.Get,
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
-        );
+        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
     }
 
     [Fact]
@@ -500,10 +484,8 @@ public class DataClientTests
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
-    public async Task GetBinaryDataList_returns_AttachemtList_when_DataElements_found(
-        StorageAuthenticationMethodWrapper? authenticationMethod
-    )
+    [MemberData(nameof(AuthenticationTestCases))]
+    public async Task GetBinaryDataList_returns_AttachemtList_when_DataElements_found(AuthenticationTestCase? testCase)
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
         HttpRequestMessage? platformRequest = null;
@@ -534,16 +516,11 @@ public class DataClientTests
             "app",
             instanceIdentifier.InstanceOwnerPartyId,
             instanceIdentifier.InstanceGuid,
-            authenticationMethod: authenticationMethod
+            authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
         platformRequest?.Should().NotBeNull();
-        AssertHttpRequest(
-            platformRequest!,
-            expectedUri,
-            HttpMethod.Get,
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
-        );
+        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
 
         var expectedList = new List<AttachmentList>()
         {
@@ -678,10 +655,8 @@ public class DataClientTests
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
-    public async Task DeleteData_returns_true_when_data_was_deleted_with_delay_true(
-        StorageAuthenticationMethodWrapper? authenticationMethod
-    )
+    [MemberData(nameof(AuthenticationTestCases))]
+    public async Task DeleteData_returns_true_when_data_was_deleted_with_delay_true(AuthenticationTestCase? testCase)
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
         var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
@@ -710,24 +685,17 @@ public class DataClientTests
             instanceIdentifier.InstanceGuid,
             dataGuid,
             true,
-            authenticationMethod: authenticationMethod
+            authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
         platformRequest?.Should().NotBeNull();
-        AssertHttpRequest(
-            platformRequest!,
-            expectedUri,
-            HttpMethod.Delete,
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
-        );
+        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete, expectedAuth: testCase?.ExpectedToken);
         result.Should().BeTrue();
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
-    public async Task UpdateData_serializes_and_updates_formdata(
-        StorageAuthenticationMethodWrapper? authenticationMethod
-    )
+    [MemberData(nameof(AuthenticationTestCases))]
+    public async Task UpdateData_serializes_and_updates_formdata(AuthenticationTestCase? testCase)
     {
         ExampleModel exampleModel = new ExampleModel() { Name = "Test", Age = 22 };
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -757,7 +725,7 @@ public class DataClientTests
             "app",
             instanceIdentifier.InstanceOwnerPartyId,
             dataGuid,
-            authenticationMethod: authenticationMethod
+            authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
         platformRequest?.Should().NotBeNull();
@@ -767,7 +735,7 @@ public class DataClientTests
             HttpMethod.Put,
             null,
             "application/xml",
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
+            expectedAuth: testCase?.ExpectedToken
         );
     }
 
@@ -808,9 +776,9 @@ public class DataClientTests
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
+    [MemberData(nameof(AuthenticationTestCases))]
     public async Task UpdateData_throws_platformhttpexception_if_platform_request_fails(
-        StorageAuthenticationMethodWrapper? authenticationMethod
+        AuthenticationTestCase? testCase
     )
     {
         object exampleModel = new ExampleModel() { Name = "Test", Age = 22 };
@@ -842,7 +810,7 @@ public class DataClientTests
                 "app",
                 instanceIdentifier.InstanceOwnerPartyId,
                 dataGuid,
-                authenticationMethod: authenticationMethod
+                authenticationMethod: testCase?.AuthenticationMethod
             )
         );
         invocations.Should().Be(1);
@@ -853,15 +821,15 @@ public class DataClientTests
             HttpMethod.Put,
             null,
             "application/xml",
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
+            expectedAuth: testCase?.ExpectedToken
         );
         result.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
+    [MemberData(nameof(AuthenticationTestCases))]
     public async Task LockDataElement_calls_lock_endpoint_in_storage_and_returns_updated_DataElement(
-        StorageAuthenticationMethodWrapper? authenticationMethod
+        AuthenticationTestCase? testCase
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -891,23 +859,18 @@ public class DataClientTests
         var response = await fixture.DataClient.LockDataElement(
             instanceIdentifier,
             dataGuid,
-            authenticationMethod: authenticationMethod
+            authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
         platformRequest?.Should().NotBeNull();
         response.Should().BeEquivalentTo(dataElement);
-        AssertHttpRequest(
-            platformRequest!,
-            expectedUri,
-            HttpMethod.Put,
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
-        );
+        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put, expectedAuth: testCase?.ExpectedToken);
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
+    [MemberData(nameof(AuthenticationTestCases))]
     public async Task LockDataElement_throws_platformhttpexception_if_platform_request_fails(
-        StorageAuthenticationMethodWrapper? authenticationMethod
+        AuthenticationTestCase? testCase
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -933,23 +896,18 @@ public class DataClientTests
             await fixture.DataClient.LockDataElement(
                 instanceIdentifier,
                 dataGuid,
-                authenticationMethod: authenticationMethod
+                authenticationMethod: testCase?.AuthenticationMethod
             )
         );
         invocations.Should().Be(1);
-        AssertHttpRequest(
-            platformRequest!,
-            expectedUri,
-            HttpMethod.Put,
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
-        );
+        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put, expectedAuth: testCase?.ExpectedToken);
         result.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
+    [MemberData(nameof(AuthenticationTestCases))]
     public async Task UnlockDataElement_calls_lock_endpoint_in_storage_and_returns_updated_DataElement(
-        StorageAuthenticationMethodWrapper? authenticationMethod
+        AuthenticationTestCase? testCase
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -979,23 +937,18 @@ public class DataClientTests
         var response = await fixture.DataClient.UnlockDataElement(
             instanceIdentifier,
             dataGuid,
-            authenticationMethod: authenticationMethod
+            authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
         platformRequest?.Should().NotBeNull();
         response.Should().BeEquivalentTo(dataElement);
-        AssertHttpRequest(
-            platformRequest!,
-            expectedUri,
-            HttpMethod.Delete,
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
-        );
+        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete, expectedAuth: testCase?.ExpectedToken);
     }
 
     [Theory]
-    [MemberData(nameof(AuthenticationMethods))]
+    [MemberData(nameof(AuthenticationTestCases))]
     public async Task UnlockDataElement_throws_platformhttpexception_if_platform_request_fails(
-        StorageAuthenticationMethodWrapper? authenticationMethod
+        AuthenticationTestCase? testCase
     )
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
@@ -1021,16 +974,11 @@ public class DataClientTests
             await fixture.DataClient.UnlockDataElement(
                 instanceIdentifier,
                 dataGuid,
-                authenticationMethod: authenticationMethod
+                authenticationMethod: testCase?.AuthenticationMethod
             )
         );
         invocations.Should().Be(1);
-        AssertHttpRequest(
-            platformRequest!,
-            expectedUri,
-            HttpMethod.Delete,
-            expectedAuth: _testTokens.GetTokenFromAuthMethod(authenticationMethod)
-        );
+        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete, expectedAuth: testCase?.ExpectedToken);
         result.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
     }
 
@@ -1089,8 +1037,7 @@ public class DataClientTests
 
         public static Fixture Create(
             Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> dataClientDelegatingHandler,
-            TelemetrySink? telemetrySink = null,
-            GeneralSettings? generalSettings = null
+            TelemetrySink? telemetrySink = null
         )
         {
             var mocks = new FixtureMocks();
@@ -1098,34 +1045,13 @@ public class DataClientTests
             mocks.AuthenticationContextMock.Setup(x => x.Current).Returns(_defaultAuth);
             mocks
                 .MaskinportenClientMock.Setup(x =>
-                    x.GetAccessToken(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())
-                )
-                .ReturnsAsync(_testTokens.MaskinportenToken);
-            mocks
-                .MaskinportenClientMock.Setup(x =>
                     x.GetAltinnExchangedToken(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())
                 )
                 .ReturnsAsync(_testTokens.ServiceOwnerToken);
-            mocks
-                .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
-                .Returns(() =>
-                {
-                    DelegatingHandlerStub delegatingHandler = new(
-                        (request, ct) =>
-                            Task.FromResult(
-                                new HttpResponseMessage()
-                                {
-                                    StatusCode = HttpStatusCode.OK,
-                                    Content = new StringContent(_testTokens.ServiceOwnerToken),
-                                }
-                            )
-                    );
-                    return new HttpClient(delegatingHandler);
-                });
 
             var services = new ServiceCollection();
-            services.AddSingleton(Options.Create(new PlatformSettings { ApiStorageEndpoint = ApiStorageEndpoint }));
-            services.AddSingleton(Options.Create(generalSettings ?? new GeneralSettings()));
+            services.AddSingleton(Options.Create(_platformSettings));
+            services.AddSingleton(Options.Create(_generalSettings));
             services.AddSingleton<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
             services.AddSingleton<ModelSerializationService>();
             services.AddSingleton(mocks.AppModelMock.Object);
@@ -1168,73 +1094,54 @@ public class DataClientTests
         }
     }
 
-    private sealed record TestTokens(
-        JwtToken UserToken,
-        JwtToken ServiceOwnerToken,
-        JwtToken MaskinportenToken,
-        JwtToken CustomToken
-    )
+    private sealed record TestTokens(JwtToken UserToken, JwtToken ServiceOwnerToken, JwtToken CustomToken);
+
+    public sealed record AuthenticationTestCase : IXunitSerializable
     {
-        public JwtToken? GetTokenFromAuthMethod(AuthenticationMethod? method)
+        private StorageAuthenticationMethod? _authenticationMethod;
+
+        public StorageAuthenticationMethod AuthenticationMethod =>
+            _authenticationMethod
+            ?? throw new InvalidOperationException($"{nameof(AuthenticationTestCase)} has not been initialized.");
+
+        private JwtToken? _expectedToken;
+        public JwtToken ExpectedToken =>
+            _expectedToken
+            ?? throw new InvalidOperationException($"{nameof(AuthenticationTestCase)} has not been initialized.");
+
+        public AuthenticationTestCase() { }
+
+        public AuthenticationTestCase(StorageAuthenticationMethod authenticationMethod, JwtToken expectedToken)
         {
-            return method switch
-            {
-                null => null,
-                AuthenticationMethod.UserToken => UserToken,
-                AuthenticationMethod.AltinnToken => ServiceOwnerToken,
-                AuthenticationMethod.MaskinportenToken => MaskinportenToken,
-                AuthenticationMethod.CustomToken => CustomToken,
-                _ => throw new ArgumentOutOfRangeException(nameof(method), method, null),
-            };
-        }
-    }
-
-    public sealed record StorageAuthenticationMethodWrapper : IXunitSerializable
-    {
-        private StorageAuthenticationMethod? _inner;
-        public StorageAuthenticationMethod Inner =>
-            _inner
-            ?? throw new InvalidOperationException(
-                $"{nameof(StorageAuthenticationMethodWrapper)} has not been initialized."
-            );
-
-        public StorageAuthenticationMethodWrapper() { }
-
-        public StorageAuthenticationMethodWrapper(StorageAuthenticationMethod inner)
-        {
-            _inner = inner;
+            _authenticationMethod = authenticationMethod;
+            _expectedToken = expectedToken;
         }
 
         public void Deserialize(IXunitSerializationInfo info)
         {
-            var targetMethod = info.GetValue<string>(nameof(Inner));
+            var targetMethod = info.GetValue<string>(nameof(AuthenticationMethod));
 
-            foreach (var authMethod in AuthenticationMethods)
+            foreach (var testCase in AuthenticationTestCases)
             {
-                if (authMethod?.ToString() == targetMethod)
+                if (testCase?.ToString() == targetMethod)
                 {
-                    _inner = authMethod;
+                    _authenticationMethod = testCase.AuthenticationMethod;
+                    _expectedToken = testCase.ExpectedToken;
                     return;
                 }
             }
 
-            throw new ArgumentException($"Unknown StorageAuthenticationMethod type: {targetMethod}", nameof(info));
+            throw new ArgumentException(
+                $"Unknown {nameof(StorageAuthenticationMethod)} type: {targetMethod}",
+                nameof(info)
+            );
         }
 
         public void Serialize(IXunitSerializationInfo info)
         {
-            info.AddValue(nameof(Inner), ToString());
+            info.AddValue(nameof(AuthenticationMethod), ToString());
         }
 
-        public override string ToString() => Inner.Request.GetType().Name;
-
-        public static implicit operator StorageAuthenticationMethodWrapper(StorageAuthenticationMethod inner) =>
-            new(inner);
-
-        public static implicit operator StorageAuthenticationMethod?(StorageAuthenticationMethodWrapper? inner) =>
-            inner?.Inner;
-
-        public static implicit operator AuthenticationMethod?(StorageAuthenticationMethodWrapper? inner) =>
-            inner?.Inner?.Request;
+        public override string ToString() => AuthenticationMethod.Request.GetType().Name;
     }
 }
