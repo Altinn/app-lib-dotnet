@@ -56,7 +56,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
 
-    private readonly TestOutputLogger _logger;
+    private readonly ILogger _logger;
     private long _currentFixtureInstance;
     private readonly string _app;
     private readonly string _scenario;
@@ -102,7 +102,7 @@ public sealed partial class AppFixture : IAsyncDisposable
     }
 
     private AppFixture(
-        TestOutputLogger logger,
+        ILogger logger,
         long currentFixtureInstance,
         string app,
         string scenario,
@@ -215,12 +215,12 @@ public sealed partial class AppFixture : IAsyncDisposable
         return result;
     }
 
-    private static async Task EnsureLocaltestRepositoryCloned(TestOutputLogger logger)
+    private static async Task EnsureLocaltestRepositoryCloned(ILogger logger, CancellationToken cancellationToken)
     {
         if (_localtestRepositoryCloned)
             return;
 
-        await _localtestCloneLock.WaitAsync();
+        await _localtestCloneLock.WaitAsync(cancellationToken);
         try
         {
             if (_localtestRepositoryCloned)
@@ -236,7 +236,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                 var currentBranch = await Cli.Wrap("git")
                     .WithArguments(["branch", "--show-current"])
                     .WithWorkingDirectory(localtestDirectory)
-                    .ExecuteBufferedAsync()
+                    .ExecuteBufferedAsync(cancellationToken)
                     .Select(x => x.StandardOutput.Trim());
 
                 if (currentBranch != _localtestBranch)
@@ -263,7 +263,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                             ]
                         )
                         .WithWorkingDirectory(_projectDirectory)
-                        .ExecuteBufferedAsync();
+                        .ExecuteBufferedAsync(cancellationToken);
                 }
                 else
                 {
@@ -271,12 +271,12 @@ public sealed partial class AppFixture : IAsyncDisposable
                     await Cli.Wrap("git")
                         .WithArguments(["fetch", "origin", _localtestBranch])
                         .WithWorkingDirectory(localtestDirectory)
-                        .ExecuteBufferedAsync();
+                        .ExecuteBufferedAsync(cancellationToken);
 
                     await Cli.Wrap("git")
                         .WithArguments(["reset", "--hard", $"origin/{_localtestBranch}"])
                         .WithWorkingDirectory(localtestDirectory)
-                        .ExecuteBufferedAsync();
+                        .ExecuteBufferedAsync(cancellationToken);
                 }
             }
             else
@@ -301,13 +301,13 @@ public sealed partial class AppFixture : IAsyncDisposable
                         ]
                     )
                     .WithWorkingDirectory(_projectDirectory)
-                    .ExecuteBufferedAsync();
+                    .ExecuteBufferedAsync(cancellationToken);
             }
 
             var sha = await Cli.Wrap("git")
                 .WithArguments(["rev-parse", "--short", "HEAD"])
                 .WithWorkingDirectory(localtestDirectory)
-                .ExecuteBufferedAsync()
+                .ExecuteBufferedAsync(cancellationToken)
                 .Select(x => x.StandardOutput.Trim());
 
             _localtestRepositoryCloned = true;
@@ -320,20 +320,21 @@ public sealed partial class AppFixture : IAsyncDisposable
     }
 
     private static async Task<IFutureDockerImage> EnsureLocaltestImageBuilt(
-        TestOutputLogger logger,
-        TestOutputLogger testContainersLogger
+        ILogger logger,
+        ILogger testContainersLogger,
+        CancellationToken cancellationToken
     )
     {
         if (_localtestContainerImage is not null)
             return _localtestContainerImage;
 
-        await _localtestBuildLock.WaitAsync();
+        await _localtestBuildLock.WaitAsync(cancellationToken);
         try
         {
             if (_localtestContainerImage is not null)
                 return _localtestContainerImage;
 
-            logger.LogInformation("Building container images");
+            logger.LogInformation("Building localtest container image");
             var localtestDirectory = Path.Join(_projectDirectory, "_localtest");
             var localtestBuilder = new ImageFromDockerfileBuilder()
                 .WithName($"applib-localtest:latest")
@@ -346,7 +347,8 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             _localtestContainerImage = localtestBuilder.Build();
 
-            await _localtestContainerImage.CreateAsync();
+            await _localtestContainerImage.CreateAsync(cancellationToken);
+            logger.LogInformation("Built localtest container image..");
             return _localtestContainerImage;
         }
         finally
@@ -357,11 +359,12 @@ public sealed partial class AppFixture : IAsyncDisposable
 
     private static async Task<IFutureDockerImage> EnsureAppImageBuilt(
         string name,
-        TestOutputLogger logger,
-        TestOutputLogger testContainersLogger
+        ILogger logger,
+        ILogger testContainersLogger,
+        CancellationToken cancellationToken
     )
     {
-        await _appBuildLock.WaitAsync();
+        await _appBuildLock.WaitAsync(cancellationToken);
         try
         {
             if (_appContainerImages.TryGetValue(name, out var existingImage))
@@ -384,8 +387,10 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             var appContainerImage = appBuilder.Build();
 
-            await appContainerImage.CreateAsync();
+            await appContainerImage.CreateAsync(cancellationToken);
             _appContainerImages[name] = appContainerImage;
+
+            logger.LogInformation("Built app container image");
             return appContainerImage;
         }
         finally
@@ -395,14 +400,15 @@ public sealed partial class AppFixture : IAsyncDisposable
     }
 
     private static async Task<IContainer> EnsurePdfServiceStarted(
-        TestOutputLogger logger,
-        TestOutputLogger testContainersLogger
+        ILogger logger,
+        ILogger testContainersLogger,
+        CancellationToken cancellationToken
     )
     {
         if (_pdfServiceContainer is not null)
             return _pdfServiceContainer;
 
-        await _pdfServiceLock.WaitAsync();
+        await _pdfServiceLock.WaitAsync(cancellationToken);
         try
         {
             if (_pdfServiceContainer is not null)
@@ -429,7 +435,8 @@ public sealed partial class AppFixture : IAsyncDisposable
                 pdfServiceContainerBuilder = pdfServiceContainerBuilder.WithLogger(testContainersLogger);
 
             _pdfServiceContainer = pdfServiceContainerBuilder.Build();
-            await _pdfServiceContainer.StartAsync();
+            await _pdfServiceContainer.StartAsync(cancellationToken);
+            logger.LogInformation("Started PDF service container");
 
             return _pdfServiceContainer;
         }
@@ -450,8 +457,9 @@ public sealed partial class AppFixture : IAsyncDisposable
         string scenario,
         IFutureDockerImage localtestContainerImage,
         IFutureDockerImage appContainerImage,
-        TestOutputLogger logger,
-        TestOutputLogger testContainersLogger
+        ILogger logger,
+        ILogger testContainersLogger,
+        CancellationToken cancellationToken
     )
     {
         var timer = Stopwatch.StartNew();
@@ -470,7 +478,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
         try
         {
-            logger.LogInformation("Starting fixture");
+            logger.LogInformation("Starting containers");
             var networkBuilder = new NetworkBuilder()
                 .WithName($"applib-{name}-network-{fixtureInstance:00}")
                 .WithReuse(false)
@@ -481,7 +489,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             network = networkBuilder.Build();
 
-            await network.CreateAsync();
+            await network.CreateAsync(cancellationToken);
 
             var localtestContainerBuilder = new ContainerBuilder()
                 .WithName($"applib-{name}-localtest-{fixtureInstance:00}")
@@ -539,22 +547,23 @@ public sealed partial class AppFixture : IAsyncDisposable
                 tcs.TrySetResult();
             };
 
-            var localtestStartup = localtestContainer.StartAsync();
-            var appStartup = appContainer.StartAsync();
+            var localtestStartup = localtestContainer.StartAsync(cancellationToken);
+            var appStartup = appContainer.StartAsync(cancellationToken);
 
             // When the `Starting` event is raise we can proceed by writing fixture configuration to the mounted volume
-            await tcs.Task;
+            await tcs.Task.WaitAsync(cancellationToken);
             await WriteFixtureConfiguration(
                 name,
                 scenario,
                 appContainer,
                 fixtureConfigDirectory,
                 fixtureInstance,
-                logger
+                logger,
+                cancellationToken
             );
 
             await Task.WhenAll(localtestStartup, appStartup);
-            logger.LogInformation("Built fixture in {ElapsedSeconds} s", timer.Elapsed.TotalSeconds.ToString("0.0"));
+            logger.LogInformation("Started fixture in {ElapsedSeconds}s", timer.Elapsed.TotalSeconds.ToString("0.0"));
             return (network, localtestContainer, appContainer, fixtureConfigDirectory);
         }
         catch (Exception ex)
@@ -584,7 +593,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         IContainer appContainer,
         string fixtureConfigDirectory,
         long fixtureInstance,
-        TestOutputLogger logger
+        ILogger logger,
+        CancellationToken cancellationToken
     )
     {
         try
@@ -604,7 +614,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             );
             var configFile = Path.Combine(fixtureConfigDirectory, "config.json");
 
-            await File.WriteAllTextAsync(configFile, configJson);
+            await File.WriteAllTextAsync(configFile, configJson, cancellationToken);
             logger.LogInformation("Wrote fixture configuration to {ConfigFile}", configFile);
         }
         catch (Exception ex)
@@ -625,9 +635,22 @@ public sealed partial class AppFixture : IAsyncDisposable
         bool isClassFixture = false
     )
     {
+        var timer = Stopwatch.StartNew();
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        var cancellationToken = cts.Token;
         var fixtureInstance = NextFixtureInstance();
-        var testContainersLogger = new TestOutputLogger(output, fixtureInstance, app, scenario, true);
-        var logger = new TestOutputLogger(output, fixtureInstance, app, scenario, false);
+
+        // When running as a class fixture we can just log to stdout immediately,
+        // but when running as a test-local fixture we need to use the ITestOutputHelper
+        // to let xUnit capture and scope the output to the test itself.
+        ILogger testContainersLogger = isClassFixture
+            ? new FixtureLogger(fixtureInstance, app, scenario, true)
+            : new TestOutputLogger(output, fixtureInstance, app, scenario, true);
+        ILogger logger = isClassFixture
+            ? new FixtureLogger(fixtureInstance, app, scenario, false)
+            : new TestOutputLogger(output, fixtureInstance, app, scenario, false);
+
+        logger.LogInformation("Creating fixture..");
 
         try
         {
@@ -637,11 +660,11 @@ public sealed partial class AppFixture : IAsyncDisposable
             // Packing has to occur before building the app image since
             // the app image rely on local nupkg's to be present.
             // The rest can happen in parallel
-            await EnsureLocaltestRepositoryCloned(logger);
-            var localtestImageTask = EnsureLocaltestImageBuilt(logger, testContainersLogger);
-            var pdfServiceTask = EnsurePdfServiceStarted(logger, testContainersLogger);
-            await EnsureLibrariesPacked();
-            var appImageTask = EnsureAppImageBuilt(app, logger, testContainersLogger);
+            await EnsureLocaltestRepositoryCloned(logger, cancellationToken);
+            var localtestImageTask = EnsureLocaltestImageBuilt(logger, testContainersLogger, cancellationToken);
+            var pdfServiceTask = EnsurePdfServiceStarted(logger, testContainersLogger, cancellationToken);
+            await EnsureLibrariesPacked(logger, cancellationToken);
+            var appImageTask = EnsureAppImageBuilt(app, logger, testContainersLogger, cancellationToken);
 
             await Task.WhenAll(localtestImageTask, pdfServiceTask, appImageTask);
             var localtestContainerImage = await localtestImageTask;
@@ -656,9 +679,11 @@ public sealed partial class AppFixture : IAsyncDisposable
                 localtestContainerImage,
                 appContainerImage,
                 logger,
-                testContainersLogger
+                testContainersLogger,
+                cancellationToken
             );
 
+            logger.LogInformation("Fixture created in {ElapsedSeconds}s", timer.Elapsed.TotalSeconds.ToString("0.00"));
             return new AppFixture(
                 logger,
                 fixtureInstance,
@@ -678,17 +703,18 @@ public sealed partial class AppFixture : IAsyncDisposable
         }
     }
 
-    public async Task ResetBetweenTestsAsync(ITestOutputHelper? output = null)
+    public async Task ResetBetweenTestsAsync(
+        ITestOutputHelper? output = null,
+        CancellationToken cancellationToken = default
+    )
     {
         Assert.True(_isClassFixture);
 
         _currentFixtureInstance = NextFixtureInstance();
 
         // Update logger with new test output helper and fixture instance
-        if (output != null)
-        {
-            _logger.UpdateOutput(output, _currentFixtureInstance);
-        }
+        if (output is not null && _logger is TestOutputLogger logger)
+            logger.UpdateOutput(output, _currentFixtureInstance);
 
         // Update fixture configuration in the container with new fixture instance
         await WriteFixtureConfiguration(
@@ -697,7 +723,8 @@ public sealed partial class AppFixture : IAsyncDisposable
             _appContainer,
             _fixtureConfigDirectory,
             _currentFixtureInstance,
-            _logger
+            _logger,
+            cancellationToken
         );
 
         // Reset error state
@@ -794,7 +821,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
     private async Task TryDispose(IAsyncDisposable? disposable) => await TryDispose(_logger, disposable);
 
-    private static async Task TryDispose(TestOutputLogger logger, IAsyncDisposable? disposable)
+    private static async Task TryDispose(ILogger logger, IAsyncDisposable? disposable)
     {
         if (disposable is null)
             return;
@@ -885,16 +912,20 @@ public sealed partial class AppFixture : IAsyncDisposable
         return info.FullName;
     }
 
-    private static async Task EnsureLibrariesPacked()
+    private static async Task EnsureLibrariesPacked(ILogger logger, CancellationToken cancellationToken)
     {
-        await _packLibrariesLock.WaitAsync();
+        await _packLibrariesLock.WaitAsync(cancellationToken);
         try
         {
             if (_librariesPacked)
                 return;
 
-            await PackLibraries();
+            logger.LogInformation("Packing libraries");
+
+            await PackLibraries(cancellationToken);
             _librariesPacked = true;
+
+            logger.LogInformation("Packed libraries");
         }
         finally
         {
@@ -902,7 +933,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         }
     }
 
-    private static async Task PackLibraries()
+    private static async Task PackLibraries(CancellationToken cancellationToken)
     {
         var output = Path.Join(_projectDirectory, "_testapps", "_packages");
         if (Directory.Exists(output))
@@ -926,14 +957,16 @@ public sealed partial class AppFixture : IAsyncDisposable
                 ]
             )
             .WithWorkingDirectory(solutionDirectory)
-            .ExecuteBufferedAsync();
+            .ExecuteBufferedAsync(cancellationToken);
         Assert.Equal(0, result.ExitCode);
 
         var nupkgFiles = Directory.GetFiles(output, "*.nupkg");
         Assert.NotEmpty(nupkgFiles);
         await Task.WhenAll(
             nupkgFiles.Select(async nupkgFile =>
-                await Cli.Wrap("dotnet").WithArguments(["NupkgDeterministicator", nupkgFile]).ExecuteBufferedAsync()
+                await Cli.Wrap("dotnet")
+                    .WithArguments(["NupkgDeterministicator", nupkgFile])
+                    .ExecuteBufferedAsync(cancellationToken)
             )
         );
     }
