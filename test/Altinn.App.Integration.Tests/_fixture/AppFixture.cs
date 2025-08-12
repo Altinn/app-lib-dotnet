@@ -926,14 +926,14 @@ public sealed partial class AppFixture : IAsyncDisposable
                 ]
             )
             .WithWorkingDirectory(solutionDirectory)
-            .ExecuteAsync();
+            .ExecuteBufferedAsync();
         Assert.Equal(0, result.ExitCode);
 
         var nupkgFiles = Directory.GetFiles(output, "*.nupkg");
         Assert.NotEmpty(nupkgFiles);
         await Task.WhenAll(
             nupkgFiles.Select(async nupkgFile =>
-                await Cli.Wrap("dotnet").WithArguments(["NupkgDeterministicator", nupkgFile]).ExecuteAsync()
+                await Cli.Wrap("dotnet").WithArguments(["NupkgDeterministicator", nupkgFile]).ExecuteBufferedAsync()
             )
         );
     }
