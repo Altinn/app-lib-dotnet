@@ -16,6 +16,7 @@ RUN cp -R config /app_output/
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine@sha256:6faef52a037435524fcda33d94a23cada50eed3775849efa863bf0d45327403c AS final
 EXPOSE 5005
+EXPOSE 5006
 WORKDIR /App
 COPY --from=build /app_output .
 ENV ASPNETCORE_URLS=http://+:5005

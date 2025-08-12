@@ -15,13 +15,6 @@
         "csharpier"
       ],
       "rollForward": false
-    },
-    "kuinox.nupkgdeterministicator": {
-      "version": "1.0.0",
-      "commands": [
-        "NupkgDeterministicator"
-      ],
-      "rollForward": false
     }
   }
 }

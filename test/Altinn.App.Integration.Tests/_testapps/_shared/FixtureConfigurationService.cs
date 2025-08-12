@@ -1,11 +1,14 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -19,14 +22,14 @@ namespace TestApp.Shared;
 
 /// <summary>
 /// Service that manages fixture configuration including dynamic updates.
-/// Watches for config file changes and updates application state accordingly.
+/// Provides an HTTP endpoint for receiving configuration updates from the test fixture.
 /// </summary>
-internal sealed class FixtureConfigurationService : IDisposable
+public sealed class FixtureConfigurationService : IDisposable
 {
-    private readonly string _configFile = "/App/fixture-config/config.json";
-    private readonly string _configDir;
-    private readonly string _configFileName;
-    private FileSystemWatcher? _watcher;
+    private const int ConfigurationPort = 5006;
+    private HttpListener? _httpListener;
+    private CancellationTokenSource? _cancellationTokenSource;
+    private Task? _listenerTask;
     private readonly object _lock = new();
     public FixtureConfiguration? Config { get; private set; }
 
@@ -35,40 +38,26 @@ internal sealed class FixtureConfigurationService : IDisposable
     // Event fired when configuration changes
     public event Action? ConfigurationChanged;
 
-    private FixtureConfigurationService()
-    {
-        _configDir = Path.GetDirectoryName(_configFile)!;
-        _configFileName = Path.GetFileName(_configFile);
-    }
+    private FixtureConfigurationService() { }
 
     /// <summary>
-    /// Waits for initial configuration and sets up dynamic watching
+    /// Starts the HTTP configuration server and waits for initial configuration
     /// </summary>
     public void Initialize(TimeSpan? timeout = null)
     {
-        // The AppFixture injects configuration including port and fixture instance
-        // as soon as the app is in the `Starting` state.
-        // This replaces the old port configuration system with a more comprehensive approach.
+        // The AppFixture sends configuration via HTTP POST to /configure endpoint
+        // as soon as the app container is in the `Starting` state.
         timeout ??= TimeSpan.FromSeconds(10);
 
         using var resetEvent = new ManualResetEventSlim(false);
 
-        // Set up watcher before checking file existence to avoid race condition
-        SetupWatcher(resetEvent);
-
-        // Check if file already exists
-        if (File.Exists(_configFile))
-        {
-            LoadConfiguration();
-            return;
-        }
+        // Start HTTP listener before waiting for configuration
+        StartHttpListener(resetEvent);
 
         if (!resetEvent.Wait(timeout.Value))
             throw new TimeoutException(
-                $"Fixture configuration not available after {timeout.Value.TotalSeconds} seconds"
+                $"Fixture configuration not received after {timeout.Value.TotalSeconds} seconds"
             );
-
-        LoadConfiguration();
     }
 
     public void Configure(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
@@ -118,55 +107,93 @@ internal sealed class FixtureConfigurationService : IDisposable
         }
     }
 
-    private void SetupWatcher(ManualResetEventSlim? initialResetEvent = null)
+    private void StartHttpListener(ManualResetEventSlim? initialResetEvent = null)
     {
-        if (_watcher != null)
+        if (_httpListener != null)
             return;
 
         lock (_lock)
         {
-            if (_watcher != null)
+            if (_httpListener != null)
                 return;
 
             try
             {
-                _watcher = new FileSystemWatcher(_configDir, _configFileName);
-                _watcher.Created += (sender, e) =>
-                {
-                    initialResetEvent?.Set();
-                    LoadConfiguration();
-                };
-                _watcher.Changed += (sender, e) =>
-                {
-                    initialResetEvent?.Set();
-                    LoadConfiguration();
-                };
-                _watcher.EnableRaisingEvents = true;
+                _cancellationTokenSource = new CancellationTokenSource();
+                _httpListener = new HttpListener();
+                _httpListener.Prefixes.Add($"http://+:{ConfigurationPort}/");
+                _httpListener.Start();
+
+                _listenerTask = Task.Run(
+                    async () => await HandleHttpRequests(initialResetEvent),
+                    _cancellationTokenSource.Token
+                );
+
+                Console.WriteLine($"Configuration HTTP server started on port {ConfigurationPort}");
             }
             catch (Exception ex)
             {
-                SnapshotLogger.LogInitError($"Failed to setup config file watcher: {ex.Message}");
+                Console.WriteLine($"Failed to start HTTP configuration server: {ex.Message}");
             }
         }
     }
 
-    private void LoadConfiguration()
+    private async Task HandleHttpRequests(ManualResetEventSlim? initialResetEvent)
     {
-        lock (_lock)
+        if (_httpListener is null)
+            throw new InvalidOperationException("HTTP listener not initialized");
+        if (_cancellationTokenSource is null)
+            throw new OperationCanceledException("HTTP listener has been canceled");
+        while (!_cancellationTokenSource.Token.IsCancellationRequested)
         {
             try
             {
-                if (!File.Exists(_configFile))
-                    return;
+                var context = await _httpListener.GetContextAsync();
+                Console.WriteLine($"Received configuration request from {context.Request.RemoteEndPoint}");
+                await ProcessConfigurationRequest(context, initialResetEvent);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Expected when shutting down
+                break;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error handling HTTP request: {ex.Message}");
+            }
+        }
+    }
 
-                var configJson = File.ReadAllText(_configFile);
-                var config = JsonSerializer.Deserialize<FixtureConfiguration>(configJson);
-                if (config is null)
-                {
-                    SnapshotLogger.LogInitError("Failed to deserialize fixture configuration.");
-                    return;
-                }
+    private async Task ProcessConfigurationRequest(HttpListenerContext context, ManualResetEventSlim? initialResetEvent)
+    {
+        var request = context.Request;
+        var response = context.Response;
 
+        try
+        {
+            if (
+                request.HttpMethod != "POST"
+                || !request.Url?.AbsolutePath.Equals("/configure", StringComparison.OrdinalIgnoreCase) == true
+            )
+            {
+                response.StatusCode = 404;
+                return;
+            }
+
+            using var reader = new StreamReader(request.InputStream, Encoding.UTF8);
+            var configJson = await reader.ReadToEndAsync();
+
+            var config = JsonSerializer.Deserialize<FixtureConfiguration>(configJson);
+            if (config is null)
+            {
+                response.StatusCode = 400;
+                var errorBytes = Encoding.UTF8.GetBytes("Invalid configuration JSON");
+                await response.OutputStream.WriteAsync(errorBytes, 0, errorBytes.Length);
+                return;
+            }
+
+            lock (_lock)
+            {
                 if (config != Config)
                 {
                     Config = config;
@@ -179,10 +206,24 @@ internal sealed class FixtureConfigurationService : IDisposable
                     SnapshotLogger.LogInitInfo($"Fixture configuration updated");
                 }
             }
-            catch (Exception ex)
-            {
-                SnapshotLogger.LogInitError($"Failed to read fixture configuration: {ex.Message}");
-            }
+
+            // Signal that configuration has been received
+            initialResetEvent?.Set();
+
+            response.StatusCode = 200;
+            var successBytes = Encoding.UTF8.GetBytes("Configuration updated successfully");
+            await response.OutputStream.WriteAsync(successBytes, 0, successBytes.Length);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing configuration request: {ex.Message}");
+            response.StatusCode = 500;
+            var errorBytes = Encoding.UTF8.GetBytes($"Internal server error: {ex.Message}");
+            await response.OutputStream.WriteAsync(errorBytes, 0, errorBytes.Length);
+        }
+        finally
+        {
+            response.Close();
         }
     }
 
@@ -264,6 +305,22 @@ internal sealed class FixtureConfigurationService : IDisposable
 
     public void Dispose()
     {
-        _watcher?.Dispose();
+        try
+        {
+            _cancellationTokenSource?.Cancel();
+            _httpListener?.Stop();
+            _httpListener?.Close();
+            _listenerTask?.Wait(TimeSpan.FromSeconds(5));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error disposing HTTP configuration server: {ex.Message}");
+        }
+        finally
+        {
+            _cancellationTokenSource?.Dispose();
+            _httpListener = null;
+            _listenerTask = null;
+        }
     }
 }

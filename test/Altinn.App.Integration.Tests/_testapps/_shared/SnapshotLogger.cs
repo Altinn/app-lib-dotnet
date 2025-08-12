@@ -8,7 +8,7 @@ namespace TestApp.Shared;
 /// All the log messages from this class will be caught by the integration test harness
 /// and included in integration test snapshots and logs.
 /// </summary>
-internal static class SnapshotLogger
+public static class SnapshotLogger
 {
     private static string GetCurrentPrefix()
     {

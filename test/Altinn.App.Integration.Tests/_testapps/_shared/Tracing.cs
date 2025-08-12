@@ -28,7 +28,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace TestApp.Shared;
 
-internal static class TracingDI
+public static class TracingDI
 {
     public static IServiceCollection AddTracingServices(this IServiceCollection services)
     {
@@ -72,7 +72,7 @@ internal static class TracingDI
     }
 }
 
-internal sealed class TracingActionFilter : IActionFilter
+public sealed class TracingActionFilter : IActionFilter
 {
     public void OnActionExecuting(ActionExecutingContext context)
     {

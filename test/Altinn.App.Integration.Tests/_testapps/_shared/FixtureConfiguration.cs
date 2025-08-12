@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace TestApp.Shared;
 
-internal sealed record FixtureConfiguration(
+public sealed record FixtureConfiguration(
     [property: JsonPropertyName("appName")] string AppName,
     [property: JsonPropertyName("appScenario")] string AppScenario,
     [property: JsonPropertyName("fixtureInstance")] long FixtureInstance,
