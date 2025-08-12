@@ -27,7 +27,11 @@ public class SubunitOnlyAppTests(ITestOutputHelper _output, AppFixtureClassFixtu
         );
 
         using var data = await response.Read<Instance>();
-        await verifier.Verify(data, snapshotName: "Instance", scrubber: Scrubbers.InstanceScrubber(data));
+        await verifier.Verify(
+            data,
+            snapshotName: "Instance",
+            scrubbers: new Scrubbers(StringScrubber: Scrubbers.InstanceStringScrubber(data))
+        );
 
         await verifier.Verify(await fixture.GetSnapshotAppLogs(), snapshotName: "Logs");
     }

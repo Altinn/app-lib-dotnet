@@ -40,7 +40,7 @@ public class BasicAppTests(ITestOutputHelper _output)
         await verifier.Verify(
             readInstantiationResponse,
             snapshotName: "Instantiation",
-            scrubber: Scrubbers.InstanceScrubber(readInstantiationResponse)
+            scrubbers: new Scrubbers(StringScrubber: Scrubbers.InstanceStringScrubber(readInstantiationResponse))
         );
         // Verify state of datamodels after instantiation (prefill)
         using var download1 = await fixture.Instances.Download(token, readInstantiationResponse);
@@ -51,7 +51,7 @@ public class BasicAppTests(ITestOutputHelper _output)
 
         var instance = readInstantiationResponse.Data.Model;
         Assert.NotNull(instance);
-        var scrubber = Scrubbers.InstanceScrubber(instance);
+        var scrubbers = new Scrubbers(StringScrubber: Scrubbers.InstanceStringScrubber(instance));
 
         var dataElement = instance.Data.First(d => d.DataType == "model");
         var initialValue = HasPrefill(testCase) ? "\"1\"" : "null";
@@ -75,11 +75,11 @@ public class BasicAppTests(ITestOutputHelper _output)
             }
         );
         using var readPatchResponse = await patchResponse.Read<DataPatchResponseMultiple>();
-        await verifier.Verify(readPatchResponse, snapshotName: "PatchFormData", scrubber: scrubber);
+        await verifier.Verify(readPatchResponse, snapshotName: "PatchFormData", scrubbers: scrubbers);
 
         using var processNextResponse = await fixture.Instances.ProcessNext(token, readInstantiationResponse);
         using var readProcessNextResponse = await processNextResponse.Read<AppProcessState>();
-        await verifier.Verify(readProcessNextResponse, snapshotName: "ProcessNext", scrubber: scrubber);
+        await verifier.Verify(readProcessNextResponse, snapshotName: "ProcessNext", scrubbers: scrubbers);
 
         using var download2 = await fixture.Instances.Download(token, readInstantiationResponse);
         await download2.Verify(verifier);

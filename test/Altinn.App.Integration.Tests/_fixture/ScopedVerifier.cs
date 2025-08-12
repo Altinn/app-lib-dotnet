@@ -24,7 +24,7 @@ internal sealed class ScopedVerifier
         AppFixture.ReadApiResponse<T> response,
         object? parameters = null,
         string? snapshotName = null,
-        Func<string, string>? scrubber = null,
+        Scrubbers? scrubbers = null,
         [CallerFilePath] string sourceFile = ""
     )
     {
@@ -32,7 +32,7 @@ internal sealed class ScopedVerifier
         {
             var parameterString = BuildParameterString(_index++, parameters, snapshotName);
 
-            return response.Verify(scrubber, sourceFile).UseTextForParameters(parameterString);
+            return response.Verify(scrubbers, sourceFile).UseTextForParameters(parameterString);
         }
         catch (Exception)
         {
@@ -45,7 +45,7 @@ internal sealed class ScopedVerifier
         AppFixture.ApiResponse response,
         object? parameters = null,
         string? snapshotName = null,
-        Func<string, string>? scrubber = null,
+        Scrubbers? scrubbers = null,
         [CallerFilePath] string sourceFile = ""
     )
     {
@@ -53,7 +53,7 @@ internal sealed class ScopedVerifier
         {
             var parameterString = BuildParameterString(_index++, parameters, snapshotName);
 
-            return response.Verify(scrubber, sourceFile).UseTextForParameters(parameterString);
+            return response.Verify(scrubbers, sourceFile).UseTextForParameters(parameterString);
         }
         catch (Exception)
         {

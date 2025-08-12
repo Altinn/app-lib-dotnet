@@ -288,14 +288,14 @@ internal sealed record InstanceDownload(ReadApiResponse<Instance> Instance, IRea
         [CallerFilePath] string sourceFile = ""
     )
     {
-        var scrubber = Scrubbers.InstanceScrubber(Instance);
+        var scrubbers = new Scrubbers(StringScrubber: Scrubbers.InstanceStringScrubber(Instance));
         if (!skipInstanceInSnapshot)
         {
             await verifier
                 .Verify(
                     Instance,
                     snapshotName: "Download-Instance",
-                    scrubber: scrubber,
+                    scrubbers: scrubbers,
                     parameters: parameters,
                     sourceFile: sourceFile
                 )
@@ -309,22 +309,27 @@ internal sealed record InstanceDownload(ReadApiResponse<Instance> Instance, IRea
                     await verifier.Verify(
                         form.Data,
                         snapshotName: $"Download-Data[{data.Index}]",
-                        scrubber: scrubber,
+                        scrubbers: scrubbers,
                         parameters: parameters,
                         sourceFile: sourceFile
                     );
                     break;
                 case InstanceDataDownload.Binary binary:
-                    var finalScrubber = scrubber;
+                    var finalScrubbers = scrubbers;
                     if (data.DataType == "ref-data-as-pdf")
                     {
                         // Special handling for PDF data types
                         var contentLength = binary.Data.Response.Content.Headers.ContentLength!.Value.ToString();
-                        finalScrubber = v =>
+                        finalScrubbers = scrubbers.WithStringScrubber(v => v.Replace(contentLength, "<contentLength>"));
+                        finalScrubbers = finalScrubbers.WithHeadersScrubber(kvp =>
                         {
-                            v = v.Replace(contentLength, "<contentLength>");
-                            return scrubber(v);
-                        };
+                            // We ignore these headers for PDF snapshots because
+                            // PDF output is not deterministic and ASP.NET core is not determnistic
+                            // in how it serves the PDF stream in the response
+                            if (kvp.Key is "Transfer-Encoding" or "Content-Length")
+                                return null;
+                            return kvp;
+                        });
                         binary.Data.IncludeBodyInSnapshot = false; // Avoid non-determnistic PDF snapshots
                     }
 
@@ -333,7 +338,7 @@ internal sealed record InstanceDownload(ReadApiResponse<Instance> Instance, IRea
                         snapshotName: data.DataType == "ref-data-as-pdf"
                             ? "Download-PDF"
                             : $"Download-Data[{data.Index}]",
-                        scrubber: finalScrubber,
+                        scrubbers: finalScrubbers,
                         parameters: parameters,
                         sourceFile: sourceFile
                     );
