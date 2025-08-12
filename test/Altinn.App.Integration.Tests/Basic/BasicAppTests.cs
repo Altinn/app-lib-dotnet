@@ -8,7 +8,8 @@ using Xunit.Abstractions;
 namespace Altinn.App.Integration.Tests.Basic;
 
 [Trait("Category", "Integration")]
-public class BasicAppTests(ITestOutputHelper _output)
+public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _classFixture)
+    : IClassFixture<AppFixtureClassFixture>
 {
     public enum TestCase
     {
@@ -26,7 +27,8 @@ public class BasicAppTests(ITestOutputHelper _output)
     [CombinatorialData]
     public async Task Full(TestCase testCase)
     {
-        await using var fixture = await AppFixture.Create(_output, TestApps.Basic);
+        await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic);
+        var fixture = fixtureScope.Fixture;
         var verifier = fixture.ScopedVerifier;
         verifier.UseTestCase(new { testCase });
 
