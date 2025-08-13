@@ -227,7 +227,7 @@ public class AuthenticationTokenResolverTest
         public GeneralSettings? GeneralSettings { get; set; }
 
         private AuthenticationMethod? _authenticationMethod;
-        public AuthenticationMethod AuthenticationMethod =>
+        internal AuthenticationMethod AuthenticationMethod =>
             _authenticationMethod ?? throw new InvalidOperationException("TestCase has not been initialized.");
 
         private JwtToken? _expectedToken;
@@ -236,7 +236,7 @@ public class AuthenticationTokenResolverTest
 
         public TestCase() { }
 
-        public TestCase(
+        internal TestCase(
             AuthenticationMethod authenticationMethod,
             JwtToken expectedToken,
             GeneralSettings? generalSettings = null
