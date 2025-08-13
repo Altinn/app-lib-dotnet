@@ -1,5 +1,5 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Models.AuthenticationMethod;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 

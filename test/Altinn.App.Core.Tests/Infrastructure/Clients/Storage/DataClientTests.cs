@@ -14,7 +14,6 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Models.AuthenticationMethod;
 using Altinn.App.Core.Tests.Infrastructure.Clients.Storage.TestData;
 using Altinn.App.PlatformServices.Tests.Data;
 using Altinn.App.PlatformServices.Tests.Mocks;

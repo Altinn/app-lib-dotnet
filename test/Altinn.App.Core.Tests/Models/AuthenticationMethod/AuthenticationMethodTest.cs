@@ -1,4 +1,4 @@
-using Altinn.App.Core.Models.AuthenticationMethod;
+using Altinn.App.Core.Features;
 
 namespace Altinn.App.Core.Tests.Models.AuthenticationMethodTest;
 

@@ -1,6 +1,7 @@
 using Altinn.App.Core.Features.Maskinporten;
+using Altinn.App.Core.Models;
 
-namespace Altinn.App.Core.Models.AuthenticationMethod;
+namespace Altinn.App.Core.Features;
 
 /// <summary>
 /// Represents the method of authentication to be used for making requests to external services.
@@ -8,7 +9,7 @@ namespace Altinn.App.Core.Models.AuthenticationMethod;
 /// <remarks>This record contains all possible authentication mechanisms, which are designed to
 /// be exposed and consumed like illustrated in <see cref="StorageAuthenticationMethod"/>
 /// </remarks>
-public abstract record AuthenticationMethod
+internal abstract record AuthenticationMethod
 {
     /// <inheritdoc cref="AuthenticationMethod.UserToken"/>
     internal static UserToken CurrentUser() => new();
@@ -66,4 +67,34 @@ public abstract record AuthenticationMethod
     /// </summary>
     /// <param name="TokenProvider">The JWT token provider delegate for this request.</param>
     internal sealed record CustomToken(Func<Task<JwtToken>> TokenProvider) : AuthenticationMethod;
+
+    public static implicit operator AuthenticationMethod(StorageAuthenticationMethod storageAuthenticationMethod) =>
+        storageAuthenticationMethod.Request;
+}
+
+/// <summary>
+/// Represents the method of authentication to be used for making requests to the Storage service.
+/// </summary>
+public sealed record StorageAuthenticationMethod
+{
+    /// <inheritdoc cref="AuthenticationMethod.CurrentUser"/>
+    public static StorageAuthenticationMethod CurrentUser() => new(AuthenticationMethod.CurrentUser());
+
+    /// <inheritdoc cref="AuthenticationMethod.ServiceOwner()"/>
+    public static StorageAuthenticationMethod ServiceOwner() => new(AuthenticationMethod.ServiceOwner());
+
+    /// <inheritdoc cref="AuthenticationMethod.ServiceOwner(string[])"/>
+    public static StorageAuthenticationMethod ServiceOwner(params string[] additionalScopes) =>
+        new(AuthenticationMethod.ServiceOwner(additionalScopes));
+
+    /// <inheritdoc cref="AuthenticationMethod.Custom"/>
+    public static StorageAuthenticationMethod Custom(Func<Task<JwtToken>> tokenProvider) =>
+        new(AuthenticationMethod.Custom(tokenProvider));
+
+    internal AuthenticationMethod Request { get; }
+
+    private StorageAuthenticationMethod(AuthenticationMethod request)
+    {
+        Request = request;
+    }
 }

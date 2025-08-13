@@ -1,5 +1,5 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Models.AuthenticationMethod;
 
 namespace Altinn.App.Core.Internal.Auth;
 
