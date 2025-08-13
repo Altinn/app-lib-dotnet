@@ -110,7 +110,7 @@ internal class DataService : IDataService
     {
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-        Stream dataStream = await _dataClient.GetBinaryData(
+        using Stream dataStream = await _dataClient.GetBinaryData(
             applicationMetadata.AppIdentifier.Org,
             applicationMetadata.AppIdentifier.App,
             instanceIdentifier.InstanceOwnerPartyId,

@@ -41,6 +41,13 @@ public abstract record MultipartCorrespondenceItem
         content.Add(new ReadOnlyMemoryContent(data), name, filename);
     }
 
+    internal static void AddRequired(MultipartFormDataContent content, Stream data, string name, string filename)
+    {
+        if (data is null)
+            throw new CorrespondenceArgumentException($"Required value is missing: {name}");
+        content.Add(new StreamContent(data), name, filename);
+    }
+
     internal static void AddIfNotNull(MultipartFormDataContent content, string? value, string name)
     {
         if (!string.IsNullOrWhiteSpace(value))
