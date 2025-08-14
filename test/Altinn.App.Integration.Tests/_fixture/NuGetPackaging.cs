@@ -2,7 +2,6 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
-using CliWrap;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Integration.Tests;
@@ -19,34 +18,32 @@ internal static class NuGetPackaging
         var solutionDirectory = ModuleInitializer.GetSolutionDirectory();
 
         await _lock.WaitAsync(cancellationToken);
+        // Packaging always runs on the solution, so multiple pack commands in parallel
+        // will conflict as they touch the same projects and files
         try
         {
-            await Cli.Wrap("dotnet")
-                .WithArguments(
-                    [
-                        "pack",
-                        "-c",
-                        "Release",
-                        // Ensure deterministic builds, also sets ContinuousIntegrationBuild through our src/Directory.Build.props
-                        "-p:Deterministic=true",
-                        // Embed symbols in the nupkg
-                        "-p:DebugType=embedded",
-                        // Don't generate additional snupkg-files which are not determistic and will mess with the Docker cache
-                        "-p:IncludeSymbols=false",
-                        "--output",
-                        output,
-                    ]
-                )
-                .WithStandardOutputPipe(PipeTarget.ToDelegate(line => logger?.LogInformation(line)))
-                .WithStandardErrorPipe(PipeTarget.ToDelegate(line => logger?.LogError(line)))
-                .WithWorkingDirectory(solutionDirectory)
-                .ExecuteAsync(cancellationToken);
+            logger?.LogInformation("Making nupkg's..");
+            await new Command(
+                "dotnet",
+                // -p:Deterministic  - ensure deterministic builds, also sets ContinuousIntegrationBuild through our src/Directory.Build.props
+                // -p:DebugType      - Embed symbols in the nupkg
+                // -p:IncludeSymbols - Don't generate additional snupkg-files which are not determistic and will mess with the Docker cache
+                $"pack -c Release -p:Deterministic=true -p:DebugType=embedded -p:IncludeSymbols=false --output \"{output}\"",
+                solutionDirectory,
+                logger,
+                CancellationToken: cancellationToken
+            );
+
+            await MakeNugetPackagesDeterministic(output, logger);
         }
         finally
         {
             _lock.Release();
         }
+    }
 
+    private static async Task MakeNugetPackagesDeterministic(string output, ILogger? logger)
+    {
         logger?.LogInformation("Making nupkg's determnistic..");
         var nupkgFiles = Directory.GetFiles(output, "*.nupkg");
         Assert.NotEmpty(nupkgFiles);
@@ -55,16 +52,25 @@ internal static class NuGetPackaging
         // These ZipFile operations don't seem to have async equivalents..
         var thread = new Thread(() =>
         {
-            foreach (var nupkgFile in nupkgFiles)
+            try
             {
-                // Repack the NuGet package to ensure deterministic builds
-                RepackNugetPackage(nupkgFile, _defaultDateTime);
+                foreach (var nupkgFile in nupkgFiles)
+                {
+                    // Repack the NuGet package to ensure deterministic builds
+                    RepackNugetPackage(nupkgFile, _defaultDateTime);
+                }
+                logger?.LogInformation("Repackaging NuGet packages for determinism succeeded");
+                tcs.SetResult();
             }
-            tcs.SetResult();
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "An error occurred while making NuGet packages deterministic");
+                tcs.SetException(ex);
+            }
         });
+        thread.Name = "NuGetPackaging.Determinism";
         thread.Start();
         await tcs.Task;
-        logger?.LogInformation("NuGet packages are packed and deterministic");
     }
 
     // The below is based on this CLI:

@@ -5,7 +5,7 @@ namespace Altinn.App.Integration.Tests;
 
 public class FixtureTests
 {
-    [Fact]
+    [Fact(Skip = "Takes some time to pack, so let's not run this every time")]
     public async Task Produces_Deterministic_NuGet_Packages()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2));

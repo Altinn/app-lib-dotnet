@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -27,10 +26,12 @@ namespace TestApp.Shared;
 public sealed class FixtureConfigurationService : IDisposable
 {
     private const int ConfigurationPort = 5006;
-    private HttpListener? _httpListener;
-    private CancellationTokenSource? _cancellationTokenSource;
-    private Task? _listenerTask;
+    private readonly HttpListener _httpListener;
+    private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly Task _listenerTask;
+    private readonly ManualResetEventSlim _initialResetEvent;
     private readonly object _lock = new();
+
     public FixtureConfiguration? Config { get; private set; }
 
     public static FixtureConfigurationService Instance { get; } = new();
@@ -38,7 +39,27 @@ public sealed class FixtureConfigurationService : IDisposable
     // Event fired when configuration changes
     public event Action? ConfigurationChanged;
 
-    private FixtureConfigurationService() { }
+    private FixtureConfigurationService()
+    {
+        _initialResetEvent = new ManualResetEventSlim(false);
+
+        try
+        {
+            _cancellationTokenSource = new CancellationTokenSource();
+            _httpListener = new HttpListener();
+            _httpListener.Prefixes.Add($"http://+:{ConfigurationPort}/");
+            _httpListener.Start();
+
+            _listenerTask = Task.Run(async () => await HandleHttpRequests(), _cancellationTokenSource.Token);
+
+            Console.WriteLine($"Configuration HTTP server started on port {ConfigurationPort}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to start HTTP configuration server: {ex.Message}");
+            throw;
+        }
+    }
 
     /// <summary>
     /// Starts the HTTP configuration server and waits for initial configuration
@@ -49,12 +70,7 @@ public sealed class FixtureConfigurationService : IDisposable
         // as soon as the app container is in the `Starting` state.
         timeout ??= TimeSpan.FromSeconds(10);
 
-        using var resetEvent = new ManualResetEventSlim(false);
-
-        // Start HTTP listener before waiting for configuration
-        StartHttpListener(resetEvent);
-
-        if (!resetEvent.Wait(timeout.Value))
+        if (!_initialResetEvent.Wait(timeout.Value))
             throw new TimeoutException(
                 $"Fixture configuration not received after {timeout.Value.TotalSeconds} seconds"
             );
@@ -107,50 +123,15 @@ public sealed class FixtureConfigurationService : IDisposable
         }
     }
 
-    private void StartHttpListener(ManualResetEventSlim? initialResetEvent = null)
+    private async Task HandleHttpRequests()
     {
-        if (_httpListener != null)
-            return;
-
-        lock (_lock)
-        {
-            if (_httpListener != null)
-                return;
-
-            try
-            {
-                _cancellationTokenSource = new CancellationTokenSource();
-                _httpListener = new HttpListener();
-                _httpListener.Prefixes.Add($"http://+:{ConfigurationPort}/");
-                _httpListener.Start();
-
-                _listenerTask = Task.Run(
-                    async () => await HandleHttpRequests(initialResetEvent),
-                    _cancellationTokenSource.Token
-                );
-
-                Console.WriteLine($"Configuration HTTP server started on port {ConfigurationPort}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to start HTTP configuration server: {ex.Message}");
-            }
-        }
-    }
-
-    private async Task HandleHttpRequests(ManualResetEventSlim? initialResetEvent)
-    {
-        if (_httpListener is null)
-            throw new InvalidOperationException("HTTP listener not initialized");
-        if (_cancellationTokenSource is null)
-            throw new OperationCanceledException("HTTP listener has been canceled");
         while (!_cancellationTokenSource.Token.IsCancellationRequested)
         {
             try
             {
                 var context = await _httpListener.GetContextAsync();
                 Console.WriteLine($"Received configuration request from {context.Request.RemoteEndPoint}");
-                await ProcessConfigurationRequest(context, initialResetEvent);
+                await ProcessConfigurationRequest(context);
             }
             catch (ObjectDisposedException)
             {
@@ -164,7 +145,7 @@ public sealed class FixtureConfigurationService : IDisposable
         }
     }
 
-    private async Task ProcessConfigurationRequest(HttpListenerContext context, ManualResetEventSlim? initialResetEvent)
+    private async Task ProcessConfigurationRequest(HttpListenerContext context)
     {
         var request = context.Request;
         var response = context.Response;
@@ -180,10 +161,7 @@ public sealed class FixtureConfigurationService : IDisposable
                 return;
             }
 
-            using var reader = new StreamReader(request.InputStream, Encoding.UTF8);
-            var configJson = await reader.ReadToEndAsync();
-
-            var config = JsonSerializer.Deserialize<FixtureConfiguration>(configJson);
+            var config = await JsonSerializer.DeserializeAsync<FixtureConfiguration>(request.InputStream);
             if (config is null)
             {
                 response.StatusCode = 400;
@@ -194,6 +172,7 @@ public sealed class FixtureConfigurationService : IDisposable
 
             lock (_lock)
             {
+                var previousConfig = Config;
                 if (config != Config)
                 {
                     Config = config;
@@ -205,10 +184,11 @@ public sealed class FixtureConfigurationService : IDisposable
                     ConfigurationChanged?.Invoke();
                     SnapshotLogger.LogInitInfo($"Fixture configuration updated");
                 }
-            }
 
-            // Signal that configuration has been received
-            initialResetEvent?.Set();
+                // Signal that configuration has been received
+                if (previousConfig is null)
+                    _initialResetEvent.Set();
+            }
 
             response.StatusCode = 200;
             var successBytes = Encoding.UTF8.GetBytes("Configuration updated successfully");
@@ -252,14 +232,14 @@ public sealed class FixtureConfigurationService : IDisposable
         }
     }
 
-    private Assembly? CompileScenarioServices(string[] csFiles)
+    private static Assembly? CompileScenarioServices(string[] csFiles)
     {
         var sourceTexts = csFiles.Select(file => File.ReadAllText(file)).ToList();
         if (!sourceTexts.Any())
             return null;
 
         var references = DependencyContext
-            .Default.CompileLibraries.SelectMany(cl => cl.ResolveReferencePaths())
+            .Default!.CompileLibraries.SelectMany(cl => cl.ResolveReferencePaths())
             .Select(asm => MetadataReference.CreateFromFile(asm))
             .ToArray();
 
@@ -319,8 +299,6 @@ public sealed class FixtureConfigurationService : IDisposable
         finally
         {
             _cancellationTokenSource?.Dispose();
-            _httpListener = null;
-            _listenerTask = null;
         }
     }
 }

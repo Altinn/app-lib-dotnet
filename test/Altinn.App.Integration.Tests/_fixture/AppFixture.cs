@@ -3,8 +3,6 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using CliWrap;
-using CliWrap.Buffered;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Images;
@@ -73,34 +71,6 @@ public sealed partial class AppFixture : IAsyncDisposable
 
     public bool TestErrored { get; set; } = false;
 
-    private static readonly Dictionary<string, string> _localtestEnv = new()
-    {
-        { "DOTNET_ENVIRONMENT", "Docker" },
-        { "LocalPlatformSettings__LocalAppUrl", $"http://{AppHostname}:{AppPort}" },
-    };
-
-    private static Dictionary<string, string?> CreateAppEnv(long fixtureInstance, string name, string scenario)
-    {
-        Assert.NotNull(_pdfServiceContainer);
-        var pdfServiceUrl =
-            $"http://host.docker.internal:{_pdfServiceContainer.GetMappedPublicPort(PdfServicePort)}/pdf";
-
-        return new()
-        {
-            { "DOTNET_ENVIRONMENT", "Development" },
-            { "AppSettings__OpenIdWellKnownEndpoint", $"{_localtestUrl}/authentication/api/v1/openid/" },
-            { "PlatformSettings__ApiStorageEndpoint", $"{_localtestUrl}/storage/api/v1/" },
-            { "PlatformSettings__ApiRegisterEndpoint", $"{_localtestUrl}/register/api/v1/" },
-            { "PlatformSettings__ApiProfileEndpoint", $"{_localtestUrl}/profile/api/v1/" },
-            { "PlatformSettings__ApiAuthenticationEndpoint", $"{_localtestUrl}/authentication/api/v1/" },
-            { "PlatformSettings__ApiAuthorizationEndpoint", $"{_localtestUrl}/authorization/api/v1/" },
-            { "PlatformSettings__ApiEventsEndpoint", $"{_localtestUrl}/events/api/v1/" },
-            { "PlatformSettings__ApiPdf2Endpoint", pdfServiceUrl },
-            { "PlatformSettings__ApiNotificationEndpoint", $"{_localtestUrl}/notifications/api/v1/" },
-            { "PlatformSettings__ApiCorrespondenceEndpoint", $"{_localtestUrl}/correspondence/api/v1/" },
-        };
-    }
-
     private AppFixture(
         ILogger logger,
         long currentFixtureInstance,
@@ -121,6 +91,118 @@ public sealed partial class AppFixture : IAsyncDisposable
         _appContainer = appContainer;
         _isClassFixture = isClassFixture;
         ScopedVerifier = new ScopedVerifier(this);
+    }
+
+    public static async Task<AppFixture> Create(
+        ITestOutputHelper output,
+        string app = TestApps.Basic,
+        string scenario = "default",
+        bool isClassFixture = false
+    )
+    {
+        var timer = Stopwatch.StartNew();
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(15));
+        var cancellationToken = cts.Token;
+        var fixtureInstance = NextFixtureInstance();
+
+        // When running as a class fixture we can just log to stdout immediately,
+        // but when running as a test-local fixture we need to use the ITestOutputHelper
+        // to let xUnit capture and scope the output to the test itself.
+        ILogger testContainersLogger = isClassFixture
+            ? new FixtureLogger(fixtureInstance, app, scenario, true)
+            : new TestOutputLogger(output, fixtureInstance, app, scenario, true);
+        ILogger logger = isClassFixture
+            ? new FixtureLogger(fixtureInstance, app, scenario, false)
+            : new TestOutputLogger(output, fixtureInstance, app, scenario, false);
+
+        logger.LogInformation("Creating fixture..");
+
+        try
+        {
+            // Build images and start PDF service in parallel for better performance
+            // Cloning localtest repo has to occur before building the localtest image since
+            // the image build relies on the repository being present.
+            // Packing has to occur before building the app image since
+            // the app image rely on local nupkg's to be present.
+            // The rest can happen in parallel
+            await EnsureLocaltestRepositoryCloned(logger, cancellationToken);
+            var localtestImageTask = EnsureLocaltestImageBuilt(logger, testContainersLogger, cancellationToken);
+            var pdfServiceTask = EnsurePdfServiceStarted(logger, testContainersLogger, cancellationToken);
+            await EnsureLibrariesPacked(logger, cancellationToken);
+            var appImageTask = EnsureAppImageBuilt(app, logger, testContainersLogger, cancellationToken);
+
+            await Task.WhenAll(localtestImageTask, pdfServiceTask, appImageTask);
+            var localtestContainerImage = await localtestImageTask;
+            var appContainerImage = await appImageTask;
+            await pdfServiceTask; // We don't capture and dispose this anywhere. Testcontainers will take care of it
+
+            // Initialize containers (including network creation and PDF service)
+            var (network, localtestContainer, appContainer) = await InitializeContainers(
+                fixtureInstance,
+                app,
+                scenario,
+                localtestContainerImage,
+                appContainerImage,
+                logger,
+                testContainersLogger,
+                cancellationToken
+            );
+
+            logger.LogInformation("Fixture created in {ElapsedSeconds}s", timer.Elapsed.TotalSeconds.ToString("0.00"));
+            return new AppFixture(
+                logger,
+                fixtureInstance,
+                app,
+                scenario,
+                network,
+                localtestContainer,
+                appContainer,
+                isClassFixture
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to create fixture");
+            throw;
+        }
+    }
+
+    public HttpClient GetAppClient()
+    {
+        if (_appClient == null)
+        {
+            var cookieContainer = new CookieContainer();
+            var handler = new HttpClientHandler() { CookieContainer = cookieContainer };
+
+            _appClient = new HttpClient(handler)
+            {
+                BaseAddress = new Uri(
+                    $"http://local.altinn.cloud:{_localtestContainer.GetMappedPublicPort(LocaltestPort)}"
+                ),
+            };
+            _appClient.DefaultRequestHeaders.Add("User-Agent", "Altinn.App.Integration.Tests");
+
+            // Add frontendVersion cookie with the app's external URL
+            var appExternalUrl = $"http://host.docker.internal:{_appContainer.GetMappedPublicPort(AppPort)}";
+            var baseUri = _appClient.BaseAddress!;
+            cookieContainer.Add(baseUri, new Cookie("frontendVersion", appExternalUrl));
+        }
+
+        return _appClient;
+    }
+
+    public HttpClient GetLocaltestClient()
+    {
+        if (_localtestClient == null)
+        {
+            _localtestClient = new HttpClient
+            {
+                BaseAddress = new Uri($"http://localhost:{_localtestContainer.GetMappedPublicPort(LocaltestPort)}"),
+            };
+            _localtestClient.DefaultRequestHeaders.Add("User-Agent", "Altinn.App.Integration.Tests");
+        }
+
+        return _localtestClient;
     }
 
     public async Task<string> GetSnapshotAppLogs()
@@ -213,6 +295,79 @@ public sealed partial class AppFixture : IAsyncDisposable
         return result;
     }
 
+    public async Task ResetBetweenTestsAsync(
+        ITestOutputHelper? output = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        Assert.True(_isClassFixture);
+
+        _currentFixtureInstance = NextFixtureInstance();
+
+        // Update logger with new test output helper and fixture instance
+        if (output is not null && _logger is TestOutputLogger logger)
+            logger.UpdateOutput(output, _currentFixtureInstance);
+
+        // Update fixture configuration in the container with new fixture instance
+        await SendFixtureConfiguration(
+            _app,
+            _scenario,
+            _appContainer,
+            _currentFixtureInstance,
+            _logger,
+            cancellationToken
+        );
+
+        // Reset error state
+        TestErrored = false;
+
+        // Dispose and reset HTTP clients to clear cookies, headers, and cached state
+        if (_localtestClient is not null)
+        {
+            _localtestClient.Dispose();
+            _localtestClient = null;
+        }
+        if (_appClient is not null)
+        {
+            _appClient.Dispose();
+            _appClient = null;
+        }
+
+        // Recreate ScopedVerifier to reset index counter and test case state
+        ScopedVerifier = new ScopedVerifier(this);
+
+        // Note: We intentionally keep containers running as they are expensive to restart
+        // and provide good isolation between tests through the HTTP layer
+    }
+
+    private static readonly Dictionary<string, string> _localtestEnv = new()
+    {
+        { "DOTNET_ENVIRONMENT", "Docker" },
+        { "LocalPlatformSettings__LocalAppUrl", $"http://{AppHostname}:{AppPort}" },
+    };
+
+    private static Dictionary<string, string?> CreateAppEnv(long fixtureInstance, string name, string scenario)
+    {
+        Assert.NotNull(_pdfServiceContainer);
+        var pdfServiceUrl =
+            $"http://host.docker.internal:{_pdfServiceContainer.GetMappedPublicPort(PdfServicePort)}/pdf";
+
+        return new()
+        {
+            { "DOTNET_ENVIRONMENT", "Development" },
+            { "AppSettings__OpenIdWellKnownEndpoint", $"{_localtestUrl}/authentication/api/v1/openid/" },
+            { "PlatformSettings__ApiStorageEndpoint", $"{_localtestUrl}/storage/api/v1/" },
+            { "PlatformSettings__ApiRegisterEndpoint", $"{_localtestUrl}/register/api/v1/" },
+            { "PlatformSettings__ApiProfileEndpoint", $"{_localtestUrl}/profile/api/v1/" },
+            { "PlatformSettings__ApiAuthenticationEndpoint", $"{_localtestUrl}/authentication/api/v1/" },
+            { "PlatformSettings__ApiAuthorizationEndpoint", $"{_localtestUrl}/authorization/api/v1/" },
+            { "PlatformSettings__ApiEventsEndpoint", $"{_localtestUrl}/events/api/v1/" },
+            { "PlatformSettings__ApiPdf2Endpoint", pdfServiceUrl },
+            { "PlatformSettings__ApiNotificationEndpoint", $"{_localtestUrl}/notifications/api/v1/" },
+            { "PlatformSettings__ApiCorrespondenceEndpoint", $"{_localtestUrl}/correspondence/api/v1/" },
+        };
+    }
+
     private static async Task EnsureLocaltestRepositoryCloned(ILogger logger, CancellationToken cancellationToken)
     {
         if (_localtestRepositoryCloned)
@@ -230,12 +385,12 @@ public sealed partial class AppFixture : IAsyncDisposable
             {
                 logger.LogInformation("Updating existing app-localtest repository: {Branch}", _localtestBranch);
 
-                // Check current branch
-                var currentBranch = await Cli.Wrap("git")
-                    .WithArguments(["branch", "--show-current"])
-                    .WithWorkingDirectory(localtestDirectory)
-                    .ExecuteBufferedAsync(cancellationToken)
-                    .Select(x => x.StandardOutput.Trim());
+                var currentBranch = await new Command(
+                    "git",
+                    "branch --show-current",
+                    localtestDirectory,
+                    CancellationToken: cancellationToken
+                ).Select(r => r.StdOut.Trim());
 
                 if (currentBranch != _localtestBranch)
                 {
@@ -248,33 +403,28 @@ public sealed partial class AppFixture : IAsyncDisposable
                     Directory.Delete(localtestDirectory, true);
                     Directory.CreateDirectory(localtestDirectory);
 
-                    // Clone the repository with the new branch
-                    await Cli.Wrap("git")
-                        .WithArguments(
-                            [
-                                "clone",
-                                "--depth=1",
-                                "https://github.com/Altinn/app-localtest",
-                                "--branch",
-                                _localtestBranch,
-                                localtestDirectory,
-                            ]
-                        )
-                        .WithWorkingDirectory(_projectDirectory)
-                        .ExecuteBufferedAsync(cancellationToken);
+                    await new Command(
+                        "git",
+                        $"clone --depth=1 https://github.com/Altinn/app-localtest --branch {_localtestBranch} {localtestDirectory}",
+                        _projectDirectory,
+                        CancellationToken: cancellationToken
+                    );
                 }
                 else
                 {
                     // Same branch, just update
-                    await Cli.Wrap("git")
-                        .WithArguments(["fetch", "origin", _localtestBranch])
-                        .WithWorkingDirectory(localtestDirectory)
-                        .ExecuteBufferedAsync(cancellationToken);
-
-                    await Cli.Wrap("git")
-                        .WithArguments(["reset", "--hard", $"origin/{_localtestBranch}"])
-                        .WithWorkingDirectory(localtestDirectory)
-                        .ExecuteBufferedAsync(cancellationToken);
+                    await new Command(
+                        "git",
+                        $"fetch origin {_localtestBranch}",
+                        localtestDirectory,
+                        CancellationToken: cancellationToken
+                    );
+                    await new Command(
+                        "git",
+                        $"reset --hard origin/{_localtestBranch}",
+                        localtestDirectory,
+                        CancellationToken: cancellationToken
+                    );
                 }
             }
             else
@@ -287,26 +437,20 @@ public sealed partial class AppFixture : IAsyncDisposable
                 Directory.CreateDirectory(localtestDirectory);
 
                 // Clone the repository
-                await Cli.Wrap("git")
-                    .WithArguments(
-                        [
-                            "clone",
-                            "--depth=1",
-                            "https://github.com/Altinn/app-localtest",
-                            "--branch",
-                            _localtestBranch,
-                            localtestDirectory,
-                        ]
-                    )
-                    .WithWorkingDirectory(_projectDirectory)
-                    .ExecuteBufferedAsync(cancellationToken);
+                await new Command(
+                    "git",
+                    $"clone --depth=1 https://github.com/Altinn/app-localtest --branch {_localtestBranch} {localtestDirectory}",
+                    _projectDirectory,
+                    CancellationToken: cancellationToken
+                );
             }
 
-            var sha = await Cli.Wrap("git")
-                .WithArguments(["rev-parse", "--short", "HEAD"])
-                .WithWorkingDirectory(localtestDirectory)
-                .ExecuteBufferedAsync(cancellationToken)
-                .Select(x => x.StandardOutput.Trim());
+            var sha = await new Command(
+                "git",
+                "rev-parse --short HEAD",
+                localtestDirectory,
+                CancellationToken: cancellationToken
+            ).Select(r => r.StdOut.Trim());
 
             _localtestRepositoryCloned = true;
             logger.LogInformation("app-localtest repository ready - {Branch} / {Sha}", _localtestBranch, sha);
@@ -371,8 +515,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             logger.LogInformation("Building app container image");
 
             var appDirectory = GetAppDir(name);
-            SyncPackages(name);
-            SyncShared(name);
+            await Task.WhenAll(SyncPackages(name), SyncShared(name));
 
             var appBuilder = new ImageFromDockerfileBuilder()
                 .WithName($"applib-{name}:latest")
@@ -574,13 +717,15 @@ public sealed partial class AppFixture : IAsyncDisposable
         CancellationToken cancellationToken
     )
     {
-        const int retries = 10;
+        const int retries = 20;
+        var appPort = appContainer.GetMappedPublicPort(AppPort);
+        var configPort = appContainer.GetMappedPublicPort(ConfigPort);
+        var configUrl = $"http://localhost:{configPort}/configure";
+        logger.LogInformation("Sending fixture configuration to app at: {ConfigUrl}", configUrl);
         for (int i = 0; i < retries; i++)
         {
             try
             {
-                var appPort = appContainer.GetMappedPublicPort(AppPort);
-                var configPort = appContainer.GetMappedPublicPort(ConfigPort);
                 var fixtureConfig = new FixtureConfiguration(
                     name,
                     scenario,
@@ -593,9 +738,6 @@ public sealed partial class AppFixture : IAsyncDisposable
                     fixtureConfig,
                     new JsonSerializerOptions { WriteIndented = true }
                 );
-
-                var configUrl = $"http://localhost:{configPort}/configure";
-                logger.LogInformation("Sending fixture configuration to app at: {ConfigUrl}", configUrl);
 
                 using var httpClient = new HttpClient();
                 httpClient.Timeout = TimeSpan.FromSeconds(10);
@@ -611,7 +753,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                     );
                 }
 
-                logger.LogInformation("Sent fixture configuration to {ConfigUrl}", configUrl);
+                logger.LogInformation("Sent fixture configuration to {ConfigUrl}, attempt {Attempt}", configUrl, i + 1);
                 break;
             }
             catch (Exception ex)
@@ -621,128 +763,9 @@ public sealed partial class AppFixture : IAsyncDisposable
                     logger.LogError(ex, "Failed to send fixture configuration to app");
                     throw;
                 }
-                await Task.Delay(100 * i);
+                await Task.Delay(Math.Min(100 * i, 500));
             }
         }
-    }
-
-    public static async Task<AppFixture> Create(
-        ITestOutputHelper output,
-        string app = TestApps.Basic,
-        string scenario = "default",
-        bool isClassFixture = false
-    )
-    {
-        var timer = Stopwatch.StartNew();
-        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
-        var cancellationToken = cts.Token;
-        var fixtureInstance = NextFixtureInstance();
-
-        // When running as a class fixture we can just log to stdout immediately,
-        // but when running as a test-local fixture we need to use the ITestOutputHelper
-        // to let xUnit capture and scope the output to the test itself.
-        ILogger testContainersLogger = isClassFixture
-            ? new FixtureLogger(fixtureInstance, app, scenario, true)
-            : new TestOutputLogger(output, fixtureInstance, app, scenario, true);
-        ILogger logger = isClassFixture
-            ? new FixtureLogger(fixtureInstance, app, scenario, false)
-            : new TestOutputLogger(output, fixtureInstance, app, scenario, false);
-
-        logger.LogInformation("Creating fixture..");
-
-        try
-        {
-            // Build images and start PDF service in parallel for better performance
-            // Cloning localtest repo has to occur before building the localtest image since
-            // the image build relies on the repository being present.
-            // Packing has to occur before building the app image since
-            // the app image rely on local nupkg's to be present.
-            // The rest can happen in parallel
-            await EnsureLocaltestRepositoryCloned(logger, cancellationToken);
-            var localtestImageTask = EnsureLocaltestImageBuilt(logger, testContainersLogger, cancellationToken);
-            var pdfServiceTask = EnsurePdfServiceStarted(logger, testContainersLogger, cancellationToken);
-            await EnsureLibrariesPacked(logger, cancellationToken);
-            var appImageTask = EnsureAppImageBuilt(app, logger, testContainersLogger, cancellationToken);
-
-            await Task.WhenAll(localtestImageTask, pdfServiceTask, appImageTask);
-            var localtestContainerImage = await localtestImageTask;
-            var appContainerImage = await appImageTask;
-            await pdfServiceTask; // We don't capture and dispose this anywhere. Testcontainers will take care of it
-
-            // Initialize containers (including network creation and PDF service)
-            var (network, localtestContainer, appContainer) = await InitializeContainers(
-                fixtureInstance,
-                app,
-                scenario,
-                localtestContainerImage,
-                appContainerImage,
-                logger,
-                testContainersLogger,
-                cancellationToken
-            );
-
-            logger.LogInformation("Fixture created in {ElapsedSeconds}s", timer.Elapsed.TotalSeconds.ToString("0.00"));
-            return new AppFixture(
-                logger,
-                fixtureInstance,
-                app,
-                scenario,
-                network,
-                localtestContainer,
-                appContainer,
-                isClassFixture
-            );
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to create fixture");
-            throw;
-        }
-    }
-
-    public async Task ResetBetweenTestsAsync(
-        ITestOutputHelper? output = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        Assert.True(_isClassFixture);
-
-        _currentFixtureInstance = NextFixtureInstance();
-
-        // Update logger with new test output helper and fixture instance
-        if (output is not null && _logger is TestOutputLogger logger)
-            logger.UpdateOutput(output, _currentFixtureInstance);
-
-        // Update fixture configuration in the container with new fixture instance
-        await SendFixtureConfiguration(
-            _app,
-            _scenario,
-            _appContainer,
-            _currentFixtureInstance,
-            _logger,
-            cancellationToken
-        );
-
-        // Reset error state
-        TestErrored = false;
-
-        // Dispose and reset HTTP clients to clear cookies, headers, and cached state
-        if (_localtestClient is not null)
-        {
-            _localtestClient.Dispose();
-            _localtestClient = null;
-        }
-        if (_appClient is not null)
-        {
-            _appClient.Dispose();
-            _appClient = null;
-        }
-
-        // Recreate ScopedVerifier to reset index counter and test case state
-        ScopedVerifier = new ScopedVerifier(this);
-
-        // Note: We intentionally keep containers running as they are expensive to restart
-        // and provide good isolation between tests through the HTTP layer
     }
 
     public async ValueTask DisposeAsync()
@@ -769,7 +792,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             await _appContainer.StopAsync();
 
             _logger.LogError("Test errored, logging container output");
-            await LogContainerLogs(_logger, _localtestContainer, _appContainer);
+            await LogContainerLogs();
         }
 
         await TryDispose(_appContainer);
@@ -779,11 +802,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
     internal Task LogContainerLogs() => LogContainerLogs(_logger, _localtestContainer, _appContainer);
 
-    internal static async Task LogContainerLogs(
-        ILogger logger,
-        IContainer? localtestContainer,
-        IContainer? appContainer
-    )
+    private static async Task LogContainerLogs(ILogger logger, IContainer? localtestContainer, IContainer? appContainer)
     {
         if (localtestContainer is not null)
         {
@@ -812,54 +831,6 @@ public sealed partial class AppFixture : IAsyncDisposable
         {
             logger.LogError(ex, "Failed to dispose {Type}", disposable.GetType().FullName);
         }
-    }
-
-    public HttpClient GetAppClient()
-    {
-        if (_appClient == null)
-        {
-            var cookieContainer = new CookieContainer();
-            var handler = new HttpClientHandler() { CookieContainer = cookieContainer };
-
-            _appClient = new HttpClient(handler)
-            {
-                BaseAddress = new Uri(
-                    $"http://local.altinn.cloud:{_localtestContainer.GetMappedPublicPort(LocaltestPort)}"
-                ),
-            };
-            _appClient.DefaultRequestHeaders.Add("User-Agent", "Altinn.App.Integration.Tests");
-
-            // Add frontendVersion cookie with the app's external URL
-            var appExternalUrl = GetAppExternalUrl();
-            var baseUri = _appClient.BaseAddress!;
-            cookieContainer.Add(baseUri, new Cookie("frontendVersion", appExternalUrl));
-        }
-
-        return _appClient;
-    }
-
-    public HttpClient GetLocaltestClient()
-    {
-        if (_localtestClient == null)
-        {
-            _localtestClient = new HttpClient
-            {
-                BaseAddress = new Uri($"http://localhost:{_localtestContainer.GetMappedPublicPort(LocaltestPort)}"),
-            };
-            _localtestClient.DefaultRequestHeaders.Add("User-Agent", "Altinn.App.Integration.Tests");
-        }
-
-        return _localtestClient;
-    }
-
-    public string GetAppExternalUrl()
-    {
-        return $"http://host.docker.internal:{_appContainer.GetMappedPublicPort(AppPort)}";
-    }
-
-    public string GetAppConfigUrl()
-    {
-        return $"http://localhost:{_appContainer.GetMappedPublicPort(ConfigPort)}";
     }
 
     private static string GetAppDir(string name)
@@ -920,7 +891,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         }
     }
 
-    private static void SyncPackages(string name)
+    private static async Task SyncPackages(string name)
     {
         var appDirectory = GetAppDir(name);
         var packagesDirectory = Path.Join(_projectDirectory, "_testapps", "_packages");
@@ -932,11 +903,13 @@ public sealed partial class AppFixture : IAsyncDisposable
         {
             var fileName = Path.GetFileName(file);
             var destFile = Path.Combine(appPackagesDirectory, fileName);
-            File.Copy(file, destFile);
+            await using var source = File.OpenRead(file);
+            await using var destination = File.Create(destFile);
+            await source.CopyToAsync(destination);
         }
     }
 
-    private static void SyncShared(string name)
+    private static async Task SyncShared(string name)
     {
         var appDirectory = GetAppDir(name);
         var sharedDirectory = Path.Join(_projectDirectory, "_testapps", "_shared");
@@ -948,7 +921,9 @@ public sealed partial class AppFixture : IAsyncDisposable
         {
             var fileName = Path.GetFileName(file);
             var destFile = Path.Combine(appSharedDirectory, fileName);
-            File.Copy(file, destFile);
+            await using var source = File.OpenRead(file);
+            await using var destination = File.Create(destFile);
+            await source.CopyToAsync(destination);
         }
     }
 
