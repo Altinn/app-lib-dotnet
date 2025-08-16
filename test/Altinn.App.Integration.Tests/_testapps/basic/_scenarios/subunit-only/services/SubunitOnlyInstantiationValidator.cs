@@ -1,7 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
+using TestApp.Shared;
+
+#nullable enable
 
 namespace Altinn.App.Integration.Tests.Scenarios.SubunitOnly;
 
@@ -9,6 +16,7 @@ public class SubunitOnlyInstantiationValidator : IInstantiationValidator
 {
     public async Task<InstantiationValidationResult?> Validate(Instance instance)
     {
+        SnapshotLogger.LogInfo("IInstantiationValidator.Validate");
         // Custom validation logic for subunit-only scenario
         await Task.CompletedTask;
 
