@@ -9,7 +9,8 @@ internal static class ModuleInitializer
     public static void Init()
     {
         VerifierSettings.InitializePlugins();
-        if (BuildServerDetector.Detected && BuildServerDetector.IsWsl)
+        var isCi = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CI"));
+        if (BuildServerDetector.Detected && BuildServerDetector.IsWsl && !isCi)
             BuildServerDetector.Detected = false; // WSL is not a build server
         VerifierSettings.AutoVerify(includeBuildServer: false);
     }

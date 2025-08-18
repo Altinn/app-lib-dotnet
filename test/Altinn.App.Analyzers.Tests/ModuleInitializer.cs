@@ -31,7 +31,8 @@ public class ModuleInitializer
             converters.Add(new DiagnosticJsonConverter());
         });
         Verifier.UseProjectRelativeDirectory("_snapshots");
-        if (BuildServerDetector.Detected && BuildServerDetector.IsWsl)
+        var isCi = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CI"));
+        if (BuildServerDetector.Detected && BuildServerDetector.IsWsl && !isCi)
             BuildServerDetector.Detected = false; // WSL is not a build server
         VerifierSettings.AutoVerify(includeBuildServer: false);
     }
