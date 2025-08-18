@@ -91,7 +91,9 @@ public sealed class PatchServiceTests : IDisposable
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<Stream>()
+                    It.IsAny<Stream>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(_dataElement)
@@ -321,7 +323,9 @@ public sealed class PatchServiceTests : IDisposable
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<Guid>()
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(_modelSerializationService.SerializeToXml(oldModel).ToArray())

@@ -184,7 +184,7 @@ public sealed class DataAccessorFixture
         Instance.Data.Add(dataElement);
         var serializationService = new ModelSerializationService(AppModelMock.Object);
         DataClientMock
-            .Setup(dc => dc.GetDataBytes(Org, App, InstanceOwnerPartyId, InstanceGuid, dataGuid))
+            .Setup(dc => dc.GetDataBytes(Org, App, InstanceOwnerPartyId, InstanceGuid, dataGuid, null, default))
             .ReturnsAsync(serializationService.SerializeToStorage(data, dataType).data.ToArray());
     }
 }
