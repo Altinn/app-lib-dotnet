@@ -60,20 +60,27 @@ internal sealed record Command(
                 using Process proc = new Process();
                 proc.StartInfo = processStartInfo;
 
+                var @lock = new object();
                 var stdout = new StringBuilder();
                 var stderr = new StringBuilder();
                 var allOutput = new StringBuilder();
                 proc.OutputDataReceived += (_, args) =>
                 {
                     Logger?.LogInformation("'{Command}' stdout: {Line}", cmd, args.Data);
-                    stdout.AppendLine(args.Data);
-                    allOutput.AppendLine(args.Data);
+                    lock (@lock)
+                    {
+                        stdout.AppendLine(args.Data);
+                        allOutput.AppendLine(args.Data);
+                    }
                 };
                 proc.ErrorDataReceived += (_, args) =>
                 {
                     Logger?.LogError("'{Command}' stderr: {Line}", cmd, args.Data);
-                    stderr.AppendLine(args.Data);
-                    allOutput.AppendLine(args.Data);
+                    lock (@lock)
+                    {
+                        stderr.AppendLine(args.Data);
+                        allOutput.AppendLine(args.Data);
+                    }
                 };
                 proc.Start();
                 proc.BeginOutputReadLine();
