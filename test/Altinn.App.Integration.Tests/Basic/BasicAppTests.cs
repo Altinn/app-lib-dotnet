@@ -38,7 +38,6 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
         var verifier = fixture.ScopedVerifier;
         verifier.UseTestCase(new { testCase, auth });
 
-        // TODO: parameterize auth
         var token = auth switch
         {
             Auth.User => await fixture.Auth.GetUserToken(userId: 1337),
