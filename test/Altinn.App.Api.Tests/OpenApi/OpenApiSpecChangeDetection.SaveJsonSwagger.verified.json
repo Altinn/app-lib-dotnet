@@ -3587,16 +3587,6 @@
                 "schema": {
                   "$ref": "#/components/schemas/InstantiationValidationResult"
                 }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/InstantiationValidationResult"
-                }
-              },
-              "text/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/InstantiationValidationResult"
-                }
               }
             }
           },
@@ -5825,6 +5815,15 @@
             }
           },
           {
+            "name": "includeRowId",
+            "in": "query",
+            "description": "Whether to initialize or remove AltinnRowId fields in the model",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
             "name": "language",
             "in": "query",
             "description": "Currently selected language by the user (if available)",
@@ -5937,6 +5936,15 @@
             }
           },
           {
+            "name": "includeRowId",
+            "in": "query",
+            "description": "Whether to initialize or remove AltinnRowId fields in the model",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
             "name": "language",
             "in": "query",
             "description": "The language selected by the user.",
@@ -5992,6 +6000,15 @@
             "description": "The data type id",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "includeRowId",
+            "in": "query",
+            "description": "Whether to initialize or remove AltinnRowId fields in the model",
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           },
           {
@@ -6064,6 +6081,15 @@
             "description": "The data type id",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "includeRowId",
+            "in": "query",
+            "description": "Whether to initialize or remove AltinnRowId fields in the model",
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           },
           {
@@ -6579,22 +6605,6 @@
                     "$ref": "#/components/schemas/ValidationIssueWithSource"
                   }
                 }
-              },
-              "application/xml": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ValidationIssueWithSource"
-                  }
-                }
-              },
-              "text/xml": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ValidationIssueWithSource"
-                  }
-                }
               }
             }
           },
@@ -6746,22 +6756,6 @@
                 }
               },
               "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ValidationIssueWithSource"
-                  }
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ValidationIssueWithSource"
-                  }
-                }
-              },
-              "text/xml": {
                 "schema": {
                   "type": "array",
                   "items": {
@@ -8386,6 +8380,13 @@
             "type": "string",
             "nullable": true
           },
+          "customTextParameters": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "nullable": true
+          },
           "message": {
             "type": "string",
             "nullable": true
@@ -10004,6 +10005,14 @@
           "customTextParams": {
             "type": "array",
             "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "deprecated": true
+          },
+          "customTextParameters": {
+            "type": "object",
+            "additionalProperties": {
               "type": "string"
             },
             "nullable": true
