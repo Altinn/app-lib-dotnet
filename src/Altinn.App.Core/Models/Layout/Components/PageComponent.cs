@@ -20,25 +20,14 @@ public sealed class PageComponent : Base.BaseComponent
             pageId,
             layoutId,
             "page",
-            ImmutableDictionary<string, ModelBinding>.Empty,
-            ImmutableDictionary<string, Expression>.Empty
+            required: Expression.False,
+            readOnly: Expression.False,
+            hidden: ParseHiddenExpressionAndValidateJsonElement(outerElement, out JsonElement dataElement),
+            removeWhenHidden: Expression.Null,
+            dataModelBindings: ImmutableDictionary<string, ModelBinding>.Empty,
+            textResourceBindings: ImmutableDictionary<string, Expression>.Empty
         )
     {
-        if (outerElement.ValueKind != JsonValueKind.Object)
-        {
-            throw new JsonException("Layout file must be an object.");
-        }
-
-        if (
-            !outerElement.TryGetProperty("data", out JsonElement dataElement)
-            || dataElement.ValueKind != JsonValueKind.Object
-        )
-        {
-            throw new JsonException("Layout file must have a \"data\" property of type object.");
-        }
-
-        Hidden = ParseExpression(dataElement, "hidden", ExpressionValue.False);
-
         if (
             !dataElement.TryGetProperty("layout", out JsonElement componentsElement)
             || componentsElement.ValueKind != JsonValueKind.Array
@@ -105,6 +94,25 @@ public sealed class PageComponent : Base.BaseComponent
         }
 
         Components = pageComponentLookup.Values.ToList();
+    }
+
+    // Silly way to run code before the base constructor is called.
+    private static Expression ParseHiddenExpressionAndValidateJsonElement(
+        JsonElement outerElement,
+        out JsonElement dataElement
+    )
+    {
+        if (outerElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new JsonException("Layout file must be an object.");
+        }
+
+        if (!outerElement.TryGetProperty("data", out dataElement) || dataElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new JsonException("Layout file must have a \"data\" property of type object.");
+        }
+
+        return ParseExpression(dataElement, "hidden");
     }
 
     /// <summary>

@@ -41,9 +41,10 @@ public abstract class BaseComponent
 
         TextResourceBindings = DeserializeTextResourceBindings(componentElement);
 
-        Hidden = ParseExpression(componentElement, "hidden", ExpressionValue.False);
-        Required = ParseExpression(componentElement, "required", ExpressionValue.False);
-        ReadOnly = ParseExpression(componentElement, "readonly", ExpressionValue.False);
+        Hidden = ParseExpression(componentElement, "hidden");
+        Required = ParseExpression(componentElement, "required");
+        ReadOnly = ParseExpression(componentElement, "readonly");
+        RemoveWhenHidden = ParseExpression(componentElement, "removeWhenHidden");
 
         PageId = pageId;
         LayoutId = layoutId;
@@ -57,6 +58,10 @@ public abstract class BaseComponent
         string pageId,
         string layoutId,
         string type,
+        Expression required,
+        Expression readOnly,
+        Expression hidden,
+        Expression removeWhenHidden,
         IReadOnlyDictionary<string, ModelBinding> dataModelBindings,
         IReadOnlyDictionary<string, Expression> textResourceBindings
     )
@@ -67,8 +72,10 @@ public abstract class BaseComponent
         Type = type;
         DataModelBindings = dataModelBindings;
         TextResourceBindings = textResourceBindings;
-        Required = Expression.False;
-        ReadOnly = Expression.False;
+        Required = required;
+        ReadOnly = readOnly;
+        Hidden = hidden;
+        RemoveWhenHidden = removeWhenHidden;
     }
 
     /// <summary>
@@ -94,7 +101,12 @@ public abstract class BaseComponent
     /// <summary>
     /// Layout Expression that can be evaluated to see if the component should be hidden
     /// </summary>
-    public Expression Hidden { get; protected init; }
+    public Expression Hidden { get; }
+
+    /// <summary>
+    /// Signal whether the data referenced by this component should be removed at the end of the task.
+    /// </summary>
+    public Expression RemoveWhenHidden { get; }
 
     /// <summary>
     /// Layout Expression that can be evaluated to see if the component should be required
@@ -144,18 +156,14 @@ public abstract class BaseComponent
     /// <summary>
     /// Helper method to parse an expression from a JSON element.
     /// </summary>
-    protected static Expression ParseExpression(
-        JsonElement componentElement,
-        string property,
-        ExpressionValue defaultValue
-    )
+    protected static Expression ParseExpression(JsonElement componentElement, string property)
     {
         if (componentElement.TryGetProperty(property, out var expressionElement))
         {
             return ExpressionConverter.ReadStatic(expressionElement);
         }
 
-        return new Expression(defaultValue);
+        return new Expression(ExpressionValue.Undefined);
     }
 
     private static IReadOnlyDictionary<string, ModelBinding> DeserializeModelBindings(JsonElement element)

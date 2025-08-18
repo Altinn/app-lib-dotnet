@@ -133,7 +133,8 @@ public abstract class RepeatingReferenceComponent : BaseComponent
                 PageId,
                 LayoutId,
                 DataModelBindings,
-                HiddenRow
+                HiddenRow,
+                RemoveWhenHidden
             );
             List<ComponentContext> rowChildren = [];
             foreach (var componentId in RepeatingChildReferences)
@@ -180,19 +181,21 @@ public class RepeatingGroupRowComponent : BaseComponent
         string pageId,
         string layoutId,
         IReadOnlyDictionary<string, ModelBinding> dataModelBindings,
-        Expression hiddenRow
+        Expression hiddenRow,
+        Expression removeWhenHidden
     )
         : base(
             id,
             pageId,
             layoutId,
             "repeatingGroupRow",
+            required: Expression.False,
+            readOnly: Expression.False,
+            hidden: hiddenRow,
+            removeWhenHidden,
             dataModelBindings,
             ImmutableDictionary<string, Expression>.Empty
-        )
-    {
-        Hidden = hiddenRow;
-    }
+        ) { }
 
     /// <inheritdoc />
     public override Task<ComponentContext> GetContext(

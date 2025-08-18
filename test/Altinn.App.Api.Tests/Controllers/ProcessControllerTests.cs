@@ -422,6 +422,10 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
                     PatchOperation.Add(
                         JsonPointer.Create("melding", "hidden"),
                         JsonNode.Parse("\"value that is hidden\"")
+                    ),
+                    PatchOperation.Add(
+                        JsonPointer.Create("melding", "hiddenNotRemove"),
+                        JsonNode.Parse("\"value that is not removed\"")
                     )
                 ),
                 IgnoredValidators = [],
@@ -441,6 +445,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         OutputHelper.WriteLine("Data before process next:");
         OutputHelper.WriteLine(dataString);
         dataString.Should().Contain("<hidden>value that is hidden</hidden>");
+        dataString.Should().Contain("<hiddenNotRemove>value that is not removed</hiddenNotRemove>");
 
         // Run process next
         var nextResponse = await client.PutAsync($"{Org}/{App}/instances/{_instanceId}/process/next", null);
@@ -453,6 +458,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         OutputHelper.WriteLine("Data after process next:");
         OutputHelper.WriteLine(dataString);
         dataString.Should().NotContain("<hidden>value that is hidden</hidden>");
+        dataString.Should().Contain("<hiddenNotRemove>value that is not removed</hiddenNotRemove>");
 
         _dataProcessorMock.Verify();
     }

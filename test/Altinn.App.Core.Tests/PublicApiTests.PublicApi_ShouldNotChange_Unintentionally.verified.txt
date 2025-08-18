@@ -3029,6 +3029,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue False { get; }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue Null { get; }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue True { get; }
+        public static Altinn.App.Core.Internal.Expressions.ExpressionValue Undefined { get; }
         public bool Equals(Altinn.App.Core.Internal.Expressions.ExpressionValue other) { }
         public override bool Equals(object? obj) { }
         public override int GetHashCode() { }
@@ -3048,10 +3049,10 @@ namespace Altinn.App.Core.Internal.Expressions
     }
     public static class LayoutEvaluator
     {
-        public static System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Layout.DataReference>> GetHiddenFieldsForRemoval(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state) { }
+        public static System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Layout.DataReference>> GetHiddenFieldsForRemoval(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, bool evaluateRemoveWhenHidden = false) { }
         [System.Obsolete("Use the async version of this method RemoveHiddenDataAsync")]
         public static void RemoveHiddenData(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
-        public static System.Threading.Tasks.Task RemoveHiddenDataAsync(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
+        public static System.Threading.Tasks.Task RemoveHiddenDataAsync(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption, bool evaluateRemoveWhenHidden = false) { }
         public static System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssue>> RunLayoutValidationsForRequired(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state) { }
     }
     public class LayoutEvaluatorState
@@ -4262,7 +4263,7 @@ namespace Altinn.App.Core.Models.Expressions
         public Altinn.App.Core.Models.Expressions.ComponentContext? Parent { get; }
         public int[]? RowIndices { get; }
         public Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState State { get; }
-        public System.Threading.Tasks.Task<bool> IsHidden() { }
+        public System.Threading.Tasks.Task<bool> IsHidden(bool evaluateRemoveWhenHidden) { }
     }
     [System.Text.Json.Serialization.JsonConverter(typeof(Altinn.App.Core.Models.Expressions.ExpressionConverter?))]
     public readonly struct Expression : System.IEquatable<Altinn.App.Core.Models.Expressions.Expression>
@@ -4354,20 +4355,21 @@ namespace Altinn.App.Core.Models.Layout.Components.Base
     public abstract class BaseComponent
     {
         protected BaseComponent(System.Text.Json.JsonElement componentElement, string pageId, string layoutId) { }
-        protected BaseComponent(string id, string pageId, string layoutId, string type, System.Collections.Generic.IReadOnlyDictionary<string, Altinn.App.Core.Models.Layout.ModelBinding> dataModelBindings, System.Collections.Generic.IReadOnlyDictionary<string, Altinn.App.Core.Models.Expressions.Expression> textResourceBindings) { }
+        protected BaseComponent(string id, string pageId, string layoutId, string type, Altinn.App.Core.Models.Expressions.Expression required, Altinn.App.Core.Models.Expressions.Expression readOnly, Altinn.App.Core.Models.Expressions.Expression hidden, Altinn.App.Core.Models.Expressions.Expression removeWhenHidden, System.Collections.Generic.IReadOnlyDictionary<string, Altinn.App.Core.Models.Layout.ModelBinding> dataModelBindings, System.Collections.Generic.IReadOnlyDictionary<string, Altinn.App.Core.Models.Expressions.Expression> textResourceBindings) { }
         public System.Collections.Generic.IReadOnlyDictionary<string, Altinn.App.Core.Models.Layout.ModelBinding> DataModelBindings { get; }
-        public Altinn.App.Core.Models.Expressions.Expression Hidden { get; protected init; }
+        public Altinn.App.Core.Models.Expressions.Expression Hidden { get; }
         public string Id { get; }
         public string LayoutId { get; }
         public string PageId { get; }
         public Altinn.App.Core.Models.Expressions.Expression ReadOnly { get; }
+        public Altinn.App.Core.Models.Expressions.Expression RemoveWhenHidden { get; }
         public Altinn.App.Core.Models.Expressions.Expression Required { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, Altinn.App.Core.Models.Expressions.Expression> TextResourceBindings { get; }
         public string Type { get; }
         public abstract void ClaimChildren(System.Collections.Generic.Dictionary<string, Altinn.App.Core.Models.Layout.Components.Base.BaseComponent> unclaimedComponents, System.Collections.Generic.Dictionary<string, string> claimedComponents);
         protected System.Collections.Generic.List<string> GetChildrenWithoutMultipageGroupIndex(System.Text.Json.JsonElement component, string property) { }
         public abstract System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext> GetContext(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.DataElementIdentifier defaultDataElementIdentifier, int[]? rowIndexes, System.Collections.Generic.Dictionary<string, Altinn.App.Core.Models.Layout.LayoutSetComponent> layoutsLookup);
-        protected static Altinn.App.Core.Models.Expressions.Expression ParseExpression(System.Text.Json.JsonElement componentElement, string property, Altinn.App.Core.Internal.Expressions.ExpressionValue defaultValue) { }
+        protected static Altinn.App.Core.Models.Expressions.Expression ParseExpression(System.Text.Json.JsonElement componentElement, string property) { }
     }
     public abstract class NoReferenceComponent : Altinn.App.Core.Models.Layout.Components.Base.BaseComponent
     {
@@ -4377,7 +4379,7 @@ namespace Altinn.App.Core.Models.Layout.Components.Base
     }
     public class RepeatingGroupRowComponent : Altinn.App.Core.Models.Layout.Components.Base.BaseComponent
     {
-        public RepeatingGroupRowComponent(string id, string pageId, string layoutId, System.Collections.Generic.IReadOnlyDictionary<string, Altinn.App.Core.Models.Layout.ModelBinding> dataModelBindings, Altinn.App.Core.Models.Expressions.Expression hiddenRow) { }
+        public RepeatingGroupRowComponent(string id, string pageId, string layoutId, System.Collections.Generic.IReadOnlyDictionary<string, Altinn.App.Core.Models.Layout.ModelBinding> dataModelBindings, Altinn.App.Core.Models.Expressions.Expression hiddenRow, Altinn.App.Core.Models.Expressions.Expression removeWhenHidden) { }
         public override void ClaimChildren(System.Collections.Generic.Dictionary<string, Altinn.App.Core.Models.Layout.Components.Base.BaseComponent> unclaimedComponents, System.Collections.Generic.Dictionary<string, string> claimedComponents) { }
         public override System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext> GetContext(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.DataElementIdentifier defaultDataElementIdentifier, int[]? rowIndexes, System.Collections.Generic.Dictionary<string, Altinn.App.Core.Models.Layout.LayoutSetComponent> layoutsLookup) { }
     }
