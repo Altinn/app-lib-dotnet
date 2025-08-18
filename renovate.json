@@ -7,6 +7,7 @@
     "dependency"
   ],
   "separateMinorPatch": true,
+  "separateMultipleMajor": true,
   "baseBranchPatterns": [
     "main"
   ],
