@@ -6,6 +6,7 @@
   "labels": [
     "dependency"
   ],
+  "separateMinorPatch": true,
   "baseBranchPatterns": [
     "main"
   ],
