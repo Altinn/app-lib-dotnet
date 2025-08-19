@@ -1201,6 +1201,14 @@ namespace Altinn.App.Core.Features
     {
         public const string JsonObjectInDataResponse = "JsonObjectInDataResponse";
     }
+    public static class FormDataWrapperExtensions
+    {
+        public static string? AddIndexToPath(this Altinn.App.Core.Features.IFormDataWrapper formDataWrapper, System.ReadOnlySpan<char> path, System.ReadOnlySpan<int> rowIndexes) { }
+        public static object? Get(this Altinn.App.Core.Features.IFormDataWrapper formDataWrapper, System.ReadOnlySpan<char> path, System.ReadOnlySpan<int> rowIndexes = default) { }
+        public static T? Get<T>(this Altinn.App.Core.Features.IFormDataWrapper formDataWrapper, System.ReadOnlySpan<char> path = default, System.ReadOnlySpan<int> rowIndexes = default) { }
+        public static Altinn.App.Core.Models.Layout.DataReference[] GetResolvedKeys(this Altinn.App.Core.Features.IFormDataWrapper formDataWrapper, Altinn.App.Core.Models.Layout.DataReference reference) { }
+        public static int? GetRowCount(this Altinn.App.Core.Features.IFormDataWrapper formDataWrapper, System.ReadOnlySpan<char> path, System.ReadOnlySpan<int> rowIndexes) { }
+    }
     public interface IAppOptionsProvider
     {
         string Id { get; }
@@ -1244,6 +1252,21 @@ namespace Altinn.App.Core.Features
         bool HasRelevantChanges(object current, object previous);
         System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssue>> ValidateFormData(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataElement dataElement, object data, string? language);
     }
+    public interface IFormDataWrapper
+    {
+        System.Type BackingDataType { get; }
+        System.ReadOnlySpan<char> AddIndexToPath(System.ReadOnlySpan<char> path, System.ReadOnlySpan<int> rowIndexes, System.Span<char> buffer);
+        T BackingData<T>()
+            where T :  class;
+        Altinn.App.Core.Features.IFormDataWrapper Copy();
+        object? Get(System.ReadOnlySpan<char> path);
+        void InitializeAltinnRowIds();
+        void PrepareModelForXmlStorage();
+        void RemoveAltinnRowIds();
+        void RemoveField(System.ReadOnlySpan<char> path, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption);
+    }
+    public interface IFormDataWrapper<T> : Altinn.App.Core.Features.IFormDataWrapper
+        where T :  class, new () { }
     public interface IInstanceAppOptionsProvider
     {
         string Id { get; }
@@ -2192,6 +2215,20 @@ namespace Altinn.App.Core.Helpers.DataModel
         public int? GetModelDataCount(string field, System.ReadOnlySpan<int> rowIndexes = default) { }
         public string[] GetResolvedKeys(string field) { }
         public void RemoveField(string field, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
+    }
+    public class ReflectionFormDataWrapper : Altinn.App.Core.Features.IFormDataWrapper
+    {
+        public ReflectionFormDataWrapper(object dataModel) { }
+        public System.Type BackingDataType { get; }
+        public System.ReadOnlySpan<char> AddIndexToPath(System.ReadOnlySpan<char> path, System.ReadOnlySpan<int> rowIndexes, System.Span<char> buffer) { }
+        public T BackingData<T>()
+            where T :  class { }
+        public Altinn.App.Core.Features.IFormDataWrapper Copy() { }
+        public object? Get(System.ReadOnlySpan<char> path) { }
+        public void InitializeAltinnRowIds() { }
+        public void PrepareModelForXmlStorage() { }
+        public void RemoveAltinnRowIds() { }
+        public void RemoveField(System.ReadOnlySpan<char> path, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
     }
 }
 namespace Altinn.App.Core.Helpers.Extensions
