@@ -80,8 +80,8 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
             new ValidationIssue
             {
                 Field = LinqExpressionHelpers.GetJsonPath(selector),
-                Description = description ?? textKey,
-                Code = code ?? textKey,
+                Description = description,
+                Code = code,
                 CustomTextKey = textKey,
                 CustomTextParameters = customTextParameters,
                 Severity = severity,
