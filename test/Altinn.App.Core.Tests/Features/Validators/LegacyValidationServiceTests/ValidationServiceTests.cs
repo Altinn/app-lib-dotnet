@@ -142,11 +142,13 @@ public sealed class ValidationServiceTests : IDisposable
             _dataClientMock.Object,
             _instanceClientMock.Object,
             _defaultAppMetadata,
+            _translationServiceMock.Object,
             _modelSerialization,
             null!,
             null!,
             DefaultTaskId,
-            DefaultLanguage
+            DefaultLanguage,
+            null
         );
         _serviceCollection.AddAppImplementationFactory();
         _serviceCollection.AddSingleton(_loggerMock.Object);
@@ -160,6 +162,7 @@ public sealed class ValidationServiceTests : IDisposable
         _serviceCollection.AddSingleton<IValidatorFactory, ValidatorFactory>();
         _serviceCollection.AddSingleton(_dataElementAccessCheckerMock.Object);
         _serviceCollection.AddSingleton(Microsoft.Extensions.Options.Options.Create(new GeneralSettings()));
+        _serviceCollection.AddSingleton(Microsoft.Extensions.Options.Options.Create(new AppSettings()));
 
         // NeverUsedValidators
         _serviceCollection.AddSingleton(_taskValidatorNeverMock.Object);
@@ -431,11 +434,13 @@ public sealed class ValidationServiceTests : IDisposable
             _dataClientMock.Object,
             _instanceClientMock.Object,
             _defaultAppMetadata,
+            _translationServiceMock.Object,
             _modelSerialization,
             null!,
             null!,
             DefaultTaskId,
-            DefaultLanguage
+            DefaultLanguage,
+            null
         );
         var resultData = await validatorService.ValidateIncrementalFormData(
             dataAccessor,
@@ -513,11 +518,13 @@ public sealed class ValidationServiceTests : IDisposable
             _dataClientMock.Object,
             _instanceClientMock.Object,
             _defaultAppMetadata,
+            _translationServiceMock.Object,
             _modelSerialization,
             null!,
             null!,
             DefaultTaskId,
-            DefaultLanguage
+            DefaultLanguage,
+            null
         );
 
         var taskResult = await validationService.ValidateInstanceAtTask(

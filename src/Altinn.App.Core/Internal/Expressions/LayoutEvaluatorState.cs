@@ -1,7 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
@@ -15,7 +14,6 @@ namespace Altinn.App.Core.Internal.Expressions;
 /// </summary>
 public class LayoutEvaluatorState
 {
-    private readonly DataModel _dataModel;
     private readonly LayoutModel? _componentModel;
     private readonly ITranslationService _translationService;
     private readonly FrontEndSettings _frontEndSettings;
@@ -53,7 +51,6 @@ public class LayoutEvaluatorState
                 _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
             }
         }
-        _dataModel = new DataModel(dataAccessor);
         _dataAccessor = dataAccessor;
         _componentModel = componentModel;
         _translationService = translationService;
@@ -181,7 +178,9 @@ public class LayoutEvaluatorState
         int[]? indexes
     )
     {
-        return await _dataModel.GetModelData(key, defaultDataElementIdentifier, indexes);
+        var elementIdentifier = ResolveDataElementIdentifier(key, defaultDataElementIdentifier);
+        var model = await _dataAccessor.GetFormDataWrapper(elementIdentifier);
+        return model.Get(key.Field, indexes);
     }
 
     /// <summary>
@@ -189,7 +188,8 @@ public class LayoutEvaluatorState
     /// </summary>
     public async Task<DataReference[]> GetResolvedKeys(DataReference reference)
     {
-        return await _dataModel.GetResolvedKeys(reference);
+        var data = await _dataAccessor.GetFormDataWrapper(reference.DataElementIdentifier);
+        return data.GetResolvedKeys(reference);
     }
 
     /// <summary>
@@ -197,7 +197,8 @@ public class LayoutEvaluatorState
     /// </summary>
     public async Task RemoveDataField(DataReference key, RowRemovalOption rowRemovalOption)
     {
-        await _dataModel.RemoveField(key, rowRemovalOption);
+        var dataWrapper = await _dataAccessor.GetFormDataWrapper(key.DataElementIdentifier);
+        dataWrapper.RemoveField(key.Field, rowRemovalOption);
     }
 
     /// <summary>
@@ -248,7 +249,47 @@ public class LayoutEvaluatorState
     /// </example>
     public async Task<DataReference> AddInidicies(ModelBinding binding, ComponentContext context)
     {
-        return await _dataModel.AddIndexes(binding, context.DataElementIdentifier, context.RowIndices);
+        var dataElementId = ResolveDataElementIdentifier(binding, context.DataElementIdentifier);
+        var formDataWrapper = await _dataAccessor.GetFormDataWrapper(dataElementId);
+
+        var field = formDataWrapper.AddIndexToPath(binding.Field, context.RowIndices) ?? "";
+        return new DataReference() { Field = field, DataElementIdentifier = dataElementId };
+    }
+
+    private DataElementIdentifier ResolveDataElementIdentifier(
+        ModelBinding key,
+        DataElementIdentifier defaultDataElementIdentifier
+    )
+    {
+        if (
+            key.DataType == null
+            || defaultDataElementIdentifier.DataTypeId == key.DataType
+            || _dataAccessor.GetDataType(defaultDataElementIdentifier).Id == key.DataType
+        )
+        {
+            return defaultDataElementIdentifier;
+        }
+
+        if (_dataIdsByType.TryGetValue(key.DataType, out var dataElementId))
+        {
+            return dataElementId;
+        }
+        if (_dataAccessor.GetDataType(key.DataType) is { } dataType)
+        {
+            if (dataType.MaxCount != 1)
+            {
+                throw new InvalidOperationException(
+                    $"{key.DataType} has maxCount different from 1 in applicationmetadata.json or don't have a classRef in appLogic"
+                );
+            }
+            throw new InvalidOperationException(
+                $"{key.DataType} has no classRef in applicationmetadata.json and can't be used as a data model in layouts"
+            );
+        }
+
+        throw new InvalidOperationException(
+            $"Data model with type {key.DataType} not found in applicationmetadata.json"
+        );
     }
 
     /// <summary>
@@ -260,7 +301,17 @@ public class LayoutEvaluatorState
         int[]? indexes
     )
     {
-        return await _dataModel.AddIndexes(binding, dataElementIdentifier, indexes);
+        var dataElementId = ResolveDataElementIdentifier(binding, dataElementIdentifier);
+        var formDataWrapper = await _dataAccessor.GetFormDataWrapper(dataElementId);
+        return new DataReference()
+        {
+            DataElementIdentifier = dataElementId,
+            Field =
+                formDataWrapper.AddIndexToPath(binding.Field, indexes)
+                ?? throw new InvalidOperationException(
+                    $"Failed to add indexes to path {binding.Field} with indexes {(indexes == null ? "null" : string.Join(", ", indexes))} on {dataElementId}"
+                ),
+        };
     }
 
     /// <summary>
@@ -288,7 +339,9 @@ public class LayoutEvaluatorState
         int[]? indexes
     )
     {
-        return await _dataModel.GetModelDataCount(groupBinding, defaultDataElementIdentifier, indexes);
+        var dataElementId = ResolveDataElementIdentifier(groupBinding, defaultDataElementIdentifier);
+        var model = await _dataAccessor.GetFormDataWrapper(dataElementId);
+        return model.GetRowCount(groupBinding.Field, indexes);
     }
 
     // /// <summary>
