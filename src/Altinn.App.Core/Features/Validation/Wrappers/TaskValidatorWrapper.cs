@@ -27,11 +27,8 @@ internal class TaskValidatorWrapper : IValidator
     /// <inheritdoc />
     public string ValidationSource => _taskValidator.ValidationSource;
 
-    /// <summary>
-    /// The old <see cref="ITaskValidator"/> interface does not support incremental validation.
-    /// so the issues will only show up when process/next fails
-    /// </summary>
-    public bool NoIncrementalValidation => true;
+    /// <inheritdoc />
+    public bool NoIncrementalValidation => _taskValidator.NoIncrementalValidation;
 
     /// <inheritdoc />
     public Task<List<ValidationIssue>> Validate(IInstanceDataAccessor dataAccessor, string taskId, string? language)
@@ -42,8 +39,8 @@ internal class TaskValidatorWrapper : IValidator
     /// <inheritdoc />
     public Task<bool> HasRelevantChanges(IInstanceDataAccessor dataAccessor, string taskId, DataElementChanges changes)
     {
-        throw new NotImplementedException(
-            "TaskValidatorWrapper should not be used for incremental validation, because it sets NoIncrementalValidation to true"
-        );
+        // If task validator sets <see cref="ITaskValidator.NoIncrementalValidation"/> to false, it will run on every PATCH request, and because <see cref="ITaskValidator" /> does not have a HasRelevantChanges method,
+        // we must run on every PATCH request.
+        return Task.FromResult(true);
     }
 }

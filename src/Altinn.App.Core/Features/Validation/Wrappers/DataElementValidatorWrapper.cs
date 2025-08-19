@@ -36,7 +36,7 @@ internal class DataElementValidatorWrapper : IValidator
     /// The old <see cref="IDataElementValidator"/> interface does not support incremental validation.
     /// so the issues will only show up when process/next fails
     /// </summary>
-    public bool NoIncrementalValidation => true;
+    public bool NoIncrementalValidation => _dataElementValidator.NoIncrementalValidation;
 
     /// <summary>
     /// Run all legacy <see cref="IDataElementValidator"/> instances for the given <see cref="DataType"/>.
@@ -77,9 +77,8 @@ internal class DataElementValidatorWrapper : IValidator
     /// <inheritdoc />
     public Task<bool> HasRelevantChanges(IInstanceDataAccessor dataAccessor, string taskId, DataElementChanges changes)
     {
-        // DataElementValidator did not previously implement incremental validation, so we always return false
-        throw new NotImplementedException(
-            "DataElementValidatorWrapper should not be used for incremental validation, because it sets NoIncrementalValidation to true"
-        );
+        // If data element validator sets <see cref="IDataElementValidator.NoIncrementalValidation"/> to false, it will run on every PATCH request, and because <see cref="IDataElementValidator" /> does not have a HasRelevantChanges method,
+        // we must run on every PATCH request.
+        return Task.FromResult(true);
     }
 }

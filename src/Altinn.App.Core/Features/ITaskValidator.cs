@@ -24,6 +24,12 @@ public interface ITaskValidator
     string ValidationSource => $"{GetType().FullName}-{TaskId}";
 
     /// <summary>
+    /// This validator is costly to run, and should only run on process/next or explicit validation requests.
+    /// <see cref="IValidator.NoIncrementalValidation"/>
+    /// </summary>
+    bool NoIncrementalValidation => true;
+
+    /// <summary>
     /// Actual validation logic for the task
     /// </summary>
     /// <param name="instance">The instance to validate</param>
