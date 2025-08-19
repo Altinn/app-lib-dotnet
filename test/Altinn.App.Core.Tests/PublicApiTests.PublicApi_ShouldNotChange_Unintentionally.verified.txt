@@ -1274,14 +1274,19 @@ namespace Altinn.App.Core.Features
     }
     public interface IInstanceDataAccessor
     {
+        System.Collections.Generic.IReadOnlyCollection<Altinn.Platform.Storage.Interface.Models.DataType> DataTypes { get; }
         Altinn.Platform.Storage.Interface.Models.Instance Instance { get; }
         System.Threading.Tasks.Task<System.ReadOnlyMemory<byte>> GetBinaryData(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
         Altinn.Platform.Storage.Interface.Models.DataElement GetDataElement(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
-        Altinn.Platform.Storage.Interface.Models.DataType? GetDataType(string dataTypeId);
         System.Threading.Tasks.Task<object> GetFormData(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
+        System.Threading.Tasks.Task<Altinn.App.Core.Features.IFormDataWrapper> GetFormDataWrapper(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
     }
     public static class IInstanceDataAccessorExtensions
     {
+        public static System.Threading.Tasks.Task<T[]> GetAllFormData<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor)
+            where T :  class { }
+        public static System.Threading.Tasks.Task<T[]> GetAllFormData<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor, Altinn.Platform.Storage.Interface.Models.DataType dataType)
+            where T :  class { }
         [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
                 "dataType",
                 "dataElement"})]
@@ -1301,7 +1306,13 @@ namespace Altinn.App.Core.Features
                 "dataElement"})]
         public static System.Collections.Generic.IEnumerable<System.ValueTuple<Altinn.Platform.Storage.Interface.Models.DataType, Altinn.Platform.Storage.Interface.Models.DataElement>> GetDataElementsWithFormDataForTask(this Altinn.App.Core.Features.IInstanceDataAccessor accessor, string taskId) { }
         public static Altinn.Platform.Storage.Interface.Models.DataType GetDataType(this Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier) { }
+        public static Altinn.Platform.Storage.Interface.Models.DataType GetDataType(this Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, string dataTypeId) { }
+        public static Altinn.Platform.Storage.Interface.Models.DataType GetDataType<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor) { }
+        public static System.Threading.Tasks.Task<T?> GetFormData<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor)
+            where T :  class { }
         public static System.Threading.Tasks.Task<T> GetFormData<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor, Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier)
+            where T :  class { }
+        public static System.Threading.Tasks.Task<T?> GetFormData<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor, Altinn.Platform.Storage.Interface.Models.DataType dataType)
             where T :  class { }
     }
     public interface IInstanceDataListProvider
@@ -2192,6 +2203,8 @@ namespace Altinn.App.Core.Helpers
 }
 namespace Altinn.App.Core.Helpers.DataModel
 {
+    [System.Obsolete("This class is deprecated and will be removed in a future version. Use the new Lay" +
+        "outEvaluatorState instead.")]
     public class DataModel
     {
         public DataModel(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor) { }
@@ -2207,6 +2220,8 @@ namespace Altinn.App.Core.Helpers.DataModel
     {
         public DataModelException(string msg) { }
     }
+    [System.Obsolete("Will be removed in v9 use Altinn.App.Core.Helpers.DataModel.FormDataWrapperFactor" +
+        "y instead")]
     public class DataModelWrapper
     {
         public DataModelWrapper(object dataModel) { }
