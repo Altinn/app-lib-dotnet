@@ -1214,15 +1214,20 @@ namespace Altinn.App.Core.Features
     public interface IInstanceDataAccessor
     {
         System.Collections.Generic.IReadOnlyDictionary<Altinn.Platform.Storage.Interface.Models.DataType, Altinn.App.Core.Features.StorageAuthenticationMethod> AuthenticationMethodOverrides { get; }
+        System.Collections.Generic.IReadOnlyCollection<Altinn.Platform.Storage.Interface.Models.DataType> DataTypes { get; }
         Altinn.Platform.Storage.Interface.Models.Instance Instance { get; }
         System.Threading.Tasks.Task<System.ReadOnlyMemory<byte>> GetBinaryData(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
         Altinn.Platform.Storage.Interface.Models.DataElement GetDataElement(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
-        Altinn.Platform.Storage.Interface.Models.DataType? GetDataType(string dataTypeId);
         System.Threading.Tasks.Task<object> GetFormData(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
+        System.Threading.Tasks.Task<Altinn.App.Core.Features.IFormDataWrapper> GetFormDataWrapper(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
         void OverrideAuthenticationMethod(Altinn.Platform.Storage.Interface.Models.DataType dataType, Altinn.App.Core.Features.StorageAuthenticationMethod method);
     }
     public static class IInstanceDataAccessorExtensions
     {
+        public static System.Threading.Tasks.Task<T[]> GetAllFormData<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor)
+            where T :  class { }
+        public static System.Threading.Tasks.Task<T[]> GetAllFormData<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor, Altinn.Platform.Storage.Interface.Models.DataType dataType)
+            where T :  class { }
         [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
                 "dataType",
                 "dataElement"})]
@@ -1242,7 +1247,13 @@ namespace Altinn.App.Core.Features
                 "dataElement"})]
         public static System.Collections.Generic.IEnumerable<System.ValueTuple<Altinn.Platform.Storage.Interface.Models.DataType, Altinn.Platform.Storage.Interface.Models.DataElement>> GetDataElementsWithFormDataForTask(this Altinn.App.Core.Features.IInstanceDataAccessor accessor, string taskId) { }
         public static Altinn.Platform.Storage.Interface.Models.DataType GetDataType(this Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier) { }
+        public static Altinn.Platform.Storage.Interface.Models.DataType GetDataType(this Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, string dataTypeId) { }
+        public static Altinn.Platform.Storage.Interface.Models.DataType GetDataType<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor) { }
+        public static System.Threading.Tasks.Task<T?> GetFormData<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor)
+            where T :  class { }
         public static System.Threading.Tasks.Task<T> GetFormData<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor, Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier)
+            where T :  class { }
+        public static System.Threading.Tasks.Task<T?> GetFormData<T>(this Altinn.App.Core.Features.IInstanceDataAccessor accessor, Altinn.Platform.Storage.Interface.Models.DataType dataType)
             where T :  class { }
     }
     public interface IInstanceDataListProvider
@@ -2209,6 +2220,8 @@ namespace Altinn.App.Core.Helpers
 }
 namespace Altinn.App.Core.Helpers.DataModel
 {
+    [System.Obsolete("This class is deprecated and will be removed in a future version. Use the new Lay" +
+        "outEvaluatorState instead.")]
     public class DataModel
     {
         public DataModel(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor) { }
@@ -2224,6 +2237,8 @@ namespace Altinn.App.Core.Helpers.DataModel
     {
         public DataModelException(string msg) { }
     }
+    [System.Obsolete("Will be removed in v9 use Altinn.App.Core.Helpers.DataModel.FormDataWrapperFactor" +
+        "y instead")]
     public class DataModelWrapper
     {
         public DataModelWrapper(object dataModel) { }
@@ -3066,6 +3081,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public LayoutEvaluatorState(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, Altinn.App.Core.Models.Layout.LayoutModel? componentModel, Altinn.App.Core.Internal.Texts.ITranslationService translationService, Altinn.App.Core.Configuration.FrontEndSettings frontEndSettings, string? gatewayAction = null, string? language = null, System.TimeZoneInfo? timeZone = null) { }
         public Altinn.Platform.Storage.Interface.Models.Instance Instance { get; }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference> AddInidicies(Altinn.App.Core.Models.Layout.ModelBinding binding, Altinn.App.Core.Models.Expressions.ComponentContext context) { }
+        [System.Obsolete("This method is deprecated and will be removed in a future version.")]
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference> AddInidicies(Altinn.App.Core.Models.Layout.ModelBinding binding, Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier, int[]? indexes) { }
         public int CountDataElements(string dataTypeId) { }
         [System.Obsolete("You need to get a context, not a component", true)]
@@ -4002,9 +4018,11 @@ namespace Altinn.App.Core.Models
     {
         public FormDataChange() { }
         public required System.ReadOnlyMemory<byte>? CurrentBinaryData { get; init; }
-        public required object CurrentFormData { get; init; }
+        public object CurrentFormData { get; }
+        public required Altinn.App.Core.Features.IFormDataWrapper CurrentFormDataWrapper { get; init; }
         public required System.ReadOnlyMemory<byte> PreviousBinaryData { get; init; }
-        public required object PreviousFormData { get; init; }
+        public object PreviousFormData { get; }
+        public required Altinn.App.Core.Features.IFormDataWrapper PreviousFormDataWrapper { get; init; }
     }
     public interface ILanguageCodeStandard
     {

@@ -13,6 +13,7 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.FileAnalysis;
 using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -1118,7 +1119,7 @@ public class DataController : ControllerBase
         // Get the previous service model for dataProcessing to work
         var oldServiceModel = await dataMutator.GetFormData(dataElement);
         // Set the new service model so that dataAccessors see the new state
-        dataMutator.SetFormData(dataElement, serviceModel);
+        dataMutator.SetFormData(dataElement, FormDataWrapperFactory.Create(serviceModel));
 
         var requestedChange = new FormDataChange()
         {
@@ -1126,8 +1127,8 @@ public class DataController : ControllerBase
             DataElement = dataElement,
             ContentType = dataElement.ContentType,
             DataType = dataType,
-            PreviousFormData = oldServiceModel,
-            CurrentFormData = serviceModel,
+            PreviousFormDataWrapper = FormDataWrapperFactory.Create(oldServiceModel),
+            CurrentFormDataWrapper = FormDataWrapperFactory.Create(serviceModel),
             PreviousBinaryData = await dataMutator.GetBinaryData(dataElement),
             CurrentBinaryData = null, // We don't serialize to xml before running data processors
         };
