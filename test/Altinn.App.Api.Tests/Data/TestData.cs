@@ -135,8 +135,7 @@ public static class TestData
     public static string GetAltinnAppsPolicyPath(string org, string app)
     {
         string testDataDirectory = GetTestDataRootDirectory();
-        return Path.Join(testDataDirectory, "apps", org, app, "config", "authorization")
-            + Path.DirectorySeparatorChar;
+        return Path.Join(testDataDirectory, "apps", org, app, "config", "authorization") + Path.DirectorySeparatorChar;
     }
 
     public static string GetAltinnProfilePath()

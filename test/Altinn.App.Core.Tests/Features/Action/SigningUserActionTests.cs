@@ -61,10 +61,7 @@ public class SigningUserActionTests
         {
             IProcessReader _processReader =
                 processReader
-                ?? ProcessTestUtils.SetupProcessReader(
-                    testBpmnFilename,
-                    Path.Join("Features", "Action", "TestData")
-                );
+                ?? ProcessTestUtils.SetupProcessReader(testBpmnFilename, Path.Join("Features", "Action", "TestData"));
             Instance _instance = instance ?? _defaultInstance;
 
             var signingReceiptService = new Mock<ISigningReceiptService>();
