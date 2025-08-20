@@ -327,7 +327,7 @@ namespace Altinn.App.Api.Controllers
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(400)]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Altinn.App.Api.Models.InstanceResponse), 201)]
         [Microsoft.AspNetCore.Mvc.RequestSizeLimit(2097152000)]
-        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Models.InstanceResponse>> PostSimplified([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromBody] Altinn.App.Api.Models.InstansiationInstance instansiationInstance, [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null) { }
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Models.InstanceResponse>> PostSimplified([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromBody] Altinn.App.Api.Models.InstantiationInstance InstantiationInstance, [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null) { }
         [Microsoft.AspNetCore.Authorization.Authorize]
         [Microsoft.AspNetCore.Mvc.HttpPut("{instanceOwnerPartyId:int}/{instanceGuid:guid}/substatus")]
         [Microsoft.AspNetCore.Mvc.Produces("application/json", new string[0])]
@@ -1028,9 +1028,9 @@ namespace Altinn.App.Api.Models
         public required System.DateTime? VisibleAfter { get; init; }
         public override string ToString() { }
     }
-    public class InstansiationInstance
+    public class InstantiationInstance
     {
-        public InstansiationInstance() { }
+        public InstantiationInstance() { }
         public System.DateTime? DueBefore { get; set; }
         public Altinn.Platform.Storage.Interface.Models.InstanceOwner InstanceOwner { get; set; }
         public System.Collections.Generic.Dictionary<string, string> Prefill { get; set; }
