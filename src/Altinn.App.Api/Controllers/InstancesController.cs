@@ -438,7 +438,7 @@ public class InstancesController : ControllerBase
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
-    /// <param name="InstantiationInstance">instansiation information</param>
+    /// <param name="InstantiationInstance">instantiation information</param>
     /// <param name="language">The currently active user language</param>
     /// <returns>The new instance</returns>
     [HttpPost("create")]
