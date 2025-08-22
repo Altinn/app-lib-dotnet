@@ -24,7 +24,7 @@ public partial class AppFixture : IAsyncDisposable
         public async Task<string> GetOldUserToken(int userId = 1337)
         {
             var client = _fixture.GetLocaltestClient();
-            var response = await client.GetAsync($"/Home/GetTestUserToken/{userId}");
+            using var response = await client.GetAsync($"/Home/GetTestUserToken/{userId}");
             Assert.True(response.IsSuccessStatusCode, $"Failed to get token for user {userId}");
             var token = await response.Content.ReadAsStringAsync();
             Assert.NotNull(token);
@@ -38,7 +38,7 @@ public partial class AppFixture : IAsyncDisposable
         {
             var client = _fixture.GetLocaltestClient();
             var encodedScopes = Uri.EscapeDataString(scopes);
-            var response = await client.GetAsync(
+            using var response = await client.GetAsync(
                 $"/Home/GetTestOrgToken/ttd?orgNumber=405003309&scopes={encodedScopes}"
             );
             Assert.True(response.IsSuccessStatusCode, "Failed to get service owner token");
@@ -65,7 +65,7 @@ public partial class AppFixture : IAsyncDisposable
                 queryParams.Add($"scope={Uri.EscapeDataString(scope)}");
 
             var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-            var response = await client.GetAsync($"/Home/auth/user{queryString}");
+            using var response = await client.GetAsync($"/Home/auth/user{queryString}");
             Assert.True(response.IsSuccessStatusCode, $"Failed to get user token");
             var token = await response.Content.ReadAsStringAsync();
             Assert.NotNull(token);
@@ -83,7 +83,7 @@ public partial class AppFixture : IAsyncDisposable
                 queryParams.Add($"scope={Uri.EscapeDataString(scope)}");
 
             var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-            var response = await client.GetAsync($"/Home/auth/serviceowner{queryString}");
+            using var response = await client.GetAsync($"/Home/auth/serviceowner{queryString}");
             Assert.True(response.IsSuccessStatusCode, "Failed to get service owner token");
             var token = await response.Content.ReadAsStringAsync();
             Assert.NotNull(token);
@@ -102,7 +102,7 @@ public partial class AppFixture : IAsyncDisposable
                 queryParams.Add($"scope={Uri.EscapeDataString(scope)}");
 
             var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-            var response = await client.GetAsync($"/Home/auth/org{queryString}");
+            using var response = await client.GetAsync($"/Home/auth/org{queryString}");
             Assert.True(response.IsSuccessStatusCode, "Failed to get org token");
             var token = await response.Content.ReadAsStringAsync();
             Assert.NotNull(token);
@@ -127,7 +127,7 @@ public partial class AppFixture : IAsyncDisposable
                 queryParams.Add($"scope={Uri.EscapeDataString(scope)}");
 
             var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-            var response = await client.GetAsync($"/Home/auth/systemuser{queryString}");
+            using var response = await client.GetAsync($"/Home/auth/systemuser{queryString}");
             Assert.True(response.IsSuccessStatusCode, "Failed to get system user token");
             var token = await response.Content.ReadAsStringAsync();
             Assert.NotNull(token);
@@ -146,7 +146,7 @@ public partial class AppFixture : IAsyncDisposable
                 queryParams.Add($"scope={Uri.EscapeDataString(scope)}");
 
             var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-            var response = await client.GetAsync($"/Home/auth/selfidentifieduser{queryString}");
+            using var response = await client.GetAsync($"/Home/auth/selfidentifieduser{queryString}");
             Assert.True(response.IsSuccessStatusCode, "Failed to get self-identified user token");
             var token = await response.Content.ReadAsStringAsync();
             Assert.NotNull(token);
@@ -157,7 +157,10 @@ public partial class AppFixture : IAsyncDisposable
         public async Task<(bool, string)> IntrospectAuthentication(string token)
         {
             var client = _fixture.GetAppClient();
-            var request = new HttpRequestMessage(HttpMethod.Get, $"/ttd/{_fixture._app}/authentication/introspection");
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"/ttd/{_fixture._app}/authentication/introspection"
+            );
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             using var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
