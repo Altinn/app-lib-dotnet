@@ -63,10 +63,11 @@ internal sealed class AuthenticationContext : IAuthenticationContext
                 var generalSettings = _generalSettings.CurrentValue;
                 var token = JwtTokenUtil.GetTokenFromContext(httpContext, appSettings.RuntimeCookieName);
                 bool isNewLocaltestToken = false;
+                JwtSecurityToken? parsedToken = null;
                 if (!string.IsNullOrWhiteSpace(token))
                 {
                     var handler = new JwtSecurityTokenHandler();
-                    var parsedToken = handler.ReadJwtToken(token);
+                    parsedToken = handler.ReadJwtToken(token);
                     // Only the new (more correctly formed) localtest tokens has this claim
                     // In these casees we don't have to special case token parsing as they
                     // now look like the ones that come from real environments/altinn-authentication
@@ -81,6 +82,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
                 {
                     authInfo = Authenticated.FromOldLocalTest(
                         tokenStr: token,
+                        parsedToken,
                         isAuthenticated: !string.IsNullOrWhiteSpace(token),
                         _appConfigurationCache.ApplicationMetadata,
                         () => _httpContext.Request.Cookies[_generalSettings.CurrentValue.GetAltinnPartyCookieName],
@@ -96,6 +98,7 @@ internal sealed class AuthenticationContext : IAuthenticationContext
                     var isAuthenticated = httpContext.User?.Identity?.IsAuthenticated ?? false;
                     authInfo = Authenticated.From(
                         tokenStr: token,
+                        parsedToken,
                         isAuthenticated: isAuthenticated,
                         _appConfigurationCache.ApplicationMetadata,
                         () => _httpContext.Request.Cookies[_generalSettings.CurrentValue.GetAltinnPartyCookieName],

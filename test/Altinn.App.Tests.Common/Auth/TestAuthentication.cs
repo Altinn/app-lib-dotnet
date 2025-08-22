@@ -146,6 +146,7 @@ public static class TestAuthentication
     {
         var auth = Authenticated.From(
             "",
+            null,
             false,
             applicationMetadata ?? NewApplicationMetadata(),
             () => null,
@@ -213,6 +214,7 @@ public static class TestAuthentication
         };
         var auth = Authenticated.From(
             token,
+            null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => $"{userPartyId}",
@@ -306,6 +308,7 @@ public static class TestAuthentication
         };
         var auth = Authenticated.From(
             token,
+            null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => $"{partyId}",
@@ -405,6 +408,7 @@ public static class TestAuthentication
         };
         var auth = Authenticated.From(
             token,
+            null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => throw new NotImplementedException(),
@@ -488,6 +492,7 @@ public static class TestAuthentication
         };
         var auth = Authenticated.From(
             token,
+            null,
             true,
             applicationMetadata ?? NewApplicationMetadata(org: org),
             getSelectedParty: () => throw new NotImplementedException(),
@@ -597,6 +602,7 @@ public static class TestAuthentication
         };
         var auth = Authenticated.From(
             token,
+            null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => throw new NotImplementedException(),

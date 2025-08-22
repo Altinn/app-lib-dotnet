@@ -256,6 +256,7 @@ public class AuthenticatedTests
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,
+                        parsedToken: null,
                         isAuthenticated: true,
                         appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
                         getSelectedParty: () =>
@@ -307,6 +308,7 @@ public class AuthenticatedTests
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,
+                        parsedToken: null,
                         isAuthenticated: true,
                         appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
                         getSelectedParty: () =>
@@ -347,6 +349,7 @@ public class AuthenticatedTests
                 {
                     auth = Authenticated.From(
                         tokenStr: token,
+                        parsedToken: null,
                         isAuthenticated: true,
                         appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
                         getSelectedParty: null!,
@@ -378,6 +381,7 @@ public class AuthenticatedTests
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,
+                        parsedToken: null,
                         isAuthenticated: true,
                         appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
                         getSelectedParty: null!,
@@ -409,6 +413,7 @@ public class AuthenticatedTests
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,
+                        parsedToken: null,
                         isAuthenticated: true,
                         appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
                         getSelectedParty: null!,
