@@ -24,7 +24,7 @@ public partial class AppFixture : IAsyncDisposable
     {
         private readonly AppFixture _fixture = fixture;
 
-        public async Task<ApiResponse> PostSimplified(string token, InstansiationInstance instansiation)
+        public async Task<ApiResponse> PostSimplified(string token, InstantiationInstance instansiation)
         {
             var client = _fixture.GetAppClient();
             var endpoint = $"/ttd/{_fixture._app}/instances/create";
