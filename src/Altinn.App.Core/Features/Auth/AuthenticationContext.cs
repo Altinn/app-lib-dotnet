@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Cache;
 using Altinn.App.Core.Internal.Auth;
@@ -61,13 +62,24 @@ internal sealed class AuthenticationContext : IAuthenticationContext
                 var appSettings = _appSettings.CurrentValue;
                 var generalSettings = _generalSettings.CurrentValue;
                 var token = JwtTokenUtil.GetTokenFromContext(httpContext, appSettings.RuntimeCookieName);
+                bool isNewLocaltestToken = false;
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    var handler = new JwtSecurityTokenHandler();
+                    var parsedToken = handler.ReadJwtToken(token);
+                    // Only the new (more correctly formed) localtest tokens has this claim
+                    // In these casees we don't have to special case token parsing as they
+                    // now look like the ones that come from real environments/altinn-authentication
+                    isNewLocaltestToken =
+                        parsedToken.Payload.TryGetValue("actual_iss", out var actualIss) && actualIss is "localtest";
+                }
 
                 var isLocaltest =
                     generalSettings.HostName.StartsWith("local.altinn.cloud", StringComparison.OrdinalIgnoreCase)
                     && !generalSettings.IsTest;
-                if (isLocaltest)
+                if (isLocaltest && !isNewLocaltestToken)
                 {
-                    authInfo = Authenticated.FromLocalTest(
+                    authInfo = Authenticated.FromOldLocalTest(
                         tokenStr: token,
                         isAuthenticated: !string.IsNullOrWhiteSpace(token),
                         _appConfigurationCache.ApplicationMetadata,

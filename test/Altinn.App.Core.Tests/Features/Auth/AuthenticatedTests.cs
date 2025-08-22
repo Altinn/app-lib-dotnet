@@ -252,7 +252,7 @@ public class AuthenticatedTests
                         Name = "Test Testesen",
                     };
                     Authenticated.Parser parse = description.Contains("localtest", StringComparison.OrdinalIgnoreCase)
-                        ? Authenticated.FromLocalTest
+                        ? Authenticated.FromOldLocalTest
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,
@@ -303,7 +303,7 @@ public class AuthenticatedTests
                         Name = "Test Testesen",
                     };
                     Authenticated.Parser parse = description.Contains("localtest", StringComparison.OrdinalIgnoreCase)
-                        ? Authenticated.FromLocalTest
+                        ? Authenticated.FromOldLocalTest
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,
@@ -374,7 +374,7 @@ public class AuthenticatedTests
             case AuthenticationTypes.ServiceOwner:
                 {
                     Authenticated.Parser parse = description.Contains("localtest", StringComparison.OrdinalIgnoreCase)
-                        ? Authenticated.FromLocalTest
+                        ? Authenticated.FromOldLocalTest
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,
@@ -405,7 +405,7 @@ public class AuthenticatedTests
             case AuthenticationTypes.SystemUser:
                 {
                     Authenticated.Parser parse = description.Contains("localtest", StringComparison.OrdinalIgnoreCase)
-                        ? Authenticated.FromLocalTest
+                        ? Authenticated.FromOldLocalTest
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,

@@ -544,7 +544,7 @@ public abstract class Authenticated
         Func<int, int, Task<bool?>> validateSelectedParty
     );
 
-    internal static Authenticated FromLocalTest(
+    internal static Authenticated FromOldLocalTest(
         string tokenStr,
         bool isAuthenticated,
         ApplicationMetadata appMetadata,

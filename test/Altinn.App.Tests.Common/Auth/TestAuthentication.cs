@@ -180,7 +180,7 @@ public static class TestAuthentication
 
         Claim[] claims =
         [
-            new(ClaimTypes.NameIdentifier, $"user-{userId}-{partyId}", ClaimValueTypes.String, iss),
+            new(ClaimTypes.NameIdentifier, userId.ToString(), ClaimValueTypes.String, iss),
             new(AltinnCoreClaimTypes.UserId, userId.ToString(), ClaimValueTypes.String, iss),
             new(AltinnCoreClaimTypes.PartyID, partyId.ToString(), ClaimValueTypes.Integer32, iss),
             new(AltinnCoreClaimTypes.AuthenticateMethod, "BankID", ClaimValueTypes.String, iss),
@@ -274,7 +274,7 @@ public static class TestAuthentication
 
         Claim[] claims =
         [
-            new(ClaimTypes.NameIdentifier, $"user-{userId}-{partyId}", ClaimValueTypes.String, iss),
+            new(ClaimTypes.NameIdentifier, userId.ToString(), ClaimValueTypes.String, iss),
             new(AltinnCoreClaimTypes.UserId, userId.ToString(), ClaimValueTypes.String, iss),
             new(AltinnCoreClaimTypes.UserName, username, ClaimValueTypes.String, iss),
             new(AltinnCoreClaimTypes.PartyID, partyId.ToString(), ClaimValueTypes.Integer32, iss),
@@ -529,7 +529,7 @@ public static class TestAuthentication
             { "jti", Guid.NewGuid().ToString() },
             { AltinnCoreClaimTypes.OrgNumber, supplierOrgNumber },
             { AltinnCoreClaimTypes.AuthenticateMethod, "maskinporten" },
-            { AltinnCoreClaimTypes.AuthenticationLevel, "3" },
+            { AltinnCoreClaimTypes.AuthenticationLevel, 3 },
         };
 
         AuthorizationDetailsClaim authorizationDetails = new SystemUserAuthorizationDetailsClaim(
