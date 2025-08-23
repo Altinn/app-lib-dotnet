@@ -27,6 +27,12 @@ ConfigureServices(builder.Services, builder.Configuration);
 
 ConfigureWebHostBuilder(builder.WebHost);
 
+// ###########################################################################
+// Not part of app-template
+HostedServices.CaptureServiceCollection(builder.Services);
+
+// ###########################################################################
+
 WebApplication app = builder.Build();
 
 Configure();
@@ -84,6 +90,7 @@ void Configure()
 
     app.UseAuthenticationIntrospection();
     app.UseConnectivityDiagnostics();
+    app.UseHostedServicesMetadataEndpoint();
 
     // Configure scenario-specific endpoints
     var endpointConfigurators = app.Services.GetServices<IEndpointConfigurator>();
