@@ -84,5 +84,10 @@ void Configure()
 
     app.UseAuthenticationIntrospection();
     app.UseConnectivityDiagnostics();
+
+    // Configure scenario-specific endpoints
+    var endpointConfigurators = app.Services.GetServices<IEndpointConfigurator>();
+    foreach (var configurator in endpointConfigurators)
+        configurator.ConfigureEndpoints(app);
     // #########################################################################
 }
