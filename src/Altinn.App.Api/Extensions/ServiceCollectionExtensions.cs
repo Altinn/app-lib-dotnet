@@ -57,7 +57,7 @@ public static class ServiceCollectionExtensions
             options.Conventions.Add(new AltinnControllerConventions());
         });
 
-        services.AddScopeAuthorizationFilter();
+        services.AddScopeAuthorization();
 
         mvcBuilder
             .AddApplicationPart(typeof(InstancesController).Assembly)
