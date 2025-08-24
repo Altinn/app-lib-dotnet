@@ -184,4 +184,14 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
             _ => throw new ArgumentOutOfRangeException(nameof(testCase)),
         };
     }
+
+    [Fact]
+    public async Task ContainerConnectivity()
+    {
+        await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic);
+        var fixture = fixtureScope.Fixture;
+
+        var response = await fixture.Connectivity.Pdf();
+        await VerifyJson(response);
+    }
 }
