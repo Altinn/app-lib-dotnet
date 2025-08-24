@@ -33,12 +33,3 @@ public partial class AppFixture : IAsyncDisposable
         }
     }
 }
-
-internal sealed record ConnectivityResult(
-    bool Success,
-    int StatusCode,
-    string Url,
-    string? ResponseContent,
-    string Message,
-    string? Exception
-);
