@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Nodes;
 using Altinn.App.Api.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -191,7 +192,10 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
         await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic);
         var fixture = fixtureScope.Fixture;
 
+        // PDF port
+        var port = fixture.PdfHostPort.ToString();
+        Assert.NotNull(port);
         var response = await fixture.Connectivity.Pdf();
-        await VerifyJson(response);
+        await VerifyJson(response).AddScrubber(sb => sb.Replace(port, "<pdfPort>"));
     }
 }
