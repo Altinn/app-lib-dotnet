@@ -106,8 +106,8 @@ internal sealed class ScopeAuthorizationService(
     ILogger<ScopeAuthorizationService> _logger
 ) : IHostedService
 {
-    private List<string> _endpointsToAuthorize = [];
-    private List<string> _endpointsNotAuthorized = [];
+    private readonly List<string> _endpointsToAuthorize = [];
+    private readonly List<string> _endpointsNotAuthorized = [];
     private bool _initialized;
 
     public IReadOnlyList<string>? EndpointsToAuthorize => _endpointsToAuthorize;
