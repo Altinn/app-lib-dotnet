@@ -28,7 +28,9 @@ public class CustomScopesTests(ITestOutputHelper _output, AppFixtureClassFixture
         await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic, scenario: "custom-scopes");
         var fixture = fixtureScope.Fixture;
         var verifier = fixture.ScopedVerifier;
-        verifier.UseTestCase(new { auth, scope = scope.Replace('/', ':') });
+        // sanitizedScope must be valid part of path on e.g. Windows. Variable is used in spanshot filename
+        var sanitizedScope = scope.Replace(':', '-').Replace(' ', '-').Replace('/', '-');
+        verifier.UseTestCase(new { auth, scope = sanitizedScope });
 
         var token = auth switch
         {
