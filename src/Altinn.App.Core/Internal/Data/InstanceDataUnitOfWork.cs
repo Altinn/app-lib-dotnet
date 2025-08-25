@@ -116,6 +116,35 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     }
 
     /// <inheritdoc />
+    public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)
+    {
+        return new CleanInstanceDataAccessor(
+            this,
+            _taskId,
+            _appResources,
+            _translationService,
+            _frontEndSettings.Value,
+            rowRemovalOption,
+            _language,
+            _telemetry
+        );
+    }
+
+    public IInstanceDataAccessor GetPreviousDataAccessor()
+    {
+        return new PreviousDataAccessor(
+            this,
+            _taskId,
+            _appResources,
+            _translationService,
+            _modelSerializationService,
+            _frontEndSettings.Value,
+            _language,
+            _telemetry
+        );
+    }
+
+    /// <inheritdoc />
     public async Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)
     {
         // Verify that the data element exists on the instance
