@@ -38,10 +38,11 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     private readonly ApplicationMetadata _appMetadata;
     private readonly ModelSerializationService _modelSerializationService;
 
-    // private readonly IAppResources _appResources;
-    // private readonly IOptions<FrontEndSettings> _frontEndSettings;
-    // private readonly string? _taskId;
-    // private readonly string? _language;
+    private readonly IAppResources _appResources;
+    private readonly IOptions<FrontEndSettings> _frontEndSettings;
+    private readonly string? _taskId;
+    private readonly string? _language;
+    private readonly ITranslationService _translationService;
     private readonly Telemetry? _telemetry;
 
     // Cache for the most up-to-date form data (can be mutated or replaced with SetFormData(dataElementId, data))
@@ -55,8 +56,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     // Form data not yet saved to storage (thus no dataElementId)
     private readonly ConcurrentBag<DataElementChange> _changesForCreation = [];
-
-    // private readonly ITranslationService _translationService;
 
     private readonly ConcurrentDictionary<DataType, StorageAuthenticationMethod> _authenticationMethodOverrides = new(
         DataTypeComparer.Instance
@@ -89,12 +88,12 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         DataTypes = appMetadata.DataTypes;
         _dataClient = dataClient;
         _appMetadata = appMetadata;
-        // _translationService = translationService;
+        _translationService = translationService;
         _modelSerializationService = modelSerializationService;
-        // _taskId = taskId;
-        // _language = language;
-        // _frontEndSettings = frontEndSettings;
-        // _appResources = appResources;
+        _taskId = taskId;
+        _language = language;
+        _frontEndSettings = frontEndSettings;
+        _appResources = appResources;
         _instanceClient = instanceClient;
         _telemetry = telemetry;
     }
@@ -136,6 +135,44 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 );
             }
         );
+    }
+
+    /// <inheritdoc />
+    public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)
+    {
+        return new CleanInstanceDataAccessor(
+            this,
+            _taskId,
+            _appResources,
+            _translationService,
+            _frontEndSettings.Value,
+            rowRemovalOption,
+            _language,
+            _telemetry
+        );
+    }
+
+    // Non thread safe cache, because the previous data is always the same.
+    private PreviousDataAccessor? _previousDataAccessorCache;
+
+    public IInstanceDataAccessor GetPreviousDataAccessor()
+    {
+        if (_previousDataAccessorCache is not null)
+        {
+            return _previousDataAccessorCache;
+        }
+
+        _previousDataAccessorCache = new PreviousDataAccessor(
+            this,
+            _taskId,
+            _appResources,
+            _translationService,
+            _modelSerializationService,
+            _frontEndSettings.Value,
+            _language,
+            _telemetry
+        );
+        return _previousDataAccessorCache;
     }
 
     /// <inheritdoc />

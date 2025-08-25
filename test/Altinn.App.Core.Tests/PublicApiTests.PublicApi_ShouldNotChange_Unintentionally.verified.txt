@@ -1187,6 +1187,7 @@ namespace Altinn.App.Core.Features
     {
         string DataType { get; }
         bool NoIncrementalValidation { get; }
+        bool ShouldRunAfterRemovingHiddenData { get; }
         string ValidationSource { get; }
         bool HasRelevantChanges(object current, object previous);
         System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssue>> ValidateFormData(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataElement dataElement, object data, string? language);
@@ -1217,9 +1218,11 @@ namespace Altinn.App.Core.Features
         System.Collections.Generic.IReadOnlyCollection<Altinn.Platform.Storage.Interface.Models.DataType> DataTypes { get; }
         Altinn.Platform.Storage.Interface.Models.Instance Instance { get; }
         System.Threading.Tasks.Task<System.ReadOnlyMemory<byte>> GetBinaryData(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
+        Altinn.App.Core.Features.IInstanceDataAccessor GetCleanAccessor(Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption = 1);
         Altinn.Platform.Storage.Interface.Models.DataElement GetDataElement(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
         System.Threading.Tasks.Task<object> GetFormData(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
         System.Threading.Tasks.Task<Altinn.App.Core.Features.IFormDataWrapper> GetFormDataWrapper(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
+        Altinn.App.Core.Features.IInstanceDataAccessor GetPreviousDataAccessor();
         void OverrideAuthenticationMethod(Altinn.Platform.Storage.Interface.Models.DataType dataType, Altinn.App.Core.Features.StorageAuthenticationMethod method);
     }
     public static class IInstanceDataAccessorExtensions
@@ -1348,6 +1351,7 @@ namespace Altinn.App.Core.Features
     public interface IValidator
     {
         bool NoIncrementalValidation { get; }
+        bool ShouldRunAfterRemovingHiddenData { get; }
         string TaskId { get; }
         string ValidationSource { get; }
         System.Threading.Tasks.Task<bool> HasRelevantChanges(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, string taskId, Altinn.App.Core.Models.DataElementChanges changes);
@@ -2070,6 +2074,7 @@ namespace Altinn.App.Core.Features.Validation
         protected GenericFormDataValidator(string dataType) { }
         public string DataType { get; }
         public virtual bool NoIncrementalValidation { get; }
+        public virtual bool ShouldRunAfterRemovingHiddenData { get; }
         public virtual string ValidationSource { get; }
         protected void AddValidationIssue(Altinn.App.Core.Models.Validation.ValidationIssue issue) { }
         protected void CreateValidationIssue<T>(System.Linq.Expressions.Expression<System.Func<TModel, T>> selector, string textKey, Altinn.App.Core.Models.Validation.ValidationIssueSeverity severity = 1, string? description = null, string? code = null, System.Collections.Generic.Dictionary<string, string>? customTextParameters = null) { }
@@ -3829,7 +3834,7 @@ namespace Altinn.App.Core.Internal.Validation
     }
     public class ValidatorFactory : Altinn.App.Core.Internal.Validation.IValidatorFactory
     {
-        public ValidatorFactory(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.GeneralSettings> generalSettings, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, System.IServiceProvider serviceProvider) { }
+        public ValidatorFactory(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.GeneralSettings> generalSettings, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, System.IServiceProvider serviceProvider, Microsoft.Extensions.Hosting.IHostEnvironment hostEnvironment) { }
         public System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.IValidator> GetValidators(string taskId) { }
     }
 }

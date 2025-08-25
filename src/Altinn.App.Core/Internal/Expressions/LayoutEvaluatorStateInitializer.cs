@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Texts;
@@ -84,9 +85,21 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
             return Task.FromResult(_data);
         }
 
+        public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption)
+        {
+            throw new NotSupportedException("Legacy single data accessor does not implement GetCleanAccessor");
+        }
+
+        public IInstanceDataAccessor GetPreviousDataAccessor()
+        {
+            throw new NotSupportedException("Legacy single data accessor does not implement GetPreviousDataAccessor");
+        }
+
         public Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)
         {
-            return Task.FromException<ReadOnlyMemory<byte>>(new NotImplementedException());
+            return Task.FromException<ReadOnlyMemory<byte>>(
+                new NotSupportedException("Legacy single data accessor does not implement GetBinaryData")
+            );
         }
 
         public DataElement GetDataElement(DataElementIdentifier dataElementIdentifier)
