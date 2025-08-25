@@ -5,13 +5,8 @@ using System.Text.Json;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Constants;
-using Altinn.App.Core.Features.FileAnalysis;
-using Altinn.App.Core.Features.Validation;
-using Altinn.App.Core.Models.Validation;
-using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.Controllers;
@@ -20,11 +15,11 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     : ApiTestBase(factory, outputHelper),
         IClassFixture<WebApplicationFactory<Program>>
 {
-    string org = "tdd";
-    string app = "contributer-restriction";
+    readonly string org = "tdd";
+    readonly string app = "contributer-restriction";
     readonly int instanceOwnerPartyId = 500600;
-    Guid instanceGuid = new("fad57e80-ec2f-4dee-90ac-400fa6d7720f");
-    Guid dataGuid = new("3b46b9ef-774c-4849-b4dd-66ef871f5b07");
+    readonly Guid instanceGuid = new("fad57e80-ec2f-4dee-90ac-400fa6d7720f");
+    readonly Guid dataGuid = new("3b46b9ef-774c-4849-b4dd-66ef871f5b07");
 
     [Fact]
     public async Task SetTags_ValidRequest_ReturnsOkWithTags()
@@ -131,7 +126,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     public async Task SetTags_DataElementNotFound_ReturnsNotFound()
     {
         // Arrange
-        Guid dataGuid = new("99999999-9999-9999-9999-999999999999"); // Non-existent data element
+        Guid nonExistentDataGuid = new("99999999-9999-9999-9999-999999999999"); // Non-existent data element
 
         HttpClient client = GetRootedClient(org, app);
         string token = TestAuthentication.GetServiceOwnerToken("405003309", org: "nav");
@@ -146,7 +141,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Act
         var response = await client.PutAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags",
+            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{nonExistentDataGuid}/tags",
             content
         );
 
