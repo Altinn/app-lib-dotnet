@@ -207,25 +207,29 @@ public partial class DataTagsController : ControllerBase
     [HttpPut]
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
     [ProducesResponseType(typeof(SetTagsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SetTagsResponse>> SetTags(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromRoute] Guid dataGuid,
-        [FromBody] SetTagsRequest setTagsRequest,
+        [FromBody] SetTagsRequest? setTagsRequest,
         [FromQuery] string? ignoredValidators = null,
         [FromQuery] string? language = null
     )
     {
+        if (!ModelState.IsValid || setTagsRequest is null)
+        {
+            return BadRequest(ModelState);
+        }
+
         var tags = setTagsRequest.Tags;
 
-        foreach (var tag in tags)
+        if (tags.Any(tag => string.IsNullOrWhiteSpace(tag) || !LettersRegex().IsMatch(tag)))
         {
-            if (tag is null || !LettersRegex().Match(tag).Success)
-            {
-                return BadRequest("The tags to add must all consist of letters.");
-            }
+            return BadRequest("Tags may only contain letters, '-' and '_'.");
         }
 
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
@@ -234,8 +238,8 @@ public partial class DataTagsController : ControllerBase
             return NotFound("Unable to find instance based on the given parameters.");
         }
 
-        DataElement? dataElement = instance.Data.FirstOrDefault(m =>
-            m.Id.Equals(dataGuid.ToString(), StringComparison.Ordinal)
+        DataElement? dataElement = instance.Data.FirstOrDefault(it =>
+            it.Id.Equals(dataGuid.ToString(), StringComparison.Ordinal)
         );
 
         if (dataElement is null)
@@ -247,7 +251,9 @@ public partial class DataTagsController : ControllerBase
         dataElement.Tags.Clear();
 
         // Add new tags
-        dataElement.Tags.AddRange(tags);
+        // Add new tags
+        var normalizedTags = tags.Distinct(StringComparer.Ordinal).ToList();
+        dataElement.Tags.AddRange(normalizedTags);
         dataElement = await _dataClient.Update(instance, dataElement);
 
         var validationIssues = await ValidateTags(instance, ignoredValidators, language);
@@ -264,7 +270,6 @@ public partial class DataTagsController : ControllerBase
     {
         var taskId = instance.Process.CurrentTask.ElementId;
         var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
-        var changes = dataAccessor.GetDataElementChanges(initializeAltinnRowId: true);
 
         List<ValidationIssueWithSource> validationIssues = [];
         if (ignoredValidatorsString is not null)

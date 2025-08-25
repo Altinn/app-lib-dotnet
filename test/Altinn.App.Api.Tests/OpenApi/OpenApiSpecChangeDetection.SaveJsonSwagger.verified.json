@@ -2075,6 +2075,26 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
@@ -9589,6 +9609,9 @@
         "description": "Represents the request body for setting a set of tags on a data element."
       },
       "SetTagsResponse": {
+        "required": [
+          "validationIssues"
+        ],
         "type": "object",
         "properties": {
           "tags": {
@@ -9604,7 +9627,7 @@
             "items": {
               "$ref": "#/components/schemas/ValidationIssueWithSource"
             },
-            "description": "List of validation issues that reported to have relevant changes after a new data element was added",
+            "description": "List of validation issues that changed as a result of updating tags.",
             "nullable": true
           }
         },

@@ -190,7 +190,9 @@ namespace Altinn.App.Api.Controllers
         [Microsoft.AspNetCore.Authorization.Authorize(Policy="InstanceWrite")]
         [Microsoft.AspNetCore.Mvc.HttpPut]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Altinn.App.Api.Models.SetTagsResponse), 200)]
-        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Models.SetTagsResponse>> SetTags([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid dataGuid, [Microsoft.AspNetCore.Mvc.FromBody] Altinn.App.Api.Models.SetTagsRequest setTagsRequest, [Microsoft.AspNetCore.Mvc.FromQuery] string? ignoredValidators = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null) { }
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails), 400)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails), 404)]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Models.SetTagsResponse>> SetTags([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid dataGuid, [Microsoft.AspNetCore.Mvc.FromBody] Altinn.App.Api.Models.SetTagsRequest? setTagsRequest, [Microsoft.AspNetCore.Mvc.FromQuery] string? ignoredValidators = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null) { }
     }
     [System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Method)]
     public class DisableFormValueModelBindingAttribute : System.Attribute, Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata, Microsoft.AspNetCore.Mvc.Filters.IResourceFilter
@@ -1102,19 +1104,19 @@ namespace Altinn.App.Api.Models
         [System.Text.Json.Serialization.JsonPropertyName("actionOnBehalfOf")]
         public string? ActionOnBehalfOf { get; set; }
     }
-    public class SetTagsRequest
+    public sealed class SetTagsRequest
     {
         public SetTagsRequest() { }
         [System.Text.Json.Serialization.JsonPropertyName("tags")]
-        public System.Collections.Generic.List<string> Tags { get; set; }
+        public System.Collections.Generic.List<string> Tags { get; init; }
     }
-    public class SetTagsResponse
+    public sealed class SetTagsResponse
     {
         public SetTagsResponse() { }
         [System.Text.Json.Serialization.JsonPropertyName("tags")]
-        public System.Collections.Generic.List<string> Tags { get; set; }
+        public System.Collections.Generic.List<string> Tags { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("validationIssues")]
-        public System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssueWithSource> ValidationIssues { get; init; }
+        public required System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssueWithSource> ValidationIssues { get; init; }
     }
     public class SigneeState
     {

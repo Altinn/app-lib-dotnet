@@ -1,5 +1,3 @@
-#nullable disable
-
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Models.Validation;
 
@@ -8,17 +6,17 @@ namespace Altinn.App.Api.Models;
 /// <summary>
 /// Represents the response from the set tags API endpoint providing a list of tags and current validation issues.
 /// </summary>
-public class SetTagsResponse
+public sealed class SetTagsResponse
 {
     /// <summary>
     /// A list of tags represented as string values.
     /// </summary>
     [JsonPropertyName("tags")]
-    public List<string> Tags { get; set; } = [];
+    public List<string> Tags { get; init; } = [];
 
     /// <summary>
-    /// List of validation issues that reported to have relevant changes after a new data element was added
+    /// List of validation issues that changed as a result of updating tags.
     /// </summary>
     [JsonPropertyName("validationIssues")]
-    public List<ValidationIssueWithSource> ValidationIssues { get; init; }
+    public required List<ValidationIssueWithSource> ValidationIssues { get; init; }
 }
