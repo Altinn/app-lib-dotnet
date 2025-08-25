@@ -5,6 +5,8 @@ using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Validation;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,20 +20,31 @@ namespace Altinn.App.Api.Controllers;
 [Produces(MediaTypeNames.Application.Json)]
 [Consumes(MediaTypeNames.Application.Json)]
 [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid}/tags")]
-public class DataTagsController : ControllerBase
+public partial class DataTagsController : ControllerBase
 {
     private readonly IInstanceClient _instanceClient;
     private readonly IDataClient _dataClient;
+    private readonly IValidationService _validationService;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     /// <summary>
     /// Initialize a new instance of <see cref="DataTagsController"/> with the given services.
     /// </summary>
     /// <param name="instanceClient">A client that can be used to send instance requests to storage.</param>
     /// <param name="dataClient">A client that can be used to send data requests to storage.</param>
-    public DataTagsController(IInstanceClient instanceClient, IDataClient dataClient)
+    /// <param name="validationService">Service for performing validations of user data</param>
+    /// <param name="serviceProvider">A service provider to resolve internal services</param>
+    public DataTagsController(
+        IInstanceClient instanceClient,
+        IDataClient dataClient,
+        IValidationService validationService,
+        IServiceProvider serviceProvider
+    )
     {
         _instanceClient = instanceClient;
         _dataClient = dataClient;
+        _validationService = validationService;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <summary>
@@ -55,7 +68,7 @@ public class DataTagsController : ControllerBase
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        if (instance == null)
+        if (instance is null)
         {
             return NotFound($"Unable to find instance based on the given parameters.");
         }
@@ -64,12 +77,12 @@ public class DataTagsController : ControllerBase
             m.Id.Equals(dataGuid.ToString(), StringComparison.Ordinal)
         );
 
-        if (dataElement == null)
+        if (dataElement is null)
         {
             return NotFound("Unable to find data element based on the given parameters.");
         }
 
-        TagsList tagsList = new TagsList { Tags = dataElement.Tags };
+        TagsList tagsList = new() { Tags = dataElement.Tags };
 
         return tagsList;
     }
@@ -96,13 +109,13 @@ public class DataTagsController : ControllerBase
         [FromBody] string tag
     )
     {
-        if (tag == null || !Regex.Match(tag, "^[\\p{L}\\-_]+$").Success)
+        if (tag is null || !LettersRegex().Match(tag).Success)
         {
             return BadRequest("The new tag must consist of letters.");
         }
 
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        if (instance == null)
+        if (instance is null)
         {
             return NotFound("Unable to find instance based on the given parameters.");
         }
@@ -111,7 +124,7 @@ public class DataTagsController : ControllerBase
             m.Id.Equals(dataGuid.ToString(), StringComparison.Ordinal)
         );
 
-        if (dataElement == null)
+        if (dataElement is null)
         {
             return NotFound("Unable to find data element based on the given parameters.");
         }
@@ -122,7 +135,7 @@ public class DataTagsController : ControllerBase
             dataElement = await _dataClient.Update(instance, dataElement);
         }
 
-        TagsList tagsList = new TagsList { Tags = dataElement.Tags };
+        TagsList tagsList = new() { Tags = dataElement.Tags };
 
         // There is no endpoint to GET a specific tag. Using the tags list endpoint.
         var routeValues = new
@@ -158,7 +171,7 @@ public class DataTagsController : ControllerBase
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        if (instance == null)
+        if (instance is null)
         {
             return NotFound("Unable to find instance based on the given parameters.");
         }
@@ -167,7 +180,7 @@ public class DataTagsController : ControllerBase
             m.Id.Equals(dataGuid.ToString(), StringComparison.Ordinal)
         );
 
-        if (dataElement == null)
+        if (dataElement is null)
         {
             return NotFound("Unable to find data element based on the given parameters.");
         }
@@ -179,4 +192,95 @@ public class DataTagsController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Sets a set of tags on a data element.
+    /// </summary>
+    /// <param name="org">The short name for the application owner.</param>
+    /// <param name="app">The name of the application.</param>
+    /// <param name="instanceOwnerPartyId">The party id of the owner of the instance.</param>
+    /// <param name="instanceGuid">The id of the instance.</param>
+    /// <param name="dataGuid">The id of the data element.</param>
+    /// <param name="setTagsRequest">The request body.</param>
+    /// <param name="ignoredValidators">comma separated string of validators to ignore.</param>
+    /// <param name="language">The currently active user language.</param>
+    [HttpPut]
+    [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
+    [ProducesResponseType(typeof(SetTagsResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<SetTagsResponse>> SetTags(
+        [FromRoute] string org,
+        [FromRoute] string app,
+        [FromRoute] int instanceOwnerPartyId,
+        [FromRoute] Guid instanceGuid,
+        [FromRoute] Guid dataGuid,
+        [FromBody] SetTagsRequest setTagsRequest,
+        [FromQuery] string? ignoredValidators = null,
+        [FromQuery] string? language = null
+    )
+    {
+        var tags = setTagsRequest.Tags;
+
+        foreach (var tag in tags)
+        {
+            if (tag is null || !LettersRegex().Match(tag).Success)
+            {
+                return BadRequest("The tags to add must all consist of letters.");
+            }
+        }
+
+        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        if (instance is null)
+        {
+            return NotFound("Unable to find instance based on the given parameters.");
+        }
+
+        DataElement? dataElement = instance.Data.FirstOrDefault(m =>
+            m.Id.Equals(dataGuid.ToString(), StringComparison.Ordinal)
+        );
+
+        if (dataElement is null)
+        {
+            return NotFound("Unable to find data element based on the given parameters.");
+        }
+
+        // Clear existing tags
+        dataElement.Tags.Clear();
+
+        // Add new tags
+        dataElement.Tags.AddRange(tags);
+        dataElement = await _dataClient.Update(instance, dataElement);
+
+        var validationIssues = await ValidateTags(instance, ignoredValidators, language);
+        SetTagsResponse updateTagsResponse = new() { Tags = dataElement.Tags, ValidationIssues = validationIssues };
+
+        return Ok(updateTagsResponse);
+    }
+
+    private async Task<List<ValidationIssueWithSource>> ValidateTags(
+        Instance instance,
+        string? ignoredValidatorsString,
+        string? language
+    )
+    {
+        var taskId = instance.Process.CurrentTask.ElementId;
+        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
+        var changes = dataAccessor.GetDataElementChanges(initializeAltinnRowId: true);
+
+        List<ValidationIssueWithSource> validationIssues = [];
+        if (ignoredValidatorsString is not null)
+        {
+            var ignoredValidators = ignoredValidatorsString.Split(',').Where(v => !string.IsNullOrEmpty(v)).ToList();
+            validationIssues = await _validationService.ValidateInstanceAtTask(
+                dataAccessor,
+                taskId,
+                ignoredValidators,
+                true,
+                language
+            );
+        }
+        return validationIssues;
+    }
+
+    [GeneratedRegex("^[\\p{L}\\-_]+$")]
+    private static partial Regex LettersRegex();
 }
