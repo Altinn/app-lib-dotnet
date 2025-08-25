@@ -69,6 +69,57 @@ public static class ConnectivityDiagnostics
             }
         );
 
+        app.MapGet(
+            "/{org}/{app}/diagnostics/connectivity/localtest",
+            async ([FromServices] IHttpClientFactory httpClientFactory, [FromServices] IConfiguration configuration) =>
+            {
+                try
+                {
+                    using var httpClient = httpClientFactory.CreateClient();
+                    httpClient.Timeout = TimeSpan.FromSeconds(5);
+
+                    // Get localtest URL from configuration
+                    var localtestBaseUrl =
+                        configuration["PlatformSettings:ApiStorageEndpoint"]
+                        ?? throw new Exception("PlatformSettings.ApiStorageEndpoint not configured");
+
+                    // Extract base URL and construct health endpoint
+                    var baseUri = new Uri(localtestBaseUrl);
+                    var healthEndpoint = $"{baseUri.Scheme}://{baseUri.Authority}/health";
+
+                    var response = await httpClient.GetAsync(healthEndpoint);
+                    var content = await response.Content.ReadAsStringAsync();
+
+                    return Results.Json(
+                        new ConnectivityResult
+                        {
+                            Success = response.IsSuccessStatusCode,
+                            StatusCode = (int)response.StatusCode,
+                            Url = healthEndpoint,
+                            ResponseContent = content,
+                            Message = response.IsSuccessStatusCode
+                                ? "Localtest health endpoint connectivity verified"
+                                : $"Localtest health endpoint connectivity failed: {response.ReasonPhrase}",
+                        }
+                    );
+                }
+                catch (Exception ex)
+                {
+                    return Results.Json(
+                        new ConnectivityResult
+                        {
+                            Success = false,
+                            StatusCode = 0,
+                            Url = "unknown",
+                            ResponseContent = null,
+                            Message = $"Localtest health endpoint connectivity error: {ex.Message}",
+                            Exception = ex.ToString(),
+                        }
+                    );
+                }
+            }
+        );
+
         return app;
     }
 }

@@ -31,5 +31,18 @@ public partial class AppFixture : IAsyncDisposable
             var content = await response.Content.ReadAsStringAsync();
             return content;
         }
+
+        /// <summary>
+        /// Tests container-to-container connectivity by calling the app's localtest diagnostic endpoint.
+        /// This verifies that the app container can reach the localtest health endpoint via host.docker.internal.
+        /// </summary>
+        public async Task<string> Localtest()
+        {
+            var client = _fixture.GetAppClient();
+            using var response = await client.GetAsync($"/ttd/{_fixture._app}/diagnostics/connectivity/localtest");
+            Assert.True(response.IsSuccessStatusCode, "Failed to check app container localtest connectivity");
+            var content = await response.Content.ReadAsStringAsync();
+            return content;
+        }
     }
 }

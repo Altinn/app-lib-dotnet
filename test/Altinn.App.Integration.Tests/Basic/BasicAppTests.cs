@@ -187,15 +187,26 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
     }
 
     [Fact]
-    public async Task ContainerConnectivity()
+    public async Task ContainerConnectivity_Pdf()
     {
         await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic);
         var fixture = fixtureScope.Fixture;
 
-        // PDF port
         var port = fixture.PdfHostPort.ToString();
         Assert.NotNull(port);
         var response = await fixture.Connectivity.Pdf();
         await VerifyJson(response).AddScrubber(sb => sb.Replace(port, "<pdfPort>"));
+    }
+
+    [Fact]
+    public async Task ContainerConnectivity_Localtest()
+    {
+        await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic);
+        var fixture = fixtureScope.Fixture;
+
+        var port = fixture.LocaltestHostPort.ToString();
+        Assert.NotNull(port);
+        var response = await fixture.Connectivity.Localtest();
+        await VerifyJson(response).AddScrubber(sb => sb.Replace(port, "<localtestPort>"));
     }
 }
