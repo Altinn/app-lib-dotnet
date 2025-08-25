@@ -1,3 +1,4 @@
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -31,6 +32,17 @@ public interface IInstanceDataAccessor
     /// <returns>The deserialized data model for this data element</returns>
     /// <exception cref="InvalidOperationException">when identifier does not exist in instance.Data with an applogic data type</exception>
     Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier);
+
+    /// <summary>
+    /// Get a <see cref="IInstanceDataAccessor"/> that provides access to the cleaned data (where all fields marked as "hidden" is removed).
+    /// </summary>
+    /// <param name="rowRemovalOption">The strategy for "hiddenRow" on group components</param>
+    IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull);
+
+    /// <summary>
+    /// Get a <see cref="IInstanceDataAccessor"/> that provides access to the data before the current change.
+    /// </summary>
+    IInstanceDataAccessor GetPreviousDataAccessor();
 
     /// <summary>
     /// Gets the raw binary data from a DataElement.
