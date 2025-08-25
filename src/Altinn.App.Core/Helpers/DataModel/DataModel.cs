@@ -9,10 +9,13 @@ namespace Altinn.App.Core.Helpers.DataModel;
 /// <summary>
 /// Get data fields from a model, using string keys (like "Bedrifter[1].Ansatte[1].Alder")
 /// </summary>
+[Obsolete(
+    "This class is deprecated and will be removed in a future version. Use the new LayoutEvaluatorState instead."
+)]
 public class DataModel
 {
     private readonly IInstanceDataAccessor _dataAccessor;
-    private readonly Dictionary<string, DataElementIdentifier> _dataIdsByType = [];
+    private readonly Lazy<Dictionary<string, DataElementIdentifier>> _dataIdsByType;
 
     /// <summary>
     /// Constructor that wraps a POCO data model, and gives extra tool for working with the data
@@ -20,13 +23,12 @@ public class DataModel
     public DataModel(IInstanceDataAccessor dataAccessor)
     {
         _dataAccessor = dataAccessor;
-        foreach (var (dataType, dataElement) in dataAccessor.GetDataElements())
-        {
-            if (dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
-            {
-                _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
-            }
-        }
+        _dataIdsByType = new Lazy<Dictionary<string, DataElementIdentifier>>(() =>
+            dataAccessor
+                .GetDataElements()
+                .Where(tuple => tuple.dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
+                .ToDictionary(tuple => tuple.dataElement.DataType, tuple => (DataElementIdentifier)tuple.dataElement)
+        );
     }
 
     /// <summary>
@@ -34,12 +36,20 @@ public class DataModel
     /// </summary>
     public Instance Instance => _dataAccessor.Instance;
 
-    private async Task<object> ServiceModel(ModelBinding key, DataElementIdentifier defaultDataElementIdentifier)
+    /// <summary>
+    /// Provides access to the instance data accessor for handling instance-related data operations.
+    /// </summary>
+    public IInstanceDataAccessor InstanceDataAccessor => _dataAccessor;
+
+    private async Task<IFormDataWrapper> ServiceModel(
+        ModelBinding key,
+        DataElementIdentifier defaultDataElementIdentifier
+    )
     {
         return (await ServiceModelAndDataElementId(key, defaultDataElementIdentifier)).model;
     }
 
-    private async Task<(DataElementIdentifier dataElementId, object model)> ServiceModelAndDataElementId(
+    private async Task<(DataElementIdentifier dataElementId, IFormDataWrapper model)> ServiceModelAndDataElementId(
         ModelBinding key,
         DataElementIdentifier defaultDataElementIdentifier
     )
@@ -50,12 +60,12 @@ public class DataModel
             || _dataAccessor.GetDataType(defaultDataElementIdentifier).Id == key.DataType
         )
         {
-            return (defaultDataElementIdentifier, await _dataAccessor.GetFormData(defaultDataElementIdentifier));
+            return (defaultDataElementIdentifier, await _dataAccessor.GetFormDataWrapper(defaultDataElementIdentifier));
         }
 
-        if (_dataIdsByType.TryGetValue(key.DataType, out var dataElementId))
+        if (_dataIdsByType.Value.TryGetValue(key.DataType, out var dataElementId))
         {
-            return (dataElementId, await _dataAccessor.GetFormData(dataElementId));
+            return (dataElementId, await _dataAccessor.GetFormDataWrapper(dataElementId));
         }
         if (_dataAccessor.GetDataType(key.DataType) is { } dataType)
         {
@@ -91,8 +101,7 @@ public class DataModel
     )
     {
         var model = await ServiceModel(key, defaultDataElementIdentifier);
-        var modelWrapper = new DataModelWrapper(model);
-        return modelWrapper.GetModelData(key.Field, rowIndexes);
+        return model.Get(key.Field, rowIndexes);
     }
 
     /// <summary>
@@ -105,8 +114,7 @@ public class DataModel
     )
     {
         var model = await ServiceModel(key, defaultDataElementIdentifier);
-        var modelWrapper = new DataModelWrapper(model);
-        return modelWrapper.GetModelDataCount(key.Field, rowIndexes);
+        return model.GetRowCount(key.Field, rowIndexes);
     }
 
     /// <summary>
@@ -121,12 +129,8 @@ public class DataModel
     /// </example>
     public async Task<DataReference[]> GetResolvedKeys(DataReference reference)
     {
-        var model = await _dataAccessor.GetFormData(reference.DataElementIdentifier);
-        var modelWrapper = new DataModelWrapper(model);
-        return modelWrapper
-            .GetResolvedKeys(reference.Field)
-            .Select(k => new DataReference { Field = k, DataElementIdentifier = reference.DataElementIdentifier })
-            .ToArray();
+        var data = await _dataAccessor.GetFormDataWrapper(reference.DataElementIdentifier);
+        return data.GetResolvedKeys(reference);
     }
 
     private static readonly Regex _rowIndexRegex = new(
@@ -159,14 +163,9 @@ public class DataModel
         int[]? rowIndexes
     )
     {
-        var (dataElementId, serviceModel) = await ServiceModelAndDataElementId(key, defaultDataElementIdentifier);
-        if (serviceModel is null)
-        {
-            throw new DataModelException($"Could not find service model for dataType {key.DataType}");
-        }
+        var (dataElementId, formDataWrapper) = await ServiceModelAndDataElementId(key, defaultDataElementIdentifier);
 
-        var modelWrapper = new DataModelWrapper(serviceModel);
-        var field = modelWrapper.AddIndicies(key.Field, rowIndexes);
+        var field = formDataWrapper.AddIndexToPath(key.Field, rowIndexes) ?? "";
         return new DataReference() { Field = field, DataElementIdentifier = dataElementId };
     }
 
@@ -175,29 +174,7 @@ public class DataModel
     /// </summary>
     public async Task RemoveField(DataReference reference, RowRemovalOption rowRemovalOption)
     {
-        var serviceModel = await _dataAccessor.GetFormData(reference.DataElementIdentifier);
-        if (serviceModel is null)
-        {
-            throw new DataModelException(
-                $"Could not find service model for data element id {reference.DataElementIdentifier} to remove values"
-            );
-        }
-
-        var modelWrapper = new DataModelWrapper(serviceModel);
-        modelWrapper.RemoveField(reference.Field, rowRemovalOption);
+        var dataWrapper = await _dataAccessor.GetFormDataWrapper(reference.DataElementIdentifier);
+        dataWrapper.RemoveField(reference.Field, rowRemovalOption);
     }
-
-    // /// <summary>
-    // /// Verify that a key is valid for the model
-    // /// </summary>
-    // public async Task<bool> VerifyKey(ModelBinding key, DataElementId defaultDataElementId)
-    // {
-    //     var serviceModel = await ServiceModel(key, defaultDataElementId);
-    //     if (serviceModel is null)
-    //     {
-    //         return false;
-    //     }
-    //     var modelWrapper = new DataModelWrapper(serviceModel);
-    //     return modelWrapper.VerifyKey(key.Field);
-    // }
 }

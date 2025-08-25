@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
-using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.App.Core.Tests.TestUtils;
@@ -65,7 +65,7 @@ public class TestBackendExclusiveFunctions
         _output.WriteLine(test.RawJson);
         _output.WriteLine(test.FullPath);
         var dataType = new DataType() { Id = "default" };
-        var layout = new LayoutSetComponent(test.Layouts!.Values.ToList(), "layout", dataType);
+        var layout = new LayoutSetComponent(test.Layouts!, "layout", dataType);
         var componentModel = new LayoutModel([layout], null);
         var state = new LayoutEvaluatorState(
             DynamicClassBuilder.DataAccessorFromJsonDocument(
@@ -92,7 +92,7 @@ public class TestBackendExclusiveFunctions
                     await ExpressionEvaluator.EvaluateExpression(
                         state,
                         test.Expression,
-                        test.Context?.ToContext(componentModel, state)!
+                        await test.GetContextOrNull(state)
                     );
                 };
                 (await act.Should().ThrowAsync<Exception>()).WithMessage(test.ExpectsFailure);
@@ -106,7 +106,7 @@ public class TestBackendExclusiveFunctions
         var result = await ExpressionEvaluator.EvaluateExpression(
             state,
             test.Expression,
-            test.Context?.ToContext(componentModel, state)!
+            await test.GetContextOrNull(state)!
         );
 
         switch (test.Expects.ValueKind)
