@@ -40,6 +40,15 @@ public interface IValidator
     bool NoIncrementalValidation => false;
 
     /// <summary>
+    /// Indicates whether the validator should execute after removing data elements marked as hidden.
+    /// </summary>
+    /// <remarks>
+    /// The default implementation returns <c>false</c>. Override this property in implementations if validation
+    /// needs to execute after hidden data removal.
+    /// </remarks>
+    bool ShouldRunAfterRemovingHiddenData => false;
+
+    /// <summary>
     /// Run this validator and return all the issues this validator is aware of.
     /// </summary>
     /// <param name="dataAccessor">Use this to access the form data from <see cref="DataElement"/>s</param>

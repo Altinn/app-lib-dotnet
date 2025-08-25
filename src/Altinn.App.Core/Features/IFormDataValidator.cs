@@ -38,6 +38,11 @@ public interface IFormDataValidator
     bool NoIncrementalValidation => false;
 
     /// <summary>
+    /// Proxy for <see cref="IValidator.ShouldRunAfterRemovingHiddenData"/>
+    /// </summary>
+    bool ShouldRunAfterRemovingHiddenData => false;
+
+    /// <summary>
     /// The actual validation function
     /// </summary>
     /// <param name="instance"></param>

@@ -80,6 +80,16 @@ public class InstanceDataAccessorFake : IInstanceDataAccessor, IEnumerable<KeyVa
         return Task.FromResult(FormDataWrapperFactory.Create(_dataById[dataElementIdentifier]));
     }
 
+    public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IInstanceDataAccessor GetPreviousDataAccessor()
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)
     {
         throw new NotImplementedException();

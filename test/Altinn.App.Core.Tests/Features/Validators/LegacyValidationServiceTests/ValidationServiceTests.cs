@@ -238,6 +238,9 @@ public sealed class ValidationServiceTests : IDisposable
         string validationSource
     )
     {
+        formDataValidatorMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
+        formDataValidatorMock.SetupGet(v => v.ShouldRunAfterRemovingHiddenData).Returns(false);
+
         // DataType
         formDataValidatorMock.Setup(v => v.DataType).Returns(dataType);
 
