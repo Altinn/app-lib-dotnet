@@ -1,3 +1,6 @@
+using System.Net.Http.Json;
+using TestApp.Shared;
+
 namespace Altinn.App.Integration.Tests;
 
 public partial class AppFixture : IAsyncDisposable
@@ -23,26 +26,26 @@ public partial class AppFixture : IAsyncDisposable
         /// Tests container-to-container connectivity by calling the app's PDF diagnostic endpoint.
         /// This verifies that the app container can reach the PDF service container via host.docker.internal.
         /// </summary>
-        public async Task<string> Pdf()
+        public async Task<ConnectivityResult> Pdf()
         {
             var client = _fixture.GetAppClient();
             using var response = await client.GetAsync($"/ttd/{_fixture._app}/diagnostics/connectivity/pdf");
             Assert.True(response.IsSuccessStatusCode, "Failed to check app container PDF connectivity");
-            var content = await response.Content.ReadAsStringAsync();
-            return content;
+            var content = await response.Content.ReadFromJsonAsync<ConnectivityResult>();
+            return content ?? throw new InvalidOperationException("Failed to deserialize connectivity result");
         }
 
         /// <summary>
         /// Tests container-to-container connectivity by calling the app's localtest diagnostic endpoint.
         /// This verifies that the app container can reach the localtest health endpoint via host.docker.internal.
         /// </summary>
-        public async Task<string> Localtest()
+        public async Task<ConnectivityResult> Localtest()
         {
             var client = _fixture.GetAppClient();
             using var response = await client.GetAsync($"/ttd/{_fixture._app}/diagnostics/connectivity/localtest");
             Assert.True(response.IsSuccessStatusCode, "Failed to check app container localtest connectivity");
-            var content = await response.Content.ReadAsStringAsync();
-            return content;
+            var content = await response.Content.ReadFromJsonAsync<ConnectivityResult>();
+            return content ?? throw new InvalidOperationException("Failed to deserialize connectivity result");
         }
     }
 }

@@ -195,7 +195,8 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
         var port = fixture.PdfHostPort.ToString();
         Assert.NotNull(port);
         var response = await fixture.Connectivity.Pdf();
-        await VerifyJson(response).AddScrubber(sb => sb.Replace(port, "<pdfPort>"));
+        await Verify(response).AddScrubber(sb => sb.Replace(port, "<pdfPort>"));
+        Assert.True(response.Success); // Connectivity is a prereq, so we fail hard here
     }
 
     [Fact]
@@ -204,9 +205,8 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
         await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic);
         var fixture = fixtureScope.Fixture;
 
-        var port = fixture.LocaltestHostPort.ToString();
-        Assert.NotNull(port);
         var response = await fixture.Connectivity.Localtest();
-        await VerifyJson(response).AddScrubber(sb => sb.Replace(port, "<localtestPort>"));
+        await Verify(response);
+        Assert.True(response.Success); // Connectivity is a prereq, so we fail hard here
     }
 }
