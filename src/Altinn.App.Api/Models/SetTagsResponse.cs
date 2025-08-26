@@ -18,5 +18,5 @@ public sealed class SetTagsResponse
     /// List of validation issues that changed as a result of updating tags.
     /// </summary>
     [JsonPropertyName("validationIssues")]
-    public required List<ValidationIssueWithSource> ValidationIssues { get; init; }
+    public required List<ValidationSourcePair> ValidationIssues { get; init; }
 }

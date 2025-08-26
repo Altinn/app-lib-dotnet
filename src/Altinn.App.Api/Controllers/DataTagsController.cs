@@ -251,7 +251,6 @@ public partial class DataTagsController : ControllerBase
         dataElement.Tags.Clear();
 
         // Add new tags
-        // Add new tags
         var normalizedTags = tags.Distinct(StringComparer.Ordinal).ToList();
         dataElement.Tags.AddRange(normalizedTags);
         dataElement = await _dataClient.Update(instance, dataElement);
@@ -262,7 +261,7 @@ public partial class DataTagsController : ControllerBase
         return Ok(updateTagsResponse);
     }
 
-    private async Task<List<ValidationIssueWithSource>> ValidateTags(
+    private async Task<List<ValidationSourcePair>> ValidateTags(
         Instance instance,
         string? ignoredValidatorsString,
         string? language
@@ -270,16 +269,17 @@ public partial class DataTagsController : ControllerBase
     {
         var taskId = instance.Process.CurrentTask.ElementId;
         var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
+        var changes = dataAccessor.GetDataElementChanges(initializeAltinnRowId: true);
 
-        List<ValidationIssueWithSource> validationIssues = [];
+        List<ValidationSourcePair> validationIssues = [];
         if (ignoredValidatorsString is not null)
         {
             var ignoredValidators = ignoredValidatorsString.Split(',').Where(v => !string.IsNullOrEmpty(v)).ToList();
-            validationIssues = await _validationService.ValidateInstanceAtTask(
+            validationIssues = await _validationService.ValidateIncrementalFormData(
                 dataAccessor,
                 taskId,
+                changes,
                 ignoredValidators,
-                true,
                 language
             );
         }
