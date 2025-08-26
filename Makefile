@@ -10,6 +10,7 @@ ta: test-all
 
 ti: test-integration
 tir: test-integration-repeatedly
+tid: test-integration-debug
 
 # Main projects (more lightweight)
 .PHONY: clean
@@ -60,6 +61,10 @@ else
 	dotnet test test/Altinn.App.Integration.Tests/ --logger "console;verbosity=detailed"
 endif
 
-.PHONY: test-integration
+.PHONY: test-integration-repeatedly
 test-integration-repeatedly:
 	@bash run-repeatedly.sh
+
+.PHONY: test-integration-debug
+test-integration-debug:
+	TEST_KEEP_CONTAINERS=1 make ti filter="FullyQualifiedName~BasicAppTests.Full&DisplayName~SimplifiedNoPrefill&DisplayName~OldUser"
