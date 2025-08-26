@@ -53,6 +53,25 @@ public sealed partial class AppFixture : IAsyncDisposable
 
     private static long NextFixtureInstance() => Interlocked.Increment(ref _fixtureInstance);
 
+    private static async Task<bool> IsPodman(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await new Command(
+                "podman",
+                "version",
+                _projectDirectory,
+                ThrowOnNonZero: false,
+                CancellationToken: cancellationToken
+            );
+            return result.IsSuccess;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
 
     private readonly ILogger _logger;
@@ -129,9 +148,10 @@ public sealed partial class AppFixture : IAsyncDisposable
             // Packing has to occur before building the app image since
             // the app image rely on local nupkg's to be present.
             // The rest can happen in parallel
+            var isPodman = await IsPodman(cancellationToken);
             await EnsureLocaltestRepositoryCloned(logger, cancellationToken);
             var localtestImageTask = EnsureLocaltestImageBuilt(logger, testContainersLogger, cancellationToken);
-            var pdfServiceTask = EnsurePdfServiceStarted(logger, testContainersLogger, cancellationToken);
+            var pdfServiceTask = EnsurePdfServiceStarted(logger, testContainersLogger, isPodman, cancellationToken);
             await EnsureLibrariesPacked(logger, cancellationToken);
             var appImageTask = EnsureAppImageBuilt(app, logger, testContainersLogger, cancellationToken);
 
@@ -149,6 +169,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                 appContainerImage,
                 logger,
                 testContainersLogger,
+                isPodman,
                 cancellationToken
             );
 
@@ -187,7 +208,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             _appClient.DefaultRequestHeaders.Add("User-Agent", "Altinn.App.Integration.Tests");
 
             // Add frontendVersion cookie with the app's external URL
-            var appExternalUrl = $"http://host.docker.internal:{_appContainer.GetMappedPublicPort(AppPort)}";
+            var appExternalUrl = $"http://host.containers.internal:{_appContainer.GetMappedPublicPort(AppPort)}";
             var baseUri = _appClient.BaseAddress!;
             cookieContainer.Add(baseUri, new Cookie("frontendVersion", appExternalUrl));
         }
@@ -371,7 +392,7 @@ public sealed partial class AppFixture : IAsyncDisposable
     {
         Assert.NotNull(_pdfServiceContainer);
         var pdfServiceUrl =
-            $"http://host.docker.internal:{_pdfServiceContainer.GetMappedPublicPort(PdfServicePort)}/pdf";
+            $"http://host.containers.internal:{_pdfServiceContainer.GetMappedPublicPort(PdfServicePort)}/pdf";
 
         return new()
         {
@@ -565,6 +586,7 @@ public sealed partial class AppFixture : IAsyncDisposable
     private static async Task<IContainer> EnsurePdfServiceStarted(
         ILogger logger,
         ILogger testContainersLogger,
+        bool isPodman,
         CancellationToken cancellationToken
     )
     {
@@ -587,12 +609,20 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .WithPortBinding(PdfServicePort, assignRandomHostPort: true)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(PdfServicePort)))
                 .WithReuse(_reuseContainers)
-                .WithCleanUp(!_keepContainers)
-                // The PDF service doesn't need to run in the same network as localtest and the app
-                // so we communicate between app and PDF service over host network
-                // (host.docker.internal and local.altinn.cloud)
-                .WithExtraHost("host.docker.internal", "host-gateway")
-                .WithExtraHost("local.altinn.cloud", "host-gateway");
+                .WithCleanUp(!_keepContainers);
+
+            // The PDF service doesn't need to run in the same network as localtest and the app
+            // so we communicate between app and PDF service over host network
+            // (host.containers.internal and local.altinn.cloud)
+            // NOTE: host-gateway is runtime specific (podman does not support it)
+            if (!isPodman)
+            {
+                pdfServiceContainerBuilder = pdfServiceContainerBuilder
+                    // NOTE: localhost is substituted with 'host.containers.internal' in app-lib when the running request
+                    // is for `local.altinn.cloud` and the `frontendVersion` cookie is set
+                    .WithExtraHost("host.containers.internal", "host-gateway")
+                    .WithExtraHost("local.altinn.cloud", "host-gateway");
+            }
 
             if (_logFromTestContainers)
                 pdfServiceContainerBuilder = pdfServiceContainerBuilder.WithLogger(testContainersLogger);
@@ -622,6 +652,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         IFutureDockerImage appContainerImage,
         ILogger logger,
         ILogger testContainersLogger,
+        bool isPodman,
         CancellationToken cancellationToken
     )
     {
@@ -656,10 +687,18 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .WithPortBinding(LocaltestPort, true)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilContainerIsHealthy(failingStreak: 20))
                 .WithReuse(_reuseContainers)
-                .WithCleanUp(!_keepContainers)
-                // The PDF service doesn't need to run in the same network as localtest and the app
-                // so we communicate between app and PDF service over host network (host.docker.internal)
-                .WithExtraHost("host.docker.internal", "host-gateway");
+                .WithCleanUp(!_keepContainers);
+
+            // The PDF service doesn't need to run in the same network as localtest and the app
+            // so we communicate between app and PDF service over host network (host.containers.internal)
+            // NOTE: host-gateway is runtime specific (podman does not support it)
+            if (!isPodman)
+            {
+                localtestContainerBuilder = localtestContainerBuilder.WithExtraHost(
+                    "host.containers.internal",
+                    "host-gateway"
+                );
+            }
 
             if (_logFromTestContainers)
                 localtestContainerBuilder = localtestContainerBuilder.WithLogger(testContainersLogger);
@@ -677,8 +716,13 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .WithPortBinding(ConfigPort, assignRandomHostPort: true)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilContainerIsHealthy(failingStreak: 20))
                 .WithReuse(_reuseContainers)
-                .WithCleanUp(!_keepContainers)
-                .WithExtraHost("host.docker.internal", "host-gateway");
+                .WithCleanUp(!_keepContainers);
+
+            // NOTE: host-gateway is runtime specific (podman does not support it)
+            if (!isPodman)
+            {
+                appContainerBuilder = appContainerBuilder.WithExtraHost("host.containers.internal", "host-gateway");
+            }
 
             if (_logFromTestContainers)
                 appContainerBuilder = appContainerBuilder.WithLogger(testContainersLogger);

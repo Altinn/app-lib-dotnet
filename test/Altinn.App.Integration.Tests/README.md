@@ -12,7 +12,7 @@ The test harness creates isolated environments with a **localtest container** (s
 - Docker install
 - May need a `127.0.0.1  local.altinn.cloud` record in `/etc/hosts`
 - May need firewall changes
-  - linux ufw firewall blocked container -> host traffic via `host.docker.internal` in one case
+  - linux ufw firewall blocked container -> host traffic via `host.containers.internal` in one case
     - Verify root cause temporarily by: `sudo ufw disable`
     - Run `BasicAppTests.ContainerConnectivity` test, it needs to succeed for the harness container setup to work
 
