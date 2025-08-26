@@ -71,6 +71,10 @@ public sealed partial class AppFixture : IAsyncDisposable
 
     public bool TestErrored { get; set; } = false;
 
+    public ushort? PdfHostPort => _pdfServiceContainer?.GetMappedPublicPort(PdfServicePort);
+    public ushort? LocaltestHostPort => _localtestContainer?.GetMappedPublicPort(LocaltestPort);
+    public ushort? AppHostPort => _appContainer?.GetMappedPublicPort(AppPort);
+
     private AppFixture(
         ILogger logger,
         long currentFixtureInstance,
@@ -216,6 +220,23 @@ public sealed partial class AppFixture : IAsyncDisposable
         var expectedPrefix = $"[{_currentFixtureInstance:00}/{_app}/{_scenario}]";
         var stdOut = logs.Stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var stdErr = logs.Stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var firstStdOutIndex = stdOut
+            .Select((line, index) => (line, index))
+            .FirstOrDefault(x =>
+                IsStartOfLogMessage(x.line, expectedPrefix, out _, out _, out var isSnapshotMessage, out _)
+                && isSnapshotMessage
+            )
+            .index;
+        var firstStdErrIndex = stdErr
+            .Select((line, index) => (line, index))
+            .FirstOrDefault(x =>
+                IsStartOfLogMessage(x.line, expectedPrefix, out _, out _, out var isSnapshotMessage, out _)
+                && isSnapshotMessage
+            )
+            .index;
+        stdOut = stdOut[firstStdOutIndex..];
+        stdErr = stdErr[firstStdErrIndex..];
+
         var data = new List<(DateTime Timestamp, string Line)>(stdOut.Length + stdErr.Length);
         static bool IsStartOfLogMessage(
             string line,
@@ -487,10 +508,11 @@ public sealed partial class AppFixture : IAsyncDisposable
             if (_logFromTestContainers)
                 localtestBuilder = localtestBuilder.WithLogger(testContainersLogger);
 
-            _localtestContainerImage = localtestBuilder.Build();
+            var localtestContainerImage = localtestBuilder.Build();
 
-            await _localtestContainerImage.CreateAsync(cancellationToken);
+            await localtestContainerImage.CreateAsync(cancellationToken);
             logger.LogInformation("Built localtest container image..");
+            _localtestContainerImage = localtestContainerImage;
             return _localtestContainerImage;
         }
         finally
@@ -575,9 +597,10 @@ public sealed partial class AppFixture : IAsyncDisposable
             if (_logFromTestContainers)
                 pdfServiceContainerBuilder = pdfServiceContainerBuilder.WithLogger(testContainersLogger);
 
-            _pdfServiceContainer = pdfServiceContainerBuilder.Build();
-            await _pdfServiceContainer.StartAsync(cancellationToken);
+            var pdfServiceContainer = pdfServiceContainerBuilder.Build();
+            await pdfServiceContainer.StartAsync(cancellationToken);
             logger.LogInformation("Started PDF service container");
+            _pdfServiceContainer = pdfServiceContainer;
 
             return _pdfServiceContainer;
         }
@@ -902,7 +925,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         foreach (var file in Directory.GetFiles(packagesDirectory))
         {
             var fileName = Path.GetFileName(file);
-            var destFile = Path.Combine(appPackagesDirectory, fileName);
+            var destFile = Path.Join(appPackagesDirectory, fileName);
             await using var source = File.OpenRead(file);
             await using var destination = File.Create(destFile);
             await source.CopyToAsync(destination);
@@ -920,7 +943,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         foreach (var file in Directory.GetFiles(sharedDirectory))
         {
             var fileName = Path.GetFileName(file);
-            var destFile = Path.Combine(appSharedDirectory, fileName);
+            var destFile = Path.Join(appSharedDirectory, fileName);
             await using var source = File.OpenRead(file);
             await using var destination = File.Create(destFile);
             await source.CopyToAsync(destination);

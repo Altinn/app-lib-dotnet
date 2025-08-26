@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Nodes;
 using Altinn.App.Api.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -20,20 +21,39 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
         MultipartXmlPrefill,
     }
 
+    public enum Auth
+    {
+        OldUser,
+        OldServiceOwner,
+        User,
+        ServiceOwner,
+        SystemUser,
+        SelfIdentifiedUser,
+    }
+
     private static bool HasPrefill(TestCase testCase) =>
         testCase is TestCase.SimplifiedWithPrefill or TestCase.MultipartJsonPrefill or TestCase.MultipartXmlPrefill;
 
     [Theory]
     [CombinatorialData]
-    public async Task Full(TestCase testCase)
+    public async Task Full(
+        TestCase testCase,
+        [CombinatorialValues(Auth.OldUser, Auth.User, Auth.OldServiceOwner, Auth.ServiceOwner)] Auth auth
+    )
     {
         await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic);
         var fixture = fixtureScope.Fixture;
         var verifier = fixture.ScopedVerifier;
-        verifier.UseTestCase(new { testCase });
+        verifier.UseTestCase(new { testCase, auth });
 
-        // TODO: parameterize auth
-        var token = await fixture.Auth.GetUserToken(userId: 1337);
+        var token = auth switch
+        {
+            Auth.OldUser => await fixture.Auth.GetOldUserToken(userId: 1337),
+            Auth.OldServiceOwner => await fixture.Auth.GetOldServiceOwnerToken(),
+            Auth.User => await fixture.Auth.GetUserToken(userId: 1337),
+            Auth.ServiceOwner => await fixture.Auth.GetServiceOwnerToken(),
+            _ => throw new ArgumentOutOfRangeException(nameof(auth)),
+        };
 
         // Create instance based on testcase
         using var instantiationResponse = await CreateInstance(fixture, token, testCase);
@@ -89,6 +109,36 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
         await verifier.Verify(await fixture.GetSnapshotAppLogs(), snapshotName: "Logs");
     }
 
+    [Theory]
+    [CombinatorialData]
+    public async Task Authentication(Auth auth)
+    {
+        await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic);
+        var fixture = fixtureScope.Fixture;
+        var verifier = fixture.ScopedVerifier;
+        verifier.UseTestCase(new { auth });
+
+        var token = auth switch
+        {
+            Auth.OldUser => await fixture.Auth.GetOldUserToken(userId: 1337),
+            Auth.OldServiceOwner => await fixture.Auth.GetOldServiceOwnerToken(),
+            Auth.User => await fixture.Auth.GetUserToken(userId: 1337),
+            Auth.ServiceOwner => await fixture.Auth.GetServiceOwnerToken(),
+            Auth.SystemUser => await fixture.Auth.GetSystemUserToken(
+                "913312465_sbs",
+                "d111dbab-d619-4f15-bf29-58fe570a9ae6"
+            ),
+            Auth.SelfIdentifiedUser => await fixture.Auth.GetSelfIdentifiedUserToken("SelvRegistrert"),
+            _ => throw new ArgumentOutOfRangeException(nameof(auth)),
+        };
+
+        var (success, data) = await fixture.Auth.IntrospectAuthentication(token);
+        if (success)
+            await VerifyJson(data).UseParameters(auth);
+        else
+            await Verify(data).UseParameters(auth);
+    }
+
     private static async Task<AppFixture.ApiResponse> CreateInstance(
         AppFixture fixture,
         string token,
@@ -134,5 +184,73 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(testCase)),
         };
+    }
+
+    [Fact]
+    public async Task ContainerConnectivity_Pdf()
+    {
+        await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic);
+        var fixture = fixtureScope.Fixture;
+
+        var port = fixture.PdfHostPort.ToString();
+        Assert.NotNull(port);
+        var response = await fixture.Connectivity.Pdf();
+        await Verify(response).AddScrubber(sb => sb.Replace(port, "<pdfPort>"));
+        Assert.True(response.Success); // Connectivity is a prereq, so we fail hard here
+    }
+
+    [Fact]
+    public async Task ContainerConnectivity_Localtest()
+    {
+        await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic);
+        var fixture = fixtureScope.Fixture;
+
+        var response = await fixture.Connectivity.Localtest();
+        await Verify(response);
+        Assert.True(response.Success); // Connectivity is a prereq, so we fail hard here
+    }
+
+    [Theory]
+    [InlineData("Test Doc 2025.pdf", false, false)]
+    [InlineData("Test Doc 2025.pdf", true, false)]
+    [InlineData("Test Doc 2025.pdf", false, true)]
+    [InlineData("Test Doc 2025.pdf", true, true)]
+    public async Task DataUpload(string filename, bool useNewEndpoint, bool filenameQuoted)
+    {
+        await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic);
+        var fixture = fixtureScope.Fixture;
+        var verifier = fixture.ScopedVerifier;
+        verifier.UseTestCase(new { useNewEndpoint, filenameQuoted });
+
+        var token = await fixture.Auth.GetUserToken(userId: 1337);
+
+        // Create instance
+        using var instantiationResponse = await fixture.Instances.PostSimplified(
+            token,
+            new InstansiationInstance { InstanceOwner = new InstanceOwner { PartyId = "501337" } }
+        );
+        using var readInstantiationResponse = await instantiationResponse.Read<Instance>();
+
+        // Create sample PDF data
+        var pdfData = System.Text.Encoding.UTF8.GetBytes("%PDF-1.4 fake pdf content");
+
+        // Test uploading attachment using the specified endpoint
+        using var uploadResponse = await fixture.Instances.PostData(
+            token,
+            readInstantiationResponse,
+            "attachment",
+            pdfData,
+            "application/pdf",
+            filenameQuoted ? $"\"{filename}\"" : filename,
+            useNewEndpoint
+        );
+        using var readUploadResponse = await uploadResponse.Read<DataPostResponse>();
+        using var updatedInstance = await fixture.Instances.Get(token, readInstantiationResponse);
+        using var readUpdatedInstance = await updatedInstance.Read<Instance>();
+
+        var scrubbers = new Scrubbers(StringScrubber: Scrubbers.InstanceStringScrubber(readUpdatedInstance));
+        if (!useNewEndpoint && readUploadResponse.Response.IsSuccessStatusCode)
+            readUploadResponse.IncludeBodyInSnapshot = false; // The old endpoint has different body, not `DataPostResponse`, so it messes with scrubbing
+        await verifier.Verify(readUploadResponse, scrubbers: scrubbers, snapshotName: "UploadResponse");
     }
 }
