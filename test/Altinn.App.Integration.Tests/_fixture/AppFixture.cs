@@ -3,8 +3,6 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Docker.DotNet;
-using Docker.DotNet.Models;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Images;
@@ -54,18 +52,6 @@ public sealed partial class AppFixture : IAsyncDisposable
     private static bool _localtestRepositoryCloned = false;
 
     private static long NextFixtureInstance() => Interlocked.Increment(ref _fixtureInstance);
-
-    private static readonly JsonSerializerOptions _jsonOptionsPretty = new(JsonSerializerDefaults.Web)
-    {
-        WriteIndented = true,
-    };
-
-    private static async Task<SystemInfoResponse> GetSystemInfo(CancellationToken cancellationToken = default)
-    {
-        using var client = new DockerClientConfiguration().CreateClient();
-        var info = await client.System.GetSystemInfoAsync(cancellationToken);
-        return info;
-    }
 
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
 
@@ -143,22 +129,12 @@ public sealed partial class AppFixture : IAsyncDisposable
             // Packing has to occur before building the app image since
             // the app image rely on local nupkg's to be present.
             // The rest can happen in parallel
-            var systemInfo = await GetSystemInfo(cancellationToken);
-            var systemInfoJson = JsonSerializer.Serialize(systemInfo, _jsonOptionsPretty);
-            // Substituting "host-gateway" with the host IP is a buildx/moby (docker) feature
-            var canUseHostGateway =
-                systemInfoJson.Contains("buildx", StringComparison.OrdinalIgnoreCase)
-                || systemInfoJson.Contains("moby", StringComparison.OrdinalIgnoreCase);
-            logger.LogInformation("Docker system info: \n{SystemInfo}", systemInfoJson);
+            var hostIp = await ContainerRuntimeService.GetHostIP(cancellationToken);
+            logger.LogInformation("Detected host IP for container communication: {HostIP}", hostIp);
 
             await EnsureLocaltestRepositoryCloned(logger, cancellationToken);
             var localtestImageTask = EnsureLocaltestImageBuilt(logger, testContainersLogger, cancellationToken);
-            var pdfServiceTask = EnsurePdfServiceStarted(
-                logger,
-                testContainersLogger,
-                canUseHostGateway,
-                cancellationToken
-            );
+            var pdfServiceTask = EnsurePdfServiceStarted(logger, testContainersLogger, hostIp, cancellationToken);
             await EnsureLibrariesPacked(logger, cancellationToken);
             var appImageTask = EnsureAppImageBuilt(app, logger, testContainersLogger, cancellationToken);
 
@@ -176,7 +152,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                 appContainerImage,
                 logger,
                 testContainersLogger,
-                canUseHostGateway,
+                hostIp,
                 cancellationToken
             );
 
@@ -593,7 +569,7 @@ public sealed partial class AppFixture : IAsyncDisposable
     private static async Task<IContainer> EnsurePdfServiceStarted(
         ILogger logger,
         ILogger testContainersLogger,
-        bool canUseHostGateway,
+        string hostIp,
         CancellationToken cancellationToken
     )
     {
@@ -621,15 +597,12 @@ public sealed partial class AppFixture : IAsyncDisposable
             // The PDF service doesn't need to run in the same network as localtest and the app
             // so we communicate between app and PDF service over host network
             // (host.containers.internal and local.altinn.cloud)
-            // NOTE: host-gateway is runtime specific (podman does not support it)
-            if (canUseHostGateway)
-            {
-                pdfServiceContainerBuilder = pdfServiceContainerBuilder
-                    // NOTE: localhost is substituted with 'host.containers.internal' in app-lib when the running request
-                    // is for `local.altinn.cloud` and the `frontendVersion` cookie is set
-                    .WithExtraHost("host.containers.internal", "host-gateway")
-                    .WithExtraHost("local.altinn.cloud", "host-gateway");
-            }
+            // Map container hostnames to the actual host IP for reliable cross-container communication
+            pdfServiceContainerBuilder = pdfServiceContainerBuilder
+                // NOTE: localhost is substituted with 'host.containers.internal' in app-lib when the running request
+                // is for `local.altinn.cloud` and the `frontendVersion` cookie is set
+                .WithExtraHost("host.containers.internal", hostIp)
+                .WithExtraHost("local.altinn.cloud", hostIp);
 
             if (_logFromTestContainers)
                 pdfServiceContainerBuilder = pdfServiceContainerBuilder.WithLogger(testContainersLogger);
@@ -659,7 +632,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         IFutureDockerImage appContainerImage,
         ILogger logger,
         ILogger testContainersLogger,
-        bool canUseHostGateway,
+        string hostIp,
         CancellationToken cancellationToken
     )
     {
@@ -698,14 +671,8 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             // The PDF service doesn't need to run in the same network as localtest and the app
             // so we communicate between app and PDF service over host network (host.containers.internal)
-            // NOTE: host-gateway is runtime specific (podman does not support it)
-            if (canUseHostGateway)
-            {
-                localtestContainerBuilder = localtestContainerBuilder.WithExtraHost(
-                    "host.containers.internal",
-                    "host-gateway"
-                );
-            }
+            // Map container hostname to the actual host IP for reliable cross-container communication
+            localtestContainerBuilder = localtestContainerBuilder.WithExtraHost("host.containers.internal", hostIp);
 
             if (_logFromTestContainers)
                 localtestContainerBuilder = localtestContainerBuilder.WithLogger(testContainersLogger);
@@ -725,11 +692,8 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .WithReuse(_reuseContainers)
                 .WithCleanUp(!_keepContainers);
 
-            // NOTE: host-gateway is runtime specific (podman does not support it)
-            if (canUseHostGateway)
-            {
-                appContainerBuilder = appContainerBuilder.WithExtraHost("host.containers.internal", "host-gateway");
-            }
+            // Map container hostname to the actual host IP for reliable cross-container communication
+            appContainerBuilder = appContainerBuilder.WithExtraHost("host.containers.internal", hostIp);
 
             if (_logFromTestContainers)
                 appContainerBuilder = appContainerBuilder.WithLogger(testContainersLogger);
