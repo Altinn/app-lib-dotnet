@@ -496,6 +496,7 @@ public class ProcessController : ControllerBase
                 appProcessState.CurrentTask.HasReadAccess = authDecisions.Single(a => a.Id == "read").Authorized;
                 appProcessState.CurrentTask.HasWriteAccess = authDecisions.Single(a => a.Id == "write").Authorized;
                 appProcessState.CurrentTask.UserActions = authDecisions;
+                appProcessState.CurrentTask.ElementType = flowElement.ElementType();
             }
         }
 
@@ -506,6 +507,7 @@ public class ProcessController : ControllerBase
                 new AppProcessTaskTypeInfo
                 {
                     ElementId = processElement.Id,
+                    ElementType = processElement.ElementType(),
                     AltinnTaskType = processElement.ExtensionElements?.TaskExtension?.TaskType,
                 }
             );
