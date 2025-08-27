@@ -152,6 +152,7 @@ publish/
 *.nuget.props
 *.nuget.targets
 *.nupkg
+*.snupkg
 **/packages/*
 
 # Allow frontend packages
@@ -383,3 +384,9 @@ src/Altinn.Apps/AppTemplates/AspNet/App/Properties/launchSettings.json
 
 # Benchmark Results
 BenchmarkDotNet.Artifacts/
+
+# Integration test harnes related files
+# app-localtest source used for integration tests
+test/Altinn.App.Integration.Tests/_localtest/
+test/Altinn.App.Integration.Tests/_testapps/*/_packages/
+test/Altinn.App.Integration.Tests/_testapps/*/_shared/

@@ -146,6 +146,7 @@ public static class TestAuthentication
     {
         var auth = Authenticated.From(
             "",
+            null,
             false,
             applicationMetadata ?? NewApplicationMetadata(),
             () => null,
@@ -180,7 +181,7 @@ public static class TestAuthentication
 
         Claim[] claims =
         [
-            new(ClaimTypes.NameIdentifier, $"user-{userId}-{partyId}", ClaimValueTypes.String, iss),
+            new(ClaimTypes.NameIdentifier, userId.ToString(), ClaimValueTypes.String, iss),
             new(AltinnCoreClaimTypes.UserId, userId.ToString(), ClaimValueTypes.String, iss),
             new(AltinnCoreClaimTypes.PartyID, partyId.ToString(), ClaimValueTypes.Integer32, iss),
             new(AltinnCoreClaimTypes.AuthenticateMethod, "BankID", ClaimValueTypes.String, iss),
@@ -213,6 +214,7 @@ public static class TestAuthentication
         };
         var auth = Authenticated.From(
             token,
+            null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => $"{userPartyId}",
@@ -274,7 +276,7 @@ public static class TestAuthentication
 
         Claim[] claims =
         [
-            new(ClaimTypes.NameIdentifier, $"user-{userId}-{partyId}", ClaimValueTypes.String, iss),
+            new(ClaimTypes.NameIdentifier, userId.ToString(), ClaimValueTypes.String, iss),
             new(AltinnCoreClaimTypes.UserId, userId.ToString(), ClaimValueTypes.String, iss),
             new(AltinnCoreClaimTypes.UserName, username, ClaimValueTypes.String, iss),
             new(AltinnCoreClaimTypes.PartyID, partyId.ToString(), ClaimValueTypes.Integer32, iss),
@@ -306,6 +308,7 @@ public static class TestAuthentication
         };
         var auth = Authenticated.From(
             token,
+            null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => $"{partyId}",
@@ -405,6 +408,7 @@ public static class TestAuthentication
         };
         var auth = Authenticated.From(
             token,
+            null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => throw new NotImplementedException(),
@@ -428,8 +432,8 @@ public static class TestAuthentication
     )
     {
         // Returns a principal that looks like a token issued by Maskinporten and exchanged to Altinn token in tt02
-        // This is a service owner token, so there should be atleast 1 service owner scope
-        string iss = "https://platform.tt02.altinn.no/authentication/api/v1/openid/";
+        // This is a service owner token, so there should be at least 1 service owner scope
+        const string iss = "https://platform.tt02.altinn.no/authentication/api/v1/openid/";
 
         var scopes = new Scopes(scope);
         if (!scopes.HasScopeWithPrefix("altinn:serviceowner/"))
@@ -488,6 +492,7 @@ public static class TestAuthentication
         };
         var auth = Authenticated.From(
             token,
+            null,
             true,
             applicationMetadata ?? NewApplicationMetadata(org: org),
             getSelectedParty: () => throw new NotImplementedException(),
@@ -529,7 +534,7 @@ public static class TestAuthentication
             { "jti", Guid.NewGuid().ToString() },
             { AltinnCoreClaimTypes.OrgNumber, supplierOrgNumber },
             { AltinnCoreClaimTypes.AuthenticateMethod, "maskinporten" },
-            { AltinnCoreClaimTypes.AuthenticationLevel, "3" },
+            { AltinnCoreClaimTypes.AuthenticationLevel, 3 },
         };
 
         AuthorizationDetailsClaim authorizationDetails = new SystemUserAuthorizationDetailsClaim(
@@ -597,6 +602,7 @@ public static class TestAuthentication
         };
         var auth = Authenticated.From(
             token,
+            null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
             getSelectedParty: () => throw new NotImplementedException(),
@@ -636,7 +642,9 @@ public static class TestAuthentication
     {
         List<Claim> claims = [];
         const string issuer = "https://test.maskinporten.no/";
+        claims.Add(new Claim(JwtClaimTypes.Issuer, issuer, ClaimValueTypes.String, issuer));
         claims.Add(new Claim(JwtClaimTypes.Scope, scope, ClaimValueTypes.String, issuer));
+        claims.Add(new Claim(JwtClaimTypes.JwtId, Guid.NewGuid().ToString(), ClaimValueTypes.String, issuer));
         claims.Add(new Claim(JwtClaimTypes.Maskinporten.AuthenticationMethod, "Mock", ClaimValueTypes.String, issuer));
 
         ClaimsIdentity identity = new("mock");
