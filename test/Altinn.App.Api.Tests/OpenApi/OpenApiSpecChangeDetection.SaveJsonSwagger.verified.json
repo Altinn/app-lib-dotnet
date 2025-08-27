@@ -9625,7 +9625,7 @@
           "validationIssues": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ValidationIssueWithSource"
+              "$ref": "#/components/schemas/ValidationSourcePair"
             },
             "description": "List of validation issues that changed as a result of updating tags.",
             "nullable": true

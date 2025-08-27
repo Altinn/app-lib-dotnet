@@ -248,12 +248,22 @@ public partial class DataTagsController : ControllerBase
         }
 
         // Clear existing tags
+        dataElement.Tags ??= [];
         dataElement.Tags.Clear();
 
         // Add new tags
         var normalizedTags = tags.Distinct(StringComparer.Ordinal).ToList();
         dataElement.Tags.AddRange(normalizedTags);
-        dataElement = await _dataClient.Update(instance, dataElement);
+        var updatedElement = await _dataClient.Update(instance, dataElement);
+        if (updatedElement == null)
+        {
+            return Problem(
+                title: "Data update failed",
+                detail: $"Could not update data element {dataElement.Id} for instance {instance.Id}.",
+                statusCode: StatusCodes.Status500InternalServerError
+            );
+        }
+        dataElement = updatedElement;
 
         var validationIssues = await ValidateTags(instance, ignoredValidators, language);
         SetTagsResponse updateTagsResponse = new() { Tags = dataElement.Tags, ValidationIssues = validationIssues };

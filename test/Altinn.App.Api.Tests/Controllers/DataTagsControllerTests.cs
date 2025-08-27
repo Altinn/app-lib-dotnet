@@ -5,6 +5,7 @@ using System.Text.Json;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Constants;
+using Altinn.App.Core.Models.Validation;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit.Abstractions;
@@ -150,6 +151,84 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         var responseContent = await response.Content.ReadAsStringAsync();
         responseContent.Should().Contain("Unable to find data element");
+    }
+
+    [Fact]
+    public async Task SetTags_WithIgnoredValidatorsQueryParameter_ReturnsOkWithValidationIssues()
+    {
+        // Arrange
+        HttpClient client = GetRootedClient(org, app);
+        string token = TestAuthentication.GetServiceOwnerToken("405003309", org: "nav");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
+
+        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+
+        var setTagsRequest = new SetTagsRequest { Tags = ["tagA", "tagB"] };
+
+        var json = JsonSerializer.Serialize(setTagsRequest);
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PutAsync(
+            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags?ignoredValidators=Validator1,Validator2",
+            content
+        );
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var setTagsResponse = JsonSerializer.Deserialize<SetTagsResponse>(
+            responseContent,
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+        );
+
+        setTagsResponse.Should().NotBeNull();
+        setTagsResponse.Tags.Should().BeEquivalentTo(["tagA", "tagB"]);
+        setTagsResponse.ValidationIssues.Should().NotBeNull();
+        setTagsResponse.ValidationIssues.Should().HaveCount(2);
+        setTagsResponse
+            .ValidationIssues.Should()
+            .Contain(validationSourcePair => validationSourcePair.Source == "Expression");
+        setTagsResponse
+            .ValidationIssues.Should()
+            .Contain(validationSourcePair => validationSourcePair.Source == "Required");
+    }
+
+    [Fact]
+    public async Task SetTags_WithoutIgnoredValidatorsQueryParameter_ReturnsOkWithoutValidationIssues()
+    {
+        // Arrange
+        HttpClient client = GetRootedClient(org, app);
+        string token = TestAuthentication.GetServiceOwnerToken("405003309", org: "nav");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
+
+        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+
+        var setTagsRequest = new SetTagsRequest { Tags = ["tagA", "tagB"] };
+
+        var json = JsonSerializer.Serialize(setTagsRequest);
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PutAsync(
+            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags",
+            content
+        );
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var setTagsResponse = JsonSerializer.Deserialize<SetTagsResponse>(
+            responseContent,
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+        );
+
+        setTagsResponse.Should().NotBeNull();
+        setTagsResponse.Tags.Should().BeEquivalentTo(["tagA", "tagB"]);
+        setTagsResponse.ValidationIssues.Should().NotBeNull();
+        setTagsResponse.ValidationIssues.Should().BeEmpty();
     }
 
     [Theory]

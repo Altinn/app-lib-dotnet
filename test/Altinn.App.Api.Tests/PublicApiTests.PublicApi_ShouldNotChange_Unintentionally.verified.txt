@@ -1116,7 +1116,7 @@ namespace Altinn.App.Api.Models
         [System.Text.Json.Serialization.JsonPropertyName("tags")]
         public System.Collections.Generic.List<string> Tags { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("validationIssues")]
-        public required System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssueWithSource> ValidationIssues { get; init; }
+        public required System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationSourcePair> ValidationIssues { get; init; }
     }
     public class SigneeState
     {
