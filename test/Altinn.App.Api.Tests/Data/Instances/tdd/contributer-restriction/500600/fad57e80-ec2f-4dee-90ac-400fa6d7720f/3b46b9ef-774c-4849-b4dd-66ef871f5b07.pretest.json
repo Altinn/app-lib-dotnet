@@ -11,7 +11,7 @@
     "locked": false,
     "refs": null,
     "isRead": true,
-    "tags": [],
+    "tags": ["Tag1"],
     "userDefinedMetadata": null,
     "metadata": null,
     "deleteStatus": null,
