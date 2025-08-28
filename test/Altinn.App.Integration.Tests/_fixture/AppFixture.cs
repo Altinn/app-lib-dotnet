@@ -226,7 +226,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
     public string GetSnapshotAppLogs()
     {
-        // Gets logs from the app container's LogsConsumerV2 and filters
+        // Gets logs from the app container
         // - Log messages from `SnapshotLogger` in the app
         // - Error logs (`fail:` prefix in the default M.E.L log format)
 
@@ -566,15 +566,10 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .WithPortBinding(PdfServicePort, assignRandomHostPort: true)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(PdfServicePort)))
                 .WithReuse(_reuseContainers)
-                .WithCleanUp(!_keepContainers);
-
-            // The PDF service doesn't need to run in the same network as localtest and the app
-            // so we communicate between app and PDF service over host network
-            // (host.containers.internal and local.altinn.cloud)
-            // Map container hostnames to the actual host IP for reliable cross-container communication
-            pdfServiceContainerBuilder = pdfServiceContainerBuilder
-                // NOTE: localhost is substituted with 'host.containers.internal' in app-lib when the running request
-                // is for `local.altinn.cloud` and the `frontendVersion` cookie is set
+                .WithCleanUp(!_keepContainers)
+                // The PDF service is very slow so we start it as part of "static initialization" (it runs as a single instance with a host port for the whole testrun).
+                // So we communicate between app and PDF service over host network through `host.containers.internal`.
+                // The PDF calls back to the host over `local.altinn.cloud`. It normally points to 127.0.0.1 so we have to override it in the container.
                 .WithExtraHost("host.containers.internal", hostIp)
                 .WithExtraHost("local.altinn.cloud", hostIp);
 
@@ -646,12 +641,8 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilContainerIsHealthy(failingStreak: 20))
                 .WithOutputConsumer(localtestLogsConsumer)
                 .WithReuse(_reuseContainers)
-                .WithCleanUp(!_keepContainers);
-
-            // The PDF service doesn't need to run in the same network as localtest and the app
-            // so we communicate between app and PDF service over host network (host.containers.internal)
-            // Map container hostname to the actual host IP for reliable cross-container communication
-            localtestContainerBuilder = localtestContainerBuilder.WithExtraHost("host.containers.internal", hostIp);
+                .WithCleanUp(!_keepContainers)
+                .WithExtraHost("host.containers.internal", hostIp);
 
             if (_logFromTestContainers)
                 localtestContainerBuilder = localtestContainerBuilder.WithLogger(testContainersLogger);
@@ -670,10 +661,8 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilContainerIsHealthy(failingStreak: 20))
                 .WithOutputConsumer(appLogsConsumer)
                 .WithReuse(_reuseContainers)
-                .WithCleanUp(!_keepContainers);
-
-            // Map container hostname to the actual host IP for reliable cross-container communication
-            appContainerBuilder = appContainerBuilder.WithExtraHost("host.containers.internal", hostIp);
+                .WithCleanUp(!_keepContainers)
+                .WithExtraHost("host.containers.internal", hostIp);
 
             if (_logFromTestContainers)
                 appContainerBuilder = appContainerBuilder.WithLogger(testContainersLogger);
@@ -947,7 +936,8 @@ public sealed partial class AppFixture : IAsyncDisposable
     {
         private readonly Pipe _pipe = new();
         private long _currentFixtureInstance;
-        private Dictionary<long, List<string>> _lines = new(4);
+        private readonly Dictionary<long, List<string>> _lines = new(4);
+        private readonly object _lock = new();
         private readonly ILogger _logger;
         private readonly CancellationToken _cancellationToken;
 
@@ -967,10 +957,15 @@ public sealed partial class AppFixture : IAsyncDisposable
 
         public void SetCurrentFixtureInstance(long fixtureInstance) => _currentFixtureInstance = fixtureInstance;
 
-        public IReadOnlyList<string> GetLines(long? forFixtureInstance = null) =>
-            _lines.TryGetValue(forFixtureInstance ?? _currentFixtureInstance, out var lines)
-                ? lines
-                : Array.Empty<string>();
+        public IReadOnlyList<string> GetLines(long? forFixtureInstance = null)
+        {
+            lock (_lock)
+            {
+                if (_lines.TryGetValue(forFixtureInstance ?? _currentFixtureInstance, out var lines))
+                    return lines.ToArray();
+            }
+            return Array.Empty<string>();
+        }
 
         private async Task ReadLines()
         {
@@ -994,9 +989,12 @@ public sealed partial class AppFixture : IAsyncDisposable
                         var line = buffer.Slice(0, eol.Value);
                         var lineStr = Encoding.UTF8.GetString(line.ToArray());
                         var currentInstance = _currentFixtureInstance;
-                        if (!_lines.TryGetValue(currentInstance, out var lines))
-                            _lines[currentInstance] = lines = new List<string>(32);
-                        lines.Add(lineStr);
+                        lock (_lock)
+                        {
+                            if (!_lines.TryGetValue(currentInstance, out var lines))
+                                _lines[currentInstance] = lines = new List<string>(32);
+                            lines.Add(lineStr);
+                        }
 
                         buffer = buffer.Slice(buffer.GetPosition(1, eol.Value));
                     }
@@ -1016,7 +1014,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while reading logs");
-                Environment.FailFast("Fatal error in LogsConsumerV2", ex);
+                Environment.FailFast("Fatal error in LogsConsumer", ex);
             }
 
             _logger.LogInformation("Log reading task is exiting");
