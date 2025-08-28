@@ -13,58 +13,7 @@ namespace Altinn.App.Clients.Fiks.Tests.FiksArkiv;
 
 public class FiksArkivInstanceClientTest
 {
-    private const string MaskinportenToken =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-    private const string LocaltestToken = "localtest-token";
     private readonly InstanceIdentifier _defaultInstanceIdentifier = new($"12345/{Guid.NewGuid()}");
-
-    [Theory]
-    [InlineData("Development")]
-    [InlineData("Staging")]
-    [InlineData("Production")]
-    public async Task GetServiceOwnerAccessToken_ReturnsCorrectToken_BasedOnEnvironment(string environmentName)
-    {
-        // Arrange
-        await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
-
-        var maskinportenResponse = JwtToken.Parse(MaskinportenToken);
-        var appMetadata = await fixture.AppMetadata.GetApplicationMetadata();
-
-        List<HttpRequestMessage> requests = [];
-        var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(
-            HttpStatusCode.OK,
-            contentFactory: request => IsTokenRequest(request) ? LocaltestToken : null,
-            requestCallback: request => requests.Add(request)
-        );
-
-        fixture
-            .MaskinportenClientMock.Setup(x =>
-                x.GetAltinnExchangedToken(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync(maskinportenResponse);
-        fixture.HostEnvironmentMock.Setup(x => x.EnvironmentName).Returns(environmentName);
-        fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-        // Act
-        var result = await fixture.FiksArkivInstanceClient.GetServiceOwnerAccessToken();
-
-        // Assert
-        if (environmentName == "Development")
-        {
-            Assert.Equal(LocaltestToken, result);
-            Assert.Single(requests);
-            Assert.Equal(HttpMethod.Get, requests[0].Method);
-            Assert.Equal(
-                $"http://localhost:5101/Home/GetTestOrgToken?org={appMetadata.Org}&orgNumber=991825827&authenticationLevel=3&scopes=altinn%3Aserviceowner%2Finstances.read+altinn%3Aserviceowner%2Finstances.write",
-                requests[0].RequestUri!.ToString()
-            );
-        }
-        else
-        {
-            Assert.Equal(MaskinportenToken, result);
-            Assert.Empty(requests);
-        }
-    }
 
     [Fact]
     public async Task GetInstance_ReturnsInstance_ForValidResponse()
@@ -78,7 +27,7 @@ public class FiksArkivInstanceClientTest
         List<HttpRequestMessage> requests = [];
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(
             HttpStatusCode.OK,
-            contentFactory: request => IsTokenRequest(request) ? LocaltestToken : JsonSerializer.Serialize(instance),
+            contentFactory: _ => JsonSerializer.Serialize(instance),
             requestCallback: request => requests.Add(request)
         );
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
@@ -91,7 +40,7 @@ public class FiksArkivInstanceClientTest
 
         HttpRequestMessage instanceRequest = requests.Last();
         Assert.Equal(instanceRequest.Method, HttpMethod.Get);
-        Assert.Equal($"Bearer {LocaltestToken}", instanceRequest.Headers.Authorization!.ToString());
+        Assert.Equal($"Bearer {TestHelpers.DummyToken}", instanceRequest.Headers.Authorization!.ToString());
         Assert.Equal(
             $"http://local.altinn.cloud/{appMetadata.AppIdentifier}/instances/{_defaultInstanceIdentifier}",
             instanceRequest.RequestUri!.ToString()
@@ -126,14 +75,17 @@ public class FiksArkivInstanceClientTest
     {
         // Arrange
         await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
-
-        var expectedPayload = await FiksArkivInstanceClient.GetProcessNextAction(action).ReadAsStringAsync();
         var appMetadata = await fixture.AppMetadata.GetApplicationMetadata();
+
+        var expectedPayload = action is null
+            ? ""
+            : $$"""
+                {"Action":"{{action}}","ActionOnBehalfOf":null}
+                """;
 
         List<CapturedHttpRequest<string>> requests = [];
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(
             HttpStatusCode.OK,
-            contentFactory: request => IsTokenRequest(request) ? LocaltestToken : null,
             requestCallback: request =>
                 requests.Add(new CapturedHttpRequest<string>(request, GetRequestContent(request.Content).Result))
         );
@@ -149,7 +101,7 @@ public class FiksArkivInstanceClientTest
         Assert.True(expectedPayload == processNextRequest.Content);
 
         Assert.Equal(HttpMethod.Put, processNextRequest.Request.Method);
-        Assert.Equal($"Bearer {LocaltestToken}", processNextRequest.Request.Headers.Authorization!.ToString());
+        Assert.Equal($"Bearer {TestHelpers.DummyToken}", processNextRequest.Request.Headers.Authorization!.ToString());
         Assert.Equal(
             $"http://local.altinn.cloud/{appMetadata.AppIdentifier}/instances/{_defaultInstanceIdentifier}/process/next",
             processNextRequest.Request.RequestUri!.ToString()
@@ -186,7 +138,6 @@ public class FiksArkivInstanceClientTest
         List<HttpRequestMessage> requests = [];
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(
             HttpStatusCode.OK,
-            contentFactory: request => IsTokenRequest(request) ? LocaltestToken : null,
             requestCallback: request => requests.Add(request)
         );
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
@@ -198,7 +149,7 @@ public class FiksArkivInstanceClientTest
         HttpRequestMessage markCompletedRequest = requests.Last();
 
         Assert.Equal(HttpMethod.Post, markCompletedRequest.Method);
-        Assert.Equal($"Bearer {LocaltestToken}", markCompletedRequest.Headers.Authorization!.ToString());
+        Assert.Equal($"Bearer {TestHelpers.DummyToken}", markCompletedRequest.Headers.Authorization!.ToString());
         Assert.Equal(
             $"http://local.altinn.cloud/{appMetadata.AppIdentifier}/instances/{_defaultInstanceIdentifier}/complete",
             markCompletedRequest.RequestUri!.ToString()
@@ -244,7 +195,7 @@ public class FiksArkivInstanceClientTest
         List<CapturedHttpRequest<byte[]>> requests = [];
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(
             HttpStatusCode.OK,
-            contentFactory: request => IsTokenRequest(request) ? LocaltestToken : JsonSerializer.Serialize(dataElement),
+            contentFactory: _ => JsonSerializer.Serialize(dataElement),
             requestCallback: request =>
                 requests.Add(
                     new CapturedHttpRequest<byte[]>(
@@ -277,7 +228,10 @@ public class FiksArkivInstanceClientTest
         Assert.Equal(dataElement.ContentType, insertBinaryDataRequest.ContentHeaders!.ContentType?.MediaType);
         Assert.Equal(dataElement.Filename, insertBinaryDataRequest.ContentHeaders.ContentDisposition?.FileName);
         Assert.Equal(data, insertBinaryDataRequest.Content);
-        Assert.Equal($"Bearer {LocaltestToken}", insertBinaryDataRequest.Request.Headers.Authorization!.ToString());
+        Assert.Equal(
+            $"Bearer {TestHelpers.DummyToken}",
+            insertBinaryDataRequest.Request.Headers.Authorization!.ToString()
+        );
         Assert.Equal(
             $"http://local.altinn.cloud/{appMetadata.AppIdentifier}/instances/{_defaultInstanceIdentifier}/data?dataType={dataElement.DataType}",
             insertBinaryDataRequest.Request.RequestUri!.ToString()
@@ -324,9 +278,6 @@ public class FiksArkivInstanceClientTest
     {
         return potentialContent is not null ? await potentialContent.ReadAsStringAsync() : string.Empty;
     }
-
-    private static bool IsTokenRequest(HttpRequestMessage request) =>
-        request.RequestUri!.AbsolutePath.Equals("/Home/GetTestOrgToken");
 
     private sealed record CapturedHttpRequest<TContent>(
         HttpRequestMessage Request,

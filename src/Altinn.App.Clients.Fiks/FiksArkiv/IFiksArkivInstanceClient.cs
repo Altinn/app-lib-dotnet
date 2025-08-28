@@ -5,7 +5,6 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal interface IFiksArkivInstanceClient
 {
-    Task<string> GetServiceOwnerAccessToken();
     Task<Instance> GetInstance(InstanceIdentifier instanceIdentifier);
     Task ProcessMoveNext(InstanceIdentifier instanceIdentifier, string? action = null);
     Task MarkInstanceComplete(InstanceIdentifier instanceIdentifier);

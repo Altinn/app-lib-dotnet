@@ -1,44 +1,44 @@
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text;
-using System.Text.Json;
+using Altinn.App.Api.Models;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using JsonSerializer = System.Text.Json.JsonSerializer;
+
+// using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
 {
-    private readonly IMaskinportenClient _maskinportenClient;
+    private readonly IAuthenticationTokenResolver _authenticationTokenResolver;
     private readonly Telemetry? _telemetry;
     private readonly PlatformSettings _platformSettings;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IAppMetadata _appMetadata;
-    private readonly IHostEnvironment _hostEnvironment;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
     private readonly GeneralSettings _generalSettings;
     private readonly ILogger<FiksArkivInstanceClient> _logger;
 
+    private readonly AuthenticationMethod _serviceOwnerAuth = AuthenticationMethod.ServiceOwner();
+
     public FiksArkivInstanceClient(
         IOptions<PlatformSettings> platformSettings,
         IOptions<GeneralSettings> generalSettings,
-        IMaskinportenClient maskinportenClient,
+        IAuthenticationTokenResolver authenticationTokenResolver,
         IHttpClientFactory httpClientFactory,
         IAppMetadata appMetadata,
-        IHostEnvironment hostEnvironment,
         IAccessTokenGenerator accessTokenGenerator,
         ILogger<FiksArkivInstanceClient> logger,
         Telemetry? telemetry = null
@@ -47,21 +47,11 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         _platformSettings = platformSettings.Value;
         _generalSettings = generalSettings.Value;
         _telemetry = telemetry;
-        _maskinportenClient = maskinportenClient;
+        _authenticationTokenResolver = authenticationTokenResolver;
         _httpClientFactory = httpClientFactory;
         _appMetadata = appMetadata;
-        _hostEnvironment = hostEnvironment;
         _accessTokenGenerator = accessTokenGenerator;
         _logger = logger;
-    }
-
-    public async Task<string> GetServiceOwnerAccessToken()
-    {
-        return _hostEnvironment.IsDevelopment()
-            ? await GetLocaltestToken()
-            : await _maskinportenClient.GetAltinnExchangedToken(
-                ["altinn:serviceowner/instances.read", "altinn:serviceowner/instances.write"]
-            );
     }
 
     public async Task<Instance> GetInstance(InstanceIdentifier instanceIdentifier)
@@ -207,24 +197,10 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         return new PlatformHttpException(response, errorMessage, innerException);
     }
 
-    private async Task<string> GetLocaltestToken()
-    {
-        var appMetadata = await _appMetadata.GetApplicationMetadata();
-        var url =
-            $"http://localhost:5101/Home/GetTestOrgToken?org={appMetadata.Org}&orgNumber=991825827&authenticationLevel=3&scopes=altinn%3Aserviceowner%2Finstances.read+altinn%3Aserviceowner%2Finstances.write";
-
-        using var client = _httpClientFactory.CreateClient();
-        using var response = await client.GetAsync(url);
-
-        await EnsureSuccessStatusCode(response);
-
-        return await response.Content.ReadAsStringAsync();
-    }
-
     private async Task<HttpClient> GetAuthenticatedClient(string? bearerToken = null)
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        bearerToken ??= await GetServiceOwnerAccessToken();
+        bearerToken ??= await _authenticationTokenResolver.GetAccessToken(_serviceOwnerAuth);
         string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appMetadata.AppIdentifier);
 
         HttpClient client = _httpClientFactory.CreateClient();
@@ -249,12 +225,8 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         if (string.IsNullOrWhiteSpace(action))
             return new StringContent(string.Empty);
 
-        var payload = new { Action = action };
+        var payload = new ProcessNext { Action = action };
 
-        return new StringContent(
-            JsonSerializer.Serialize(payload, JsonSerializerOptions.Web),
-            Encoding.UTF8,
-            "application/json"
-        );
+        return new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
     }
 }

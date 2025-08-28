@@ -15,16 +15,15 @@ using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
-using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -178,6 +177,7 @@ internal sealed record TestFixture(
         builder.Services.AddSingleton(accessTokenGeneratorMock.Object);
 
         // Non-mockable services
+        builder.Services.AddSingleton<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
         builder.Services.AddTransient<InstanceDataUnitOfWorkInitializer>();
         builder.Services.AddSingleton<ModelSerializationService>();
         builder.Services.AddAppImplementationFactory();

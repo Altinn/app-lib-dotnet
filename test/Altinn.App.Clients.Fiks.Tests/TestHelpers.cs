@@ -15,8 +15,12 @@ namespace Altinn.App.Clients.Fiks.Tests;
 
 internal static class TestHelpers
 {
+    public const string DummyToken =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+
     public static HttpClient GetHttpClientWithMockedHandler(
         HttpStatusCode statusCode,
+        Func<HttpRequestMessage, string?>? authFactory = null,
         Func<HttpRequestMessage, string?>? contentFactory = null,
         Action<HttpRequestMessage>? requestCallback = null
     )
@@ -34,7 +38,10 @@ internal static class TestHelpers
                 {
                     requestCallback?.Invoke(request);
 
-                    var content = contentFactory?.Invoke(request);
+                    var content = IsTokenRequest(request)
+                        ? authFactory?.Invoke(request) ?? DummyToken
+                        : contentFactory?.Invoke(request);
+
                     return new HttpResponseMessage(statusCode)
                     {
                         Content = content is not null ? new StringContent(content) : null,
@@ -47,11 +54,20 @@ internal static class TestHelpers
 
     public static Func<HttpClient> GetHttpClientWithMockedHandlerFactory(
         HttpStatusCode statusCode,
+        Func<HttpRequestMessage, string?>? authFactory = null,
         Func<HttpRequestMessage, string?>? contentFactory = null,
         Action<HttpRequestMessage>? requestCallback = null
     )
     {
-        return () => GetHttpClientWithMockedHandler(statusCode, contentFactory, requestCallback);
+        return () => GetHttpClientWithMockedHandler(statusCode, authFactory, contentFactory, requestCallback);
+    }
+
+    private static bool IsTokenRequest(HttpRequestMessage request)
+    {
+        string[] authEndpoints = ["/Home/GetTestOrgToken", "/token", "/exchange/maskinporten"];
+        string requestPath = request.RequestUri!.AbsolutePath;
+
+        return authEndpoints.Any(x => requestPath.Contains(x, StringComparison.OrdinalIgnoreCase));
     }
 
     public static MaskinportenSettings GetDefaultMaskinportenSettings()
