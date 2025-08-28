@@ -66,8 +66,8 @@ public sealed partial class AppFixture : IAsyncDisposable
     private readonly IContainer _localtestContainer;
     private readonly IContainer _appContainer;
     private readonly bool _isClassFixture;
-    private readonly LogsConsumerV2 _appLogsConsumer;
-    private readonly LogsConsumerV2 _localtestLogsConsumer;
+    private readonly LogsConsumer _appLogsConsumer;
+    private readonly LogsConsumer _localtestLogsConsumer;
 
     internal ScopedVerifier ScopedVerifier { get; private set; }
 
@@ -89,8 +89,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         IContainer localtestContainer,
         IContainer appContainer,
         bool isClassFixture,
-        LogsConsumerV2 appLogsConsumer,
-        LogsConsumerV2 localtestLogsConsumer
+        LogsConsumer appLogsConsumer,
+        LogsConsumer localtestLogsConsumer
     )
     {
         _logger = logger;
@@ -602,8 +602,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         INetwork network,
         IContainer localtestContainer,
         IContainer appContainer,
-        LogsConsumerV2 appLogsConsumer,
-        LogsConsumerV2 localtestLogsConsumer
+        LogsConsumer appLogsConsumer,
+        LogsConsumer localtestLogsConsumer
     )> InitializeContainers(
         long fixtureInstance,
         string name,
@@ -638,7 +638,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             await network.CreateAsync(cancellationToken);
 
-            var localtestLogsConsumer = new LogsConsumerV2(logger);
+            var localtestLogsConsumer = new LogsConsumer(logger);
             var localtestContainerBuilder = new ContainerBuilder()
                 .WithName($"applib-{name}-localtest-{fixtureInstance:00}")
                 .WithImage(localtestContainerImage)
@@ -661,7 +661,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             localtestContainer = localtestContainerBuilder.Build();
 
-            var appOutputConsumer = new LogsConsumerV2(logger);
+            var appOutputConsumer = new LogsConsumer(logger);
             var appEnv = CreateAppEnv(fixtureInstance, name, scenario);
             var appContainerBuilder = new ContainerBuilder()
                 .WithName($"applib-{name}-app-{fixtureInstance:00}")
@@ -980,7 +980,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         return string.Join('\n', data.Select(d => d.Line));
     }
 
-    private sealed class LogsConsumerV2 : IOutputConsumer
+    private sealed class LogsConsumer : IOutputConsumer
     {
         private readonly Pipe _pipe = new();
         private int _consumedLines;
@@ -994,7 +994,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
         public Stream Stderr => _pipe.Writer.AsStream();
 
-        public LogsConsumerV2(ILogger logger)
+        public LogsConsumer(ILogger logger)
         {
             _logger = logger;
             _readingTask = Task.Run(ReadLines);
@@ -1051,83 +1051,4 @@ public sealed partial class AppFixture : IAsyncDisposable
 
         public void Dispose() => _pipe.Writer.Complete();
     }
-
-    // Adapted from: https://stackoverflow.com/a/12328307
-    // private sealed class LogsConsumer : IOutputConsumer
-    // {
-    //     public bool Enabled => true;
-
-    //     public Stream Stdout => _stdout;
-
-    //     public Stream Stderr => _stderr;
-
-    //     private readonly ProducerConsumerStream _stdout = new();
-    //     private readonly ProducerConsumerStream _stderr = new();
-
-    //     public void Dispose() { }
-    // }
-
-    // private sealed class ProducerConsumerStream : Stream
-    // {
-    //     private readonly MemoryStream _stream = new();
-    //     private long _readPosition;
-    //     private long _writePosition;
-
-    //     public override bool CanRead => true;
-
-    //     public override bool CanWrite => true;
-
-    //     public override bool CanSeek => false;
-
-    //     public override void Flush()
-    //     {
-    //         lock (_stream)
-    //         {
-    //             _stream.Flush();
-    //         }
-    //     }
-
-    //     public override long Length
-    //     {
-    //         get
-    //         {
-    //             lock (_stream)
-    //             {
-    //                 return _stream.Length;
-    //             }
-    //         }
-    //     }
-
-    //     public override int Read(byte[] buffer, int offset, int count)
-    //     {
-    //         lock (_stream)
-    //         {
-    //             _stream.Position = _readPosition;
-    //             int read = _stream.Read(buffer, offset, count);
-    //             _readPosition = _stream.Position;
-
-    //             return read;
-    //         }
-    //     }
-
-    //     public override void Write(byte[] buffer, int offset, int count)
-    //     {
-    //         lock (_stream)
-    //         {
-    //             _stream.Position = _writePosition;
-    //             _stream.Write(buffer, offset, count);
-    //             _writePosition = _stream.Position;
-    //         }
-    //     }
-
-    //     public override long Position
-    //     {
-    //         get { throw new NotSupportedException(); }
-    //         set { throw new NotSupportedException(); }
-    //     }
-
-    //     public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-
-    //     public override void SetLength(long value) => throw new NotImplementedException();
-    // }
 }
