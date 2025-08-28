@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO.Pipelines;
 using System.Net;
 using System.Text;
@@ -66,8 +65,8 @@ public sealed partial class AppFixture : IAsyncDisposable
     private readonly IContainer _localtestContainer;
     private readonly IContainer _appContainer;
     private readonly bool _isClassFixture;
-    private readonly LogsConsumer _appLogsConsumer;
     private readonly LogsConsumer _localtestLogsConsumer;
+    private readonly LogsConsumer _appLogsConsumer;
 
     internal ScopedVerifier ScopedVerifier { get; private set; }
 
@@ -89,8 +88,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         IContainer localtestContainer,
         IContainer appContainer,
         bool isClassFixture,
-        LogsConsumer appLogsConsumer,
-        LogsConsumer localtestLogsConsumer
+        LogsConsumer localtestLogsConsumer,
+        LogsConsumer appLogsConsumer
     )
     {
         _logger = logger;
@@ -101,8 +100,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         _localtestContainer = localtestContainer;
         _appContainer = appContainer;
         _isClassFixture = isClassFixture;
-        _appLogsConsumer = appLogsConsumer;
         _localtestLogsConsumer = localtestLogsConsumer;
+        _appLogsConsumer = appLogsConsumer;
         ScopedVerifier = new ScopedVerifier(this);
     }
 
@@ -153,7 +152,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             await pdfServiceTask; // We don't capture and dispose this anywhere. Testcontainers will take care of it
 
             // Initialize containers (including network creation and PDF service)
-            var (network, localtestContainer, appContainer, appLogsConsumer, localtestLogsConsumer) =
+            var (network, localtestContainer, appContainer, localtestLogsConsumer, appLogsConsumer) =
                 await InitializeContainers(
                     fixtureInstance,
                     app,
@@ -176,8 +175,8 @@ public sealed partial class AppFixture : IAsyncDisposable
                 localtestContainer,
                 appContainer,
                 isClassFixture,
-                appLogsConsumer,
-                localtestLogsConsumer
+                localtestLogsConsumer,
+                appLogsConsumer
             );
         }
         catch (Exception ex)
@@ -232,9 +231,9 @@ public sealed partial class AppFixture : IAsyncDisposable
         // - Error logs (`fail:` prefix in the default M.E.L log format)
 
         var expectedPrefix = $"[{_currentFixtureInstance:00}/{_app}/{_scenario}]";
-        var allLines = _appLogsConsumer.ConsumeLines().ToArray();
+        var allLines = _appLogsConsumer.GetLines();
 
-        var data = new List<string>(allLines.Length);
+        var data = new List<string>(allLines.Count);
         static bool IsStartOfLogMessage(
             string line,
             string prefix,
@@ -243,12 +242,6 @@ public sealed partial class AppFixture : IAsyncDisposable
             out bool isError
         )
         {
-            start = default;
-            isSnapshotMessage = false;
-            isError = false;
-            var firstWhitespace = line.IndexOf(' ');
-            if (firstWhitespace < 0)
-                return false;
             start = line;
             isSnapshotMessage = start.StartsWith(prefix);
             isError = start.StartsWith("fail:");
@@ -259,9 +252,9 @@ public sealed partial class AppFixture : IAsyncDisposable
                 || start.StartsWith("dbug:");
         }
 
-        static void AddLines(string[] source, List<string> target, string prefix)
+        static void AddLines(IReadOnlyList<string> source, List<string> target, string prefix)
         {
-            for (int i = 0; i < source.Length; i++)
+            for (int i = 0; i < source.Count; i++)
             {
                 var line = source[i];
                 if (
@@ -278,7 +271,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                 {
                     var fullMessage = new StringBuilder();
                     fullMessage.Append(start);
-                    for (int j = i + 1; j < source.Length; j++)
+                    for (int j = i + 1; j < source.Count; j++)
                     {
                         if (IsStartOfLogMessage(source[j], prefix, out start, out _, out _))
                             break;
@@ -310,6 +303,9 @@ public sealed partial class AppFixture : IAsyncDisposable
         // Update logger with new test output helper and fixture instance
         if (output is not null && _logger is TestOutputLogger logger)
             logger.UpdateOutput(output, _currentFixtureInstance);
+
+        _localtestLogsConsumer.SetCurrentFixtureInstance(_currentFixtureInstance);
+        _appLogsConsumer.SetCurrentFixtureInstance(_currentFixtureInstance);
 
         // Update fixture configuration in the container with new fixture instance
         await SendFixtureConfiguration(
@@ -602,8 +598,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         INetwork network,
         IContainer localtestContainer,
         IContainer appContainer,
-        LogsConsumer appLogsConsumer,
-        LogsConsumer localtestLogsConsumer
+        LogsConsumer localtestLogsConsumer,
+        LogsConsumer appLogsConsumer
     )> InitializeContainers(
         long fixtureInstance,
         string name,
@@ -623,6 +619,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         IContainer? localtestContainer = null;
         IContainer? appContainer = null;
 
+        var localtestLogsConsumer = new LogsConsumer(logger, fixtureInstance, cancellationToken);
+        var appLogsConsumer = new LogsConsumer(logger, fixtureInstance, cancellationToken);
         try
         {
             logger.LogInformation("Starting containers");
@@ -638,7 +636,6 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             await network.CreateAsync(cancellationToken);
 
-            var localtestLogsConsumer = new LogsConsumer(logger);
             var localtestContainerBuilder = new ContainerBuilder()
                 .WithName($"applib-{name}-localtest-{fixtureInstance:00}")
                 .WithImage(localtestContainerImage)
@@ -661,7 +658,6 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             localtestContainer = localtestContainerBuilder.Build();
 
-            var appOutputConsumer = new LogsConsumer(logger);
             var appEnv = CreateAppEnv(fixtureInstance, name, scenario);
             var appContainerBuilder = new ContainerBuilder()
                 .WithName($"applib-{name}-app-{fixtureInstance:00}")
@@ -672,7 +668,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .WithPortBinding(AppPort, assignRandomHostPort: true)
                 .WithPortBinding(ConfigPort, assignRandomHostPort: true)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilContainerIsHealthy(failingStreak: 20))
-                .WithOutputConsumer(appOutputConsumer)
+                .WithOutputConsumer(appLogsConsumer)
                 .WithReuse(_reuseContainers)
                 .WithCleanUp(!_keepContainers);
 
@@ -707,7 +703,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             await Task.WhenAll(localtestStartup, appStartup);
             logger.LogInformation("Started fixture in {ElapsedSeconds}s", timer.Elapsed.TotalSeconds.ToString("0.0"));
-            return (network, localtestContainer, appContainer, appOutputConsumer, localtestLogsConsumer);
+            return (network, localtestContainer, appContainer, localtestLogsConsumer, appLogsConsumer);
         }
         catch (Exception ex)
         {
@@ -716,7 +712,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             try
             {
                 logger.LogError("Crashed during fixture creation, dumping logs:");
-                await LogContainerLogs(logger, localtestContainer, appContainer);
+                LogContainerLogs(logger, localtestLogsConsumer, appLogsConsumer);
             }
             catch (Exception lex)
             {
@@ -814,7 +810,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             await _appContainer.StopAsync();
 
             _logger.LogError("Test errored, logging container output");
-            await LogContainerLogs();
+            LogContainerLogs();
         }
 
         await TryDispose(_appContainer);
@@ -822,19 +818,17 @@ public sealed partial class AppFixture : IAsyncDisposable
         await TryDispose(_network);
     }
 
-    internal Task LogContainerLogs() => LogContainerLogs(_logger, _localtestContainer, _appContainer);
+    internal void LogContainerLogs() => LogContainerLogs(_logger, _localtestLogsConsumer, _appLogsConsumer);
 
-    private static async Task LogContainerLogs(ILogger logger, IContainer? localtestContainer, IContainer? appContainer)
+    private static void LogContainerLogs(ILogger logger, LogsConsumer localtestLogs, LogsConsumer appLogs)
     {
-        if (localtestContainer is not null)
         {
-            var localtestLogs = await GetCombinedLogs(localtestContainer);
-            logger.LogError("Localtest container logs:\n{Logs}", localtestLogs);
+            var logs = string.Join("\n", localtestLogs.GetLines());
+            logger.LogError("Localtest container logs:\n{Logs}", logs);
         }
-        if (appContainer is not null)
         {
-            var appLogs = await GetCombinedLogs(appContainer);
-            logger.LogError("App container logs:\n{Logs}", appLogs);
+            var logs = string.Join("\n", appLogs.GetLines());
+            logger.LogError("App container logs:\n{Logs}", logs);
         }
     }
 
@@ -949,44 +943,13 @@ public sealed partial class AppFixture : IAsyncDisposable
         }
     }
 
-    private static async Task<string> GetCombinedLogs(IContainer container)
-    {
-        var logs = await container.GetLogsAsync(timestampsEnabled: true);
-        var stdOut = logs.Stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        var stdErr = logs.Stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-        var data = new List<(DateTime Timestamp, string Line)>(stdOut.Length + stdErr.Length);
-        static void AddLines(string[] source, List<(DateTime Timestamp, string Line)> data)
-        {
-            foreach (var line in source)
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
-                var firstWhitespace = line.IndexOf(' ');
-                data.Add(
-                    (
-                        DateTime.Parse(line.AsSpan(0, firstWhitespace), CultureInfo.InvariantCulture),
-                        line.Substring(firstWhitespace + 1)
-                    )
-                );
-            }
-        }
-        AddLines(stdOut, data);
-        AddLines(stdErr, data);
-
-        // Sort by timestamp
-        data.Sort((a, b) => a.Timestamp.CompareTo(b.Timestamp));
-        return string.Join('\n', data.Select(d => d.Line));
-    }
-
     private sealed class LogsConsumer : IOutputConsumer
     {
         private readonly Pipe _pipe = new();
-        private int _consumedLines;
-        private List<string> _lines = new(16);
+        private long _currentFixtureInstance;
+        private Dictionary<long, List<string>> _lines = new(4);
         private readonly ILogger _logger;
-        private readonly Task _readingTask;
+        private readonly CancellationToken _cancellationToken;
 
         public bool Enabled => true;
 
@@ -994,29 +957,30 @@ public sealed partial class AppFixture : IAsyncDisposable
 
         public Stream Stderr => _pipe.Writer.AsStream();
 
-        public LogsConsumer(ILogger logger)
+        public LogsConsumer(ILogger logger, long fixtureInstance, CancellationToken cancellationToken)
         {
             _logger = logger;
-            _readingTask = Task.Run(ReadLines);
+            _currentFixtureInstance = fixtureInstance;
+            _cancellationToken = cancellationToken;
+            _ = Task.Run(ReadLines);
         }
 
-        public IEnumerable<string> ConsumeLines()
-        {
-            for (int i = _consumedLines; i < _lines.Count; i++)
-            {
-                yield return _lines[i];
-                _consumedLines++;
-            }
-        }
+        public void SetCurrentFixtureInstance(long fixtureInstance) => _currentFixtureInstance = fixtureInstance;
+
+        public IReadOnlyList<string> GetLines(long? forFixtureInstance = null) =>
+            _lines.TryGetValue(forFixtureInstance ?? _currentFixtureInstance, out var lines)
+                ? lines
+                : Array.Empty<string>();
 
         private async Task ReadLines()
         {
+            var cancellationToken = _cancellationToken;
             try
             {
                 var reader = _pipe.Reader;
-                while (true)
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    var result = await reader.ReadAsync();
+                    var result = await reader.ReadAsync(cancellationToken);
                     var buffer = result.Buffer;
                     if (result.IsCanceled)
                         break;
@@ -1029,7 +993,10 @@ public sealed partial class AppFixture : IAsyncDisposable
 
                         var line = buffer.Slice(0, eol.Value);
                         var lineStr = Encoding.UTF8.GetString(line.ToArray());
-                        _lines.Add(lineStr);
+                        var currentInstance = _currentFixtureInstance;
+                        if (!_lines.TryGetValue(currentInstance, out var lines))
+                            _lines[currentInstance] = lines = new List<string>(32);
+                        lines.Add(lineStr);
 
                         buffer = buffer.Slice(buffer.GetPosition(1, eol.Value));
                     }
@@ -1042,11 +1009,17 @@ public sealed partial class AppFixture : IAsyncDisposable
 
                 await reader.CompleteAsync();
             }
+            catch (OperationCanceledException)
+            {
+                // Ignore
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while reading logs");
                 Environment.FailFast("Fatal error in LogsConsumerV2", ex);
             }
+
+            _logger.LogInformation("Log reading task is exiting");
         }
 
         public void Dispose() => _pipe.Writer.Complete();
