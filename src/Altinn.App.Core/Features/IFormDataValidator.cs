@@ -31,7 +31,8 @@ public interface IFormDataValidator
     string ValidationSource => $"{this.GetType().FullName}-{DataType}";
 
     /// <summary>
-    /// This validator is costly to run, and should only run on process/next or explicit validation requests.
+    /// If you override this to return true, the validator will only run on process/next, and not continuously.
+    /// <see cref="HasRelevantChanges" will never get called
     /// <see cref="IValidator.NoIncrementalValidation"/>
     /// </summary>
     bool NoIncrementalValidation => false;

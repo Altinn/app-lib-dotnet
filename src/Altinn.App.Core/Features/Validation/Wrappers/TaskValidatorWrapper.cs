@@ -39,8 +39,9 @@ internal class TaskValidatorWrapper : IValidator
     /// <inheritdoc />
     public Task<bool> HasRelevantChanges(IInstanceDataAccessor dataAccessor, string taskId, DataElementChanges changes)
     {
-        // If task validator sets <see cref="ITaskValidator.NoIncrementalValidation"/> to false, it will run on every PATCH request, and because <see cref="ITaskValidator" /> does not have a HasRelevantChanges method,
-        // we must run on every PATCH request.
+        // ITaskValidator does not have a HasRelevantChanges method, so we need to return something sensible.
+        // By default it sets NoIncrementalValidation to true, so this method will never get called,
+        // but if someone overrides it to false, we must just assume there might be relevant changes on every PATCH
         return Task.FromResult(true);
     }
 }
