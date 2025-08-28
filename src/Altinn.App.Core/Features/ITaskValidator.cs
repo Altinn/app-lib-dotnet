@@ -25,7 +25,7 @@ public interface ITaskValidator
 
     /// <summary>
     /// If you override this to false, the validator will run on every PATCH request.
-    /// A default implementation for <see cref="HasRelevantChanges"/> will always indicate that the validator should run again.
+    /// A default implementation for <see cref="ITaskValidator.HasRelevantChanges"/> will always indicate that the validator should run again.
     /// <see cref="IValidator.NoIncrementalValidation"/>
     /// </summary>
     bool NoIncrementalValidation => true;
