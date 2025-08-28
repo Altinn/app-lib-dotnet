@@ -1,9 +1,12 @@
+using System.Buffers;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO.Pipelines;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Images;
 using DotNet.Testcontainers.Networks;
@@ -63,6 +66,8 @@ public sealed partial class AppFixture : IAsyncDisposable
     private readonly IContainer _localtestContainer;
     private readonly IContainer _appContainer;
     private readonly bool _isClassFixture;
+    private readonly LogsConsumerV2 _appLogsConsumer;
+    private readonly LogsConsumerV2 _localtestLogsConsumer;
 
     internal ScopedVerifier ScopedVerifier { get; private set; }
 
@@ -83,7 +88,9 @@ public sealed partial class AppFixture : IAsyncDisposable
         INetwork network,
         IContainer localtestContainer,
         IContainer appContainer,
-        bool isClassFixture
+        bool isClassFixture,
+        LogsConsumerV2 appLogsConsumer,
+        LogsConsumerV2 localtestLogsConsumer
     )
     {
         _logger = logger;
@@ -94,6 +101,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         _localtestContainer = localtestContainer;
         _appContainer = appContainer;
         _isClassFixture = isClassFixture;
+        _appLogsConsumer = appLogsConsumer;
+        _localtestLogsConsumer = localtestLogsConsumer;
         ScopedVerifier = new ScopedVerifier(this);
     }
 
@@ -144,17 +153,18 @@ public sealed partial class AppFixture : IAsyncDisposable
             await pdfServiceTask; // We don't capture and dispose this anywhere. Testcontainers will take care of it
 
             // Initialize containers (including network creation and PDF service)
-            var (network, localtestContainer, appContainer) = await InitializeContainers(
-                fixtureInstance,
-                app,
-                scenario,
-                localtestContainerImage,
-                appContainerImage,
-                logger,
-                testContainersLogger,
-                hostIp,
-                cancellationToken
-            );
+            var (network, localtestContainer, appContainer, appLogsConsumer, localtestLogsConsumer) =
+                await InitializeContainers(
+                    fixtureInstance,
+                    app,
+                    scenario,
+                    localtestContainerImage,
+                    appContainerImage,
+                    logger,
+                    testContainersLogger,
+                    hostIp,
+                    cancellationToken
+                );
 
             logger.LogInformation("Fixture created in {ElapsedSeconds}s", timer.Elapsed.TotalSeconds.ToString("0.00"));
             return new AppFixture(
@@ -165,7 +175,9 @@ public sealed partial class AppFixture : IAsyncDisposable
                 network,
                 localtestContainer,
                 appContainer,
-                isClassFixture
+                isClassFixture,
+                appLogsConsumer,
+                localtestLogsConsumer
             );
         }
         catch (Exception ex)
@@ -213,53 +225,31 @@ public sealed partial class AppFixture : IAsyncDisposable
         return _localtestClient;
     }
 
-    public async Task<string> GetSnapshotAppLogs()
+    public string GetSnapshotAppLogs()
     {
-        // Gets stdout and stderr logs from the app container and combines/filters (while sorting by timestamp)
+        // Gets logs from the app container's LogsConsumerV2 and filters
         // - Log messages from `SnapshotLogger` in the app
         // - Error logs (`fail:` prefix in the default M.E.L log format)
 
-        var logs = await _appContainer.GetLogsAsync(timestampsEnabled: true);
-
         var expectedPrefix = $"[{_currentFixtureInstance:00}/{_app}/{_scenario}]";
-        var stdOut = logs.Stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        var stdErr = logs.Stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        var firstStdOutIndex = stdOut
-            .Select((line, index) => (line, index))
-            .FirstOrDefault(x =>
-                IsStartOfLogMessage(x.line, expectedPrefix, out _, out _, out var isSnapshotMessage, out _)
-                && isSnapshotMessage
-            )
-            .index;
-        var firstStdErrIndex = stdErr
-            .Select((line, index) => (line, index))
-            .FirstOrDefault(x =>
-                IsStartOfLogMessage(x.line, expectedPrefix, out _, out _, out var isSnapshotMessage, out _)
-                && isSnapshotMessage
-            )
-            .index;
-        stdOut = stdOut[firstStdOutIndex..];
-        stdErr = stdErr[firstStdErrIndex..];
+        var allLines = _appLogsConsumer.ConsumeLines().ToArray();
 
-        var data = new List<(DateTime Timestamp, string Line)>(stdOut.Length + stdErr.Length);
+        var data = new List<string>(allLines.Length);
         static bool IsStartOfLogMessage(
             string line,
             string prefix,
-            out ReadOnlySpan<char> timestamp,
             out ReadOnlySpan<char> start,
             out bool isSnapshotMessage,
             out bool isError
         )
         {
-            timestamp = default;
             start = default;
             isSnapshotMessage = false;
             isError = false;
             var firstWhitespace = line.IndexOf(' ');
             if (firstWhitespace < 0)
                 return false;
-            timestamp = line.AsSpan(0, firstWhitespace);
-            start = line.AsSpan(firstWhitespace + 1); // Skip timestamp
+            start = line;
             isSnapshotMessage = start.StartsWith(prefix);
             isError = start.StartsWith("fail:");
             return isSnapshotMessage
@@ -269,28 +259,20 @@ public sealed partial class AppFixture : IAsyncDisposable
                 || start.StartsWith("dbug:");
         }
 
-        static void AddLines(string[] source, List<(DateTime Timestamp, string Line)> target, string prefix)
+        static void AddLines(string[] source, List<string> target, string prefix)
         {
             for (int i = 0; i < source.Length; i++)
             {
                 var line = source[i];
                 if (
-                    !IsStartOfLogMessage(
-                        line,
-                        prefix,
-                        out var timestampString,
-                        out var start,
-                        out var isSnapshotMessage,
-                        out var isErrorMessage
-                    )
+                    !IsStartOfLogMessage(line, prefix, out var start, out var isSnapshotMessage, out var isErrorMessage)
                 )
                     continue;
 
-                var timestamp = DateTime.Parse(timestampString, CultureInfo.InvariantCulture);
                 if (isSnapshotMessage)
                 {
                     start = $"[{start.Slice(4)}"; // Remove the fixture index as tests run with parallelism
-                    target.Add((timestamp, start.ToString()));
+                    target.Add(start.ToString());
                 }
                 else if (isErrorMessage)
                 {
@@ -298,7 +280,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                     fullMessage.Append(start);
                     for (int j = i + 1; j < source.Length; j++)
                     {
-                        if (IsStartOfLogMessage(source[j], prefix, out _, out start, out _, out _))
+                        if (IsStartOfLogMessage(source[j], prefix, out start, out _, out _))
                             break;
                         if (start.IsEmpty)
                             continue;
@@ -306,17 +288,13 @@ public sealed partial class AppFixture : IAsyncDisposable
                         fullMessage.Append('\n');
                         fullMessage.Append(start);
                     }
-                    target.Add((timestamp, fullMessage.ToString()));
+                    target.Add(fullMessage.ToString());
                 }
             }
         }
-        AddLines(stdOut, data, expectedPrefix);
-        AddLines(stdErr, data, expectedPrefix);
+        AddLines(allLines, data, expectedPrefix);
 
-        // Sort by RFC3339Nano timestamp and remove timestamp prefix
-        data.Sort((a, b) => a.Timestamp.CompareTo(b.Timestamp));
-
-        var result = string.Join('\n', data.Select(d => d.Line));
+        var result = string.Join('\n', data);
         return result;
     }
 
@@ -623,7 +601,9 @@ public sealed partial class AppFixture : IAsyncDisposable
     private static async Task<(
         INetwork network,
         IContainer localtestContainer,
-        IContainer appContainer
+        IContainer appContainer,
+        LogsConsumerV2 appLogsConsumer,
+        LogsConsumerV2 localtestLogsConsumer
     )> InitializeContainers(
         long fixtureInstance,
         string name,
@@ -658,6 +638,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             await network.CreateAsync(cancellationToken);
 
+            var localtestLogsConsumer = new LogsConsumerV2(logger);
             var localtestContainerBuilder = new ContainerBuilder()
                 .WithName($"applib-{name}-localtest-{fixtureInstance:00}")
                 .WithImage(localtestContainerImage)
@@ -666,6 +647,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .WithEnvironment(_localtestEnv)
                 .WithPortBinding(LocaltestPort, true)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilContainerIsHealthy(failingStreak: 20))
+                .WithOutputConsumer(localtestLogsConsumer)
                 .WithReuse(_reuseContainers)
                 .WithCleanUp(!_keepContainers);
 
@@ -679,6 +661,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             localtestContainer = localtestContainerBuilder.Build();
 
+            var appOutputConsumer = new LogsConsumerV2(logger);
             var appEnv = CreateAppEnv(fixtureInstance, name, scenario);
             var appContainerBuilder = new ContainerBuilder()
                 .WithName($"applib-{name}-app-{fixtureInstance:00}")
@@ -689,6 +672,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                 .WithPortBinding(AppPort, assignRandomHostPort: true)
                 .WithPortBinding(ConfigPort, assignRandomHostPort: true)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilContainerIsHealthy(failingStreak: 20))
+                .WithOutputConsumer(appOutputConsumer)
                 .WithReuse(_reuseContainers)
                 .WithCleanUp(!_keepContainers);
 
@@ -723,7 +707,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             await Task.WhenAll(localtestStartup, appStartup);
             logger.LogInformation("Started fixture in {ElapsedSeconds}s", timer.Elapsed.TotalSeconds.ToString("0.0"));
-            return (network, localtestContainer, appContainer);
+            return (network, localtestContainer, appContainer, appOutputConsumer, localtestLogsConsumer);
         }
         catch (Exception ex)
         {
@@ -995,4 +979,155 @@ public sealed partial class AppFixture : IAsyncDisposable
         data.Sort((a, b) => a.Timestamp.CompareTo(b.Timestamp));
         return string.Join('\n', data.Select(d => d.Line));
     }
+
+    private sealed class LogsConsumerV2 : IOutputConsumer
+    {
+        private readonly Pipe _pipe = new();
+        private int _consumedLines;
+        private List<string> _lines = new(16);
+        private readonly ILogger _logger;
+        private readonly Task _readingTask;
+
+        public bool Enabled => true;
+
+        public Stream Stdout => _pipe.Writer.AsStream();
+
+        public Stream Stderr => _pipe.Writer.AsStream();
+
+        public LogsConsumerV2(ILogger logger)
+        {
+            _logger = logger;
+            _readingTask = Task.Run(ReadLines);
+        }
+
+        public IEnumerable<string> ConsumeLines()
+        {
+            for (int i = _consumedLines; i < _lines.Count; i++)
+            {
+                yield return _lines[i];
+                _consumedLines++;
+            }
+        }
+
+        private async Task ReadLines()
+        {
+            try
+            {
+                var reader = _pipe.Reader;
+                while (true)
+                {
+                    var result = await reader.ReadAsync();
+                    var buffer = result.Buffer;
+                    if (result.IsCanceled)
+                        break;
+
+                    while (buffer.Length > 0)
+                    {
+                        var eol = buffer.PositionOf((byte)'\n');
+                        if (eol == null)
+                            break;
+
+                        var line = buffer.Slice(0, eol.Value);
+                        var lineStr = Encoding.UTF8.GetString(line.ToArray());
+                        _lines.Add(lineStr);
+
+                        buffer = buffer.Slice(buffer.GetPosition(1, eol.Value));
+                    }
+
+                    reader.AdvanceTo(buffer.Start, buffer.End);
+
+                    if (result.IsCompleted)
+                        break;
+                }
+
+                await reader.CompleteAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while reading logs");
+                Environment.FailFast("Fatal error in LogsConsumerV2", ex);
+            }
+        }
+
+        public void Dispose() => _pipe.Writer.Complete();
+    }
+
+    // Adapted from: https://stackoverflow.com/a/12328307
+    // private sealed class LogsConsumer : IOutputConsumer
+    // {
+    //     public bool Enabled => true;
+
+    //     public Stream Stdout => _stdout;
+
+    //     public Stream Stderr => _stderr;
+
+    //     private readonly ProducerConsumerStream _stdout = new();
+    //     private readonly ProducerConsumerStream _stderr = new();
+
+    //     public void Dispose() { }
+    // }
+
+    // private sealed class ProducerConsumerStream : Stream
+    // {
+    //     private readonly MemoryStream _stream = new();
+    //     private long _readPosition;
+    //     private long _writePosition;
+
+    //     public override bool CanRead => true;
+
+    //     public override bool CanWrite => true;
+
+    //     public override bool CanSeek => false;
+
+    //     public override void Flush()
+    //     {
+    //         lock (_stream)
+    //         {
+    //             _stream.Flush();
+    //         }
+    //     }
+
+    //     public override long Length
+    //     {
+    //         get
+    //         {
+    //             lock (_stream)
+    //             {
+    //                 return _stream.Length;
+    //             }
+    //         }
+    //     }
+
+    //     public override int Read(byte[] buffer, int offset, int count)
+    //     {
+    //         lock (_stream)
+    //         {
+    //             _stream.Position = _readPosition;
+    //             int read = _stream.Read(buffer, offset, count);
+    //             _readPosition = _stream.Position;
+
+    //             return read;
+    //         }
+    //     }
+
+    //     public override void Write(byte[] buffer, int offset, int count)
+    //     {
+    //         lock (_stream)
+    //         {
+    //             _stream.Position = _writePosition;
+    //             _stream.Write(buffer, offset, count);
+    //             _writePosition = _stream.Position;
+    //         }
+    //     }
+
+    //     public override long Position
+    //     {
+    //         get { throw new NotSupportedException(); }
+    //         set { throw new NotSupportedException(); }
+    //     }
+
+    //     public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+    //     public override void SetLength(long value) => throw new NotImplementedException();
+    // }
 }
