@@ -32,7 +32,7 @@ public interface IFormDataValidator
 
     /// <summary>
     /// If you override this to return true, the validator will only run on process/next, and not continuously.
-    /// <see cref="HasRelevantChanges" will never get called
+    /// <see cref="HasRelevantChanges"/> will never get called
     /// <see cref="IValidator.NoIncrementalValidation"/>
     /// </summary>
     bool NoIncrementalValidation => false;
