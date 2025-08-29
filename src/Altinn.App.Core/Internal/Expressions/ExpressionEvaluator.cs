@@ -29,6 +29,7 @@ public static class ExpressionEvaluator
             {
                 "hidden" => context.Component.Hidden,
                 "required" => context.Component.Required,
+                "removeWhenHidden" => context.Component.RemoveWhenHidden,
                 _ => throw new ExpressionEvaluatorTypeErrorException($"unknown boolean expression property {property}"),
             };
 
@@ -268,7 +269,7 @@ public static class ExpressionEvaluator
         {
             throw new ArgumentException("component lookup requires the target component to have a simpleBinding");
         }
-        if (await targetContext.IsHidden())
+        if (await targetContext.IsHidden(evaluateRemoveWhenHidden: false))
         {
             return ExpressionValue.Null;
         }

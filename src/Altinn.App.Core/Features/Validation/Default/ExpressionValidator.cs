@@ -119,7 +119,10 @@ public class ExpressionValidator : IValidator
             gatewayAction: null,
             language
         );
-        var hiddenFields = await LayoutEvaluator.GetHiddenFieldsForRemoval(evaluatorState);
+        var hiddenFields = await LayoutEvaluator.GetHiddenFieldsForRemoval(
+            evaluatorState,
+            evaluateRemoveWhenHidden: false
+        );
 
         var validationIssues = new List<ValidationIssue>();
         DataElementIdentifier dataElementIdentifier = dataElement;

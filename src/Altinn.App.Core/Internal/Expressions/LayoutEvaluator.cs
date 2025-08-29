@@ -13,7 +13,10 @@ public static class LayoutEvaluator
     /// <summary>
     /// Get a list of fields that are only referenced in hidden components in <see cref="LayoutEvaluatorState" />
     /// </summary>
-    public static async Task<List<DataReference>> GetHiddenFieldsForRemoval(LayoutEvaluatorState state)
+    public static async Task<List<DataReference>> GetHiddenFieldsForRemoval(
+        LayoutEvaluatorState state,
+        bool evaluateRemoveWhenHidden = false
+    )
     {
         var hiddenModelBindings = new HashSet<DataReference>();
         var nonHiddenModelBindings = new HashSet<DataReference>();
@@ -21,7 +24,14 @@ public static class LayoutEvaluator
         var pageContexts = await state.GetComponentContexts();
         foreach (var pageContext in pageContexts)
         {
-            await HiddenFieldsForRemovalRecurs(state, hiddenModelBindings, nonHiddenModelBindings, pageContext, []);
+            await HiddenFieldsForRemovalRecurs(
+                state,
+                hiddenModelBindings,
+                nonHiddenModelBindings,
+                pageContext,
+                evaluateRemoveWhenHidden,
+                []
+            );
         }
 
         var forRemoval = hiddenModelBindings.Except(nonHiddenModelBindings).ToList();
@@ -34,6 +44,7 @@ public static class LayoutEvaluator
         HashSet<DataReference> hiddenModelBindings,
         HashSet<DataReference> nonHiddenModelBindings,
         ComponentContext context,
+        bool evaluateRemoveWhenHidden,
         IReadOnlyList<DataReference> ignoredPrefixes
     )
     {
@@ -45,7 +56,7 @@ public static class LayoutEvaluator
             );
         }
 
-        var isHidden = await context.IsHidden();
+        var isHidden = await context.IsHidden(evaluateRemoveWhenHidden);
 
         List<DataReference> childIgnoredPrefixes = [.. ignoredPrefixes];
 
@@ -77,6 +88,7 @@ public static class LayoutEvaluator
                 hiddenModelBindings,
                 nonHiddenModelBindings,
                 childContext,
+                evaluateRemoveWhenHidden,
                 childIgnoredPrefixes
             );
         }
@@ -88,15 +100,19 @@ public static class LayoutEvaluator
     [Obsolete("Use the async version of this method RemoveHiddenDataAsync")]
     public static void RemoveHiddenData(LayoutEvaluatorState state, RowRemovalOption rowRemovalOption)
     {
-        RemoveHiddenDataAsync(state, rowRemovalOption).GetAwaiter().GetResult();
+        RemoveHiddenDataAsync(state, rowRemovalOption, evaluateRemoveWhenHidden: false).GetAwaiter().GetResult();
     }
 
     /// <summary>
     /// Remove fields that are only referenced from hidden fields from the data object in the state.
     /// </summary>
-    public static async Task RemoveHiddenDataAsync(LayoutEvaluatorState state, RowRemovalOption rowRemovalOption)
+    public static async Task RemoveHiddenDataAsync(
+        LayoutEvaluatorState state,
+        RowRemovalOption rowRemovalOption,
+        bool evaluateRemoveWhenHidden = false
+    )
     {
-        var fields = await GetHiddenFieldsForRemoval(state);
+        var fields = await GetHiddenFieldsForRemoval(state, evaluateRemoveWhenHidden);
 
         // Ensure fields with higher row numbers are removed before fields with lower row numbers.
         foreach (var dataReference in OrderByListIndexReverse(fields))
@@ -127,7 +143,7 @@ public static class LayoutEvaluator
     )
     {
         ArgumentNullException.ThrowIfNull(context.Component);
-        var hidden = await context.IsHidden();
+        var hidden = await context.IsHidden(evaluateRemoveWhenHidden: false);
         if (!hidden)
         {
             foreach (var childContext in context.ChildContexts)
