@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -e
+set -Eeuo pipefail
+IFS=$'\n\t'
 
 # Configuration
 TEST_LOCALTEST_BRANCH="${TEST_LOCALTEST_BRANCH:-main}"
@@ -51,15 +52,26 @@ cleanup_containers() {
 
     echo "Cleaning up containers after successful run $run_number..."
 
-    # Stop and remove all containers
-    if [ "$($CONTAINER_RUNTIME ps -q | wc -l)" -gt 0 ]; then
-        echo "Stopping running containers..."
-        $CONTAINER_RUNTIME stop $($CONTAINER_RUNTIME ps -q) || true
+    # Collect running containers with applib prefix
+    local running_containers=()
+    while IFS= read -r container_id; do
+        [[ -n "$container_id" ]] && running_containers+=("$container_id")
+    done < <($CONTAINER_RUNTIME ps -q --filter "name=^applib")
+
+    if [ ${#running_containers[@]} -gt 0 ]; then
+        echo "Stopping ${#running_containers[@]} running applib containers..."
+        "$CONTAINER_RUNTIME" stop "${running_containers[@]}" || true
     fi
 
-    if [ "$($CONTAINER_RUNTIME ps -a -q | wc -l)" -gt 0 ]; then
-        echo "Removing stopped containers..."
-        $CONTAINER_RUNTIME rm $($CONTAINER_RUNTIME ps -a -q) || true
+    # Collect all containers (running and stopped) with applib prefix
+    local all_containers=()
+    while IFS= read -r container_id; do
+        [[ -n "$container_id" ]] && all_containers+=("$container_id")
+    done < <($CONTAINER_RUNTIME ps -a -q --filter "name=^applib")
+
+    if [ ${#all_containers[@]} -gt 0 ]; then
+        echo "Removing ${#all_containers[@]} applib containers..."
+        "$CONTAINER_RUNTIME" rm "${all_containers[@]}" || true
     fi
 
     echo "✓ Container cleanup completed"
