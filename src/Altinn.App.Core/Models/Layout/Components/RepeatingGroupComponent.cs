@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout.Components;
@@ -5,28 +6,75 @@ namespace Altinn.App.Core.Models.Layout.Components;
 /// <summary>
 /// Component specialisation for repeating groups with maxCount > 1
 /// </summary>
-public record RepeatingGroupComponent : GroupComponent
+public sealed class RepeatingGroupComponent : Base.RepeatingReferenceComponent
 {
     /// <summary>
     /// Constructor for RepeatingGroupComponent
     /// </summary>
-    public RepeatingGroupComponent(
-        string id,
-        string type,
-        IReadOnlyDictionary<string, ModelBinding>? dataModelBindings,
-        IReadOnlyCollection<BaseComponent> children,
-        IReadOnlyCollection<string>? childIDs,
-        int maxCount,
-        Expression hidden,
-        Expression hiddenRow,
-        Expression required,
-        Expression readOnly,
-        IReadOnlyDictionary<string, string>? additionalProperties
-    )
-        : base(id, type, dataModelBindings, children, childIDs, hidden, required, readOnly, additionalProperties)
+    public RepeatingGroupComponent(JsonElement componentElement, string pageId, string layoutId, int maxCount)
+        : base(componentElement, pageId, layoutId)
     {
         MaxCount = maxCount;
-        HiddenRow = hiddenRow;
+        if (
+            !componentElement.TryGetProperty("children", out JsonElement childIdsElement)
+            || childIdsElement.ValueKind != JsonValueKind.Array
+        )
+        {
+            throw new JsonException($"{Type} must have a \"children\" property that contains a list of strings.");
+        }
+
+        if (!DataModelBindings.TryGetValue("group", out var groupBinding))
+        {
+            throw new JsonException($"{Type} must have a 'group' data model binding.");
+        }
+
+        if (string.IsNullOrWhiteSpace(groupBinding.Field))
+        {
+            throw new JsonException(
+                $"Component {layoutId}.{pageId}.{Id} must have 'dataModelBindings.group' which is a non-empty string or object with a non-empty 'field'."
+            );
+        }
+
+        GroupModelBinding = groupBinding;
+
+        RepeatingChildReferences = GetChildrenWithoutMultipageGroupIndex(componentElement, "children");
+
+        HiddenRow = componentElement.TryGetProperty("hiddenRow", out JsonElement hiddenRowElement)
+            ? ExpressionConverter.ReadStatic(hiddenRowElement)
+            : Expression.False;
+        RowsBefore = ParseGridConfig("rowsBefore", componentElement);
+
+        RowsAfter = ParseGridConfig("rowsAfter", componentElement);
+
+        BeforeChildReferences = RowsBefore
+            .SelectMany(row => row.Cells?.Select(cell => cell?.ComponentId) ?? [])
+            .OfType<string>()
+            .ToList();
+
+        AfterChildReferences = RowsAfter
+            .SelectMany(row => row.Cells?.Select(cell => cell?.ComponentId) ?? [])
+            .OfType<string>()
+            .ToList();
+    }
+
+    private static List<GridComponent.GridRowConfig> ParseGridConfig(string propertyName, JsonElement componentElement)
+    {
+        if (
+            componentElement.TryGetProperty(propertyName, out JsonElement gridConfigElement)
+            && gridConfigElement.ValueKind != JsonValueKind.Null
+        )
+        {
+            if (gridConfigElement.ValueKind != JsonValueKind.Array)
+            {
+                throw new JsonException(
+                    $"If present, RepeatingGroupComponent \"{propertyName}\" property must be an array."
+                );
+            }
+            return gridConfigElement.Deserialize<List<GridComponent.GridRowConfig>>()
+                ?? throw new JsonException($"Failed to deserialize {propertyName} in RepeatingGroupComponent.");
+        }
+
+        return [];
     }
 
     /// <summary>
@@ -35,35 +83,27 @@ public record RepeatingGroupComponent : GroupComponent
     public int MaxCount { get; }
 
     /// <summary>
-    /// Layout Expression that can be evaluated to see if row should be hidden
+    /// List of rows before the repeating group, used to associate components that are not repeated to the repeating group for layout purposes
     /// </summary>
-    public Expression HiddenRow { get; }
-}
+    public IReadOnlyList<GridComponent.GridRowConfig> RowsBefore { get; }
 
-/// <summary>
-/// Component (currently only used for contexts to have something to point to) for a row in a repeating group
-/// </summary>
-public record RepeatingGroupRowComponent : BaseComponent
-{
     /// <summary>
-    /// Constructor for RepeatingGroupRowComponent
+    /// List of rows after the repeating group, used to associate components that are not repeated to the repeating group for layout purposes
     /// </summary>
-    public RepeatingGroupRowComponent(
-        string id,
-        IReadOnlyDictionary<string, ModelBinding> dataModelBindings,
-        Expression hiddenRow,
-        BaseComponent parent
-    )
-        : base(
-            id,
-            "groupRow",
-            dataModelBindings,
-            hiddenRow,
-            required: Expression.False,
-            readOnly: Expression.False,
-            null
-        )
-    {
-        Parent = parent;
-    }
+    public IReadOnlyList<GridComponent.GridRowConfig> RowsAfter { get; }
+
+    /// <inheritdoc />
+    public override ModelBinding GroupModelBinding { get; }
+
+    /// <inheritdoc />
+    public override Expression HiddenRow { get; }
+
+    /// <inheritdoc />
+    public override IReadOnlyList<string> RepeatingChildReferences { get; }
+
+    /// <inheritdoc />
+    public override IReadOnlyList<string> BeforeChildReferences { get; }
+
+    /// <inheritdoc />
+    public override IReadOnlyList<string> AfterChildReferences { get; }
 }
