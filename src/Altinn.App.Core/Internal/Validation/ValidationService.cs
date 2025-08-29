@@ -50,13 +50,26 @@ public class ValidationService : IValidationService
         var validators = _validatorFactory.GetValidators(taskId);
         // Filter out validators that should be ignored or not run incrementally
         if (onlyIncrementalValidators == true)
+        {
             validators = validators.Where(v => !v.NoIncrementalValidation);
+        }
         else if (onlyIncrementalValidators == false)
+        {
             validators = validators.Where(v => v.NoIncrementalValidation);
+        }
+
+        // Remove ignored validators
         if (ignoredValidators is not null)
             validators = validators.Where(v =>
                 !ignoredValidators.Contains(v.ValidationSource, StringComparer.InvariantCulture)
             );
+
+        var cleanAccessor = dataAccessor;
+        validators = validators.ToArray();
+        if (validators.Any(c => c.ShouldRunAfterRemovingHiddenData))
+        {
+            cleanAccessor = dataAccessor.GetCleanAccessor();
+        }
 
         // Start the validation tasks (but don't await yet, so that they can run in parallel)
         var validationTasks = validators.Select(async v =>
@@ -64,7 +77,8 @@ public class ValidationService : IValidationService
             using var validatorActivity = _telemetry?.StartRunValidatorActivity(v);
             try
             {
-                var issues = await v.Validate(dataAccessor, taskId, language);
+                var accessor = v.ShouldRunAfterRemovingHiddenData ? cleanAccessor : dataAccessor;
+                var issues = await v.Validate(accessor, taskId, language);
                 validatorActivity?.SetTag(Telemetry.InternalLabels.ValidatorIssueCount, issues.Count);
                 await TranslateValidationIssues(issues, language);
                 return KeyValuePair.Create(
@@ -119,17 +133,30 @@ public class ValidationService : IValidationService
 
         ThrowIfDuplicateValidators(validators, taskId);
 
+        DataElementChanges cleanChanges = changes;
+        IInstanceDataAccessor cleanAccessor = dataAccessor;
+        if (validators.Any(p => p.ShouldRunAfterRemovingHiddenData))
+        {
+            // Run validations on clean
+            cleanAccessor = dataAccessor.GetCleanAccessor();
+            var previousCleanAccessor = dataAccessor.GetPreviousDataAccessor().GetCleanAccessor();
+
+            cleanChanges = await CleanFormDataChanges(changes, previousCleanAccessor, cleanAccessor);
+        }
+
         // Start the validation tasks (but don't await yet, so that they can run in parallel)
         var validationTasks = validators.Select(async validator =>
         {
             using var validatorActivity = _telemetry?.StartRunValidatorActivity(validator);
             try
             {
-                var hasRelevantChanges = await validator.HasRelevantChanges(dataAccessor, taskId, changes);
+                var localAccessor = validator.ShouldRunAfterRemovingHiddenData ? cleanAccessor : dataAccessor;
+                var localChanges = validator.ShouldRunAfterRemovingHiddenData ? cleanChanges : changes;
+                var hasRelevantChanges = await validator.HasRelevantChanges(localAccessor, taskId, localChanges);
                 validatorActivity?.SetTag(Telemetry.InternalLabels.ValidatorHasRelevantChanges, hasRelevantChanges);
                 if (hasRelevantChanges)
                 {
-                    var issues = await validator.Validate(dataAccessor, taskId, language);
+                    var issues = await validator.Validate(localAccessor, taskId, language);
                     validatorActivity?.SetTag(Telemetry.InternalLabels.ValidatorIssueCount, issues.Count);
                     await TranslateValidationIssues(issues, language);
                     var issuesWithSource = issues
@@ -169,11 +196,49 @@ public class ValidationService : IValidationService
         return lists.OfType<ValidationSourcePair>().ToList();
     }
 
+    private static async Task<DataElementChanges> CleanFormDataChanges(
+        DataElementChanges changes,
+        IInstanceDataAccessor previousAccessor,
+        IInstanceDataAccessor cleanAccessor
+    )
+    {
+        var cleanedChangeList = new List<DataElementChange>();
+
+        foreach (var change in changes.AllChanges)
+        {
+            // Clean FormDataChange updates but keep other changes as is
+            if (change is FormDataChange { DataElement: not null, Type: ChangeType.Updated } fdc)
+            {
+                cleanedChangeList.Add(
+                    new FormDataChange()
+                    {
+                        ContentType = fdc.ContentType,
+                        DataElement = fdc.DataElement,
+                        DataType = fdc.DataType,
+                        Type = fdc.Type,
+
+                        PreviousFormData = await previousAccessor.GetFormData(fdc.DataElementIdentifier),
+                        CurrentFormData = await cleanAccessor.GetFormData(fdc.DataElementIdentifier),
+                        // The binary data is kept as is, because logic is assumed to not use it
+                        CurrentBinaryData = fdc.CurrentBinaryData,
+                        PreviousBinaryData = fdc.PreviousBinaryData,
+                    }
+                );
+            }
+            else
+            {
+                cleanedChangeList.Add(change);
+            }
+        }
+
+        return new DataElementChanges(cleanedChangeList);
+    }
+
     private async Task TranslateValidationIssues(IEnumerable<ValidationIssue> issues, string? language)
     {
         foreach (var issue in issues)
         {
-            if (String.IsNullOrEmpty(issue.Description) && !String.IsNullOrEmpty(issue.CustomTextKey))
+            if (string.IsNullOrEmpty(issue.Description) && !string.IsNullOrEmpty(issue.CustomTextKey))
             {
                 if (
                     await _translationService.TranslateTextKey(
