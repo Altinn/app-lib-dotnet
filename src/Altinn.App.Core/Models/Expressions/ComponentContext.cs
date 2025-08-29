@@ -58,13 +58,13 @@ public sealed class ComponentContext
     /// <summary>
     /// Memoized way to check if the component is hidden
     /// </summary>
-    public async Task<bool> IsHidden()
+    public async Task<bool> IsHidden(bool evaluateRemoveWhenHidden)
     {
         if (_isHidden.HasValue)
         {
             return _isHidden.Value;
         }
-        if (Parent is not null && await Parent.IsHidden())
+        if (Parent is not null && await Parent.IsHidden(evaluateRemoveWhenHidden))
         {
             _isHidden = true;
             return _isHidden.Value;
@@ -87,6 +87,18 @@ public sealed class ComponentContext
         }
 
         var hidden = await ExpressionEvaluator.EvaluateBooleanExpression(State, this, "hidden", false);
+
+        if (hidden && evaluateRemoveWhenHidden)
+        {
+            hidden = await ExpressionEvaluator.EvaluateBooleanExpression(
+                State,
+                this,
+                "removeWhenHidden",
+                // Default return should match AppSettings.RemoveHiddenData,
+                // but currently we only run removal when it is true, so we set it to true here
+                defaultReturn: true
+            );
+        }
 
         _isHidden = hidden;
         return _isHidden.Value;

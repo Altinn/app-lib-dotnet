@@ -52,7 +52,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     // Form data not yet saved to storage (thus no dataElementId)
     private readonly ConcurrentBag<DataElementChange> _changesForCreation = [];
 
-
     public InstanceDataUnitOfWork(
         Instance instance,
         IDataClient dataClient,

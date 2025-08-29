@@ -101,7 +101,11 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
                 gatewayAction: null,
                 language
             );
-            await LayoutEvaluator.RemoveHiddenDataAsync(evaluationState, RowRemovalOption.DeleteRow);
+            await LayoutEvaluator.RemoveHiddenDataAsync(
+                evaluationState,
+                RowRemovalOption.DeleteRow,
+                evaluateRemoveWhenHidden: true
+            );
         }
 
         // Remove shadow fields
