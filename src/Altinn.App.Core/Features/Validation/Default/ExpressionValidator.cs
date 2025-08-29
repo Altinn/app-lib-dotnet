@@ -143,6 +143,7 @@ public class ExpressionValidator : IValidator
                     continue;
                 }
                 var context = new ComponentContext(
+                    evaluatorState,
                     component: null,
                     rowIndices: DataModel.GetRowIndices(resolvedField.Field),
                     dataElementIdentifier: resolvedField.DataElementIdentifier

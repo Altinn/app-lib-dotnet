@@ -373,14 +373,11 @@ public class AppResourcesSI : IAppResources
         foreach (var page in order)
         {
             var pageBytes = File.ReadAllBytes(Path.Join(folder, page + ".json"));
-            // Set the PageName using AsyncLocal before deserializing.
-            PageComponentConverter.SetAsyncLocalPageName(layoutSet.Id, page);
-            pages.Add(
-                System.Text.Json.JsonSerializer.Deserialize<PageComponent>(
-                    pageBytes.RemoveBom(),
-                    _jsonSerializerOptions
-                ) ?? throw new InvalidDataException(page + ".json is \"null\"")
+            using var document = JsonDocument.Parse(
+                pageBytes,
+                new JsonDocumentOptions() { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip }
             );
+            pages.Add(new PageComponent(document.RootElement, page, layoutSet.Id));
         }
 
         // First look at the specified data type, but

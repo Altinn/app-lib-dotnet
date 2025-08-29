@@ -25,8 +25,7 @@ public class ContextListRoot
     public string Name { get; set; } = default!;
 
     [JsonPropertyName("layouts")]
-    [JsonConverter(typeof(LayoutModelConverterFromObject))]
-    public IReadOnlyDictionary<string, PageComponent> Layouts { get; set; } = default!;
+    public IReadOnlyDictionary<string, JsonElement> Layouts { get; set; } = default!;
 
     [JsonPropertyName("dataModel")]
     public JsonElement? DataModel { get; set; }

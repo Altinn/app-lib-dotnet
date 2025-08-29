@@ -351,8 +351,8 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
 
     private static PageComponent ParsePage(string layoutId, string pageName, [StringSyntax("json")] string json)
     {
-        PageComponentConverter.SetAsyncLocalPageName(layoutId, pageName);
-        return JsonSerializer.Deserialize<PageComponent>(json) ?? throw new JsonException("Deserialization failed");
+        using var document = JsonDocument.Parse(json);
+        return new PageComponent(document.RootElement, pageName, layoutId);
     }
 
     private static string Json([StringSyntax("json")] string json) => json;
