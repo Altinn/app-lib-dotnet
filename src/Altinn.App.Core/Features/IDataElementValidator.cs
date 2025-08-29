@@ -29,7 +29,9 @@ public interface IDataElementValidator
     string ValidationSource => $"{this.GetType().FullName}-{DataType}";
 
     /// <summary>
-    /// This validator is costly to run, and should only run on process/next or explicit validation requests.
+    /// If you override this to false, the validator will run on every PATCH request.
+    /// A default implementation for <see cref="IValidator.HasRelevantChanges"/> will always indicate that the validator should run again.
+    /// <see cref="IValidator.NoIncrementalValidation"/>
     /// <see cref="IValidator.NoIncrementalValidation"/>
     /// </summary>
     bool NoIncrementalValidation => true;
