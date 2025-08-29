@@ -29,8 +29,8 @@ public static partial class ContainerRuntimeService
             var probeScript = """
                 set -e
                 try_host() {
-                    # use ping to avoid depending on getent; parse 'PING name (A.B.C.D)'
-                    ip=$(ping -c1 -W1 "$1" 2>/dev/null | sed -n 's/^PING [^(]*(\([0-9.]*\)).*/\1/p')
+                    # use ping -4 to force IPv4; parse 'PING name (A.B.C.D)'
+                    ip=$(ping -4 -c1 -W1 "$1" 2>/dev/null | sed -n 's/^PING [^(]*(\([0-9.]*\)).*/\1/p')
                     if [ -n "$ip" ]; then echo "$ip"; return 0; fi
                     return 1
                 }
