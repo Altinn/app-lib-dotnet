@@ -115,19 +115,6 @@ internal sealed class SynchronizedWriteStream(Stream _inner) : Stream
         }
     }
 
-    public override void Close()
-    {
-        _lock.Wait();
-        try
-        {
-            _inner.Close();
-        }
-        finally
-        {
-            _lock.Release();
-        }
-    }
-
     private bool _disposed;
 
     protected override void Dispose(bool disposing)
