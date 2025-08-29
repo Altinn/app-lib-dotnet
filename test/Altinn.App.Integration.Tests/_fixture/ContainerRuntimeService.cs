@@ -56,12 +56,12 @@ public static partial class ContainerRuntimeService
 
                 // Get the logs from the container
                 var (stdout, stderr) = await container.GetLogsAsync(timestampsEnabled: false, ct: cancellationToken);
-                if (!string.IsNullOrWhiteSpace(stderr))
-                    throw new InvalidOperationException($"Error while probing host IP: {stderr}");
 
                 var ip = ExtractFirstIPv4(stdout);
                 if (ip is null)
-                    throw new InvalidOperationException($"Unable to determine host IPv4 from probe: {stdout}");
+                    throw new InvalidOperationException(
+                        $"Unable to determine host IPv4 from probe. stdout: {stdout}, stderr: {stderr}"
+                    );
 
                 _cachedHostIp = ip;
                 return ip;
