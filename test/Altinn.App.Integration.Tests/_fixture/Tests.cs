@@ -69,12 +69,16 @@ public class FixtureTests
             .WithCommand(
                 "/bin/sh",
                 "-c",
+                // We separate stdout and stderr here because
+                // the current LogsConsumer gets stdout and stderr as separate
+                // streams due to Testcontainers. So we can't really rely on the ordering much
                 """
                 printf 'stdout line 1\n'
-                printf 'stderr line 1\n' >&2
                 printf 'stdout line 2\n'
-                printf 'stderr line 2\n' >&2
                 printf 'stdout line 3\n'
+                sleep 1
+                printf 'stderr line 1\n' >&2
+                printf 'stderr line 2\n' >&2
                 printf 'stderr line 3\n' >&2
                 exit 0
                 """.ReplaceLineEndings("\n")
