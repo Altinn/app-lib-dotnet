@@ -63,7 +63,11 @@ endif
 
 .PHONY: test-integration-repeatedly
 test-integration-repeatedly:
+ifdef filter
+	@TEST_FILTER="$(filter)" bash run-repeatedly.sh
+else
 	@bash run-repeatedly.sh
+endif
 
 .PHONY: test-integration-debug
 test-integration-debug:

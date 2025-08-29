@@ -6,6 +6,7 @@ IFS=$'\n\t'
 # Configuration
 TEST_LOCALTEST_BRANCH="${TEST_LOCALTEST_BRANCH:-main}"
 TEST_KEEP_CONTAINERS="${TEST_KEEP_CONTAINERS:-true}"
+TEST_FILTER="${TEST_FILTER:-}"
 MAX_RUNS="${MAX_RUNS:-10}"
 
 # Detect container runtime (docker or podman)
@@ -21,6 +22,7 @@ fi
 echo "Running integration tests repeatedly with:"
 echo "  TEST_LOCALTEST_BRANCH=$TEST_LOCALTEST_BRANCH"
 echo "  TEST_KEEP_CONTAINERS=$TEST_KEEP_CONTAINERS"
+echo "  TEST_FILTER=$TEST_FILTER"
 echo "  MAX_RUNS=$MAX_RUNS"
 echo "  CONTAINER_RUNTIME=$CONTAINER_RUNTIME"
 echo
@@ -86,7 +88,12 @@ for i in $(seq 1 $MAX_RUNS); do
     echo "========================================"
 
     # Run the integration tests
-    if TEST_LOCALTEST_BRANCH="$TEST_LOCALTEST_BRANCH" TEST_KEEP_CONTAINERS="$TEST_KEEP_CONTAINERS" dotnet test --no-restore --no-build test/Altinn.App.Integration.Tests/ --logger "console;verbosity=detailed"; then
+    DOTNET_TEST_ARGS="--no-restore --no-build test/Altinn.App.Integration.Tests/ --logger \"console;verbosity=detailed\""
+    if [ -n "$TEST_FILTER" ]; then
+        DOTNET_TEST_ARGS="$DOTNET_TEST_ARGS --filter \"$TEST_FILTER\""
+    fi
+    
+    if TEST_LOCALTEST_BRANCH="$TEST_LOCALTEST_BRANCH" TEST_KEEP_CONTAINERS="$TEST_KEEP_CONTAINERS" eval "dotnet test $DOTNET_TEST_ARGS"; then
         echo "✓ Test run $i completed successfully"
 
         # Check for snapshot differences

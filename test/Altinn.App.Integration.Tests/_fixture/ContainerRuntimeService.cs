@@ -34,7 +34,7 @@ public static partial class ContainerRuntimeService
                     if [ -n "$ip" ]; then echo "$ip"; return 0; fi
                     return 1
                 }
-                for n in host.docker.internal host.containers.internal host.rancher-desktop.internal; do
+                for n in host.docker.internal host.containers.internal host.rancher-desktop.internal host.lima.internal; do
                     try_host "$n" && exit 0
                 done
                 # default route (Gateway hex in column 3 of /proc/net/route on the 0.0.0.0 row)

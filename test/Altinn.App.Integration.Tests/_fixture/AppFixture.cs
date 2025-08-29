@@ -934,9 +934,16 @@ public sealed partial class AppFixture : IAsyncDisposable
         }
     }
 
-    private sealed class LogsConsumer : IOutputConsumer
+    internal sealed class LogsConsumer : IOutputConsumer
     {
-        private readonly Pipe _pipe = new();
+        // This is a rather complicated way to actually recombine stdout and stderr
+        // into a single stream. It seems like Testcontainers takes Docker.Dotnet's
+        // multiplexed stream and splits it into 2.
+        // We could use Docker.Dotnet directly but then we would probably get other issues to solve..
+        // NOTE: even though we try to read every line in the order they were printed, it seems thats
+        // not possible due to the way Testcontainers works. See the LogsConsumer test in the fixture tests.
+        private readonly Pipe _pipe;
+        private readonly SynchronizedWriteStream _writeStream;
         private long _currentFixtureInstance;
         private readonly Dictionary<long, List<string>> _lines = new(4);
         private readonly object _lock = new();
@@ -945,12 +952,15 @@ public sealed partial class AppFixture : IAsyncDisposable
 
         public bool Enabled => true;
 
-        public Stream Stdout => _pipe.Writer.AsStream();
+        public Stream Stdout => _writeStream;
 
-        public Stream Stderr => _pipe.Writer.AsStream();
+        public Stream Stderr => _writeStream;
 
         public LogsConsumer(ILogger logger, long fixtureInstance, CancellationToken cancellationToken)
         {
+            _pipe = new();
+            _writeStream = new SynchronizedWriteStream(_pipe.Writer.AsStream());
+
             _logger = logger;
             _currentFixtureInstance = fixtureInstance;
             _cancellationToken = cancellationToken;
@@ -978,10 +988,10 @@ public sealed partial class AppFixture : IAsyncDisposable
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     var result = await reader.ReadAsync(cancellationToken);
-                    var buffer = result.Buffer;
                     if (result.IsCanceled)
                         break;
 
+                    var buffer = result.Buffer;
                     while (buffer.Length > 0)
                     {
                         var eol = buffer.PositionOf((byte)'\n');
@@ -1022,6 +1032,10 @@ public sealed partial class AppFixture : IAsyncDisposable
             _logger.LogInformation("Log reading task is exiting");
         }
 
-        public void Dispose() => _pipe.Writer.Complete();
+        public void Dispose()
+        {
+            _pipe.Writer.Complete();
+            _writeStream.Dispose();
+        }
     }
 }
