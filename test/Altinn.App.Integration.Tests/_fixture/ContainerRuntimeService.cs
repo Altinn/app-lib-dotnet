@@ -3,7 +3,7 @@ using DotNet.Testcontainers.Builders;
 
 namespace Altinn.App.Integration.Tests;
 
-public static partial class ContainerRuntimeService
+internal static partial class ContainerRuntimeService
 {
     private static string? _cachedHostIp; // process-lifetime cache
     private static readonly SemaphoreSlim _lock = new(1, 1);
