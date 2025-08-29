@@ -5,6 +5,7 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Integration.Tests;
 
+[Trait("Category", "Integration")]
 public class FixtureTests
 {
     private readonly ITestOutputHelper _output;

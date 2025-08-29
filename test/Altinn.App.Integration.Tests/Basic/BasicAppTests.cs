@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json.Nodes;
 using Altinn.App.Api.Models;
 using Altinn.Platform.Storage.Interface.Models;
