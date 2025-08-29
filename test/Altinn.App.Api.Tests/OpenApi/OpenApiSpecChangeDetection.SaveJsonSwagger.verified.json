@@ -2702,17 +2702,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/InstansiationInstance"
+                "$ref": "#/components/schemas/InstantiationInstance"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/InstansiationInstance"
+                "$ref": "#/components/schemas/InstantiationInstance"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/InstansiationInstance"
+                "$ref": "#/components/schemas/InstantiationInstance"
               }
             }
           }
@@ -8334,7 +8334,7 @@
         },
         "additionalProperties": false
       },
-      "InstansiationInstance": {
+      "InstantiationInstance": {
         "type": "object",
         "properties": {
           "instanceOwner": {
