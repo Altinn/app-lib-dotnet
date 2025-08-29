@@ -6,7 +6,6 @@ using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
-using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Expressions;
@@ -20,11 +19,12 @@ public class LayoutEvaluatorState
     private readonly LayoutModel? _componentModel;
     private readonly ITranslationService _translationService;
     private readonly FrontEndSettings _frontEndSettings;
-    private readonly Instance _instanceContext;
     private readonly string? _gatewayAction;
     private readonly string? _language;
     private readonly TimeZoneInfo? _timeZone;
-    private readonly Lazy<Task<List<ComponentContext>>?> _rootContext;
+    private List<ComponentContext>? _rootContext;
+    private readonly IInstanceDataAccessor _dataAccessor;
+    private readonly Dictionary<string, DataElementIdentifier> _dataIdsByType = [];
 
     /// <summary>
     /// Constructor for LayoutEvaluatorState. Usually called via <see cref="LayoutEvaluatorStateInitializer" /> that can be fetched from dependency injection.
@@ -46,27 +46,43 @@ public class LayoutEvaluatorState
         TimeZoneInfo? timeZone = null
     )
     {
+        foreach (var (dataType, dataElement) in dataAccessor.GetDataElements())
+        {
+            if (dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
+            {
+                _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
+            }
+        }
         _dataModel = new DataModel(dataAccessor);
+        _dataAccessor = dataAccessor;
         _componentModel = componentModel;
         _translationService = translationService;
         _frontEndSettings = frontEndSettings;
-        _instanceContext = dataAccessor.Instance;
+        Instance = dataAccessor.Instance;
         _gatewayAction = gatewayAction;
         _language = language;
         _timeZone = timeZone;
-        _rootContext = new(() => _componentModel?.GenerateComponentContexts(_instanceContext, _dataModel));
     }
+
+    /// <summary>
+    /// Get the Instance object that is referenced for evaluation.
+    /// </summary>
+    public Instance Instance { get; }
 
     /// <summary>
     /// Get a hierarchy of the different contexts in the component model (remember to iterate <see cref="ComponentContext.ChildContexts" />)
     /// </summary>
     public async Task<List<ComponentContext>> GetComponentContexts()
     {
-        if (_rootContext.Value is null)
+        if (_rootContext is null)
         {
-            throw new InvalidOperationException("Component model not loaded");
+            if (_componentModel is null)
+            {
+                throw new InvalidOperationException("Component model not loaded");
+            }
+            _rootContext = await _componentModel.GenerateComponentContexts(this);
         }
-        return (await _rootContext.Value);
+        return _rootContext;
     }
 
     /// <summary>
@@ -90,10 +106,10 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Get component from componentModel
     /// </summary>
-    public BaseComponent GetComponent(string pageName, string componentId)
+    [Obsolete("You need to get a context not a commponent", true)]
+    public void GetComponent(string pageName, string componentId)
     {
-        return _componentModel?.GetComponent(pageName, componentId)
-            ?? throw new InvalidOperationException("Component model not loaded");
+        throw new NotSupportedException("GetComponent is not supported, use GetComponentContext instead.");
     }
 
     /// <summary>
@@ -192,13 +208,13 @@ public class LayoutEvaluatorState
         // Instance context only supports a small subset of variables from the instance
         return key switch
         {
-            "instanceOwnerPartyId" => _instanceContext.InstanceOwner.PartyId,
-            "appId" => _instanceContext.AppId,
-            "instanceId" => _instanceContext.Id,
+            "instanceOwnerPartyId" => Instance.InstanceOwner.PartyId,
+            "appId" => Instance.AppId,
+            "instanceId" => Instance.Id,
             "instanceOwnerPartyType" => (
-                !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.OrganisationNumber) ? "org"
-                : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.PersonNumber) ? "person"
-                : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.Username) ? "selfIdentified"
+                !string.IsNullOrWhiteSpace(Instance.InstanceOwner.OrganisationNumber) ? "org"
+                : !string.IsNullOrWhiteSpace(Instance.InstanceOwner.PersonNumber) ? "person"
+                : !string.IsNullOrWhiteSpace(Instance.InstanceOwner.Username) ? "selfIdentified"
                 : "unknown"
             ),
             _ => throw new ExpressionEvaluatorTypeErrorException($"Unknown Instance context property {key}"),
@@ -210,7 +226,7 @@ public class LayoutEvaluatorState
     /// </summary>
     public int CountDataElements(string dataTypeId)
     {
-        return _instanceContext.Data.Count(d => d.DataType == dataTypeId);
+        return Instance.Data.Count(d => d.DataType == dataTypeId);
     }
 
     /// <summary>
@@ -252,7 +268,7 @@ public class LayoutEvaluatorState
     /// </summary>
     internal DataElementIdentifier GetDefaultDataElementId()
     {
-        return _componentModel?.GetDefaultDataElementId(_instanceContext)
+        return _componentModel?.GetDefaultDataElementId(Instance)
             ?? throw new InvalidOperationException("Component model not loaded");
     }
 
@@ -264,6 +280,15 @@ public class LayoutEvaluatorState
     public async Task<string> TranslateText(string textKey, ComponentContext context)
     {
         return await _translationService.TranslateTextKey(textKey, this, context) ?? textKey;
+    }
+
+    internal async Task<int?> GetModelDataCount(
+        ModelBinding groupBinding,
+        DataElementIdentifier defaultDataElementIdentifier,
+        int[]? indexes
+    )
+    {
+        return await _dataModel.GetModelDataCount(groupBinding, defaultDataElementIdentifier, indexes);
     }
 
     // /// <summary>
