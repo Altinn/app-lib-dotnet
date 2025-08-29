@@ -130,6 +130,7 @@ public class FixtureTests
 
         await using var container = new ContainerBuilder()
             .WithImage("busybox:1.37")
+            .WithName("applib-diagnostics")
             .WithCommand("/bin/sh", "-c", pingScript)
             .WithExtraHost("host.containers.internal", hostIp)
             .Build();

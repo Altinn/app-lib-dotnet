@@ -44,32 +44,26 @@ public static partial class ContainerRuntimeService
                 fi
                 """.ReplaceLineEndings("\n");
 
-            var container = new ContainerBuilder()
+            await using var container = new ContainerBuilder()
                 .WithImage("busybox:1.37")
+                .WithName("applib-runtimeservice")
                 .WithCommand("sh", "-lc", probeScript)
                 .Build();
 
-            try
-            {
-                await container.StartAsync(cancellationToken);
-                await container.GetExitCodeAsync(cancellationToken);
+            await container.StartAsync(cancellationToken);
+            await container.GetExitCodeAsync(cancellationToken);
 
-                // Get the logs from the container
-                var (stdout, stderr) = await container.GetLogsAsync(timestampsEnabled: false, ct: cancellationToken);
+            // Get the logs from the container
+            var (stdout, stderr) = await container.GetLogsAsync(timestampsEnabled: false, ct: cancellationToken);
 
-                var ip = ExtractFirstIPv4(stdout);
-                if (ip is null)
-                    throw new InvalidOperationException(
-                        $"Unable to determine host IPv4 from probe. stdout: {stdout}, stderr: {stderr}"
-                    );
+            var ip = ExtractFirstIPv4(stdout);
+            if (ip is null)
+                throw new InvalidOperationException(
+                    $"Unable to determine host IPv4 from probe. stdout: {stdout}, stderr: {stderr}"
+                );
 
-                _cachedHostIp = ip;
-                return ip;
-            }
-            finally
-            {
-                await container.DisposeAsync();
-            }
+            _cachedHostIp = ip;
+            return ip;
         }
         finally
         {
