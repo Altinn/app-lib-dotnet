@@ -271,7 +271,8 @@ public sealed partial class AppFixture : IAsyncDisposable
                 {
                     var fullMessage = new StringBuilder();
                     fullMessage.Append(start);
-                    for (int j = i + 1; j < source.Count; j++)
+                    var j = i + 1;
+                    for (; j < source.Count; j++)
                     {
                         if (IsStartOfLogMessage(source[j], prefix, out start, out _, out _))
                             break;
@@ -282,6 +283,7 @@ public sealed partial class AppFixture : IAsyncDisposable
                         fullMessage.Append(start);
                     }
                     target.Add(fullMessage.ToString());
+                    i = j - 1; // skip lines we just consumed
                 }
             }
         }
