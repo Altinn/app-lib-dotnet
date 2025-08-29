@@ -230,7 +230,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         // - Log messages from `SnapshotLogger` in the app
         // - Error logs (`fail:` prefix in the default M.E.L log format)
 
-        var expectedPrefix = $"[{_currentFixtureInstance:00}/{_app}/{_scenario}]";
+        var expectedPrefix = $"[{_currentFixtureInstance:00}/{_app}/{_scenario}";
         var allLines = _appLogsConsumer.GetLines();
 
         var data = new List<string>(allLines.Count);
@@ -244,12 +244,13 @@ public sealed partial class AppFixture : IAsyncDisposable
         {
             start = line;
             isSnapshotMessage = start.StartsWith(prefix);
-            isError = start.StartsWith("fail:");
+            isError = start.StartsWith("fail:") || start.StartsWith("crit:");
             return isSnapshotMessage
                 || isError
                 || start.StartsWith("info:")
                 || start.StartsWith("warn:")
-                || start.StartsWith("dbug:");
+                || start.StartsWith("dbug:")
+                || start.StartsWith("trce:");
         }
 
         static void AddLines(IReadOnlyList<string> source, List<string> target, string prefix)
@@ -264,8 +265,8 @@ public sealed partial class AppFixture : IAsyncDisposable
 
                 if (isSnapshotMessage)
                 {
-                    start = $"[{start.Slice(4)}"; // Remove the fixture index as tests run with parallelism
-                    target.Add(start.ToString());
+                    // Remove the fixture index as tests run with parallelism - use efficient slicing
+                    target.Add($"[{start[4..]}");
                 }
                 else if (isErrorMessage)
                 {
