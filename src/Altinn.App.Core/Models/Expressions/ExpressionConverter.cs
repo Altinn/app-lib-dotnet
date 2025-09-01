@@ -65,6 +65,11 @@ public class ExpressionConverter : JsonConverter<Expression>
             throw new JsonException("Missing function name in expression");
         }
 
+        if (enumerator.Current.ValueKind != JsonValueKind.String)
+        {
+            throw new JsonException("Function name in expression must be string");
+        }
+
         var functionEnum = ExpressionFunction(enumerator.Current.GetString());
 
         var args = new List<Expression>();

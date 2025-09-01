@@ -22,7 +22,7 @@ public abstract class BaseComponent
             || idElement.ValueKind != JsonValueKind.String
         )
         {
-            throw new ArgumentException($"Component must have a string 'id' property. Was {idElement.ValueKind}");
+            throw new JsonException($"Component must have a string 'id' property. Was {idElement.ValueKind}");
         }
 
         Id = idElement.GetString() ?? throw new UnreachableException();
@@ -32,7 +32,7 @@ public abstract class BaseComponent
             || typeElement.ValueKind != JsonValueKind.String
         )
         {
-            throw new ArgumentException($"Component must have a string 'type' property. Was {typeElement.ValueKind}");
+            throw new JsonException($"Component must have a string 'type' property. Was {typeElement.ValueKind}");
         }
 
         Type = typeElement.GetString() ?? throw new UnreachableException();
@@ -43,7 +43,7 @@ public abstract class BaseComponent
 
         Hidden = ParseExpression(componentElement, "hidden");
         Required = ParseExpression(componentElement, "required");
-        ReadOnly = ParseExpression(componentElement, "readonly");
+        ReadOnly = ParseExpression(componentElement, "readOnly");
         RemoveWhenHidden = ParseExpression(componentElement, "removeWhenHidden");
 
         PageId = pageId;
@@ -180,7 +180,7 @@ public abstract class BaseComponent
         var modelBindings = new Dictionary<string, ModelBinding>();
         if (dataModelBindingsElement.ValueKind != JsonValueKind.Object)
         {
-            throw new ArgumentException(
+            throw new JsonException(
                 $"Unexpected JSON token type '{dataModelBindingsElement.ValueKind}' for \"dataModelBindings\", expected '{nameof(JsonValueKind.Object)}'"
             );
         }
@@ -194,7 +194,7 @@ public abstract class BaseComponent
                     Field = property.Value.GetString() ?? throw new UnreachableException(),
                 },
                 JsonValueKind.Object => property.Value.Deserialize<ModelBinding>(),
-                _ => throw new ArgumentException("dataModelBindings must be a string or an object"),
+                _ => throw new JsonException("dataModelBindings must be a string or an object"),
             };
         }
 
@@ -203,13 +203,16 @@ public abstract class BaseComponent
 
     private static Dictionary<string, Expression> DeserializeTextResourceBindings(JsonElement element)
     {
-        if (!element.TryGetProperty("textResourceBindings", out JsonElement textResourceBindingsElement))
+        if (
+            !element.TryGetProperty("textResourceBindings", out JsonElement textResourceBindingsElement)
+            || textResourceBindingsElement.ValueKind == JsonValueKind.Null
+        )
         {
             return [];
         }
         if (textResourceBindingsElement.ValueKind != JsonValueKind.Object)
         {
-            throw new ArgumentException(
+            throw new JsonException(
                 $"Unexpected JSON token type '{textResourceBindingsElement.ValueKind}' for \"textResourceBindings\", expected '{nameof(JsonValueKind.Object)}'"
             );
         }

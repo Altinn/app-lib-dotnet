@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Models.Layout;
 /// <summary>
 /// Wrapper class for a single layout set
 /// </summary>
-public class LayoutSetComponent
+public sealed class LayoutSetComponent
 {
     private readonly Dictionary<string, PageComponent> _pagesLookup;
     private readonly List<PageComponent> _pages;
@@ -29,8 +29,8 @@ public class LayoutSetComponent
         DataType defaultDataType
     )
     {
-        _pagesLookup = layouts.ToDictionary(kvp => kvp.Key, kvp => new PageComponent(kvp.Value, kvp.Key, layoutSetId));
-        _pages = _pagesLookup.Values.ToList();
+        _pages = layouts.Select(kvp => new PageComponent(kvp.Value, kvp.Key, layoutSetId)).ToList();
+        _pagesLookup = _pages.ToDictionary(p => p.PageId);
         Id = layoutSetId;
         DefaultDataType = defaultDataType;
     }

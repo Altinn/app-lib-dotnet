@@ -62,6 +62,13 @@ public sealed class PageComponent : Base.BaseComponent
                 && maxCountElement.ValueKind == JsonValueKind.Number
                     ? maxCountElement.GetInt32()
                     : 1;
+            // ensure maxCount is positive
+            if (maxCount < 0)
+            {
+                throw new JsonException(
+                    $"Component {layoutId}.{pageId}.{Id} has invalid maxCount={maxCount}, must be positive."
+                );
+            }
 
             Base.BaseComponent component = type.ToLowerInvariant() switch
             {
@@ -83,7 +90,14 @@ public sealed class PageComponent : Base.BaseComponent
             componentList.Add(component);
         }
 
-        var pageComponentLookup = componentList.ToDictionary(c => c.Id, c => c);
+        var pageComponentLookup = new Dictionary<string, Base.BaseComponent>(StringComparer.Ordinal);
+        foreach (var c in componentList)
+        {
+            if (!pageComponentLookup.TryAdd(c.Id, c))
+            {
+                throw new JsonException($"Duplicate component id '{c.Id}' on page '{pageId}' in layout '{layoutId}'.");
+            }
+        }
 
         Dictionary<string, string> claimedComponentIds = []; // Keep track of claimed components
 
@@ -93,7 +107,8 @@ public sealed class PageComponent : Base.BaseComponent
             component.ClaimChildren(pageComponentLookup, claimedComponentIds);
         }
 
-        Components = pageComponentLookup.Values.ToList();
+        // Preserve order but remove components that have been claimed
+        Components = componentList.Where(c => !claimedComponentIds.ContainsKey(c.Id)).ToList();
     }
 
     // Silly way to run code before the base constructor is called.

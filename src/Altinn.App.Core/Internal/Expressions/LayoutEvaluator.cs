@@ -139,7 +139,11 @@ public static class LayoutEvaluator
                 foreach (var (bindingName, binding) in context.Component.DataModelBindings)
                 {
                     var value = await state.GetModelData(binding, context.DataElementIdentifier, context.RowIndices);
-                    if (value is null)
+                    if (
+                        (value is null)
+                        || (value is string s && string.IsNullOrWhiteSpace(s))
+                        || (value is System.Collections.ICollection col && col.Count == 0)
+                    )
                     {
                         var field = await state.AddInidicies(binding, context);
                         validationIssues.Add(

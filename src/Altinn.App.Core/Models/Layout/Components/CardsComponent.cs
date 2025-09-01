@@ -22,7 +22,7 @@ public sealed class CardsComponent : SimpleReferenceComponent
 
         Cards =
             cardsElement.Deserialize<List<CardsConfig>>()
-            ?? throw new JsonException("Failed to deserialize tabs in TabsComponent.");
+            ?? throw new JsonException("Failed to deserialize cards in CardsComponent.");
 
         ChildReferences = Cards.SelectMany(t => t.Children ?? []).ToList();
     }

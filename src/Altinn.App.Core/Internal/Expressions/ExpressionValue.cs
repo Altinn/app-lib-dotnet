@@ -404,6 +404,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
         switch (value.ValueKind)
         {
             case JsonValueKind.Null:
+            case JsonValueKind.Undefined:
                 writer.WriteNullValue();
                 break;
             case JsonValueKind.True:

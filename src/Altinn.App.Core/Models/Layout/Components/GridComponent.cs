@@ -26,7 +26,8 @@ public sealed class GridComponent : SimpleReferenceComponent
 
         // Extract component IDs from the Components in the grid so that they can be claimed and used
         // when getting contexts.
-        ChildReferences = Rows.SelectMany(r => r.Cells).Select(c => c?.ComponentId).WhereNotNull().ToList();
+        // cells might not reference components, so we filter out nulls with OfType<string>()
+        ChildReferences = Rows.SelectMany(r => r.Cells).Select(c => c?.ComponentId).OfType<string>().ToList();
     }
 
     /// <summary>

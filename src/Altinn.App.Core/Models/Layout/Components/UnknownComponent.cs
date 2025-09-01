@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Models.Layout.Components;
 /// Represents an unknown or unrecognized component in a layout. UnknownComponent serves as a placeholder
 /// for components that do not match any predefined or supported type.
 /// </summary>
-public sealed class UnknownComponent : Base.NoReferenceComponent
+internal sealed class UnknownComponent : Base.NoReferenceComponent
 {
     /// <summary>
     /// Constructor for UnknownComponent

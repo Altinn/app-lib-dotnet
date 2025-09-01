@@ -372,7 +372,9 @@ public class AppResourcesSI : IAppResources
         string folder = Path.Join(_settings.AppBasePath, _settings.UiFolder, layoutSet.Id, "layouts");
         foreach (var page in order)
         {
-            var pageBytes = File.ReadAllBytes(Path.Join(folder, page + ".json"));
+            var pagePath = Path.Join(folder, page + ".json");
+            PathHelper.EnsureLegalPath(folder, pagePath);
+            var pageBytes = File.ReadAllBytes(pagePath);
             using var document = JsonDocument.Parse(
                 pageBytes,
                 new JsonDocumentOptions() { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip }

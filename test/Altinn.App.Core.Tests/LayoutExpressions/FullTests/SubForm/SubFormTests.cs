@@ -267,6 +267,13 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
+
+    private static readonly JsonDocumentOptions _jsonDocumentOptions = new()
+    {
+        AllowTrailingCommas = true,
+        CommentHandling = JsonCommentHandling.Skip,
+    };
+
     private VerifySettings _verifySettings
     {
         get
@@ -351,7 +358,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
 
     private static PageComponent ParsePage(string layoutId, string pageName, [StringSyntax("json")] string json)
     {
-        using var document = JsonDocument.Parse(json);
+        using var document = JsonDocument.Parse(json, _jsonDocumentOptions);
         return new PageComponent(document.RootElement, pageName, layoutId);
     }
 

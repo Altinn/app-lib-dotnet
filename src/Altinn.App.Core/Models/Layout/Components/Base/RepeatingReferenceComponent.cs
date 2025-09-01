@@ -38,6 +38,7 @@ public abstract class RepeatingReferenceComponent : BaseComponent
     /// </summary>
     public abstract IReadOnlyList<string> NonRepeatingChildReferences { get; }
 
+    // References to the components that are used for the child contexts of this component
     private Dictionary<string, BaseComponent>? _claimedChildrenLookup;
 
     // used for some tests to ensure hierarchy is correct
@@ -56,7 +57,7 @@ public abstract class RepeatingReferenceComponent : BaseComponent
             );
         }
 
-        var components = new List<BaseComponent>();
+        var components = new Dictionary<string, BaseComponent>();
         foreach (var componentId in RepeatingChildReferences.Concat(NonRepeatingChildReferences))
         {
             if (unclaimedComponents.Remove(componentId, out var component))
@@ -77,9 +78,13 @@ public abstract class RepeatingReferenceComponent : BaseComponent
                 );
             }
 
-            components.Add(component);
+            if (!components.TryAdd(component.Id, component))
+            {
+                throw new ArgumentException($"Component with id {component.Id} is claimed twice by {Id}.");
+            }
         }
-        _claimedChildrenLookup = components.ToDictionary(k => k.Id, v => v);
+
+        _claimedChildrenLookup = components;
     }
 
     /// <inheritdoc />
@@ -125,11 +130,11 @@ public abstract class RepeatingReferenceComponent : BaseComponent
         var rowCount = await state.GetModelDataCount(GroupModelBinding, defaultDataElementIdentifier, rowIndexes) ?? 0;
 
         // We need to count backwards so that deleting by index works for multiple rows.
-        for (int i = rowCount - 1; i >= 0; i--)
+        for (int i = 0; i < rowCount; i++)
         {
-            var subRowIndexes = (rowIndexes ?? []).Append(i).ToArray();
+            var subRowIndexes = GetSubRowIndexes(rowIndexes, i);
             var rowComponent = new RepeatingGroupRowComponent(
-                $"{Id}_{Guid.NewGuid()}",
+                $"{Id}__group_row_{i}",
                 PageId,
                 LayoutId,
                 DataModelBindings,
@@ -157,12 +162,26 @@ public abstract class RepeatingReferenceComponent : BaseComponent
                 }
             }
 
-            childContexts.Add(
+            // Insert the new row context at the beginning so that they are processed in deletion order
+            childContexts.Insert(
+                0,
                 new ComponentContext(state, rowComponent, subRowIndexes, defaultDataElementIdentifier, rowChildren)
             );
         }
 
         return new ComponentContext(state, this, rowIndexes, defaultDataElementIdentifier, childContexts);
+    }
+
+    private static int[] GetSubRowIndexes(int[]? baseIndexes, int index)
+    {
+        if (baseIndexes is null || baseIndexes.Length == 0)
+        {
+            return new[] { index };
+        }
+        var result = new int[baseIndexes.Length + 1];
+        Array.Copy(baseIndexes, result, baseIndexes.Length);
+        result[^1] = index;
+        return result;
     }
 }
 

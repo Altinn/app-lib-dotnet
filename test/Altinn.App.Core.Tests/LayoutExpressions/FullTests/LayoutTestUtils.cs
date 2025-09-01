@@ -41,6 +41,12 @@ public static class LayoutTestUtils
         DataType = "default",
     };
 
+    private static JsonDocumentOptions _options = new()
+    {
+        AllowTrailingCommas = true,
+        CommentHandling = JsonCommentHandling.Skip,
+    };
+
     public static async Task<LayoutEvaluatorState> GetLayoutModelTools(object model, string folder)
     {
         var services = new ServiceCollection();
@@ -77,7 +83,7 @@ public static class LayoutTestUtils
             var layoutBytes = await File.ReadAllBytesAsync(layoutFile);
             string pageName = layoutFile.Replace(layoutsPath + "/", string.Empty).Replace(".json", string.Empty);
 
-            using var document = JsonDocument.Parse(layoutBytes);
+            using var document = JsonDocument.Parse(layoutBytes, _options);
 
             pages.Add(new PageComponent(document.RootElement, pageName, "layout"));
         }

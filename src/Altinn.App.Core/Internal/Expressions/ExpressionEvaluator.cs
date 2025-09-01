@@ -259,7 +259,7 @@ public static class ExpressionEvaluator
             throw new ArgumentException($"Unable to find component with identifier {componentId}{rowIndexInfo}");
         }
 
-        if (targetContext.ChildContexts.Count > 0)
+        if (targetContext.HasChildContexts)
         {
             throw new NotImplementedException("Component lookup for components that are groups is not implemented");
         }

@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Models.Layout;
 /// <summary>
 /// Class for handling a full layout/layoutset
 /// </summary>
-public class LayoutModel
+public sealed class LayoutModel
 {
     private readonly Dictionary<string, LayoutSetComponent> _layoutsLookup;
     private readonly LayoutSetComponent _defaultLayoutSet;
@@ -34,14 +34,16 @@ public class LayoutModel
     /// </summary>
     public async Task<List<ComponentContext>> GenerateComponentContexts(LayoutEvaluatorState state)
     {
+        var defaultElementId = _defaultLayoutSet.GetDefaultDataElementId(state.Instance);
+        if (defaultElementId is null)
+        {
+            return [];
+        }
+
         var pageContexts = new List<ComponentContext>();
         foreach (var page in _defaultLayoutSet.Pages)
         {
-            var defaultElementId = _defaultLayoutSet.GetDefaultDataElementId(state.Instance);
-            if (defaultElementId is not null)
-            {
-                pageContexts.Add(await page.GetContext(state, defaultElementId.Value, null, _layoutsLookup));
-            }
+            pageContexts.Add(await page.GetContext(state, defaultElementId.Value, null, _layoutsLookup));
         }
 
         return pageContexts;

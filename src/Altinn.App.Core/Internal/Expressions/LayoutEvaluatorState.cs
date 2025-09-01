@@ -23,8 +23,6 @@ public class LayoutEvaluatorState
     private readonly string? _language;
     private readonly TimeZoneInfo? _timeZone;
     private List<ComponentContext>? _rootContext;
-    private readonly IInstanceDataAccessor _dataAccessor;
-    private readonly Dictionary<string, DataElementIdentifier> _dataIdsByType = [];
 
     /// <summary>
     /// Constructor for LayoutEvaluatorState. Usually called via <see cref="LayoutEvaluatorStateInitializer" /> that can be fetched from dependency injection.
@@ -46,15 +44,7 @@ public class LayoutEvaluatorState
         TimeZoneInfo? timeZone = null
     )
     {
-        foreach (var (dataType, dataElement) in dataAccessor.GetDataElements())
-        {
-            if (dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
-            {
-                _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
-            }
-        }
         _dataModel = new DataModel(dataAccessor);
-        _dataAccessor = dataAccessor;
         _componentModel = componentModel;
         _translationService = translationService;
         _frontEndSettings = frontEndSettings;
@@ -106,7 +96,7 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Get component from componentModel
     /// </summary>
-    [Obsolete("You need to get a context not a commponent", true)]
+    [Obsolete("You need to get a context, not a commponent", true)]
     public void GetComponent(string pageName, string componentId)
     {
         throw new NotSupportedException("GetComponent is not supported, use GetComponentContext instead.");
@@ -208,13 +198,14 @@ public class LayoutEvaluatorState
         // Instance context only supports a small subset of variables from the instance
         return key switch
         {
-            "instanceOwnerPartyId" => Instance.InstanceOwner.PartyId,
+            "instanceOwnerPartyId" => Instance.InstanceOwner?.PartyId
+                ?? throw new InvalidOperationException("InstanceOwner or PartyId is null"),
             "appId" => Instance.AppId,
             "instanceId" => Instance.Id,
             "instanceOwnerPartyType" => (
-                !string.IsNullOrWhiteSpace(Instance.InstanceOwner.OrganisationNumber) ? "org"
-                : !string.IsNullOrWhiteSpace(Instance.InstanceOwner.PersonNumber) ? "person"
-                : !string.IsNullOrWhiteSpace(Instance.InstanceOwner.Username) ? "selfIdentified"
+                !string.IsNullOrWhiteSpace(Instance.InstanceOwner?.OrganisationNumber) ? "org"
+                : !string.IsNullOrWhiteSpace(Instance.InstanceOwner?.PersonNumber) ? "person"
+                : !string.IsNullOrWhiteSpace(Instance.InstanceOwner?.Username) ? "selfIdentified"
                 : "unknown"
             ),
             _ => throw new ExpressionEvaluatorTypeErrorException($"Unknown Instance context property {key}"),

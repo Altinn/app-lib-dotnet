@@ -36,7 +36,7 @@ public abstract class SimpleReferenceComponent : BaseComponent
             );
         }
 
-        var components = new List<BaseComponent>();
+        var components = new Dictionary<string, BaseComponent>();
         foreach (var componentId in ChildReferences)
         {
             if (unclaimedComponents.Remove(componentId, out var component))
@@ -57,10 +57,13 @@ public abstract class SimpleReferenceComponent : BaseComponent
                 );
             }
 
-            components.Add(component);
+            if (!components.TryAdd(component.Id, component))
+            {
+                throw new ArgumentException($"Component with id {component.Id} is claimed twice by {Id}.");
+            }
         }
 
-        _claimedChildrenLookup = components.ToDictionary(k => k.Id, v => v);
+        _claimedChildrenLookup = components;
     }
 
     /// <summary>

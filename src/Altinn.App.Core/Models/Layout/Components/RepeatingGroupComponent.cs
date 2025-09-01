@@ -27,6 +27,14 @@ public sealed class RepeatingGroupComponent : Base.RepeatingReferenceComponent
         {
             throw new JsonException($"{Type} must have a 'group' data model binding.");
         }
+
+        if (string.IsNullOrWhiteSpace(groupBinding.Field))
+        {
+            throw new JsonException(
+                $"Component {layoutId}.{pageId}.{Id} must have 'dataModelBindings.group' which is a non-empty string or object with a non-empty 'field'."
+            );
+        }
+
         GroupModelBinding = groupBinding;
 
         RepeatingChildReferences = GetChildrenWithoutMultipageGroupIndex(componentElement, "children");
@@ -34,40 +42,35 @@ public sealed class RepeatingGroupComponent : Base.RepeatingReferenceComponent
         HiddenRow = componentElement.TryGetProperty("hiddenRow", out JsonElement hiddenRowElement)
             ? ExpressionConverter.ReadStatic(hiddenRowElement)
             : Expression.False;
+        RowsBefore = ParseGridConfig("rowsBefore", componentElement);
 
-        if (
-            componentElement.TryGetProperty("rowsBefore", out JsonElement rowsBeforeElement)
-            && rowsBeforeElement.ValueKind == JsonValueKind.Array
-        )
-        {
-            RowsBefore =
-                rowsBeforeElement.Deserialize<List<GridComponent.GridRowConfig>>()
-                ?? throw new JsonException("Failed to deserialize rowsBefore in RepeatingGroupComponent.");
-        }
-        else
-        {
-            RowsBefore = [];
-        }
-
-        if (
-            componentElement.TryGetProperty("rowsAfter", out JsonElement rowsAfterElement)
-            && rowsAfterElement.ValueKind == JsonValueKind.Array
-        )
-        {
-            RowsAfter =
-                rowsAfterElement.Deserialize<List<GridComponent.GridRowConfig>>()
-                ?? throw new JsonException("Failed to deserialize rowsAfter in RepeatingGroupComponent.");
-        }
-        else
-        {
-            RowsAfter = [];
-        }
+        RowsAfter = ParseGridConfig("rowsAfter", componentElement);
 
         NonRepeatingChildReferences = RowsBefore
             .Concat(RowsAfter)
             .SelectMany(row => row.Cells.Select(cell => cell?.ComponentId))
             .OfType<string>()
             .ToList();
+    }
+
+    private static List<GridComponent.GridRowConfig> ParseGridConfig(string propertyName, JsonElement componentElement)
+    {
+        if (
+            componentElement.TryGetProperty(propertyName, out JsonElement gridConfigElement)
+            && gridConfigElement.ValueKind != JsonValueKind.Null
+        )
+        {
+            if (gridConfigElement.ValueKind != JsonValueKind.Array)
+            {
+                throw new JsonException(
+                    $"If present, RepeatingGroupComponent \"{propertyName}\" property must be an array."
+                );
+            }
+            return gridConfigElement.Deserialize<List<GridComponent.GridRowConfig>>()
+                ?? throw new JsonException($"Failed to deserialize {propertyName} in RepeatingGroupComponent.");
+        }
+
+        return [];
     }
 
     /// <summary>

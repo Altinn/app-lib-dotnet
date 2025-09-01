@@ -3014,7 +3014,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference> AddInidicies(Altinn.App.Core.Models.Layout.ModelBinding binding, Altinn.App.Core.Models.Expressions.ComponentContext context) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference> AddInidicies(Altinn.App.Core.Models.Layout.ModelBinding binding, Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier, int[]? indexes) { }
         public int CountDataElements(string dataTypeId) { }
-        [System.Obsolete("You need to get a context not a commponent", true)]
+        [System.Obsolete("You need to get a context, not a commponent", true)]
         public void GetComponent(string pageName, string componentId) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext?> GetComponentContext(string pageName, string componentId, int[]? rowIndexes = null) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Expressions.ComponentContext>> GetComponentContexts() { }
@@ -4212,6 +4212,7 @@ namespace Altinn.App.Core.Models.Expressions
         public Altinn.App.Core.Models.Layout.Components.Base.BaseComponent? Component { get; }
         public Altinn.App.Core.Models.DataElementIdentifier DataElementIdentifier { get; }
         public System.Collections.Generic.IEnumerable<Altinn.App.Core.Models.Expressions.ComponentContext> Descendants { get; }
+        public bool HasChildContexts { get; }
         public Altinn.App.Core.Models.Expressions.ComponentContext? Parent { get; }
         public int[]? RowIndices { get; }
         public Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState State { get; }
@@ -4442,10 +4443,6 @@ namespace Altinn.App.Core.Models.Layout.Components
         [System.Text.Json.Serialization.JsonPropertyName("children")]
         public System.Collections.Generic.List<string>? Children { get; init; }
     }
-    public sealed class UnknownComponent : Altinn.App.Core.Models.Layout.Components.Base.NoReferenceComponent
-    {
-        public UnknownComponent(System.Text.Json.JsonElement componentElement, string pageId, string layoutId) { }
-    }
 }
 namespace Altinn.App.Core.Models.Layout
 {
@@ -4455,13 +4452,13 @@ namespace Altinn.App.Core.Models.Layout
         public required string Field { get; init; }
         public bool StartsWith(Altinn.App.Core.Models.Layout.DataReference prefix) { }
     }
-    public class LayoutModel
+    public sealed class LayoutModel
     {
         public LayoutModel(System.Collections.Generic.List<Altinn.App.Core.Models.Layout.LayoutSetComponent> layouts, Altinn.App.Core.Models.LayoutSet? defaultLayout) { }
         public Altinn.Platform.Storage.Interface.Models.DataType DefaultDataType { get; }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Expressions.ComponentContext>> GenerateComponentContexts(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state) { }
     }
-    public class LayoutSetComponent
+    public sealed class LayoutSetComponent
     {
         public LayoutSetComponent(System.Collections.Generic.List<Altinn.App.Core.Models.Layout.Components.PageComponent> pages, string id, Altinn.Platform.Storage.Interface.Models.DataType defaultDataType) { }
         public Altinn.Platform.Storage.Interface.Models.DataType DefaultDataType { get; }

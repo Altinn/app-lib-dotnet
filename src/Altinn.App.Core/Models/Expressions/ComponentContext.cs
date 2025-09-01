@@ -27,10 +27,19 @@ public sealed class ComponentContext
         DataElementIdentifier = dataElementIdentifier;
         Component = component;
         RowIndices = rowIndices;
-        ChildContexts = childContexts ?? [];
-        foreach (var child in ChildContexts)
+        if (childContexts is null)
         {
-            child.Parent = this;
+            HasChildContexts = false;
+            ChildContexts = [];
+        }
+        else
+        {
+            HasChildContexts = true;
+            ChildContexts = childContexts;
+            foreach (var child in ChildContexts)
+            {
+                child.Parent = this;
+            }
         }
     }
 
@@ -84,6 +93,11 @@ public sealed class ComponentContext
     }
 
     /// <summary>
+    /// Indicates whether this context was initialized with child contexts
+    /// </summary>
+    public bool HasChildContexts { get; }
+
+    /// <summary>
     /// Contexts that logically belongs under this context (eg cell => row => group=> page)
     /// </summary>
     public List<ComponentContext> ChildContexts { get; }
@@ -94,7 +108,7 @@ public sealed class ComponentContext
     public ComponentContext? Parent { get; private set; }
 
     /// <summary>
-    /// The LatoutEvaluatorState that this context is part of
+    /// The LayoutEvaluatorState that this context is part of
     /// </summary>
     public LayoutEvaluatorState State { get; }
 
@@ -124,7 +138,7 @@ public sealed class ComponentContext
     private string _debuggerName =>
         $"{Component?.Type}" + (RowIndices is not null ? $"[{string.Join(',', RowIndices)}]" : "");
     private string _debuggerDisplay =>
-        $"id:\"{Component?.Id}\"" + (ChildContexts.Count > 0 ? $" ({ChildContexts.Count} children)" : "");
+        $"id:\"{Component?.Id}\"" + (HasChildContexts ? $" ({ChildContexts.Count} children)" : "");
 
     private class DebuggerProxy
     {
@@ -160,12 +174,10 @@ public sealed class ComponentContext
             public ExpressionFunction Function => _expression.Function;
             public IEnumerable<DebuggerEvaluatedExpression>? Args =>
                 _expression.Args?.Select(e => new DebuggerEvaluatedExpression(e, _context));
-            public ExpressionValue EvaluationResult =>
+            public Task<ExpressionValue> EvaluationResult =>
                 _expression.IsFunctionExpression
-                    ? ExpressionEvaluator
-                        .EvaluateExpression_internal(_context.State, _expression, _context, null)
-                        .Result
-                    : _expression.ValueUnion;
+                    ? ExpressionEvaluator.EvaluateExpression_internal(_context.State, _expression, _context, null)
+                    : Task.FromResult(_expression.ValueUnion);
 
             public override string ToString()
             {
