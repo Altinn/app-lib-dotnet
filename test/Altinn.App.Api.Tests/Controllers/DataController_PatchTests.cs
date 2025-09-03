@@ -9,8 +9,7 @@ using System.Text.Json.Serialization;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
-using Altinn.App.Api.Tests.Utils;
-using Altinn.App.Common.Tests;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
@@ -32,7 +31,7 @@ namespace Altinn.App.Api.Tests.Controllers;
 
 public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    internal static readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
@@ -56,7 +55,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
     private HttpClient? _client;
 
-    private HttpClient GetClient() => _client ??= GetRootedClient(Org, App, UserId, null);
+    private HttpClient GetClient() => _client ??= GetRootedUserClient(Org, App, UserId, InstanceOwnerPartyId);
 
     // Constructor with common setup
     public DataControllerPatchTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
@@ -64,6 +63,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
     {
         _formDataValidatorMock.Setup(v => v.DataType).Returns("9edd53de-f46f-40a1-bb4d-3efb93dc113d");
         _formDataValidatorMock.Setup(v => v.ValidationSource).Returns("Not a valid validation source");
+        _formDataValidatorMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
         OverrideServicesForAllTests = (services) =>
         {
             services.AddSingleton(_dataProcessorMock.Object);
@@ -91,8 +91,11 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         }
         OutputHelper.WriteLine($"Calling PATCH {url}");
         using var httpClient = GetRootedClient(Org, App);
-        string token = PrincipalUtil.GetToken(1337, null);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(userId: 1337);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            AuthorizationSchemes.Bearer,
+            token
+        );
         var serializedPatch = JsonSerializer.Serialize(
             new DataPatchRequest() { Patch = patch, IgnoredValidators = ignoredValidators },
             _jsonSerializerOptions
@@ -315,7 +318,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             .Be("melding.name is required in component with id default.page.name for binding simpleBinding");
 
         // Run full validation to see that result is the same
-        using var client = GetRootedClient(Org, App, UserId, null);
+        using var client = GetRootedUserClient(Org, App, UserId, InstanceOwnerPartyId);
         var validationResponse = await client.GetAsync($"/{Org}/{App}/instances/{_instanceId}/validate");
         validationResponse.Should().HaveStatusCode(HttpStatusCode.OK);
         var validationResponseString = await validationResponse.Content.ReadAsStringAsync();
@@ -345,8 +348,9 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         this.OverrideServicesForThisTest = (services) =>
         {
             services.AddTelemetrySink(
-                shouldAlsoListenToActivities: (sp, source) => source.Name == "Microsoft.AspNetCore",
-                activityFilter: this.ActivityFilter
+                additionalActivitySources: source => source.Name == "Microsoft.AspNetCore",
+                additionalMeters: source => source.Name == "Microsoft.AspNetCore.Hosting",
+                filterMetrics: metric => metric.Name == "http.server.request.duration"
             );
         };
 
@@ -366,7 +370,8 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         _dataProcessorMock.VerifyNoOtherCalls();
 
-        await telemetry.SnapshotActivities();
+        await telemetry.WaitForServerTelemetry();
+        await Verify(telemetry.GetSnapshot());
     }
 
     [Fact]
@@ -855,8 +860,11 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         var url = $"/{Org}/{App}/instances/{_instanceId}/data/{_dataGuid}?language=nn";
         OutputHelper.WriteLine($"Calling GET {url}");
         using var httpClient = GetRootedClient(Org, App);
-        string token = PrincipalUtil.GetToken(1337, null);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(userId: UserId, InstanceOwnerPartyId);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            AuthorizationSchemes.Bearer,
+            token
+        );
         var response = await httpClient.GetAsync(url);
         var responseString = await response.Content.ReadAsStringAsync();
         using var responseParsedRaw = JsonDocument.Parse(responseString);
@@ -984,6 +992,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
             .Verifiable(Times.Once);
         _formDataValidatorMock.SetupGet(fdv => fdv.ValidationSource).Returns("ignored");
         _formDataValidatorMock.SetupGet(fdv => fdv.DataType).Returns("default");
+        _formDataValidatorMock.SetupGet(fdv => fdv.NoIncrementalValidation).Returns(false);
         _formDataValidatorMock
             .Setup(fdv => fdv.HasRelevantChanges(It.IsAny<object>(), It.IsAny<object>()))
             .Returns(true);
@@ -1068,6 +1077,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
         _formDataValidatorMock
             .Setup(fdv => fdv.HasRelevantChanges(It.IsAny<object>(), It.IsAny<object>()))
             .Returns(true);
+        _formDataValidatorMock.SetupGet(fdv => fdv.NoIncrementalValidation).Returns(false);
         _formDataValidatorMock
             .Setup(v => v.ValidateFormData(It.IsAny<Instance>(), It.IsAny<DataElement>(), It.IsAny<object>(), "nb"))
             .ReturnsAsync(

@@ -1,14 +1,12 @@
 using System.Globalization;
 using System.Reflection;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Prefill;
-using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
@@ -18,10 +16,9 @@ namespace Altinn.App.Core.Implementation;
 public class PrefillSI : IPrefill
 {
     private readonly ILogger _logger;
-    private readonly IProfileClient _profileClient;
     private readonly IAppResources _appResourcesService;
-    private readonly IAltinnPartyClient _altinnPartyClientClient;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IAltinnPartyClient _altinnPartyClient;
+    private readonly IAuthenticationContext _authenticationContext;
     private readonly Telemetry? _telemetry;
     private static readonly string _erKey = "ER";
     private static readonly string _dsfKey = "DSF";
@@ -33,25 +30,22 @@ public class PrefillSI : IPrefill
     /// Creates a new instance of the <see cref="PrefillSI"/> class
     /// </summary>
     /// <param name="logger">The logger</param>
-    /// <param name="profileClient">The profile client</param>
     /// <param name="appResourcesService">The app's resource service</param>
-    /// <param name="altinnPartyClientClient">The register client</param>
-    /// <param name="httpContextAccessor">A service with access to the http context.</param>
+    /// <param name="altinnPartyClient">The register client</param>
+    /// <param name="authenticationContext">The authentication context</param>
     /// <param name="telemetry">Telemetry for traces and metrics.</param>
     public PrefillSI(
         ILogger<PrefillSI> logger,
-        IProfileClient profileClient,
         IAppResources appResourcesService,
-        IAltinnPartyClient altinnPartyClientClient,
-        IHttpContextAccessor httpContextAccessor,
+        IAltinnPartyClient altinnPartyClient,
+        IAuthenticationContext authenticationContext,
         Telemetry? telemetry = null
     )
     {
         _logger = logger;
-        _profileClient = profileClient;
         _appResourcesService = appResourcesService;
-        _altinnPartyClientClient = altinnPartyClientClient;
-        _httpContextAccessor = httpContextAccessor;
+        _altinnPartyClient = altinnPartyClient;
+        _authenticationContext = authenticationContext;
         _telemetry = telemetry;
     }
 
@@ -94,7 +88,16 @@ public class PrefillSI : IPrefill
             _allowOverwrite = allowOverwriteToken.ToObject<bool>();
         }
 
-        Party? party = await _altinnPartyClientClient.GetParty(int.Parse(partyId, CultureInfo.InvariantCulture));
+        var currentAuth = _authenticationContext.Current;
+        var partyIdNum = int.Parse(partyId, CultureInfo.InvariantCulture);
+        Party? party = currentAuth switch
+        {
+            Authenticated.User user when user.SelectedPartyId == partyIdNum => await user.LookupSelectedParty(),
+            Authenticated.SystemUser systemUser
+                when await systemUser.LoadDetails() is { } details && details.Party.PartyId == partyIdNum =>
+                details.Party,
+            _ => await _altinnPartyClient.GetParty(partyIdNum),
+        };
         if (party == null)
         {
             string errorMessage = $"Could find party for partyId: {partyId}";
@@ -113,13 +116,17 @@ public class PrefillSI : IPrefill
 
             if (userProfileDict.Count > 0)
             {
-                var httpContext =
-                    _httpContextAccessor.HttpContext
-                    ?? throw new Exception(
-                        "Could not get HttpContext - must be in a request context to get current user"
-                    );
-                int userId = AuthenticationHelper.GetUserId(httpContext);
-                UserProfile? userProfile = userId != 0 ? await _profileClient.GetUserProfile(userId) : null;
+                UserProfile? userProfile = null;
+                switch (currentAuth)
+                {
+                    case Authenticated.User user:
+                    {
+                        var details = await user.LoadDetails(validateSelectedParty: false);
+                        userProfile = details.Profile;
+                        break;
+                    }
+                }
+
                 if (userProfile != null)
                 {
                     JObject userProfileJsonObject = JObject.FromObject(userProfile);
@@ -282,16 +289,19 @@ public class PrefillSI : IPrefill
         {
             string source = keyValuePair.Value;
             string target = keyValuePair.Key.Replace("-", string.Empty);
-            if (source == null || source == string.Empty)
+
+            if (string.IsNullOrEmpty(source))
             {
-                string errorMessage = $"Could not prefill, a source value was not set for target: {target}";
+                string errorMessage =
+                    $"Could not prefill, a source value was not set for target: {target.Replace(Environment.NewLine, "")}";
                 _logger.LogError(errorMessage);
                 throw new Exception(errorMessage);
             }
 
-            if (target == null || target == string.Empty)
+            if (string.IsNullOrEmpty(target))
             {
-                string errorMessage = $"Could not prefill, a target value was not set for source: {source}";
+                string errorMessage =
+                    $"Could not prefill, a target value was not set for source: {source.Replace(Environment.NewLine, "")}";
                 _logger.LogError(errorMessage);
                 throw new Exception(errorMessage);
             }
@@ -303,12 +313,11 @@ public class PrefillSI : IPrefill
             }
             else
             {
-                sourceValue = JToken.Parse($"'{source}'");
+                sourceValue = JValue.CreateString(source);
             }
 
-            _logger.LogInformation($"Source: {source}, target: {target}");
-            _logger.LogInformation($"Value read from source object: {sourceValue?.ToString()}");
             string[] keys = target.Split(".");
+
             AssignValueToDataModel(keys, sourceValue, serviceModel, 0, continueOnError);
         }
     }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
@@ -45,7 +46,9 @@ public class DataServiceTests
                     applicationMetadata.AppIdentifier.App,
                     instanceIdentifier.InstanceOwnerPartyId,
                     instanceIdentifier.InstanceGuid,
-                    new Guid(instance.Data.First().Id)
+                    new Guid(instance.Data.First().Id),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(referenceStream);
@@ -100,7 +103,9 @@ public class DataServiceTests
                     applicationMetadata.AppIdentifier.App,
                     instanceIdentifier.InstanceOwnerPartyId,
                     instanceIdentifier.InstanceGuid,
-                    expectedDataId
+                    expectedDataId,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(referenceStream);
@@ -122,8 +127,8 @@ public class DataServiceTests
         instance.Data = [new DataElement { Id = Guid.NewGuid().ToString() }];
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _dataService.GetById<TestModel>(instance, Guid.NewGuid())
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _dataService.GetById<TestModel>(instance, Guid.NewGuid())
         );
     }
 
@@ -145,7 +150,9 @@ public class DataServiceTests
                     "application/json",
                     dataTypeId + ".json",
                     It.IsAny<Stream>(),
-                    null
+                    null,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(expectedDataElement);
@@ -175,7 +182,9 @@ public class DataServiceTests
                     "application/json",
                     dataTypeId + ".json",
                     dataElementId,
-                    It.IsAny<Stream>()
+                    It.IsAny<Stream>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(expectedDataElement);

@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using System.Net.Http.Headers;
-using Altinn.App.Api.Tests.Mocks;
-using Altinn.App.Api.Tests.Utils;
-using Altinn.App.Common.Tests;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,8 +22,8 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         this.OverrideServicesForThisTest = (services) =>
         {
             services.AddTelemetrySink(
-                shouldAlsoListenToActivities: (_, source) => source.Name == "Microsoft.AspNetCore",
-                activityFilter: this.ActivityFilter
+                additionalActivitySources: source => source.Name == "Microsoft.AspNetCore",
+                additionalMeters: source => source.Name == "Microsoft.AspNetCore.Hosting"
             );
         };
 
@@ -35,7 +33,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         HttpClient client = GetRootedClient(org, app, includeTraceContext);
         var telemetry = this.Services.GetRequiredService<TelemetrySink>();
 
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         if (includePdfHeader)
             client.DefaultRequestHeaders.Add("X-Altinn-IsPdf", "true");
 
@@ -46,11 +44,11 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
     public async Task Should_Have_Root_AspNetCore_Trace_Org()
     {
         var org = Guid.NewGuid().ToString();
-        string token = PrincipalUtil.GetOrgToken(org, "160694123", 4);
+        string token = TestAuthentication.GetServiceOwnerToken();
 
         var (telemetry, request) = AnalyzeTelemetry(token);
         await request();
-        await telemetry.WaitForServerActivity();
+        await telemetry.WaitForServerTelemetry();
 
         var activities = telemetry.CapturedActivities;
         var activity = Assert.Single(activities, a => a.Kind == ActivityKind.Server);
@@ -61,19 +59,19 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         Assert.Null(activity.ParentId);
         Assert.Equal(default, activity.ParentSpanId);
 
-        await telemetry.Snapshot(activity);
+        await Verify(telemetry.GetSnapshot());
     }
 
     [Fact]
     public async Task Should_Have_Root_AspNetCore_Trace_User()
     {
         var partyId = Random.Shared.Next();
-        var principal = PrincipalUtil.GetUserPrincipal(10, partyId, 4);
+        var principal = TestAuthentication.GetUserPrincipal(10, partyId, 4);
         var token = JwtTokenMock.GenerateToken(principal, new TimeSpan(1, 1, 1));
 
         var (telemetry, request) = AnalyzeTelemetry(token);
         await request();
-        await telemetry.WaitForServerActivity();
+        await telemetry.WaitForServerTelemetry();
 
         var activities = telemetry.CapturedActivities;
         var activity = Assert.Single(activities, a => a.Kind == ActivityKind.Server);
@@ -84,14 +82,14 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         Assert.Null(activity.ParentId);
         Assert.Equal(default, activity.ParentSpanId);
 
-        await telemetry.Snapshot(activity, c => c.ScrubMember(Telemetry.Labels.UserPartyId));
+        await Verify(telemetry.GetSnapshot()).ScrubMember(Telemetry.Labels.UserPartyId);
     }
 
     [Fact]
     public async Task Should_Always_Be_A_Root_Trace()
     {
         var partyId = Random.Shared.Next();
-        var principal = PrincipalUtil.GetUserPrincipal(10, partyId, 4);
+        var principal = TestAuthentication.GetUserPrincipal(10, partyId, 4);
         var token = JwtTokenMock.GenerateToken(principal, new TimeSpan(1, 1, 1));
 
         var (telemetry, request) = AnalyzeTelemetry(token, includeTraceContext: true);
@@ -100,7 +98,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
             Assert.NotNull(parentActivity);
             await request();
         }
-        await telemetry.WaitForServerActivity();
+        await telemetry.WaitForServerTelemetry();
 
         var activities = telemetry.CapturedActivities;
         var activity = Assert.Single(activities, a => a.Kind == ActivityKind.Server);
@@ -111,14 +109,14 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         Assert.Null(activity.ParentId);
         Assert.Equal(default, activity.ParentSpanId);
 
-        await telemetry.Snapshot(activity, c => c.ScrubMember(Telemetry.Labels.UserPartyId));
+        await Verify(telemetry.GetSnapshot()).ScrubMember(Telemetry.Labels.UserPartyId);
     }
 
     [Fact]
     public async Task Should_Always_Be_A_Root_Trace_Unless_Pdf()
     {
         var partyId = Random.Shared.Next();
-        var principal = PrincipalUtil.GetUserPrincipal(10, partyId, 4);
+        var principal = TestAuthentication.GetUserPrincipal(10, partyId, 4);
         var token = JwtTokenMock.GenerateToken(principal, new TimeSpan(1, 1, 1));
 
         var (telemetry, request) = AnalyzeTelemetry(token, includeTraceContext: true, includePdfHeader: true);
@@ -129,7 +127,7 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
             parentSpanId = parentActivity.SpanId;
             await request();
         }
-        await telemetry.WaitForServerActivity();
+        await telemetry.WaitForServerTelemetry();
 
         var activities = telemetry.CapturedActivities;
         var activity = Assert.Single(activities, a => a.Kind == ActivityKind.Server);
@@ -139,6 +137,6 @@ public class TelemetryEnrichingMiddlewareTests : ApiTestBase, IClassFixture<WebA
         Assert.NotNull(activity.ParentId);
         Assert.Equal(parentSpanId, activity.ParentSpanId);
 
-        await telemetry.Snapshot(activity, c => c.ScrubMember(Telemetry.Labels.UserPartyId));
+        await Verify(telemetry.GetSnapshot()).ScrubMember(Telemetry.Labels.UserPartyId);
     }
 }

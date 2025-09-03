@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using Altinn.App.Api.Tests.Data;
-using Altinn.App.Api.Tests.Utils;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.FileAnalysis;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Models.Validation;
@@ -27,8 +27,8 @@ public class DataControllerTests : ApiTestBase, IClassFixture<WebApplicationFact
         int instanceOwnerPartyId = 1337;
         Guid guid = new Guid("0fc98a23-fe31-4ef5-8fb9-dd3f479354cd");
         HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetOrgToken("nav", "160694123");
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetServiceOwnerToken("405003309", org: "nav");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
         TestData.PrepareInstance(org, app, instanceOwnerPartyId, guid);
 
@@ -49,8 +49,8 @@ public class DataControllerTests : ApiTestBase, IClassFixture<WebApplicationFact
         string dataType = "specificFileType"; // Should have restrictions on 1 mb in app metadata
         Guid guid = new Guid("0fc98a23-fe31-4ef5-8fb9-dd3f479354cd");
         HttpClient client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetOrgToken("nav", "160694123");
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetServiceOwnerToken("405003309", org: "nav");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
         TestData.PrepareInstance(org, app, instanceOwnerPartyId, guid);
 
@@ -94,8 +94,8 @@ public class DataControllerTests : ApiTestBase, IClassFixture<WebApplicationFact
         TestData.PrepareInstance(org, app, 1337, guid);
 
         // Setup the request
-        string token = PrincipalUtil.GetOrgToken("nav", "160694123");
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetServiceOwnerToken("405003309", org: "nav");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         ByteArrayContent fileContent = await CreateBinaryContent(org, app, "example.pdf", "application/pdf");
         string url = $"/{org}/{app}/instances/1337/{guid}/data?dataType=specificFileType";
         var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = fileContent };
@@ -127,8 +127,8 @@ public class DataControllerTests : ApiTestBase, IClassFixture<WebApplicationFact
         TestData.PrepareInstance(org, app, 1337, guid);
 
         // Setup the request
-        string token = PrincipalUtil.GetOrgToken("nav", "160694123");
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetServiceOwnerToken("405003309", org: "nav");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         ByteArrayContent fileContent = await CreateBinaryContent(org, app, "zero.pdf", "application/pdf");
         string url = $"/{org}/{app}/instances/1337/{guid}/data?dataType=specificFileType";
         var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = fileContent };
@@ -162,8 +162,8 @@ public class DataControllerTests : ApiTestBase, IClassFixture<WebApplicationFact
         TestData.PrepareInstance(org, app, 1337, guid);
 
         // Setup the request
-        string token = PrincipalUtil.GetOrgToken("nav", "160694123");
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetServiceOwnerToken("405003309", org: "nav");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         ByteArrayContent fileContent = await CreateBinaryContent(org, app, "example.jpg.pdf", "application/pdf");
         string url = $"/{org}/{app}/instances/1337/{guid}/data?dataType=specificFileType";
         var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = fileContent };

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
@@ -41,6 +42,21 @@ public class ExpressionTestCaseRoot
     [JsonPropertyName("expectsFailure")]
     public string? ExpectsFailure { get; set; }
 
+    public class TestCaseItem
+    {
+        [JsonPropertyName("expression")]
+        public required Expression Expression { get; set; }
+
+        [JsonPropertyName("expects")]
+        public JsonElement Expects { get; set; }
+
+        [JsonPropertyName("expectsFailure")]
+        public string? ExpectsFailure { get; set; }
+    }
+
+    [JsonPropertyName("testCases")]
+    public List<TestCaseItem>? TestCases { get; set; }
+
     [JsonPropertyName("layouts")]
     [JsonConverter(typeof(LayoutModelConverterFromObject))]
     public IReadOnlyDictionary<string, PageComponent>? Layouts { get; set; }
@@ -54,6 +70,9 @@ public class ExpressionTestCaseRoot
     [JsonPropertyName("frontendSettings")]
     public FrontEndSettings? FrontEndSettings { get; set; }
 
+    [JsonPropertyName("textResources")]
+    public List<TextResourceElement>? TextResources { get; set; }
+
     [JsonPropertyName("instance")]
     public Instance Instance { get; set; } = new Instance();
 
@@ -62,6 +81,9 @@ public class ExpressionTestCaseRoot
 
     [JsonPropertyName("profileSettings")]
     public ProfileSettings? ProfileSettings { get; set; }
+
+    [JsonPropertyName("positionalArguments")]
+    public List<JsonElement>? PositionalArguments { get; set; }
 
     public override string ToString()
     {
@@ -105,10 +127,9 @@ public class ComponentContextForTestSpec
         return new ComponentContext(
             component,
             RowIndices,
-            rowLength: component is RepeatingGroupComponent ? 0 : null,
             // TODO: get from data model, but currently not important for tests
             state.GetDefaultDataElementId(),
-            ChildContexts.Select(c => c.ToContext(model, state))
+            ChildContexts.Select(c => c.ToContext(model, state)).ToList()
         );
     }
 
@@ -117,10 +138,17 @@ public class ComponentContextForTestSpec
         ArgumentNullException.ThrowIfNull(context.Component);
         ArgumentNullException.ThrowIfNull(context.Component.Id);
         ArgumentNullException.ThrowIfNull(context.Component.PageId);
+        var id = context.Component.Id;
+
+        // Remove guid from the end of the id
+        if (Regex.IsMatch(id, @".*_[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}"))
+        {
+            id = id.Substring(0, id.LastIndexOf('_'));
+        }
 
         return new ComponentContextForTestSpec
         {
-            ComponentId = context.Component.Id,
+            ComponentId = id,
             CurrentPageName = context.Component.PageId,
             ChildContexts = context.ChildContexts?.Select(FromContext) ?? [],
             RowIndices = context.RowIndices,

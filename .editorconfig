@@ -10,6 +10,10 @@ indent_style = space
 indent_size = 4
 max_line_length = 120
 
+[{Makefile,**.mk}]
+# Use tabs for indentation (Makefiles require tabs)
+indent_style = tab
+
 # XML project files
 [*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
 indent_size = 2
@@ -165,3 +169,14 @@ dotnet_diagnostic.S1118.severity = none
 [*.{yml,yaml}]
 indent_size = 2
 end_of_line = lf
+
+ # Verify settings
+ # https://github.com/VerifyTests/Verify?tab=readme-ov-file#editorconfig-settings
+ [*.{received,verified}.{json,txt,xml}]
+ charset = "utf-8-bom"
+ end_of_line = lf
+ indent_size = unset
+ indent_style = unset
+ insert_final_newline = false
+ tab_width = unset
+ trim_trailing_whitespace = false

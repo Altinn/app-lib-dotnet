@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Models;
 
@@ -46,6 +47,14 @@ public abstract record MultipartCorrespondenceItem
             content.Add(new StringContent(value), name);
     }
 
+    internal static void OverrideIfAlreadyExists(MultipartFormDataContent content, string? value, string name)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            content.ReplaceByName(new StringContent(value), name);
+        }
+    }
+
     internal static void AddIfNotNull(MultipartFormDataContent content, DateTimeOffset? value, string name)
     {
         if (value is null)
@@ -85,6 +94,25 @@ public abstract record MultipartCorrespondenceItem
         {
             items[i].Serialise(content, i);
         }
+    }
+
+    internal static void SerializeOverrideNotificationRecipient(
+        MultipartFormDataContent content,
+        CorrespondenceNotificationRecipient notificationRecipient
+    )
+    {
+        notificationRecipient.Serialise(content);
+    }
+
+    internal static void SerializeOverrideNotificationRecipients(
+        MultipartFormDataContent content,
+        IReadOnlyList<CorrespondenceNotificationRecipient>? notificationRecipients
+    )
+    {
+        if (IsEmptyCollection(notificationRecipients))
+            return;
+
+        notificationRecipients[0].Serialise(content);
     }
 
     internal static void SerializeAttachmentItems(
@@ -223,7 +251,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     /// <summary>
     /// When can Altinn remove the correspondence from its database?
     /// </summary>
-    public required DateTimeOffset AllowSystemDeleteAfter { get; init; }
+    public required DateTimeOffset? AllowSystemDeleteAfter { get; init; }
 
     /// <summary>
     /// When must the recipient respond by?
@@ -284,9 +312,9 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
         Validate();
 
         AddRequired(content, ResourceId, "Correspondence.ResourceId");
-        AddRequired(content, Sender.Get(OrganisationNumberFormat.International), "Correspondence.Sender");
+        AddRequired(content, Sender.ToUrnFormattedString(), "Correspondence.Sender");
         AddRequired(content, SendersReference, "Correspondence.SendersReference");
-        AddRequired(content, AllowSystemDeleteAfter, "Correspondence.AllowSystemDeleteAfter");
+        AddIfNotNull(content, AllowSystemDeleteAfter, "Correspondence.AllowSystemDeleteAfter");
         AddIfNotNull(content, MessageSender, "Correspondence.MessageSender");
         AddIfNotNull(content, RequestedPublishTime, "Correspondence.RequestedPublishTime");
         AddIfNotNull(content, DueDateTime, "Correspondence.DueDateTime");
@@ -294,7 +322,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
         AddIfNotNull(content, IsConfirmationNeeded?.ToString(), "Correspondence.IsConfirmationNeeded");
         AddDictionaryItems(content, PropertyList, x => x, key => $"Correspondence.PropertyList.{key}");
         AddListItems(content, ExistingAttachments, x => x.ToString(), i => $"Correspondence.ExistingAttachments[{i}]");
-        AddListItems(content, Recipients, GetFormattedRecipient, i => $"Recipients[{i}]");
+        AddListItems(content, Recipients, x => x.ToUrnFormattedString(), i => $"Recipients[{i}]");
 
         Content.Serialise(content);
         Notification?.Serialise(content);
@@ -323,11 +351,17 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
         if (IsConfirmationNeeded is true && DueDateTime is null)
             ValidationError($"When {nameof(IsConfirmationNeeded)} is set, {nameof(DueDateTime)} is also required");
 
-        var normalisedAllowSystemDeleteAfter = NormaliseDateTime(AllowSystemDeleteAfter);
-        if (normalisedAllowSystemDeleteAfter < DateTimeOffset.UtcNow)
-            ValidationError($"{nameof(AllowSystemDeleteAfter)} cannot be a time in the past");
-        if (normalisedAllowSystemDeleteAfter < RequestedPublishTime)
-            ValidationError($"{nameof(AllowSystemDeleteAfter)} cannot be prior to {nameof(RequestedPublishTime)}");
+        DateTimeOffset? normalisedAllowSystemDeleteAfter = AllowSystemDeleteAfter is not null
+            ? NormaliseDateTime(AllowSystemDeleteAfter.Value)
+            : null;
+
+        if (normalisedAllowSystemDeleteAfter is not null)
+        {
+            if (normalisedAllowSystemDeleteAfter.Value < DateTimeOffset.UtcNow)
+                ValidationError($"{nameof(AllowSystemDeleteAfter)} cannot be a time in the past");
+            if (normalisedAllowSystemDeleteAfter.Value < RequestedPublishTime)
+                ValidationError($"{nameof(AllowSystemDeleteAfter)} cannot be prior to {nameof(RequestedPublishTime)}");
+        }
 
         if (DueDateTime is not null)
         {
@@ -336,7 +370,10 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
                 ValidationError($"{nameof(DueDateTime)} cannot be a time in the past");
             if (normalisedDueDate < RequestedPublishTime)
                 ValidationError($"{nameof(DueDateTime)} cannot be prior to {nameof(RequestedPublishTime)}");
-            if (normalisedAllowSystemDeleteAfter < normalisedDueDate)
+            if (
+                normalisedAllowSystemDeleteAfter is not null
+                && normalisedAllowSystemDeleteAfter.Value < normalisedDueDate
+            )
                 ValidationError($"{nameof(AllowSystemDeleteAfter)} cannot be prior to {nameof(DueDateTime)}");
         }
     }
@@ -345,17 +382,5 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     private static void ValidationError(string errorMessage)
     {
         throw new CorrespondenceArgumentException(errorMessage);
-    }
-
-    private static string GetFormattedRecipient(OrganisationOrPersonIdentifier recipient)
-    {
-        return recipient switch
-        {
-            OrganisationOrPersonIdentifier.Organisation org => org.Value.Get(OrganisationNumberFormat.International),
-            OrganisationOrPersonIdentifier.Person person => person.Value.Value,
-            _ => throw new CorrespondenceArgumentException(
-                $"Unknown {nameof(OrganisationOrPersonIdentifier)} type `{recipient.GetType()}`"
-            ),
-        };
     }
 }

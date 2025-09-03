@@ -1,9 +1,8 @@
-using System.Collections.Frozen;
-using System.Diagnostics;
-using System.Security.Claims;
 using Altinn.App.Core.Features;
-using AltinnCore.Authentication.Constants;
+using Altinn.App.Core.Features.Auth;
 using Microsoft.AspNetCore.Http.Features;
+using Labels = Altinn.App.Core.Features.Telemetry.Labels;
+using Tag = System.Collections.Generic.KeyValuePair<string, object?>;
 
 namespace Altinn.App.Api.Infrastructure.Middleware;
 
@@ -11,53 +10,6 @@ internal sealed class TelemetryEnrichingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<TelemetryEnrichingMiddleware> _logger;
-    private static readonly FrozenDictionary<string, Action<Claim, Activity>> _claimActions;
-
-    static TelemetryEnrichingMiddleware()
-    {
-        var actions = new Dictionary<string, Action<Claim, Activity>>(StringComparer.OrdinalIgnoreCase)
-        {
-            { AltinnCoreClaimTypes.UserName, static (claim, activity) => activity.SetUsername(claim.Value) },
-            {
-                AltinnCoreClaimTypes.UserId,
-                static (claim, activity) =>
-                {
-                    if (int.TryParse(claim.Value, out var result))
-                    {
-                        activity.SetUserId(result);
-                    }
-                }
-            },
-            {
-                AltinnCoreClaimTypes.PartyID,
-                static (claim, activity) =>
-                {
-                    if (int.TryParse(claim.Value, out var result))
-                    {
-                        activity.SetUserPartyId(result);
-                    }
-                }
-            },
-            {
-                AltinnCoreClaimTypes.AuthenticateMethod,
-                static (claim, activity) => activity.SetAuthenticationMethod(claim.Value)
-            },
-            {
-                AltinnCoreClaimTypes.AuthenticationLevel,
-                static (claim, activity) =>
-                {
-                    if (int.TryParse(claim.Value, out var result))
-                    {
-                        activity.SetAuthenticationLevel(result);
-                    }
-                }
-            },
-            { AltinnCoreClaimTypes.Org, static (claim, activity) => activity.SetOrganisationName(claim.Value) },
-            { AltinnCoreClaimTypes.OrgNumber, static (claim, activity) => activity.SetOrganisationNumber(claim.Value) },
-        };
-
-        _claimActions = actions.ToFrozenDictionary();
-    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TelemetryEnrichingMiddleware"/> class.
@@ -77,48 +29,64 @@ internal sealed class TelemetryEnrichingMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var activity = context.Features.Get<IHttpActivityFeature>()?.Activity;
-        if (activity is null)
-        {
-            await _next(context);
-            return;
-        }
 
-        try
+        if (activity is not null)
         {
-            foreach (var claim in context.User.Claims)
+            try
             {
-                if (_claimActions.TryGetValue(claim.Type, out var action))
+                var authenticationContext = context.RequestServices.GetRequiredService<IAuthenticationContext>();
+                var currentAuth = authenticationContext.Current;
+                activity.SetAuthenticated(currentAuth);
+
+                // Set telemetry tags with route values if available.
+                if (
+                    context.Request.RouteValues.TryGetValue("instanceOwnerPartyId", out var instanceOwnerPartyId)
+                    && instanceOwnerPartyId != null
+                    && int.TryParse(instanceOwnerPartyId.ToString(), out var instanceOwnerPartyIdInt)
+                )
                 {
-                    action(claim, activity);
+                    activity.SetInstanceOwnerPartyId(instanceOwnerPartyIdInt);
+                }
+
+                var routeValues = context.Request.RouteValues;
+                if (
+                    routeValues.TryGetValue("instanceGuid", out var instanceGuidObj)
+                    && instanceGuidObj is Guid instanceGuid
+                )
+                {
+                    activity.SetInstanceId(instanceGuid);
+                }
+
+                if (routeValues.TryGetValue("dataGuid", out var dataGuidObj) && dataGuidObj is Guid dataGuid)
+                {
+                    activity.SetDataElementId(dataGuid);
                 }
             }
-
-            // Set telemetry tags with route values if available.
-            if (
-                context.Request.RouteValues.TryGetValue("instanceOwnerPartyId", out var instanceOwnerPartyId)
-                && instanceOwnerPartyId != null
-                && int.TryParse(instanceOwnerPartyId.ToString(), out var instanceOwnerPartyIdInt)
-            )
+            catch (Exception ex)
             {
-                activity.SetInstanceOwnerPartyId(instanceOwnerPartyIdInt);
-            }
-
-            var routeValues = context.Request.RouteValues;
-            if (
-                routeValues.TryGetValue("instanceGuid", out var instanceGuidObj) && instanceGuidObj is Guid instanceGuid
-            )
-            {
-                activity.SetInstanceId(instanceGuid);
-            }
-
-            if (routeValues.TryGetValue("dataGuid", out var dataGuidObj) && dataGuidObj is Guid dataGuid)
-            {
-                activity.SetDataElementId(dataGuid);
+                _logger.LogError(ex, "An error occurred while enriching trace telemetry.");
             }
         }
-        catch (Exception ex)
+
+        var metrics = context.Features.Get<IHttpMetricsTagsFeature>();
+        if (metrics is not null)
         {
-            _logger.LogError(ex, "An error occurred while enriching telemetry.");
+            var tags = metrics.Tags;
+            try
+            {
+                var authenticationContext = context.RequestServices.GetRequiredService<IAuthenticationContext>();
+                var auth = authenticationContext.Current;
+
+                tags.Add(new Tag(Labels.UserAuthenticationType, auth.GetType().Name));
+                tags.Add(new Tag(Labels.UserAuthenticationTokenIssuer, auth.TokenIssuer));
+                tags.Add(new Tag(Labels.UserAuthenticationTokenIsExchanged, auth.TokenIsExchanged));
+                if (auth.ClientId is not null)
+                    tags.Add(new Tag(Labels.UserAuthenticationTokenClientId, auth.ClientId));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while enriching metric telemetry.");
+            }
         }
 
         await _next(context);

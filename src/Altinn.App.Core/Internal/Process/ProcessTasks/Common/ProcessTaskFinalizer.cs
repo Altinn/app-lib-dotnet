@@ -1,15 +1,13 @@
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.DataModel;
-using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks;
@@ -18,33 +16,29 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks;
 public class ProcessTaskFinalizer : IProcessTaskFinalizer
 {
     private readonly IAppMetadata _appMetadata;
-    private readonly IDataClient _dataClient;
-    private readonly IInstanceClient _intanceClient;
     private readonly IAppModel _appModel;
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IOptions<AppSettings> _appSettings;
-    private readonly ModelSerializationService _modelSerializer;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessTaskFinalizer"/> class.
     /// </summary>
     public ProcessTaskFinalizer(
         IAppMetadata appMetadata,
-        IDataClient dataClient,
-        IInstanceClient intanceClient,
         IAppModel appModel,
-        ModelSerializationService modelSerializer,
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
+        IServiceProvider serviceProvider,
         IOptions<AppSettings> appSettings
     )
     {
         _appMetadata = appMetadata;
-        _dataClient = dataClient;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
         _appSettings = appSettings;
-        _intanceClient = intanceClient;
         _appModel = appModel;
-        _modelSerializer = modelSerializer;
     }
 
     /// <inheritdoc/>
@@ -52,13 +46,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
     {
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-        var dataAccessor = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _intanceClient,
-            applicationMetadata,
-            _modelSerializer
-        );
+        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, "nb");
 
         List<Task> tasks = [];
         foreach (
@@ -67,6 +55,11 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
             )
         )
         {
+            if (await _dataElementAccessChecker.CanRead(dataAccessor.Instance, dataType) is false)
+            {
+                continue;
+            }
+
             foreach (var dataElement in instance.Data.Where(de => de.DataType == dataType.Id))
             {
                 tasks.Add(RemoveFieldsOnTaskComplete(dataAccessor, taskId, applicationMetadata, dataElement, dataType));
@@ -105,7 +98,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
                 gatewayAction: null,
                 language
             );
-            await LayoutEvaluator.RemoveHiddenData(evaluationState, RowRemovalOption.DeleteRow);
+            await LayoutEvaluator.RemoveHiddenDataAsync(evaluationState, RowRemovalOption.DeleteRow);
         }
 
         // Remove shadow fields

@@ -1,7 +1,9 @@
 ﻿{
   Activities: [
     {
-      ActivityName: GET {org}/{app}/api/v1/applicationmetadata,
+      Name: GET {org}/{app}/api/v1/applicationmetadata,
+      Kind: Server,
+      IdFormat: W3C,
       Tags: [
         {
           http.request.method: GET
@@ -16,16 +18,16 @@
           network.protocol.version: 1.1
         },
         {
-          organisation.name: Guid_1
+          organisation.name: tdd
         },
         {
-          organisation.number: 160694123
+          organisation.number: 405003309
         },
         {
           server.address: localhost
         },
         {
-          TestId: Guid_2
+          TestId: Guid_1
         },
         {
           url.path: /tdd/contributer-restriction/api/v1/applicationmetadata
@@ -34,15 +36,67 @@
           url.scheme: http
         },
         {
-          user.authentication.level: 4
+          user.authentication.level: 3
         },
         {
-          user.authentication.method: Mock
+          user.authentication.method: maskinporten
+        },
+        {
+          user.authentication.token.clientId: Guid_2
+        },
+        {
+          user.authentication.token.isExchanged: true
+        },
+        {
+          user.authentication.token.issuer: Maskinporten
+        },
+        {
+          user.authentication.type: ServiceOwner
         }
       ],
-      IdFormat: W3C,
-      Kind: Server
+      HasParent: false
     }
   ],
-  Metrics: []
+  Metrics: [
+    {
+      Name: http.server.request.duration,
+      MeterName: Microsoft.AspNetCore.Hosting,
+      Measurements: [
+        {
+          Tags: [
+            {
+              http.request.method: GET
+            },
+            {
+              http.response.status_code: 200
+            },
+            {
+              http.route: {org}/{app}/api/v1/applicationmetadata
+            },
+            {
+              network.protocol.version: 1.1
+            },
+            {
+              TestId: Guid_1
+            },
+            {
+              url.scheme: http
+            },
+            {
+              user.authentication.token.clientId: Guid_2
+            },
+            {
+              user.authentication.token.isExchanged: true
+            },
+            {
+              user.authentication.token.issuer: Maskinporten
+            },
+            {
+              user.authentication.type: ServiceOwner
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -1,6 +1,8 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.AccessManagement;
 using Altinn.App.Core.Features.Action;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.DataLists;
 using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.ExternalApi;
@@ -14,10 +16,12 @@ using Altinn.App.Core.Features.Payment.Processors.FakePaymentProcessor;
 using Altinn.App.Core.Features.Payment.Processors.Nets;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Features.Pdf;
+using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Implementation;
+using Altinn.App.Core.Infrastructure.Clients.AccessManagement;
 using Altinn.App.Core.Infrastructure.Clients.Authentication;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
 using Altinn.App.Core.Infrastructure.Clients.Events;
@@ -26,6 +30,8 @@ using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
+using Altinn.App.Core.Internal;
+using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
@@ -101,19 +107,25 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IEventsClient, EventsClient>();
         services.AddProfileClient();
         services.AddHttpClient<IAltinnPartyClient, AltinnPartyClient>();
+        services.AddAltinnCdnClient();
+        services.AddRegisterClient();
 #pragma warning disable CS0618 // Type or member is obsolete
         services.AddHttpClient<IText, TextClient>();
 #pragma warning restore CS0618 // Type or member is obsolete
         services.AddHttpClient<IProcessClient, ProcessClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
+        services.AddHttpClient<IAccessManagementClient, AccessManagementClient>();
+
 #pragma warning disable EXTEXP0018 // is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         services.AddHybridCache();
-#pragma warning restore EXTEXP0018
 
         services.TryAddTransient<IUserTokenProvider, UserTokenProvider>();
         services.TryAddTransient<IAccessTokenGenerator, AccessTokenGenerator>();
         services.TryAddTransient<IApplicationLanguage, Internal.Language.ApplicationLanguage>();
         services.TryAddTransient<IAuthorizationService, AuthorizationService>();
+        services.AddTransient<InstanceDataUnitOfWorkInitializer>();
+
+        services.AddAuthenticationContext();
     }
 
     private static void AddApplicationIdentifier(IServiceCollection services)
@@ -150,12 +162,16 @@ public static class ServiceCollectionExtensions
         IWebHostEnvironment env
     )
     {
+        services.AddAppImplementationFactory();
+
+        // Services for Altinn App
         services.TryAddTransient<IPDP, PDPAppSI>();
         services.TryAddTransient<IPrefill, PrefillSI>();
         services.TryAddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
         services.TryAddSingleton<IAppResources, AppResourcesSI>();
         services.TryAddSingleton<IAppMetadata, AppMetadata>();
         services.TryAddSingleton<IFrontendFeatures, FrontendFeatures>();
+        services.TryAddSingleton<ITranslationService, TranslationService>();
         services.TryAddTransient<IAppEvents, DefaultAppEvents>();
 #pragma warning disable CS0618, CS0612 // Type or member is obsolete
         services.TryAddTransient<IPageOrder, DefaultPageOrder>();
@@ -165,9 +181,11 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IAppModel, DefaultAppModel>();
         services.TryAddTransient<DataListsFactory>();
         services.TryAddTransient<InstanceDataListsFactory>();
+        services.TryAddTransient<IDataElementAccessChecker, DataElementAccessChecker>();
         services.TryAddTransient<IDataListsService, DataListsService>();
         services.TryAddTransient<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
         services.TryAddTransient<LayoutEvaluatorStateInitializer>();
+        services.AddSingleton<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
         services.AddTransient<IDataService, DataService>();
         services.AddSingleton<ModelSerializationService>();
         services.Configure<Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
@@ -175,6 +193,9 @@ public static class ServiceCollectionExtensions
         services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
         services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
         services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
+
+        if (env.IsDevelopment())
+            services.AddLocaltestValidation();
 
         AddValidationServices(services, configuration);
         AddAppOptions(services);
@@ -207,6 +228,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IFormDataValidator, DataAnnotationValidator>();
         services.AddTransient<IDataElementValidator, DefaultDataElementValidator>();
         services.AddTransient<ITaskValidator, DefaultTaskValidator>();
+        services.AddTransient<IValidator, SigningTaskValidator>();
 
         var appSettings = configuration.GetSection("AppSettings").Get<AppSettings>();
         if (appSettings?.RequiredValidation is true)
@@ -291,6 +313,12 @@ public static class ServiceCollectionExtensions
     private static void AddSignatureServices(IServiceCollection services)
     {
         services.AddHttpClient<ISignClient, SignClient>();
+        services.AddTransient<ISigningDelegationService, SigningDelegationService>();
+        services.AddTransient<ISigningReceiptService, SigningReceiptService>();
+        services.AddTransient<ISigningCallToActionService, SigningCallToActionService>();
+        services.AddTransient<ISigneeContextsManager, SigneeContextsManager>();
+        services.AddTransient<ISignDocumentManager, SignDocumentManager>();
+        services.AddTransient<ISigningService, SigningService>();
     }
 
     private static void AddAppOptions(IServiceCollection services)
@@ -317,6 +345,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddTransient<IProcessExclusiveGateway, ExpressionsExclusiveGateway>();
         services.TryAddTransient<IProcessEngine, ProcessEngine>();
+        services.TryAddTransient<IProcessEngineAuthorizer, ProcessEngineAuthorizer>();
         services.TryAddTransient<IProcessNavigator, ProcessNavigator>();
         services.TryAddSingleton<IProcessReader, ProcessReader>();
         services.TryAddTransient<IProcessEventHandlerDelegator, ProcessEventHandlingDelegator>();

@@ -1,16 +1,19 @@
 ﻿{
   Activities: [
     {
-      ActivityName: Data.Patch,
+      Name: Data.Patch,
+      IdFormat: W3C,
       Tags: [
         {
           instance.guid: Guid_1
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     },
     {
-      ActivityName: PATCH {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid},
+      Name: PATCH {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid},
+      Kind: Server,
+      IdFormat: W3C,
       Tags: [
         {
           http.request.method: PATCH
@@ -49,30 +52,80 @@
           url.scheme: http
         },
         {
+          user.authentication.inAltinnPortal: true
+        },
+        {
           user.authentication.level: 2
         },
         {
-          user.authentication.method: Mock
+          user.authentication.method: BankID
+        },
+        {
+          user.authentication.token.isExchanged: false
+        },
+        {
+          user.authentication.token.issuer: Altinn
+        },
+        {
+          user.authentication.type: User
         },
         {
           user.id: 1337
         },
         {
-          user.name: User1337
+          user.party.id: 500600
         }
       ],
-      IdFormat: W3C,
-      Kind: Server
+      HasParent: false
     },
     {
-      ActivityName: SerializationService.DeserializeXml,
+      Name: SerializationService.DeserializeXml,
+      IdFormat: W3C,
       Tags: [
         {
           Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     }
   ],
-  Metrics: []
+  Metrics: [
+    {
+      Name: http.server.request.duration,
+      MeterName: Microsoft.AspNetCore.Hosting,
+      Measurements: [
+        {
+          Tags: [
+            {
+              http.request.method: PATCH
+            },
+            {
+              http.response.status_code: 409
+            },
+            {
+              http.route: {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid}
+            },
+            {
+              network.protocol.version: 1.1
+            },
+            {
+              TestId: Guid_2
+            },
+            {
+              url.scheme: http
+            },
+            {
+              user.authentication.token.isExchanged: false
+            },
+            {
+              user.authentication.token.issuer: Altinn
+            },
+            {
+              user.authentication.type: User
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

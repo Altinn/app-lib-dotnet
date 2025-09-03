@@ -1,10 +1,6 @@
 {
   "name": "dataModel non default data type lookup",
-  "expression": [
-    "dataModel",
-    "a.value",
-    "non-defualt"
-  ],
+  "expression": ["dataModel", "a.value", "non-default"],
   "expects": "valueFromNonDefaultModel",
   "dataModels": [
     {
@@ -21,7 +17,7 @@
     {
       "dataElement": {
         "id": "10dd7417-5b4e-402a-bb73-007537071f13",
-        "dataType": "non-defualt"
+        "dataType": "non-default"
       },
       "data": {
         "a": {
@@ -32,7 +28,7 @@
   ],
   "layouts": {
     "Page1": {
-      "$schema": "https://altinncdn.no/schemas/json/layout/layout.schema.v1.json",
+      "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/layout/layout.schema.v1.json",
       "data": {
         "layout": [
           {

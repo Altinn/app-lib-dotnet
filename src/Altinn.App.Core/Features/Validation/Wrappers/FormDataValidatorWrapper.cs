@@ -1,9 +1,9 @@
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
-
-namespace Altinn.App.Core.Features.Validation.Wrappers;
-
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
+
+namespace Altinn.App.Core.Features.Validation.Wrappers;
 
 /// <summary>
 /// Wrap the old <see cref="IFormDataValidator"/> interface to the new <see cref="IValidator"/> interface.
@@ -12,11 +12,18 @@ internal class FormDataValidatorWrapper : IValidator
 {
     private readonly IFormDataValidator _formDataValidator;
     private readonly string _taskId;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
-    public FormDataValidatorWrapper(IFormDataValidator formDataValidator, string taskId)
+    public FormDataValidatorWrapper(
+        /* altinn:injection:ignore */
+        IFormDataValidator formDataValidator,
+        string taskId,
+        IDataElementAccessChecker dataElementAccessChecker
+    )
     {
         _formDataValidator = formDataValidator;
         _taskId = taskId;
+        _dataElementAccessChecker = dataElementAccessChecker;
     }
 
     /// <inheritdoc />
@@ -24,6 +31,9 @@ internal class FormDataValidatorWrapper : IValidator
 
     /// <inheritdoc />
     public string ValidationSource => _formDataValidator.ValidationSource;
+
+    /// <inheritdoc />
+    public bool NoIncrementalValidation => _formDataValidator.NoIncrementalValidation;
 
     /// <summary>
     /// Run all legacy <see cref="IDataElementValidator"/> instances for the given <see cref="DataType"/>.
@@ -38,6 +48,11 @@ internal class FormDataValidatorWrapper : IValidator
         var validateAllElements = _formDataValidator.DataType == "*";
         foreach (var (dataType, dataElement) in dataAccessor.GetDataElementsWithFormData())
         {
+            if (await _dataElementAccessChecker.CanRead(dataAccessor.Instance, dataType) is false)
+            {
+                continue;
+            }
+
             if (!validateAllElements && _formDataValidator.DataType != dataType.Id)
             {
                 continue;

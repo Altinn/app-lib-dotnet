@@ -1,11 +1,9 @@
 using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
-using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
-using Altinn.App.Core.Helpers.Serialization;
-using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Validation;
@@ -24,7 +22,6 @@ namespace Altinn.App.Api.Controllers;
 /// Controller that handles actions performed by users
 /// </summary>
 [AutoValidateAntiforgeryTokenIfAuthCookie]
-[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/actions")]
 public class ActionsController : ControllerBase
 {
@@ -32,9 +29,8 @@ public class ActionsController : ControllerBase
     private readonly IInstanceClient _instanceClient;
     private readonly UserActionService _userActionService;
     private readonly IValidationService _validationService;
-    private readonly IDataClient _dataClient;
-    private readonly IAppMetadata _appMetadata;
-    private readonly ModelSerializationService _modelSerialization;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly IAuthenticationContext _authenticationContext;
 
     /// <summary>
     /// Create new instance of the <see cref="ActionsController"/> class
@@ -44,18 +40,16 @@ public class ActionsController : ControllerBase
         IInstanceClient instanceClient,
         UserActionService userActionService,
         IValidationService validationService,
-        IDataClient dataClient,
-        IAppMetadata appMetadata,
-        ModelSerializationService modelSerialization
+        IServiceProvider serviceProvider,
+        IAuthenticationContext authenticationContext
     )
     {
         _authorization = authorization;
         _instanceClient = instanceClient;
         _userActionService = userActionService;
         _validationService = validationService;
-        _dataClient = dataClient;
-        _appMetadata = appMetadata;
-        _modelSerialization = modelSerialization;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _authenticationContext = authenticationContext;
     }
 
     /// <summary>
@@ -66,26 +60,33 @@ public class ActionsController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="actionRequest">user action request</param>
+    /// <param name="ct">Cancellation token, populated by the framework</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
     /// <returns><see cref="UserActionResponse"/></returns>
     [HttpPost]
     [Authorize]
-    [ProducesResponseType(typeof(UserActionResponse), 200)]
-    [ProducesResponseType(typeof(ProblemDetails), 400)]
-    [ProducesResponseType(409)]
-    [ProducesResponseType(500)]
-    [ProducesResponseType(401)]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict, "text/plain")]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UserActionResponse>> Perform(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromBody] UserActionRequest actionRequest,
+        CancellationToken ct,
         [FromQuery] string? language = null
     )
     {
         string? action = actionRequest.Action;
-        if (action == null)
+        if (action is null)
         {
             return new BadRequestObjectResult(
                 new ProblemDetails()
@@ -99,7 +100,7 @@ public class ActionsController : ControllerBase
         }
 
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        if (instance?.Process == null)
+        if (instance?.Process is null)
         {
             return Conflict($"Process is not started.");
         }
@@ -109,10 +110,15 @@ public class ActionsController : ControllerBase
             return Conflict($"Process is ended.");
         }
 
-        int? userId = HttpContext.User.GetUserIdAsInt();
-        if (userId == null)
+        var currentAuth = _authenticationContext.Current;
+
+        switch (currentAuth)
         {
-            return Unauthorized();
+            case Authenticated.User:
+            case Authenticated.SystemUser:
+                break;
+            default:
+                return Unauthorized();
         }
 
         bool authorized = await _authorization.AuthorizeAction(
@@ -126,23 +132,21 @@ public class ActionsController : ControllerBase
         {
             return Forbid();
         }
+        var taskId = instance.Process?.CurrentTask?.ElementId;
+        var dataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
 
-        var dataMutator = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            await _appMetadata.GetApplicationMetadata(),
-            _modelSerialization
-        );
         UserActionContext userActionContext = new(
             dataMutator,
-            userId.Value,
+            null, // let userId be derived from currentAuth
             actionRequest.ButtonId,
             actionRequest.Metadata,
-            language
+            language,
+            currentAuth,
+            actionRequest.OnBehalfOf,
+            cancellationToken: ct
         );
         IUserAction? actionHandler = _userActionService.GetActionHandler(action);
-        if (actionHandler == null)
+        if (actionHandler is null)
         {
             return new NotFoundObjectResult(
                 new UserActionResponse()
@@ -159,7 +163,7 @@ public class ActionsController : ControllerBase
 
         UserActionResult result = await actionHandler.HandleAction(userActionContext);
 
-        if (result.ResultType == ResultType.Failure)
+        if (result.ResultType is ResultType.Failure)
         {
             return StatusCode(
                 statusCode: result.ErrorType switch
@@ -260,7 +264,7 @@ public class ActionsController : ControllerBase
         return PartitionValidationIssuesByDataElement(validationIssues);
     }
 
-    private static Dictionary<
+    internal static Dictionary<
         string,
         Dictionary<string, List<ValidationIssueWithSource>>
     > PartitionValidationIssuesByDataElement(List<ValidationSourcePair> validationIssues)
@@ -268,22 +272,43 @@ public class ActionsController : ControllerBase
         var updatedValidationIssues = new Dictionary<string, Dictionary<string, List<ValidationIssueWithSource>>>();
         foreach (var (validationSource, issuesFromSource) in validationIssues)
         {
+            // Ensure that the empty list is created for the validation source for the "" data element
+            if (issuesFromSource.Count == 0)
+            {
+                AddIssueToPartitionedResponse(updatedValidationIssues, null, validationSource);
+                continue;
+            }
+
             foreach (var issue in issuesFromSource)
             {
-                if (!updatedValidationIssues.TryGetValue(issue.DataElementId ?? "", out var elementIssues))
-                {
-                    elementIssues = [];
-                    updatedValidationIssues[issue.DataElementId ?? ""] = elementIssues;
-                }
-                if (!elementIssues.TryGetValue(validationSource, out var sourceIssues))
-                {
-                    sourceIssues = [];
-                    elementIssues[validationSource] = sourceIssues;
-                }
-                sourceIssues.Add(issue);
+                AddIssueToPartitionedResponse(updatedValidationIssues, issue, validationSource);
             }
         }
 
         return updatedValidationIssues;
+    }
+
+    private static void AddIssueToPartitionedResponse(
+        Dictionary<string, Dictionary<string, List<ValidationIssueWithSource>>> partitionedResponse,
+        ValidationIssueWithSource? issue,
+        string validationSource
+    )
+    {
+        if (!partitionedResponse.TryGetValue(issue?.DataElementId ?? "", out var elementIssues))
+        {
+            elementIssues = [];
+            partitionedResponse[issue?.DataElementId ?? ""] = elementIssues;
+        }
+
+        if (!elementIssues.TryGetValue(validationSource, out var sourceIssues))
+        {
+            sourceIssues = [];
+            elementIssues[validationSource] = sourceIssues;
+        }
+
+        if (issue is not null)
+        {
+            sourceIssues.Add(issue);
+        }
     }
 }

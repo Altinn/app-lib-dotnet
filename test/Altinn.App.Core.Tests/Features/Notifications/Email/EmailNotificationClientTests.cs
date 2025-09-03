@@ -1,10 +1,6 @@
-namespace Altinn.App.Core.Tests.Features.Notifications.Email;
-
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications.Email;
@@ -19,7 +15,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
-using Xunit;
+
+namespace Altinn.App.Core.Tests.Features.Notifications.Email;
 
 public class EmailNotificationClientTests
 {
@@ -254,7 +251,9 @@ public class EmailNotificationClientTests
 
         services.AddSingleton<IAppMetadata>(new Mock<IAppMetadata>().Object);
         services.AddSingleton<IAccessTokenGenerator>(new Mock<IAccessTokenGenerator>().Object);
-        services.AddSingleton<IOptions<PlatformSettings>>(Options.Create(new PlatformSettings()));
+        services.AddSingleton<IOptions<PlatformSettings>>(
+            Microsoft.Extensions.Options.Options.Create(new PlatformSettings())
+        );
         services.AddLogging(logging =>
         {
             logging.ClearProviders();
@@ -278,9 +277,7 @@ public class EmailNotificationClientTests
 
         services.AddTransient<IEmailNotificationClient, EmailNotificationClient>();
 
-        var sp = services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }
-        );
+        var sp = services.BuildStrictServiceProvider();
 
         var client = (EmailNotificationClient)sp.GetRequiredService<IEmailNotificationClient>();
         var telemetrySink = sp.GetService<TelemetrySink>();

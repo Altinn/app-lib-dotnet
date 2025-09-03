@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using Altinn.App.Api.Helpers.Patch;
-using Altinn.App.Common.Tests;
+using Altinn.App.Api.Models;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers.Serialization;
@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
@@ -17,8 +18,9 @@ using FluentAssertions;
 using Json.Patch;
 using Json.Pointer;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using DataType = Altinn.Platform.Storage.Interface.Models.DataType;
 
@@ -41,6 +43,7 @@ public sealed class PatchServiceTests : IDisposable
 
     // Service mocks
     private readonly Mock<ILogger<ValidationService>> _vLoggerMock = new(MockBehavior.Loose);
+    private readonly Mock<ITranslationService> _translationService = new(MockBehavior.Strict);
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
@@ -48,10 +51,14 @@ public sealed class PatchServiceTests : IDisposable
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
     private readonly TelemetrySink _telemetrySink = new();
     private readonly Mock<IWebHostEnvironment> _webHostEnvironment = new(MockBehavior.Strict);
+    private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
+    private readonly Mock<IDataElementAccessChecker> _dataElementAccessCheckerMock = new(MockBehavior.Strict);
 
     // ValidatorMocks
     private readonly Mock<IFormDataValidator> _formDataValidator = new(MockBehavior.Strict);
     private readonly Mock<IDataElementValidator> _dataElementValidator = new(MockBehavior.Strict);
+
+    private readonly IServiceProvider _serviceProvider;
 
     // System under test
     private readonly InternalPatchService _patchService;
@@ -71,8 +78,10 @@ public sealed class PatchServiceTests : IDisposable
         _formDataValidator.Setup(fdv => fdv.DataType).Returns(_dataType.Id);
         _formDataValidator.Setup(fdv => fdv.ValidationSource).Returns("formDataValidator");
         _formDataValidator.Setup(fdv => fdv.HasRelevantChanges(It.IsAny<object>(), It.IsAny<object>())).Returns(true);
+        _formDataValidator.SetupGet(fdv => fdv.NoIncrementalValidation).Returns(false);
         _dataElementValidator.Setup(dev => dev.DataType).Returns(_dataType.Id);
         _dataElementValidator.Setup(dev => dev.ValidationSource).Returns("dataElementValidator");
+        _dataElementValidator.SetupGet(fdv => fdv.NoIncrementalValidation).Returns(true);
         _dataClientMock
             .Setup(d =>
                 d.UpdateBinaryData(
@@ -80,34 +89,47 @@ public sealed class PatchServiceTests : IDisposable
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<Stream>()
+                    It.IsAny<Stream>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(_dataElement)
             .Verifiable();
-        _webHostEnvironment.SetupGet(whe => whe.EnvironmentName).Returns("Development");
-        var validatorFactory = new ValidatorFactory(
-            [],
-            Options.Create(new GeneralSettings()),
-            [_dataElementValidator.Object],
-            [_formDataValidator.Object],
-            [],
-            [],
-            _appMetadataMock.Object
-        );
-        var validationService = new ValidationService(validatorFactory, _vLoggerMock.Object);
 
+        _dataElementAccessCheckerMock
+            .Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>()))
+            .ReturnsAsync(true);
+
+        _webHostEnvironment.SetupGet(whe => whe.EnvironmentName).Returns("Development");
+        var services = new ServiceCollection();
+        services.AddAppImplementationFactory();
+        services.AddSingleton<IDataElementValidator>(_dataElementValidator.Object);
+        services.AddSingleton<IFormDataValidator>(_formDataValidator.Object);
+        services.AddSingleton<IValidatorFactory, ValidatorFactory>();
+        services.AddTransient<InstanceDataUnitOfWorkInitializer>();
+        services.AddSingleton(_appMetadataMock.Object);
+        services.AddSingleton(_dataProcessorMock.Object);
+        services.AddSingleton(_appResourcesMock.Object);
+        services.AddSingleton(_dataClientMock.Object);
+        services.AddSingleton(_instanceClientMock.Object);
+        services.AddSingleton(_dataElementAccessCheckerMock.Object);
         _modelSerializationService = new ModelSerializationService(_appModelMock.Object);
+        services.AddSingleton(_modelSerializationService);
+        services.Configure<GeneralSettings>(_ => { });
+
+        _serviceProvider = services.BuildStrictServiceProvider();
+        var validatorFactory = _serviceProvider.GetRequiredService<IValidatorFactory>();
+        var validationService = new ValidationService(
+            validatorFactory,
+            _translationService.Object,
+            _vLoggerMock.Object
+        );
 
         _patchService = new InternalPatchService(
-            _appMetadataMock.Object,
-            _dataClientMock.Object,
-            _instanceClientMock.Object,
             validationService,
-            [_dataProcessorMock.Object],
-            [],
-            _modelSerializationService,
             _webHostEnvironment.Object,
+            _serviceProvider,
             _telemetrySink.Object
         );
     }
@@ -232,9 +254,11 @@ public sealed class PatchServiceTests : IDisposable
         err.Should().NotBeNull();
         err!.Title.Should().Be("Precondition in patch failed");
         err.Detail.Should().Be("Path `/Name` is not equal to the indicated value.");
-        err.Status.Should().Be((int)HttpStatusCode.Conflict);
-        err.Extensions.Should().ContainKey("previousModel");
-        err.Extensions.Should().ContainKey("patchOperationIndex");
+        err.Status.Should().Be(StatusCodes.Status409Conflict);
+        var errType = err.Should().BeOfType<DataPatchError>().Which;
+        errType.PreviousModel.Should().BeEquivalentTo(oldModel);
+        errType.DataElementId.Should().Be(_dataGuid);
+        errType.PatchOperationIndex.Should().Be(0);
     }
 
     [Fact]
@@ -296,7 +320,9 @@ public sealed class PatchServiceTests : IDisposable
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<Guid>()
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(_modelSerializationService.SerializeToXml(oldModel).ToArray())
@@ -306,5 +332,7 @@ public sealed class PatchServiceTests : IDisposable
     public void Dispose()
     {
         _telemetrySink.Dispose();
+        if (_serviceProvider is IDisposable disposable)
+            disposable.Dispose();
     }
 }

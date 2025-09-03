@@ -4,8 +4,8 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -27,7 +27,7 @@ namespace Altinn.App.Api.Tests;
 
 public class ApiTestBase
 {
-    protected static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions
+    internal static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
@@ -38,20 +38,6 @@ public class ApiTestBase
     private readonly WebApplicationFactory<Program> _factory;
 
     protected IServiceProvider Services { get; private set; }
-
-    protected readonly Func<TestId?, Activity, bool> ActivityFilter = static (thisTestId, activity) =>
-    {
-        Assert.NotNull(thisTestId);
-        var current = activity;
-        do
-        {
-            if (current.GetTagItem(nameof(TestId)) is Guid testId && testId == thisTestId.Value)
-                return true;
-            current = current.Parent;
-        } while (current is not null);
-
-        return false;
-    };
 
     protected ApiTestBase(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
     {
@@ -94,22 +80,42 @@ public class ApiTestBase
             {
                 activity.AddTag(nameof(TestId), _testId);
             }
+            var metrics = httpContext.Features.Get<IHttpMetricsTagsFeature>();
+            if (metrics is not null)
+            {
+                metrics.Tags.Add(new KeyValuePair<string, object?>(nameof(TestId), _testId));
+            }
             return _next(httpContext);
         }
     }
 
-    public HttpClient GetRootedClient(
+    public HttpClient GetRootedUserClient(
         string org,
         string app,
-        int userId,
-        int? partyId,
-        int authenticationLevel = 2,
-        string? serviceOwnerOrg = null
+        int userId = TestAuthentication.DefaultUserId,
+        int partyId = TestAuthentication.DefaultUserPartyId,
+        int authenticationLevel = TestAuthentication.DefaultUserAuthenticationLevel,
+        Action<IServiceCollection>? configureServices = null
     )
     {
-        var client = GetRootedClient(org, app);
-        string token = PrincipalUtil.GetToken(userId, partyId, authenticationLevel, org: serviceOwnerOrg);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var client = GetRootedClient(org, app, configureServices: configureServices);
+        string token = TestAuthentication.GetUserToken(userId, partyId, authenticationLevel);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
+        return client;
+    }
+
+    public HttpClient GetRootedOrgClient(
+        string org,
+        string app,
+        string orgNumber = TestAuthentication.DefaultOrgNumber,
+        string scope = TestAuthentication.DefaultServiceOwnerScope,
+        string serviceOwnerOrg = TestAuthentication.DefaultOrg,
+        Action<IServiceCollection>? configureServices = null
+    )
+    {
+        var client = GetRootedClient(org, app, configureServices: configureServices);
+        string token = TestAuthentication.GetServiceOwnerToken(orgNumber, org: serviceOwnerOrg, scope: scope);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         return client;
     }
 
@@ -117,7 +123,12 @@ public class ApiTestBase
     /// Gets a client that adds appsettings from the specified org/app
     /// test application under TestData/Apps to the service collection.
     /// </summary>
-    public HttpClient GetRootedClient(string org, string app, bool includeTraceContext = false)
+    public HttpClient GetRootedClient(
+        string org,
+        string app,
+        bool includeTraceContext = false,
+        Action<IServiceCollection>? configureServices = null
+    )
     {
         string appRootPath = TestData.GetApplicationDirectory(org, app);
         string appSettingsPath = Path.Join(appRootPath, "appsettings.json");
@@ -138,6 +149,8 @@ public class ApiTestBase
             builder.ConfigureTestServices(services => OverrideServicesForAllTests(services));
             builder.ConfigureTestServices(OverrideServicesForThisTest);
             builder.ConfigureTestServices(ConfigureFakeHttpClientHandler);
+            builder.ConfigureTestServices(services => configureServices?.Invoke(services));
+
             // Mock IHostEnvironment to return the environment name we want to test
             if (OverrideEnvironment is not null)
             {
@@ -231,10 +244,10 @@ public class ApiTestBase
             var clientFactoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
             clientFactoryMock
                 .Setup(f => f.CreateClient(It.IsAny<string>()))
-                .Returns(sp.GetRequiredService<HttpClient>());
+                .Returns(() => sp.GetRequiredService<HttpClient>());
             return clientFactoryMock.Object;
         });
-        services.AddSingleton<HttpClient>(sp => new HttpClient(
+        services.AddTransient<HttpClient>(sp => new HttpClient(
             new MockHttpMessageHandler(SendAsync, sp.GetRequiredService<ILogger<MockHttpMessageHandler>>())
         ));
     }

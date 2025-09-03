@@ -1,7 +1,9 @@
 ﻿{
   Activities: [
     {
-      ActivityName: GET {org}/{app}/api/v1/applicationmetadata,
+      Name: GET {org}/{app}/api/v1/applicationmetadata,
+      Kind: Server,
+      IdFormat: W3C,
       Tags: [
         {
           http.request.method: GET
@@ -28,24 +30,70 @@
           url.scheme: http
         },
         {
+          user.authentication.inAltinnPortal: true
+        },
+        {
           user.authentication.level: 4
         },
         {
-          user.authentication.method: Mock
+          user.authentication.method: BankID
+        },
+        {
+          user.authentication.token.isExchanged: false
+        },
+        {
+          user.authentication.token.issuer: Altinn
+        },
+        {
+          user.authentication.type: User
         },
         {
           user.id: 10
         },
         {
-          user.name: User10
-        },
-        {
           user.party.id: Scrubbed
         }
       ],
-      IdFormat: W3C,
-      Kind: Server
+      HasParent: false
     }
   ],
-  Metrics: []
+  Metrics: [
+    {
+      Name: http.server.request.duration,
+      MeterName: Microsoft.AspNetCore.Hosting,
+      Measurements: [
+        {
+          Tags: [
+            {
+              http.request.method: GET
+            },
+            {
+              http.response.status_code: 200
+            },
+            {
+              http.route: {org}/{app}/api/v1/applicationmetadata
+            },
+            {
+              network.protocol.version: 1.1
+            },
+            {
+              TestId: Guid_1
+            },
+            {
+              url.scheme: http
+            },
+            {
+              user.authentication.token.isExchanged: false
+            },
+            {
+              user.authentication.token.issuer: Altinn
+            },
+            {
+              user.authentication.type: User
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

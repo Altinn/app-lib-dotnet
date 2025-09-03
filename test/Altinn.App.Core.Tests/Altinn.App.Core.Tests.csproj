@@ -17,90 +17,41 @@
     -->
   </PropertyGroup>
 
+
   <ItemGroup>
-    <Compile Remove="Implementation\AppBaseTests.cs" />
-    <Content Include="LayoutExpressions/**/*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
-    <Watch Include="LayoutExpressions/**/*.json" />
-    <Content Include="Features/Validators/**/*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
-    <Watch Include="Features/Validators/**/*.json" />
-    <Content Include="Models/**/*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
-    <Watch Include="Models/**/*.json" />
-    <Watch Include="**/*.cs" />
-    <Content Update="Implementation\TestData\AppMetadata\default.applicationmetadata.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Update="Implementation\TestData\AppMetadata\invalid.applicationmetadata.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Update="Implementation\TestData\AppPolicy\policy.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Update="Implementation\TestData\AppProcess\process.bpmn">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing"/>
+    <PackageReference Include="Verify.Xunit"/>
+    <PackageReference Include="FluentAssertions"/>
+    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore"/>
+    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+    <PackageReference Include="Moq"/>
+    <PackageReference Include="xunit"/>
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="WireMock.Net"/>
+    <PackageReference Include="System.Linq.Async"/>
+    <PackageReference Include="System.IO.Hashing" />
+    <PackageReference Include="PublicApiGenerator" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Altinn.App.Core/Altinn.App.Core.csproj" />
+    <ProjectReference Include="../Altinn.App.Tests.Common/Altinn.App.Tests.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Altinn.App.Tests.Common" />
+    <Using Include="Altinn.App.Tests.Common.Auth" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="secrets.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.0.0" />
-    <PackageReference Include="Verify.Xunit" Version="28.4.0" />
-    <PackageReference Include="FluentAssertions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" Version="4.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageReference Include="Moq" Version="4.20.72" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="6.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Altinn.App.Core\Altinn.App.Core.csproj" />
-    <ProjectReference Include="..\Altinn.App.Common.Tests\Altinn.App.Common.Tests.csproj" />
-    <ProjectReference Include="..\Altinn.App.Api.Tests\Altinn.App.Api.Tests.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="Helpers\TestData\**">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Infrastructure\Clients\Authorization\TestData\**">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Internal\Pdf\TestData\**">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Internal\Process\TestData\**">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Internal\App\TestData\**">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Features\Action\TestData\**">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Implementation\TestData\**">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Watch Remove="Extensions\DictionaryExtensionsTests.cs" />
-    <Watch Remove="Internal\Pdf\PdfServiceTests.cs" />
-    <Watch Remove="Mocks\RequestInterceptor.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Internal\Pdf\TestData\example.pdf" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="LayoutExpressions\CommonTests\exclusive-tests\functions\" />
   </ItemGroup>
 
 </Project>

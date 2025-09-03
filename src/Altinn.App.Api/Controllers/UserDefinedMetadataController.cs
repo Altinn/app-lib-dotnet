@@ -1,8 +1,8 @@
 using System.Net.Mime;
-using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
@@ -19,7 +19,6 @@ namespace Altinn.App.Api.Controllers;
 [ApiController]
 [Produces(MediaTypeNames.Application.Json)]
 [Consumes(MediaTypeNames.Application.Json)]
-[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 [Route(
     "{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid}/user-defined-metadata"
 )]
@@ -28,22 +27,30 @@ public class UserDefinedMetadataController : ControllerBase
     private readonly IInstanceClient _instanceClient;
     private readonly IDataClient _dataClient;
     private readonly IAppMetadata _appMetadata;
+    private readonly IAuthenticationContext _authenticationContext;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     /// <summary>
-    /// Initialize a new instance of <see cref="DataTagsController"/> with the given services.
+    /// Initialize a new instance of <see cref="UserDefinedMetadataController"/> with the given services.
     /// </summary>
     /// <param name="instanceClient">A client that can be used to send instance requests to storage.</param>
     /// <param name="dataClient">A client that can be used to send data requests to storage.</param>
     /// <param name="appMetadata">The app metadata service</param>
+    /// <param name="authenticationContext">The authentication context service</param>
+    /// <param name="serviceProvider">The service provider</param>
     public UserDefinedMetadataController(
         IInstanceClient instanceClient,
         IDataClient dataClient,
-        IAppMetadata appMetadata
+        IAppMetadata appMetadata,
+        IAuthenticationContext authenticationContext,
+        IServiceProvider serviceProvider
     )
     {
         _instanceClient = instanceClient;
         _dataClient = dataClient;
         _appMetadata = appMetadata;
+        _authenticationContext = authenticationContext;
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
 
     /// <summary>
@@ -136,7 +143,14 @@ public class UserDefinedMetadataController : ControllerBase
             );
         }
 
-        if (DataElementAccessChecker.GetUpdateProblem(instance, dataTypeFromMetadata, User) is { } problem)
+        if (
+            await _dataElementAccessChecker.GetUpdateProblem(
+                instance,
+                dataTypeFromMetadata,
+                _authenticationContext.Current
+            ) is
+            { } problem
+        )
         {
             return StatusCode(problem.Status ?? 500, problem);
         }

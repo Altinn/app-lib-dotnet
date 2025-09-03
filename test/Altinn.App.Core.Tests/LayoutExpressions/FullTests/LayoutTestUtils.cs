@@ -4,10 +4,12 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
+using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -46,6 +48,8 @@ public static class LayoutTestUtils
     {
         var services = new ServiceCollection();
 
+        services.AddFakeLogging();
+
         var modelType = model.GetType();
         var modelTypeFullName = modelType.FullName!;
         var appMetadata = new Mock<IAppMetadata>(MockBehavior.Strict);
@@ -70,7 +74,7 @@ public static class LayoutTestUtils
 
         var resources = new Mock<IAppResources>();
         var pages = new List<PageComponent>();
-        var layoutsPath = Path.Join("LayoutExpressions", "FullTests", folder);
+        var layoutsPath = Path.Join(PathUtils.GetCoreTestsPath(), "LayoutExpressions", "FullTests", folder);
         foreach (var layoutFile in Directory.GetFiles(layoutsPath, "*.json"))
         {
             var layoutBytes = await File.ReadAllBytesAsync(layoutFile);
@@ -89,11 +93,14 @@ public static class LayoutTestUtils
         services.AddSingleton(resources.Object);
         services.AddSingleton(appMetadata.Object);
         // services.AddSingleton(appModel.Object);
-        services.AddScoped<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
+        services.AddTransient<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
 
         services.AddOptions<FrontEndSettings>().Configure(fes => fes.Add("test", "value"));
 
-        var serviceProvider = services.BuildServiceProvider(validateScopes: true);
+        services.AddSingleton(new AppIdentifier(Org, App));
+        services.AddTransient<ITranslationService, TranslationService>();
+
+        var serviceProvider = services.BuildStrictServiceProvider();
         using var scope = serviceProvider.CreateScope();
         var initializer = scope.ServiceProvider.GetRequiredService<ILayoutEvaluatorStateInitializer>();
 

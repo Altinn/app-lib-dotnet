@@ -97,6 +97,32 @@ public interface ICorrespondenceNotificationBuilder : ICorrespondenceNotificatio
     ICorrespondenceNotificationBuilder WithRequestedSendTime(DateTimeOffset? requestedSendTime);
 
     /// <summary>
+    /// Sets the recipient override for the correspondence notification.
+    /// </summary>
+    /// <param name="recipientOverride">The recipient override</param>
+    public ICorrespondenceNotificationBuilder WithRecipientOverride(
+        CorrespondenceNotificationRecipient recipientOverride
+    );
+
+    /// <summary>
+    /// Sets the recipient override for the correspondence notification.
+    /// </summary>
+    /// <param name="recipientOverrideBuilder">The recipient override builder.</param>
+    public ICorrespondenceNotificationBuilder WithRecipientOverride(
+        ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder
+    );
+
+    /// <summary>
+    /// Sets the recipient override for the correspondence notification.
+    /// </summary>
+    /// <param name="recipientToOverrideWrapper">Recipients to override.</param>
+    /// <returns></returns>
+    [Obsolete("Use WithRecipientOverride(CorrespondenceNotificationRecipient recipientOverride) instead.")]
+    public ICorrespondenceNotificationBuilder WithRecipientOverride(
+        CorrespondenceNotificationRecipientWrapper recipientToOverrideWrapper
+    );
+
+    /// <summary>
     /// Builds the <see cref="CorrespondenceNotification"/> instance.
     /// </summary>
     CorrespondenceNotification Build();

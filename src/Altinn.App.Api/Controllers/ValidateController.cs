@@ -1,5 +1,4 @@
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
@@ -20,8 +19,7 @@ namespace Altinn.App.Api.Controllers;
 public class ValidateController : ControllerBase
 {
     private readonly IInstanceClient _instanceClient;
-    private readonly IDataClient _dataClient;
-    private readonly ModelSerializationService _modelSerialization;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAppMetadata _appMetadata;
     private readonly IValidationService _validationService;
 
@@ -32,15 +30,13 @@ public class ValidateController : ControllerBase
         IInstanceClient instanceClient,
         IValidationService validationService,
         IAppMetadata appMetadata,
-        IDataClient dataClient,
-        ModelSerializationService modelSerialization
+        IServiceProvider serviceProvider
     )
     {
         _instanceClient = instanceClient;
         _validationService = validationService;
         _appMetadata = appMetadata;
-        _dataClient = dataClient;
-        _modelSerialization = modelSerialization;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <summary>
@@ -56,7 +52,9 @@ public class ValidateController : ControllerBase
     /// <param name="language">The currently used language by the user (or null if not available)</param>
     [HttpGet]
     [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/validate")]
-    [ProducesResponseType(typeof(ValidationIssueWithSource), 200)]
+    [ProducesResponseType(typeof(List<ValidationIssueWithSource>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ValidateInstance(
         [FromRoute] string org,
         [FromRoute] string app,
@@ -81,13 +79,8 @@ public class ValidateController : ControllerBase
 
         try
         {
-            var dataAccessor = new InstanceDataUnitOfWork(
-                instance,
-                _dataClient,
-                _instanceClient,
-                await _appMetadata.GetApplicationMetadata(),
-                _modelSerialization
-            );
+            var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
+
             var ignoredSources = ignoredValidators?.Split(',').ToList();
             List<ValidationIssueWithSource> messages = await _validationService.ValidateInstanceAtTask(
                 dataAccessor,
@@ -123,6 +116,8 @@ public class ValidateController : ControllerBase
         "There is no longer any concept of validating a single data element. Use the /validate endpoint instead."
     )]
     [Route("{org}/{app}/instances/{instanceOwnerId:int}/{instanceId:guid}/data/{dataGuid:guid}/validate")]
+    [ProducesResponseType(typeof(List<ValidationIssueWithSource>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ValidateData(
         [FromRoute] string org,
         [FromRoute] string app,
@@ -138,7 +133,9 @@ public class ValidateController : ControllerBase
             return NotFound();
         }
 
-        if (instance.Process?.CurrentTask?.ElementId == null)
+        var taskId = instance.Process?.CurrentTask?.ElementId;
+
+        if (taskId is null)
         {
             throw new ValidationException("Unable to validate instance without a started process.");
         }
@@ -161,28 +158,9 @@ public class ValidateController : ControllerBase
             throw new ValidationException("Unknown element type.");
         }
 
-        var dataAccessor = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            application,
-            _modelSerialization
-        );
-
-        // Run validations for all data elements, but only return the issues for the specific data element
-        var issues = await _validationService.ValidateInstanceAtTask(
-            dataAccessor,
-            dataType.TaskId,
-            ignoredValidators: null,
-            onlyIncrementalValidators: true,
-            language: language
-        );
-        messages.AddRange(issues.Where(i => i.DataElementId == element.Id));
-
-        string taskId = instance.Process.CurrentTask.ElementId;
-
         // Should this be a BadRequest instead?
-        if (!dataType.TaskId.Equals(taskId, StringComparison.OrdinalIgnoreCase))
+        // The element will likely not be validated at all if the taskId is not the same as the one in the dataType
+        if (!taskId.Equals(dataType.TaskId, StringComparison.OrdinalIgnoreCase))
         {
             ValidationIssueWithSource message = new()
             {
@@ -197,6 +175,18 @@ public class ValidateController : ControllerBase
             };
             messages.Add(message);
         }
+
+        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, dataType.TaskId, language);
+
+        // Run validations for all data elements, but only return the issues for the specific data element
+        var issues = await _validationService.ValidateInstanceAtTask(
+            dataAccessor,
+            dataType.TaskId,
+            ignoredValidators: null,
+            onlyIncrementalValidators: true,
+            language: language
+        );
+        messages.AddRange(issues.Where(i => i.DataElementId == element.Id));
 
         return Ok(messages);
     }

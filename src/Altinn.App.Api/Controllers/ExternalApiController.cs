@@ -1,4 +1,3 @@
-using System.Net;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.ExternalApi;
 using Altinn.App.Core.Models;
@@ -36,8 +35,10 @@ public class ExternalApiController : ControllerBase
     /// <returns>The data for the external api</returns>
     [HttpGet]
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest, "text/plain")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError, "text/plain")]
     [Route("{externalApiId}")]
     public async Task<IActionResult> Get(
         [FromRoute] int instanceOwnerPartyId,
@@ -74,7 +75,7 @@ public class ExternalApiController : ControllerBase
                 return StatusCode((int)httpEx.StatusCode.Value, errorMessage);
             }
 
-            return StatusCode((int)HttpStatusCode.InternalServerError, $"{genericErrorDescription}: {ex.Message}");
+            return StatusCode(StatusCodes.Status500InternalServerError, $"{genericErrorDescription}: {ex.Message}");
         }
     }
 }

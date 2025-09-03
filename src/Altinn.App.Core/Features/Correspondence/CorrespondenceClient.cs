@@ -6,7 +6,6 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
-using Altinn.App.Core.Features.Maskinporten.Constants;
 using Altinn.App.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -38,29 +37,6 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         _platformSettings = platformSettings.Value;
         _telemetry = telemetry;
         _authorisationFactory = new CorrespondenceAuthorisationFactory(serviceProvider);
-    }
-
-    private async Task<JwtToken> AuthorisationResolver(CorrespondencePayloadBase payload)
-    {
-        if (payload.AccessTokenFactory is null && payload.AuthorisationMethod is null)
-        {
-            throw new CorrespondenceArgumentException(
-                "Neither AccessTokenFactory nor AuthorisationMethod was provided in the CorrespondencePayload object"
-            );
-        }
-
-        if (payload.AccessTokenFactory is not null)
-        {
-            return await payload.AccessTokenFactory();
-        }
-
-        return payload.AuthorisationMethod switch
-        {
-            CorrespondenceAuthorisation.Maskinporten => await _authorisationFactory.Maskinporten(),
-            _ => throw new CorrespondenceArgumentException(
-                $"Unknown CorrespondenceAuthorisation `{payload.AuthorisationMethod}`"
-            ),
-        };
     }
 
     /// <inheritdoc />
@@ -118,7 +94,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("Fetching correspondence status");
+        _logger.LogDebug("Fetching correspondence status for {CorrespondenceId}", payload.CorrespondenceId);
         using Activity? activity = _telemetry?.StartCorrespondenceStatusActivity(payload.CorrespondenceId);
 
         try
@@ -162,18 +138,18 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     )
     {
         _logger.LogDebug("Fetching access token via factory");
-        JwtToken accessToken = await AuthorisationResolver(payload);
+        JwtToken accessToken = await _authorisationFactory.Resolve(payload);
 
         _logger.LogDebug("Constructing authorized http request for target uri {TargetEndpoint}", uri);
         HttpRequestMessage request = new(method, uri) { Content = content };
 
-        request.Headers.Authorization = new AuthenticationHeaderValue(TokenTypes.Bearer, accessToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, accessToken);
         request.Headers.TryAddWithoutValidation(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
 
         return request;
     }
 
-    private ProblemDetails? GetProblemDetails(string responseBody)
+    private ValidationProblemDetails? GetProblemDetails(string responseBody)
     {
         if (string.IsNullOrWhiteSpace(responseBody))
         {
@@ -182,7 +158,18 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
 
         try
         {
-            return JsonSerializer.Deserialize<ProblemDetails>(responseBody);
+            var problemDetails = JsonSerializer.Deserialize<ValidationProblemDetails>(responseBody);
+            if (problemDetails is null)
+            {
+                return null;
+            }
+
+            problemDetails.Detail ??=
+                problemDetails.Errors.Count > 0
+                    ? JsonSerializer.Serialize(problemDetails.Errors)
+                    : $"Unknown error. Full server response: {responseBody}";
+
+            return problemDetails;
         }
         catch (Exception e)
         {

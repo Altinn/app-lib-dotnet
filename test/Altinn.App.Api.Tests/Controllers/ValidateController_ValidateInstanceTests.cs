@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
-using Altinn.App.Api.Tests.Utils;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
@@ -45,6 +45,7 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
     {
         _formDataValidatorMock.Setup(v => v.DataType).Returns("9edd53de-f46f-40a1-bb4d-3efb93dc113d");
         _formDataValidatorMock.Setup(v => v.ValidationSource).Returns("Not a valid validation source");
+        _formDataValidatorMock.SetupGet(fdv => fdv.NoIncrementalValidation).Returns(false);
         OverrideServicesForAllTests = (services) =>
         {
             services.AddSingleton(_dataProcessorMock.Object);
@@ -56,16 +57,22 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
     private async Task<HttpResponseMessage> CallValidateInstanceApi()
     {
         using var httpClient = GetRootedClient(Org, App);
-        string token = PrincipalUtil.GetToken(1337, null);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(userId: 1337);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            AuthorizationSchemes.Bearer,
+            token
+        );
         return await httpClient.GetAsync($"/{Org}/{App}/instances/{InstanceId}/validate");
     }
 
     private async Task<(HttpResponseMessage response, string responseString)> CallValidateDataApi()
     {
         using var httpClient = GetRootedClient(Org, App);
-        string token = PrincipalUtil.GetToken(1337, null);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(userId: 1337);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            AuthorizationSchemes.Bearer,
+            token
+        );
         var response = await httpClient.GetAsync($"/{Org}/{App}/instances/{InstanceId}/data/{DataGuid}/validate");
         var responseString = await LogResponse(response);
         return (response, responseString);

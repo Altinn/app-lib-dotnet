@@ -5,38 +5,74 @@
     <Description>
       This class library holds all the core features used by a standard Altinn 3 App.
     </Description>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="Altinn.ApiClients.Maskinporten" Version="8.0.1" />
-    <PackageReference Include="Altinn.Common.AccessTokenClient" Version="1.1.5" />
-    <PackageReference Include="Altinn.Common.EFormidlingClient" Version="1.3.3" />
-    <PackageReference Include="Altinn.Common.PEP" Version="4.1.2" />
-    <PackageReference Include="Altinn.Platform.Models" Version="1.6.1" />
-    <PackageReference Include="Altinn.Platform.Storage.Interface" Version="4.0.4" />
-    <PackageReference Include="JsonPatch.Net" Version="3.2.3" />
-    <PackageReference Include="JWTCookieAuthentication" Version="3.0.1" />
+    <!-- The following packages uses frozen version because of compatibility considerations for apps -->
+    <!-- See: https://github.com/Altinn/app-lib-dotnet/issues/647 -->
+    <PackageReference Include="Altinn.ApiClients.Maskinporten"/>
+
+    <PackageReference Include="JWTCookieAuthentication"/>
     <!-- The follwoing are depencencies for JWTCookieAuthentication, but we need newer versions-->
-    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.3.0"
-    />
-    <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.24" />
-    <PackageReference Include="Microsoft.Rest.ClientRuntime.Azure" Version="3.3.19" />
-    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
+    <PackageReference Include="Microsoft.Rest.ClientRuntime" />
+    <PackageReference Include="Microsoft.Rest.ClientRuntime.Azure" />
+    <PackageReference Include="System.Text.RegularExpressions" />
     <!-- End JWTCookieAuthentication deps -->
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="[9.0.0-preview.9.24556.5]" NoWarn="NU5104" />
-    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" Version="4.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="NetEscapades.EnumGenerators" Version="1.0.0-beta11" PrivateAssets="all" ExcludeAssets="runtime" />
-    <PackageReference Include="OpenTelemetry.Api" Version="1.10.0" />
+
+    <PackageReference Include="Altinn.Common.AccessTokenClient"/>
+    <!-- End frozen versions -->
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Altinn.App.Core.Tests" />
-    <InternalsVisibleTo Include="Altinn.App.Api.Tests" />
+    <PackageReference Include="Altinn.Common.EFormidlingClient"/>
+    <PackageReference Include="Altinn.Common.PEP"/>
+    <PackageReference Include="Altinn.Platform.Models"/>
+    <PackageReference Include="Altinn.Platform.Storage.Interface"/>
+    <PackageReference Include="JsonPatch.Net"/>
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore"/>
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid"/>
+    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore"/>
+    <PackageReference Include="Newtonsoft.Json"/>
+    <PackageReference Include="NetEscapades.EnumGenerators" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="OpenTelemetry.Api"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Internal analyzers are for analysis of _our_ code, so we reference this project as an analyzer (it's a build-time dep) -->
+    <ProjectReference Include="../Altinn.App.Internal.Analyzers/Altinn.App.Internal.Analyzers.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+
+    <!-- We reference the app analyzers to make sure it's built, but we don't really reference it. We just include it in packaging below -->
+    <ProjectReference Include="../Altinn.App.Analyzers/Altinn.App.Analyzers.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="None" />
+    <!-- This makes sure that the app analyzers is bundled alongside Altinn.App.Core when referenced in an app -->
+    <None Include="../Altinn.App.Analyzers/bin/$(Configuration)/netstandard2.0/Altinn.App.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" />
+    <!-- We will probably use System.Text.Json while analyzing in the future, this setup has been tested -->
+    <!-- <None Include="../Altinn.App.Analyzers/bin/$(Configuration)/netstandard2.0/System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" /> -->
+    <!-- These MSBuild props are applied to the app when they reference the Altinn.App.Core package. Used for <AdditionalFile /> inclusions etc. -->
+    <None Include="packaging/Altinn.App.Core.props" Pack="true" PackagePath="build/" Visible="true" Condition="'$(MinVerVersionOverride)'==''" />
+    <!--
+      When we do PR builds/experimental releases we set tne MinVerVersionOverride from CI, and we also append '.Experimental' to package IDs.
+      The props file name must match the package ID for the package it is included in.
+     -->
+    <None Include="packaging/Altinn.App.Core.Experimental.props" Pack="true" PackagePath="build/" Visible="true" Condition="'$(MinVerVersionOverride)'!=''" />
+  </ItemGroup>
+
+  <Target Name="CreateExperimentalPropsFile" AfterTargets="Build" Condition="'$(MinVerVersionOverride)'!=''">
+    <!-- For PR/experimental builds we need to rename the props file (only happens in CI) -->
+    <Move SourceFiles="packaging/Altinn.App.Core.props" DestinationFiles="packaging/Altinn.App.Core.Experimental.props"/>
+  </Target>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Altinn.App.Api" />
+
+    <InternalsVisibleTo Include="$(AssemblyName).Tests" />
+    <InternalsVisibleTo Include="Altinn.App.Api.Tests" />
+    <InternalsVisibleTo Include="Altinn.App.Benchmarks" />
+    <InternalsVisibleTo Include="Altinn.App.Tests.Common" />
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 </Project>

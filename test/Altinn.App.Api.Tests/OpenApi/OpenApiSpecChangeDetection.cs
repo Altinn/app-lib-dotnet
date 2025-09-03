@@ -1,6 +1,9 @@
-using System.Net.Http.Headers;
-using FluentAssertions;
+using Altinn.App.Api.Controllers;
+using Argon;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.OpenApi.Extensions;
+using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Readers;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.OpenApi;
@@ -13,40 +16,47 @@ public class OpenApiSpecChangeDetection : ApiTestBase, IClassFixture<WebApplicat
     [Fact]
     public async Task SaveJsonSwagger()
     {
-        HttpClient client = GetRootedClient("tdd", "contributer-restriction");
+        using HttpClient client = GetRootedClient("tdd", "contributer-restriction");
         // The test project exposes swagger.json at /swagger/v1/swagger.json not /{org}/{app}/swagger/v1/swagger.json
-        HttpResponseMessage response = await client.GetAsync("/swagger/v1/swagger.json");
-        string openApiSpec = await response.Content.ReadAsStringAsync();
-        response.EnsureSuccessStatusCode();
-        var originalSpec = await File.ReadAllTextAsync("../../../OpenApi/swagger.json");
-        await File.WriteAllTextAsync("../../../OpenApi/swagger.json", openApiSpec);
-        openApiSpec
-            .ReplaceLineEndings()
-            .Should()
-            .BeEquivalentTo(
-                originalSpec.ReplaceLineEndings(),
-                because: "The OpenAPI spec in the repo should be up do date with the code. If this test fails, update the OpenAPI spec in the repo with the new one from the code. This ensures that tests fails in CI if spec is not updated."
-            );
+        using HttpResponseMessage response = await client.GetAsync("/swagger/v1/swagger.json");
+        await Snapshot(response);
     }
 
     [Fact]
-    public async Task SaveYamlSwagger()
+    public async Task SaveCustomOpenApiSpec()
     {
-        HttpClient client = GetRootedClient("tdd", "contributer-restriction");
+        var org = "tdd";
+        var app = "contributer-restriction";
+        using HttpClient client = GetRootedClient(org, app);
         // The test project exposes swagger.json at /swagger/v1/swagger.json not /{org}/{app}/swagger/v1/swagger.json
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/swagger/v1/swagger.yaml");
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/yaml"));
-        HttpResponseMessage response = await client.SendAsync(request);
-        string openApiSpec = await response.Content.ReadAsStringAsync();
+        using HttpResponseMessage response = await client.GetAsync($"/{org}/{app}/v1/customOpenapi.json");
+        await Snapshot(response);
+    }
+
+    private static async Task Snapshot(HttpResponseMessage response)
+    {
         response.EnsureSuccessStatusCode();
-        var originalSpec = await File.ReadAllTextAsync("../../../OpenApi/swagger.yaml");
-        await File.WriteAllTextAsync("../../../OpenApi/swagger.yaml", openApiSpec);
-        openApiSpec
-            .ReplaceLineEndings()
-            .Should()
-            .BeEquivalentTo(
-                originalSpec.ReplaceLineEndings(),
-                because: "The OpenAPI spec in the repo should be up do date with the code. If this test fails, update the OpenAPI spec in the repo with the new one from the code. This ensures that tests fails in CI if spec is not updated."
-            );
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        var reader = new OpenApiStreamReader();
+        OpenApiDocument document = reader.Read(stream, out OpenApiDiagnostic diagnostic);
+        // Assert.Empty(diagnostic.Errors);
+        document.Info.Version = "";
+        await VerifyJson(
+            document.Serialize(CustomOpenApiController.SpecVersion, CustomOpenApiController.SpecFormat),
+            _verifySettings
+        );
+    }
+
+    private static VerifySettings _verifySettings
+    {
+        get
+        {
+            VerifySettings settings = new();
+            settings.UseStrictJson();
+            settings.DontScrubGuids();
+            settings.DontIgnoreEmptyCollections();
+            settings.AddExtraSettings(settings => settings.MetadataPropertyHandling = MetadataPropertyHandling.Ignore);
+            return settings;
+        }
     }
 }

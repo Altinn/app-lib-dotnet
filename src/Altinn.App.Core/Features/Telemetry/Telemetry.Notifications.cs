@@ -11,7 +11,7 @@ partial class Telemetry
     /// <summary>
     /// Prometheus' increase and rate functions do not register the first value as an increase, but rather as the registration.<br/>
     /// This means that going from none (non-existant) to 1 on a counter will register as an increase of 0.<br/>
-    /// In order to workaround this, we initialize to 0 for all metrics here.<br/>
+    /// In order to work around this, we initialize to 0 for all metrics here.<br/>
     /// Github issue can be found <a href="https://github.com/prometheus/prometheus/issues/3806">here</a>.
     /// </summary>
     /// <param name="context"></param>
@@ -28,8 +28,8 @@ partial class Telemetry
                     {
                         m.Add(
                             0,
-                            new Tag(InternalLabels.Type, type.ToStringFast()),
-                            new Tag(InternalLabels.Result, result.ToStringFast())
+                            new Tag(InternalLabels.Type, type.ToStringFast(useMetadataAttributes: true)),
+                            new Tag(InternalLabels.Result, result.ToStringFast(useMetadataAttributes: true))
                         );
                     }
                 }
@@ -40,7 +40,7 @@ partial class Telemetry
     internal Activity? StartNotificationOrderActivity(OrderType type)
     {
         var activity = ActivitySource.StartActivity("Notifications.Order");
-        activity?.SetTag(InternalLabels.Type, type.ToStringFast());
+        activity?.SetTag(InternalLabels.Type, type.ToStringFast(useMetadataAttributes: true));
         return activity;
     }
 
@@ -48,8 +48,8 @@ partial class Telemetry
         _counters[MetricNameOrder]
             .Add(
                 1,
-                new Tag(InternalLabels.Type, type.ToStringFast()),
-                new Tag(InternalLabels.Result, result.ToStringFast())
+                new Tag(InternalLabels.Type, type.ToStringFast(useMetadataAttributes: true)),
+                new Tag(InternalLabels.Result, result.ToStringFast(useMetadataAttributes: true))
             );
 
     internal static class Notifications

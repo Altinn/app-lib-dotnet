@@ -262,7 +262,9 @@ public class ExpressionsExclusiveGatewayTests
                         It.IsAny<string>(),
                         It.IsAny<int>(),
                         It.IsAny<Guid>(),
-                        It.IsAny<Guid>()
+                        It.IsAny<Guid>(),
+                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<CancellationToken>()
                     )
                 )
                 .ReturnsAsync(modelSerializationService.SerializeToXml(formData).ToArray());
@@ -277,11 +279,16 @@ public class ExpressionsExclusiveGatewayTests
             _dataClient.Object,
             _instanceClient.Object,
             appMetadata,
-            modelSerializationService
+            modelSerializationService,
+            null!,
+            null!,
+            TaskId,
+            null
         );
 
         var layoutStateInit = new LayoutEvaluatorStateInitializer(
             _resources.Object,
+            null!,
             _appMetadata.Object,
             frontendSettings
         );

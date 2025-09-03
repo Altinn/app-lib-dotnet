@@ -3,12 +3,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
@@ -93,7 +94,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
             {
                 Id = SubformDataType,
                 TaskId = TaskId,
-                AppLogic = new ApplicationLogic() { ClassRef = _classRefSub, AllowInSubform = true },
+                AppLogic = new ApplicationLogic() { ClassRef = _classRefSub },
             },
         ],
     };
@@ -156,14 +157,17 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
                 "SubPage",
                 """
                 {
-                "$schema": "https://altinncdn.no/schemas/json/layout/layout.schema.v1.json",
+                "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/layout/layout.schema.v1.json",
                 "data": {
                   "layout": [
                     {
                       "id": "Name",
                       "type": "Input",
                       "dataModelBindings": {
-                        "simpleBinding": "Name"
+                        "simpleBinding": {
+                          "field": "Name",
+                          "dataType": "subform"
+                        }
                       },
                       "required": true
                     },
@@ -200,9 +204,61 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
         _applicationMetadata.DataTypes[1]
     );
 
+    private static readonly string _defaultValidationConfig = Json(
+        """
+        {
+          "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/validation/validation.schema.v1.json",
+          "validations": {
+              "Phone": [
+              "Phone-is-not-allowed",
+              "Phone-is-allowed"
+              ]
+            },
+            "definitions": {
+              "Phone-is-not-allowed": {
+                "message": "Phone should not be \"Phone\"",
+                "severity": "error",
+                "condition": ["equals", ["dataModel", ["argv", 0]], "Phone"]
+              },
+              "Phone-is-allowed": {
+                "message": "Phone should be \"Phone\"",
+                "severity": "error",
+                "condition": ["notEquals", ["dataModel", ["argv", 0]], "Phone"]
+              }
+            }
+        }
+        """
+    );
+
+    private static readonly string _subformValidationConfig = Json(
+        """
+        {
+          "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/validation/validation.schema.v1.json",
+          "validations": {
+              "Phone": ["phone2-is-not-allowed"],
+              "missing-in-model": ["none-is-not-allowed"]
+            },
+            "definitions": {
+              "phone2-is-not-allowed": {
+                "message": "Phone should not be \"Phone2\", but only single error when not null",
+                "severity": "error",
+                "condition": ["equals", ["dataModel", ["argv", 0]], "Phone2"]
+              },
+              "none-is-not-allowed": {
+                "message": "none is not allowed",
+                "severity": "error",
+                "condition": true
+              }
+            }
+        }
+        """
+    );
+
     private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
+    private readonly Mock<ITranslationService> _translationServiceMock = new(MockBehavior.Loose);
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new(MockBehavior.Loose);
+    private readonly Mock<IDataElementAccessChecker> _dataElementAccessCheckerMock = new(MockBehavior.Strict);
 
     private readonly IServiceCollection _services = new ServiceCollection();
     private static readonly JsonSerializerOptions _options = new()
@@ -226,10 +282,17 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
 
     public SubFormTests(ITestOutputHelper output, DataAnnotationsTestFixture fixture)
     {
+        _dataElementAccessCheckerMock
+            .Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>()))
+            .ReturnsAsync(true);
+
         _output = output;
+        _services.AddAppImplementationFactory();
         _services.AddSingleton(_appResourcesMock.Object);
         _services.AddSingleton(_appMetadataMock.Object);
+        _services.AddSingleton(_translationServiceMock.Object);
         _services.AddSingleton(_httpContextAccessorMock.Object);
+        _services.AddSingleton(_dataElementAccessCheckerMock.Object);
         _services.AddSingleton(fixture.App.Services.GetRequiredService<IObjectModelValidator>());
         _services.AddSingleton(_generalSettings);
         _services.AddTransient<IValidationService, ValidationService>();
@@ -257,6 +320,8 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
                     ],
                 }
             );
+        _appResourcesMock.Setup(ar => ar.GetValidationConfiguration(DefaultDataType)).Returns(_defaultValidationConfig);
+        _appResourcesMock.Setup(ar => ar.GetValidationConfiguration(SubformDataType)).Returns(_subformValidationConfig);
         _httpContextAccessorMock.SetupGet(hca => hca.HttpContext).Returns(new DefaultHttpContext());
     }
 
@@ -265,7 +330,8 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
     {
         _services.AddTransient<IValidator, RequiredLayoutValidator>();
         _services.AddTransient<IFormDataValidator, DataAnnotationValidator>();
-        using var serviceProvider = _services.BuildServiceProvider();
+        _services.AddTransient<IValidator, ExpressionValidator>();
+        using var serviceProvider = _services.BuildStrictServiceProvider();
 
         var validationService = serviceProvider.GetRequiredService<IValidationService>();
         var dataAccessor = new InstanceDataAccessorFake(_instance, _applicationMetadata)
@@ -288,6 +354,8 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
         PageComponentConverter.SetAsyncLocalPageName(layoutId, pageName);
         return JsonSerializer.Deserialize<PageComponent>(json) ?? throw new JsonException("Deserialization failed");
     }
+
+    private static string Json([StringSyntax("json")] string json) => json;
 
     ~SubFormTests()
     {

@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -7,6 +9,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Constants;
 using FluentAssertions;
@@ -20,6 +23,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
     private readonly Mock<IInstanceClient> _instanceClientMock;
     private readonly Mock<IDataClient> _dataClientMock;
     private readonly Mock<IAppMetadata> _appMetadataMock;
+    private ApplicationMetadata? _applicationMetadata;
 
     public UniqueSignatureAuthorizerTests()
     {
@@ -39,7 +43,8 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new ClaimsPrincipal(),
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
-                "sign"
+                "sign",
+                TestAuthentication.GetUserAuthentication(applicationMetadata: _applicationMetadata)
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -56,7 +61,8 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 new ClaimsPrincipal(),
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
-                "sign"
+                "sign",
+                TestAuthentication.GetUserAuthentication(applicationMetadata: _applicationMetadata)
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -87,7 +93,8 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 user,
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
-                "sign"
+                "sign",
+                TestAuthentication.GetUserAuthentication(userId: 1000, applicationMetadata: _applicationMetadata)
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -115,7 +122,12 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 user,
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
-                "sign"
+                "sign",
+                TestAuthentication.GetUserAuthentication(
+                    userId: 1000,
+                    authenticationLevel: 2,
+                    applicationMetadata: _applicationMetadata
+                )
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -152,7 +164,12 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 user,
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
-                "sign"
+                "sign",
+                TestAuthentication.GetUserAuthentication(
+                    userId: 1000,
+                    authenticationLevel: 2,
+                    applicationMetadata: _applicationMetadata
+                )
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -166,7 +183,9 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeTrue();
@@ -202,7 +221,12 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 user,
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
-                "sign"
+                "sign",
+                TestAuthentication.GetUserAuthentication(
+                    userId: 1337,
+                    authenticationLevel: 2,
+                    applicationMetadata: _applicationMetadata
+                )
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -216,7 +240,9 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeFalse();
@@ -252,7 +278,12 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 user,
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 null,
-                "sign"
+                "sign",
+                TestAuthentication.GetUserAuthentication(
+                    userId: 1337,
+                    authenticationLevel: 2,
+                    applicationMetadata: _applicationMetadata
+                )
             )
         );
         result.Should().BeTrue();
@@ -291,7 +322,12 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 user,
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
-                "sign"
+                "sign",
+                TestAuthentication.GetUserAuthentication(
+                    userId: 1337,
+                    authenticationLevel: 2,
+                    applicationMetadata: _applicationMetadata
+                )
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -305,7 +341,9 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeTrue();
@@ -344,7 +382,12 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 user,
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
-                "sign"
+                "sign",
+                TestAuthentication.GetUserAuthentication(
+                    userId: 1337,
+                    authenticationLevel: 2,
+                    applicationMetadata: _applicationMetadata
+                )
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -358,7 +401,9 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeTrue();
@@ -397,7 +442,12 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 user,
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
-                "sign"
+                "sign",
+                TestAuthentication.GetUserAuthentication(
+                    userId: 1337,
+                    authenticationLevel: 2,
+                    applicationMetadata: _applicationMetadata
+                )
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -411,7 +461,9 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeTrue();
@@ -450,7 +502,12 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 user,
                 new InstanceIdentifier("500001/abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 "Task_2",
-                "sign"
+                "sign",
+                TestAuthentication.GetUserAuthentication(
+                    userId: 1337,
+                    authenticationLevel: 2,
+                    applicationMetadata: _applicationMetadata
+                )
             )
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
@@ -464,19 +521,23 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeTrue();
     }
 
+    [MemberNotNull(nameof(_applicationMetadata))]
     private UniqueSignatureAuthorizer CreateUniqueSignatureAuthorizer(
         ProcessElement? task,
         string signatureFileToRead = "signature.json"
     )
     {
         _processReaderMock.Setup(sr => sr.GetFlowElement(It.IsAny<string>())).Returns(task);
-        _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("ttd/xunit-app"));
+        _applicationMetadata = new ApplicationMetadata("ttd/xunit-app");
+        _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(_applicationMetadata);
         _instanceClientMock
             .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
             .ReturnsAsync(
@@ -488,7 +549,9 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                     },
                 }
             );
-        FileStream fileStream = File.OpenRead(Path.Combine("Features", "Action", "TestData", signatureFileToRead));
+        FileStream fileStream = File.OpenRead(
+            Path.Join(PathUtils.GetCoreTestsPath(), "Features", "Action", "TestData", signatureFileToRead)
+        );
         _dataClientMock
             .Setup(d =>
                 d.GetBinaryData(
@@ -496,7 +559,9 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<Guid>()
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(fileStream);

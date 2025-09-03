@@ -114,7 +114,7 @@ public interface IAppResources
     LayoutSets? GetLayoutSet();
 
     /// <summary>
-    ///
+    /// Get the layout set definition for a given task. Return null if no layoutsets exists
     /// </summary>
     LayoutSet? GetLayoutSetForTask(string taskId);
 
@@ -133,7 +133,7 @@ public interface IAppResources
     /// <summary>
     /// Gets the full layout model for the optional set
     /// </summary>
-    [Obsolete("Use GetLayoutModelForTask instead", true)]
+    [Obsolete("Use GetLayoutModelForTask instead", false)]
     LayoutModel GetLayoutModel(string? layoutSetId = null);
 
     /// <summary>

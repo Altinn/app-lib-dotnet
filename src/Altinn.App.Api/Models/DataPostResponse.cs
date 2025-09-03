@@ -1,4 +1,4 @@
-using System.Net;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
@@ -14,25 +14,25 @@ public class DataPostResponse
     /// <summary>
     /// The Id of the created data element
     /// </summary>
-    [JsonPropertyName("newDataElementId")]
+    [JsonPropertyName("newDataElementId"), Required]
     public required Guid NewDataElementId { get; init; }
 
     /// <summary>
     /// The instance with updated data
     /// </summary>
-    [JsonPropertyName("instance")]
+    [JsonPropertyName("instance"), Required]
     public required Instance Instance { get; init; }
 
     /// <summary>
     /// List of validation issues that reported to have relevant changes after a new data element was added
     /// </summary>
-    [JsonPropertyName("validationIssues")]
+    [JsonPropertyName("validationIssues"), Required]
     public required List<ValidationSourcePair> ValidationIssues { get; init; }
 
     /// <summary>
     /// List of updated DataModels caused by dataProcessing
     /// </summary>
-    [JsonPropertyName("newDataModels")]
+    [JsonPropertyName("newDataModels"), Required]
     public required List<DataModelPairResponse> NewDataModels { get; init; }
 }
 
@@ -48,13 +48,13 @@ public class DataPostErrorResponse : ProblemDetails
     {
         Title = "File validation failed";
         Detail = detail;
-        Status = (int)HttpStatusCode.BadRequest;
+        Status = StatusCodes.Status400BadRequest;
         UploadValidationIssues = validationIssues;
     }
 
     /// <summary>
     /// List of the validators that reported to have relevant changes after a new data element was added
     /// </summary>
-    [JsonPropertyName("uploadValidationIssues")]
+    [JsonPropertyName("uploadValidationIssues"), Required]
     public List<ValidationIssueWithSource> UploadValidationIssues { get; }
 }

@@ -1,10 +1,10 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.ExternalApi;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
@@ -22,7 +22,8 @@ public class AppMetadataTest
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    private readonly string _appBasePath = Path.Combine("Internal", "App", "TestData") + Path.DirectorySeparatorChar;
+    private readonly string _appBasePath =
+        Path.Join(PathUtils.GetCoreTestsPath(), "Internal", "App", "TestData") + Path.DirectorySeparatorChar;
 
     [Fact]
     public async Task GetApplicationMetadata_desrializes_file_from_disk()
@@ -476,7 +477,7 @@ public class AppMetadataTest
         var appMetadataObj = await appMetadata.GetApplicationMetadata();
         string serialized = JsonSerializer.Serialize(appMetadataObj, _jsonSerializerOptions);
         serialized = serialized.Replace(
-            typeof(ApplicationMetadata).Assembly!.GetName().Version!.ToString(),
+            ApplicationMetadata.LibVersion ?? throw new Exception("Couldn't get library version"),
             "--AltinnNugetVersion--"
         );
 

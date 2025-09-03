@@ -11,6 +11,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -22,6 +23,7 @@ using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.Validation;
@@ -45,7 +47,6 @@ namespace Altinn.App.Api.Controllers;
 /// You can create a new instance (POST), update it (PUT) and retrieve a specific instance (GET).
 /// </summary>
 [Authorize]
-[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 [AutoValidateAntiforgeryTokenIfAuthCookie]
 [Route("{org}/{app}/instances")]
 [ApiController]
@@ -55,14 +56,14 @@ public class InstancesController : ControllerBase
 
     private readonly IInstanceClient _instanceClient;
     private readonly IDataClient _dataClient;
-    private readonly IAltinnPartyClient _altinnPartyClientClient;
+    private readonly IAltinnPartyClient _altinnPartyClient;
+    private readonly IRegisterClient _registerClient;
     private readonly IEventsClient _eventsClient;
     private readonly IProfileClient _profileClient;
 
     private readonly IAppMetadata _appMetadata;
     private readonly IAppModel _appModel;
-    private readonly IInstantiationProcessor _instantiationProcessor;
-    private readonly IInstantiationValidator _instantiationValidator;
+    private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IPDP _pdp;
     private readonly IPrefill _prefillService;
     private readonly AppSettings _appSettings;
@@ -71,7 +72,10 @@ public class InstancesController : ControllerBase
     private readonly IHostEnvironment _env;
     private readonly ModelSerializationService _serializationService;
     private readonly InternalPatchService _patchService;
-
+    private readonly ITranslationService _translationService;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly IAuthenticationContext _authenticationContext;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
     /// <summary>
@@ -79,13 +83,12 @@ public class InstancesController : ControllerBase
     /// </summary>
     public InstancesController(
         ILogger<InstancesController> logger,
-        IAltinnPartyClient altinnPartyClientClient,
+        IAltinnPartyClient altinnPartyClient,
         IInstanceClient instanceClient,
         IDataClient dataClient,
         IAppMetadata appMetadata,
         IAppModel appModel,
-        IInstantiationProcessor instantiationProcessor,
-        IInstantiationValidator instantiationValidator,
+        IAuthenticationContext authenticationContext,
         IPDP pdp,
         IEventsClient eventsClient,
         IOptions<AppSettings> appSettings,
@@ -95,17 +98,19 @@ public class InstancesController : ControllerBase
         IOrganizationClient orgClient,
         IHostEnvironment env,
         ModelSerializationService serializationService,
-        InternalPatchService patchService
+        InternalPatchService patchService,
+        ITranslationService translationService,
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
         _instanceClient = instanceClient;
         _dataClient = dataClient;
         _appMetadata = appMetadata;
-        _altinnPartyClientClient = altinnPartyClientClient;
+        _altinnPartyClient = altinnPartyClient;
+        _registerClient = serviceProvider.GetRequiredService<IRegisterClient>();
         _appModel = appModel;
-        _instantiationProcessor = instantiationProcessor;
-        _instantiationValidator = instantiationValidator;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _pdp = pdp;
         _eventsClient = eventsClient;
         _appSettings = appSettings.Value;
@@ -116,6 +121,10 @@ public class InstancesController : ControllerBase
         _env = env;
         _serializationService = serializationService;
         _patchService = patchService;
+        _translationService = translationService;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _authenticationContext = authenticationContext;
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
 
     /// <summary>
@@ -125,17 +134,19 @@ public class InstancesController : ControllerBase
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
+    /// <param name="cancellationToken">cancellation token</param>
     /// <returns>the instance</returns>
     [Authorize]
     [HttpGet("{instanceOwnerPartyId:int}/{instanceGuid:guid}")]
     [Produces("application/json")]
-    [ProducesResponseType(typeof(Instance), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> Get(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
-        [FromRoute] Guid instanceGuid
+        [FromRoute] Guid instanceGuid,
+        CancellationToken cancellationToken
     )
     {
         EnforcementResult enforcementResult = await AuthorizeAction(
@@ -163,7 +174,14 @@ public class InstancesController : ControllerBase
                 await _instanceClient.UpdateReadStatus(instanceOwnerPartyId, instanceGuid, "read");
             }
 
-            return Ok(instance);
+            var instanceOwnerParty = await _registerClient.GetPartyUnchecked(instanceOwnerPartyId, cancellationToken);
+
+            var dto = InstanceResponse.From(
+                await instance.WithOnlyAccessibleDataElements(_dataElementAccessChecker),
+                instanceOwnerParty
+            );
+
+            return Ok(dto);
         }
         catch (Exception exception)
         {
@@ -185,10 +203,10 @@ public class InstancesController : ControllerBase
     [HttpPost]
     [DisableFormValueModelBinding]
     [Produces("application/json")]
-    [ProducesResponseType(typeof(Instance), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [RequestSizeLimit(RequestSizeLimit)]
-    public async Task<ActionResult<Instance>> Post(
+    public async Task<ActionResult<InstanceResponse>> Post(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromQuery] int? instanceOwnerPartyId,
@@ -285,7 +303,7 @@ public class InstancesController : ControllerBase
             {
                 if (sexp.StatusCode.Equals(HttpStatusCode.Unauthorized))
                 {
-                    return StatusCode((int)HttpStatusCode.Forbidden);
+                    return StatusCode(StatusCodes.Status403Forbidden);
                 }
             }
 
@@ -301,16 +319,18 @@ public class InstancesController : ControllerBase
         if (!InstantiationHelper.IsPartyAllowedToInstantiate(party, application.PartyTypesAllowed))
         {
             return StatusCode(
-                (int)HttpStatusCode.Forbidden,
+                StatusCodes.Status403Forbidden,
                 $"Party {party.PartyId} is not allowed to instantiate this application {org}/{app}"
             );
         }
 
         // Run custom app logic to validate instantiation
-        InstantiationValidationResult? validationResult = await _instantiationValidator.Validate(instanceTemplate);
+        var instantiationValidator = _appImplementationFactory.GetRequired<IInstantiationValidator>();
+        InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
         if (validationResult != null && !validationResult.Valid)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, validationResult);
+            await TranslateValidationResult(validationResult, language);
+            return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
         instanceTemplate.Org = application.Org;
@@ -382,7 +402,12 @@ public class InstancesController : ControllerBase
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
 
-        return Created(url, instance);
+        var dto = InstanceResponse.From(
+            await instance.WithOnlyAccessibleDataElements(_dataElementAccessChecker),
+            party
+        );
+
+        return Created(url, dto);
     }
 
     private ObjectResult? VerifyInstantiationPermissions(
@@ -400,7 +425,7 @@ public class InstancesController : ControllerBase
                 return null;
 
             return StatusCode(
-                (int)HttpStatusCode.Forbidden,
+                StatusCodes.Status403Forbidden,
                 $"User instantiation is disabled for this application {org}/{app}"
             );
         }
@@ -414,17 +439,19 @@ public class InstancesController : ControllerBase
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instansiationInstance">instansiation information</param>
+    /// <param name="language">The currently active user language</param>
     /// <returns>The new instance</returns>
     [HttpPost("create")]
     [DisableFormValueModelBinding]
     [Produces("application/json")]
-    [ProducesResponseType(typeof(Instance), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [RequestSizeLimit(RequestSizeLimit)]
-    public async Task<ActionResult<Instance>> PostSimplified(
+    public async Task<ActionResult<InstanceResponse>> PostSimplified(
         [FromRoute] string org,
         [FromRoute] string app,
-        [FromBody] InstansiationInstance instansiationInstance
+        [FromBody] InstansiationInstance instansiationInstance,
+        [FromQuery] string? language = null
     )
     {
         if (string.IsNullOrEmpty(org))
@@ -476,7 +503,7 @@ public class InstancesController : ControllerBase
             {
                 if (sexp.StatusCode.Equals(HttpStatusCode.Unauthorized))
                 {
-                    return StatusCode((int)HttpStatusCode.Forbidden);
+                    return StatusCode(StatusCodes.Status403Forbidden);
                 }
             }
 
@@ -502,7 +529,7 @@ public class InstancesController : ControllerBase
         if (!InstantiationHelper.IsPartyAllowedToInstantiate(party, application.PartyTypesAllowed))
         {
             return StatusCode(
-                (int)HttpStatusCode.Forbidden,
+                StatusCodes.Status403Forbidden,
                 $"Party {party.PartyId} is not allowed to instantiate this application {org}/{app}"
             );
         }
@@ -518,10 +545,12 @@ public class InstancesController : ControllerBase
         ConditionallySetReadStatus(instanceTemplate);
 
         // Run custom app logic to validate instantiation
-        InstantiationValidationResult? validationResult = await _instantiationValidator.Validate(instanceTemplate);
+        var instantiationValidator = _appImplementationFactory.GetRequired<IInstantiationValidator>();
+        InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
         if (validationResult != null && !validationResult.Valid)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, validationResult);
+            await TranslateValidationResult(validationResult, language);
+            return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
         Instance instance;
@@ -592,24 +621,32 @@ public class InstancesController : ControllerBase
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
 
-        return Created(url, instance);
+        var dto = InstanceResponse.From(instance, party);
+
+        return Created(url, dto);
     }
 
     /// <summary>
     /// This method handles the copy endpoint for when a user wants to create a copy of an existing instance.
-    /// The endpoint will primarily be accessed directly by a user clicking the copy button for an archived instance.
+    /// The endpoint will primarily be accessed directly by a user clicking the copy button for an archived instance
+    /// from the message box in the Altinn 2 portal/Altinn 3 arbeidsflate.
     /// </summary>
     /// <param name="org">Unique identifier of the organisation responsible for the app</param>
     /// <param name="app">Application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">Unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">Unique id to identify the instance</param>
+    /// <param name="language">The currently active user language</param>
     /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
     /// <remarks>
     /// The endpoint will return a redirect to the new instance if the copy operation was successful.
     /// </remarks>
-    [Obsolete("This endpoint will be removed in a future release of the app template packages.")]
     [ApiExplorerSettings(IgnoreApi = true)]
     [Authorize]
+    // The URL contains "legacy", but it is not really legacy.
+    // Originally it was thought of as tech debt to do mutation like this in a GET endpoint,
+    // but after further consideration, it was decided to keep it as is.
+    // A related topic is the fact that Altinn tokens are "global" and not scoped to a specific app.
+    // Since it now would be a breaking change to rename or remove, it still has "legacy" as part of the name.
     [HttpGet("/{org}/{app}/legacy/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/copy")]
     [ProducesResponseType(typeof(Instance), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -617,13 +654,14 @@ public class InstancesController : ControllerBase
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
-        [FromRoute] Guid instanceGuid
+        [FromRoute] Guid instanceGuid,
+        [FromQuery] string? language = null
     )
     {
         // This endpoint should be used exclusively by end users. Ideally from a browser as a request after clicking
-        // a button in the message box, but for now we simply just exclude app owner(s).
-        string? orgClaim = User.GetOrg();
-        if (orgClaim is not null)
+        // a button in the message box.
+        var auth = _authenticationContext.Current;
+        if (auth is not Authenticated.User)
         {
             return Forbid();
         }
@@ -672,10 +710,12 @@ public class InstancesController : ControllerBase
             Status = new() { ReadStatus = ReadStatus.Read },
         };
 
-        InstantiationValidationResult? validationResult = await _instantiationValidator.Validate(targetInstance);
+        var instantiationValidator = _appImplementationFactory.GetRequired<IInstantiationValidator>();
+        InstantiationValidationResult? validationResult = await instantiationValidator.Validate(targetInstance);
         if (validationResult != null && !validationResult.Valid)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, validationResult);
+            await TranslateValidationResult(validationResult, language);
+            return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
         ProcessStartRequest processStartRequest = new() { Instance = targetInstance, User = User };
@@ -981,7 +1021,8 @@ public class InstancesController : ControllerBase
                     data
                 );
 
-                await _instantiationProcessor.DataCreation(targetInstance, data, null);
+                var instantiationProcessor = _appImplementationFactory.GetRequired<IInstantiationProcessor>();
+                await instantiationProcessor.DataCreation(targetInstance, data, null);
 
                 ObjectUtils.InitializeAltinnRowId(data);
 
@@ -997,6 +1038,49 @@ public class InstancesController : ControllerBase
 
                 await UpdatePresentationTextsOnInstance(application.PresentationFields, targetInstance, dt.Id, data);
                 await UpdateDataValuesOnInstance(application.DataFields, targetInstance, dt.Id, data);
+            }
+        }
+
+        if (application.CopyInstanceSettings?.IncludeAttachments != true)
+        {
+            return;
+        }
+
+        // Copy binary data elements (files/attachments)
+        // Error handling strategy: Continue processing other attachments even if individual ones fail
+        // This ensures partial success rather than complete failure when some attachments cannot be copied
+        List<DataType> binaryDataTypes = application
+            .DataTypes.Where(dt => dt.AppLogic?.ClassRef == null)
+            .Where(dt =>
+                dt.TaskId != null
+                && dt.TaskId.Equals(targetInstance.Process.CurrentTask.ElementId, StringComparison.Ordinal)
+            )
+            .ToList();
+
+        foreach (DataElement de in sourceInstance.Data)
+        {
+            if (excludedDataTypes != null && excludedDataTypes.Contains(de.DataType))
+            {
+                continue;
+            }
+
+            if (binaryDataTypes.Any(dt => dt.Id.Equals(de.DataType, StringComparison.Ordinal)))
+            {
+                using var binaryDataStream = await _dataClient.GetBinaryData(
+                    org,
+                    app,
+                    instanceOwnerPartyId,
+                    sourceInstanceGuid,
+                    Guid.Parse(de.Id)
+                );
+
+                await _dataClient.InsertBinaryData(
+                    targetInstance.Id,
+                    de.DataType,
+                    de.ContentType,
+                    de.Filename,
+                    binaryDataStream
+                );
             }
         }
     }
@@ -1064,8 +1148,9 @@ public class InstancesController : ControllerBase
         {
             try
             {
-                return await _altinnPartyClientClient.GetParty(
-                    int.Parse(instanceOwner.PartyId, CultureInfo.InvariantCulture)
+                return await _registerClient.GetPartyUnchecked(
+                    int.Parse(instanceOwner.PartyId, CultureInfo.InvariantCulture),
+                    this.HttpContext.RequestAborted
                 );
             }
             catch (Exception e) when (e is not ServiceException)
@@ -1087,14 +1172,12 @@ public class InstancesController : ControllerBase
                 if (!string.IsNullOrEmpty(instanceOwner.PersonNumber))
                 {
                     lookupNumber = "personNumber";
-                    return await _altinnPartyClientClient.LookupParty(
-                        new PartyLookup { Ssn = instanceOwner.PersonNumber }
-                    );
+                    return await _altinnPartyClient.LookupParty(new PartyLookup { Ssn = instanceOwner.PersonNumber });
                 }
                 else if (!string.IsNullOrEmpty(instanceOwner.OrganisationNumber))
                 {
                     lookupNumber = "organisationNumber";
-                    return await _altinnPartyClientClient.LookupParty(
+                    return await _altinnPartyClient.LookupParty(
                         new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
                     );
                 }
@@ -1130,13 +1213,7 @@ public class InstancesController : ControllerBase
         string? language
     )
     {
-        var dataMutator = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            appInfo,
-            _serializationService
-        );
+        var dataMutator = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId: null, language);
 
         for (int partIndex = 0; partIndex < parts.Count; partIndex++)
         {
@@ -1178,7 +1255,9 @@ public class InstancesController : ControllerBase
                 var data = deserializationResult.Ok;
 
                 await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, part.Name, data);
-                await _instantiationProcessor.DataCreation(instance, data, null);
+
+                var instantiationProcessor = _appImplementationFactory.GetRequired<IInstantiationProcessor>();
+                await instantiationProcessor.DataCreation(instance, data, null);
 
                 dataMutator.AddFormDataElement(dataType.Id, data);
             }
@@ -1267,10 +1346,10 @@ public class InstancesController : ControllerBase
     {
         if (enforcementResult.FailedObligations != null && enforcementResult.FailedObligations.Count > 0)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, enforcementResult.FailedObligations);
+            return StatusCode(StatusCodes.Status403Forbidden, enforcementResult.FailedObligations);
         }
 
-        return StatusCode((int)HttpStatusCode.Forbidden);
+        return StatusCode(StatusCodes.Status403Forbidden);
     }
 
     private async Task UpdatePresentationTextsOnInstance(
@@ -1313,6 +1392,24 @@ public class InstancesController : ControllerBase
                 Guid.Parse(instance.Id.Split("/")[1]),
                 new DataValues { Values = updatedValues }
             );
+        }
+    }
+
+    private async Task TranslateValidationResult(InstantiationValidationResult validationResult, string? language)
+    {
+        if (String.IsNullOrEmpty(validationResult.Message) && !String.IsNullOrEmpty(validationResult.CustomTextKey))
+        {
+            if (
+                await _translationService.TranslateTextKey(
+                    validationResult.CustomTextKey,
+                    language,
+                    validationResult.CustomTextParameters
+                )
+                is string translated
+            )
+            {
+                validationResult.Message = translated;
+            }
         }
     }
 }

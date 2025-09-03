@@ -1,5 +1,6 @@
 using System.Collections;
 using Altinn.App.Api.Controllers;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
@@ -14,6 +15,8 @@ using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Altinn.App.Api.Tests.Controllers;
@@ -42,7 +45,7 @@ public class TestScenariosData : IEnumerable<object[]>
         {
             ReceivedInstance = new Instance
             {
-                Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "1234" } },
+                Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
                 Data = new List<DataElement>(),
             },
             ExpectedExceptionMessage = "Unable to validate data element.",
@@ -52,8 +55,11 @@ public class TestScenariosData : IEnumerable<object[]>
             DataGuid = _dataGuid,
             ReceivedInstance = new Instance
             {
-                Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "1234" } },
-                Data = new List<DataElement> { new DataElement { Id = "0fc98a23-fe31-4ef5-8fb9-dd3f479354cd" } },
+                Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
+                Data = new List<DataElement>
+                {
+                    new DataElement { Id = "0fc98a23-fe31-4ef5-8fb9-dd3f479354cd", DataType = "dataType" },
+                },
             },
             ReceivedApplication = new ApplicationMetadata("ttd/test") { DataTypes = new List<DataType>() },
             ExpectedExceptionMessage = "Unknown element type.",
@@ -68,7 +74,7 @@ public class TestScenariosData : IEnumerable<object[]>
                 Org = ValidationControllerValidateDataTests.Org,
                 Id = $"{ValidationControllerValidateDataTests.InstanceOwnerId}/{_instanceId}",
                 InstanceOwner = new() { PartyId = ValidationControllerValidateDataTests.InstanceOwnerId.ToString() },
-                Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "1234" } },
+                Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
                 Data = new List<DataElement>
                 {
                     new DataElement
@@ -115,10 +121,7 @@ public class TestScenariosData : IEnumerable<object[]>
                 Org = ValidationControllerValidateDataTests.Org,
                 Id = $"{ValidationControllerValidateDataTests.InstanceOwnerId}/{_instanceId}",
                 InstanceOwner = new() { PartyId = ValidationControllerValidateDataTests.InstanceOwnerId.ToString() },
-                Process = new ProcessState
-                {
-                    CurrentTask = new ProcessElementInfo { ElementId = "0fc98a23-fe31-4ef5-8fb9-dd3f479354cd" },
-                },
+                Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_1" } },
                 Data = new List<DataElement>
                 {
                     new DataElement
@@ -191,6 +194,8 @@ public class ValidationControllerValidateDataTests
     private readonly Mock<IValidationService> _validationMock = new(MockBehavior.Strict);
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
+    private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
+    private readonly ServiceCollection _services = new();
 
     [Theory]
     [ClassData(typeof(TestScenariosData))]
@@ -199,13 +204,9 @@ public class ValidationControllerValidateDataTests
         // Arrange
 
         SetupMocks(App, Org, InstanceOwnerId, testScenario);
-        var validateController = new ValidateController(
-            _instanceMock.Object,
-            _validationMock.Object,
-            _appMetadataMock.Object,
-            _dataClientMock.Object,
-            new ModelSerializationService(_appModelMock.Object)
-        );
+        await using var sp = _services.BuildStrictServiceProvider();
+
+        var validateController = sp.GetRequiredService<ValidateController>();
 
         // Act and Assert
         if (testScenario.ExpectedExceptionMessage == null)
@@ -221,15 +222,14 @@ public class ValidationControllerValidateDataTests
         }
         else
         {
-            var exception = await Assert.ThrowsAsync<ValidationException>(
-                () =>
-                    validateController.ValidateData(
-                        Org,
-                        App,
-                        InstanceOwnerId,
-                        testScenario.InstanceId,
-                        testScenario.DataGuid
-                    )
+            var exception = await Assert.ThrowsAsync<ValidationException>(() =>
+                validateController.ValidateData(
+                    Org,
+                    App,
+                    InstanceOwnerId,
+                    testScenario.InstanceId,
+                    testScenario.DataGuid
+                )
             );
             Assert.Equal(testScenario.ExpectedExceptionMessage, exception.Message);
         }
@@ -257,6 +257,16 @@ public class ValidationControllerValidateDataTests
                 )
                 .ReturnsAsync(testScenario.ReceivedValidationIssues);
         }
+        _services.AddSingleton(_instanceMock.Object);
+        _services.AddSingleton(_appMetadataMock.Object);
+        _services.AddSingleton(_validationMock.Object);
+        _services.AddSingleton(_dataClientMock.Object);
+        _services.AddSingleton(_appModelMock.Object);
+        _services.AddSingleton(_appResourcesMock.Object);
+        _services.AddSingleton(Options.Create(new FrontEndSettings()));
+        _services.AddTransient<InstanceDataUnitOfWorkInitializer>();
+        _services.AddTransient<ModelSerializationService>();
+        _services.AddTransient<ValidateController>();
     }
 }
 

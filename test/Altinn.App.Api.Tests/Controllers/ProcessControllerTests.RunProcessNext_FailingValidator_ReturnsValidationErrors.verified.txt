@@ -1,79 +1,98 @@
 ﻿{
   Activities: [
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutModel,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutModel,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutModel,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutModel,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSet,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSet,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSet,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSet,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSet,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSet,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSet,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSet,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSet,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSet,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSets,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSets,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSets,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSets,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSets,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSets,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSets,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSets,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSets,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSets,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSetsForTask,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSetsForTask,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSetsForTask,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSetsForTask,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSettingsForSet,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSettingsForSet,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetLayoutSettingsForSet,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetLayoutSettingsForSet,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetValidationConfiguration,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetValidationConfiguration,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: ApplicationMetadata.Service.GetValidationConfiguration,
-      IdFormat: W3C
+      Name: ApplicationMetadata.Service.GetValidationConfiguration,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: Authorization.Service.AuthorizeAction,
+      Name: Authorization.Service.AuthorizeAction,
+      IdFormat: W3C,
       Tags: [
         {
           authorization.action: write
@@ -88,10 +107,12 @@
           task.id: Task_1
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     },
     {
-      ActivityName: PUT {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next,
+      Name: PUT {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next,
+      Kind: Server,
+      IdFormat: W3C,
       Tags: [
         {
           http.request.method: PUT
@@ -127,39 +148,60 @@
           url.scheme: http
         },
         {
+          user.authentication.inAltinnPortal: true
+        },
+        {
           user.authentication.level: 2
         },
         {
-          user.authentication.method: Mock
+          user.authentication.method: BankID
+        },
+        {
+          user.authentication.token.isExchanged: false
+        },
+        {
+          user.authentication.token.issuer: Altinn
+        },
+        {
+          user.authentication.type: User
         },
         {
           user.id: 1337
         },
         {
-          user.name: User1337
-        },
-        {
           user.party.id: 500600
         }
       ],
+      HasParent: false
+    },
+    {
+      Name: ProcessClient.GetProcessDefinition,
       IdFormat: W3C,
-      Kind: Server
+      HasParent: true
     },
     {
-      ActivityName: ProcessClient.GetProcessDefinition,
-      IdFormat: W3C
+      Name: ProcessReader.GetAltinnTaskExtension,
+      IdFormat: W3C,
+      HasParent: true
     },
     {
-      ActivityName: SerializationService.DeserializeXml,
+      Name: ProcessReader.GetFlowElement,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeXml,
+      IdFormat: W3C,
       Tags: [
         {
           Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -171,10 +213,11 @@
           validator.type: RequiredLayoutValidator
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -186,10 +229,11 @@
           validator.type: ExpressionValidator
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -201,10 +245,11 @@
           validator.type: TaskValidatorWrapper
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -216,10 +261,11 @@
           validator.type: DataElementValidatorWrapper
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -231,10 +277,11 @@
           validator.type: FormDataValidatorWrapper
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 0
@@ -246,10 +293,11 @@
           validator.type: FormDataValidatorWrapper
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     },
     {
-      ActivityName: Validation.RunValidator,
+      Name: Validation.RunValidator,
+      IdFormat: W3C,
       Tags: [
         {
           validation.issue_count: 1
@@ -261,10 +309,11 @@
           validator.type: FormDataValidatorWrapper
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     },
     {
-      ActivityName: Validation.ValidateInstanceAtTask,
+      Name: Validation.ValidateInstanceAtTask,
+      IdFormat: W3C,
       Tags: [
         {
           task.id: Task_1
@@ -273,8 +322,46 @@
           validation.total_issue_count: 1
         }
       ],
-      IdFormat: W3C
+      HasParent: true
     }
   ],
-  Metrics: []
+  Metrics: [
+    {
+      Name: http.server.request.duration,
+      MeterName: Microsoft.AspNetCore.Hosting,
+      Measurements: [
+        {
+          Tags: [
+            {
+              http.request.method: PUT
+            },
+            {
+              http.response.status_code: 409
+            },
+            {
+              http.route: {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next
+            },
+            {
+              network.protocol.version: 1.1
+            },
+            {
+              TestId: Guid_2
+            },
+            {
+              url.scheme: http
+            },
+            {
+              user.authentication.token.isExchanged: false
+            },
+            {
+              user.authentication.token.issuer: Altinn
+            },
+            {
+              user.authentication.type: User
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

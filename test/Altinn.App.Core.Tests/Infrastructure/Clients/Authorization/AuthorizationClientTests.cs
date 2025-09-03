@@ -1,9 +1,9 @@
-#nullable disable
 using System.Security.Claims;
 using System.Text.Json;
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
+using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Common.PEP.Interfaces;
 using Altinn.Platform.Storage.Interface.Models;
@@ -116,8 +116,8 @@ public class AuthorizationClientTests
                 new(
                     new List<Claim>
                     {
-                        new("urn:altinn:partyid", partyId, "#integer"),
-                        new("urn:altinn:authlevel", "3", "#integer"),
+                        new(AltinnUrns.PartyId, partyId, "#integer"),
+                        new(AltinnUrns.AuthenticationLevel, "3", "#integer"),
                     }
                 ),
             }
@@ -127,8 +127,17 @@ public class AuthorizationClientTests
     private static XacmlJsonResponse GetXacmlJsonRespons(string filename)
     {
         var xacmlJesonRespons = File.ReadAllText(
-            Path.Join("Infrastructure", "Clients", "Authorization", "TestData", $"{filename}.json")
+            Path.Join(
+                PathUtils.GetCoreTestsPath(),
+                "Infrastructure",
+                "Clients",
+                "Authorization",
+                "TestData",
+                $"{filename}.json"
+            )
         );
-        return JsonSerializer.Deserialize<XacmlJsonResponse>(xacmlJesonRespons);
+        var response = JsonSerializer.Deserialize<XacmlJsonResponse>(xacmlJesonRespons);
+        Assert.NotNull(response);
+        return response;
     }
 }

@@ -1,5 +1,6 @@
+using System.Globalization;
 using System.Text.Json;
-using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
@@ -74,12 +75,18 @@ public class UniqueSignatureAuthorizer : IUserActionAuthorizer
             var signatureDataElements = instance.Data.Where(d => dataTypes.Contains(d.DataType)).ToList();
             foreach (var signatureDataElement in signatureDataElements)
             {
-                var userId = await GetUserIdFromDataElementContainingSignDocument(
+                var signee = await GetSigneeFromSignDocument(
                     appMetadata.AppIdentifier,
                     context.InstanceIdentifier,
                     signatureDataElement
                 );
-                if (userId == context.User.GetUserOrOrgId())
+                bool unauthorized = context.Authentication switch
+                {
+                    Authenticated.User a => a.UserId.ToString(CultureInfo.InvariantCulture) == signee?.UserId,
+                    Authenticated.SystemUser a => a.SystemUserId[0] == signee?.SystemUserId,
+                    _ => false,
+                };
+                if (unauthorized)
                 {
                     return false;
                 }
@@ -89,7 +96,7 @@ public class UniqueSignatureAuthorizer : IUserActionAuthorizer
         return true;
     }
 
-    private async Task<string> GetUserIdFromDataElementContainingSignDocument(
+    private async Task<Signee?> GetSigneeFromSignDocument(
         AppIdentifier appIdentifier,
         InstanceIdentifier instanceIdentifier,
         DataElement dataElement
@@ -105,11 +112,11 @@ public class UniqueSignatureAuthorizer : IUserActionAuthorizer
         try
         {
             var signDocument = await JsonSerializer.DeserializeAsync<SignDocument>(data, _jsonSerializerOptions);
-            return signDocument?.SigneeInfo.UserId ?? "";
+            return signDocument?.SigneeInfo;
         }
         catch (JsonException)
         {
-            return "";
+            return null;
         }
     }
 }

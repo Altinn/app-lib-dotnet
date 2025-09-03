@@ -3,14 +3,16 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.task_action.config.models;
-using Altinn.App.Api.Tests.Utils;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
+using Altinn.App.Core.Models.Validation;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,8 +42,8 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpClient client = GetRootedClient(org, app);
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(1000, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(1000, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent(
             "{\"action\":\"lookup_unauthorized\"}",
             Encoding.UTF8,
@@ -55,6 +57,10 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         TestData.DeleteInstanceAndData(org, app, 1337, guid);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Verify that [ResponseCache] attribute is being set by filter
+        Assert.NotNull(response.Headers.CacheControl);
+        Assert.Equal("no-store, no-cache", response.Headers.CacheControl.ToString());
     }
 
     [Fact]
@@ -88,8 +94,6 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpClient client = GetRootedClient(org, app);
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(null, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using var content = new StringContent(
             "{\"action\":\"lookup_unauthorized\"}",
             Encoding.UTF8,
@@ -113,8 +117,8 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpClient client = GetRootedClient(org, app);
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(1000, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(1000, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":null}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -134,8 +138,8 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpClient client = GetRootedClient(org, app);
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef43");
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(1000, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -155,8 +159,8 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpClient client = GetRootedClient(org, app);
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef42");
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(1000, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(1000, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -180,8 +184,8 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpClient client = GetRootedClient(org, app);
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(1000, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(1000, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var requestContent = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -232,8 +236,8 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpClient client = GetRootedClient(org, app);
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(400, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(400, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -257,8 +261,8 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpClient client = GetRootedClient(org, app);
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(401, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(userId: 401, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -282,8 +286,8 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpClient client = GetRootedClient(org, app);
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(409, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(userId: 409, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -307,8 +311,8 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpClient client = GetRootedClient(org, app);
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(500, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(userId: 500, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -332,8 +336,8 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpClient client = GetRootedClient(org, app);
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
-        string token = PrincipalUtil.GetToken(1001, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        string token = TestAuthentication.GetUserToken(userId: 1001, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"notfound\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -357,9 +361,9 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         {
             services.AddTransient<IUserAction, FillAction>();
         };
-        var client = GetRootedClient(org, app, 1337, null);
-        string token = PrincipalUtil.GetToken(1001, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var client = GetRootedUserClient(org, app, 1337);
+        string token = TestAuthentication.GetUserToken(userId: 1001, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
         // Run buttonId "add"
         using var content = JsonContent.Create(new { action = "fill", buttonId = "add" });
@@ -481,9 +485,9 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         {
             services.AddTransient<IUserAction, FillAction>();
         };
-        var client = GetRootedClient(org, app, 1337, null);
-        string token = PrincipalUtil.GetToken(1001, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var client = GetRootedUserClient(org, app, 1337);
+        string token = TestAuthentication.GetUserToken(userId: 1001, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
         // run buttonId "getClientActions"
         using var getClientActionsContent = JsonContent.Create(new { action = "fill", buttonId = "getClientActions" });
@@ -513,9 +517,9 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         {
             services.AddTransient<IUserAction, FillAction>();
         };
-        var client = GetRootedClient(org, app, 1337, null);
-        string token = PrincipalUtil.GetToken(1001, null, 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var client = GetRootedUserClient(org, app, 1337);
+        string token = TestAuthentication.GetUserToken(userId: 1001, authenticationLevel: 3);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
         // Run buttonId "fail"
         using var failContent = JsonContent.Create(new { action = "fill", buttonId = "fail" });
@@ -547,6 +551,104 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         mutator?.Invoke(expected);
         actual.Should().BeEquivalentTo(expected);
     }
+
+    [Theory]
+    [MemberData(nameof(PartitionValidationIssuesByDataElement))]
+    public void TestPartitionCodeForCompatibility(List<ValidationSourcePair> validationIssues, string expectedJson)
+    {
+        var partitionedIssues = ActionsController.PartitionValidationIssuesByDataElement(validationIssues);
+        var json = JsonSerializer.Serialize(partitionedIssues);
+        Assert.Equal(expectedJson, json);
+    }
+
+    public static TheoryData<List<ValidationSourcePair>, string> PartitionValidationIssuesByDataElement =>
+        new()
+        {
+            { [new ValidationSourcePair("source", new List<ValidationIssueWithSource>())], """{"":{"source":[]}}""" },
+            {
+                [new ValidationSourcePair("source", []), new ValidationSourcePair("source2", [])],
+                """{"":{"source":[],"source2":[]}}"""
+            },
+            {
+                [
+                    new ValidationSourcePair(
+                        "source",
+                        [
+                            new()
+                            {
+                                DataElementId = "123445",
+                                Severity = ValidationIssueSeverity.Unspecified,
+                                Code = null,
+                                Description = null,
+                                Source = "null",
+                            },
+                        ]
+                    ),
+                ],
+                """{"123445":{"source":[{"severity":0,"dataElementId":"123445","field":null,"code":null,"description":null,"source":"null"}]}}"""
+            },
+            {
+                [
+                    new ValidationSourcePair(
+                        "source",
+                        [
+                            new()
+                            {
+                                DataElementId = "123445",
+                                Severity = ValidationIssueSeverity.Unspecified,
+                                Code = null,
+                                Description = null,
+                                Source = "null",
+                            },
+                        ]
+                    ),
+                    new ValidationSourcePair(
+                        "source2",
+                        [
+                            new()
+                            {
+                                DataElementId = "123445",
+                                Severity = ValidationIssueSeverity.Unspecified,
+                                Code = null,
+                                Description = null,
+                                Source = "null",
+                            },
+                        ]
+                    ),
+                ],
+                """{"123445":{"source":[{"severity":0,"dataElementId":"123445","field":null,"code":null,"description":null,"source":"null"}],"source2":[{"severity":0,"dataElementId":"123445","field":null,"code":null,"description":null,"source":"null"}]}}"""
+            },
+            {
+                [
+                    new ValidationSourcePair(
+                        "source",
+                        [
+                            new()
+                            {
+                                Severity = ValidationIssueSeverity.Unspecified,
+                                Code = null,
+                                Description = null,
+                                Source = "null",
+                            },
+                        ]
+                    ),
+                    new ValidationSourcePair(
+                        "source2",
+                        [
+                            new()
+                            {
+                                DataElementId = "123445",
+                                Severity = ValidationIssueSeverity.Unspecified,
+                                Code = null,
+                                Description = null,
+                                Source = "null",
+                            },
+                        ]
+                    ),
+                ],
+                """{"":{"source":[{"severity":0,"dataElementId":null,"field":null,"code":null,"description":null,"source":"null"}]},"123445":{"source2":[{"severity":0,"dataElementId":"123445","field":null,"code":null,"description":null,"source":"null"}]}}"""
+            },
+        };
 }
 
 public class FillAction : IUserAction

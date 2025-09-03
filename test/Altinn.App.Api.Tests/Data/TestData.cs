@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Models;
@@ -16,16 +17,21 @@ public static class TestData
 
     public static string GetTestDataRootDirectory()
     {
-        var assemblyPath = new Uri(typeof(TestData).Assembly.Location).LocalPath;
-        var assemblyFolder = Path.GetDirectoryName(assemblyPath);
-
-        return Path.Combine(assemblyFolder!, @"../../../Data/");
+        var file = GetCallerFilePath();
+        return (
+                Path.GetDirectoryName(file)
+                ?? throw new DirectoryNotFoundException(
+                    $"Could not find directory for file {file}. Please check the test data root directory."
+                )
+            ) + '/';
     }
+
+    private static string GetCallerFilePath([CallerFilePath] string file = "") => file;
 
     public static string GetApplicationDirectory(string org, string app)
     {
         string testDataDirectory = GetTestDataRootDirectory();
-        return Path.Combine(testDataDirectory, "apps", org, app);
+        return Path.Join(testDataDirectory, "apps", org, app);
     }
 
     public static string GetAppSpecificTestdataDirectory(string org, string app)
@@ -43,13 +49,13 @@ public static class TestData
     public static string GetApplicationMetadataPath(string org, string app)
     {
         string applicationMetadataPath = GetApplicationDirectory(org, app);
-        return Path.Combine(applicationMetadataPath, "config", "applicationmetadata.json");
+        return Path.Join(applicationMetadataPath, "config", "applicationmetadata.json");
     }
 
     public static string GetInstancesDirectory()
     {
         string? testDataDirectory = GetTestDataRootDirectory();
-        return Path.Combine(testDataDirectory!, @"Instances");
+        return Path.Join(testDataDirectory!, @"Instances");
     }
 
     public static string GetDataDirectory(string org, string app, int instanceOwnerId, Guid instanceGuid)
@@ -92,7 +98,7 @@ public static class TestData
     )
     {
         string dataDirectory = GetDataDirectory(org, app, instanceOwnerId, instanceGuid);
-        return Path.Combine(dataDirectory, $"{dataGuid}.json");
+        return Path.Join(dataDirectory, $"{dataGuid}.json");
     }
 
     public static string GetDataElementBlobContnet(
@@ -110,13 +116,13 @@ public static class TestData
     public static string GetDataBlobPath(string org, string app, int instanceOwnerId, Guid instanceGuid, Guid dataGuid)
     {
         string dataDirectory = GetDataDirectory(org, app, instanceOwnerId, instanceGuid);
-        return Path.Combine(dataDirectory, "blob", dataGuid.ToString());
+        return Path.Join(dataDirectory, "blob", dataGuid.ToString());
     }
 
     public static string GetTestDataRolesFolder(int userId, int resourcePartyId)
     {
         string testDataDirectory = GetTestDataRootDirectory();
-        return Path.Combine(
+        return Path.Join(
             testDataDirectory,
             "authorization",
             "roles",
@@ -129,26 +135,25 @@ public static class TestData
     public static string GetAltinnAppsPolicyPath(string org, string app)
     {
         string testDataDirectory = GetTestDataRootDirectory();
-        return Path.Combine(testDataDirectory, "apps", org, app, "config", "authorization")
-            + Path.DirectorySeparatorChar;
+        return Path.Join(testDataDirectory, "apps", org, app, "config", "authorization") + Path.DirectorySeparatorChar;
     }
 
     public static string GetAltinnProfilePath()
     {
         string testDataDirectory = GetTestDataRootDirectory();
-        return Path.Combine(testDataDirectory, "Register", "Party");
+        return Path.Join(testDataDirectory, "Register", "Party");
     }
 
     public static string GetRegisterProfilePath()
     {
         string testDataDirectory = GetTestDataRootDirectory();
-        return Path.Combine(testDataDirectory, "Profile", "User");
+        return Path.Join(testDataDirectory, "Profile", "User");
     }
 
     public static string GetInstancePath(string org, string app, int instanceOwnerId, Guid instanceGuid)
     {
         string instancesDirectory = GetInstancesDirectory();
-        return Path.Combine(instancesDirectory, org, app, instanceOwnerId.ToString(), instanceGuid + @".json");
+        return Path.Join(instancesDirectory, org, app, instanceOwnerId.ToString(), instanceGuid + @".json");
     }
 
     public static void PrepareInstance(string org, string app, int instanceOwnerId, Guid instanceGuid)

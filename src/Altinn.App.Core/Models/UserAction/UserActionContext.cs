@@ -1,4 +1,6 @@
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Models.UserAction;
@@ -16,20 +18,29 @@ public class UserActionContext
     /// <param name="buttonId">The id of the button that triggered the action (optional)</param>
     /// <param name="actionMetadata"></param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
+    /// <param name="authentication">Information about the authenticated party</param>
+    /// <param name="onBehalfOf">The organisation number of the party the user is acting on behalf of</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     public UserActionContext(
         IInstanceDataMutator dataMutator,
         int? userId,
         string? buttonId = null,
         Dictionary<string, string>? actionMetadata = null,
-        string? language = null
+        string? language = null,
+        Authenticated? authentication = null,
+        string? onBehalfOf = null,
+        CancellationToken? cancellationToken = null
     )
     {
         Instance = dataMutator.Instance;
         DataMutator = dataMutator;
-        UserId = userId;
+        _userId = userId;
+        Authentication = authentication;
+        OnBehalfOf = onBehalfOf;
         ButtonId = buttonId;
         ActionMetadata = actionMetadata ?? [];
         Language = language;
+        CancellationToken = cancellationToken ?? default;
     }
 
     /// <summary>
@@ -40,19 +51,22 @@ public class UserActionContext
     /// <param name="buttonId">The id of the button that triggered the action (optional)</param>
     /// <param name="actionMetadata"></param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
+    /// <param name="authentication">Information about the authenticated party</param>
     [Obsolete("Use the constructor with IInstanceDataAccessor instead")]
     public UserActionContext(
         Instance instance,
         int? userId,
         string? buttonId = null,
         Dictionary<string, string>? actionMetadata = null,
-        string? language = null
+        string? language = null,
+        Authenticated? authentication = null
     )
     {
         Instance = instance;
         // ! TODO: Deprecated constructor, remove in v9
         DataMutator = null!;
-        UserId = userId;
+        _userId = userId;
+        Authentication = authentication;
         ButtonId = buttonId;
         ActionMetadata = actionMetadata ?? [];
         Language = language;
@@ -68,10 +82,28 @@ public class UserActionContext
     /// </summary>
     public IInstanceDataMutator DataMutator { get; }
 
+    private readonly int? _userId;
+
     /// <summary>
     /// The user performing the action
     /// </summary>
-    public int? UserId { get; }
+    public int? UserId =>
+        _userId
+        ?? Authentication switch
+        {
+            Authenticated.User user => user.UserId,
+            _ => null,
+        };
+
+    /// <summary>
+    /// The organisation number of the party the user is acting on behalf of
+    /// </summary>
+    public string? OnBehalfOf { get; }
+
+    /// <summary>
+    /// Information about the authenticated party
+    /// </summary>
+    public Authenticated? Authentication { get; }
 
     /// <summary>
     /// The id of the button that triggered the action (optional)
@@ -87,4 +119,11 @@ public class UserActionContext
     /// The language that will be used for the action
     /// </summary>
     public string? Language { get; }
+
+    /// <summary>
+    /// The cancellation token associated with the action
+    /// </summary>
+    public CancellationToken CancellationToken { get; }
+
+    internal IAltinnCdnClient? AltinnCdnClient { get; set; }
 }

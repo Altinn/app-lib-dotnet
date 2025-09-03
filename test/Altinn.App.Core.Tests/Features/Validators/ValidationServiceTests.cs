@@ -1,7 +1,8 @@
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
@@ -31,21 +32,30 @@ public class ValidationServiceTests : IAsyncLifetime
     };
 
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
+    private readonly Mock<ITranslationService> _translationServiceMock = new(MockBehavior.Loose);
+    private readonly Mock<IDataElementAccessChecker> _dataElementAccessCheckerMock = new(MockBehavior.Strict);
     private readonly InstanceDataAccessorFake _instanceDataAccessor;
     private readonly IServiceCollection _services = new ServiceCollection();
     private readonly Lazy<ServiceProvider> _serviceProvider;
 
     public ValidationServiceTests(ITestOutputHelper output)
     {
+        _dataElementAccessCheckerMock
+            .Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>()))
+            .ReturnsAsync(true);
+
         _instanceDataAccessor = new InstanceDataAccessorFake(_instance, _appMetadata, TaskId);
-        _services.AddScoped<IValidationService, ValidationService>();
+        _services.AddTransient<IValidationService, ValidationService>();
         _services.AddTelemetrySink();
         _services.AddFakeLoggingWithXunit(output);
-        _services.AddScoped<IValidatorFactory, ValidatorFactory>();
+        _services.AddTransient<IValidatorFactory, ValidatorFactory>();
         _services.AddSingleton(_appMetadataMock.Object);
+        _services.AddSingleton(_translationServiceMock.Object);
+        _services.AddSingleton(_dataElementAccessCheckerMock.Object);
+        _services.AddAppImplementationFactory();
 
         _appMetadataMock.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(_appMetadata);
-        _serviceProvider = new(() => _services.BuildServiceProvider());
+        _serviceProvider = new(() => _services.BuildStrictServiceProvider());
     }
 
     public Task InitializeAsync()
@@ -313,6 +323,7 @@ public class ValidationServiceTests : IAsyncLifetime
             .SetupGet(v => v.ValidationSource)
             .Returns("FormDataValidatorNoAppLogic")
             .Verifiable(Times.AtLeastOnce);
+        formDataValidatorNoAppLogicMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
         _services.AddSingleton(formDataValidatorNoAppLogicMock.Object);
         _appMetadata.DataTypes.Add(new DataType { Id = "dataTypeNoAppLogic", TaskId = TaskId });
 
@@ -328,6 +339,7 @@ public class ValidationServiceTests : IAsyncLifetime
             .SetupGet(v => v.ValidationSource)
             .Returns("FormDataValidatorWrongTask")
             .Verifiable(Times.AtLeastOnce);
+        formDataValidatorWrongTaskMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
         _services.AddSingleton(formDataValidatorWrongTaskMock.Object);
         _appMetadata.DataTypes.Add(
             new DataType
@@ -357,6 +369,7 @@ public class ValidationServiceTests : IAsyncLifetime
                     },
                 }
             );
+        formDataValidatorMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
         _services.AddSingleton(formDataValidatorMock.Object);
         _appMetadata.DataTypes.Add(
             new DataType

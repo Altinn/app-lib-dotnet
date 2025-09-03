@@ -35,6 +35,15 @@ public class GeneralSettings
     public string HostName { get; set; } = "local.altinn.cloud";
 
     /// <summary>
+    /// Gets or sets a value indicating whether to disable localtest validation on startup.
+    /// </summary>
+    public bool DisableLocaltestValidation { get; set; }
+
+    internal bool DisableAppConfigurationCache { get; set; }
+
+    internal bool IsTest { get; set; }
+
+    /// <summary>
     /// The externally accesible base url for the app with trailing /
     /// </summary>
     /// <remarks>
@@ -73,5 +82,19 @@ public class GeneralSettings
             return Environment.GetEnvironmentVariable("GeneralSettings__AltinnPartyCookieName")
                 ?? AltinnPartyCookieName;
         }
+    }
+}
+
+internal static class GeneralSettingsExtensions
+{
+    /// <summary>
+    /// Convenience method to get <see cref="GeneralSettings.ExternalAppBaseUrl" /> with segments replaced and trailing # and / as this is how the url is used in the app.
+    /// </summary>
+    /// <param name="settings">The general settings</param>
+    /// <param name="app">The app identifier</param>
+    /// <returns>The formatted url</returns>
+    public static string FormattedExternalAppBaseUrlWithTrailingPound(this GeneralSettings settings, AppIdentifier app)
+    {
+        return settings.FormattedExternalAppBaseUrl(app).TrimEnd('/') + "/#";
     }
 }

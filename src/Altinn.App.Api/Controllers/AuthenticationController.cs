@@ -1,4 +1,3 @@
-#nullable disable
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Internal.Auth;
@@ -29,6 +28,8 @@ public class AuthenticationController : ControllerBase
     /// Refreshes the AltinnStudioRuntime JwtToken when not in AltinnStudio mode.
     /// </summary>
     /// <returns>Ok result with updated token.</returns>
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [Authorize]
     [HttpGet("{org}/{app}/api/[controller]/keepAlive")]
     public async Task<IActionResult> KeepAlive()
@@ -57,6 +58,7 @@ public class AuthenticationController : ControllerBase
     /// Invalidates the AltinnStudioRuntime cookie.
     /// </summary>
     /// <returns>Ok result with invalidated cookie.</returns>
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize]
     [HttpPut("{org}/{app}/api/[controller]/invalidatecookie")]
     public IActionResult InvalidateCookie()

@@ -3,7 +3,9 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Features.Validation.Wrappers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Validation;
@@ -24,53 +26,42 @@ public interface IValidatorFactory
 /// </summary>
 public class ValidatorFactory : IValidatorFactory
 {
-    private readonly IEnumerable<ITaskValidator> _taskValidators;
     private readonly IOptions<GeneralSettings> _generalSettings;
-    private readonly IEnumerable<IDataElementValidator> _dataElementValidators;
-    private readonly IEnumerable<IFormDataValidator> _formDataValidators;
-    private readonly IEnumerable<IValidator> _validators;
-#pragma warning disable CS0618 // Type or member is obsolete
-    private readonly IEnumerable<IInstanceValidator> _instanceValidators;
-#pragma warning restore CS0618 // Type or member is obsolete
     private readonly IAppMetadata _appMetadata;
+    private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ValidatorFactory"/> class.
     /// </summary>
     public ValidatorFactory(
-        IEnumerable<ITaskValidator> taskValidators,
         IOptions<GeneralSettings> generalSettings,
-        IEnumerable<IDataElementValidator> dataElementValidators,
-        IEnumerable<IFormDataValidator> formDataValidators,
-        IEnumerable<IValidator> validators,
-#pragma warning disable CS0618 // Type or member is obsolete
-        IEnumerable<IInstanceValidator> instanceValidators,
-#pragma warning restore CS0618 // Type or member is obsolete
-        IAppMetadata appMetadata
+        IAppMetadata appMetadata,
+        IServiceProvider serviceProvider
     )
     {
-        _taskValidators = taskValidators;
         _generalSettings = generalSettings;
-        _dataElementValidators = dataElementValidators;
-        _formDataValidators = formDataValidators;
-        _validators = validators;
-        _instanceValidators = instanceValidators;
         _appMetadata = appMetadata;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
 
     private IEnumerable<IValidator> GetIValidators(string taskId)
     {
-        return _validators.Where(v => v.ShouldRunForTask(taskId));
+        var validators = _appImplementationFactory.GetAll<IValidator>();
+        return validators.Where(v => v.ShouldRunForTask(taskId));
     }
 
     private IEnumerable<ITaskValidator> GetTaskValidators(string taskId)
     {
-        return _taskValidators.Where(tv => tv.TaskId == "*" || tv.TaskId == taskId);
+        var validators = _appImplementationFactory.GetAll<ITaskValidator>();
+        return validators.Where(tv => tv.TaskId == "*" || tv.TaskId == taskId);
     }
 
     private IEnumerable<IDataElementValidator> GetDataElementValidators(string taskId, List<DataType> dataTypes)
     {
-        foreach (var dataElementValidator in _dataElementValidators)
+        var validators = _appImplementationFactory.GetAll<IDataElementValidator>();
+        foreach (var dataElementValidator in validators)
         {
             if (dataElementValidator.DataType == "*")
             {
@@ -95,7 +86,8 @@ public class ValidatorFactory : IValidatorFactory
 
     private IEnumerable<IFormDataValidator> GetFormDataValidators(string taskId, List<DataType> dataTypes)
     {
-        foreach (var formDataValidator in _formDataValidators)
+        var validators = _appImplementationFactory.GetAll<IFormDataValidator>();
+        foreach (var formDataValidator in validators)
         {
             if (formDataValidator.DataType == "*")
             {
@@ -132,14 +124,19 @@ public class ValidatorFactory : IValidatorFactory
         var dataTypes = _appMetadata.GetApplicationMetadata().Result.DataTypes;
 
         validators.AddRange(
-            GetDataElementValidators(taskId, dataTypes).Select(dev => new DataElementValidatorWrapper(dev, taskId))
+            GetDataElementValidators(taskId, dataTypes)
+                .Select(dev => new DataElementValidatorWrapper(dev, taskId, _dataElementAccessChecker))
         );
         validators.AddRange(
-            GetFormDataValidators(taskId, dataTypes).Select(fdv => new FormDataValidatorWrapper(fdv, taskId))
+            GetFormDataValidators(taskId, dataTypes)
+                .Select(fdv => new FormDataValidatorWrapper(fdv, taskId, _dataElementAccessChecker))
         );
 
         // add legacy instance validators wrapped in IValidator wrappers
-        foreach (var instanceValidator in _instanceValidators)
+#pragma warning disable CS0618 // Type or member is obsolete
+        var instanceValidators = _appImplementationFactory.GetAll<IInstanceValidator>();
+#pragma warning restore CS0618 // Type or member is obsolete
+        foreach (var instanceValidator in instanceValidators)
         {
             validators.Add(new LegacyIInstanceValidatorTaskValidator(_generalSettings, instanceValidator));
             validators.Add(new LegacyIInstanceValidatorFormDataValidator(_generalSettings, instanceValidator));

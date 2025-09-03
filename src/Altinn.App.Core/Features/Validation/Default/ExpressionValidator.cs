@@ -1,12 +1,14 @@
 using System.Text.Json;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Validation.Default;
@@ -26,6 +28,7 @@ public class ExpressionValidator : IValidator
     private readonly IAppResources _appResourceService;
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IAppMetadata _appMetadata;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     /// <summary>
     /// Constructor for the expression validator
@@ -34,13 +37,15 @@ public class ExpressionValidator : IValidator
         ILogger<ExpressionValidator> logger,
         IAppResources appResourceService,
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
-        IAppMetadata appMetadata
+        IAppMetadata appMetadata,
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
         _appResourceService = appResourceService;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _appMetadata = appMetadata;
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
 
     /// <summary>
@@ -84,6 +89,11 @@ public class ExpressionValidator : IValidator
         var validationIssues = new List<ValidationIssue>();
         foreach (var (dataType, dataElement) in dataAccessor.GetDataElementsForTask(taskId))
         {
+            if (await _dataElementAccessChecker.CanRead(dataAccessor.Instance, dataType) is false)
+            {
+                continue;
+            }
+
             var validationConfig = _appResourceService.GetValidationConfiguration(dataType.Id);
             if (!string.IsNullOrEmpty(validationConfig))
             {
@@ -95,6 +105,7 @@ public class ExpressionValidator : IValidator
         return validationIssues;
     }
 
+    // Method signature kept to be compatible with existing tests
     internal async Task<List<ValidationIssue>> ValidateFormData(
         DataElement dataElement,
         IInstanceDataAccessor dataAccessor,
@@ -103,8 +114,6 @@ public class ExpressionValidator : IValidator
         string? language
     )
     {
-        using var validationConfig = JsonDocument.Parse(rawValidationConfig);
-
         var evaluatorState = await _layoutEvaluatorStateInitializer.Init(
             dataAccessor,
             taskId,
@@ -114,17 +123,14 @@ public class ExpressionValidator : IValidator
         var hiddenFields = await LayoutEvaluator.GetHiddenFieldsForRemoval(evaluatorState);
 
         var validationIssues = new List<ValidationIssue>();
-        var expressionValidations = ParseExpressionValidationConfig(validationConfig.RootElement, _logger);
         DataElementIdentifier dataElementIdentifier = dataElement;
-        foreach (var validationObject in expressionValidations)
+        var expressionValidations = ParseExpressionValidationConfig(rawValidationConfig, _logger);
+
+        foreach (var (baseField, validations) in expressionValidations)
         {
-            var baseField = new DataReference()
-            {
-                Field = validationObject.Key,
-                DataElementIdentifier = dataElementIdentifier,
-            };
-            var resolvedFields = await evaluatorState.GetResolvedKeys(baseField);
-            var validations = validationObject.Value;
+            var resolvedFields = await evaluatorState.GetResolvedKeys(
+                new DataReference() { Field = baseField, DataElementIdentifier = dataElementIdentifier }
+            );
             foreach (var resolvedField in resolvedFields)
             {
                 if (
@@ -139,10 +145,9 @@ public class ExpressionValidator : IValidator
                 var context = new ComponentContext(
                     component: null,
                     rowIndices: DataModel.GetRowIndices(resolvedField.Field),
-                    rowLength: null,
                     dataElementIdentifier: resolvedField.DataElementIdentifier
                 );
-                var positionalArguments = new object[] { resolvedField };
+                var positionalArguments = new object[] { resolvedField.Field };
                 foreach (var validation in validations)
                 {
                     await RunValidation(
@@ -171,27 +176,29 @@ public class ExpressionValidator : IValidator
     {
         try
         {
-            if (validation.Condition == null)
-            {
-                return;
-            }
-
             var validationResult = await ExpressionEvaluator.EvaluateExpression(
                 evaluatorState,
-                validation.Condition.Value,
+                validation.Condition,
                 context,
                 positionalArguments
             );
             switch (validationResult)
             {
                 case true:
+                    var message = await ExpressionEvaluator.EvaluateExpression(
+                        evaluatorState,
+                        validation.Message,
+                        context,
+                        positionalArguments
+                    );
+
                     var validationIssue = new ValidationIssue
                     {
                         Field = resolvedField.Field,
-                        DataElementId = resolvedField.DataElementIdentifier.Id.ToString(),
+                        DataElementId = resolvedField.DataElementIdentifier.Id,
                         Severity = validation.Severity ?? ValidationIssueSeverity.Error,
-                        CustomTextKey = validation.Message,
-                        Code = validation.Message,
+                        CustomTextKey = message as string ?? "",
+                        Code = message as string ?? "",
                     };
                     validationIssues.Add(validationIssue);
 
@@ -212,18 +219,17 @@ public class ExpressionValidator : IValidator
     }
 
     private static RawExpressionValidation? ResolveValidationDefinition(
-        string name,
-        JsonElement definition,
+        JsonProperty definitionProperty,
         Dictionary<string, RawExpressionValidation> resolvedDefinitions,
         ILogger logger
     )
     {
         var resolvedDefinition = new RawExpressionValidation();
 
-        var rawDefinition = definition.Deserialize<RawExpressionValidation>(_jsonSerializerOptions);
+        var rawDefinition = definitionProperty.Value.Deserialize<RawExpressionValidation>(_jsonSerializerOptions);
         if (rawDefinition == null)
         {
-            logger.LogError("Validation definition {name} could not be parsed", name);
+            logger.LogError("Validation definition {name} could not be parsed", definitionProperty.Name);
             return null;
         }
         if (rawDefinition.Ref != null)
@@ -234,7 +240,7 @@ public class ExpressionValidator : IValidator
                 logger.LogError(
                     "Could not resolve reference {rawDefinitionRef} for validation {name}",
                     rawDefinition.Ref,
-                    name
+                    definitionProperty.Name
                 );
                 return null;
             }
@@ -260,13 +266,13 @@ public class ExpressionValidator : IValidator
 
         if (resolvedDefinition.Message == null)
         {
-            logger.LogError("Validation {name} is missing message", name);
+            logger.LogError("Validation {name} is missing message", definitionProperty.Name);
             return null;
         }
 
         if (resolvedDefinition.Condition == null)
         {
-            logger.LogError("Validation {name} is missing condition", name);
+            logger.LogError("Validation {name} is missing condition", definitionProperty.Name);
             return null;
         }
 
@@ -360,8 +366,8 @@ public class ExpressionValidator : IValidator
 
         var expressionValidation = new ExpressionValidation
         {
-            Message = rawExpressionValidation.Message,
-            Condition = rawExpressionValidation.Condition,
+            Message = rawExpressionValidation.Message.Value,
+            Condition = rawExpressionValidation.Condition.Value,
             Severity = rawExpressionValidation.Severity ?? ValidationIssueSeverity.Error,
         };
 
@@ -369,37 +375,36 @@ public class ExpressionValidator : IValidator
     }
 
     private static Dictionary<string, List<ExpressionValidation>> ParseExpressionValidationConfig(
-        JsonElement expressionValidationConfig,
+        string validationConfig,
         ILogger logger
     )
     {
+        using var expressionValidationConfigDocument = JsonDocument.Parse(validationConfig);
         var expressionValidationDefinitions = new Dictionary<string, RawExpressionValidation>();
-        var hasDefinitions = expressionValidationConfig.TryGetProperty(
+        var hasDefinitions = expressionValidationConfigDocument.RootElement.TryGetProperty(
             "definitions",
             out JsonElement definitionsObject
         );
         if (hasDefinitions)
         {
-            foreach (var definitionObject in definitionsObject.EnumerateObject())
+            foreach (var definitionProperty in definitionsObject.EnumerateObject())
             {
-                var name = definitionObject.Name;
-                var definition = definitionObject.Value;
                 var resolvedDefinition = ResolveValidationDefinition(
-                    name,
-                    definition,
+                    definitionProperty,
                     expressionValidationDefinitions,
                     logger
                 );
                 if (resolvedDefinition == null)
                 {
-                    logger.LogError("Validation definition {name} could not be resolved", name);
+                    logger.LogError("Validation definition {name} could not be resolved", definitionProperty.Name);
                     continue;
                 }
-                expressionValidationDefinitions[name] = resolvedDefinition;
+                expressionValidationDefinitions[definitionProperty.Name] = resolvedDefinition;
             }
         }
+
         var expressionValidations = new Dictionary<string, List<ExpressionValidation>>();
-        var hasValidations = expressionValidationConfig.TryGetProperty(
+        var hasValidations = expressionValidationConfigDocument.RootElement.TryGetProperty(
             "validations",
             out JsonElement validationsObject
         );

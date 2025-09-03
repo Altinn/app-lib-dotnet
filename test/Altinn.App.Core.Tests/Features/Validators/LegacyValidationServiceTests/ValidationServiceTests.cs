@@ -6,6 +6,7 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
@@ -76,11 +77,13 @@ public sealed class ValidationServiceTests : IDisposable
     private readonly Mock<ILogger<ValidationService>> _loggerMock = new();
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
+    private readonly Mock<IDataElementAccessChecker> _dataElementAccessCheckerMock = new(MockBehavior.Strict);
 
     private readonly IInstanceDataAccessor _dataAccessor;
 
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
+    private readonly Mock<ITranslationService> _translationServiceMock = new(MockBehavior.Loose);
 
     // Specific validators for this task.
     private readonly Mock<ITaskValidator> _taskValidatorMock = new(MockBehavior.Strict)
@@ -129,23 +132,33 @@ public sealed class ValidationServiceTests : IDisposable
 
     public ValidationServiceTests()
     {
+        _dataElementAccessCheckerMock
+            .Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>()))
+            .ReturnsAsync(true);
+
         _modelSerialization = new ModelSerializationService(_appModelMock.Object);
         _dataAccessor = new InstanceDataUnitOfWork(
             _defaultInstance,
             _dataClientMock.Object,
             _instanceClientMock.Object,
             _defaultAppMetadata,
-            _modelSerialization
+            _modelSerialization,
+            null!,
+            null!,
+            DefaultTaskId,
+            DefaultLanguage
         );
+        _serviceCollection.AddAppImplementationFactory();
         _serviceCollection.AddSingleton(_loggerMock.Object);
         _serviceCollection.AddSingleton(_dataClientMock.Object);
         _serviceCollection.AddSingleton<IValidationService, ValidationService>();
         _serviceCollection.AddSingleton(_appModelMock.Object);
         _appModelMock.Setup(a => a.GetModelType(typeof(MyModel).FullName!)).Returns(typeof(MyModel));
         _serviceCollection.AddSingleton(_appMetadataMock.Object);
+        _serviceCollection.AddSingleton(_translationServiceMock.Object);
         _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(_defaultAppMetadata);
         _serviceCollection.AddSingleton<IValidatorFactory, ValidatorFactory>();
-
+        _serviceCollection.AddSingleton(_dataElementAccessCheckerMock.Object);
         _serviceCollection.AddSingleton(Microsoft.Extensions.Options.Options.Create(new GeneralSettings()));
 
         // NeverUsedValidators
@@ -177,6 +190,7 @@ public sealed class ValidationServiceTests : IDisposable
     {
         taskValidatorMock.Setup(v => v.TaskId).Returns(taskId);
         taskValidatorMock.Setup(v => v.ValidationSource).Returns(validationSource);
+        taskValidatorMock.Setup(v => v.NoIncrementalValidation).Returns(true);
     }
 
     private void SetupTaskValidatorReturn(
@@ -199,6 +213,7 @@ public sealed class ValidationServiceTests : IDisposable
     {
         taskValidatorMock.Setup(v => v.DataType).Returns(dataType);
         taskValidatorMock.Setup(v => v.ValidationSource).Returns(validationSource);
+        taskValidatorMock.SetupGet(v => v.NoIncrementalValidation).Returns(true);
     }
 
     private void SetupDataElementValidatorReturn(
@@ -224,6 +239,8 @@ public sealed class ValidationServiceTests : IDisposable
 
         // ValidatorName (used for source)
         formDataValidatorMock.Setup(v => v.ValidationSource).Returns(validationSource);
+
+        formDataValidatorMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
     }
 
     private void SetupFormDataValidatorReturn(
@@ -272,7 +289,15 @@ public sealed class ValidationServiceTests : IDisposable
     {
         _dataClientMock
             .Setup(d =>
-                d.GetDataBytes(DefaultOrg, DefaultApp, DefaultPartyId, _defaultInstanceId, _defaultDataElementId)
+                d.GetDataBytes(
+                    DefaultOrg,
+                    DefaultApp,
+                    DefaultPartyId,
+                    _defaultInstanceId,
+                    _defaultDataElementId,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
             )
             .ReturnsAsync(_modelSerialization.SerializeToXml(data).ToArray())
             .Verifiable(Times.AtLeastOnce);
@@ -286,7 +311,7 @@ public sealed class ValidationServiceTests : IDisposable
         _serviceCollection.RemoveAll(typeof(IFormDataValidator));
 
         // Don't call setup as they are removed from the service collection
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildStrictServiceProvider();
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
 
@@ -327,7 +352,7 @@ public sealed class ValidationServiceTests : IDisposable
             model => throw new Exception("Should not be called")
         );
 
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildStrictServiceProvider();
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Ola" };
@@ -381,7 +406,7 @@ public sealed class ValidationServiceTests : IDisposable
             }
         );
 
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildStrictServiceProvider();
 
         var validatorService = serviceProvider.GetRequiredService<IValidationService>();
         var data = new MyModel { Name = "Kari" };
@@ -406,7 +431,11 @@ public sealed class ValidationServiceTests : IDisposable
             _dataClientMock.Object,
             _instanceClientMock.Object,
             _defaultAppMetadata,
-            _modelSerialization
+            _modelSerialization,
+            null!,
+            null!,
+            DefaultTaskId,
+            DefaultLanguage
         );
         var resultData = await validatorService.ValidateIncrementalFormData(
             dataAccessor,
@@ -476,7 +505,7 @@ public sealed class ValidationServiceTests : IDisposable
         var data = new MyModel();
         SetupDataClient(data);
 
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildStrictServiceProvider();
         var validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         var dataAccessor = new InstanceDataUnitOfWork(
@@ -484,7 +513,11 @@ public sealed class ValidationServiceTests : IDisposable
             _dataClientMock.Object,
             _instanceClientMock.Object,
             _defaultAppMetadata,
-            _modelSerialization
+            _modelSerialization,
+            null!,
+            null!,
+            DefaultTaskId,
+            DefaultLanguage
         );
 
         var taskResult = await validationService.ValidateInstanceAtTask(
@@ -547,7 +580,7 @@ public sealed class ValidationServiceTests : IDisposable
         var data = new MyModel();
         SetupDataClient(data);
 
-        await using var serviceProvider = _serviceCollection.BuildServiceProvider();
+        await using var serviceProvider = _serviceCollection.BuildStrictServiceProvider();
         var validationService = serviceProvider.GetRequiredService<IValidationService>();
 
         var result = await validationService.ValidateInstanceAtTask(

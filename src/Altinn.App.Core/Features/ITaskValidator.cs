@@ -6,6 +6,7 @@ namespace Altinn.App.Core.Features;
 /// <summary>
 /// Interface for handling validation of tasks.
 /// </summary>
+[ImplementableByApps]
 public interface ITaskValidator
 {
     /// <summary>
@@ -21,6 +22,13 @@ public interface ITaskValidator
     /// The default is based on the FullName and TaskId fields, and should not need customization
     /// </remarks>
     string ValidationSource => $"{GetType().FullName}-{TaskId}";
+
+    /// <summary>
+    /// If you override this to false, the validator will run on every PATCH request.
+    /// A default implementation for <see cref="IValidator.HasRelevantChanges"/> will always indicate that the validator should run again.
+    /// <see cref="IValidator.NoIncrementalValidation"/>
+    /// </summary>
+    bool NoIncrementalValidation => true;
 
     /// <summary>
     /// Actual validation logic for the task

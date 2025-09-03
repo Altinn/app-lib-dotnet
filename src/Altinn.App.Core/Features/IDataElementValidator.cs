@@ -11,6 +11,7 @@ namespace Altinn.App.Core.Features;
 /// and that support incremental validation on save.
 /// For validating the content of files, see <see cref="IFileAnalyser"/> and <see cref="IFileValidator"/>
 /// </summary>
+[ImplementableByApps]
 public interface IDataElementValidator
 {
     /// <summary>
@@ -26,6 +27,12 @@ public interface IDataElementValidator
     /// The default is based on the FullName and DataType fields, and should not need customization
     /// </summary>
     string ValidationSource => $"{this.GetType().FullName}-{DataType}";
+
+    /// <summary>
+    /// This validator is costly to run, and should only run on process/next or explicit validation requests.
+    /// <see cref="IValidator.NoIncrementalValidation"/>
+    /// </summary>
+    bool NoIncrementalValidation => true;
 
     /// <summary>
     /// Run validations for a data element. This is supposed to run quickly

@@ -5,9 +5,9 @@ using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Api.Tests.Mocks.Authentication;
 using Altinn.App.Api.Tests.Mocks.Event;
-using Altinn.App.Common.Tests;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Cache;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
@@ -18,10 +18,12 @@ using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using AltinnCore.Authentication.JwtCookie;
 using App.IntegrationTests.Mocks.Services;
+using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
@@ -57,6 +59,15 @@ builder.Configuration.AddJsonFile(
 );
 builder.Configuration.GetSection("MetricsSettings:Enabled").Value = "false";
 builder.Configuration.GetSection("AppSettings:UseOpenTelemetry").Value = "true";
+builder.Services.Configure<ApplicationInsightsServiceOptions>(options =>
+    options.RequestCollectionOptions.InjectResponseHeaders = false
+);
+builder.Services.Configure<GeneralSettings>(settings => settings.DisableLocaltestValidation = true);
+builder.Services.Configure<GeneralSettings>(settings => settings.DisableAppConfigurationCache = true);
+builder.Services.Configure<GeneralSettings>(settings => settings.IsTest = true);
+builder.Configuration.GetSection("GeneralSettings:IsTest").Value = "true";
+
+// AppConfigurationCache.Disable = true;
 
 ConfigureServices(builder.Services, builder.Configuration);
 ConfigureMockServices(builder.Services, builder.Configuration);
@@ -87,18 +98,44 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IAuthorizationClient, AuthorizationMock>();
     services.AddTransient<IInstanceClient, InstanceClientMockSi>();
     services.AddSingleton<Altinn.Common.PEP.Interfaces.IPDP, PepWithPDPAuthorizationMockSI>();
-    services.AddSingleton<ISigningKeysRetriever, SigningKeysRetrieverStub>();
     services.AddSingleton<IPostConfigureOptions<JwtCookieOptions>, JwtCookiePostConfigureOptionsStub>();
     services.AddTransient<IEventHandlerResolver, EventHandlerResolver>();
     services.AddSingleton<IEventSecretCodeProvider, EventSecretCodeProviderStub>();
     services.AddTransient<IEventHandler, DummyFailureEventHandler>();
     services.AddTransient<IEventHandler, DummySuccessEventHandler>();
     services.AddTransient<IAppMetadata, AppMetadataMock>();
+    services.AddSingleton<IAppConfigurationCache, AppConfigurationCacheMock>();
     services.AddTransient<IDataClient, DataClientMock>();
     services.AddTransient<IAltinnPartyClient, AltinnPartyClientMock>();
+    services.AddTransient<IRegisterClient, RegisterClientMock>();
     services.AddTransient<IProfileClient, ProfileClientMock>();
     services.AddTransient<IInstanceEventClient, InstanceEventClientMock>();
-    services.AddTransient<IAppModel, AppModelMock>();
+    services.AddTransient<IAppModel, AppModelMock<Program>>();
+
+    services.PostConfigureAll<JwtCookieOptions>(options =>
+    {
+        // During tests we generate tokens immediately before trying to validate them.
+        // Depending on the clock implementation used from the current OS, the clock may not be
+        // monotonically increasing, so there is a non-zero chance we experience issues with 'nbf' for example
+        // So since this is only relevant during tests we just amp up the clock skew to be safe
+        options.TokenValidationParameters.ClockSkew = TimeSpan.FromSeconds(10);
+
+        // Failed token validation during tests should output logs
+        options.Events = new JwtCookieEvents
+        {
+            OnAuthenticationFailed = (context) =>
+            {
+                var services = context.HttpContext.RequestServices;
+                var logger = services.GetRequiredService<ILogger<JwtCookieOptions>>();
+                logger.LogError(context.Exception, "Authentication failed");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = (context) =>
+            {
+                return Task.CompletedTask;
+            },
+        };
+    });
 }
 
 void Configure()

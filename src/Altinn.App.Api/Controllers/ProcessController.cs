@@ -4,16 +4,14 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.Serialization;
-using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Validation;
-using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
+using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -41,9 +39,8 @@ public class ProcessController : ControllerBase
     private readonly IAuthorizationService _authorization;
     private readonly IProcessEngine _processEngine;
     private readonly IProcessReader _processReader;
-    private readonly IDataClient _dataClient;
-    private readonly IAppMetadata _appMetadata;
-    private readonly ModelSerializationService _modelSerialization;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -56,9 +53,8 @@ public class ProcessController : ControllerBase
         IAuthorizationService authorization,
         IProcessReader processReader,
         IProcessEngine processEngine,
-        IDataClient dataClient,
-        IAppMetadata appMetadata,
-        ModelSerializationService modelSerialization
+        IServiceProvider serviceProvider,
+        IProcessEngineAuthorizer processEngineAuthorizer
     )
     {
         _logger = logger;
@@ -68,9 +64,8 @@ public class ProcessController : ControllerBase
         _authorization = authorization;
         _processReader = processReader;
         _processEngine = processEngine;
-        _dataClient = dataClient;
-        _appMetadata = appMetadata;
-        _modelSerialization = modelSerialization;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _processEngineAuthorizer = processEngineAuthorizer;
     }
 
     /// <summary>
@@ -249,13 +244,8 @@ public class ProcessController : ControllerBase
         string? language
     )
     {
-        var dataAccessor = new InstanceDataUnitOfWork(
-            instance,
-            _dataClient,
-            _instanceClient,
-            await _appMetadata.GetApplicationMetadata(),
-            _modelSerialization
-        );
+        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, currentTaskId, language);
+
         var validationIssues = await _validationService.ValidateInstanceAtTask(
             dataAccessor,
             currentTaskId, // run full validation
@@ -271,7 +261,7 @@ public class ProcessController : ControllerBase
             return new ProblemDetails()
             {
                 Detail = $"{errorCount} validation errors found for task {currentTaskId}",
-                Status = (int)HttpStatusCode.Conflict,
+                Status = StatusCodes.Status409Conflict,
                 Title = "Validation failed for task",
                 Extensions = new Dictionary<string, object?>() { { "validationIssues", validationIssues } },
             };
@@ -288,6 +278,7 @@ public class ProcessController : ControllerBase
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
+    /// <param name="ct">Cancellation token, populated by the framework</param>
     /// <param name="elementId">obsolete: alias for action</param>
     /// <param name="language">Signal the language to use for pdf generation, error messages...</param>
     /// <param name="processNext">The body of the request containing possible actions to perform before advancing the process</param>
@@ -300,6 +291,7 @@ public class ProcessController : ControllerBase
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
+        CancellationToken ct,
         [FromQuery] string? elementId = null,
         [FromQuery] string? language = null,
         [FromBody] ProcessNext? processNext = null
@@ -309,14 +301,14 @@ public class ProcessController : ControllerBase
         {
             Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
-            var currentTaskId = instance.Process.CurrentTask?.ElementId;
+            string? currentTaskId = instance.Process.CurrentTask?.ElementId;
 
             if (currentTaskId is null)
             {
                 return Conflict(
                     new ProblemDetails()
                     {
-                        Status = (int)HttpStatusCode.Conflict,
+                        Status = StatusCodes.Status409Conflict,
                         Title = "Process is not started. Use start!",
                     }
                 );
@@ -325,7 +317,7 @@ public class ProcessController : ControllerBase
             if (instance.Process.Ended.HasValue)
             {
                 return Conflict(
-                    new ProblemDetails() { Status = (int)HttpStatusCode.Conflict, Title = "Process is ended." }
+                    new ProblemDetails() { Status = StatusCodes.Status409Conflict, Title = "Process is ended." }
                 );
             }
 
@@ -336,21 +328,13 @@ public class ProcessController : ControllerBase
                 return Conflict(
                     new ProblemDetails()
                     {
-                        Status = (int)HttpStatusCode.Conflict,
+                        Status = StatusCodes.Status409Conflict,
                         Title = "Instance does not have current altinn task type information!",
                     }
                 );
             }
 
-            string? checkedAction = EnsureActionNotTaskType(processNext?.Action ?? altinnTaskType);
-            bool authorized = await AuthorizeAction(
-                checkedAction,
-                org,
-                app,
-                instanceOwnerPartyId,
-                instanceGuid,
-                currentTaskId
-            );
+            bool authorized = await _processEngineAuthorizer.AuthorizeProcessNext(instance, processNext?.Action);
 
             if (!authorized)
             {
@@ -358,28 +342,70 @@ public class ProcessController : ControllerBase
                     403,
                     new ProblemDetails()
                     {
-                        Status = (int)HttpStatusCode.Forbidden,
-                        Detail = $"User is not authorized to perform action {checkedAction} on task {currentTaskId}",
+                        Status = StatusCodes.Status403Forbidden,
+                        Detail =
+                            $"User is not authorized to perform process next. Task ID: {currentTaskId}. Task type: {altinnTaskType}. Action: {processNext?.Action ?? "none"}.",
                         Title = "Unauthorized",
                     }
                 );
             }
 
-            _logger.LogDebug("User is authorized to perform action {Action}", checkedAction);
+            _logger.LogDebug(
+                "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",
+                currentTaskId,
+                altinnTaskType,
+                LogSanitizer.Sanitize(processNext?.Action ?? "none")
+            );
+
+            string checkedAction = processNext?.Action ?? ConvertTaskTypeToAction(altinnTaskType);
+
             var request = new ProcessNextRequest()
             {
                 Instance = instance,
                 User = User,
                 Action = checkedAction,
+                ActionOnBehalfOf = processNext?.ActionOnBehalfOf,
                 Language = language,
             };
-            var validationProblem = await GetValidationProblemDetails(instance, currentTaskId, language);
-            if (validationProblem is not null)
+
+            if (processNext?.Action is not null)
             {
-                return Conflict(validationProblem);
+                UserActionResult userActionResult = await _processEngine.HandleUserAction(request, ct);
+                if (userActionResult.ResultType is ResultType.Failure)
+                {
+                    var failedUserActionResult = new ProcessChangeResult()
+                    {
+                        Success = false,
+                        ErrorMessage = $"Action handler for action {request.Action} failed!",
+                        ErrorType = userActionResult.ErrorType,
+                    };
+
+                    return GetResultForError(failedUserActionResult);
+                }
             }
 
-            var result = await _processEngine.Next(request);
+            // If the action is 'reject' the task is being abandoned, and we should skip validation, but only if reject has been allowed for the task in bpmn.
+            if (checkedAction == "reject" && _processReader.IsActionAllowedForTask(currentTaskId, checkedAction))
+            {
+                _logger.LogInformation(
+                    "Skipping validation during process next because the action is 'reject' and the task is being abandoned."
+                );
+            }
+            else
+            {
+                ProblemDetails? validationProblem = await GetValidationProblemDetails(
+                    instance,
+                    currentTaskId,
+                    language
+                );
+                if (validationProblem is not null)
+                {
+                    return Conflict(validationProblem);
+                }
+            }
+
+            ProcessChangeResult result = await _processEngine.Next(request);
+
             if (!result.Success)
             {
                 return GetResultForError(result);
@@ -412,7 +438,7 @@ public class ProcessController : ControllerBase
                     new ProblemDetails()
                     {
                         Detail = result.ErrorMessage,
-                        Status = (int)HttpStatusCode.Conflict,
+                        Status = StatusCodes.Status409Conflict,
                         Title = "Conflict",
                     }
                 );
@@ -422,7 +448,7 @@ public class ProcessController : ControllerBase
                     new ProblemDetails()
                     {
                         Detail = result.ErrorMessage,
-                        Status = (int)HttpStatusCode.InternalServerError,
+                        Status = StatusCodes.Status500InternalServerError,
                         Title = "Internal server error",
                     }
                 );
@@ -432,7 +458,7 @@ public class ProcessController : ControllerBase
                     new ProblemDetails()
                     {
                         Detail = result.ErrorMessage,
-                        Status = (int)HttpStatusCode.Forbidden,
+                        Status = StatusCodes.Status403Forbidden,
                         Title = "Unauthorized",
                     }
                 );
@@ -442,7 +468,7 @@ public class ProcessController : ControllerBase
                     new ProblemDetails()
                     {
                         Detail = $"Unknown ProcessErrorType {result.ErrorType}",
-                        Status = (int)HttpStatusCode.InternalServerError,
+                        Status = StatusCodes.Status500InternalServerError,
                         Title = "Internal server error",
                     }
                 );
@@ -487,7 +513,7 @@ public class ProcessController : ControllerBase
             return Conflict(
                 new ProblemDetails()
                 {
-                    Status = (int)HttpStatusCode.Conflict,
+                    Status = StatusCodes.Status409Conflict,
                     Title = "Process is not started. Use start!",
                 }
             );
@@ -516,17 +542,9 @@ public class ProcessController : ControllerBase
             && counter++ < MaxIterationsAllowed
         )
         {
-            string altinnTaskType = EnsureActionNotTaskType(instance.Process.CurrentTask.AltinnTaskType);
+            bool authorizeProcessNext = await _processEngineAuthorizer.AuthorizeProcessNext(instance);
 
-            bool authorized = await AuthorizeAction(
-                altinnTaskType,
-                org,
-                app,
-                instanceOwnerPartyId,
-                instanceGuid,
-                instance.Process.CurrentTask.ElementId
-            );
-            if (!authorized)
+            if (!authorizeProcessNext)
             {
                 return Forbid();
             }
@@ -547,7 +565,7 @@ public class ProcessController : ControllerBase
                 {
                     Instance = instance,
                     User = User,
-                    Action = altinnTaskType,
+                    Action = ConvertTaskTypeToAction(instance.Process.CurrentTask.AltinnTaskType),
                     Language = language,
                 };
                 var result = await _processEngine.Next(request);
@@ -699,30 +717,12 @@ public class ProcessController : ControllerBase
         );
     }
 
-    private async Task<bool> AuthorizeAction(
-        string action,
-        string org,
-        string app,
-        int instanceOwnerPartyId,
-        Guid instanceGuid,
-        string? taskId = null
-    )
-    {
-        return await _authorization.AuthorizeAction(
-            new AppIdentifier(org, app),
-            new InstanceIdentifier(instanceOwnerPartyId, instanceGuid),
-            HttpContext.User,
-            action,
-            taskId
-        );
-    }
-
     private async Task<List<UserAction>> AuthorizeActions(List<AltinnAction> actions, Instance instance)
     {
         return await _authorization.AuthorizeActions(instance, HttpContext.User, actions);
     }
 
-    private static string EnsureActionNotTaskType(string actionOrTaskType)
+    private static string ConvertTaskTypeToAction(string actionOrTaskType)
     {
         switch (actionOrTaskType)
         {
@@ -731,6 +731,8 @@ public class ProcessController : ControllerBase
                 return "write";
             case "confirmation":
                 return "confirm";
+            case "signing":
+                return "sign";
             default:
                 // Not any known task type, so assume it is an action type
                 return actionOrTaskType;

@@ -30,6 +30,9 @@
         "image/jpeg"
       ],
       "AllowedContributers": null,
+      "AllowedContributors": null,
+      "ActionRequiredToRead": null,
+      "ActionRequiredToWrite": null,
       "AppLogic": null,
       "TaskId": "Task_1",
       "MaxSize": null,
@@ -50,6 +53,9 @@
         "application/pdf"
       ],
       "AllowedContributers": null,
+      "AllowedContributors": null,
+      "ActionRequiredToRead": null,
+      "ActionRequiredToWrite": null,
       "AppLogic": null,
       "TaskId": "Task_1",
       "MaxSize": null,
@@ -71,11 +77,13 @@
     "SubUnit": true
   },
   "AutoDeleteOnProcessEnd": false,
+  "PreventInstanceDeletionForDays": null,
   "PresentationFields": null,
   "DataFields": null,
   "EFormidling": null,
   "MessageBoxConfig": null,
   "CopyInstanceSettings": null,
+  "ApiScopes": null,
   "StorageAccountNumber": null,
   "DisallowUserInstantiation": false,
   "Created": "2019-09-16T22:22:22",

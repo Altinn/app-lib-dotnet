@@ -1,11 +1,8 @@
-#nullable disable
 using System.Text.Json;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -17,7 +14,7 @@ public class EventsReceiverController : ControllerBase
 {
     private readonly IEventHandlerResolver _eventHandlerResolver;
     private readonly ILogger _logger;
-    private readonly IEventSecretCodeProvider _secretCodeProvider;
+    private readonly AppImplementationFactory _appImplementationFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EventsReceiverController"/> class.
@@ -25,13 +22,12 @@ public class EventsReceiverController : ControllerBase
     public EventsReceiverController(
         IEventHandlerResolver eventHandlerResolver,
         ILogger<EventsReceiverController> logger,
-        IOptions<PlatformSettings> options,
-        IEventSecretCodeProvider secretCodeProvider
+        IServiceProvider serviceProvider
     )
     {
         _eventHandlerResolver = eventHandlerResolver;
         _logger = logger;
-        _secretCodeProvider = secretCodeProvider;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <summary>
@@ -39,12 +35,15 @@ public class EventsReceiverController : ControllerBase
     /// </summary>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest, "text/plain")]
     [ProducesResponseType(425)]
-    [ProducesResponseType(500)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult> Post([FromQuery] string code, [FromBody] CloudEvent cloudEvent)
     {
-        if (await _secretCodeProvider.GetSecretCode() != code)
+        var secretCodeProvider = _appImplementationFactory.GetRequired<IEventSecretCodeProvider>();
+        if (await secretCodeProvider.GetSecretCode() != code)
         {
             return Unauthorized();
         }
