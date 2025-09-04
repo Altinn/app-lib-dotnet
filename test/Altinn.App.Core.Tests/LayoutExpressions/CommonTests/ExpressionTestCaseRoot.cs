@@ -142,7 +142,7 @@ public class ComponentContextForTestSpec
         var id = context.Component.Id;
 
         List<ComponentContextForTestSpec> childContexts = context
-            .ChildContexts.SelectMany(c => c.Component is RepeatingGroupRowComponent ? c.ChildContexts : [c])
+            .ChildContexts.SelectMany(c => c.Component is RepeatingGroupRowComponent ? c.ChildContexts : [c]) // Flatten out the synthetic Row components that are not used in test spec
             .Select(FromContext)
             .ToList();
 

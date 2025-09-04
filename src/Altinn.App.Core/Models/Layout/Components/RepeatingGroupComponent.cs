@@ -46,9 +46,13 @@ public sealed class RepeatingGroupComponent : Base.RepeatingReferenceComponent
 
         RowsAfter = ParseGridConfig("rowsAfter", componentElement);
 
-        NonRepeatingChildReferences = RowsBefore
-            .Concat(RowsAfter)
-            .SelectMany(row => row.Cells.Select(cell => cell?.ComponentId))
+        BeforeChildReferences = RowsBefore
+            .SelectMany(row => row.Cells?.Select(cell => cell?.ComponentId) ?? [])
+            .OfType<string>()
+            .ToList();
+
+        AfterChildReferences = RowsAfter
+            .SelectMany(row => row.Cells?.Select(cell => cell?.ComponentId) ?? [])
             .OfType<string>()
             .ToList();
     }
@@ -98,5 +102,8 @@ public sealed class RepeatingGroupComponent : Base.RepeatingReferenceComponent
     public override IReadOnlyList<string> RepeatingChildReferences { get; }
 
     /// <inheritdoc />
-    public override IReadOnlyList<string> NonRepeatingChildReferences { get; }
+    public override IReadOnlyList<string> BeforeChildReferences { get; }
+
+    /// <inheritdoc />
+    public override IReadOnlyList<string> AfterChildReferences { get; }
 }

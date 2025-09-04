@@ -283,6 +283,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         ValueKind switch
         {
             JsonValueKind.Null => null,
+            JsonValueKind.Undefined => null,
             JsonValueKind.True => "true",
             JsonValueKind.False => "false",
             JsonValueKind.String => String switch

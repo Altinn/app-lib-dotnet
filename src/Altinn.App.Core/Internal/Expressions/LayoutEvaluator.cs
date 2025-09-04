@@ -34,7 +34,7 @@ public static class LayoutEvaluator
         HashSet<DataReference> hiddenModelBindings,
         HashSet<DataReference> nonHiddenModelBindings,
         ComponentContext context,
-        IReadOnlyList<DataReference> ignoredPreifxes
+        IReadOnlyList<DataReference> ignoredPrefixes
     )
     {
         if (context.Component is null)
@@ -47,13 +47,13 @@ public static class LayoutEvaluator
 
         var isHidden = await context.IsHidden();
 
-        List<DataReference> childIgnoredPrefixes = [.. ignoredPreifxes];
+        List<DataReference> childIgnoredPrefixes = [.. ignoredPrefixes];
 
         // Schedule fields for removal
         foreach (var (_, binding) in context.Component.DataModelBindings)
         {
             var indexedBinding = await state.AddInidicies(binding, context);
-            if (ignoredPreifxes.Any(prefix => indexedBinding.StartsWith(prefix)))
+            if (ignoredPrefixes.Any(prefix => indexedBinding.StartsWith(prefix)))
             {
                 continue; // Skip fields with ignored prefixes
             }
@@ -97,7 +97,9 @@ public static class LayoutEvaluator
     public static async Task RemoveHiddenDataAsync(LayoutEvaluatorState state, RowRemovalOption rowRemovalOption)
     {
         var fields = await GetHiddenFieldsForRemoval(state);
-        foreach (var dataReference in fields)
+
+        // Ensure fields with higher row numbers are removed before fields with lower row numbers.
+        foreach (var dataReference in OrderByListIndexReverse(fields))
         {
             await state.RemoveDataField(dataReference, rowRemovalOption);
         }
@@ -142,7 +144,7 @@ public static class LayoutEvaluator
                     if (
                         (value is null)
                         || (value is string s && string.IsNullOrWhiteSpace(s))
-                        || (value is System.Collections.ICollection col && col.Count == 0)
+                        || value is System.Collections.ICollection { Count: 0 }
                     )
                     {
                         var field = await state.AddInidicies(binding, context);
@@ -161,5 +163,21 @@ public static class LayoutEvaluator
                 }
             }
         }
+    }
+
+#if NET10_0_OR_GREATER
+    private static readonly IComparer<string> _naturalStringComparer = StringComparer.Create(
+        CultureInfo.InvariantCulture,
+        CompareOptions.NumericOrdering
+    );
+#else
+    private static readonly IComparer<string> _naturalStringComparer = NaturalStringComparerPolyfill.Instance;
+#endif
+
+    internal static IEnumerable<DataReference> OrderByListIndexReverse(List<DataReference> fields)
+    {
+        return fields
+            .OrderByDescending(f => f.DataElementIdentifier.Guid)
+            .ThenByDescending(f => f.Field, _naturalStringComparer);
     }
 }

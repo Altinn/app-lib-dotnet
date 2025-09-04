@@ -34,9 +34,14 @@ public abstract class RepeatingReferenceComponent : BaseComponent
     public abstract IReadOnlyList<string> RepeatingChildReferences { get; }
 
     /// <summary>
-    /// References to child components that are not repeated
+    /// References to child components that are not repeated and comes before the repeating group
     /// </summary>
-    public abstract IReadOnlyList<string> NonRepeatingChildReferences { get; }
+    public abstract IReadOnlyList<string> BeforeChildReferences { get; }
+
+    /// <summary>
+    /// References to child components that are not repeated and comes after the repeating group
+    /// </summary>
+    public abstract IReadOnlyList<string> AfterChildReferences { get; }
 
     // References to the components that are used for the child contexts of this component
     private Dictionary<string, BaseComponent>? _claimedChildrenLookup;
@@ -50,15 +55,20 @@ public abstract class RepeatingReferenceComponent : BaseComponent
         Dictionary<string, string> claimedComponents
     )
     {
-        if (GroupModelBinding.Field is null || RepeatingChildReferences is null || NonRepeatingChildReferences is null)
+        if (
+            GroupModelBinding.Field is null
+            || RepeatingChildReferences is null
+            || BeforeChildReferences is null
+            || AfterChildReferences is null
+        )
         {
             throw new UnreachableException(
-                $"{GetType().Name} inherits from {nameof(RepeatingReferenceComponent)} and must initialize {nameof(GroupModelBinding)}, {nameof(RepeatingChildReferences)}, {nameof(HiddenRow)} and {nameof(NonRepeatingChildReferences)} in its constructor."
+                $"{GetType().Name} inherits from {nameof(RepeatingReferenceComponent)} and must initialize {nameof(GroupModelBinding)}, {nameof(RepeatingChildReferences)}, {nameof(HiddenRow)}, {nameof(BeforeChildReferences)} and {nameof(AfterChildReferences)} in its constructor."
             );
         }
 
         var components = new Dictionary<string, BaseComponent>();
-        foreach (var componentId in RepeatingChildReferences.Concat(NonRepeatingChildReferences))
+        foreach (var componentId in BeforeChildReferences.Concat(RepeatingChildReferences).Concat(AfterChildReferences))
         {
             if (unclaimedComponents.Remove(componentId, out var component))
             {
@@ -98,8 +108,9 @@ public abstract class RepeatingReferenceComponent : BaseComponent
         if (
             _claimedChildrenLookup is null
             || RepeatingChildReferences is null
-            || NonRepeatingChildReferences is null
+            || BeforeChildReferences is null
             || GroupModelBinding.Field is null
+            || AfterChildReferences is null
         )
         {
             throw new InvalidOperationException(
@@ -109,27 +120,15 @@ public abstract class RepeatingReferenceComponent : BaseComponent
 
         var childContexts = new List<ComponentContext>();
 
-        foreach (var componentId in NonRepeatingChildReferences)
+        foreach (var componentId in BeforeChildReferences)
         {
-            if (_claimedChildrenLookup.TryGetValue(componentId, out var childComponent))
-            {
-                var childContext = await childComponent.GetContext(
-                    state,
-                    defaultDataElementIdentifier,
-                    rowIndexes,
-                    layoutsLookup
-                );
-                childContexts.Add(childContext);
-            }
-            else
-            {
-                throw new ArgumentException($"Child component with id {componentId} not found in claimed children.");
-            }
+            childContexts.Add(
+                await GetChildContext(componentId, state, defaultDataElementIdentifier, rowIndexes, layoutsLookup)
+            );
         }
 
         var rowCount = await state.GetModelDataCount(GroupModelBinding, defaultDataElementIdentifier, rowIndexes) ?? 0;
 
-        // We need to count backwards so that deleting by index works for multiple rows.
         for (int i = 0; i < rowCount; i++)
         {
             var subRowIndexes = GetSubRowIndexes(rowIndexes, i);
@@ -144,32 +143,49 @@ public abstract class RepeatingReferenceComponent : BaseComponent
             List<ComponentContext> rowChildren = [];
             foreach (var componentId in RepeatingChildReferences)
             {
-                if (_claimedChildrenLookup.TryGetValue(componentId, out var childComponent))
-                {
-                    var childContext = await childComponent.GetContext(
+                rowChildren.Add(
+                    await GetChildContext(
+                        componentId,
                         state,
                         defaultDataElementIdentifier,
                         subRowIndexes,
                         layoutsLookup
-                    );
-                    rowChildren.Add(childContext);
-                }
-                else
-                {
-                    throw new ArgumentException(
-                        $"Child component with id {componentId} not found in claimed children."
-                    );
-                }
+                    )
+                );
             }
 
-            // Insert the new row context at the beginning so that they are processed in deletion order
-            childContexts.Insert(
-                0,
+            childContexts.Add(
                 new ComponentContext(state, rowComponent, subRowIndexes, defaultDataElementIdentifier, rowChildren)
             );
         }
 
+        foreach (var componentId in AfterChildReferences)
+        {
+            childContexts.Add(
+                await GetChildContext(componentId, state, defaultDataElementIdentifier, rowIndexes, layoutsLookup)
+            );
+        }
+
         return new ComponentContext(state, this, rowIndexes, defaultDataElementIdentifier, childContexts);
+    }
+
+    private async Task<ComponentContext> GetChildContext(
+        string componentId,
+        LayoutEvaluatorState state,
+        DataElementIdentifier defaultDataElementIdentifier,
+        int[]? rowIndexes,
+        Dictionary<string, LayoutSetComponent> layoutsLookup
+    )
+    {
+        Debug.Assert(_claimedChildrenLookup is not null, "Must call ClaimChildren before GetContext");
+        if (_claimedChildrenLookup.TryGetValue(componentId, out var childComponent))
+        {
+            return await childComponent.GetContext(state, defaultDataElementIdentifier, rowIndexes, layoutsLookup);
+        }
+        else
+        {
+            throw new ArgumentException($"Child component with id {componentId} not found in claimed children.");
+        }
     }
 
     private static int[] GetSubRowIndexes(int[]? baseIndexes, int index)

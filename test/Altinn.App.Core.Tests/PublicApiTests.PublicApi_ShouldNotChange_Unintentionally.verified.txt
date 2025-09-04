@@ -3014,7 +3014,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference> AddInidicies(Altinn.App.Core.Models.Layout.ModelBinding binding, Altinn.App.Core.Models.Expressions.ComponentContext context) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference> AddInidicies(Altinn.App.Core.Models.Layout.ModelBinding binding, Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier, int[]? indexes) { }
         public int CountDataElements(string dataTypeId) { }
-        [System.Obsolete("You need to get a context, not a commponent", true)]
+        [System.Obsolete("You need to get a context, not a component", true)]
         public void GetComponent(string pageName, string componentId) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext?> GetComponentContext(string pageName, string componentId, int[]? rowIndexes = null) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Expressions.ComponentContext>> GetComponentContexts() { }
@@ -4339,9 +4339,10 @@ namespace Altinn.App.Core.Models.Layout.Components.Base
     public abstract class RepeatingReferenceComponent : Altinn.App.Core.Models.Layout.Components.Base.BaseComponent
     {
         protected RepeatingReferenceComponent(System.Text.Json.JsonElement componentElement, string pageId, string layoutId) { }
+        public abstract System.Collections.Generic.IReadOnlyList<string> AfterChildReferences { get; }
+        public abstract System.Collections.Generic.IReadOnlyList<string> BeforeChildReferences { get; }
         public abstract Altinn.App.Core.Models.Layout.ModelBinding GroupModelBinding { get; }
         public abstract Altinn.App.Core.Models.Expressions.Expression HiddenRow { get; }
-        public abstract System.Collections.Generic.IReadOnlyList<string> NonRepeatingChildReferences { get; }
         public abstract System.Collections.Generic.IReadOnlyList<string> RepeatingChildReferences { get; }
         public override void ClaimChildren(System.Collections.Generic.Dictionary<string, Altinn.App.Core.Models.Layout.Components.Base.BaseComponent> unclaimedComponents, System.Collections.Generic.Dictionary<string, string> claimedComponents) { }
         public override System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext> GetContext(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.DataElementIdentifier defaultDataElementIdentifier, int[]? rowIndexes, System.Collections.Generic.Dictionary<string, Altinn.App.Core.Models.Layout.LayoutSetComponent> layoutsLookup) { }
@@ -4416,10 +4417,11 @@ namespace Altinn.App.Core.Models.Layout.Components
     public sealed class RepeatingGroupComponent : Altinn.App.Core.Models.Layout.Components.Base.RepeatingReferenceComponent
     {
         public RepeatingGroupComponent(System.Text.Json.JsonElement componentElement, string pageId, string layoutId, int maxCount) { }
+        public override System.Collections.Generic.IReadOnlyList<string> AfterChildReferences { get; }
+        public override System.Collections.Generic.IReadOnlyList<string> BeforeChildReferences { get; }
         public override Altinn.App.Core.Models.Layout.ModelBinding GroupModelBinding { get; }
         public override Altinn.App.Core.Models.Expressions.Expression HiddenRow { get; }
         public int MaxCount { get; }
-        public override System.Collections.Generic.IReadOnlyList<string> NonRepeatingChildReferences { get; }
         public override System.Collections.Generic.IReadOnlyList<string> RepeatingChildReferences { get; }
         public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Models.Layout.Components.GridComponent.GridRowConfig> RowsAfter { get; }
         public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Models.Layout.Components.GridComponent.GridRowConfig> RowsBefore { get; }

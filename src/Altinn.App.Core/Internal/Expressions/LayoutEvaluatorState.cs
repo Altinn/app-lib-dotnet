@@ -96,14 +96,14 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Get component from componentModel
     /// </summary>
-    [Obsolete("You need to get a context, not a commponent", true)]
+    [Obsolete("You need to get a context, not a component", true)]
     public void GetComponent(string pageName, string componentId)
     {
         throw new NotSupportedException("GetComponent is not supported, use GetComponentContext instead.");
     }
 
     /// <summary>
-    /// Get a specific component context based on
+    /// Get a specific component context from the state
     /// </summary>
     public async Task<ComponentContext?> GetComponentContext(
         string pageName,
@@ -121,7 +121,7 @@ public class LayoutEvaluatorState
         // Filter out all contexts that have the wrong Id
         contexts = contexts.Where(c => c.Component?.Id == componentId);
         // Filter out contexts that does not have a prefix matching
-        var filteredContexts = contexts.Where(c => CompareRowIndexes(c.RowIndices, rowIndexes)).ToArray();
+        var filteredContexts = contexts.Where(c => RowIndexMatch(rowIndexes, c.RowIndices)).ToArray();
         if (filteredContexts.Length == 0)
         {
             return null; // No context found
@@ -142,19 +142,25 @@ public class LayoutEvaluatorState
         );
     }
 
-    private static bool CompareRowIndexes(int[]? targetRowIndexes, int[]? sourceRowIndexes)
+    private static bool RowIndexMatch(int[]? searchRowIndexes, int[]? componentRowIndexes)
     {
-        if (targetRowIndexes is null)
+        if (componentRowIndexes is null)
         {
             return true;
         }
-        if (sourceRowIndexes is null)
+        if (searchRowIndexes is null)
         {
             return false;
         }
-        for (int i = 0; i < targetRowIndexes.Length; i++)
+
+        if (searchRowIndexes.Length < componentRowIndexes.Length)
         {
-            if (targetRowIndexes[i] != sourceRowIndexes[i])
+            return false;
+        }
+
+        for (int i = 0; i < componentRowIndexes.Length; i++)
+        {
+            if (searchRowIndexes[i] != componentRowIndexes[i])
             {
                 return false;
             }
@@ -200,8 +206,8 @@ public class LayoutEvaluatorState
         {
             "instanceOwnerPartyId" => Instance.InstanceOwner?.PartyId
                 ?? throw new InvalidOperationException("InstanceOwner or PartyId is null"),
-            "appId" => Instance.AppId,
-            "instanceId" => Instance.Id,
+            "appId" => Instance.AppId ?? throw new InvalidOperationException("AppId is null"),
+            "instanceId" => Instance.Id ?? throw new InvalidOperationException("InstanceId is null"),
             "instanceOwnerPartyType" => (
                 !string.IsNullOrWhiteSpace(Instance.InstanceOwner?.OrganisationNumber) ? "org"
                 : !string.IsNullOrWhiteSpace(Instance.InstanceOwner?.PersonNumber) ? "person"
@@ -217,7 +223,7 @@ public class LayoutEvaluatorState
     /// </summary>
     public int CountDataElements(string dataTypeId)
     {
-        return Instance.Data.Count(d => d.DataType == dataTypeId);
+        return Instance.Data?.Count(d => d.DataType == dataTypeId) ?? 0;
     }
 
     /// <summary>

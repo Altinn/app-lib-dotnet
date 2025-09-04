@@ -91,7 +91,14 @@ public class TestContextList
 
         foreach (var (result, expected, index) in results.Zip(test.Expected, Enumerable.Range(0, int.MaxValue)))
         {
-            result.Should().BeEquivalentTo(expected, "component context at {0} should match", index);
+            result
+                .Should()
+                .BeEquivalentTo(
+                    expected,
+                    opt => opt.WithStrictOrdering(),
+                    "component context at {0} should match",
+                    index
+                );
         }
 
         results.Count.Should().Be(test.Expected.Count);
