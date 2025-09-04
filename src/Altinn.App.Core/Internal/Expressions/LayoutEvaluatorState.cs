@@ -6,7 +6,6 @@ using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
-using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Expressions;
@@ -20,11 +19,10 @@ public class LayoutEvaluatorState
     private readonly LayoutModel? _componentModel;
     private readonly ITranslationService _translationService;
     private readonly FrontEndSettings _frontEndSettings;
-    private readonly Instance _instanceContext;
     private readonly string? _gatewayAction;
     private readonly string? _language;
     private readonly TimeZoneInfo? _timeZone;
-    private readonly Lazy<Task<List<ComponentContext>>?> _rootContext;
+    private List<ComponentContext>? _rootContext;
 
     /// <summary>
     /// Constructor for LayoutEvaluatorState. Usually called via <see cref="LayoutEvaluatorStateInitializer" /> that can be fetched from dependency injection.
@@ -50,23 +48,31 @@ public class LayoutEvaluatorState
         _componentModel = componentModel;
         _translationService = translationService;
         _frontEndSettings = frontEndSettings;
-        _instanceContext = dataAccessor.Instance;
+        Instance = dataAccessor.Instance;
         _gatewayAction = gatewayAction;
         _language = language;
         _timeZone = timeZone;
-        _rootContext = new(() => _componentModel?.GenerateComponentContexts(_instanceContext, _dataModel));
     }
+
+    /// <summary>
+    /// Get the Instance object that is referenced for evaluation.
+    /// </summary>
+    public Instance Instance { get; }
 
     /// <summary>
     /// Get a hierarchy of the different contexts in the component model (remember to iterate <see cref="ComponentContext.ChildContexts" />)
     /// </summary>
     public async Task<List<ComponentContext>> GetComponentContexts()
     {
-        if (_rootContext.Value is null)
+        if (_rootContext is null)
         {
-            throw new InvalidOperationException("Component model not loaded");
+            if (_componentModel is null)
+            {
+                throw new InvalidOperationException("Component model not loaded");
+            }
+            _rootContext = await _componentModel.GenerateComponentContexts(this);
         }
-        return (await _rootContext.Value);
+        return _rootContext;
     }
 
     /// <summary>
@@ -90,14 +96,14 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Get component from componentModel
     /// </summary>
-    public BaseComponent GetComponent(string pageName, string componentId)
+    [Obsolete("You need to get a context, not a component", true)]
+    public void GetComponent(string pageName, string componentId)
     {
-        return _componentModel?.GetComponent(pageName, componentId)
-            ?? throw new InvalidOperationException("Component model not loaded");
+        throw new NotSupportedException("GetComponent is not supported, use GetComponentContext instead.");
     }
 
     /// <summary>
-    /// Get a specific component context based on
+    /// Get a specific component context from the state
     /// </summary>
     public async Task<ComponentContext?> GetComponentContext(
         string pageName,
@@ -115,7 +121,7 @@ public class LayoutEvaluatorState
         // Filter out all contexts that have the wrong Id
         contexts = contexts.Where(c => c.Component?.Id == componentId);
         // Filter out contexts that does not have a prefix matching
-        var filteredContexts = contexts.Where(c => CompareRowIndexes(c.RowIndices, rowIndexes)).ToArray();
+        var filteredContexts = contexts.Where(c => RowIndexMatch(rowIndexes, c.RowIndices)).ToArray();
         if (filteredContexts.Length == 0)
         {
             return null; // No context found
@@ -136,19 +142,25 @@ public class LayoutEvaluatorState
         );
     }
 
-    private static bool CompareRowIndexes(int[]? targetRowIndexes, int[]? sourceRowIndexes)
+    private static bool RowIndexMatch(int[]? searchRowIndexes, int[]? componentRowIndexes)
     {
-        if (targetRowIndexes is null)
+        if (componentRowIndexes is null)
         {
             return true;
         }
-        if (sourceRowIndexes is null)
+        if (searchRowIndexes is null)
         {
             return false;
         }
-        for (int i = 0; i < targetRowIndexes.Length; i++)
+
+        if (searchRowIndexes.Length < componentRowIndexes.Length)
         {
-            if (targetRowIndexes[i] != sourceRowIndexes[i])
+            return false;
+        }
+
+        for (int i = 0; i < componentRowIndexes.Length; i++)
+        {
+            if (searchRowIndexes[i] != componentRowIndexes[i])
             {
                 return false;
             }
@@ -192,13 +204,14 @@ public class LayoutEvaluatorState
         // Instance context only supports a small subset of variables from the instance
         return key switch
         {
-            "instanceOwnerPartyId" => _instanceContext.InstanceOwner.PartyId,
-            "appId" => _instanceContext.AppId,
-            "instanceId" => _instanceContext.Id,
+            "instanceOwnerPartyId" => Instance.InstanceOwner?.PartyId
+                ?? throw new InvalidOperationException("InstanceOwner or PartyId is null"),
+            "appId" => Instance.AppId ?? throw new InvalidOperationException("AppId is null"),
+            "instanceId" => Instance.Id ?? throw new InvalidOperationException("InstanceId is null"),
             "instanceOwnerPartyType" => (
-                !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.OrganisationNumber) ? "org"
-                : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.PersonNumber) ? "person"
-                : !string.IsNullOrWhiteSpace(_instanceContext.InstanceOwner.Username) ? "selfIdentified"
+                !string.IsNullOrWhiteSpace(Instance.InstanceOwner?.OrganisationNumber) ? "org"
+                : !string.IsNullOrWhiteSpace(Instance.InstanceOwner?.PersonNumber) ? "person"
+                : !string.IsNullOrWhiteSpace(Instance.InstanceOwner?.Username) ? "selfIdentified"
                 : "unknown"
             ),
             _ => throw new ExpressionEvaluatorTypeErrorException($"Unknown Instance context property {key}"),
@@ -210,7 +223,7 @@ public class LayoutEvaluatorState
     /// </summary>
     public int CountDataElements(string dataTypeId)
     {
-        return _instanceContext.Data.Count(d => d.DataType == dataTypeId);
+        return Instance.Data?.Count(d => d.DataType == dataTypeId) ?? 0;
     }
 
     /// <summary>
@@ -252,7 +265,7 @@ public class LayoutEvaluatorState
     /// </summary>
     internal DataElementIdentifier GetDefaultDataElementId()
     {
-        return _componentModel?.GetDefaultDataElementId(_instanceContext)
+        return _componentModel?.GetDefaultDataElementId(Instance)
             ?? throw new InvalidOperationException("Component model not loaded");
     }
 
@@ -264,6 +277,15 @@ public class LayoutEvaluatorState
     public async Task<string> TranslateText(string textKey, ComponentContext context)
     {
         return await _translationService.TranslateTextKey(textKey, this, context) ?? textKey;
+    }
+
+    internal async Task<int?> GetModelDataCount(
+        ModelBinding groupBinding,
+        DataElementIdentifier defaultDataElementIdentifier,
+        int[]? indexes
+    )
+    {
+        return await _dataModel.GetModelDataCount(groupBinding, defaultDataElementIdentifier, indexes);
     }
 
     // /// <summary>

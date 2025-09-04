@@ -14,7 +14,33 @@
             "dataModelBindings": {
               "group": "gruppe1"
             },
-            "children": ["comp3", "comp4"]
+            "children": ["comp3", "comp4"],
+            "rowsAfter": [
+              {
+                "cells":
+                [
+                  {
+                    "text": "Group row 1"
+                  },
+                  {
+                    "component": "after"
+                  }
+                ]
+              }
+            ],
+            "rowsBefore": [
+              {
+                "cells":
+                [
+                  {
+                    "text": "Group row 0"
+                  },
+                  {
+                    "component": "before"
+                  }
+                ]
+              }
+            ]
           },
           {
             "id": "comp3",
@@ -28,6 +54,20 @@
             "type": "Input",
             "dataModelBindings": {
               "simpleBinding": "gruppe1.comp4binding"
+            }
+          },
+          {
+            "id": "before",
+            "type": "Input",
+            "dataModelBindings": {
+              "simpleBinding": "beforebinding"
+            }
+          },
+          {
+            "id": "after",
+            "type": "Input",
+            "dataModelBindings": {
+              "simpleBinding": "afterbinding"
             }
           }
         ]
@@ -68,6 +108,10 @@
           "currentLayout": "Page1",
           "children": [
             {
+              "component": "before",
+              "currentLayout": "Page1"
+            },
+            {
               "component": "comp3",
               "rowIndices": [0],
               "currentLayout": "Page1"
@@ -86,6 +130,10 @@
               "component": "comp4",
               "rowIndices": [1],
               "currentLayout": "Page1"
+            },
+            {
+                "component": "after",
+                "currentLayout": "Page1"
             }
           ]
         }
