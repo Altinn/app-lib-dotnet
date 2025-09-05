@@ -298,12 +298,12 @@ public class ProcessEngine : IProcessEngine
         List<InstanceEvent>? events
     )
     {
-        using (var activity = _telemetry?.StartProcessHandleEventsActivity(instance))
+        using (_telemetry?.StartProcessHandleEventsActivity(instance))
         {
             await _processEventHandlerDelegator.HandleEvents(instance, prefill, events);
         }
 
-        using (var activity = _telemetry?.StartProcessStoreEventsActivity(instance))
+        using (_telemetry?.StartProcessStoreEventsActivity(instance))
         {
             return await _processEventDispatcher.DispatchToStorage(instance, events);
         }
