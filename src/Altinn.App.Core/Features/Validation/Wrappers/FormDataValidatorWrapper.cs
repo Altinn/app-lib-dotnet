@@ -1,10 +1,9 @@
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
-
-namespace Altinn.App.Core.Features.Validation.Wrappers;
-
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
+
+namespace Altinn.App.Core.Features.Validation.Wrappers;
 
 /// <summary>
 /// Wrap the old <see cref="IFormDataValidator"/> interface to the new <see cref="IValidator"/> interface.
@@ -32,6 +31,9 @@ internal class FormDataValidatorWrapper : IValidator
 
     /// <inheritdoc />
     public string ValidationSource => _formDataValidator.ValidationSource;
+
+    /// <inheritdoc />
+    public bool NoIncrementalValidation => _formDataValidator.NoIncrementalValidation;
 
     /// <summary>
     /// Run all legacy <see cref="IDataElementValidator"/> instances for the given <see cref="DataType"/>.
