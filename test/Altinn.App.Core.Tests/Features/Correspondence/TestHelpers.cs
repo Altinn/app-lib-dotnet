@@ -1,5 +1,8 @@
 using System.Net;
 using System.Text.Json;
+using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Features.Correspondence.Models;
+using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Tests.Features.Correspondence;
@@ -26,4 +29,42 @@ public static class TestHelpers
 
         return new HttpResponseMessage(statusCode) { Content = new StringContent(test) };
     }
+
+    public static Task<JwtToken> OrgTokenFactory(IEnumerable<string> scopes)
+    {
+        var _scopes = new Scopes(MaskinportenClient.GetFormattedScopes(scopes));
+        var token = _scopes.HasScopeWithPrefix("altinn:serviceowner/")
+            ? TestAuthentication.GetServiceOwnerToken(scope: _scopes.ToString())
+            : TestAuthentication.GetOrgToken(scope: _scopes.ToString());
+
+        return Task.FromResult(JwtToken.Parse(token));
+    }
+
+    public static SendCorrespondenceResponse DummySendCorrespondenceResponse =>
+        new()
+        {
+            Correspondences = new List<CorrespondenceDetailsResponse>
+            {
+                new()
+                {
+                    CorrespondenceId = Guid.Empty,
+                    Status = CorrespondenceStatus.Initialized,
+                    Recipient = OrganisationOrPersonIdentifier.Create(GetOrganisationNumber(0)),
+                },
+            },
+        };
+
+    public static GetCorrespondenceStatusResponse DummyGetCorrespondenceStatusResponse =>
+        new()
+        {
+            CorrespondenceId = Guid.Empty,
+            Created = DateTimeOffset.MinValue,
+            StatusChanged = DateTimeOffset.MinValue,
+            Recipient = GetOrganisationNumber(0),
+            Sender = GetOrganisationNumber(1),
+            Status = CorrespondenceStatus.Published,
+            StatusHistory = [],
+            ResourceId = string.Empty,
+            SendersReference = string.Empty,
+        };
 }
