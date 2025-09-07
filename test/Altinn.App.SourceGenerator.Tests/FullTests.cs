@@ -77,10 +77,7 @@ public class FullTests
                 public string? Poststed { get; set; }
             }
             """;
-        var syntax = CSharpSyntaxTree.ParseText(
-            source,
-            path: "/Users/ivarne/Altinn/ttd/altinn-app-frontend/models/Models.cs"
-        );
+        var syntax = CSharpSyntaxTree.ParseText(source, path: "models/Models.cs");
 
         var applicationMetadata = """
             {

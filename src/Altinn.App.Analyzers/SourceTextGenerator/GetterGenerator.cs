@@ -12,7 +12,7 @@ internal static class GetterGenerator
                 """
 
                     /// <inheritdoc />
-                    public object? Get(ReadOnlySpan<char> path) => null;
+                    public object? Get(global::System.ReadOnlySpan<char> path) => null;
 
                 """
             );
@@ -22,7 +22,7 @@ internal static class GetterGenerator
             """
 
                 /// <inheritdoc />
-                public object? Get(ReadOnlySpan<char> path)
+                public object? Get(global::System.ReadOnlySpan<char> path)
                 {
                     if (path.IsEmpty)
                     {
@@ -57,14 +57,14 @@ internal static class GetterGenerator
 
                     private static object? GetRecursive(
                         {{modelPathNode.ListType}}? model,
-                        ReadOnlySpan<char> path,
+                        global::System.ReadOnlySpan<char> path,
                         int offset
                     )
                     {
                         int index = GetIndex(path, offset, out int nextOffset);
                         if (index < 0 || index >= model?.Count)
                         {
-                            // throw new IndexOutOfRangeException($"Index {index} is out of range for list of length {model.Count}.");
+                            // throw new global::System.IndexOutOfRangeException($"Index {index} is out of range for list of length {model.Count}.");
                             return null;
                         }
 
@@ -86,7 +86,7 @@ internal static class GetterGenerator
 
                 private static object? GetRecursive(
                     {{modelPathNode.TypeName}}? model,
-                    ReadOnlySpan<char> path,
+                    global::System.ReadOnlySpan<char> path,
                     int offset
                 )
                 {
@@ -107,7 +107,7 @@ internal static class GetterGenerator
         builder.Append(
             """
                         "" => model,
-                        // _ => throw new ArgumentException("{path} is not a valid path."),
+                        // _ => throw new global::System.ArgumentException("{path} is not a valid path."),
                         _ => null,
                     };
                 }

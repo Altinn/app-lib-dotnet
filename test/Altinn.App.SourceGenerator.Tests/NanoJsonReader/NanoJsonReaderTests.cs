@@ -54,11 +54,11 @@ public class NanoJsonReaderTests(ITestOutputHelper output)
             { "stringWithEscapes3", @"string with \\n" },
             {
                 "array",
-                new List<int> { 1, 2, 3 }
+                new List<double> { 1, 2, 3 }
             },
             {
                 "array2",
-                new List<object?> { 1, 2, 3, "string", true, false, null }
+                new List<object?> { 1.0, 2.0, 3.0, "string", true, false, null }
             },
             {
                 "object",
@@ -75,11 +75,11 @@ public class NanoJsonReaderTests(ITestOutputHelper output)
                     { "stringWithEscapes3", @"string with \\n" },
                     {
                         "array",
-                        new List<int> { 1, 2, 3 }
+                        new List<double> { 1, 2, 3 }
                     },
                     {
                         "array2",
-                        new List<object?> { 1, 2, 3, "string", true, false, null }
+                        new List<object?> { 1.0, 2.0, 3.0, "string", true, false, null }
                     },
                 }
             },
@@ -112,15 +112,15 @@ public class NanoJsonReaderTests(ITestOutputHelper output)
         {
             {
                 "array",
-                new List<int> { 1, 2, 3 }
+                new List<double> { 1, 2, 3 }
             },
             {
                 "array2",
                 new List<object?>
                 {
-                    1,
-                    2,
-                    3,
+                    1.0,
+                    2.0,
+                    3.0,
                     "string\n\r\b\t\f\\v\u0020",
                     true,
                     new Dictionary<string, object?>() { { "key", "value" } },
@@ -132,10 +132,10 @@ public class NanoJsonReaderTests(ITestOutputHelper output)
         AssertEquivalency(expectedValues, root);
     }
 
-    private void AssertEquivalency(object? value, JsonValue currentValue)
+    private void AssertEquivalency(object? expectedValue, JsonValue currentValue)
     {
-        output.WriteLine("asserting " + value);
-        switch (value)
+        output.WriteLine("asserting " + expectedValue);
+        switch (expectedValue)
         {
             case null:
                 Assert.Equal(JsonType.Null, currentValue.Type);
@@ -179,6 +179,8 @@ public class NanoJsonReaderTests(ITestOutputHelper output)
                 }
 
                 break;
+            default:
+                throw new Exception($"Unexpected value type {expectedValue.GetType()}, assert with only json types");
         }
     }
 

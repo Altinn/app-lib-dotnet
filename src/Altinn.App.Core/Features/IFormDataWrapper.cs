@@ -64,12 +64,12 @@ public interface IFormDataWrapper
     IFormDataWrapper Copy();
 
     /// <summary>
-    /// Set all Guid AltinRowId fields to Guid.Empty (so that they don't get serialized to xml or json)
+    /// Set all Guid AltinnRowId fields to Guid.Empty (so that they don't get serialized to xml or json)
     /// </summary>
     void RemoveAltinnRowIds();
 
     /// <summary>
-    /// Set all Guid AltinRowId fields that are Guid.Empty to Guid.NewGuid (so that we have an addressable id for the row when diffing for patches)
+    /// Set all Guid AltinnRowId fields that are Guid.Empty to Guid.NewGuid (so that we have an addressable id for the row when diffing for patches)
     /// </summary>
     void InitializeAltinnRowIds();
 

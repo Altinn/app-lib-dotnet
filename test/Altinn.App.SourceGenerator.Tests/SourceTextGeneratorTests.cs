@@ -1,10 +1,8 @@
-using System.Collections.Immutable;
 using System.Reflection;
 using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Analyzers;
+using Altinn.App.Analyzers.SourceTextGenerator;
 using Xunit.Abstractions;
 
 namespace Altinn.App.SourceGenerator.Tests;
@@ -16,7 +14,7 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
     {
         var rootNode = GetRoot<Skjema>();
 
-        var text = Analyzers.SourceTextGenerator.SourceTextGenerator.GenerateSourceText(rootNode, "internal");
+        var text = SourceTextGenerator.GenerateSourceText(rootNode, "internal");
         outputHelper.WriteLine(AddLineNumbers(text));
 
         await Verify(text, extension: "cs");
@@ -27,7 +25,7 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
     {
         var rootNode = GetRoot<Empty>();
 
-        var text = Analyzers.SourceTextGenerator.SourceTextGenerator.GenerateSourceText(rootNode, "internal");
+        var text = SourceTextGenerator.GenerateSourceText(rootNode, "internal");
         outputHelper.WriteLine(AddLineNumbers(text));
 
         await Verify(text, extension: "cs");

@@ -18,25 +18,19 @@ public static class SourceTextGenerator
         builder.Append(
             $$"""
             #nullable enable
-            using System;
-            using System.Collections.Generic;
-            using System.Diagnostics.CodeAnalysis;
-            using System.Linq;
-            using Altinn.App.Core.Features;
-            using Altinn.App.Core.Helpers;
 
             {{classModifier}} class {{className}}
-                : IFormDataWrapper<{{rootNode.TypeName}}>
+                : global::Altinn.App.Core.Features.IFormDataWrapper<{{rootNode.TypeName}}>
             {
                 private readonly {{rootNode.TypeName}} _dataModel;
 
-                public Type BackingDataType => typeof({{rootNode.TypeName}});
+                public global::System.Type BackingDataType => typeof({{rootNode.TypeName}});
 
                 public T BackingData<T>()
                     where T : class
                 {
                     return _dataModel as T
-                        ?? throw new InvalidCastException(
+                        ?? throw new global::System.InvalidCastException(
                             $"Attempted to cast data model of type {{rootNode.FullName}} to {typeof(T).FullName}"
                         );
                 }
@@ -45,7 +39,7 @@ public static class SourceTextGenerator
                 {
                     _dataModel =
                         dataModel as {{rootNode.TypeName}}
-                        ?? throw new ArgumentException(
+                        ?? throw new global::System.ArgumentException(
                             $"Data model must be of type {{rootNode.FullName}}, (was {dataModel.GetType().FullName})"
                         );
                 }
@@ -73,21 +67,21 @@ public static class SourceTextGenerator
 
         builder.Append(
             """
-            public static ReadOnlySpan<char> GetNextSegment(ReadOnlySpan<char> path, int offset, out int nextOffset)
+            public static global::System.ReadOnlySpan<char> GetNextSegment(global::System.ReadOnlySpan<char> path, int offset, out int nextOffset)
             {
                 if (offset < 0 || offset >= path.Length)
                 {
-                    throw new ArgumentOutOfRangeException(nameof(offset));
+                    throw new global::System.ArgumentOutOfRangeException(nameof(offset));
                 }
                 var segment = path[offset..];
-                var periodOffset = segment.IndexOf('.');
-                var bracketOffset = segment.IndexOf('[');
+                var periodOffset = global::System.MemoryExtensions.IndexOf(segment, '.');
+                var bracketOffset = global::System.MemoryExtensions.IndexOf(segment, '[');
                 var endOffset = (periodOffset, bracketOffset) switch
                 {
                     (-1, -1) => -1,
                     (-1, _) => bracketOffset,
                     (_, -1) => periodOffset,
-                    _ => Math.Min(periodOffset, bracketOffset),
+                    _ => global::System.Math.Min(periodOffset, bracketOffset),
                 };
                 if (endOffset == -1)
                 {
@@ -99,18 +93,18 @@ public static class SourceTextGenerator
                 return segment[..endOffset];
             }
 
-            public static int GetIndex(ReadOnlySpan<char> path, int offset, out int nextOffset)
+            public static int GetIndex(global::System.ReadOnlySpan<char> path, int offset, out int nextOffset)
             {
                 var segment = path[offset..];
-                var bracketOffset = segment.IndexOf(']');
+                var bracketOffset = global::System.MemoryExtensions.IndexOf(segment, ']');
                 if (bracketOffset < 0)
                 {
-                    throw new IndexOutOfRangeException();
+                    throw new global::System.IndexOutOfRangeException();
                 }
 
                 if (!int.TryParse(segment[..bracketOffset], out var index))
                 {
-                    throw new IndexOutOfRangeException();
+                    throw new global::System.IndexOutOfRangeException();
                 }
 
                 nextOffset = offset + bracketOffset + 2;

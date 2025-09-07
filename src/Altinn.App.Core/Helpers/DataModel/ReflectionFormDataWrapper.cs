@@ -60,7 +60,7 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
             return path;
         }
 
-        string tmp = AddIndicies(path.ToString(), rowIndexes);
+        string tmp = AddIndexes(path.ToString(), rowIndexes);
         tmp.AsSpan().CopyTo(buffer);
         return buffer.Slice(0, tmp.Length);
     }
@@ -244,10 +244,10 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
     /// </summary>
     /// <example>
     /// key = "bedrift.ansatte.navn"
-    /// indicies = [1,2]
+    /// indexes = [1,2]
     /// => "bedrift[1].ansatte[2].navn"
     /// </example>
-    private string AddIndicies(string field, ReadOnlySpan<int> rowIndexes = default)
+    private string AddIndexes(string field, ReadOnlySpan<int> rowIndexes = default)
     {
         if (rowIndexes.Length == 0)
         {
@@ -331,10 +331,21 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
                     $"Tried to remove row {field}, ended in a non-list ({propertyValue?.GetType()})"
                 );
             }
+            if (listValue.Count < lastGroupIndex)
+            {
+                throw new ArgumentException(
+                    $"Tried to remove item at index {lastGroupIndex} but {field} only has {listValue.Count} elements"
+                );
+            }
 
             switch (rowRemovalOption)
             {
                 case RowRemovalOption.DeleteRow:
+                    if (lastGroupIndex.Value < 0 || lastGroupIndex.Value >= listValue.Count)
+                    {
+                        // Index out of range, nothing to remove
+                        return;
+                    }
                     listValue.RemoveAt(lastGroupIndex.Value);
                     break;
                 case RowRemovalOption.SetToNull:

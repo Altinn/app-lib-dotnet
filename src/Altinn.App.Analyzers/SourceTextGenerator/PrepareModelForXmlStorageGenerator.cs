@@ -12,7 +12,7 @@ internal static class PrepareModelForXmlStorageGenerator
                 /// <inheritdoc />
                 public void PrepareModelForXmlStorage()
                 {
-                    ObjectUtils.PrepareModelForXmlStorage(_dataModel);
+                    global::Altinn.App.Core.Helpers.ObjectUtils.PrepareModelForXmlStorage(_dataModel);
                 }
 
             """

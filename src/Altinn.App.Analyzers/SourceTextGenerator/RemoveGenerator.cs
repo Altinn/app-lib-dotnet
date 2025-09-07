@@ -12,7 +12,7 @@ internal static class RemoveGenerator
                 """
 
                     /// <inheritdoc />
-                    public void RemoveField(ReadOnlySpan<char> path, RowRemovalOption rowRemovalOption) { }
+                    public void RemoveField(global::System.ReadOnlySpan<char> path, global::Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
 
                 """
             );
@@ -22,7 +22,7 @@ internal static class RemoveGenerator
             """
 
                 /// <inheritdoc />
-                public void RemoveField(ReadOnlySpan<char> path, RowRemovalOption rowRemovalOption)
+                public void RemoveField(global::System.ReadOnlySpan<char> path, global::Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption)
                 {
                     if (path.IsEmpty)
                     {
@@ -57,13 +57,13 @@ internal static class RemoveGenerator
 
                     private static void RemoveRecursive(
                         {{modelPathNode.ListType}}? model,
-                        ReadOnlySpan<char> path,
+                        global::System.ReadOnlySpan<char> path,
                         int offset,
-                        RowRemovalOption rowRemovalOption
+                        global::Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption
                     )
                     {
                         int index = GetIndex(path, offset, out int nextOffset);
-                        if (index < 0 || index >= model?.Count || model is null)
+                        if (model is null || index < 0 || index >= model.Count)
                         {
                             return;
                         }
@@ -71,10 +71,10 @@ internal static class RemoveGenerator
                         {
                             switch (rowRemovalOption)
                             {
-                                case RowRemovalOption.DeleteRow:
+                                case global::Altinn.App.Core.Helpers.RowRemovalOption.DeleteRow:
                                     model.RemoveAt(index);
                                     break;
-                                case RowRemovalOption.SetToNull:
+                                case global::Altinn.App.Core.Helpers.RowRemovalOption.SetToNull:
                                     model[index] = null!;
                                     break;
                             }
@@ -99,9 +99,9 @@ internal static class RemoveGenerator
 
                 private static void RemoveRecursive(
                     {{modelPathNode.TypeName}}? model,
-                    ReadOnlySpan<char> path,
+                    global::System.ReadOnlySpan<char> path,
                     int offset,
-                    RowRemovalOption rowRemovalOption
+                    global::Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption
                 )
                 {
                     if (model is null)

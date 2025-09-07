@@ -10,7 +10,7 @@ internal static class CopyGenerator
             $$"""
 
                 /// <inheritdoc />
-                public IFormDataWrapper Copy()
+                public global::Altinn.App.Core.Features.IFormDataWrapper Copy()
                 {
                     return new {{generatedWrapperClassName}}(CopyRecursive(_dataModel));
                 }
@@ -35,7 +35,7 @@ internal static class CopyGenerator
         builder.Append(
             $$"""
 
-                [return: NotNullIfNotNull("data")]
+                [return: global::System.Diagnostics.CodeAnalysis.NotNullIfNotNull("data")]
                 private static {{node.TypeName}}? CopyRecursive(
                     {{node.TypeName}}? data
                 )
@@ -78,7 +78,7 @@ internal static class CopyGenerator
         builder.Append(
             $$"""
 
-                [return: NotNullIfNotNull("list")]
+                [return: global::System.Diagnostics.CodeAnalysis.NotNullIfNotNull("list")]
                 private static {{node.ListType}}? CopyRecursive(
                     {{node.ListType}}? list
                 )
@@ -88,7 +88,13 @@ internal static class CopyGenerator
                         return null;
                     }
 
-                    return [.. list.Select(CopyRecursive)];
+                    global::System.Collections.Generic.List<{{node.TypeName}}?> result = new(list.Count);
+                    foreach (var item in list)
+                    {
+                        result.Add(CopyRecursive(item));
+                    }
+
+                    return result;
                 }
 
             """

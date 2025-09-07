@@ -10,7 +10,7 @@ internal static class AddIndexToPathGenerator
             $$"""
 
                 /// <inheritdoc />
-                public ReadOnlySpan<char> AddIndexToPath(ReadOnlySpan<char> path, ReadOnlySpan<int> rowIndexes, Span<char> buffer)
+                public global::System.ReadOnlySpan<char> AddIndexToPath(global::System.ReadOnlySpan<char> path, global::System.ReadOnlySpan<int> rowIndexes, global::System.Span<char> buffer)
                 {
                     var bufferOffset = 0;
                     var pathOffset = 0;
@@ -42,10 +42,10 @@ internal static class AddIndexToPathGenerator
             $$"""
 
                 private void AddIndexToPathRecursive_{{node.Name}}(
-                    ReadOnlySpan<char> path,
+                    global::System.ReadOnlySpan<char> path,
                     int pathOffset,
-                    ReadOnlySpan<int> rowIndexes,
-                    Span<char> buffer,
+                    global::System.ReadOnlySpan<int> rowIndexes,
+                    global::System.Span<char> buffer,
                     ref int bufferOffset
                 )
                 {
@@ -75,7 +75,7 @@ internal static class AddIndexToPathGenerator
                 builder.Append(
                     """
 
-                                    if (path.Length <= pathOffset && path[pathOffset] == '[')
+                                    if (pathOffset != -1 && pathOffset < path.Length && path[pathOffset] == '[')
                                     {
                                         // Copy index from path to buffer
                                         GetIndex(path, pathOffset, out int nextPathIndexOffset);
