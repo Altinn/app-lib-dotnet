@@ -32,10 +32,17 @@ public static class TestHelpers
 
     public static Task<JwtToken> OrgTokenFactory(IEnumerable<string> scopes)
     {
-        var _scopes = new Scopes(MaskinportenClient.GetFormattedScopes(scopes));
-        var token = _scopes.HasScopeWithPrefix("altinn:serviceowner/")
-            ? TestAuthentication.GetServiceOwnerToken(scope: _scopes.ToString())
-            : TestAuthentication.GetOrgToken(scope: _scopes.ToString());
+        var formattedScopes = MaskinportenClient.GetFormattedScopes(scopes);
+        string token;
+
+        try
+        {
+            token = TestAuthentication.GetServiceOwnerToken(scope: formattedScopes);
+        }
+        catch (InvalidOperationException)
+        {
+            token = TestAuthentication.GetOrgToken(scope: formattedScopes);
+        }
 
         return Task.FromResult(JwtToken.Parse(token));
     }
