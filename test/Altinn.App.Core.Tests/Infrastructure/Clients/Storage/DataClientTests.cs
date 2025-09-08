@@ -1049,7 +1049,7 @@ public class DataClientTests
             var services = new ServiceCollection();
             services.Configure<PlatformSettings>(options => options.ApiStorageEndpoint = ApiStorageEndpoint);
             services.Configure<GeneralSettings>(options => options.HostName = "tt02.altinn.no");
-            services.AddLocaltestDiscovery();
+            services.AddRuntimeEnvironment();
             services.AddSingleton<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
             services.AddSingleton<ModelSerializationService>();
             services.AddSingleton(mocks.AppModelMock.Object);

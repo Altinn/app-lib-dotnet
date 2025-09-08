@@ -23,7 +23,7 @@ internal sealed class LocaltestValidation : BackgroundService
     private readonly ILogger<LocaltestValidation> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptionsMonitor<GeneralSettings> _generalSettings;
-    private readonly LocaltestDiscovery _localtestDiscovery;
+    private readonly RuntimeEnvironment _runtimeEnvironment;
     private readonly IHostApplicationLifetime _lifetime;
     private readonly TimeProvider _timeProvider;
     private readonly Channel<VersionResult> _resultChannel;
@@ -34,7 +34,7 @@ internal sealed class LocaltestValidation : BackgroundService
         ILogger<LocaltestValidation> logger,
         IHttpClientFactory httpClientFactory,
         IOptionsMonitor<GeneralSettings> generalSettings,
-        LocaltestDiscovery localtestDiscovery,
+        RuntimeEnvironment runtimeEnvironment,
         IHostApplicationLifetime lifetime,
         TimeProvider? timeProvider = null
     )
@@ -42,7 +42,7 @@ internal sealed class LocaltestValidation : BackgroundService
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _generalSettings = generalSettings;
-        _localtestDiscovery = localtestDiscovery;
+        _runtimeEnvironment = runtimeEnvironment;
         _lifetime = lifetime;
         _timeProvider = timeProvider ?? TimeProvider.System;
         _resultChannel = Channel.CreateBounded<VersionResult>(
@@ -60,10 +60,10 @@ internal sealed class LocaltestValidation : BackgroundService
             if (settings.DisableLocaltestValidation)
                 return;
 
-            if (!_localtestDiscovery.IsRunning())
+            if (!_runtimeEnvironment.IsLocaltestPlatform())
                 return;
 
-            var baseUrl = _localtestDiscovery.GetBaseUrl();
+            var baseUrl = _runtimeEnvironment.GetPlatformBaseUrl();
             while (!stoppingToken.IsCancellationRequested)
             {
                 var result = await Version();
@@ -166,7 +166,7 @@ internal sealed class LocaltestValidation : BackgroundService
         {
             using var client = _httpClientFactory.CreateClient();
 
-            var baseUrl = _localtestDiscovery.GetBaseUrl();
+            var baseUrl = _runtimeEnvironment.GetPlatformBaseUrl();
             var url = $"{baseUrl}/Home/Localtest/Version";
 
             using var response = await client.GetAsync(url, cancellationToken);

@@ -183,7 +183,7 @@ public class AuthenticationTokenResolverTest
                 });
 
             var services = new ServiceCollection();
-            services.AddLocaltestDiscovery();
+            services.AddRuntimeEnvironment();
             services.Configure<PlatformSettings>(options =>
                 options.ApiStorageEndpoint = _platformSettings.ApiStorageEndpoint
             );

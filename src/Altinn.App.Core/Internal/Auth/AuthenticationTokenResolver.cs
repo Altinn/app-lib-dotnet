@@ -23,15 +23,15 @@ internal class AuthenticationTokenResolver : IAuthenticationTokenResolver
         IMaskinportenClient maskinportenClient,
         IAppMetadata appMetadata,
         IAuthenticationContext authenticationContext,
-        LocaltestDiscovery localtestDiscovery
+        RuntimeEnvironment runtimeEnvironment
     )
     {
         _maskinportenClient = maskinportenClient;
         _appMetadata = appMetadata;
         _httpClientFactory = httpClientFactory;
         _authenticationContext = authenticationContext;
-        _isDev = localtestDiscovery.IsRunning();
-        _localtestBaseUrl = localtestDiscovery.GetBaseUrl();
+        _isDev = runtimeEnvironment.IsLocaltestPlatform();
+        _localtestBaseUrl = runtimeEnvironment.GetPlatformBaseUrl();
     }
 
     /// <inheritdoc />

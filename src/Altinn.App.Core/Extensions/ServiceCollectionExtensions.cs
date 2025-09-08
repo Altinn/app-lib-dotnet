@@ -194,7 +194,7 @@ public static class ServiceCollectionExtensions
         services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
         services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
 
-        services.AddLocaltestDiscovery();
+        services.AddRuntimeEnvironment();
         if (env.IsDevelopment())
             services.AddLocaltestValidation();
 

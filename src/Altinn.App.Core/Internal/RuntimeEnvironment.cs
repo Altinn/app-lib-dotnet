@@ -5,28 +5,28 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal;
 
-internal static class LocaltestDiscoveryDI
+internal static class RuntimeEnvironmentDI
 {
-    public static IServiceCollection AddLocaltestDiscovery(this IServiceCollection services)
+    public static IServiceCollection AddRuntimeEnvironment(this IServiceCollection services)
     {
-        services.AddSingleton<LocaltestDiscovery>();
+        services.AddSingleton<RuntimeEnvironment>();
         return services;
     }
 }
 
-internal sealed class LocaltestDiscovery(
+internal sealed class RuntimeEnvironment(
     IOptionsMonitor<GeneralSettings> _generalSettings,
     IOptionsMonitor<PlatformSettings> _platformSettings
 )
 {
     private static readonly FrozenSet<string> _expectedHostnames = new[]
     {
-        "local.altinn.cloud",
-        "altinn3local.no",
+        "local.altinn.cloud", // Current hostname for localtest
+        "altinn3local.no", // Old hostname for localtest
     }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
-    public bool IsRunning() => _expectedHostnames.Contains(_generalSettings.CurrentValue.HostName);
+    public bool IsLocaltestPlatform() => _expectedHostnames.Contains(_generalSettings.CurrentValue.HostName);
 
-    public string GetBaseUrl() =>
+    public string GetPlatformBaseUrl() =>
         new Uri(_platformSettings.CurrentValue.ApiStorageEndpoint).GetLeftPart(UriPartial.Authority);
 }
