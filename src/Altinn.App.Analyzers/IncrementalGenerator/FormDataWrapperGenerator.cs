@@ -173,15 +173,9 @@ public class FormDataWrapperGenerator : IIncrementalGenerator
         var nodeProperties = new List<ModelPathNode>();
         foreach (var property in namedTypeSymbol.GetMembers().OfType<IPropertySymbol>())
         {
-            if (
-                property.IsStatic
-                || property.IsReadOnly
-                || property.IsWriteOnly
-                || property.IsImplicitlyDeclared
-                || property.IsIndexer
-            )
+            if (PropertyShouldBeSkipped(property))
             {
-                // Skip static, readonly, writeonly, implicitly declared and indexer properties
+                // Skip static, readonly, writeonly, implicitly declared, private and indexer properties
                 continue;
             }
             var (propertyTypeSymbol, propertyCollectionTypeSymbol) = SourceReaderUtils.GetTypeFromProperty(
@@ -216,6 +210,33 @@ public class FormDataWrapperGenerator : IIncrementalGenerator
             }
         }
         return nodeProperties;
+    }
+
+    private static bool PropertyShouldBeSkipped(IPropertySymbol property)
+    {
+        // Skip static, readonly, writeonly, implicitly declared, private and indexer properties
+        if (
+            property.IsStatic
+            || property.IsReadOnly
+            || property.IsWriteOnly
+            || property.IsImplicitlyDeclared
+            || property.IsIndexer
+            || (
+                property.DeclaredAccessibility is not Accessibility.Public
+                && property.DeclaredAccessibility is not Accessibility.Internal
+            )
+        )
+        {
+            return true;
+        }
+
+        // Skip properties of abstract types (cannot be instantiated)
+        if (SourceReaderUtils.UnwrapNullable(property.Type) is INamedTypeSymbol { IsAbstract: true })
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private static void GenerateFromNode(SourceProductionContext context, Result<ModelPathNode> result)

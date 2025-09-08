@@ -22,7 +22,7 @@ internal class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
         _dataModel =
             dataModel as global::Altinn.App.SourceGenerator.Tests.Skjema
             ?? throw new global::System.ArgumentException(
-                $"Data model must be of type Altinn.App.SourceGenerator.Tests.Skjema, (was {dataModel.GetType().FullName})"
+                $"Data model must be of type Altinn.App.SourceGenerator.Tests.Skjema, (was {dataModel?.GetType().FullName ?? "null"})"
             );
     }
 

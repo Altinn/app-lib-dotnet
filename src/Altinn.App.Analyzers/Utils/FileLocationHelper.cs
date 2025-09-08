@@ -16,13 +16,14 @@ public static class FileLocationHelper
 
     public static Location GetLocation(ReadOnlySpan<char> fileContent, string filePath, int startIndex, int? endIndex)
     {
+        // normalize and clamp
+        var start = Math.Max(0, Math.Min(startIndex, fileContent.Length));
+        var endRaw = endIndex ?? start;
+        var end = Math.Max(start, Math.Min(endRaw, fileContent.Length));
         return Location.Create(
             filePath,
-            new TextSpan(startIndex, endIndex.HasValue ? endIndex.Value - startIndex : 0),
-            new LinePositionSpan(
-                GetLinePosition(startIndex, fileContent),
-                GetLinePosition(endIndex ?? startIndex, fileContent)
-            )
+            new TextSpan(start, end - start),
+            new LinePositionSpan(GetLinePosition(start, fileContent), GetLinePosition(end, fileContent))
         );
     }
 

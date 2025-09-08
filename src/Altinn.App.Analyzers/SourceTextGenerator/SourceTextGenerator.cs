@@ -40,7 +40,7 @@ public static class SourceTextGenerator
                     _dataModel =
                         dataModel as {{rootNode.TypeName}}
                         ?? throw new global::System.ArgumentException(
-                            $"Data model must be of type {{rootNode.FullName}}, (was {dataModel.GetType().FullName})"
+                            $"Data model must be of type {{rootNode.FullName}}, (was {dataModel?.GetType().FullName ?? "null"})"
                         );
                 }
 

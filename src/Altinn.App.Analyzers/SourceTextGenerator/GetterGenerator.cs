@@ -35,7 +35,7 @@ internal static class GetterGenerator
             """
         );
 
-        GenerateRecursive(builder, rootNode, []);
+        GenerateRecursive(builder, rootNode, new HashSet<string>(StringComparer.Ordinal));
     }
 
     private static void GenerateRecursive(

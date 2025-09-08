@@ -28,7 +28,7 @@ internal static class AddIndexToPathGenerator
 
             """
         );
-        GenerateRecursiveMethod(builder, rootNode, []);
+        GenerateRecursiveMethod(builder, rootNode, new HashSet<string>(StringComparer.Ordinal));
     }
 
     private static void GenerateRecursiveMethod(StringBuilder builder, ModelPathNode node, HashSet<string> methods)

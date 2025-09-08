@@ -59,6 +59,10 @@ public class FullTests
 
                 [JsonPropertyName("tidligere-adresse")]
                 public List<Adresse>? TidligereAdresse { get; set; }
+
+
+                [JsonPropertyName("withCollection")]
+                public ICollection<Adresse>? WithCollection { get; set; }
             }
 
             public class Adresse

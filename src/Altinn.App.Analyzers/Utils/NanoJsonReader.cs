@@ -355,8 +355,10 @@ public static class JsonReader
         index++; // skip opening "
         while (fullJson[index] != '"')
         {
+            // naive skip escape to ensure that we don't end the string at \"
+            // (we use a better algorithm in WriteStringToBuffer that actually translate escape sequences to the proper characters)
             if (fullJson[index] == '\\')
-                index++; // naive skip escape (we use a better algorithm in WriteStringToBuffer)
+                index++;
             index++;
             if (index >= fullJson.Length)
             {
@@ -464,7 +466,7 @@ public static class JsonReader
         while (readPos < jsonString.Length)
         {
             if (writePos >= buffer.Length)
-                throw new InvalidOperationException("Buffer too small");
+                throw new ArgumentException("Buffer too small");
 
             char c = jsonString[readPos++];
 

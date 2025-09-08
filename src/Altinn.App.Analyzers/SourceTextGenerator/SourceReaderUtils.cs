@@ -5,11 +5,7 @@ internal static class SourceReaderUtils
     public static ITypeSymbol UnwrapNullable(ITypeSymbol symbol)
     {
         if (
-            symbol is INamedTypeSymbol
-            {
-                NullableAnnotation: NullableAnnotation.Annotated,
-                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
-            } namedTypeSymbol
+            symbol is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } namedTypeSymbol
         )
         {
             return namedTypeSymbol.TypeArguments[0];
