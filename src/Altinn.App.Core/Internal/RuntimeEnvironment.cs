@@ -25,7 +25,15 @@ internal sealed class RuntimeEnvironment(
         "altinn3local.no", // Old hostname for localtest
     }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
-    public bool IsLocaltestPlatform() => _expectedHostnames.Contains(_generalSettings.CurrentValue.HostName);
+    public bool IsLocaltestPlatform()
+    {
+        var hostName = _generalSettings.CurrentValue.HostName;
+        var colonIdx = hostName.IndexOf(':');
+        if (colonIdx >= 0)
+            hostName = hostName[..colonIdx];
+
+        return _expectedHostnames.Contains(hostName);
+    }
 
     public string GetPlatformBaseUrl() =>
         new Uri(_platformSettings.CurrentValue.ApiStorageEndpoint).GetLeftPart(UriPartial.Authority);
