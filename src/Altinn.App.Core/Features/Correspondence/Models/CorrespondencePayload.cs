@@ -28,7 +28,7 @@ public sealed record SendCorrespondencePayload : CorrespondencePayloadBase
     internal CorrespondenceRequest CorrespondenceRequest { get; init; }
 
     /// <summary>
-    /// Instantiates a new payload for <see cref="SendCorrespondencePayload"/>.
+    /// Instantiates a new payload for <see cref="CorrespondenceClient.Send"/>.
     /// </summary>
     /// <param name="request">The correspondence request to send</param>
     /// <param name="authenticationMethod">The authentication method to use</param>
@@ -42,7 +42,7 @@ public sealed record SendCorrespondencePayload : CorrespondencePayloadBase
     }
 
     /// <summary>
-    /// Instantiates a new payload for <see cref="SendCorrespondencePayload"/>.
+    /// Instantiates a new payload for <see cref="CorrespondenceClient.Send"/>.
     /// </summary>
     /// <param name="request">The correspondence request to send</param>
     /// <param name="accessTokenFactory">Access token factory delegate (e.g. <see cref="MaskinportenClient.GetAltinnExchangedToken"/>) to use for authorisation</param>
@@ -54,7 +54,7 @@ public sealed record SendCorrespondencePayload : CorrespondencePayloadBase
     }
 
     /// <summary>
-    /// Instantiates a new payload for <see cref="SendCorrespondencePayload"/>.
+    /// Instantiates a new payload for <see cref="CorrespondenceClient.Send"/>.
     /// </summary>
     /// <param name="request">The correspondence request to send</param>
     /// <param name="authorisation">The built-in authorisation method to use</param>
@@ -74,7 +74,7 @@ public sealed record GetCorrespondenceStatusPayload : CorrespondencePayloadBase
     internal Guid CorrespondenceId { get; init; }
 
     /// <summary>
-    /// Instantiates a new payload for <see cref="SendCorrespondencePayload"/>.
+    /// Instantiates a new payload for <see cref="CorrespondenceClient.Send"/>.
     /// </summary>
     /// <param name="correspondenceId">The correspondence identifier to retrieve information about</param>
     /// <param name="authenticationMethod">The authentication method to use</param>
@@ -88,7 +88,7 @@ public sealed record GetCorrespondenceStatusPayload : CorrespondencePayloadBase
     }
 
     /// <summary>
-    /// Instantiates a new payload for <see cref="CorrespondenceClient.GetStatus"/>.
+    /// Instantiates a new payload for <see cref="Correspond`enceClient.GetStatus"/>.
     /// </summary>
     /// <param name="correspondenceId">The correspondence identifier to retrieve information about</param>
     /// <param name="accessTokenFactory">Access token factory delegate (e.g. <see cref="MaskinportenClient.GetAltinnExchangedToken"/>) to use for authorisation</param>
