@@ -25,16 +25,15 @@ internal class AuthenticationTokenResolver : IAuthenticationTokenResolver
         IMaskinportenClient maskinportenClient,
         IAppMetadata appMetadata,
         IAuthenticationContext authenticationContext,
-        IOptions<PlatformSettings> platformSettings,
-        IOptions<GeneralSettings> generalSettings
+        LocaltestDiscovery localtestDiscovery
     )
     {
         _maskinportenClient = maskinportenClient;
         _appMetadata = appMetadata;
         _httpClientFactory = httpClientFactory;
         _authenticationContext = authenticationContext;
-        _isDev = LocaltestValidation.IsLocaltest(generalSettings.Value);
-        _localtestBaseUrl = LocaltestValidation.GetLocaltestBaseUrl(platformSettings.Value);
+        _isDev = localtestDiscovery.IsRunning();
+        _localtestBaseUrl = localtestDiscovery.GetBaseUrl();
     }
 
     /// <inheritdoc />
