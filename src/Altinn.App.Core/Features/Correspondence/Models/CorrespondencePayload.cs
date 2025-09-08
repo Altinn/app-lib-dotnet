@@ -88,7 +88,7 @@ public sealed record GetCorrespondenceStatusPayload : CorrespondencePayloadBase
     }
 
     /// <summary>
-    /// Instantiates a new payload for <see cref="Correspond`enceClient.GetStatus"/>.
+    /// Instantiates a new payload for <see cref="CorrespondenceClient.GetStatus"/>.
     /// </summary>
     /// <param name="correspondenceId">The correspondence identifier to retrieve information about</param>
     /// <param name="accessTokenFactory">Access token factory delegate (e.g. <see cref="MaskinportenClient.GetAltinnExchangedToken"/>) to use for authorisation</param>
