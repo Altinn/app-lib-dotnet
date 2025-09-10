@@ -1,7 +1,6 @@
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
-using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Models.Validation;
 
 namespace Altinn.App.Core.Internal.Expressions;
@@ -14,7 +13,10 @@ public static class LayoutEvaluator
     /// <summary>
     /// Get a list of fields that are only referenced in hidden components in <see cref="LayoutEvaluatorState" />
     /// </summary>
-    public static async Task<List<DataReference>> GetHiddenFieldsForRemoval(LayoutEvaluatorState state)
+    public static async Task<List<DataReference>> GetHiddenFieldsForRemoval(
+        LayoutEvaluatorState state,
+        bool evaluateRemoveWhenHidden = false
+    )
     {
         var hiddenModelBindings = new HashSet<DataReference>();
         var nonHiddenModelBindings = new HashSet<DataReference>();
@@ -22,18 +24,28 @@ public static class LayoutEvaluator
         var pageContexts = await state.GetComponentContexts();
         foreach (var pageContext in pageContexts)
         {
-            await HiddenFieldsForRemovalRecurs(state, hiddenModelBindings, nonHiddenModelBindings, pageContext);
+            await HiddenFieldsForRemovalRecurs(
+                state,
+                hiddenModelBindings,
+                nonHiddenModelBindings,
+                pageContext,
+                evaluateRemoveWhenHidden,
+                []
+            );
         }
 
-        var forRemoval = hiddenModelBindings.Except(nonHiddenModelBindings);
-        return forRemoval.ToList();
+        var forRemoval = hiddenModelBindings.Except(nonHiddenModelBindings).ToList();
+
+        return forRemoval;
     }
 
     private static async Task HiddenFieldsForRemovalRecurs(
         LayoutEvaluatorState state,
         HashSet<DataReference> hiddenModelBindings,
         HashSet<DataReference> nonHiddenModelBindings,
-        ComponentContext context
+        ComponentContext context,
+        bool evaluateRemoveWhenHidden,
+        IReadOnlyList<DataReference> ignoredPreifxes
     )
     {
         if (context.Component is null)
@@ -44,43 +56,41 @@ public static class LayoutEvaluator
             );
         }
 
-        var isHidden = await context.IsHidden(state);
-        if (context.Component is RepeatingGroupRowComponent or RepeatingGroupComponent)
+        var isHidden = await context.IsHidden(evaluateRemoveWhenHidden);
+
+        List<DataReference> childIgnoredPrefixes = [.. ignoredPreifxes];
+
+        // Schedule fields for removal
+        foreach (var (_, binding) in context.Component.DataModelBindings)
         {
-            if (context.Component.DataModelBindings.TryGetValue("group", out var groupBinding))
-            {
-                var indexedBinding = await state.AddInidicies(groupBinding, context);
-                (isHidden ? hiddenModelBindings : nonHiddenModelBindings).Add(indexedBinding);
-            }
-
-            if (isHidden)
-                return;
-        }
-
-        // Recurse children
-        foreach (var childContext in context.ChildContexts)
-        {
-            await HiddenFieldsForRemovalRecurs(state, hiddenModelBindings, nonHiddenModelBindings, childContext);
-        }
-
-        // Remove data if hidden
-        foreach (var (bindingName, binding) in context.Component.DataModelBindings)
-        {
-            if (bindingName == "group")
-            {
-                continue;
-            }
-
             var indexedBinding = await state.AddInidicies(binding, context);
+            if (ignoredPreifxes.Any(prefix => indexedBinding.StartsWith(prefix)))
+            {
+                continue; // Skip fields with ignored prefixes
+            }
 
             if (isHidden)
             {
                 hiddenModelBindings.Add(indexedBinding);
+                childIgnoredPrefixes.Add(indexedBinding);
             }
             else
             {
                 nonHiddenModelBindings.Add(indexedBinding);
             }
+        }
+
+        // Recurse children
+        foreach (var childContext in context.ChildContexts)
+        {
+            await HiddenFieldsForRemovalRecurs(
+                state,
+                hiddenModelBindings,
+                nonHiddenModelBindings,
+                childContext,
+                evaluateRemoveWhenHidden,
+                childIgnoredPrefixes
+            );
         }
     }
 
@@ -90,15 +100,19 @@ public static class LayoutEvaluator
     [Obsolete("Use the async version of this method RemoveHiddenDataAsync")]
     public static void RemoveHiddenData(LayoutEvaluatorState state, RowRemovalOption rowRemovalOption)
     {
-        RemoveHiddenDataAsync(state, rowRemovalOption).GetAwaiter().GetResult();
+        RemoveHiddenDataAsync(state, rowRemovalOption, evaluateRemoveWhenHidden: false).GetAwaiter().GetResult();
     }
 
     /// <summary>
     /// Remove fields that are only referenced from hidden fields from the data object in the state.
     /// </summary>
-    public static async Task RemoveHiddenDataAsync(LayoutEvaluatorState state, RowRemovalOption rowRemovalOption)
+    public static async Task RemoveHiddenDataAsync(
+        LayoutEvaluatorState state,
+        RowRemovalOption rowRemovalOption,
+        bool evaluateRemoveWhenHidden = false
+    )
     {
-        var fields = await GetHiddenFieldsForRemoval(state);
+        var fields = await GetHiddenFieldsForRemoval(state, evaluateRemoveWhenHidden);
         foreach (var dataReference in fields)
         {
             await state.RemoveDataField(dataReference, rowRemovalOption);
@@ -127,7 +141,7 @@ public static class LayoutEvaluator
     )
     {
         ArgumentNullException.ThrowIfNull(context.Component);
-        var hidden = await context.IsHidden(state);
+        var hidden = await context.IsHidden(evaluateRemoveWhenHidden: false);
         if (!hidden)
         {
             foreach (var childContext in context.ChildContexts)
@@ -141,7 +155,11 @@ public static class LayoutEvaluator
                 foreach (var (bindingName, binding) in context.Component.DataModelBindings)
                 {
                     var value = await state.GetModelData(binding, context.DataElementIdentifier, context.RowIndices);
-                    if (value is null)
+                    if (
+                        (value is null)
+                        || (value is string s && string.IsNullOrWhiteSpace(s))
+                        || (value is System.Collections.ICollection col && col.Count == 0)
+                    )
                     {
                         var field = await state.AddInidicies(binding, context);
                         validationIssues.Add(

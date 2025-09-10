@@ -9,6 +9,9 @@ namespace Altinn.App.Core.Helpers.DataModel;
 /// <summary>
 /// Get data fields from a model, using string keys (like "Bedrifter[1].Ansatte[1].Alder")
 /// </summary>
+[Obsolete(
+    "This class is deprecated and will be removed in a future version. Use the new LayoutEvaluatorState instead."
+)]
 public class DataModel
 {
     private readonly IInstanceDataAccessor _dataAccessor;
