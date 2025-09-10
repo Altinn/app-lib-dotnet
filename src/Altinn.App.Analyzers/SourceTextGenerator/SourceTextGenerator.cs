@@ -19,7 +19,9 @@ public static class SourceTextGenerator
             $$"""
             #nullable enable
 
-            {{classModifier}} class {{className}}
+            [global::System.CodeDom.Compiler.GeneratedCode]
+            [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+            {{classModifier}} sealed class {{className}}
                 : global::Altinn.App.Core.Features.IFormDataWrapper<{{rootNode.TypeName}}>
             {
                 private readonly {{rootNode.TypeName}} _dataModel;
@@ -67,54 +69,60 @@ public static class SourceTextGenerator
 
         builder.Append(
             """
-            public static global::System.ReadOnlySpan<char> GetNextSegment(global::System.ReadOnlySpan<char> path, int offset, out int nextOffset)
-            {
-                if (offset < 0 || offset >= path.Length)
+                private static global::System.ReadOnlySpan<char> GetNextSegment(global::System.ReadOnlySpan<char> path, int offset, out int nextOffset)
                 {
-                    throw new global::System.ArgumentOutOfRangeException(nameof(offset));
-                }
-                var segment = path[offset..];
-                var periodOffset = global::System.MemoryExtensions.IndexOf(segment, '.');
-                var bracketOffset = global::System.MemoryExtensions.IndexOf(segment, '[');
-                var endOffset = (periodOffset, bracketOffset) switch
-                {
-                    (-1, -1) => -1,
-                    (-1, _) => bracketOffset,
-                    (_, -1) => periodOffset,
-                    _ => global::System.Math.Min(periodOffset, bracketOffset),
-                };
-                if (endOffset == -1)
-                {
-                    nextOffset = -1;
-                    return segment;
-                }
-                nextOffset = endOffset + offset + 1;
+                    if (offset < 0 || offset >= path.Length)
+                    {
+                        throw new global::System.ArgumentOutOfRangeException(nameof(offset));
+                    }
+                    var segment = path[offset..];
+                    var periodOffset = global::System.MemoryExtensions.IndexOf(segment, '.');
+                    var bracketOffset = global::System.MemoryExtensions.IndexOf(segment, '[');
+                    var endOffset = (periodOffset, bracketOffset) switch
+                    {
+                        (-1, -1) => -1,
+                        (-1, _) => bracketOffset,
+                        (_, -1) => periodOffset,
+                        _ => global::System.Math.Min(periodOffset, bracketOffset),
+                    };
+                    if (endOffset == -1)
+                    {
+                        nextOffset = -1;
+                        return segment;
+                    }
+                    nextOffset = endOffset + offset + 1;
 
-                return segment[..endOffset];
-            }
-
-            public static int GetIndex(global::System.ReadOnlySpan<char> path, int offset, out int nextOffset)
-            {
-                var segment = path[offset..];
-                var bracketOffset = global::System.MemoryExtensions.IndexOf(segment, ']');
-                if (bracketOffset < 0)
-                {
-                    throw new global::System.IndexOutOfRangeException();
+                    return segment[..endOffset];
                 }
 
-                if (!int.TryParse(segment[..bracketOffset], out var index))
+                private static int GetIndex(global::System.ReadOnlySpan<char> path, int offset, out int nextOffset)
                 {
-                    throw new global::System.IndexOutOfRangeException();
+                    var segment = path[offset..];
+                    var bracketOffset = global::System.MemoryExtensions.IndexOf(segment, ']');
+                    if (bracketOffset < 0)
+                    {
+                        throw new global::System.FormatException($"Missing closing bracket ']' in {path}.");
+                    }
+
+                    if (!int.TryParse(segment[..bracketOffset], out var index))
+                    {
+                        throw new global::System.FormatException($"Invalid index in {path}.");
+                    }
+
+                    if (index < 0)
+                    {
+                        throw new global::System.FormatException($"Invalid negative index in {path}.");
+                    }
+
+                    nextOffset = offset + bracketOffset + 2;
+                    if (nextOffset >= path.Length)
+                    {
+                        nextOffset = -1;
+                    }
+
+                    return index;
                 }
 
-                nextOffset = offset + bracketOffset + 2;
-                if (nextOffset >= path.Length)
-                {
-                    nextOffset = -1;
-                }
-
-                return index;
-            }
             """
         );
         builder.Append("}\r\n");

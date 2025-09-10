@@ -61,6 +61,10 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
         }
 
         string tmp = AddIndexes(path.ToString(), rowIndexes);
+        if (tmp.Length > buffer.Length)
+        {
+            throw new ArgumentException("Buffer too small");
+        }
         tmp.AsSpan().CopyTo(buffer);
         return buffer.Slice(0, tmp.Length);
     }
@@ -151,7 +155,7 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
     private static readonly Regex _keyPartRegex = new(
         @"^([^\s\[\]\.]+)\[(\d*)\]?$",
         RegexOptions.Compiled,
-        TimeSpan.FromMicroseconds(10)
+        TimeSpan.FromMilliseconds(2)
     );
 
     private static (string key, int? index) ParseKeyPart(string keyPart)
@@ -160,7 +164,7 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
         {
             throw new DataModelException("Tried to parse empty part of dataModel key");
         }
-        if (keyPart.Last() != ']')
+        if (keyPart[^1] != ']')
         {
             return (keyPart, null);
         }
@@ -240,7 +244,7 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
     }
 
     /// <summary>
-    /// Return a full dataModelBiding from a context aware binding by adding indexes
+    /// Return a full dataModelBinding from a context aware binding by adding indexes
     /// </summary>
     /// <example>
     /// key = "bedrift.ansatte.navn"

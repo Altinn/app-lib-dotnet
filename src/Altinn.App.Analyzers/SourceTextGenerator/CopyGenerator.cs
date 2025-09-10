@@ -88,7 +88,7 @@ internal static class CopyGenerator
                         return null;
                     }
 
-                    global::System.Collections.Generic.List<{{node.TypeName}}?> result = new(list.Count);
+                    {{node.ListType}} result = new(list.Count);
                     foreach (var item in list)
                     {
                         result.Add(CopyRecursive(item));

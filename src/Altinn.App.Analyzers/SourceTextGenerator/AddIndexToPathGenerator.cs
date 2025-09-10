@@ -31,9 +31,13 @@ internal static class AddIndexToPathGenerator
         GenerateRecursiveMethod(builder, rootNode, new HashSet<string>(StringComparer.Ordinal));
     }
 
-    private static void GenerateRecursiveMethod(StringBuilder builder, ModelPathNode node, HashSet<string> methods)
+    private static void GenerateRecursiveMethod(
+        StringBuilder builder,
+        ModelPathNode node,
+        HashSet<string> generatedTypeNames
+    )
     {
-        if (!methods.Add(node.TypeName))
+        if (!generatedTypeNames.Add(node.TypeName))
         {
             // Already generated this method
             return;
@@ -128,7 +132,6 @@ internal static class AddIndexToPathGenerator
                             case "{{child.JsonName}}":
                                 segment.CopyTo(buffer.Slice(bufferOffset));
                                 bufferOffset += {{child.JsonName.Length}};
-                                pathOffset += {{child.JsonName.Length}};
                                 return;
 
                 """
@@ -147,7 +150,7 @@ internal static class AddIndexToPathGenerator
         );
         foreach (var child in node.Properties.Where(c => IsRelevantForRecursion(c)))
         {
-            GenerateRecursiveMethod(builder, child, methods);
+            GenerateRecursiveMethod(builder, child, generatedTypeNames);
         }
     }
 

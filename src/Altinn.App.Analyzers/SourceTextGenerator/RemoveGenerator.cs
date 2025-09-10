@@ -62,8 +62,12 @@ internal static class RemoveGenerator
                         global::Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption
                     )
                     {
+                        if (model is null)
+                        {
+                            return;
+                        }
                         int index = GetIndex(path, offset, out int nextOffset);
-                        if (model is null || index < 0 || index >= model.Count)
+                        if (index < 0 || index >= model.Count)
                         {
                             return;
                         }
@@ -75,7 +79,7 @@ internal static class RemoveGenerator
                                     model.RemoveAt(index);
                                     break;
                                 case global::Altinn.App.Core.Helpers.RowRemovalOption.SetToNull:
-                                    model[index] = null!;
+                                    model[index] = default!;
                                     break;
                             }
                         }

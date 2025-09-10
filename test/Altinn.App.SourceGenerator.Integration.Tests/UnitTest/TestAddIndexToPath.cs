@@ -1,3 +1,4 @@
+using System;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.SourceGenerator.Integration.Tests.Models;
@@ -32,5 +33,9 @@ public class TestAddIndexToPath
             "skjemainnhold[0].tidligere-adresse[4]",
             wrapper.AddIndexToPath("skjemainnhold.tidligere-adresse", [0, 4])
         );
+
+        Assert.Equal("skjemainnhold.navn", wrapper.AddIndexToPath("skjemainnhold.navn", []));
+        Assert.Throws<ArgumentException>(() => wrapper.AddIndexToPath("", []));
+        Assert.Throws<ArgumentException>(() => wrapper.AddIndexToPath(null, []));
     }
 }

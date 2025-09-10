@@ -63,7 +63,7 @@ public class FormDataWrapperGenerator : IIncrementalGenerator
                         new EquatableDiagnostic(
                             Diagnostics.FormDataWrapperGenerator.AppMetadataError,
                             FileLocationHelper.GetLocation(text, 0, null),
-                            ["Failed to read applicationmetadata.json"]
+                            ["Failed to read"]
                         )
                     ),
                 ];
@@ -78,7 +78,7 @@ public class FormDataWrapperGenerator : IIncrementalGenerator
                         new EquatableDiagnostic(
                             Diagnostics.FormDataWrapperGenerator.AppMetadataError,
                             FileLocationHelper.GetLocation(text, appMetadata.Start, appMetadata.End),
-                            ["applicationmetadata.json is not a valid JSON object"]
+                            ["not a valid JSON object"]
                         )
                     ),
                 ];

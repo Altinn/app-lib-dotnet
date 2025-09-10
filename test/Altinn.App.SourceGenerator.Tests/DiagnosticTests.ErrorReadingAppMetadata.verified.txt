@@ -1,7 +1,7 @@
 ﻿[
   {
     Location: C:\temp\config\applicationmetadata.json: (0,0)-(0,0),
-    Message: Error in applicationmetadata.json: Failed to read applicationmetadata.json,
+    Message: Error in applicationmetadata.json: Failed to read,
     Severity: Warning,
     WarningLevel: 1,
     Descriptor: {

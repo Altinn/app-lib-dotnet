@@ -221,7 +221,7 @@ public class DataModelWrapper
     private static readonly Regex _keyPartRegex = new(
         @"^([^\s\[\]\.]+)\[(\d+)\]?$",
         RegexOptions.Compiled,
-        TimeSpan.FromMicroseconds(10)
+        TimeSpan.FromMilliseconds(2)
     );
 
     private static (string key, int? index) ParseKeyPart(string keyPart)

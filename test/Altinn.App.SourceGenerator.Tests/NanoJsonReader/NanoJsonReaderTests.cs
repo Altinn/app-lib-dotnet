@@ -185,7 +185,7 @@ public class NanoJsonReaderTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void TestAppMetdata()
+    public void TestAppMetadata()
     {
         var applicationMetadata = """
             {

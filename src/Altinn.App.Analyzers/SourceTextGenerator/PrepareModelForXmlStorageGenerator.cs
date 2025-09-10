@@ -6,6 +6,7 @@ internal static class PrepareModelForXmlStorageGenerator
 {
     public static void Generate(StringBuilder builder, ModelPathNode rootNode)
     {
+        _ = rootNode; // Currently not used as we rely on the reflection implementation
         builder.Append(
             """
 

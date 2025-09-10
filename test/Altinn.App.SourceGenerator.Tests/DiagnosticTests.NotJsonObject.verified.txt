@@ -1,7 +1,7 @@
 ﻿[
   {
     Location: C:\temp\config\applicationmetadata.json: (0,0)-(0,4),
-    Message: Error in applicationmetadata.json: applicationmetadata.json is not a valid JSON object,
+    Message: Error in applicationmetadata.json: not a valid JSON object,
     Severity: Warning,
     WarningLevel: 1,
     Descriptor: {

@@ -7,6 +7,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
@@ -16,6 +17,8 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
+    <Compile Remove="Generated\**" />
+    <None Include="Generated\**" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Altinn.App.Core\Altinn.App.Core.csproj" />
@@ -26,7 +29,7 @@
       ReferenceOutputAssembly="false"
     />
   </ItemGroup>
-  <!-- TODO: Reference the real analzyzer via local nuget, so that we get the <AdditionalFiles declaration via build.props -->
+  <!-- TODO: Reference the real analyzer via local nuget, so that we get the <AdditionalFiles declaration via build.props -->
   <ItemGroup>
     <None Remove="config\applicationmetadata.json" />
     <AdditionalFiles Include="config\applicationmetadata.json">

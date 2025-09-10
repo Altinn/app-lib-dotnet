@@ -22,10 +22,13 @@ internal static class SourceReaderUtils
     {
         foreach (var attributeData in symbol.GetAttributes())
         {
-            if (attributeData.AttributeClass?.Name == "JsonPropertyNameAttribute")
+            if (
+                attributeData.AttributeClass is { Name: "JsonPropertyNameAttribute" } attr
+                && attr.ContainingNamespace?.ToDisplayString() == "System.Text.Json.Serialization"
+            )
             {
-                var jsonName = attributeData.ConstructorArguments.FirstOrDefault().Value?.ToString();
-                if (jsonName != null)
+                var args = attributeData.ConstructorArguments;
+                if (args.Length == 1 && args[0].Value is string jsonName)
                 {
                     return jsonName;
                 }

@@ -32,7 +32,7 @@ public interface IFormDataWrapper
         where T : class;
 
     /// <summary>
-    /// Access the raw data model as an object
+    /// Get the value at the given path from the data model
     /// </summary>
     /// <param name="path">The dotted path to use (including inline indexes)</param>
     object? Get(ReadOnlySpan<char> path);
@@ -55,7 +55,7 @@ public interface IFormDataWrapper
     ///     A buffer that the method can work with, that is large enough to hold the full indexed path
     ///     (Typically we use path.Length + rowIndexes.Length * 12, as int.MaxValue.ToString().Length = 10 + 2 characters for "[]")
     /// </param>
-    /// <returns>Whether a valid path could be constructed</returns>
+    /// <returns>The indexed path as a span that references buffer</returns>
     ReadOnlySpan<char> AddIndexToPath(ReadOnlySpan<char> path, ReadOnlySpan<int> rowIndexes, Span<char> buffer);
 
     /// <summary>
@@ -120,9 +120,26 @@ public static class FormDataWrapperExtensions
         ReadOnlySpan<int> rowIndexes = default
     )
     {
-        Span<char> buffer = stackalloc char[GetMaxBufferLength(path, rowIndexes)];
-        var indexedPath = formDataWrapper.AddIndexToPath(path, rowIndexes, buffer);
-        return indexedPath.IsEmpty ? null : formDataWrapper.Get(indexedPath);
+        int len = GetMaxBufferLength(path, rowIndexes);
+        if (len <= 512)
+        {
+            Span<char> buffer = stackalloc char[len];
+            var indexedPath = formDataWrapper.AddIndexToPath(path, rowIndexes, buffer);
+            return indexedPath.IsEmpty ? null : formDataWrapper.Get(indexedPath);
+        }
+        else
+        {
+            char[] pool = System.Buffers.ArrayPool<char>.Shared.Rent(len);
+            try
+            {
+                var indexedPath = formDataWrapper.AddIndexToPath(path, rowIndexes, pool);
+                return indexedPath.IsEmpty ? null : formDataWrapper.Get(indexedPath);
+            }
+            finally
+            {
+                System.Buffers.ArrayPool<char>.Shared.Return(pool);
+            }
+        }
     }
 
     /// <summary>
@@ -134,14 +151,31 @@ public static class FormDataWrapperExtensions
         ReadOnlySpan<int> rowIndexes
     )
     {
-        Span<char> buffer = stackalloc char[GetMaxBufferLength(path, rowIndexes)];
-        var indexedPath = formDataWrapper.AddIndexToPath(path, rowIndexes, buffer);
-
-        return indexedPath.IsEmpty ? null : indexedPath.ToString();
+        int len = GetMaxBufferLength(path, rowIndexes);
+        if (len <= 512)
+        {
+            Span<char> buffer = stackalloc char[len];
+            var indexedPath = formDataWrapper.AddIndexToPath(path, rowIndexes, buffer);
+            return indexedPath.IsEmpty ? null : indexedPath.ToString();
+        }
+        else
+        {
+            char[] pool = System.Buffers.ArrayPool<char>.Shared.Rent(len);
+            try
+            {
+                var indexedPath = formDataWrapper.AddIndexToPath(path, rowIndexes, pool);
+                return indexedPath.IsEmpty ? null : indexedPath.ToString();
+            }
+            finally
+            {
+                System.Buffers.ArrayPool<char>.Shared.Return(pool);
+            }
+        }
     }
 
     /// <summary>
     /// Get the number of rows in the collection at the given path
+    /// Returns null if the path does not resolve to an ICollection&lt;T&gt; (or is missing)
     /// </summary>
     public static int? GetRowCount(
         this IFormDataWrapper formDataWrapper,
@@ -248,7 +282,7 @@ public static class FormDataWrapperExtensions
 }
 
 /// <summary>
-/// Marker interface for <see cref="FormDataWrapperFactory.Create"/> to find the correct implmentation for assembly scanning
+/// Marker interface for <see cref="FormDataWrapperFactory.Create"/> to find the correct implementation during assembly scanning
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public interface IFormDataWrapper<T> : IFormDataWrapper

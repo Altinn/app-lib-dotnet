@@ -85,9 +85,14 @@ public class TestGeneratedCopy
         Assert.Equal("TidligereGata2", copy.Skjemainnhold?[1]?.TidligereAdresse?[1]?.Gate);
 
         // Modifications to the copy should not affect the original
-        copy.Skjemainnhold![1]!
-            .Adresse!
-            .Postnummer = 9999;
+
+        copy.Skjemaversjon = "Changed";
+        Assert.Equal("1", data.Skjemaversjon);
+
+        copy.Skjemainnhold![1]!.Adresse!.Postnummer = 9999;
         Assert.Null(data.Skjemainnhold![1]!.Adresse!.Postnummer);
+
+        copy.Skjemainnhold![1]!.TidligereAdresse![0]!.Gate = "CHANGED";
+        Assert.Equal("TidligereGata", data.Skjemainnhold![1]!.TidligereAdresse![0]!.Gate);
     }
 }

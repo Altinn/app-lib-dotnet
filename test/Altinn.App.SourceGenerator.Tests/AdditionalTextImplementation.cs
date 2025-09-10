@@ -14,30 +14,10 @@ public class AdditionalTextImplementation : AdditionalText
         Path = filePath;
     }
 
-    public override SourceText? GetText(CancellationToken cancellationToken = new CancellationToken())
+    public override SourceText? GetText(CancellationToken cancellationToken = default)
     {
-        return _text != null ? new StringSourceText(_text) : null;
+        return _text != null ? SourceText.From(_text, Encoding.UTF8) : null;
     }
 
     public override string Path { get; }
-
-    private class StringSourceText : SourceText
-    {
-        private readonly string _text;
-
-        public StringSourceText(string text)
-        {
-            _text = text;
-        }
-
-        public override void CopyTo(int sourceIndex, char[] destination, int destinationIndex, int count)
-        {
-            _text.CopyTo(sourceIndex, destination, destinationIndex, count);
-        }
-
-        public override Encoding Encoding => Encoding.Unicode;
-        public override int Length => _text.Length;
-
-        public override char this[int position] => _text[position];
-    }
 }
