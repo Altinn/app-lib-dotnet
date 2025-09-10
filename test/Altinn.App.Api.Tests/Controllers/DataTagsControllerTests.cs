@@ -5,8 +5,8 @@ using System.Text.Json;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Constants;
-using Altinn.App.Core.Models.Validation;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit.Abstractions;
 
@@ -16,11 +16,11 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     : ApiTestBase(factory, outputHelper),
         IClassFixture<WebApplicationFactory<Program>>
 {
-    readonly string org = "tdd";
-    readonly string app = "contributer-restriction";
-    readonly int instanceOwnerPartyId = 500600;
-    readonly Guid instanceGuid = new("fad57e80-ec2f-4dee-90ac-400fa6d7720f");
-    readonly Guid dataGuid = new("3b46b9ef-774c-4849-b4dd-66ef871f5b07");
+    readonly string _org = "tdd";
+    readonly string _app = "contributer-restriction";
+    readonly int _instanceOwnerPartyId = 500600;
+    readonly Guid _instanceGuid = new("fad57e80-ec2f-4dee-90ac-400fa6d7720f");
+    readonly Guid _dataGuid = new("3b46b9ef-774c-4849-b4dd-66ef871f5b07");
 
     #region GET endpoint tests
 
@@ -28,15 +28,15 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     public async Task GetTags_ValidRequest_ReturnsOkWithTagsList()
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         // Act
         var response = await client.GetAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags"
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags"
         );
 
         // Assert
@@ -60,15 +60,15 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
         // Arrange
         Guid nonExistentDataGuid = new("99999999-9999-9999-9999-999999999999");
 
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         // Act
         var response = await client.GetAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{nonExistentDataGuid}/tags"
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{nonExistentDataGuid}/tags"
         );
 
         // Assert
@@ -86,11 +86,11 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     public async Task AddTag_ValidTag_ReturnsCreatedWithTagsList()
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         string newTag = "newValidTag";
         var json = JsonSerializer.Serialize(newTag);
@@ -98,7 +98,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Act
         var response = await client.PostAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags",
             content
         );
 
@@ -130,18 +130,18 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     public async Task AddTag_InvalidTagFormat_ReturnsBadRequest(string? invalidTag)
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         var json = JsonSerializer.Serialize(invalidTag);
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Act
         var response = await client.PostAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags",
             content
         );
 
@@ -149,18 +149,24 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var responseContent = await response.Content.ReadAsStringAsync();
-        responseContent.Should().Contain("letters");
+        var problemDetails = JsonSerializer.Deserialize<ProblemDetails>(
+            responseContent,
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+        );
+
+        problemDetails.Should().NotBeNull();
+        problemDetails.Status.Should().Be(400);
     }
 
     [Fact]
     public async Task AddTag_DuplicateTag_ReturnsCreatedWithoutDuplicate()
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         string duplicateTag = "duplicateTag";
 
@@ -168,7 +174,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
         var json = JsonSerializer.Serialize(duplicateTag);
         using var content1 = new StringContent(json, Encoding.UTF8, "application/json");
         await client.PostAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags",
             content1
         );
 
@@ -177,7 +183,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Act
         var response = await client.PostAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags",
             content2
         );
 
@@ -202,11 +208,11 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
         // Arrange
         Guid nonExistentDataGuid = new("99999999-9999-9999-9999-999999999999");
 
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         string validTag = "validTag";
         var json = JsonSerializer.Serialize(validTag);
@@ -214,7 +220,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Act
         var response = await client.PostAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{nonExistentDataGuid}/tags",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{nonExistentDataGuid}/tags",
             content
         );
 
@@ -233,17 +239,17 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     public async Task DeleteTag_ExistingTag_ReturnsNoContent()
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         string preExistingTag = "Tag1";
 
         // Act - Delete the tag
         var response = await client.DeleteAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags/{preExistingTag}"
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags/{preExistingTag}"
         );
 
         // Assert
@@ -251,7 +257,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Verify the tag was actually removed by checking the tags list
         var getResponse = await client.GetAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags"
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags"
         );
         var getContent = await getResponse.Content.ReadAsStringAsync();
         var tagsList = JsonSerializer.Deserialize<TagsList>(
@@ -267,17 +273,17 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     public async Task DeleteTag_NonExistentTag_ReturnsNoContent()
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         string nonExistentTag = "nonExistentTag";
 
         // Act
         var response = await client.DeleteAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags/{nonExistentTag}"
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags/{nonExistentTag}"
         );
 
         // Assert
@@ -290,17 +296,17 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
         // Arrange
         Guid nonExistentDataGuid = new("99999999-9999-9999-9999-999999999999");
 
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         string tagToDelete = "tagToDelete";
 
         // Act
         var response = await client.DeleteAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{nonExistentDataGuid}/tags/{tagToDelete}"
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{nonExistentDataGuid}/tags/{tagToDelete}"
         );
 
         // Assert
@@ -318,11 +324,11 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     public async Task SetTags_ValidRequest_ReturnsOkWithTags()
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         var setTagsRequest = new SetTagsRequest { Tags = ["tagA", "tagB", "tagC"] };
 
@@ -331,7 +337,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Act
         var response = await client.PutAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags",
             content
         );
 
@@ -346,18 +352,18 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         setTagsResponse.Should().NotBeNull();
         setTagsResponse.Tags.Should().BeEquivalentTo(["tagA", "tagB", "tagC"]);
-        setTagsResponse.ValidationIssues.Should().NotBeNull();
+        setTagsResponse.ValidationIssues.Should().BeNull();
     }
 
     [Fact]
     public async Task SetTags_EmptyTagsList_ClearsAllTags()
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         var setTagsRequest = new SetTagsRequest { Tags = [] };
 
@@ -366,7 +372,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Act
         var response = await client.PutAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags",
             content
         );
 
@@ -391,11 +397,11 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     public async Task SetTags_InvalidTagFormat_ReturnsBadRequest(string invalidTag)
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         var setTagsRequest = new SetTagsRequest { Tags = ["validTag", invalidTag] };
 
@@ -404,7 +410,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Act
         var response = await client.PutAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags",
             content
         );
 
@@ -412,7 +418,15 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var responseContent = await response.Content.ReadAsStringAsync();
-        responseContent.Should().Contain("letters");
+        var problemDetails = JsonSerializer.Deserialize<ProblemDetails>(
+            responseContent,
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+        );
+
+        problemDetails.Should().NotBeNull();
+        problemDetails.Title.Should().Be("Invalid tag name");
+        problemDetails.Detail.Should().Contain("letters");
+        problemDetails.Status.Should().Be(400);
     }
 
     [Fact]
@@ -421,11 +435,11 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
         // Arrange
         Guid nonExistentDataGuid = new("99999999-9999-9999-9999-999999999999"); // Non-existent data element
 
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         var setTagsRequest = new SetTagsRequest { Tags = ["tagA"] };
 
@@ -434,7 +448,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Act
         var response = await client.PutAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{nonExistentDataGuid}/tags",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{nonExistentDataGuid}/tags",
             content
         );
 
@@ -449,11 +463,11 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     public async Task SetTags_WithIgnoredValidatorsQueryParameter_ReturnsOkWithValidationIssues()
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         var setTagsRequest = new SetTagsRequest { Tags = ["tagA", "tagB"] };
 
@@ -462,7 +476,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Act
         var response = await client.PutAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags?ignoredValidators=Validator1,Validator2",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags?ignoredValidators=Validator1,Validator2",
             content
         );
 
@@ -491,11 +505,11 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     public async Task SetTags_WithoutIgnoredValidatorsQueryParameter_ReturnsOkWithoutValidationIssues()
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         var setTagsRequest = new SetTagsRequest { Tags = ["tagA", "tagB"] };
 
@@ -504,7 +518,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Act
         var response = await client.PutAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags",
             content
         );
 
@@ -519,8 +533,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         setTagsResponse.Should().NotBeNull();
         setTagsResponse.Tags.Should().BeEquivalentTo(["tagA", "tagB"]);
-        setTagsResponse.ValidationIssues.Should().NotBeNull();
-        setTagsResponse.ValidationIssues.Should().BeEmpty();
+        setTagsResponse.ValidationIssues.Should().BeNull();
     }
 
     [Theory]
@@ -532,11 +545,11 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
     public async Task SetTags_ValidTagFormats_ReturnsOk(string validTag)
     {
         // Arrange
-        HttpClient client = GetRootedClient(org, app);
-        string token = TestAuthentication.GetUserToken(1337, instanceOwnerPartyId);
+        HttpClient client = GetRootedClient(_org, _app);
+        string token = TestAuthentication.GetUserToken(1337, _instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        TestData.PrepareInstance(_org, _app, _instanceOwnerPartyId, _instanceGuid);
 
         var setTagsRequest = new SetTagsRequest { Tags = [validTag] };
 
@@ -545,7 +558,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
 
         // Act
         var response = await client.PutAsync(
-            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/tags",
+            $"/{_org}/{_app}/instances/{_instanceOwnerPartyId}/{_instanceGuid}/data/{_dataGuid}/tags",
             content
         );
 

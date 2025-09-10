@@ -231,7 +231,7 @@ public partial class DataTagsController : ControllerBase
     /// <param name="instanceGuid">The id of the instance.</param>
     /// <param name="dataGuid">The id of the data element.</param>
     /// <param name="setTagsRequest">The request body.</param>
-    /// <param name="ignoredValidators">comma separated string of validators to ignore.</param>
+    /// <param name="ignoredValidators">comma separated string of validators to ignore. If missing we don't run validation.</param>
     /// <param name="language">The currently active user language.</param>
     [HttpPut]
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_WRITE)]
@@ -283,15 +283,10 @@ public partial class DataTagsController : ControllerBase
             );
         }
 
-        // Clear existing tags
-        dataElement.Tags ??= [];
-        dataElement.Tags.Clear();
-
-        // Add new tags
-        var normalizedTags = tags.Distinct(StringComparer.Ordinal).ToList();
-        dataElement.Tags.AddRange(normalizedTags);
+        // Set dataElement tags to be the new tags
+        dataElement.Tags = [.. tags.Distinct(StringComparer.Ordinal)];
         var updatedElement = await _dataClient.Update(instance, dataElement);
-        if (updatedElement == null)
+        if (updatedElement is null)
         {
             return Problem(
                 title: "Data update failed",
@@ -299,15 +294,14 @@ public partial class DataTagsController : ControllerBase
                 statusCode: StatusCodes.Status500InternalServerError
             );
         }
-        dataElement = updatedElement;
 
         var validationIssues = await ValidateTags(instance, ignoredValidators, language);
-        SetTagsResponse updateTagsResponse = new() { Tags = dataElement.Tags, ValidationIssues = validationIssues };
+        SetTagsResponse updateTagsResponse = new() { Tags = updatedElement.Tags, ValidationIssues = validationIssues };
 
         return Ok(updateTagsResponse);
     }
 
-    private async Task<List<ValidationSourcePair>> ValidateTags(
+    private async Task<List<ValidationSourcePair>?> ValidateTags(
         Instance instance,
         string? ignoredValidatorsString,
         string? language
@@ -317,7 +311,7 @@ public partial class DataTagsController : ControllerBase
         var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
         var changes = dataAccessor.GetDataElementChanges(initializeAltinnRowId: true);
 
-        List<ValidationSourcePair> validationIssues = [];
+        List<ValidationSourcePair>? validationIssues = null;
         if (ignoredValidatorsString is not null)
         {
             var ignoredValidators = ignoredValidatorsString.Split(',').Where(v => !string.IsNullOrEmpty(v)).ToList();

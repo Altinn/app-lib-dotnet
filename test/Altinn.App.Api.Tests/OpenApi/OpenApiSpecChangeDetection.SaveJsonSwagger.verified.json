@@ -2041,7 +2041,7 @@
           {
             "name": "ignoredValidators",
             "in": "query",
-            "description": "comma separated string of validators to ignore.",
+            "description": "comma separated string of validators to ignore. If missing we don't run validation.",
             "schema": {
               "type": "string"
             }
@@ -9594,6 +9594,9 @@
         "additionalProperties": false
       },
       "SetTagsRequest": {
+        "required": [
+          "tags"
+        ],
         "type": "object",
         "properties": {
           "tags": {
@@ -9609,9 +9612,6 @@
         "description": "Represents the request body for setting a set of tags on a data element."
       },
       "SetTagsResponse": {
-        "required": [
-          "validationIssues"
-        ],
         "type": "object",
         "properties": {
           "tags": {

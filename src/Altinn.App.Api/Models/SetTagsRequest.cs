@@ -11,5 +11,5 @@ public sealed class SetTagsRequest
     /// A list of tags to set on the data element represented as string values.
     /// </summary>
     [JsonPropertyName("tags")]
-    public List<string> Tags { get; init; } = [];
+    public required List<string> Tags { get; init; }
 }
