@@ -16,6 +16,7 @@ namespace Altinn.App.Api.Controllers;
 /// <summary>
 /// This controller class provides action methods for endpoints related to the tags resource on data elements.
 /// </summary>
+[ApiController]
 [AutoValidateAntiforgeryTokenIfAuthCookie]
 [Produces(MediaTypeNames.Application.Json)]
 [Consumes(MediaTypeNames.Application.Json)]
@@ -70,7 +71,11 @@ public partial class DataTagsController : ControllerBase
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         if (instance is null)
         {
-            return NotFound($"Unable to find instance based on the given parameters.");
+            return Problem(
+                title: "Instance not found",
+                detail: "Unable to find instance based on the given parameters.",
+                statusCode: StatusCodes.Status404NotFound
+            );
         }
 
         DataElement? dataElement = instance.Data.FirstOrDefault(m =>
@@ -79,7 +84,11 @@ public partial class DataTagsController : ControllerBase
 
         if (dataElement is null)
         {
-            return NotFound("Unable to find data element based on the given parameters.");
+            return Problem(
+                title: "Data element not found",
+                detail: "Unable to find data element based on the given parameters.",
+                statusCode: StatusCodes.Status404NotFound
+            );
         }
 
         TagsList tagsList = new() { Tags = dataElement.Tags };
@@ -111,13 +120,21 @@ public partial class DataTagsController : ControllerBase
     {
         if (tag is null || !LettersRegex().Match(tag).Success)
         {
-            return BadRequest("The new tag must consist of letters.");
+            return Problem(
+                title: "Invalid tag name",
+                detail: "Tags may only contain letters, '-' and '_'.",
+                statusCode: StatusCodes.Status400BadRequest
+            );
         }
 
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         if (instance is null)
         {
-            return NotFound("Unable to find instance based on the given parameters.");
+            return Problem(
+                title: "Instance not found",
+                detail: "Unable to find instance based on the given parameters.",
+                statusCode: StatusCodes.Status404NotFound
+            );
         }
 
         DataElement? dataElement = instance.Data.FirstOrDefault(m =>
@@ -126,7 +143,11 @@ public partial class DataTagsController : ControllerBase
 
         if (dataElement is null)
         {
-            return NotFound("Unable to find data element based on the given parameters.");
+            return Problem(
+                title: "Data element not found",
+                detail: "Unable to find data element based on the given parameters.",
+                statusCode: StatusCodes.Status404NotFound
+            );
         }
 
         if (!dataElement.Tags.Contains(tag))
@@ -173,7 +194,11 @@ public partial class DataTagsController : ControllerBase
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         if (instance is null)
         {
-            return NotFound("Unable to find instance based on the given parameters.");
+            return Problem(
+                title: "Instance not found",
+                detail: "Unable to find instance based on the given parameters.",
+                statusCode: StatusCodes.Status404NotFound
+            );
         }
 
         DataElement? dataElement = instance.Data.FirstOrDefault(m =>
@@ -182,7 +207,11 @@ public partial class DataTagsController : ControllerBase
 
         if (dataElement is null)
         {
-            return NotFound("Unable to find data element based on the given parameters.");
+            return Problem(
+                title: "Data element not found",
+                detail: "Unable to find data element based on the given parameters.",
+                statusCode: StatusCodes.Status404NotFound
+            );
         }
 
         if (dataElement.Tags.Remove(tag))
@@ -215,27 +244,30 @@ public partial class DataTagsController : ControllerBase
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromRoute] Guid dataGuid,
-        [FromBody] SetTagsRequest? setTagsRequest,
+        [FromBody] SetTagsRequest setTagsRequest,
         [FromQuery] string? ignoredValidators = null,
         [FromQuery] string? language = null
     )
     {
-        if (!ModelState.IsValid || setTagsRequest is null)
-        {
-            return BadRequest(ModelState);
-        }
-
         var tags = setTagsRequest.Tags;
 
         if (tags.Any(tag => string.IsNullOrWhiteSpace(tag) || !LettersRegex().IsMatch(tag)))
         {
-            return BadRequest("Tags may only contain letters, '-' and '_'.");
+            return Problem(
+                title: "Invalid tag name",
+                detail: "Tags may only contain letters, '-' and '_'.",
+                statusCode: StatusCodes.Status400BadRequest
+            );
         }
 
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         if (instance is null)
         {
-            return NotFound("Unable to find instance based on the given parameters.");
+            return Problem(
+                title: "Instance not found",
+                detail: "Unable to find instance based on the given parameters.",
+                statusCode: StatusCodes.Status404NotFound
+            );
         }
 
         DataElement? dataElement = instance.Data.FirstOrDefault(it =>
@@ -244,7 +276,11 @@ public partial class DataTagsController : ControllerBase
 
         if (dataElement is null)
         {
-            return NotFound("Unable to find data element based on the given parameters.");
+            return Problem(
+                title: "Data element not found",
+                detail: "Unable to find data element based on the given parameters.",
+                statusCode: StatusCodes.Status404NotFound
+            );
         }
 
         // Clear existing tags
