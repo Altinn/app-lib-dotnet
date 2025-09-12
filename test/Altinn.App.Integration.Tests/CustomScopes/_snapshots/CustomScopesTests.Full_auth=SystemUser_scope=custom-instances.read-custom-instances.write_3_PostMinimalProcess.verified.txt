@@ -46,14 +46,14 @@
             application/json
           ],
           Content-Length: [
-            15
+            2
           ]
         }
       },
       Method: {
         Method: POST
       },
-      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/api/instances/e4c4cea1-4ec2-4735-9811-c6aca538a8bf/minimal-process,
+      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/api/instances/<instanceGuid>/minimal-process,
       Headers: {
         Authorization: [
           Bearer <token>

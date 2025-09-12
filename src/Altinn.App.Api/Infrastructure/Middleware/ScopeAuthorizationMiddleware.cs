@@ -61,6 +61,12 @@ internal sealed class ScopeAuthorizationMiddleware(RequestDelegate next, ILogger
             var authorizer = context.RequestServices.GetRequiredService<ScopeAuthorizationService>();
             await authorizer.EnsureInitialized();
 
+            if (!authorizer.HasDefinedCustomScopes)
+            {
+                await _next(context);
+                return;
+            }
+
             var endpoint = context.GetEndpoint();
             if (endpoint is null)
             {
@@ -159,6 +165,8 @@ internal sealed class ScopeAuthorizationService(
     private long _initializing;
     private CancellationTokenRegistration? _startedListener = null;
 
+    internal bool HasDefinedCustomScopes { get; private set; }
+
     public IReadOnlyList<string>? EndpointsToUserAuthorize => _endpointsToUserAuthorize;
     public IReadOnlyList<string>? EndpointsNotUserAuthorized => _endpointsNotUserAuthorized;
     public IReadOnlyList<string>? EndpointsToServiceOwnerAuthorize => _endpointsToServiceOwnerAuthorize;
@@ -251,15 +259,12 @@ internal sealed class ScopeAuthorizationService(
             var appMetadata = _appConfigurationCache.ApplicationMetadata;
             var dedupe = new Dictionary<string, IEnumerable<string>>();
 
-            if (
+            HasDefinedCustomScopes =
                 !string.IsNullOrWhiteSpace(appMetadata.ApiScopes?.Users?.Read)
                 || !string.IsNullOrWhiteSpace(appMetadata.ApiScopes?.Users?.Write)
                 || !string.IsNullOrWhiteSpace(appMetadata.ApiScopes?.ServiceOwners?.Read)
-                || !string.IsNullOrWhiteSpace(appMetadata.ApiScopes?.ServiceOwners?.Write)
-            )
-            {
-                ProcessEndpoints(appMetadata, dedupe);
-            }
+                || !string.IsNullOrWhiteSpace(appMetadata.ApiScopes?.ServiceOwners?.Write);
+            ProcessEndpoints(appMetadata, dedupe);
 
             _initialization.TrySetResult();
             _logger.LogInformation(
@@ -384,7 +389,7 @@ internal sealed class ScopeAuthorizationService(
             }
 
             _logger.LogDebug(
-                "Endpoint API scope authorization summary:\n"
+                "Endpoint API scope authorization summary (HasDefinedCustomScopes={HasDefinedCustomScopes}):\n"
                     + "User-authorized endpoints ({UserAuthorizedCount}): [{UserAuthorized}]\n"
                     + "User-not-authorized endpoints ({UserNotAuthorizedCount}): [{UserNotAuthorized}]\n"
                     + "ServiceOwner-authorized endpoints ({ServiceOwnerAuthorizedCount}): [{ServiceOwnerAuthorized}]\n"
@@ -393,6 +398,7 @@ internal sealed class ScopeAuthorizationService(
                     + "Service owner scopes: [{ServiceOwnerScopes}]\n"
                     + "User error message keys: [{UserErrorKeys}]\n"
                     + "Service owner error message keys: [{ServiceOwnerErrorKeys}]",
+                HasDefinedCustomScopes,
                 _endpointsToUserAuthorize.Count,
                 authorizedEndpoints,
                 _endpointsNotUserAuthorized.Count,

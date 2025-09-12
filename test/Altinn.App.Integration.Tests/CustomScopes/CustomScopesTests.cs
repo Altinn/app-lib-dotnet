@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using Altinn.App.Api.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Xunit.Abstractions;
@@ -73,50 +74,35 @@ public class CustomScopesTests(ITestOutputHelper _output, AppFixtureClassFixture
             ? Guid.Parse(instance.Id.Split('/')[1])
             : Guid.Parse("12345678-1234-1234-1234-123456789012");
         var instanceOwnerPartyId = instance?.InstanceOwner?.PartyId ?? "501337";
-
-        async Task<AppFixture.ApiResponse> CallGetAsync(string endpoint)
-        {
-            var client = fixture.GetAppClient();
-            using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            var response = await client.SendAsync(request);
-            return new AppFixture.ApiResponse(fixture, response);
-        }
-
-        async Task<AppFixture.ApiResponse> CallPostAsync(string endpoint, object data)
-        {
-            var client = fixture.GetAppClient();
-            using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            var payload = System.Text.Json.JsonSerializer.Serialize(data);
-            request.Content = new StringContent(
-                payload,
-                new System.Net.Http.Headers.MediaTypeHeaderValue("application/json")
-            );
-            var response = await client.SendAsync(request);
-            return new AppFixture.ApiResponse(fixture, response);
-        }
+        var scrubbers = instance is not null
+            ? new Scrubbers(StringScrubber: Scrubbers.InstanceStringScrubber(readInstantiationResponse))
+            : null;
 
         // GET endpoint with instanceGuid - should be protected with read scope
-        using var getDataResponse = await CallGetAsync($"/ttd/basic/api/instances/{instanceGuid}/minimal-data");
-        await verifier.Verify(getDataResponse, snapshotName: "GetMinimalData", scrubbers: null);
+        using var getDataResponse = await fixture.Generic.Get(
+            $"/ttd/basic/api/instances/{instanceGuid}/minimal-data",
+            token
+        );
+        await verifier.Verify(getDataResponse, snapshotName: "GetMinimalData", scrubbers: scrubbers);
 
         // POST endpoint with instanceGuid - should be protected with write scope
-        using var postProcessResponse = await CallPostAsync(
+        using var postProcessResponse = await fixture.Generic.Post(
             $"/ttd/basic/api/instances/{instanceGuid}/minimal-process",
-            new { data = "test" }
+            token,
+            new StringContent("[]", MediaTypeHeaderValue.Parse("application/json"))
         );
-        await verifier.Verify(postProcessResponse, snapshotName: "PostMinimalProcess", scrubbers: null);
+        await verifier.Verify(postProcessResponse, snapshotName: "PostMinimalProcess", scrubbers: scrubbers);
 
         // GET endpoint with instanceOwnerPartyId - should be protected with read scope
-        using var getSummaryResponse = await CallGetAsync(
-            $"/ttd/basic/api/parties/{instanceOwnerPartyId}/minimal-summary"
+        using var getSummaryResponse = await fixture.Generic.Get(
+            $"/ttd/basic/api/parties/{instanceOwnerPartyId}/minimal-summary",
+            token
         );
-        await verifier.Verify(getSummaryResponse, snapshotName: "GetMinimalSummary", scrubbers: null);
+        await verifier.Verify(getSummaryResponse, snapshotName: "GetMinimalSummary", scrubbers: scrubbers);
 
         // Anonymous endpoint - should NOT be protected
-        using var getPublicResponse = await CallGetAsync("/ttd/basic/api/minimal-public");
-        await verifier.Verify(getPublicResponse, snapshotName: "GetMinimalPublic", scrubbers: null);
+        using var getPublicResponse = await fixture.Generic.Get("/ttd/basic/api/minimal-public", token);
+        await verifier.Verify(getPublicResponse, snapshotName: "GetMinimalPublic", scrubbers: scrubbers);
 
         await verifier.VerifyLogs();
     }
