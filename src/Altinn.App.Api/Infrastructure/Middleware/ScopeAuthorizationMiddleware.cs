@@ -298,15 +298,44 @@ internal sealed class ScopeAuthorizationService(
                 _endpointsNotServiceOwnerAuthorized.Select(e => $"'{e}'")
             );
 
+            // Collect actual computed scopes and error keys from endpoint metadata
+            var allUserScopes = new HashSet<string>();
+            var allServiceOwnerScopes = new HashSet<string>();
+            var userErrorKeys = new HashSet<string>();
+            var serviceOwnerErrorKeys = new HashSet<string>();
+
+            foreach (var endpoint in _endpointDataSource.Endpoints)
+            {
+                var metadata = endpoint.Metadata.GetMetadata<ScopeRequirementMetadata>();
+                if (metadata is not null)
+                {
+                    if (metadata.RequiredScopesUsers is not null)
+                    {
+                        foreach (var scope in metadata.RequiredScopesUsers)
+                            allUserScopes.Add(scope);
+                    }
+                    if (metadata.RequiredScopesServiceOwners is not null)
+                    {
+                        foreach (var scope in metadata.RequiredScopesServiceOwners)
+                            allServiceOwnerScopes.Add(scope);
+                    }
+                    if (!string.IsNullOrEmpty(metadata.ErrorMessageTextResourceKeyUser))
+                        userErrorKeys.Add(metadata.ErrorMessageTextResourceKeyUser);
+                    if (!string.IsNullOrEmpty(metadata.ErrorMessageTextResourceKeyServiceOwner))
+                        serviceOwnerErrorKeys.Add(metadata.ErrorMessageTextResourceKeyServiceOwner);
+                }
+            }
+
             _logger.LogDebug(
                 "Endpoint API scope authorization summary:\n"
                     + "User-authorized endpoints ({UserAuthorizedCount}): [{UserAuthorized}]\n"
                     + "User-not-authorized endpoints ({UserNotAuthorizedCount}): [{UserNotAuthorized}]\n"
                     + "ServiceOwner-authorized endpoints ({ServiceOwnerAuthorizedCount}): [{ServiceOwnerAuthorized}]\n"
                     + "ServiceOwner-not-authorized endpoints ({ServiceOwnerNotAuthorizedCount}): [{ServiceOwnerNotAuthorized}]\n"
-                    + "User scopes - Read: '{UserReadScope}', Write: '{UserWriteScope}'\n"
-                    + "ServiceOwner scopes - Read: '{ServiceOwnerReadScope}', Write: '{ServiceOwnerWriteScope}'\n"
-                    + "User error message key: '{UserErrorKey}', ServiceOwner error message key: '{ServiceOwnerErrorKey}'",
+                    + "User scopes: [{UserScopes}]\n"
+                    + "Service owner scopes: [{ServiceOwnerScopes}]\n"
+                    + "User error message keys: [{UserErrorKeys}]\n"
+                    + "Service owner error message keys: [{ServiceOwnerErrorKeys}]",
                 _endpointsToUserAuthorize.Count,
                 authorizedEndpoints,
                 _endpointsNotUserAuthorized.Count,
@@ -315,16 +344,10 @@ internal sealed class ScopeAuthorizationService(
                 serviceOwnerAuthorizedEndpoints,
                 _endpointsNotServiceOwnerAuthorized.Count,
                 serviceOwnerNotAuthorizedEndpoints,
-                appMetadata.ApiScopes?.Users?.Read ?? "null",
-                appMetadata.ApiScopes?.Users?.Write ?? "null",
-                appMetadata.ApiScopes?.ServiceOwners?.Read ?? "null",
-                appMetadata.ApiScopes?.ServiceOwners?.Write ?? "null",
-                appMetadata.ApiScopes?.Users?.ErrorMessageTextResourceKey
-                    ?? appMetadata.ApiScopes?.ErrorMessageTextResourceKey
-                    ?? "authorization.scopes.insufficient",
-                appMetadata.ApiScopes?.ServiceOwners?.ErrorMessageTextResourceKey
-                    ?? appMetadata.ApiScopes?.ErrorMessageTextResourceKey
-                    ?? "authorization.scopes.insufficient"
+                string.Join(", ", allUserScopes.Order()),
+                string.Join(", ", allServiceOwnerScopes.Order()),
+                string.Join(", ", userErrorKeys.Order()),
+                string.Join(", ", serviceOwnerErrorKeys.Order())
             );
         }
     }
@@ -417,11 +440,7 @@ internal sealed class ScopeAuthorizationService(
 
         var appMetadata = _appConfigurationCache.ApplicationMetadata;
         configuredScope = configuredScope.Replace("[app]", appMetadata.AppIdentifier.App);
-        var serviceOwnerScope =
-            type == ScopeType.Read ? "altinn:serviceowner/instances.read" : "altinn:serviceowner/instances.write";
-        return new[] { configuredScope, "altinn:portal/enduser", serviceOwnerScope }.ToFrozenSet(
-            StringComparer.Ordinal
-        );
+        return new[] { configuredScope, "altinn:portal/enduser" }.ToFrozenSet(StringComparer.Ordinal);
     }
 
     private FrozenSet<string>? CreateServiceOwnersScopesSet(ScopeType type, ApiScopes? apiScopes)
