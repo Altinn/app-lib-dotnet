@@ -294,6 +294,13 @@ public sealed partial class AppFixture : IAsyncDisposable
         return result;
     }
 
+    public string GetAppLogs()
+    {
+        var allLines = _appLogsConsumer.GetLines();
+        var result = string.Join('\n', allLines);
+        return result;
+    }
+
     public async Task ResetBetweenTestsAsync(
         ITestOutputHelper? output = null,
         CancellationToken cancellationToken = default

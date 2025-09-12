@@ -21,8 +21,10 @@ public class CustomScopesTests(ITestOutputHelper _output, AppFixtureClassFixture
     [InlineData(Auth.User, "altinn:portal/enduser")]
     [InlineData(Auth.User, "altinn:instances.read altinn:instances.write")]
     [InlineData(Auth.User, "custom:instances.read custom:instances.write")]
-    // TODO: serviceowner
-    // [InlineData(Auth.ServiceOwner, "altinn:serviceowner/instances.read altinn:serviceowner/instances.write")]
+    [InlineData(Auth.SystemUser, "altinn:instances.read altinn:instances.write")]
+    [InlineData(Auth.SystemUser, "custom:instances.read custom:instances.write")]
+    [InlineData(Auth.ServiceOwner, "altinn:serviceowner/instances.read altinn:serviceowner/instances.write")]
+    [InlineData(Auth.ServiceOwner, "custom:serviceowner/instances.read custom:serviceowner/instances.write")]
     public async Task Full(Auth auth, string scope)
     {
         await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic, scenario: "custom-scopes");
@@ -35,13 +37,12 @@ public class CustomScopesTests(ITestOutputHelper _output, AppFixtureClassFixture
         var token = auth switch
         {
             Auth.User => await fixture.Auth.GetUserToken(userId: 1337, scope: scope),
-            Auth.ServiceOwner => await fixture.Auth.GetServiceOwnerToken(scope: scope),
             Auth.SystemUser => await fixture.Auth.GetSystemUserToken(
                 "913312465_sbs",
                 "d111dbab-d619-4f15-bf29-58fe570a9ae6",
                 scope: scope
             ),
-            Auth.SelfIdentifiedUser => await fixture.Auth.GetSelfIdentifiedUserToken("SelvRegistrert", scope: scope),
+            Auth.ServiceOwner => await fixture.Auth.GetServiceOwnerToken(scope: scope),
             _ => throw new ArgumentOutOfRangeException(nameof(auth)),
         };
         var handler = new JwtSecurityTokenHandler();
@@ -63,5 +64,7 @@ public class CustomScopesTests(ITestOutputHelper _output, AppFixtureClassFixture
             snapshotName: "Instantiation",
             scrubbers: new Scrubbers(StringScrubber: Scrubbers.InstanceStringScrubber(readInstantiationResponse))
         );
+
+        await verifier.VerifyLogs();
     }
 }

@@ -6,12 +6,12 @@
   },
   "apiScopes": {
     "users": {
-      "read": "custom:instances.read",
-      "write": "custom:instances.write"
+      "read": "custom:[app]/instances.read",
+      "write": "custom:[app]/instances.write"
     },
     "serviceOwners": {
-      "read": "custom:serviceowner/instances.read",
-      "write": "custom:serviceowner/instances.write"
+      "read": "custom:[app]/serviceowner/instances.read",
+      "write": "custom:[app]/serviceowner/instances.write"
     }
   },
   "dataTypes": [
