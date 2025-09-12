@@ -18,6 +18,8 @@ public class CustomScopesTests(ITestOutputHelper _output, AppFixtureClassFixture
     }
 
     [Theory]
+    // Here the `altinn:` scopes should end in forbidden while the `custom:` scopes should work
+    // since the scenario configures them.
     [InlineData(Auth.User, "altinn:portal/enduser")]
     [InlineData(Auth.User, "altinn:instances.read altinn:instances.write")]
     [InlineData(Auth.User, "custom:instances.read custom:instances.write")]
