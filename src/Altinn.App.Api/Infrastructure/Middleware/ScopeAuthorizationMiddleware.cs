@@ -58,6 +58,9 @@ internal sealed class ScopeAuthorizationMiddleware(RequestDelegate next, ILogger
 
         if (isAuth)
         {
+            var authorizer = context.RequestServices.GetRequiredService<ScopeAuthorizationService>();
+            await authorizer.EnsureInitialized();
+
             var endpoint = context.GetEndpoint();
             if (endpoint is null)
             {
@@ -67,7 +70,8 @@ internal sealed class ScopeAuthorizationMiddleware(RequestDelegate next, ILogger
             }
 
             // Get scopes from endpoint metadata
-            var scopeMetadata = endpoint.Metadata.GetMetadata<ScopeRequirementMetadata>();
+            var scopeMetadata =
+                endpoint.Metadata.GetMetadata<ScopeRequirementMetadata>() ?? authorizer.LookupMetadata(endpoint);
             var authenticated = context.RequestServices.GetRequiredService<IAuthenticationContext>().Current;
             var (errorMessageTextResourceKey, requiredScopes) = authenticated switch
             {
@@ -141,7 +145,8 @@ internal sealed class ScopeAuthorizationMiddleware(RequestDelegate next, ILogger
 
 internal sealed class ScopeAuthorizationService(
     IAppConfigurationCache _appConfigurationCache,
-    EndpointDataSource _endpointDataSource,
+    IEnumerable<EndpointDataSource> _endpointDataSources,
+    IHostApplicationLifetime _hostLifetime,
     IOptions<GeneralSettings> _generalSettings,
     ILogger<ScopeAuthorizationService> _logger
 ) : IHostedService
@@ -150,7 +155,9 @@ internal sealed class ScopeAuthorizationService(
     private readonly List<string> _endpointsNotUserAuthorized = [];
     private readonly List<string> _endpointsToServiceOwnerAuthorize = [];
     private readonly List<string> _endpointsNotServiceOwnerAuthorized = [];
-    private bool _initialized;
+    private readonly TaskCompletionSource _initialization = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private long _initializing;
+    private CancellationTokenRegistration? _startedListener = null;
 
     public IReadOnlyList<string>? EndpointsToUserAuthorize => _endpointsToUserAuthorize;
     public IReadOnlyList<string>? EndpointsNotUserAuthorized => _endpointsNotUserAuthorized;
@@ -177,26 +184,68 @@ internal sealed class ScopeAuthorizationService(
         ["Altinn.App.Api.Controllers.StatelessDataController.Post (Altinn.App.Api)"] = ScopeType.Read,
     }.ToFrozenDictionary(StringComparer.Ordinal);
 
+    private FrozenDictionary<string, ScopeRequirementMetadata>? _metadataLookup;
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Starting scope authorization initialization");
-        Initialize();
+        _startedListener = _hostLifetime.ApplicationStarted.Register(() =>
+        {
+            // Population of `EndpointsDataSource` begins _after_ `IHostedService.StartAsync` has is started,
+            // but when the host lifetime is reported as started all the endpoints should already be there
+            // since that means the HTTP server is ready to accept requests. So we can safely initialize here.
+            // If we don't do this here, that means we can have an unlucky request in the beginning
+            // that hits initialization.
+            _ = Initialize();
+        });
         return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
+        _startedListener?.Dispose();
         return Task.CompletedTask;
     }
 
-    private void Initialize()
+    internal Task EnsureInitialized()
+    {
+        if (_initialization.Task.IsCompleted)
+            return _initialization.Task;
+
+        return Initialize();
+    }
+
+    internal ScopeRequirementMetadata LookupMetadata(Endpoint endpoint)
+    {
+        // We have this secondary lookup in case the metadata was not added to the endpoint.
+        // All this code is supposed to work for all endpoints exposed throught ASP.NET Core,
+        // but there is no global way to define metadata for endpoints (i.e. IEndpointConventionBuilder that applies to all endpoints)
+        // So we have a fallback to this lookup which is also populated on initialization
+        if (_metadataLookup is null)
+            throw new InvalidOperationException("Scope authorization service is not initialized");
+
+        if (endpoint.DisplayName is null)
+            throw new InvalidOperationException("Endpoint display name is null");
+
+        if (_metadataLookup.TryGetValue(endpoint.DisplayName, out var metadata))
+            return metadata;
+
+        throw new KeyNotFoundException($"No metadata found for endpoint '{endpoint.DisplayName}'");
+    }
+
+    private Task Initialize()
     {
         if (_generalSettings.Value.IsTest)
-            _initialized = true; // Skip initialization during WAF tests
+        {
+            _initialization.TrySetResult();
+            return _initialization.Task; // Skip initialization during WAF tests
+        }
+        if (_initialization.Task.IsCompleted)
+            return _initialization.Task;
 
-        if (_initialized)
-            return;
+        if (Interlocked.CompareExchange(ref _initializing, 1, 0) != 0)
+            return _initialization.Task; // Being initialized by another thread
 
+        _logger.LogDebug("Starting scope authorization initialization");
         try
         {
             var appMetadata = _appConfigurationCache.ApplicationMetadata;
@@ -212,7 +261,7 @@ internal sealed class ScopeAuthorizationService(
                 ProcessEndpoints(appMetadata, dedupe);
             }
 
-            _initialized = true;
+            _initialization.TrySetResult();
             _logger.LogInformation(
                 "Scope authorization initialized. Endpoints to authorize: {ToAuthorize}, Not authorized: {NotAuthorized}",
                 _endpointsToUserAuthorize.Count,
@@ -221,20 +270,21 @@ internal sealed class ScopeAuthorizationService(
         }
         catch (Exception ex)
         {
+            _initialization.TrySetException(ex);
             _logger.LogError(ex, "Failed to initialize scope authorization service");
             throw;
         }
+
+        return Task.CompletedTask;
     }
 
     private void ProcessEndpoints(ApplicationMetadata appMetadata, Dictionary<string, IEnumerable<string>> dedupe)
     {
-        foreach (var endpoint in _endpointDataSource.Endpoints)
+        var metadataLookup = new Dictionary<string, ScopeRequirementMetadata>(StringComparer.Ordinal);
+        foreach (var endpoint in _endpointDataSources.SelectMany(ed => ed.Endpoints))
         {
-            if (endpoint is not RouteEndpoint routeEndpoint)
-                continue;
-
-            var displayName = GetEndpointDisplayName(routeEndpoint);
-            var httpMethods = GetEndpointHttpMethods(routeEndpoint);
+            var displayName = GetEndpointDisplayName(endpoint);
+            var httpMethods = GetEndpointHttpMethods(endpoint);
 
             // Skip duplicates (same logic as original)
             if (dedupe.TryGetValue(displayName, out var existingHttpMethods))
@@ -250,11 +300,16 @@ internal sealed class ScopeAuthorizationService(
 
             dedupe.Add(displayName, httpMethods);
 
-            var metadata =
-                endpoint.Metadata.GetMetadata<ScopeRequirementMetadata>()
-                ?? throw new InvalidOperationException(
-                    $"Endpoint '{displayName}' does not have ScopeRequirementMetadata"
-                );
+            var metadata = endpoint.Metadata.GetMetadata<ScopeRequirementMetadata>() ?? new ScopeRequirementMetadata();
+
+            // Using DisplayName on the endpoint here doesn't feel very solid,
+            // but it's the only thing given by ASP.NET Core that I could find..
+            // Atleast if there are endpoints that don't have this or have duplicates,
+            // we will find out during initialization (the app will be obviously broken)
+            if (endpoint.DisplayName is null)
+                throw new InvalidOperationException("Endpoint display name is null");
+            metadataLookup.Add(endpoint.DisplayName, metadata);
+
             var fallbackTextResourceKey =
                 appMetadata.ApiScopes?.ErrorMessageTextResourceKey ?? "authorization.scopes.insufficient";
             metadata.ErrorMessageTextResourceKeyUser =
@@ -273,7 +328,7 @@ internal sealed class ScopeAuthorizationService(
             scopeType = httpMethods.All(m => _readHttpMethods.Contains(m)) ? ScopeType.Read : ScopeType.Write;
 
             // Check if endpoint should be authorized
-            if (ShouldAuthorizeEndpoint(routeEndpoint))
+            if (ShouldAuthorizeEndpoint(endpoint))
             {
                 ProcessEndpoint(metadata, scopeType, appMetadata.ApiScopes, displayName);
             }
@@ -284,18 +339,20 @@ internal sealed class ScopeAuthorizationService(
             }
         }
 
+        _metadataLookup = metadataLookup.ToFrozenDictionary(StringComparer.Ordinal);
+
         // Debug log endpoint authorization summary
         if (_logger.IsEnabled(LogLevel.Debug))
         {
-            var authorizedEndpoints = string.Join(", ", _endpointsToUserAuthorize.Select(e => $"'{e}'"));
-            var notAuthorizedEndpoints = string.Join(", ", _endpointsNotUserAuthorized.Select(e => $"'{e}'"));
+            var authorizedEndpoints = string.Join(", ", _endpointsToUserAuthorize.Select(e => $"\n\t'{e}'"));
+            var notAuthorizedEndpoints = string.Join(", ", _endpointsNotUserAuthorized.Select(e => $"\n\t'{e}'"));
             var serviceOwnerAuthorizedEndpoints = string.Join(
                 ", ",
-                _endpointsToServiceOwnerAuthorize.Select(e => $"'{e}'")
+                _endpointsToServiceOwnerAuthorize.Select(e => $"\n\t'{e}'")
             );
             var serviceOwnerNotAuthorizedEndpoints = string.Join(
                 ", ",
-                _endpointsNotServiceOwnerAuthorized.Select(e => $"'{e}'")
+                _endpointsNotServiceOwnerAuthorized.Select(e => $"\n\t'{e}'")
             );
 
             // Collect actual computed scopes and error keys from endpoint metadata
@@ -304,7 +361,7 @@ internal sealed class ScopeAuthorizationService(
             var userErrorKeys = new HashSet<string>();
             var serviceOwnerErrorKeys = new HashSet<string>();
 
-            foreach (var endpoint in _endpointDataSource.Endpoints)
+            foreach (var endpoint in _endpointDataSources.SelectMany(ed => ed.Endpoints))
             {
                 var metadata = endpoint.Metadata.GetMetadata<ScopeRequirementMetadata>();
                 if (metadata is not null)
@@ -415,21 +472,26 @@ internal sealed class ScopeAuthorizationService(
         return httpMethods.Order().ToArray();
     }
 
-    private static bool ShouldAuthorizeEndpoint(RouteEndpoint endpoint)
+    private static bool ShouldAuthorizeEndpoint(Endpoint endpoint)
     {
         // Skip endpoints with AllowAnonymous
         if (endpoint.Metadata.GetMetadata<AllowAnonymousAttribute>() is not null)
             return false;
 
         // Check route parameters for instance-related endpoints
-        var routePattern = endpoint.RoutePattern;
-        var hasInstanceParameters = routePattern.Parameters.Any(p =>
-            string.Equals(p.Name, "instanceGuid", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(p.Name, "instanceId", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(p.Name, "instanceOwnerPartyId", StringComparison.OrdinalIgnoreCase)
-        );
+        if (endpoint is RouteEndpoint routeEndpoint)
+        {
+            var routePattern = routeEndpoint.RoutePattern;
+            var hasInstanceParameters = routePattern.Parameters.Any(p =>
+                string.Equals(p.Name, "instanceGuid", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(p.Name, "instanceId", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(p.Name, "instanceOwnerPartyId", StringComparison.OrdinalIgnoreCase)
+            );
 
-        return hasInstanceParameters;
+            return hasInstanceParameters;
+        }
+
+        return true;
     }
 
     private FrozenSet<string>? CreateUsersScopesSet(ScopeType type, ApiScopes? apiScopes)

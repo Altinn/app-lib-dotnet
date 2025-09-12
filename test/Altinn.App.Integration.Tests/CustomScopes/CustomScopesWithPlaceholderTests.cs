@@ -71,6 +71,57 @@ public class CustomScopesWithPlaceholderTests(ITestOutputHelper _output, AppFixt
             scrubbers: new Scrubbers(StringScrubber: Scrubbers.InstanceStringScrubber(readInstantiationResponse))
         );
 
+        // Test minimal API endpoints
+        var instance = readInstantiationResponse.Data.Model;
+        var instanceGuid = instance?.Id is not null
+            ? Guid.Parse(instance.Id.Split('/')[1])
+            : Guid.Parse("12345678-1234-1234-1234-123456789012");
+        var instanceOwnerPartyId = instance?.InstanceOwner?.PartyId ?? "501337";
+
+        async Task<AppFixture.ApiResponse> CallGetAsync(string endpoint)
+        {
+            var client = fixture.GetAppClient();
+            using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await client.SendAsync(request);
+            return new AppFixture.ApiResponse(fixture, response);
+        }
+
+        async Task<AppFixture.ApiResponse> CallPostAsync(string endpoint, object data)
+        {
+            var client = fixture.GetAppClient();
+            using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var payload = System.Text.Json.JsonSerializer.Serialize(data);
+            request.Content = new StringContent(
+                payload,
+                new System.Net.Http.Headers.MediaTypeHeaderValue("application/json")
+            );
+            var response = await client.SendAsync(request);
+            return new AppFixture.ApiResponse(fixture, response);
+        }
+
+        // GET endpoint with instanceGuid - should be protected with read scope
+        using var getDataResponse = await CallGetAsync($"/ttd/basic/api/instances/{instanceGuid}/minimal-data");
+        await verifier.Verify(getDataResponse, snapshotName: "GetMinimalData", scrubbers: null);
+
+        // POST endpoint with instanceGuid - should be protected with write scope
+        using var postProcessResponse = await CallPostAsync(
+            $"/ttd/basic/api/instances/{instanceGuid}/minimal-process",
+            new { data = "test" }
+        );
+        await verifier.Verify(postProcessResponse, snapshotName: "PostMinimalProcess", scrubbers: null);
+
+        // GET endpoint with instanceOwnerPartyId - should be protected with read scope
+        using var getSummaryResponse = await CallGetAsync(
+            $"/ttd/basic/api/parties/{instanceOwnerPartyId}/minimal-summary"
+        );
+        await verifier.Verify(getSummaryResponse, snapshotName: "GetMinimalSummary", scrubbers: null);
+
+        // Anonymous endpoint - should NOT be protected
+        using var getPublicResponse = await CallGetAsync("/ttd/basic/api/minimal-public");
+        await verifier.Verify(getPublicResponse, snapshotName: "GetMinimalPublic", scrubbers: null);
+
         await verifier.VerifyLogs();
     }
 }
