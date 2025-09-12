@@ -14,7 +14,7 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
     {
         var rootNode = GetRoot<Skjema>();
 
-        var text = SourceTextGenerator.GenerateSourceText(rootNode, "internal");
+        var text = SourceTextGenerator.GenerateSourceText(rootNode);
         outputHelper.WriteLine(AddLineNumbers(text));
 
         await Verify(text, extension: "cs");
@@ -25,7 +25,7 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
     {
         var rootNode = GetRoot<Empty>();
 
-        var text = SourceTextGenerator.GenerateSourceText(rootNode, "internal");
+        var text = SourceTextGenerator.GenerateSourceText(rootNode);
         outputHelper.WriteLine(AddLineNumbers(text));
 
         await Verify(text, extension: "cs");

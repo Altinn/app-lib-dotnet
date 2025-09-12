@@ -65,7 +65,7 @@ public class TestAltinnRowIds
         Assert.NotEqual(Guid.Empty, _skjema.Skjemainnhold?[0]?.TidligereAdresse?[1].AltinnRowId);
         // And that guids are different
         Assert.NotEqual(
-            skjema.Skjemainnhold?[0]?.TidligereAdresse?[0].AltinnRowId,
+            _skjema.Skjemainnhold?[0]?.TidligereAdresse?[0].AltinnRowId,
             _skjema.Skjemainnhold?[0]?.TidligereAdresse?[1].AltinnRowId
         );
         // Initialize again to ensure that values don't change on multiple initializations

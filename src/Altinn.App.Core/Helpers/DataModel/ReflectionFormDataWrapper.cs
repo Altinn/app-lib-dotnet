@@ -14,7 +14,7 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
     private readonly object _dataModel;
 
     /// <summary>
-    /// Constructor that wraps a PCOC data model, and gives extra tool for working with the data in an object using json like keys and reflection
+    /// Constructor that wraps a POCO data model, and gives extra tools for working with the data in an object using json like keys and reflection
     /// </summary>
     public ReflectionFormDataWrapper(object dataModel)
     {
@@ -55,11 +55,6 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
     /// <inheritdoc />
     public ReadOnlySpan<char> AddIndexToPath(ReadOnlySpan<char> path, ReadOnlySpan<int> rowIndexes, Span<char> buffer)
     {
-        if (rowIndexes.Length == 0)
-        {
-            return path;
-        }
-
         string tmp = AddIndexes(path.ToString(), rowIndexes);
         if (tmp.Length > buffer.Length)
         {
@@ -162,7 +157,7 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
     {
         if (keyPart.Length == 0)
         {
-            throw new DataModelException("Tried to parse empty part of dataModel key");
+            return (keyPart, null);
         }
         if (keyPart[^1] != ']')
         {
@@ -219,17 +214,23 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
                 }
                 else
                 {
-                    // Add empty index to indicate that this is a repeating group where we don't know the row
-                    ret.Add($"{key}[]");
+                    if (keys.Length == 1)
+                    {
+                        ret.Add(key);
+                        return;
+                    }
+                    // We don't have an index, but the path continues, so return empty to indicate failure
+                    ret.Clear();
+                    return;
                 }
             }
             else
             {
-                rowIndexes = default; //when you use a literal index, the context indecies are not to be used later.
+                rowIndexes = default; //when you use a literal index, the context indexes are not to be used later.
                 ret.Add($"{key}[{groupIndex}]");
             }
 
-            AddIndexesRecursive(ret, childTypeEnumerableParameter, keys.Slice(1), rowIndexes);
+            AddIndexesRecursive(ret, childTypeEnumerableParameter, keys[1..], rowIndexes);
         }
         else
         {
@@ -253,11 +254,6 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
     /// </example>
     private string AddIndexes(string field, ReadOnlySpan<int> rowIndexes = default)
     {
-        if (rowIndexes.Length == 0)
-        {
-            return field;
-        }
-
         var ret = new List<string>();
         AddIndexesRecursive(ret, _dataModel.GetType(), field.Split('.'), rowIndexes);
         return string.Join('.', ret);

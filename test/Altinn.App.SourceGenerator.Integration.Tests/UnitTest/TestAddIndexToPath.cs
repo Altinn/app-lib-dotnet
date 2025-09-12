@@ -34,8 +34,20 @@ public class TestAddIndexToPath
             wrapper.AddIndexToPath("skjemainnhold.tidligere-adresse", [0, 4])
         );
 
-        Assert.Equal("skjemainnhold.navn", wrapper.AddIndexToPath("skjemainnhold.navn", []));
-        Assert.Throws<ArgumentException>(() => wrapper.AddIndexToPath("", []));
-        Assert.Throws<ArgumentException>(() => wrapper.AddIndexToPath(null, []));
+        Assert.Equal(
+            "skjemainnhold[0].tidligere-adresse[6]",
+            wrapper.AddIndexToPath("skjemainnhold.tidligere-adresse[6]", [0, 4])
+        );
+
+        Assert.Equal(
+            "skjemainnhold[6].tidligere-adresse",
+            wrapper.AddIndexToPath("skjemainnhold[6].tidligere-adresse", [0, 4])
+        );
+        Assert.Null(wrapper.AddIndexToPath("skjemainnhold[6].tidligere-adresse.gate", [0, 4]));
+
+        Assert.Equal("skjemainnhold", wrapper.AddIndexToPath("skjemainnhold", []));
+        Assert.Null(wrapper.AddIndexToPath("skjemainnhold.navn", []));
+        Assert.Null(wrapper.AddIndexToPath("", []));
+        Assert.Null(wrapper.AddIndexToPath(null, []));
     }
 }

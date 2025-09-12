@@ -59,6 +59,7 @@ internal static class RemoveGenerator
                         {{modelPathNode.ListType}}? model,
                         global::System.ReadOnlySpan<char> path,
                         int offset,
+                        int index,
                         global::Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption
                     )
                     {
@@ -66,12 +67,11 @@ internal static class RemoveGenerator
                         {
                             return;
                         }
-                        int index = GetIndex(path, offset, out int nextOffset);
                         if (index < 0 || index >= model.Count)
                         {
                             return;
                         }
-                        if (nextOffset == -1)
+                        if (offset == -1)
                         {
                             switch (rowRemovalOption)
                             {
@@ -85,7 +85,7 @@ internal static class RemoveGenerator
                         }
                         else
                         {
-                            RemoveRecursive(model?[index], path, nextOffset, rowRemovalOption);
+                            RemoveRecursive(model?[index], path, offset, rowRemovalOption);
                         }
                     }
 
@@ -112,7 +112,7 @@ internal static class RemoveGenerator
                     {
                         return;
                     }
-                    switch (GetNextSegment(path, offset, out int nextOffset))
+                    switch (ParseSegment(path, offset, out int nextOffset, out int literalIndex))
                     {
 
             """
@@ -127,13 +127,24 @@ internal static class RemoveGenerator
 
             builder.Append(
                 $"""
-                            case "{child.JsonName}" when nextOffset is -1:
+                            case "{child.JsonName}" when (nextOffset is -1) && (literalIndex is -1):
                                 model.{child.CSharpName} = default;
                                 break;
 
                 """
             );
-            if (child.Properties.Count != 0)
+            if (child.ListType is not null)
+            {
+                builder.Append(
+                    $"""
+                                case "{child.JsonName}":
+                                    RemoveRecursive(model.{child.CSharpName}, path, nextOffset, literalIndex, rowRemovalOption);
+                                    break;
+
+                    """
+                );
+            }
+            else if (child.Properties.Count != 0)
             {
                 builder.Append(
                     $"""

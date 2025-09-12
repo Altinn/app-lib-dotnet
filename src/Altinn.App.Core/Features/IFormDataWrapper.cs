@@ -55,7 +55,7 @@ public interface IFormDataWrapper
     ///     A buffer that the method can work with, that is large enough to hold the full indexed path
     ///     (Typically we use path.Length + rowIndexes.Length * 12, as int.MaxValue.ToString().Length = 10 + 2 characters for "[]")
     /// </param>
-    /// <returns>The indexed path as a span that references buffer</returns>
+    /// <returns>The indexed path as a span that references buffer, or an empty span if a fully indexed path could not be constructed</returns>
     ReadOnlySpan<char> AddIndexToPath(ReadOnlySpan<char> path, ReadOnlySpan<int> rowIndexes, Span<char> buffer);
 
     /// <summary>
@@ -145,6 +145,7 @@ public static class FormDataWrapperExtensions
     /// <summary>
     /// Get a string representation of the path with indexes from context added
     /// </summary>
+    /// <returns>The path with indexes added or null if a fully indexed path could not be constructed</returns>
     public static string? AddIndexToPath(
         this IFormDataWrapper formDataWrapper,
         ReadOnlySpan<char> path,

@@ -247,7 +247,8 @@ public class FormDataWrapperGenerator : IIncrementalGenerator
         }
         if (result is not { Value: { } node })
             return;
-        var sourceText = SourceTextGenerator.SourceTextGenerator.GenerateSourceText(node, "public");
+
+        var sourceText = SourceTextGenerator.SourceTextGenerator.GenerateSourceText(node);
         context.AddSource(node.Name + "FormDataWrapper.g.cs", sourceText);
     }
 }

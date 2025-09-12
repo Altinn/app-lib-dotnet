@@ -58,17 +58,16 @@ internal static class GetterGenerator
                     private static object? GetRecursive(
                         {{modelPathNode.ListType}}? model,
                         global::System.ReadOnlySpan<char> path,
+                        int literalIndex,
                         int offset
                     )
                     {
-                        int index = GetIndex(path, offset, out int nextOffset);
-                        if (index < 0 || index >= model?.Count)
+                        if (model is null || literalIndex < 0 || literalIndex >= model.Count)
                         {
-                            // throw new global::System.IndexOutOfRangeException($"Index {index} is out of range for list of length {model.Count}.");
                             return null;
                         }
 
-                        return GetRecursive(model?[index], path, nextOffset);
+                        return GetRecursive(model[literalIndex], path, offset);
                     }
 
                 """
@@ -90,7 +89,12 @@ internal static class GetterGenerator
                     int offset
                 )
                 {
-                    return GetNextSegment(path, offset, out int nextOffset) switch
+                    if(model is null)
+                    {
+                        return null;
+                    }
+
+                    return ParseSegment(path, offset, out int nextOffset, out int literalIndex) switch
                     {
 
             """
@@ -98,9 +102,15 @@ internal static class GetterGenerator
         foreach (var child in modelPathNode.Properties)
         {
             builder.Append(
-                child.Properties.Count == 0
-                    ? $"            \"{child.JsonName}\" when nextOffset is -1 => model?.{child.CSharpName},\r\n"
-                    : $"            \"{child.JsonName}\" => GetRecursive(model?.{child.CSharpName}, path, nextOffset),\r\n"
+                child switch
+                {
+                    { Properties.Count: 0 } =>
+                        $"            \"{child.JsonName}\" when nextOffset is -1 => model.{child.CSharpName},\r\n",
+                    { ListType: not null } =>
+                        $"            \"{child.JsonName}\" => GetRecursive(model.{child.CSharpName}, path, literalIndex, nextOffset),\r\n",
+                    _ =>
+                        $"            \"{child.JsonName}\" => GetRecursive(model.{child.CSharpName}, path, nextOffset),\r\n",
+                }
             );
         }
 

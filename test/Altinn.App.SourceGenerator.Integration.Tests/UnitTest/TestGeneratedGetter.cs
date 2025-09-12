@@ -104,66 +104,73 @@ public class TestGeneratedGetter
     public void TestPathHelper()
     {
         var path = "skjemainnhold.navn";
-        var segment = Altinn_App_SourceGenerator_Integration_Tests_models_SkjemaFormDataWrapper.GetNextSegment(
+        var segment = Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper.ParseSegment(
             path,
             0,
-            out int nextOffset
+            out int nextOffset,
+            out int literalIndex
         );
         Assert.Equal("skjemainnhold", segment);
         Assert.Equal(14, nextOffset);
-        segment = Altinn_App_SourceGenerator_Integration_Tests_models_SkjemaFormDataWrapper.GetNextSegment(
+        Assert.Equal(-1, literalIndex);
+        segment = Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper.ParseSegment(
             path,
             nextOffset,
-            out nextOffset
+            out nextOffset,
+            out literalIndex
         );
         Assert.Equal("navn", segment);
         Assert.Equal(-1, nextOffset);
+        Assert.Equal(-1, literalIndex);
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            Altinn_App_SourceGenerator_Integration_Tests_models_SkjemaFormDataWrapper.GetNextSegment(
+            Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper.ParseSegment(
                 path,
                 nextOffset,
-                out nextOffset
+                out nextOffset,
+                out literalIndex
             )
         );
     }
 
     [Fact]
-    public void TestAltinn_App_SourceGenerator_Integration_Tests_models_SkjemaFormDataWrapperRecursive()
+    public void TestAltinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapperRecursive()
     {
         var path = "a.b[3].c";
-        var segment = Altinn_App_SourceGenerator_Integration_Tests_models_SkjemaFormDataWrapper.GetNextSegment(
+        var segment = Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper.ParseSegment(
             path,
             0,
-            out int nextOffset
+            out int nextOffset,
+            out int literalIndex
         );
         Assert.Equal("a", segment);
         Assert.Equal(2, nextOffset);
-        segment = Altinn_App_SourceGenerator_Integration_Tests_models_SkjemaFormDataWrapper.GetNextSegment(
+        Assert.Equal(-1, literalIndex);
+        segment = Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper.ParseSegment(
             path,
             nextOffset,
-            out nextOffset
+            out nextOffset,
+            out literalIndex
         );
         Assert.Equal("b", segment);
-        Assert.Equal(4, nextOffset);
-        var index = Altinn_App_SourceGenerator_Integration_Tests_models_SkjemaFormDataWrapper.GetIndex(
+        Assert.Equal(7, nextOffset);
+        Assert.Equal(3, literalIndex);
+
+        segment = Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper.ParseSegment(
             path,
             nextOffset,
-            out nextOffset
-        );
-        Assert.Equal(3, index);
-        segment = Altinn_App_SourceGenerator_Integration_Tests_models_SkjemaFormDataWrapper.GetNextSegment(
-            path,
-            nextOffset,
-            out nextOffset
+            out nextOffset,
+            out literalIndex
         );
         Assert.Equal("c", segment);
         Assert.Equal(-1, nextOffset);
+        Assert.Equal(-1, literalIndex);
 
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            Altinn_App_SourceGenerator_Integration_Tests_models_SkjemaFormDataWrapper.GetNextSegment(
+            Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper.ParseSegment(
                 path,
                 nextOffset,
-                out nextOffset
+                out nextOffset,
+                out literalIndex
             )
         );
     }

@@ -69,7 +69,14 @@ internal static class AltinnRowIdsGenerator
             {
                 builder.Append(
                     $$"""
-                            dataModel.{{child.Node.CSharpName}} = initialize ? global::System.Guid.NewGuid() : global::System.Guid.Empty;
+                            if (!initialize)
+                            {
+                                dataModel.{{child.Node.CSharpName}} = global::System.Guid.Empty;
+                            }
+                            else if (dataModel.{{child.Node.CSharpName}} == global::System.Guid.Empty)
+                            {
+                                dataModel.{{child.Node.CSharpName}} = global::System.Guid.NewGuid();
+                            }
 
                     """
                 );
