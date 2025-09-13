@@ -72,7 +72,7 @@ public class CustomScopesWithPlaceholderTests(ITestOutputHelper _output, AppFixt
             scrubbers: new Scrubbers(StringScrubber: Scrubbers.InstanceStringScrubber(readInstantiationResponse))
         );
 
-        await MinimalApiOperations.Call(fixture, verifier, token, readInstantiationResponse);
+        await Apis.Call(fixture, verifier, token, readInstantiationResponse);
 
         await verifier.VerifyLogs();
     }

@@ -1,5 +1,4 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Net.Http.Headers;
 using Altinn.App.Api.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Xunit.Abstractions;
@@ -68,7 +67,7 @@ public class CustomScopesTests(ITestOutputHelper _output, AppFixtureClassFixture
             scrubbers: new Scrubbers(StringScrubber: Scrubbers.InstanceStringScrubber(readInstantiationResponse))
         );
 
-        await MinimalApiOperations.Call(fixture, verifier, token, readInstantiationResponse);
+        await Apis.Call(fixture, verifier, token, readInstantiationResponse);
 
         await verifier.VerifyLogs();
     }
@@ -94,6 +93,6 @@ public class CustomScopesTests(ITestOutputHelper _output, AppFixtureClassFixture
             _ => throw new ArgumentOutOfRangeException(nameof(auth)),
         };
 
-        await MinimalApiOperations.Call(fixture, verifier, token, instantiationData: null);
+        await Apis.Call(fixture, verifier, token, instantiationData: null);
     }
 }
