@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
@@ -67,6 +68,24 @@ internal sealed class SigningProcessTask : IProcessTask
             null
         );
 
+        // Ensure proper authentication method for restricted data types
+        IEnumerable<DataType> signatureDataTypes = GetDataTypes(
+            appMetadata,
+            [signatureConfiguration.SignatureDataType, signatureConfiguration.SigneeStatesDataTypeId]
+        );
+
+        foreach (DataType signatureDataType in signatureDataTypes)
+        {
+            if (IsRestrictedDataType(signatureDataType))
+            {
+                cachedDataMutator.SetAuthenticationMethod(
+                    signatureDataType,
+                    StorageAuthenticationMethod.ServiceOwner()
+                );
+            }
+        }
+
+        // Initialize delegated signing if configured
         if (
             signatureConfiguration.SigneeProviderId is not null
             && signatureConfiguration.SigneeStatesDataTypeId is not null
@@ -79,6 +98,20 @@ internal sealed class SigningProcessTask : IProcessTask
         await cachedDataMutator.UpdateInstanceData(changes);
         await cachedDataMutator.SaveChanges(changes);
     }
+
+    private static DataType? GetDataType(ApplicationMetadata appMetadata, string? dataTypeId) =>
+        dataTypeId is null
+            ? null
+            : appMetadata.DataTypes.FirstOrDefault(x => x.Id.Equals(dataTypeId, StringComparison.OrdinalIgnoreCase));
+
+    private static IEnumerable<DataType> GetDataTypes(
+        ApplicationMetadata appMetadata,
+        IEnumerable<string?> dataTypeIds
+    ) => dataTypeIds.Select(dataTypeId => GetDataType(appMetadata, dataTypeId)).OfType<DataType>();
+
+    private static bool IsRestrictedDataType([NotNullWhen(true)] DataType? dataType) =>
+        !string.IsNullOrWhiteSpace(dataType?.ActionRequiredToRead)
+        || !string.IsNullOrWhiteSpace(dataType?.ActionRequiredToWrite);
 
     /// <inheritdoc/>
     /// <remarks> Generates a PDF if the signature configuration specifies a signature data type. </remarks>

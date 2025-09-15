@@ -47,6 +47,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     // We want to make sure that the data elements are updated in the instance object
     private readonly ConcurrentBag<DataElement> _savedDataElements = [];
 
+    private readonly ConcurrentDictionary<string, StorageAuthenticationMethod> _authenticationMethodOverrides = [];
+    private static readonly StorageAuthenticationMethod _defaultAuthenticationMethod =
+        StorageAuthenticationMethod.CurrentUser();
+
     public InstanceDataUnitOfWork(
         Instance instance,
         IDataClient dataClient,
@@ -74,6 +78,12 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     }
 
     public Instance Instance { get; }
+
+    /// <inheritdoc />
+    public void SetAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method)
+    {
+        _authenticationMethodOverrides[dataType.Id] = method;
+    }
 
     /// <inheritdoc />
     public async Task<object> GetFormData(DataElementIdentifier dataElementIdentifier)
@@ -106,7 +116,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                     _appMetadata.AppIdentifier.App,
                     _instanceOwnerPartyId,
                     _instanceGuid,
-                    dataElementIdentifier.Guid
+                    dataElementIdentifier.Guid,
+                    authenticationMethod: GetAuthenticationMethod(dataElementIdentifier)
                 )
         );
     }
@@ -375,7 +386,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             change.DataType.Id,
             change.ContentType,
             (change as BinaryDataChange)?.FileName,
-            new MemoryAsStream(bytes)
+            new MemoryAsStream(bytes),
+            authenticationMethod: GetAuthenticationMethod(change.DataType)
         );
         _binaryCache.Set(dataElement, bytes);
         if (change is FormDataChange formDataChange)
@@ -397,7 +409,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             contentType,
             filename,
             dataElementIdentifier.Guid,
-            new MemoryAsStream(bytes)
+            new MemoryAsStream(bytes),
+            authenticationMethod: GetAuthenticationMethod(dataElementIdentifier)
         );
         _savedDataElements.Add(newDataElement);
     }
@@ -435,7 +448,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                     _instanceOwnerPartyId,
                     _instanceGuid,
                     change.DataElementIdentifier.Guid,
-                    false
+                    false,
+                    authenticationMethod: GetAuthenticationMethod(change.DataElementIdentifier)
                 );
             }
 
@@ -540,6 +554,16 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
         return dataType;
     }
+
+    private StorageAuthenticationMethod GetAuthenticationMethod(DataElementIdentifier dataElementIdentifier)
+    {
+        DataType dataType = this.GetDataType(dataElementIdentifier);
+
+        return GetAuthenticationMethod(dataType);
+    }
+
+    private StorageAuthenticationMethod GetAuthenticationMethod(DataType dataType) =>
+        _authenticationMethodOverrides.GetValueOrDefault(dataType.Id, _defaultAuthenticationMethod);
 
     internal void VerifyDataElementsUnchangedSincePreviousChanges(DataElementChanges previousChanges)
     {

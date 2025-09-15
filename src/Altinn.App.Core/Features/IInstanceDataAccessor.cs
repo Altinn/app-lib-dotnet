@@ -39,6 +39,13 @@ public interface IInstanceDataAccessor
     /// <param name="dataTypeId">DataType.Id (from applicationmetadata.json)</param>
     /// <returns>The data type (or null if it does not exist)</returns>
     DataType? GetDataType(string dataTypeId);
+
+    /// <summary>
+    /// Set the authentication method associated with a given data type.
+    /// </summary>
+    /// <param name="dataType">The <see cref="DataType"/> this configuration applies to.</param>
+    /// <param name="method">The <see cref="StorageAuthenticationMethod"/> to associate with the given data type.</param>
+    void SetAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method);
 }
 
 /// <summary>
