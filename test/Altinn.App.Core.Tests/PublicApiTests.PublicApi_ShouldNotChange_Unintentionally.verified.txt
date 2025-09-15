@@ -1256,6 +1256,7 @@ namespace Altinn.App.Core.Features
         Altinn.Platform.Storage.Interface.Models.DataElement GetDataElement(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
         Altinn.Platform.Storage.Interface.Models.DataType? GetDataType(string dataTypeId);
         System.Threading.Tasks.Task<object> GetFormData(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
+        void SetAuthenticationMethod(Altinn.Platform.Storage.Interface.Models.DataType dataType, Altinn.App.Core.Features.StorageAuthenticationMethod method);
     }
     public static class IInstanceDataAccessorExtensions
     {
