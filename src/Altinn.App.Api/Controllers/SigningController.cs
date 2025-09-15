@@ -1,6 +1,7 @@
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Features.Signing.Extensions;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Helpers;
@@ -9,6 +10,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
@@ -31,6 +33,7 @@ public class SigningController : ControllerBase
     private readonly ISigningService _signingService;
 
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly IAppMetadata _appMetadata;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SigningController"/> class.
@@ -40,6 +43,7 @@ public class SigningController : ControllerBase
         IInstanceClient instanceClient,
         IProcessReader processReader,
         IAuthenticationContext authenticationContext,
+        IAppMetadata appMetadata,
         ILogger<SigningController> logger
     )
     {
@@ -47,6 +51,7 @@ public class SigningController : ControllerBase
         _processReader = processReader;
         _authenticationContext = authenticationContext;
         _logger = logger;
+        _appMetadata = appMetadata;
         _signingService = serviceProvider.GetRequiredService<ISigningService>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
@@ -98,6 +103,14 @@ public class SigningController : ControllerBase
         AltinnSignatureConfiguration signingConfiguration =
             (_processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.SignatureConfiguration)
             ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
+
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+
+        // Ensure proper authentication method for restricted data types
+        cachedDataMutator.SetServiceOwnerAuthForRestrictedDataTypes(
+            appMetadata,
+            [signingConfiguration.SignatureDataType, signingConfiguration.SigneeStatesDataTypeId]
+        );
 
         List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(
             cachedDataMutator,
@@ -208,6 +221,14 @@ public class SigningController : ControllerBase
         {
             return Unauthorized();
         }
+
+        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+
+        // Ensure proper authentication method for restricted data types
+        cachedDataMutator.SetServiceOwnerAuthForRestrictedDataTypes(
+            appMetadata,
+            [signingConfiguration.SignatureDataType, signingConfiguration.SigneeStatesDataTypeId]
+        );
 
         List<OrganizationSignee> authorizedOrganizations = await _signingService.GetAuthorizedOrganizationSignees(
             cachedDataMutator,

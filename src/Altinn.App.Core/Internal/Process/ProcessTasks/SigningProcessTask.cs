@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Signing.Extensions;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Helpers;
@@ -57,10 +58,10 @@ internal sealed class SigningProcessTask : IProcessTask
     {
         using var cts = new CancellationTokenSource();
 
-        AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
+        AltinnSignatureConfiguration signingConfiguration = GetAltinnSignatureConfiguration(taskId);
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
 
-        ValidateSigningConfiguration(appMetadata, signatureConfiguration);
+        ValidateSigningConfiguration(appMetadata, signingConfiguration);
 
         InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
             instance,
@@ -69,29 +70,18 @@ internal sealed class SigningProcessTask : IProcessTask
         );
 
         // Ensure proper authentication method for restricted data types
-        IEnumerable<DataType> signatureDataTypes = GetDataTypes(
+        cachedDataMutator.SetServiceOwnerAuthForRestrictedDataTypes(
             appMetadata,
-            [signatureConfiguration.SignatureDataType, signatureConfiguration.SigneeStatesDataTypeId]
+            [signingConfiguration.SignatureDataType, signingConfiguration.SigneeStatesDataTypeId]
         );
-
-        foreach (DataType signatureDataType in signatureDataTypes)
-        {
-            if (IsRestrictedDataType(signatureDataType))
-            {
-                cachedDataMutator.SetAuthenticationMethod(
-                    signatureDataType,
-                    StorageAuthenticationMethod.ServiceOwner()
-                );
-            }
-        }
 
         // Initialize delegated signing if configured
         if (
-            signatureConfiguration.SigneeProviderId is not null
-            && signatureConfiguration.SigneeStatesDataTypeId is not null
+            signingConfiguration.SigneeProviderId is not null
+            && signingConfiguration.SigneeStatesDataTypeId is not null
         )
         {
-            await InitialiseRuntimeDelegatedSigning(cachedDataMutator, signatureConfiguration, cts.Token);
+            await InitialiseRuntimeDelegatedSigning(cachedDataMutator, signingConfiguration, cts.Token);
         }
 
         DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
