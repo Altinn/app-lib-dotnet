@@ -16,7 +16,6 @@
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
   <ItemGroup>
-    <Using Include="Xunit" />
     <Compile Remove="Generated\**" />
     <None Include="Generated\**" />
   </ItemGroup>
