@@ -74,8 +74,8 @@ public static class IInstanceDataAccessorExtensions
         DataElementIdentifier dataElementIdentifier
     )
     {
-        var dataElement = dataAccessor.GetDataElement(dataElementIdentifier);
-        return dataAccessor.GetDataType(dataElement.DataType);
+        var dataType = dataElementIdentifier.DataTypeId ?? dataAccessor.GetDataElement(dataElementIdentifier).DataType;
+        return dataAccessor.GetDataType(dataType);
     }
 
     /// <summary>
@@ -263,10 +263,7 @@ public static class IInstanceDataAccessorExtensions
         foreach (var dataElement in accessor.Instance.Data)
         {
             var dataType = accessor.GetDataType(dataElement.DataType);
-            if (dataType is not null)
-            {
-                yield return (dataType, dataElement);
-            }
+            yield return (dataType, dataElement);
         }
     }
 }

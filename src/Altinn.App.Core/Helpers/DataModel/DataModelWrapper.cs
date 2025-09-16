@@ -13,7 +13,7 @@ public class DataModelWrapper
     private readonly object _dataModel;
 
     /// <summary>
-    /// Constructor that wraps a PCOC data model, and gives extra tool for working with the data in an object using json like keys and reflection
+    /// Constructor that wraps a POCO data model, and gives extra tools for working with the data in an object using json like keys and reflection
     /// </summary>
     public DataModelWrapper(object dataModel)
     {
@@ -297,11 +297,11 @@ public class DataModelWrapper
     }
 
     /// <summary>
-    /// Return a full dataModelBiding from a context aware binding by adding indexes
+    /// Return a full dataModelBinding from a context aware binding by adding indexes
     /// </summary>
     /// <example>
     /// key = "bedrift.ansatte.navn"
-    /// indicies = [1,2]
+    /// indexes = [1,2]
     /// => "bedrift[1].ansatte[2].navn"
     /// </example>
     public string AddIndicies(string field, ReadOnlySpan<int> rowIndexes = default)

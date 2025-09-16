@@ -622,7 +622,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetAuthorizedOrganizations_UserIdIsNull_Returns_Unathorized()
+    public async Task GetAuthorizedOrganizations_UserIdIsNull_Returns_Unauthorized()
     {
         // Arrange
         SetupAuthenticationContextMock(authenticated: CreateAuthenticatedNone());

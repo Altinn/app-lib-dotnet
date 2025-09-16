@@ -32,17 +32,17 @@ public class TestScenariosData : IEnumerable<object[]>
             ReceivedInstance = null,
             ExpectedResult = typeof(NotFoundResult),
         },
-        new("thows_ValidationException_when_instance_process_is_null")
+        new("throws_ValidationException_when_instance_process_is_null")
         {
             ReceivedInstance = new Instance { Process = null },
             ExpectedExceptionMessage = "Unable to validate instance without a started process.",
         },
-        new("thows_ValidationException_when_Instance_Process_CurrentTask_is_null")
+        new("throws_ValidationException_when_Instance_Process_CurrentTask_is_null")
         {
             ReceivedInstance = new Instance { Process = new ProcessState { CurrentTask = null } },
             ExpectedExceptionMessage = "Unable to validate instance without a started process.",
         },
-        new("thows_ValidationException_when_Instance_Data_is_empty")
+        new("throws_ValidationException_when_Instance_Data_is_empty")
         {
             ReceivedInstance = new Instance
             {
@@ -51,7 +51,7 @@ public class TestScenariosData : IEnumerable<object[]>
             },
             ExpectedExceptionMessage = "Unable to validate data element.",
         },
-        new("thows_ValidationException_when_Application_DataTypes_is_empty")
+        new("throws_ValidationException_when_Application_DataTypes_is_empty")
         {
             DataGuid = _dataGuid,
             ReceivedInstance = new Instance

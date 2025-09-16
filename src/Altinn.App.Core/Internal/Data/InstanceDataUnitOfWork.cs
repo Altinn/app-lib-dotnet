@@ -267,7 +267,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                     DataType = dataType,
                     ContentType = dataElement.ContentType,
                     CurrentFormData = _formDataCache.TryGetCachedValue(dataElementIdentifier, out var cfd)
-                        ? cfd
+                        ? cfd.BackingData<object>()
                         : _modelSerializationService.GetEmpty(dataType),
                     PreviousFormData = _modelSerializationService.GetEmpty(dataType),
                     CurrentBinaryData = ReadOnlyMemory<byte>.Empty,

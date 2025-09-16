@@ -247,11 +247,11 @@ public class LayoutEvaluatorState
     }
 
     /// <summary>
-    /// Return a full dataModelBiding from a context aware binding by adding indicies
+    /// Return a full dataModelBiding from a context aware binding by adding indexes
     /// </summary>
     /// <example>
     /// key = "bedrift.ansatte.navn"
-    /// indicies = [1,2]
+    /// indexes = [1,2]
     /// => "bedrift[1].ansatte[2].navn"
     /// </example>
     public async Task<DataReference> AddInidicies(ModelBinding binding, ComponentContext context)
@@ -268,40 +268,44 @@ public class LayoutEvaluatorState
         DataElementIdentifier defaultDataElementIdentifier
     )
     {
-        if (
-            key.DataType == null
-            || defaultDataElementIdentifier.DataTypeId == key.DataType
-            || _dataAccessor.GetDataType(defaultDataElementIdentifier).Id == key.DataType
-        )
+        // If the binding don't have a specific data type, use the default
+        if (key.DataType == null)
+        {
+            return defaultDataElementIdentifier;
+        }
+        // If the data element has the same type as default, return it
+        var dataType = _dataAccessor.GetDataType(defaultDataElementIdentifier);
+        if (dataType.Id == key.DataType)
         {
             return defaultDataElementIdentifier;
         }
 
+        // Return correct element if the data type has a single element on the instance and MaxCount == 1
         if (_dataIdsByType.TryGetValue(key.DataType, out var dataElementId))
         {
             return dataElementId;
         }
-        if (_dataAccessor.GetDataType(key.DataType) is { } dataType)
+
+        // Raise the correct error
+        if (dataType.AppLogic?.ClassRef is null)
         {
-            if (dataType.MaxCount != 1)
-            {
-                throw new InvalidOperationException(
-                    $"{key.DataType} has maxCount different from 1 in applicationmetadata.json or don't have a classRef in appLogic"
-                );
-            }
             throw new InvalidOperationException(
                 $"{key.DataType} has no classRef in applicationmetadata.json and can't be used as a data model in layouts"
             );
         }
-
-        throw new InvalidOperationException(
-            $"Data model with type {key.DataType} not found in applicationmetadata.json"
-        );
+        if (dataType.MaxCount != 1)
+        {
+            throw new InvalidOperationException(
+                $"{key.DataType} has maxCount different from 1 in applicationmetadata.json and must be part of a subform when used in layouts"
+            );
+        }
+        throw new InvalidOperationException($"Data element with type {key.DataType} not found on instance");
     }
 
     /// <summary>
     /// Return a full dataModelBiding from a context aware binding by adding indexes
     /// </summary>
+    [Obsolete("This method is deprecated and will be removed in a future version.")]
     public async Task<DataReference> AddInidicies(
         ModelBinding binding,
         DataElementIdentifier dataElementIdentifier,

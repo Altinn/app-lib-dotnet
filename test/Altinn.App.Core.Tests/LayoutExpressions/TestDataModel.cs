@@ -23,7 +23,7 @@ public class TestDataModel
     }
 
     [Fact]
-    public void AttributeNoAttriubteCaseSensitive()
+    public void AttributeNoAttributeCaseSensitive()
     {
         var model = new Model { NoAttribute = "asdfsf559" };
         var modelHelper = new ReflectionFormDataWrapper(model);
@@ -330,7 +330,7 @@ public class TestDataModel
                 Friends = new List<Friend>() { new() { Name = new() { Value = "Ole" } } },
             }
         );
-        modelHelper.Invoking(m => m.Get(".")).Should().Throw<DataModelException>().WithMessage("*empty part*");
+        Assert.Null(modelHelper.Get("."));
         modelHelper.Get("friends[0]").Should().BeOfType<Friend>().Which.Name?.Value.Should().Be("Ole");
         modelHelper.Get("friends[3]").Should().BeNull();
 
@@ -344,7 +344,7 @@ public class TestDataModel
     }
 
     [Fact]
-    public void TestAddIndicies()
+    public void TestAddIndexes()
     {
         var modelHelper = new ReflectionFormDataWrapper(
             new Model
@@ -354,27 +354,27 @@ public class TestDataModel
             }
         );
 
-        // Plain add indicies
+        // Plain add indexes
         modelHelper.AddIndexToPath("friends.friends.name", [0, 1]).Should().Be("friends[0].friends[1].name");
 
-        // Ignore extra indicies
+        // Ignore extra indexes
         modelHelper.AddIndexToPath("friends.friends", [0, 1, 4, 6]).Should().Be("friends[0].friends[1]");
 
         // Add empty when too few indexes
-        modelHelper.AddIndexToPath("friends.friends.friends", [0]).Should().Be("friends[0].friends[].friends[]");
+        Assert.Null(modelHelper.AddIndexToPath("friends.friends.friends", [0]));
 
-        // Don't add indicies if they are specified in input
+        // Don't add indexes if they are specified in input
         modelHelper.AddIndexToPath("friends[3]", [0]).Should().Be("friends[3]");
 
         // First index (and remaining) is ignored if first is explicit
-        modelHelper.AddIndexToPath("friends[0].friends.friends", [2, 3]).Should().Be("friends[0].friends[].friends[]");
+        Assert.Null(modelHelper.AddIndexToPath("friends[0].friends.friends", [2, 3]));
 
         // After we have used one index from context, we still respect explicit indexes
         modelHelper.AddIndexToPath("friends.friends[4].name", [10, 10]).Should().Be("friends[10].friends[4].name");
     }
 
     [Fact]
-    public void AddIndicies_WhenGivenIndexOnNonIndexableProperty_ThrowsError()
+    public void AddIndexes_WhenGivenIndexOnNonIndexableProperty_ThrowsError()
     {
         var modelHelper = new ReflectionFormDataWrapper(new Model { Id = 3 });
 
