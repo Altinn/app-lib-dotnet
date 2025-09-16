@@ -41,7 +41,7 @@ public interface IInstanceDataAccessor
     DataType? GetDataType(string dataTypeId);
 
     /// <summary>
-    /// Set the authentication method associated with a given data type.
+    /// Set the authentication method used when reading and writing data of the given data type.
     /// </summary>
     /// <param name="dataType">The <see cref="DataType"/> this configuration applies to.</param>
     /// <param name="method">The <see cref="StorageAuthenticationMethod"/> to associate with the given data type.</param>
