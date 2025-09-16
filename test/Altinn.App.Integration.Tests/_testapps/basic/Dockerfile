@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine@sha256:0f31419f1f4f6687dd29f8c12c135ef401ad75a695995fdef1d55ada6665c2c0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine@sha256:cd6c81064940585fc59a2c7b169268dff2e015565ecde961f7c6e2a18434a210 AS build
 
 COPY NuGet.config .
 COPY _packages _packages/
@@ -14,7 +14,7 @@ RUN dotnet publish App.csproj --configuration Release --output /app_output
 # Ensure that the config folder is copied to the output folder (policy.xml was missing)
 RUN cp -R config /app_output/
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine@sha256:6faef52a037435524fcda33d94a23cada50eed3775849efa863bf0d45327403c AS final
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine@sha256:8f4ced906b6610a1835696f59d80e992008957d38317093258e0879f736d28ed AS final
 EXPOSE 5005
 EXPOSE 5006
 WORKDIR /App
