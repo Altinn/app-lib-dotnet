@@ -5,8 +5,10 @@ using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,8 +36,11 @@ public sealed class SigneeContextsManagerTests : IDisposable
 
     private readonly Mock<IAltinnPartyClient> _altinnPartyClient = new(MockBehavior.Strict);
     private readonly Mock<ISigneeProvider> _signeeProvider = new(MockBehavior.Strict);
+    private readonly Mock<IAppMetadata> _appMetadata = new();
     private readonly Mock<ILogger<SigneeContextsManager>> _logger = new();
     private readonly AppImplementationFactory _appImplementationFactory;
+
+    private const string SigneeStatesDataTypeId = "signeeStates";
 
     public void Dispose() => _serviceProvider.Dispose();
 
@@ -46,11 +51,18 @@ public sealed class SigneeContextsManagerTests : IDisposable
         services.AddSingleton(_signeeProvider.Object);
         _serviceProvider = services.BuildServiceProvider();
 
+        _appMetadata
+            .Setup(x => x.GetApplicationMetadata())
+            .ReturnsAsync(
+                new ApplicationMetadata("ttd/app") { DataTypes = [new DataType { Id = SigneeStatesDataTypeId }] }
+            );
+
         _appImplementationFactory = _serviceProvider.GetRequiredService<AppImplementationFactory>();
 
         _signeeContextsManager = new SigneeContextsManager(
             _altinnPartyClient.Object,
             _appImplementationFactory,
+            _appMetadata.Object,
             _logger.Object
         );
 
@@ -103,7 +115,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         var signatureConfiguration = new AltinnSignatureConfiguration
         {
             SigneeProviderId = "testProvider",
-            SigneeStatesDataTypeId = "signeeStates",
+            SigneeStatesDataTypeId = SigneeStatesDataTypeId,
         };
 
         var instance = new Instance
@@ -204,7 +216,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         var signatureConfiguration = new AltinnSignatureConfiguration
         {
             SigneeProviderId = "testProvider",
-            SigneeStatesDataTypeId = "signeeStates",
+            SigneeStatesDataTypeId = SigneeStatesDataTypeId,
         };
 
         var instance = new Instance
@@ -271,7 +283,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         var signatureConfiguration = new AltinnSignatureConfiguration
         {
             SigneeProviderId = null,
-            SigneeStatesDataTypeId = "signeeStates",
+            SigneeStatesDataTypeId = SigneeStatesDataTypeId,
         };
 
         var instance = new Instance
@@ -301,7 +313,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         var signatureConfiguration = new AltinnSignatureConfiguration
         {
             SigneeProviderId = "nonExistentProvider",
-            SigneeStatesDataTypeId = "signeeStates",
+            SigneeStatesDataTypeId = SigneeStatesDataTypeId,
         };
 
         var instance = new Instance
@@ -361,7 +373,7 @@ public sealed class SigneeContextsManagerTests : IDisposable
         var signatureConfiguration = new AltinnSignatureConfiguration
         {
             SigneeProviderId = "testProvider",
-            SigneeStatesDataTypeId = "signeeStates",
+            SigneeStatesDataTypeId = SigneeStatesDataTypeId,
         };
 
         var instance = new Instance
@@ -392,10 +404,14 @@ public sealed class SigneeContextsManagerTests : IDisposable
         var signatureConfiguration = new AltinnSignatureConfiguration
         {
             SigneeProviderId = "testProvider",
-            SigneeStatesDataTypeId = "signeeStates",
+            SigneeStatesDataTypeId = SigneeStatesDataTypeId,
         };
 
-        var signeeStateDataElement = new DataElement { Id = Guid.NewGuid().ToString(), DataType = "signeeStates" };
+        var signeeStateDataElement = new DataElement
+        {
+            Id = Guid.NewGuid().ToString(),
+            DataType = SigneeStatesDataTypeId,
+        };
 
         var instance = new Instance
         {

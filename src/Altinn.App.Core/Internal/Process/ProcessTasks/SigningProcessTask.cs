@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Signing.Extensions;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Helpers;
@@ -67,12 +66,6 @@ internal sealed class SigningProcessTask : IProcessTask
             instance,
             taskId,
             null
-        );
-
-        // Ensure proper authentication method for restricted data types
-        cachedDataMutator.SetServiceOwnerAuthForRestrictedDataTypes(
-            appMetadata,
-            [signingConfiguration.SignatureDataType, signingConfiguration.SigneeStatesDataTypeId]
         );
 
         // Initialize delegated signing if configured

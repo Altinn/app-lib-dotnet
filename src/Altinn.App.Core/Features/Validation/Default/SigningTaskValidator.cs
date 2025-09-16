@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Altinn.App.Core.Features.Signing.Extensions;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Internal.App;
@@ -91,18 +90,15 @@ internal sealed class SigningTaskValidator : IValidator
             (_processReader.GetAltinnTaskExtension(taskId)?.SignatureConfiguration)
             ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
-        ServiceResult<ApplicationMetadata, Exception> appMetadataResult =
-            await CatchError(_appMetadata.GetApplicationMetadata);
+        ServiceResult<ApplicationMetadata, Exception> appMetadataResult = await CatchError(
+            _appMetadata.GetApplicationMetadata
+        );
 
         if (!appMetadataResult.Success)
         {
             _logger.LogError(appMetadataResult.Error, "Error while fetching application metadata");
             return [];
         }
-
-        // Ensure proper authentication method for restricted data types
-        dataAccessor.SetServiceOwnerAuthForRestrictedDataTypes(appMetadataResult.Ok,
-            [signingConfiguration.SignatureDataType, signingConfiguration.SigneeStatesDataTypeId]);
 
         ServiceResult<List<SigneeContext>, Exception> signeeContextsResult = await CatchError(() =>
             _signingService.GetSigneeContexts(dataAccessor, signingConfiguration, CancellationToken.None)
