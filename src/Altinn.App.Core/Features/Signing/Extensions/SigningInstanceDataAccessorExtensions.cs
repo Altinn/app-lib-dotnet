@@ -10,22 +10,20 @@ namespace Altinn.App.Core.Features.Signing.Extensions;
 internal static class SigningInstanceDataAccessorExtensions
 {
     /// <summary>
-    /// Set service owner as authentication method for the given data types.
+    /// Overrides the authentication method for all restricted data types in the provided list of data type IDs.
     /// </summary>
-    public static void SetServiceOwnerAuthForRestrictedDataTypes(
+    public static void OverrideAuthenticationMethodForRestrictedDataTypes(
         this IInstanceDataAccessor accessor,
         ApplicationMetadata appMetadata,
-        string?[] dataTypeIds
+        string?[] dataTypeIds,
+        StorageAuthenticationMethod authenticationMethod
     )
     {
-        IEnumerable<DataType> signatureDataTypes = GetDataTypes(appMetadata, dataTypeIds);
+        IEnumerable<DataType> restrictedDataTypes = GetDataTypes(appMetadata, dataTypeIds).Where(IsRestrictedDataType);
 
-        foreach (DataType signatureDataType in signatureDataTypes)
+        foreach (DataType signatureDataType in restrictedDataTypes)
         {
-            if (IsRestrictedDataType(signatureDataType))
-            {
-                accessor.SetAuthenticationMethod(signatureDataType, StorageAuthenticationMethod.ServiceOwner());
-            }
+            accessor.OverrideAuthenticationMethod(signatureDataType, authenticationMethod);
         }
     }
 

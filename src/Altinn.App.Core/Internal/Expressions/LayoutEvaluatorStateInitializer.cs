@@ -91,7 +91,7 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
 
         public DataType? GetDataType(string dataTypeId) => _applicationMetadata.DataTypes.Find(d => d.Id == dataTypeId);
 
-        public void SetAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method) =>
+        public void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method) =>
             throw new NotImplementedException();
     }
 

@@ -178,9 +178,10 @@ internal sealed class SigneeContextsManager(
             );
 
         ApplicationMetadata applicationMetadata = await appMetadata.GetApplicationMetadata();
-        instanceDataAccessor.SetServiceOwnerAuthForRestrictedDataTypes(
+        instanceDataAccessor.OverrideAuthenticationMethodForRestrictedDataTypes(
             applicationMetadata,
-            [signatureConfiguration.SigneeStatesDataTypeId]
+            [signatureConfiguration.SigneeStatesDataTypeId],
+            StorageAuthenticationMethod.ServiceOwner()
         );
 
         IEnumerable<DataElement> dataElements = instanceDataAccessor.GetDataElementsForType(signeeStatesDataTypeId);

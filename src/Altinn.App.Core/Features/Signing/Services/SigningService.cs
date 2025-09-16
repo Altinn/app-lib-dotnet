@@ -141,7 +141,11 @@ internal sealed class SigningService(
         }
 
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
-        instanceDataMutator.SetServiceOwnerAuthForRestrictedDataTypes(applicationMetadata, [signeeStateDataTypeId]);
+        instanceDataMutator.OverrideAuthenticationMethodForRestrictedDataTypes(
+            applicationMetadata,
+            [signeeStateDataTypeId],
+            StorageAuthenticationMethod.ServiceOwner()
+        );
 
         instanceDataMutator.AddBinaryDataElement(
             dataTypeId: signeeStateDataTypeId,

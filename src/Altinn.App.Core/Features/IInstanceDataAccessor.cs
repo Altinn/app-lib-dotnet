@@ -45,7 +45,7 @@ public interface IInstanceDataAccessor
     /// </summary>
     /// <param name="dataType">The <see cref="DataType"/> this configuration applies to.</param>
     /// <param name="method">The <see cref="StorageAuthenticationMethod"/> to associate with the given data type.</param>
-    void SetAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method);
+    void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method);
 }
 
 /// <summary>

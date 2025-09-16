@@ -80,7 +80,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     public Instance Instance { get; }
 
     /// <inheritdoc />
-    public void SetAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method)
+    public void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method)
     {
         _authenticationMethodOverrides[dataType.Id] = method;
     }

@@ -95,7 +95,7 @@ public class InstanceDataAccessorFake : IInstanceDataAccessor, IEnumerable<KeyVa
         return dataType;
     }
 
-    public void SetAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method)
+    public void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method)
     {
         throw new NotImplementedException();
     }
