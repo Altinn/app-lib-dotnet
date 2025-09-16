@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features;
@@ -6,6 +7,7 @@ using Altinn.App.Core.Features.Signing.Exceptions;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
@@ -54,7 +56,13 @@ public sealed class SigneeContextsManagerTests : IDisposable
         _appMetadata
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(
-                new ApplicationMetadata("ttd/app") { DataTypes = [new DataType { Id = SigneeStatesDataTypeId }] }
+                new ApplicationMetadata("ttd/app")
+                {
+                    DataTypes =
+                    [
+                        new DataType { Id = SigneeStatesDataTypeId, ActionRequiredToRead = "restricted-read" },
+                    ],
+                }
             );
 
         _appImplementationFactory = _serviceProvider.GetRequiredService<AppImplementationFactory>();
@@ -486,6 +494,15 @@ public sealed class SigneeContextsManagerTests : IDisposable
         Assert.Equal("test@example.com", context.CommunicationConfig.Notification.Email.EmailAddress);
         Assert.NotNull(context.CommunicationConfig.Notification.Sms);
         Assert.Equal("12345678", context.CommunicationConfig.Notification.Sms.MobileNumber);
+
+        cachedInstanceAccessor.Verify(
+            m =>
+                m.OverrideAuthenticationMethod(
+                    It.Is<DataType>(dt => dt.Id == signatureConfiguration.SigneeStatesDataTypeId),
+                    StorageAuthenticationMethod.ServiceOwner()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]

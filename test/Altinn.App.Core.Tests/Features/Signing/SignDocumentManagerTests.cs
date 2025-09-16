@@ -38,7 +38,10 @@ public sealed class SignDocumentManagerTests : IDisposable
         _appMetadata
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(
-                new ApplicationMetadata("ttd/app") { DataTypes = [new DataType { Id = SignatureDataTypeId }] }
+                new ApplicationMetadata("ttd/app")
+                {
+                    DataTypes = [new DataType { Id = SignatureDataTypeId, ActionRequiredToRead = "restricted-read" }],
+                }
             );
 
         _signDocumentManager = new SignDocumentManager(_altinnPartyClient.Object, _appMetadata.Object, _logger.Object);
@@ -244,6 +247,15 @@ public sealed class SignDocumentManagerTests : IDisposable
         Assert.Equal(2, result.Count);
         Assert.Equal("12345678901", result[0].SigneeInfo.PersonNumber);
         Assert.Equal("10987654321", result[1].SigneeInfo.PersonNumber);
+
+        cachedInstanceMutator.Verify(
+            m =>
+                m.OverrideAuthenticationMethod(
+                    It.Is<DataType>(dt => dt.Id == signatureConfiguration.SignatureDataType),
+                    StorageAuthenticationMethod.ServiceOwner()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
