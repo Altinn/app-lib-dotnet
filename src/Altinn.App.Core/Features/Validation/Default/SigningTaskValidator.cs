@@ -95,17 +95,15 @@ internal sealed class SigningTaskValidator : IValidator
             CancellationToken.None
         );
 
-        DataType signatureDateType =
-            appMetadataResult.DataTypes.First(x => x.Id == signingConfiguration.SignatureDataType)
+        DataType signatureDataType =
+            appMetadataResult.DataTypes.FirstOrDefault(x => x.Id == signingConfiguration.SignatureDataType)
             ?? throw new ApplicationConfigException("Didn't find signature data type in app metadata");
 
-        bool minimumAmountOfSignatures =
-            signeeContextsResult.Count(signeeContext => signeeContext.SignDocument is not null)
-            >= signatureDateType.MinCount;
-
+        int signedCount = signeeContextsResult.Count(signeeContext => signeeContext.SignDocument is not null);
+        bool haveMinimumAmountOfSignatures = signedCount >= signatureDataType.MinCount;
         bool allSigneesHaveSigned = signeeContextsResult.All(signeeContext => signeeContext.SignDocument is not null);
 
-        if (minimumAmountOfSignatures && allSigneesHaveSigned)
+        if (haveMinimumAmountOfSignatures && allSigneesHaveSigned)
         {
             return [];
         }
