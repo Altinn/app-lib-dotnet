@@ -7,7 +7,6 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Models.Result;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -20,8 +19,8 @@ namespace Altinn.App.Core.Features.Validation.Default;
 internal sealed class SignatureHashValidator(
     ISigningService signingService,
     IProcessReader processReader,
-    IAppMetadata appMetadata,
     IDataClient dataClient,
+    IAppMetadata appMetadata,
     ILogger<SignatureHashValidator> logger
 ) : IValidator
 {
@@ -45,7 +44,7 @@ internal sealed class SignatureHashValidator(
             return false;
         }
 
-        return taskConfig?.TaskType is "signing"; //TODO: Do you agree that it's best to always run this validator for singing, even if they haven't turned on 'RunDefaultValidator'? Why would you want to finish the step with invalid hashes?
+        return taskConfig?.TaskType is "signing";
     }
 
     public bool NoIncrementalValidation => true;
@@ -71,27 +70,15 @@ internal sealed class SignatureHashValidator(
             (processReader.GetAltinnTaskExtension(taskId)?.SignatureConfiguration)
             ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
-        ServiceResult<ApplicationMetadata, Exception> appMetadataResult = await CatchError(
-            appMetadata.GetApplicationMetadata
+        ApplicationMetadata applicationMetadata = await appMetadata.GetApplicationMetadata();
+
+        List<SigneeContext> signeeContextsResults = await signingService.GetSigneeContexts(
+            dataAccessor,
+            signingConfiguration,
+            CancellationToken.None
         );
 
-        if (!appMetadataResult.Success)
-        {
-            logger.LogError(appMetadataResult.Error, "Error while fetching application metadata");
-            return [];
-        }
-
-        ServiceResult<List<SigneeContext>, Exception> signeeContextsResults = await CatchError(() =>
-            signingService.GetSigneeContexts(dataAccessor, signingConfiguration, CancellationToken.None)
-        );
-
-        if (!signeeContextsResults.Success)
-        {
-            logger.LogError(signeeContextsResults.Error, "Error while fetching signee contexts");
-            return [];
-        }
-
-        foreach (SigneeContext signeeContext in signeeContextsResults.Ok)
+        foreach (SigneeContext signeeContext in signeeContextsResults)
         {
             List<SignDocument.DataElementSignature> dataElementSignatures =
                 signeeContext.SignDocument?.DataElementSignatures ?? [];
@@ -103,13 +90,20 @@ internal sealed class SignatureHashValidator(
                     instance.AppId,
                     instanceIdentifier.InstanceOwnerPartyId,
                     instanceIdentifier.InstanceGuid,
-                    Guid.Parse(dataElementSignature.DataElementId)
+                    Guid.Parse(dataElementSignature.DataElementId),
+                    HasRestrictedRead(applicationMetadata, instance, dataElementSignature.DataElementId)
+                        ? StorageAuthenticationMethod.ServiceOwner()
+                        : null
                 );
 
                 string sha256Hash = await GenerateSha256Hash(dataStream);
 
                 if (sha256Hash != dataElementSignature.Sha256Hash)
                 {
+                    logger.LogError(
+                        $"Found an invalid signature for data element {dataElementSignature.DataElementId} on instance {instance.Id}. Expected hash {dataElementSignature.Sha256Hash}, calculated hash {sha256Hash}."
+                    );
+
                     return
                     [
                         new ValidationIssue
@@ -123,7 +117,29 @@ internal sealed class SignatureHashValidator(
             }
         }
 
+        logger.LogInformation("All signature hashes are valid for instance {InstanceId}", instance.Id);
+
         return [];
+    }
+
+    private static bool HasRestrictedRead(
+        ApplicationMetadata applicationMetadata,
+        Instance instance,
+        string dataElementId
+    )
+    {
+        DataElement? dataElement = instance.Data.FirstOrDefault(de => de.Id == dataElementId);
+        string? dataTypeId = dataElement?.DataType;
+        DataType? dataType = applicationMetadata.DataTypes.FirstOrDefault(dt => dt.Id == dataTypeId);
+
+        if (dataType == null)
+        {
+            throw new ApplicationConfigException(
+                $"Unable to find data type {dataTypeId} for data element {dataElementId} in applicationmetadata.json."
+            );
+        }
+
+        return !string.IsNullOrEmpty(dataType?.ActionRequiredToRead);
     }
 
     private static async Task<string> GenerateSha256Hash(Stream stream)
@@ -142,21 +158,5 @@ internal sealed class SignatureHashValidator(
     private static string FormatShaDigest(byte[] digest)
     {
         return Convert.ToHexString(digest).ToLowerInvariant();
-    }
-
-    /// <summary>
-    /// Catch exceptions from an async function and return them as a ServiceResult record with the result.
-    /// </summary>
-    private static async Task<ServiceResult<T, Exception>> CatchError<T>(Func<Task<T>> function)
-    {
-        try
-        {
-            var result = await function();
-            return result;
-        }
-        catch (Exception ex)
-        {
-            return ex;
-        }
     }
 }
