@@ -4,9 +4,8 @@ namespace Altinn.App.Analyzers.SourceTextGenerator;
 
 internal static class PrepareModelForXmlStorageGenerator
 {
-    public static void Generate(StringBuilder builder, ModelPathNode rootNode)
+    public static void Generate(StringBuilder builder, ModelPathNode _)
     {
-        _ = rootNode; // Currently not used as we rely on the reflection implementation
         builder.Append(
             """
 

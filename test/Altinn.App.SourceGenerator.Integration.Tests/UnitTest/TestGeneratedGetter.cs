@@ -196,4 +196,34 @@ public class TestGeneratedGetter
             )
         );
     }
+
+    [Fact]
+    public void TestParseSegment_HyphenWithIndex()
+    {
+        var path = "tidligere-adresse[1]";
+        var segment = Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper.ParseSegment(
+            path,
+            0,
+            out int nextOffset,
+            out int literalIndex
+        );
+        Assert.Equal("tidligere-adresse", segment);
+        Assert.Equal(-1, nextOffset);
+        Assert.Equal(1, literalIndex);
+    }
+
+    [Fact]
+    public void TestParseSegment_MultiDigitIndex()
+    {
+        var path = "x[12344567]";
+        var segment = Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper.ParseSegment(
+            path,
+            0,
+            out int nextOffset,
+            out int literalIndex
+        );
+        Assert.Equal("x", segment);
+        Assert.Equal(-1, nextOffset);
+        Assert.Equal(12344567, literalIndex);
+    }
 }
