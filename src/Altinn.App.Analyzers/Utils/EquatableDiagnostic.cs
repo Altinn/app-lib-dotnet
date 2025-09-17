@@ -1,6 +1,6 @@
 // Copied from PolyType with some inlined helper methods
 
-// Original lisense
+// Original license
 // MIT License
 //
 // Copyright (c) 2023 Eirik Tsarpalis

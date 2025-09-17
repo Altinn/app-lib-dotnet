@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Altinn.App.SourceGenerator.Tests;
 
-public class AdditionalTextImplementation : AdditionalText
+public sealed class AdditionalTextImplementation : AdditionalText
 {
     private readonly string? _text;
 

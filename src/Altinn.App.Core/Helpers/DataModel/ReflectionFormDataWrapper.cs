@@ -110,6 +110,11 @@ public class ReflectionFormDataWrapper : IFormDataWrapper
         // Other enumerable types is treated as a collection
         if (!(childModel is not string && childModel is System.Collections.IEnumerable childModelList))
         {
+            if (groupIndex is not null)
+            {
+                // Error, trying to index a non-collection
+                return null;
+            }
             return GetModelDataRecursive(keys, index + 1, childModel);
         }
 

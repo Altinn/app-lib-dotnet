@@ -49,6 +49,8 @@ public class TestGeneratedGetter
     [InlineData("skjemainnhold[1].navn", "navn2")]
     [InlineData("skjemainnhold[1].alder", 43)]
     [InlineData("skjemainnhold[1].deltar", false)]
+    [InlineData("skjemainnhold[1].adresse.gate", "gate")]
+    [InlineData("skjemainnhold[1].adresse.postnummer", 1234)]
     [InlineData("skjemainnhold[1].tidligere-adresse[1].postnummer", 1236)]
     public void TestGetRaw(string path, object expected)
     {
@@ -88,7 +90,10 @@ public class TestGeneratedGetter
     [InlineData("skjemainnhold[2].navn")]
     [InlineData("skjemainnhold[0].not-exists")]
     [InlineData("skjemainnhold[0].navn.not-exists")]
+    [InlineData("skjemainnhold[1].tidligere-adresse[99].postnummer")]
     [InlineData("skjemainnhold[0].adresse.gate")]
+    [InlineData("skjemainnhold[1].adresse[0]")]
+    [InlineData("skjemainnhold[1].")]
     public void TestGetRawErrorReturnNull(string? path)
     {
         // These might all throw exceptions when we have better validation of data model bindings at startup
@@ -99,6 +104,22 @@ public class TestGeneratedGetter
 
         var reflector = new ReflectionFormDataWrapper(_skjema);
         Assert.Null(reflector.Get(path));
+    }
+
+    [Theory]
+    [InlineData("skjemainnhold[-1]")]
+    [InlineData("skjemainnhold[a]")]
+    [InlineData("skjemainnhold[1].tidligere-adresse[-1]")]
+    public void TestGetRawErrorReturnException(string? path)
+    {
+        // These might all throw exceptions when we have better validation of data model bindings at startup
+        IFormDataWrapper dataWrapper = new Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper(
+            _skjema
+        );
+        Assert.Throws<DataModelException>(() => dataWrapper.Get(path));
+
+        var reflector = new ReflectionFormDataWrapper(_skjema);
+        Assert.Throws<DataModelException>(() => reflector.Get(path));
     }
 
     [Fact]

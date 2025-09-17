@@ -39,7 +39,7 @@ public interface IFormDataWrapper
 
     /// <summary>
     /// Remove the field at the given path
-    /// If the field points to a row (ends in "[]"), the row will be removed or set to null based on rowRemovalOptions
+    /// If the path points to a row (last segment is a list with an explicit [index]), the row will be removed or set to null based on rowRemovalOption
     /// </summary>
     void RemoveField(ReadOnlySpan<char> path, RowRemovalOption rowRemovalOption);
 

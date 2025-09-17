@@ -21,7 +21,7 @@ public static class SourceTextGenerator
             $$"""
             #nullable enable
 
-            [global::System.CodeDom.Compiler.GeneratedCode("Altinn.App.Analyzer", "{{_sourceGeneratorVersion}}")]
+            [global::System.CodeDom.Compiler.GeneratedCode("Altinn.App.Analyzers", "{{_sourceGeneratorVersion}}")]
             [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
             public sealed class {{className}}
                 : global::Altinn.App.Core.Features.IFormDataWrapper<{{rootNode.TypeName}}>
@@ -39,7 +39,7 @@ public static class SourceTextGenerator
                         );
                 }
 
-                public {{rootNode.Name}}FormDataWrapper(object dataModel)
+                public {{className}}(object dataModel)
                 {
                     _dataModel =
                         dataModel as {{rootNode.TypeName}}
@@ -104,17 +104,17 @@ public static class SourceTextGenerator
                     var bracketOffset = global::System.MemoryExtensions.IndexOf(segment, ']');
                     if (bracketOffset < 0)
                     {
-                        throw new global::System.FormatException($"Missing closing bracket ']' in {path}.");
+                        throw new global::Altinn.App.Core.Helpers.DataModel.DataModelException($"Missing closing bracket ']' in {path}.");
                     }
 
                     if (!int.TryParse(segment[..bracketOffset], out var index))
                     {
-                        throw new global::System.FormatException($"Invalid index in {path}.");
+                        throw new global::Altinn.App.Core.Helpers.DataModel.DataModelException($"Invalid index in {path}.");
                     }
 
                     if (index < 0)
                     {
-                        throw new global::System.FormatException($"Invalid negative index in {path}.");
+                        throw new global::Altinn.App.Core.Helpers.DataModel.DataModelException($"Invalid negative index in {path}.");
                     }
 
                     nextOffset = offset + bracketOffset + 2;
