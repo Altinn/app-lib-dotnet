@@ -24,7 +24,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 {
     /// <inheritdoc />
     public IReadOnlyDictionary<DataType, StorageAuthenticationMethod> AuthenticationMethodOverrides =>
-        _authenticationMethodOverrides.ToImmutableDictionary();
+        _authenticationMethodOverrides.ToImmutableDictionary(DataTypeComparer.Instance);
 
     // DataClient needs a few arguments to fetch data
     private readonly Guid _instanceGuid;
