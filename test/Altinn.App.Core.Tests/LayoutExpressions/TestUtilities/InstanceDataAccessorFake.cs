@@ -95,12 +95,11 @@ public class InstanceDataAccessorFake : IInstanceDataAccessor, IEnumerable<KeyVa
         return dataType;
     }
 
-    public void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method)
-    {
+    public void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method) =>
         throw new NotImplementedException();
-    }
 
-    public IReadOnlyDictionary<DataType, StorageAuthenticationMethod> AuthenticationMethodOverrides { get; }
+    public IReadOnlyDictionary<DataType, StorageAuthenticationMethod> AuthenticationMethodOverrides =>
+        throw new NotImplementedException();
 
     public void AddFormDataElement(string dataType, object model)
     {
