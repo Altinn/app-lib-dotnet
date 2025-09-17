@@ -10,12 +10,11 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
+using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using CoreSignee = Altinn.App.Core.Features.Signing.Models.Signee;
-using SigneeState = Altinn.App.Core.Features.Signing.Models.SigneeContextState;
 
 namespace Altinn.App.Core.Tests.Features.Validators.Default;
 
@@ -25,7 +24,6 @@ public class SignatureHashValidatorTests
     private readonly Mock<ISigningService> _signingServiceMock = new();
     private readonly Mock<IDataClient> _dataClientMock = new();
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
-    private readonly Mock<ILogger<SignatureHashValidator>> _loggerMock = new();
     private readonly Mock<IInstanceDataAccessor> _dataAccessorMock = new();
     private readonly SignatureHashValidator _validator;
 
@@ -36,84 +34,80 @@ public class SignatureHashValidatorTests
             _processReaderMock.Object,
             _dataClientMock.Object,
             _appMetadataMock.Object,
-            _loggerMock.Object
+            new Mock<ILogger<SignatureHashValidator>>().Object
         );
+
+        _dataAccessorMock.Setup(x => x.Instance).Returns(CreateTestInstance());
     }
 
     [Fact]
     public async Task Validate_WithValidSignatureHashes_ReturnsEmptyList()
     {
-        var testData = "test data";
-        var expectedHash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
-        var instance = CreateTestInstance();
-        var signingConfiguration = new AltinnSignatureConfiguration { SignatureDataType = "signature" };
-        var applicationMetadata = new ApplicationMetadata("testorg/testapp")
+        const string testData = "test data";
+        const string expectedHash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
+        AltinnSignatureConfiguration signingConfiguration = new() { SignatureDataType = "signature" };
+        ApplicationMetadata applicationMetadata = new("testorg/testapp")
         {
             DataTypes = [new DataType { Id = "form", ActionRequiredToRead = null }],
         };
-        var signeeContext = CreateSigneeContextWithValidHash(expectedHash);
+        SigneeContext signeeContext = CreateSigneeContextWithValidHash(expectedHash);
 
-        SetupMocks(instance, signingConfiguration, applicationMetadata, [signeeContext], testData);
+        SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], testData);
 
-        var result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        List<ValidationIssue> result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
 
-        result.Should().BeEmpty();
+        Assert.Empty(result);
     }
 
     [Fact]
     public async Task Validate_WithInvalidSignatureHash_ReturnsValidationIssue()
     {
-        var testData = "test data";
-        var storedHash = "different-hash";
-        var instance = CreateTestInstance();
-        var signingConfiguration = new AltinnSignatureConfiguration { SignatureDataType = "signature" };
-        var applicationMetadata = new ApplicationMetadata("testorg/testapp")
+        const string testData = "test data";
+        const string storedHash = "different-hash";
+        AltinnSignatureConfiguration signingConfiguration = new() { SignatureDataType = "signature" };
+        ApplicationMetadata applicationMetadata = new("testorg/testapp")
         {
             DataTypes = [new DataType { Id = "form", ActionRequiredToRead = null }],
         };
-        var signeeContext = CreateSigneeContextWithValidHash(storedHash);
+        SigneeContext signeeContext = CreateSigneeContextWithValidHash(storedHash);
 
-        SetupMocks(instance, signingConfiguration, applicationMetadata, [signeeContext], testData);
+        SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], testData);
 
-        var result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        List<ValidationIssue> result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
 
-        result.Should().HaveCount(1);
-        result[0].Code.Should().Be(ValidationIssueCodes.DataElementCodes.InvalidSignatureHash);
-        result[0].Severity.Should().Be(ValidationIssueSeverity.Error);
-        result[0].Description.Should().Be(ValidationIssueCodes.DataElementCodes.InvalidSignatureHash);
+        Assert.Single(result);
+        Assert.Equal(ValidationIssueCodes.DataElementCodes.InvalidSignatureHash, result[0].Code);
+        Assert.Equal(ValidationIssueSeverity.Error, result[0].Severity);
+        Assert.Equal(ValidationIssueCodes.DataElementCodes.InvalidSignatureHash, result[0].Description);
     }
 
     [Fact]
     public async Task Validate_WithMissingSignatureConfiguration_ThrowsApplicationConfigException()
     {
-        var instance = CreateTestInstance();
-        _dataAccessorMock.Setup(x => x.Instance).Returns(instance);
         _processReaderMock
             .Setup(x => x.GetAltinnTaskExtension("signing-task"))
             .Returns(new AltinnTaskExtension { SignatureConfiguration = null });
 
-        var action = async () => await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(() =>
+            _validator.Validate(_dataAccessorMock.Object, "signing-task", "en")
+        );
 
-        await action
-            .Should()
-            .ThrowAsync<ApplicationConfigException>()
-            .WithMessage("Signing configuration not found in AltinnTaskExtension");
+        Assert.Equal("Signing configuration not found in AltinnTaskExtension", exception.Message);
     }
 
     [Fact]
     public async Task Validate_WithRestrictedReadDataType_UsesServiceOwnerAuth()
     {
-        var testData = "test data";
-        var expectedHash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
-        var instance = CreateTestInstance();
-        var signingConfiguration = new AltinnSignatureConfiguration { SignatureDataType = "signature" };
-        var applicationMetadata = new ApplicationMetadata("testorg/testapp")
+        const string testData = "test data";
+        const string expectedHash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
+        AltinnSignatureConfiguration signingConfiguration = new() { SignatureDataType = "signature" };
+        ApplicationMetadata applicationMetadata = new("testorg/testapp")
         {
             DataTypes = [new DataType { Id = "form", ActionRequiredToRead = "read" }],
         };
-        var signeeContext = CreateSigneeContextWithValidHash(expectedHash);
+        SigneeContext signeeContext = CreateSigneeContextWithValidHash(expectedHash);
 
-        SetupMocks(instance, signingConfiguration, applicationMetadata, [signeeContext], testData);
+        SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], testData);
 
         await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
 
@@ -135,17 +129,16 @@ public class SignatureHashValidatorTests
     [Fact]
     public async Task Validate_WithNonRestrictedReadDataType_DoesNotUseServiceOwnerAuth()
     {
-        var testData = "test data";
-        var expectedHash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
-        var instance = CreateTestInstance();
+        const string testData = "test data";
+        const string expectedHash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
         var signingConfiguration = new AltinnSignatureConfiguration { SignatureDataType = "signature" };
         var applicationMetadata = new ApplicationMetadata("testorg/testapp")
         {
             DataTypes = [new DataType { Id = "form", ActionRequiredToRead = null }],
         };
-        var signeeContext = CreateSigneeContextWithValidHash(expectedHash);
+        SigneeContext signeeContext = CreateSigneeContextWithValidHash(expectedHash);
 
-        SetupMocks(instance, signingConfiguration, applicationMetadata, [signeeContext], testData);
+        SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], testData);
 
         await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
 
@@ -167,47 +160,45 @@ public class SignatureHashValidatorTests
     [Fact]
     public async Task Validate_WithDataTypeNotFoundInApplicationMetadata_ThrowsApplicationConfigException()
     {
-        var testData = "test data";
-        var expectedHash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
-        var instance = CreateTestInstance();
-        var signingConfiguration = new AltinnSignatureConfiguration { SignatureDataType = "signature" };
-        var applicationMetadata = new ApplicationMetadata("testorg/testapp") { DataTypes = [] };
-        var signeeContext = CreateSigneeContextWithValidHash(expectedHash);
+        const string testData = "test data";
+        const string expectedHash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
+        AltinnSignatureConfiguration signingConfiguration = new() { SignatureDataType = "signature" };
+        ApplicationMetadata applicationMetadata = new("testorg/testapp") { DataTypes = [] };
+        SigneeContext signeeContext = CreateSigneeContextWithValidHash(expectedHash);
 
-        SetupMocks(instance, signingConfiguration, applicationMetadata, [signeeContext], testData);
+        SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], testData);
 
-        var action = async () => await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(() =>
+            _validator.Validate(_dataAccessorMock.Object, "signing-task", "en")
+        );
 
-        await action
-            .Should()
-            .ThrowAsync<ApplicationConfigException>()
-            .WithMessage(
-                "Unable to find data type form for data element 550e8400-e29b-41d4-a716-446655440001 in applicationmetadata.json."
-            );
+        Assert.Equal(
+            "Unable to find data type form for data element 550e8400-e29b-41d4-a716-446655440001 in applicationmetadata.json.",
+            exception.Message
+        );
     }
 
     [Fact]
     public async Task Validate_WithMultipleSigneeContexts_ValidatesAllSignatures()
     {
-        var testData = "test data";
-        var expectedHash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
-        var instance = CreateTestInstance();
-        var signingConfiguration = new AltinnSignatureConfiguration { SignatureDataType = "signature" };
-        var applicationMetadata = new ApplicationMetadata("testorg/testapp")
+        const string testData = "test data";
+        const string expectedHash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
+        AltinnSignatureConfiguration signingConfiguration = new() { SignatureDataType = "signature" };
+        ApplicationMetadata applicationMetadata = new("testorg/testapp")
         {
             DataTypes = [new DataType { Id = "form", ActionRequiredToRead = null }],
         };
-        var signeeContexts = new List<SigneeContext>
-        {
+        List<SigneeContext> signeeContexts =
+        [
             CreateSigneeContextWithValidHash(expectedHash),
             CreateSigneeContextWithValidHash(expectedHash),
-        };
+        ];
 
-        SetupMocks(instance, signingConfiguration, applicationMetadata, signeeContexts, testData);
+        SetupMocks(signingConfiguration, applicationMetadata, signeeContexts, testData);
 
-        var result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        List<ValidationIssue> result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
 
-        result.Should().BeEmpty();
+        Assert.Empty(result);
         _dataClientMock.Verify(
             x =>
                 x.GetBinaryData(
@@ -226,30 +217,29 @@ public class SignatureHashValidatorTests
     [Fact]
     public async Task Validate_WithSigneeContextWithoutSignDocument_SkipsValidation()
     {
-        var instance = CreateTestInstance();
-        var signingConfiguration = new AltinnSignatureConfiguration { SignatureDataType = "signature" };
-        var applicationMetadata = new ApplicationMetadata("testorg/testapp")
+        AltinnSignatureConfiguration signingConfiguration = new() { SignatureDataType = "signature" };
+        ApplicationMetadata applicationMetadata = new("testorg/testapp")
         {
             DataTypes = [new DataType { Id = "form", ActionRequiredToRead = null }],
         };
-        var signeeContext = new SigneeContext
+        SigneeContext signeeContext = new()
         {
             TaskId = "signing-task",
             Signee = new CoreSignee.PersonSignee
             {
                 SocialSecurityNumber = "12345678901",
                 FullName = "Test Person",
-                Party = new Altinn.Platform.Register.Models.Party(),
+                Party = new Party(),
             },
-            SigneeState = new SigneeState { IsAccessDelegated = false },
+            SigneeState = new SigneeContextState { IsAccessDelegated = false },
             SignDocument = null,
         };
 
-        SetupMocks(instance, signingConfiguration, applicationMetadata, [signeeContext], "test");
+        SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], "test");
 
-        var result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        List<ValidationIssue> result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
 
-        result.Should().BeEmpty();
+        Assert.Empty(result);
         _dataClientMock.Verify(
             x =>
                 x.GetBinaryData(
@@ -268,46 +258,46 @@ public class SignatureHashValidatorTests
     [Fact]
     public void TaskId_ShouldReturnAsterisk()
     {
-        _validator.TaskId.Should().Be("*");
+        Assert.Equal("*", _validator.TaskId);
     }
 
     [Fact]
     public void NoIncrementalValidation_ShouldReturnTrue()
     {
-        _validator.NoIncrementalValidation.Should().BeTrue();
+        Assert.True(_validator.NoIncrementalValidation);
     }
 
     [Fact]
     public void ShouldRunForTask_WithSigningTask_ReturnsTrue()
     {
-        var taskConfig = new AltinnTaskExtension { TaskType = "signing" };
+        AltinnTaskExtension taskConfig = new() { TaskType = "signing" };
         _processReaderMock.Setup(x => x.GetAltinnTaskExtension("signing-task")).Returns(taskConfig);
 
-        var result = _validator.ShouldRunForTask("signing-task");
+        bool result = _validator.ShouldRunForTask("signing-task");
 
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
     public void ShouldRunForTask_WithNonSigningTask_ReturnsFalse()
     {
-        var taskConfig = new AltinnTaskExtension { TaskType = "data" };
+        AltinnTaskExtension taskConfig = new() { TaskType = "data" };
         _processReaderMock.Setup(x => x.GetAltinnTaskExtension("data-task")).Returns(taskConfig);
 
-        var result = _validator.ShouldRunForTask("data-task");
+        bool result = _validator.ShouldRunForTask("data-task");
 
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
     public void ShouldRunForTask_WithNullTaskType_ReturnsFalse()
     {
-        var taskConfig = new AltinnTaskExtension { TaskType = null };
+        AltinnTaskExtension taskConfig = new() { TaskType = null };
         _processReaderMock.Setup(x => x.GetAltinnTaskExtension("task")).Returns(taskConfig);
 
-        var result = _validator.ShouldRunForTask("task");
+        bool result = _validator.ShouldRunForTask("task");
 
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -317,25 +307,27 @@ public class SignatureHashValidatorTests
             .Setup(x => x.GetAltinnTaskExtension("task"))
             .Throws(new InvalidOperationException("Task not found"));
 
-        var result = _validator.ShouldRunForTask("task");
+        bool result = _validator.ShouldRunForTask("task");
 
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
-    public void HasRelevantChanges_ShouldThrowUnreachableException()
+    public async Task HasRelevantChanges_ShouldThrowUnreachableException()
     {
-        var changes = new DataElementChanges([]);
+        DataElementChanges changes = new([]);
 
-        var action = () => _validator.HasRelevantChanges(_dataAccessorMock.Object, "task", changes);
+        var exception = await Assert.ThrowsAsync<UnreachableException>(() =>
+            _validator.HasRelevantChanges(_dataAccessorMock.Object, "task", changes)
+        );
 
-        action
-            .Should()
-            .ThrowAsync<UnreachableException>()
-            .WithMessage("HasRelevantChanges should not be called because NoIncrementalValidation is true.");
+        Assert.Equal(
+            "HasRelevantChanges should not be called because NoIncrementalValidation is true.",
+            exception.Message
+        );
     }
 
-    private Instance CreateTestInstance()
+    private static Instance CreateTestInstance()
     {
         return new Instance
         {
@@ -346,7 +338,7 @@ public class SignatureHashValidatorTests
         };
     }
 
-    private SigneeContext CreateSigneeContextWithValidHash(string hash)
+    private static SigneeContext CreateSigneeContextWithValidHash(string hash)
     {
         return new SigneeContext
         {
@@ -355,9 +347,9 @@ public class SignatureHashValidatorTests
             {
                 SocialSecurityNumber = "12345678901",
                 FullName = "Test Person",
-                Party = new Altinn.Platform.Register.Models.Party(),
+                Party = new Party(),
             },
-            SigneeState = new SigneeState { IsAccessDelegated = false },
+            SigneeState = new SigneeContextState { IsAccessDelegated = false },
             SignDocument = new SignDocument
             {
                 DataElementSignatures =
@@ -373,15 +365,12 @@ public class SignatureHashValidatorTests
     }
 
     private void SetupMocks(
-        Instance instance,
         AltinnSignatureConfiguration signingConfiguration,
         ApplicationMetadata applicationMetadata,
         List<SigneeContext> signeeContexts,
-        string testData
+        string dataElementStringContent
     )
     {
-        _dataAccessorMock.Setup(x => x.Instance).Returns(instance);
-
         _processReaderMock
             .Setup(x => x.GetAltinnTaskExtension("signing-task"))
             .Returns(new AltinnTaskExtension { SignatureConfiguration = signingConfiguration });
@@ -410,6 +399,6 @@ public class SignatureHashValidatorTests
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(() => new MemoryStream(Encoding.UTF8.GetBytes(testData)));
+            .ReturnsAsync(() => new MemoryStream(Encoding.UTF8.GetBytes(dataElementStringContent)));
     }
 }
