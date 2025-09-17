@@ -43,12 +43,12 @@ public sealed class PatchServiceTests : IDisposable
 
     // Service mocks
     private readonly Mock<ILogger<ValidationService>> _vLoggerMock = new(MockBehavior.Loose);
-    private readonly Mock<ITranslationService> _translationService = new(MockBehavior.Strict);
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
     private readonly Mock<IDataProcessor> _dataProcessorMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
+    private readonly Mock<ITranslationService> _translationServiceMock = new(MockBehavior.Strict);
     private readonly TelemetrySink _telemetrySink = new();
     private readonly Mock<IWebHostEnvironment> _webHostEnvironment = new(MockBehavior.Strict);
     private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
@@ -122,7 +122,7 @@ public sealed class PatchServiceTests : IDisposable
         var validatorFactory = _serviceProvider.GetRequiredService<IValidatorFactory>();
         var validationService = new ValidationService(
             validatorFactory,
-            _translationService.Object,
+            _translationServiceMock.Object,
             _vLoggerMock.Object
         );
 
