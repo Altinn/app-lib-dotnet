@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using Altinn.App.Core.Configuration;
@@ -21,6 +22,10 @@ namespace Altinn.App.Core.Internal.Data;
 /// </summary>
 internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 {
+    /// <inheritdoc />
+    public IReadOnlyDictionary<DataType, StorageAuthenticationMethod> AuthenticationMethodOverrides =>
+        _authenticationMethodOverrides.ToImmutableDictionary();
+
     // DataClient needs a few arguments to fetch data
     private readonly Guid _instanceGuid;
     private readonly int _instanceOwnerPartyId;
@@ -47,7 +52,9 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     // We want to make sure that the data elements are updated in the instance object
     private readonly ConcurrentBag<DataElement> _savedDataElements = [];
 
-    private readonly ConcurrentDictionary<string, StorageAuthenticationMethod> _authenticationMethodOverrides = [];
+    private readonly ConcurrentDictionary<DataType, StorageAuthenticationMethod> _authenticationMethodOverrides = new(
+        DataTypeComparer.Instance
+    );
     private static readonly StorageAuthenticationMethod _defaultAuthenticationMethod =
         StorageAuthenticationMethod.CurrentUser();
 
@@ -82,7 +89,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     /// <inheritdoc />
     public void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method)
     {
-        _authenticationMethodOverrides[dataType.Id] = method;
+        _authenticationMethodOverrides[dataType] = method;
     }
 
     /// <inheritdoc />
@@ -563,7 +570,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     }
 
     private StorageAuthenticationMethod GetAuthenticationMethod(DataType dataType) =>
-        _authenticationMethodOverrides.GetValueOrDefault(dataType.Id, _defaultAuthenticationMethod);
+        _authenticationMethodOverrides.GetValueOrDefault(dataType, _defaultAuthenticationMethod);
 
     internal void VerifyDataElementsUnchangedSincePreviousChanges(DataElementChanges previousChanges)
     {
@@ -636,4 +643,28 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             );
         }
     }
+}
+
+/// <summary>
+/// Equality comparer for DataType that compares by <c>Id</c>.
+/// </summary>
+internal class DataTypeComparer : IEqualityComparer<DataType>
+{
+    public static DataTypeComparer Instance { get; } = new();
+
+    public bool Equals(DataType? x, DataType? y)
+    {
+        if (ReferenceEquals(x, y))
+            return true;
+
+        if (x is null || y is null)
+            return false;
+
+        if (x.GetType() != y.GetType())
+            return false;
+
+        return x.Id == y.Id;
+    }
+
+    public int GetHashCode(DataType obj) => obj.Id != null ? obj.Id.GetHashCode() : 0;
 }

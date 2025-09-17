@@ -93,6 +93,8 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
 
         public void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method) =>
             throw new NotImplementedException();
+
+        public IReadOnlyDictionary<DataType, StorageAuthenticationMethod> AuthenticationMethodOverrides { get; }
     }
 
     /// <summary>

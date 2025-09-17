@@ -100,6 +100,8 @@ public class InstanceDataAccessorFake : IInstanceDataAccessor, IEnumerable<KeyVa
         throw new NotImplementedException();
     }
 
+    public IReadOnlyDictionary<DataType, StorageAuthenticationMethod> AuthenticationMethodOverrides { get; }
+
     public void AddFormDataElement(string dataType, object model)
     {
         throw new NotImplementedException();
