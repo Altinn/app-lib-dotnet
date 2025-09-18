@@ -54,7 +54,6 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         _formDataValidatorMock.SetupGet(v => v.ShouldRunAfterRemovingHiddenData).Returns(false);
         _formDataValidatorMock.Setup(v => v.DataType).Returns("9edd53de-f46f-40a1-bb4d-3efb93dc113d");
         _formDataValidatorMock.Setup(v => v.ValidationSource).Returns("Not a valid validation source");
-        _formDataValidatorMock.SetupGet(fdv => fdv.NoIncrementalValidation).Returns(false);
         OverrideServicesForAllTests = (services) =>
         {
             services.AddSingleton(_dataProcessorMock.Object);
@@ -255,7 +254,6 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         dataValidator.SetupGet(v => v.ShouldRunAfterRemovingHiddenData).Returns(false);
         dataValidator.Setup(v => v.DataType).Returns("*");
         dataValidator.Setup(v => v.ValidationSource).Returns("test-source");
-        dataValidator.SetupGet(v => v.NoIncrementalValidation).Returns(false);
         dataValidator
             .Setup(v =>
                 v.ValidateFormData(
@@ -317,7 +315,6 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         dataValidator.SetupGet(v => v.NoIncrementalValidation).Returns(false);
         dataValidator.Setup(v => v.DataType).Returns("*");
         dataValidator.Setup(v => v.ValidationSource).Returns("test-source");
-        dataValidator.SetupGet(v => v.NoIncrementalValidation).Returns(false);
         dataValidator
             .Setup(v =>
                 v.ValidateFormData(
@@ -569,7 +566,6 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         dataValidator.SetupGet(v => v.ShouldRunAfterRemovingHiddenData).Returns(false);
         dataValidator.Setup(v => v.DataType).Returns("*");
         dataValidator.Setup(v => v.ValidationSource).Returns("test-source");
-        dataValidator.SetupGet(v => v.NoIncrementalValidation).Returns(false);
         dataValidator
             .Setup(v =>
                 v.ValidateFormData(

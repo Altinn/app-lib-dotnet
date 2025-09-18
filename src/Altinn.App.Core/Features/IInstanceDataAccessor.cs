@@ -34,13 +34,14 @@ public interface IInstanceDataAccessor
     Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier);
 
     /// <summary>
-    /// Get a <see cref="IInstanceDataAccessor"/> that provides access to the cleaned data (where all fields marked as "hidden" is removed).
+    /// Get a <see cref="IInstanceDataAccessor"/> that provides access to the cleaned data (where all fields marked as "hidden" are removed).
     /// </summary>
     /// <param name="rowRemovalOption">The strategy for "hiddenRow" on group components</param>
     IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull);
 
     /// <summary>
-    /// Get a <see cref="IInstanceDataAccessor"/> that provides access to the data before the current change.
+    /// Get a <see cref="IInstanceDataAccessor"/> that provides access to the
+    /// storage persisted before any in-memory changes in this request.
     /// </summary>
     IInstanceDataAccessor GetPreviousDataAccessor();
 

@@ -66,6 +66,8 @@ public class ValidationService : IValidationService
 
         var cleanAccessor = dataAccessor;
         validators = validators.ToArray();
+        // Initialize the clean accessor if any validator requires it
+        // or skip initialization if all validators can run with the complete data
         if (validators.Any(c => c.ShouldRunAfterRemovingHiddenData))
         {
             cleanAccessor = dataAccessor.GetCleanAccessor();
@@ -217,8 +219,8 @@ public class ValidationService : IValidationService
                         DataType = fdc.DataType,
                         Type = fdc.Type,
 
-                        PreviousFormData = await previousAccessor.GetFormData(fdc.DataElementIdentifier),
-                        CurrentFormData = await cleanAccessor.GetFormData(fdc.DataElementIdentifier),
+                        PreviousFormDataWrapper = await previousAccessor.GetFormDataWrapper(fdc.DataElementIdentifier),
+                        CurrentFormDataWrapper = await cleanAccessor.GetFormDataWrapper(fdc.DataElementIdentifier),
                         // The binary data is kept as is, because logic is assumed to not use it
                         CurrentBinaryData = fdc.CurrentBinaryData,
                         PreviousBinaryData = fdc.PreviousBinaryData,

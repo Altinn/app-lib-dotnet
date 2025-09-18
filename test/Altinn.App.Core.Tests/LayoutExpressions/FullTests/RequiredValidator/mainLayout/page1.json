@@ -32,7 +32,7 @@
                 }
             },
             {
-                "id": "input-hidden-requried",
+                "id": "input-hidden-required",
                 "type": "Input",
                 "required": true,
                 "hidden": true,

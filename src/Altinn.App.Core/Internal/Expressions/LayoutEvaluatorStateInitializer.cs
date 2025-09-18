@@ -87,17 +87,19 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
 
         public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption)
         {
-            throw new NotImplementedException("Legacy data accessor does not implement GetCleanAccessorForTask");
+            throw new NotSupportedException("Legacy single data accessor does not implement GetCleanAccessorForTask");
         }
 
         public IInstanceDataAccessor GetPreviousDataAccessor()
         {
-            throw new NotImplementedException("Legacy data accessor does not implement GetPreviousDataAccessor");
+            throw new NotSupportedException("Legacy single data accessor does not implement GetPreviousDataAccessor");
         }
 
         public Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)
         {
-            return Task.FromException<ReadOnlyMemory<byte>>(new NotImplementedException());
+            return Task.FromException<ReadOnlyMemory<byte>>(
+                new NotSupportedException("Legacy single data accessor does not implement GetBinaryData")
+            );
         }
 
         public DataElement GetDataElement(DataElementIdentifier dataElementIdentifier)

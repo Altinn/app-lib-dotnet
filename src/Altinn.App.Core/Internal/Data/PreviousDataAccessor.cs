@@ -48,11 +48,16 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
 
     public async Task<object> GetFormData(DataElementIdentifier dataElementIdentifier)
     {
+        var dataType = this.GetDataType(dataElementIdentifier);
+        if (dataType.AppLogic?.ClassRef is null)
+        {
+            throw new InvalidOperationException(
+                $"Data element {dataElementIdentifier.Id} is of data type {dataType.Id} which doesn't have app logic in application metadata and cant be used as form data"
+            );
+        }
+
         var binaryData = await _dataAccessor.GetBinaryData(dataElementIdentifier);
-        return _modelSerializationService.DeserializeFromStorage(
-            binaryData.Span,
-            this.GetDataType(dataElementIdentifier)
-        );
+        return _modelSerializationService.DeserializeFromStorage(binaryData.Span, dataType);
     }
 
     public async Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier)

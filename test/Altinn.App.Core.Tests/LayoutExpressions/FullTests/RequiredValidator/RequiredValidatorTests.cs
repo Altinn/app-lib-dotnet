@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
@@ -135,7 +136,7 @@ public class RequiredValidatorTests
         }
 
         fixture.ServiceCollection.AddTransient<IValidator, TestValidator>();
-        await using var sp = fixture.ServiceCollection.BuildServiceProvider();
+        await using var sp = fixture.BuildServiceProvider();
 
         var dataUnitOfWorkInitializer = sp.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         var dataMutator = await dataUnitOfWorkInitializer.Init(
@@ -154,8 +155,8 @@ public class RequiredValidatorTests
                     DataElement = null,
                     CurrentBinaryData = null,
                     PreviousBinaryData = null,
-                    CurrentFormData = data,
-                    PreviousFormData = new Model(),
+                    CurrentFormDataWrapper = FormDataWrapperFactory.Create(data),
+                    PreviousFormDataWrapper = FormDataWrapperFactory.Create(new Model()),
                     Type = ChangeType.Created,
                 },
             ]

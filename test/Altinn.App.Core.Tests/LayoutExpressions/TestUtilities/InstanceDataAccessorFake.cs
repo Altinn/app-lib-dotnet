@@ -82,12 +82,14 @@ public class InstanceDataAccessorFake : IInstanceDataAccessor, IEnumerable<KeyVa
 
     public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)
     {
-        throw new NotImplementedException();
+        throw new NotImplementedException("GetCleanAccessor is not yet implemented for InstanceDataAccessorFake");
     }
 
     public IInstanceDataAccessor GetPreviousDataAccessor()
     {
-        throw new NotImplementedException();
+        throw new NotImplementedException(
+            "GetPreviousDataAccessor is not yet implemented for InstanceDataAccessorFake"
+        );
     }
 
     public Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)

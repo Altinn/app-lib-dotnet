@@ -55,6 +55,8 @@ public sealed class DataAccessorFixture
 
     public IServiceCollection ServiceCollection { get; } = new ServiceCollection();
 
+    public ServiceProvider BuildServiceProvider() => ServiceCollection.BuildServiceProvider(validateScopes: true);
+
     private DataAccessorFixture(ITestOutputHelper outputHelper)
     {
         AppMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(ApplicationMetadata);
@@ -76,7 +78,6 @@ public sealed class DataAccessorFixture
         ServiceCollection.AddTransient<IValidationService, ValidationService>();
         ServiceCollection.AddTransient<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
         ServiceCollection.AddTransient<AppImplementationFactory>();
-        ServiceCollection.AddSingleton(TranslationServiceMock.Object);
         ServiceCollection.AddFakeLoggingWithXunit(outputHelper);
         AppResourcesMock
             .Setup(ar => ar.GetLayoutSet())
@@ -121,9 +122,15 @@ public sealed class DataAccessorFixture
 
         foreach (var spec in specs)
         {
+            var layoutDir = Path.Join(directory, spec.LayoutSetName);
+            if (!Directory.Exists(layoutDir))
+            {
+                throw new DirectoryNotFoundException($"Missing layout directory: {layoutDir}");
+            }
             var pageNames = Directory
-                .GetFiles(Path.Join(directory, spec.LayoutSetName), "*.json")
-                .Select(Path.GetFileNameWithoutExtension);
+                .GetFiles(layoutDir, "*.json")
+                .Select(Path.GetFileNameWithoutExtension)
+                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase);
 
             var pages = await Task.WhenAll(
                 pageNames.Select(async pageName =>
@@ -184,7 +191,17 @@ public sealed class DataAccessorFixture
         Instance.Data.Add(dataElement);
         var serializationService = new ModelSerializationService(AppModelMock.Object);
         DataClientMock
-            .Setup(dc => dc.GetDataBytes(Org, App, InstanceOwnerPartyId, InstanceGuid, dataGuid, null, default))
+            .Setup(dc =>
+                dc.GetDataBytes(
+                    Org,
+                    App,
+                    InstanceOwnerPartyId,
+                    InstanceGuid,
+                    dataGuid,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(serializationService.SerializeToStorage(data, dataType).data.ToArray());
     }
 }

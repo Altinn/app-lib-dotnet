@@ -246,8 +246,6 @@ public sealed class ValidationServiceTests : IDisposable
 
         // ValidatorName (used for source)
         formDataValidatorMock.Setup(v => v.ValidationSource).Returns(validationSource);
-
-        formDataValidatorMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
     }
 
     private void SetupFormDataValidatorReturn(

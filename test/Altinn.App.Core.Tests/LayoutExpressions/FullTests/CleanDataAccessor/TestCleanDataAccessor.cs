@@ -299,7 +299,7 @@ public class TestCleanDataAccessor
         {
             fixture.AddFormData(subData);
         }
-        await using var sp = fixture.ServiceCollection.BuildServiceProvider();
+        await using var sp = fixture.BuildServiceProvider();
         var dataUnitOfWorkInitializer = sp.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         var dataMutator = await dataUnitOfWorkInitializer.Init(
             fixture.Instance,
