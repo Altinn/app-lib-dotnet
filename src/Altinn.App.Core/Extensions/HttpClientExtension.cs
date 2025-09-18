@@ -104,6 +104,36 @@ public static class HttpClientExtension
     }
 
     /// <summary>
+    /// Extension that adds authorization header to request and returns an unbuffered response
+    /// </summary>
+    /// <param name="httpClient">The HttpClient</param>
+    /// <param name="authorizationToken">the authorization token (jwt)</param>
+    /// <param name="requestUri">The request Uri</param>
+    /// <param name="platformAccessToken">The platformAccess tokens</param>
+    /// <returns>A HttpResponseMessage</returns>
+    public static async Task<HttpResponseMessage> GetUnbufferedAsync(
+        this HttpClient httpClient,
+        string authorizationToken,
+        string requestUri,
+        string? platformAccessToken = null
+    )
+    {
+        using HttpRequestMessage request = new(HttpMethod.Get, requestUri);
+
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            Constants.AuthorizationSchemes.Bearer,
+            authorizationToken
+        );
+
+        if (!string.IsNullOrEmpty(platformAccessToken))
+        {
+            request.Headers.Add(Constants.General.PlatformAccessTokenHeaderName, platformAccessToken);
+        }
+
+        return await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None);
+    }
+
+    /// <summary>
     /// Extension that add authorization header to request
     /// </summary>
     /// <param name="httpClient">The HttpClient</param>

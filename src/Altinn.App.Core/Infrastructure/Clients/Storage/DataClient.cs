@@ -205,6 +205,36 @@ public class DataClient : IDataClient
     }
 
     /// <inheritdoc />
+    public async Task<Stream> GetBinaryDataStream(
+        string org,
+        string app,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        Guid dataId,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using var activity = _telemetry?.StartGetBinaryDataActivity(instanceGuid, dataId);
+        string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
+        string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
+
+        JwtToken token = await _authenticationTokenResolver.GetAccessToken(
+            authenticationMethod ?? _defaultAuthenticationMethod,
+            cancellationToken: cancellationToken
+        );
+
+        HttpResponseMessage response = await _client.GetUnbufferedAsync(token, apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return await response.Content.ReadAsStreamAsync(cancellationToken);
+        }
+
+        throw await PlatformHttpException.CreateAsync(response);
+    }
+
+    /// <inheritdoc />
     public async Task<object> GetFormData(
         Guid instanceGuid,
         Type type,
