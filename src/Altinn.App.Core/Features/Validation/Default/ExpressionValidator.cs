@@ -167,7 +167,7 @@ public class ExpressionValidator : IValidator
 
     private static int[]? GetRowIndices(string field)
     {
-        Span<int> rowIndicesSpan = stackalloc int[20]; // Assuming max 20 indices for simplicity
+        Span<int> rowIndicesSpan = stackalloc int[200]; // Assuming max 200 indices for simplicity recursion will never go deeper than 3-4
         int count = 0;
         for (int index = 0; index < field.Length; index++)
         {

@@ -1127,8 +1127,8 @@ public class DataController : ControllerBase
             DataElement = dataElement,
             ContentType = dataElement.ContentType,
             DataType = dataType,
-            PreviousFormData = oldServiceModel,
-            CurrentFormData = serviceModel,
+            PreviousFormDataWrapper = FormDataWrapperFactory.Create(oldServiceModel),
+            CurrentFormDataWrapper = FormDataWrapperFactory.Create(serviceModel),
             PreviousBinaryData = await dataMutator.GetBinaryData(dataElement),
             CurrentBinaryData = null, // We don't serialize to xml before running data processors
         };

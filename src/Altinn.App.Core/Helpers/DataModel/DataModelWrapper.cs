@@ -21,7 +21,7 @@ public class DataModelWrapper
     }
 
     /// <summary>
-    /// Get model data based on key and optionally indicies
+    /// Get model data based on key and optionally indexes
     /// </summary>
     /// <remarks>
     /// Inline indexes in the key "Bedrifter[1].Ansatte[1].Alder" will override

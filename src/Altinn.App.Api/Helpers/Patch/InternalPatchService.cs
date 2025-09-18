@@ -127,8 +127,8 @@ public class InternalPatchService
                     DataElement = dataElement,
                     ContentType = dataElement.ContentType,
                     DataType = dataAccessor.GetDataType(dataElementIdentifier),
-                    PreviousFormData = oldModel,
-                    CurrentFormData = newModel,
+                    PreviousFormDataWrapper = FormDataWrapperFactory.Create(oldModel),
+                    CurrentFormDataWrapper = FormDataWrapperFactory.Create(newModel),
                     PreviousBinaryData = await dataAccessor.GetBinaryData(dataElementIdentifier),
                     CurrentBinaryData = null, // Set this after DataProcessors have run
                 }
@@ -192,8 +192,8 @@ public class InternalPatchService
                             DataElement = dataElement,
                             ContentType = dataElement.ContentType,
                             DataType = dataAccessor.GetDataType(dataElement),
-                            PreviousFormData = await dataAccessor.GetFormData(dataElement),
-                            CurrentFormData = await dataAccessor.GetFormData(dataElement),
+                            PreviousFormDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement),
+                            CurrentFormDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement),
                             PreviousBinaryData = await dataAccessor.GetBinaryData(dataElement),
                             CurrentBinaryData = await dataAccessor.GetBinaryData(dataElement),
                         }

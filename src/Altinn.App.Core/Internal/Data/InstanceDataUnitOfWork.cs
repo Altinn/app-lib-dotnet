@@ -105,13 +105,17 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             dataElementIdentifier,
             async () =>
             {
+                var dataType = this.GetDataType(dataElementIdentifier);
+                if (dataType.AppLogic?.ClassRef is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Data element {dataElementIdentifier.Id} is of data type {dataType.Id} which doesn't have app logic in application metadata and cant be used as form data"
+                    );
+                }
                 var binaryData = await GetBinaryData(dataElementIdentifier);
 
                 return FormDataWrapperFactory.Create(
-                    _modelSerializationService.DeserializeFromStorage(
-                        binaryData.Span,
-                        this.GetDataType(dataElementIdentifier)
-                    )
+                    _modelSerializationService.DeserializeFromStorage(binaryData.Span, dataType)
                 );
             }
         );
@@ -179,8 +183,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             DataElement = null,
             DataType = dataType,
             ContentType = contentType,
-            CurrentFormData = model,
-            PreviousFormData = _modelSerializationService.GetEmpty(dataType),
+            CurrentFormDataWrapper = FormDataWrapperFactory.Create(model),
+            PreviousFormDataWrapper = FormDataWrapperFactory.Create(_modelSerializationService.GetEmpty(dataType)),
             CurrentBinaryData = bytes,
             PreviousBinaryData = default, // empty memory reference
         };
@@ -266,10 +270,12 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                     DataElement = dataElement,
                     DataType = dataType,
                     ContentType = dataElement.ContentType,
-                    CurrentFormData = _formDataCache.TryGetCachedValue(dataElementIdentifier, out var cfd)
-                        ? cfd.BackingData<object>()
-                        : _modelSerializationService.GetEmpty(dataType),
-                    PreviousFormData = _modelSerializationService.GetEmpty(dataType),
+                    CurrentFormDataWrapper = _formDataCache.TryGetCachedValue(dataElementIdentifier, out var cfd)
+                        ? cfd
+                        : FormDataWrapperFactory.Create(_modelSerializationService.GetEmpty(dataType)),
+                    PreviousFormDataWrapper = FormDataWrapperFactory.Create(
+                        _modelSerializationService.GetEmpty(dataType)
+                    ),
                     CurrentBinaryData = ReadOnlyMemory<byte>.Empty,
                     PreviousBinaryData = _binaryCache.TryGetCachedValue(dataElementIdentifier, out var value)
                         ? value
@@ -352,12 +358,11 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                         DataElement = dataElement,
                         ContentType = dataElement.ContentType,
                         DataType = dataType,
-                        CurrentFormData = dataWrapper.BackingData<object>(),
+                        CurrentFormDataWrapper = dataWrapper,
                         // For patch requests we could get the previous data from the patch, but it's not available here
                         // and deserializing twice is not a big deal
-                        PreviousFormData = _modelSerializationService.DeserializeFromStorage(
-                            cachedBinary.Span,
-                            dataType
+                        PreviousFormDataWrapper = FormDataWrapperFactory.Create(
+                            _modelSerializationService.DeserializeFromStorage(cachedBinary.Span, dataType)
                         ),
                         CurrentBinaryData = currentBinary,
                         PreviousBinaryData = cachedBinary,
@@ -401,18 +406,22 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         createdDataElements.TryAdd(change, dataElement);
     }
 
-    private async Task UpdateDataElement(
-        DataElementIdentifier dataElementIdentifier,
-        string contentType,
-        string? filename,
-        ReadOnlyMemory<byte> bytes
-    )
+    private async Task UpdateDataElement(FormDataChange change)
     {
+        if (change.CurrentBinaryData is null)
+        {
+            throw new InvalidOperationException(
+                "ChangeType.Updated sent to SaveChanges must have a CurrentBinaryData value"
+            );
+        }
+        if (change.DataElement is null)
+            throw new InvalidOperationException("ChangeType.Updated sent to SaveChanges must have a DataElement value");
+        ReadOnlyMemory<byte> bytes = change.CurrentBinaryData.Value;
         await _dataClient.UpdateBinaryData(
             new InstanceIdentifier(Instance),
-            contentType,
-            filename,
-            dataElementIdentifier.Guid,
+            change.DataElement.ContentType,
+            change.DataElement.Filename,
+            Guid.Parse(change.DataElement.Id),
             new MemoryAsStream(bytes)
         );
     }
@@ -499,26 +508,9 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         foreach (var change in changes.FormDataChanges)
         {
             if (change.Type != ChangeType.Updated)
-                continue;
-            if (change.CurrentBinaryData is null)
-            {
-                throw new InvalidOperationException(
-                    "ChangeType.Updated sent to SaveChanges must have a CurrentBinaryData value"
-                );
-            }
-            if (change.DataElement is null)
-                throw new InvalidOperationException(
-                    "ChangeType.Updated sent to SaveChanges must have a DataElement value"
-                );
+                continue; // New and deleted form data is handled separately
 
-            tasks.Add(
-                UpdateDataElement(
-                    change.DataElement,
-                    change.DataElement.ContentType,
-                    change.DataElement.Filename,
-                    change.CurrentBinaryData.Value
-                )
-            );
+            tasks.Add(UpdateDataElement(change));
         }
 
         await Task.WhenAll(tasks);
@@ -529,6 +521,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     /// </summary>
     internal void SetFormData(DataElementIdentifier dataElementIdentifier, IFormDataWrapper formDataWrapper)
     {
+        ArgumentNullException.ThrowIfNull(formDataWrapper);
         var dataType = this.GetDataType(dataElementIdentifier);
         if (dataType.AppLogic?.ClassRef is not { } classRef)
         {

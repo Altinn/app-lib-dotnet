@@ -149,7 +149,7 @@ public class DataModel
     }
 
     /// <summary>
-    /// Return a full dataModelBiding from a context aware binding by adding indexes
+    /// Return a full dataModelBinding from a context aware binding by adding indexes
     /// </summary>
     /// <example>
     /// key = "bedrift.ansatte.navn"

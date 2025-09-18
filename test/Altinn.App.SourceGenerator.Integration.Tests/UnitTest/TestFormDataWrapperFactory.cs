@@ -1,7 +1,10 @@
 using System;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.SourceGenerator.Integration.Tests.Models;
+using Xunit;
 using Xunit.Abstractions;
+
+namespace Altinn.App.SourceGenerator.Integration.Tests.UnitTest;
 
 public class TestFormDataWrapperFactory(ITestOutputHelper testOutputHelper)
 {

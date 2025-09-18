@@ -4001,9 +4001,11 @@ namespace Altinn.App.Core.Models
     {
         public FormDataChange() { }
         public required System.ReadOnlyMemory<byte>? CurrentBinaryData { get; init; }
-        public required object CurrentFormData { get; init; }
+        public object CurrentFormData { get; }
+        public required Altinn.App.Core.Features.IFormDataWrapper CurrentFormDataWrapper { get; init; }
         public required System.ReadOnlyMemory<byte> PreviousBinaryData { get; init; }
-        public required object PreviousFormData { get; init; }
+        public object PreviousFormData { get; }
+        public required Altinn.App.Core.Features.IFormDataWrapper PreviousFormDataWrapper { get; init; }
     }
     public interface ILanguageCodeStandard
     {

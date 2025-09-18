@@ -1,5 +1,6 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Texts;
@@ -441,8 +442,8 @@ public class ValidationServiceTests : IAsyncLifetime
                     DataElement = dataElement,
                     DataType = _instanceDataAccessor.GetDataType(dataElement),
                     ContentType = "text/plain",
-                    CurrentFormData = "currentValue",
-                    PreviousFormData = "previousValue",
+                    CurrentFormDataWrapper = FormDataWrapperFactory.Create("currentValue"),
+                    PreviousFormDataWrapper = FormDataWrapperFactory.Create("previousValue"),
                     CurrentBinaryData = default,
                     PreviousBinaryData = default,
                 },
@@ -452,8 +453,8 @@ public class ValidationServiceTests : IAsyncLifetime
                     DataElement = dataElementNoValidation,
                     DataType = _instanceDataAccessor.GetDataType(dataElement),
                     ContentType = "text/plain",
-                    CurrentFormData = "currentValue",
-                    PreviousFormData = "previousValue",
+                    CurrentFormDataWrapper = FormDataWrapperFactory.Create("currentValue"),
+                    PreviousFormDataWrapper = FormDataWrapperFactory.Create("previousValue"),
                     CurrentBinaryData = null,
                     PreviousBinaryData = null,
                 },

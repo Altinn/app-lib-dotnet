@@ -16,16 +16,27 @@ internal static class FormDataWrapperFactory
             .SelectMany(a =>
             {
                 List<KeyValuePair<Type, Type>> pathAccessors = new();
-                var assemblyTypes = a.GetExportedTypes();
-                foreach (var type in assemblyTypes)
+                try
                 {
-                    var formDataWrapperInterface = type.GetInterfaces()
-                        .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == interfaceType);
-                    if (formDataWrapperInterface is not null)
+                    var assemblyTypes = a.GetExportedTypes();
+                    foreach (var type in assemblyTypes)
                     {
-                        pathAccessors.Add(KeyValuePair.Create(formDataWrapperInterface.GenericTypeArguments[0], type));
+                        var formDataWrapperInterface = type.GetInterfaces()
+                            .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == interfaceType);
+                        if (formDataWrapperInterface is not null)
+                        {
+                            pathAccessors.Add(
+                                KeyValuePair.Create(formDataWrapperInterface.GenericTypeArguments[0], type)
+                            );
+                        }
                     }
                 }
+                catch (Exception)
+                {
+                    // Just ignore it if we can't load the assembly types for some reason
+                    // It is likely not the relevant assembly anyway
+                }
+
                 return pathAccessors;
             })
             .ToFrozenDictionary();

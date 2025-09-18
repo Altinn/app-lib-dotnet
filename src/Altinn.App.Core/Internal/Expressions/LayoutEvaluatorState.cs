@@ -44,10 +44,13 @@ public class LayoutEvaluatorState
         TimeZoneInfo? timeZone = null
     )
     {
+        // Precompute a map of data types to data element ids for all single-instance data types
+        // This is used to resolve data element ids when a specific data type is requested in a binding
         foreach (var (dataType, dataElement) in dataAccessor.GetDataElements())
         {
             if (dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
             {
+                // There should never be duplicates because of MaxCount == 1, but just in case, we only want the first one
                 _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
             }
         }
@@ -247,7 +250,7 @@ public class LayoutEvaluatorState
     }
 
     /// <summary>
-    /// Return a full dataModelBiding from a context aware binding by adding indexes
+    /// Return a full dataModelBinding from a context-aware binding by adding indexes
     /// </summary>
     /// <example>
     /// key = "bedrift.ansatte.navn"
@@ -259,7 +262,13 @@ public class LayoutEvaluatorState
         var dataElementId = ResolveDataElementIdentifier(binding, context.DataElementIdentifier);
         var formDataWrapper = await _dataAccessor.GetFormDataWrapper(dataElementId);
 
-        var field = formDataWrapper.AddIndexToPath(binding.Field, context.RowIndices) ?? "";
+        var field =
+            formDataWrapper.AddIndexToPath(binding.Field, context.RowIndices)
+            ?? throw new InvalidOperationException(
+                $"Failed to add indexes to path {binding.Field} with indexes "
+                    + $"{(context.RowIndices is null ? "null" : string.Join(", ", context.RowIndices))} on {dataElementId}"
+            );
+        ;
         return new DataReference() { Field = field, DataElementIdentifier = dataElementId };
     }
 
@@ -274,26 +283,27 @@ public class LayoutEvaluatorState
             return defaultDataElementIdentifier;
         }
         // If the data element has the same type as default, return it
-        var dataType = _dataAccessor.GetDataType(defaultDataElementIdentifier);
-        if (dataType.Id == key.DataType)
+        var defaultDataType = _dataAccessor.GetDataType(defaultDataElementIdentifier);
+        if (defaultDataType.Id == key.DataType)
         {
             return defaultDataElementIdentifier;
         }
 
-        // Return correct element if the data type has a single element on the instance and MaxCount == 1
+        // Return the correct element if the data type has a single element on the instance and MaxCount == 1
         if (_dataIdsByType.TryGetValue(key.DataType, out var dataElementId))
         {
             return dataElementId;
         }
 
         // Raise the correct error
-        if (dataType.AppLogic?.ClassRef is null)
+        var requestedDataType = _dataAccessor.GetDataType(key.DataType);
+        if (requestedDataType.AppLogic?.ClassRef is null)
         {
             throw new InvalidOperationException(
                 $"{key.DataType} has no classRef in applicationmetadata.json and can't be used as a data model in layouts"
             );
         }
-        if (dataType.MaxCount != 1)
+        if (requestedDataType.MaxCount != 1)
         {
             throw new InvalidOperationException(
                 $"{key.DataType} has maxCount different from 1 in applicationmetadata.json and must be part of a subform when used in layouts"
@@ -303,7 +313,7 @@ public class LayoutEvaluatorState
     }
 
     /// <summary>
-    /// Return a full dataModelBiding from a context aware binding by adding indexes
+    /// Return a full dataModelBinding from a context aware binding by adding indexes
     /// </summary>
     [Obsolete("This method is deprecated and will be removed in a future version.")]
     public async Task<DataReference> AddInidicies(

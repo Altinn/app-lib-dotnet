@@ -173,14 +173,7 @@ public static class IInstanceDataAccessorExtensions
     public static async Task<T[]> GetAllFormData<T>(this IInstanceDataAccessor accessor, DataType dataType)
         where T : class
     {
-        var dataElements = accessor.GetDataElementsForType(dataType).ToArray();
-        var result = new T[dataElements.Length];
-        for (int i = 0; i < dataElements.Length; i++)
-        {
-            result[i] = await accessor.GetFormData<T>(dataElements[i]);
-        }
-
-        return result;
+        return await Task.WhenAll(accessor.GetDataElementsForType(dataType).Select(e => accessor.GetFormData<T>(e)));
     }
 
     /// <summary>
