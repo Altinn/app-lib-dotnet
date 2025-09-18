@@ -3,11 +3,14 @@
     Version: 1.1,
     Content: {
       Headers: {
+        Content-Length: [
+          510
+        ],
         Content-Type: [
-          application/pdf
+          application/json
         ],
         Content-Disposition: [
-          attachment; filename=basic.pdf; filename*=UTF-8''basic.pdf
+          attachment; filename=signatureInformation.json; filename*=UTF-8''signatureInformation.json
         ]
       }
     },
@@ -43,13 +46,13 @@
       Method: {
         Method: GET
       },
-      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/instances/500700/<instanceGuid>/data/<dataElementId[2]>,
+      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/instances/501337/<instanceGuid>/data/<dataElementId[1]>,
       Headers: {
         Authorization: [
           Bearer <token>
         ],
         Accept: [
-          application/octet-stream
+          application/json
         ],
         User-Agent: [
           Altinn.App.Integration.Tests
@@ -57,5 +60,23 @@
       }
     },
     IsSuccessStatusCode: true
+  },
+  Response: {
+    id: <dataElementId[1]>,
+    instanceGuid: <instanceGuid>,
+    signedTime: DateTimeOffset_1,
+    signeeInfo: {
+      userId: 1337,
+      systemUserId: null,
+      personNumber: 01039012345,
+      organisationNumber: null
+    },
+    dataElementSignatures: [
+      {
+        dataElementId: <dataElementId[0]>,
+        sha256Hash: 9621bdd8df0f3c757f9a91f449e9cf32e2d6c77aca437c3a117c6b78b05343b7,
+        signed: true
+      }
+    ]
   }
 }

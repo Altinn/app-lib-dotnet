@@ -20,7 +20,7 @@ public class SimpleTests(ITestOutputHelper _output, AppFixtureClassFixture _clas
 
     [Theory]
     [CombinatorialData]
-    public async Task Full([CombinatorialValues(Auth.SystemUser)] Auth auth)
+    public async Task Full([CombinatorialValues(Auth.User, Auth.SystemUser)] Auth auth)
     {
         await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic, "signing-simple");
         var fixture = fixtureScope.Fixture;
@@ -29,6 +29,7 @@ public class SimpleTests(ITestOutputHelper _output, AppFixtureClassFixture _clas
 
         var token = auth switch
         {
+            Auth.User => await fixture.Auth.GetUserToken(1337, authenticationLevel: 3, scope: "altinn:portal/enduser"),
             Auth.SystemUser => await fixture.Auth.GetSystemUserToken(
                 systemId: "913312465_sbs",
                 systemUserId: "d111dbab-d619-4f15-bf29-58fe570a9ae6",
@@ -39,6 +40,7 @@ public class SimpleTests(ITestOutputHelper _output, AppFixtureClassFixture _clas
 
         var instanceOwner = auth switch
         {
+            Auth.User => new InstanceOwner { PartyId = "501337" },
             Auth.SystemUser => new InstanceOwner { OrganisationNumber = "950474084" },
             _ => throw new NotSupportedException($"Auth {auth} is not supported"),
         };

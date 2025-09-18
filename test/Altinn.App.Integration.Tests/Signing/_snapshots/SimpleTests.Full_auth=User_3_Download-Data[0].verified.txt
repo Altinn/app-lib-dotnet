@@ -4,12 +4,12 @@
     Content: {
       Headers: {
         Content-Type: [
-          application/problem+json; charset=utf-8
+          application/json; charset=utf-8
         ]
       }
     },
-    StatusCode: InternalServerError,
-    ReasonPhrase: Internal Server Error,
+    StatusCode: OK,
+    ReasonPhrase: OK,
     Headers: {
       Date: <date>,
       Server: [
@@ -40,30 +40,27 @@
     TrailingHeaders: {},
     RequestMessage: {
       Version: 1.1,
-      Content: {
-        Headers: {
-          Content-Type: [
-            application/json
-          ],
-          Content-Length: [
-            41
-          ]
-        }
-      },
       Method: {
-        Method: PUT
+        Method: GET
       },
-      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/instances/500700/<instanceGuid>/process/next,
+      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/instances/501337/<instanceGuid>/data/<dataElementId[0]>,
       Headers: {
         Authorization: [
           Bearer <token>
+        ],
+        Accept: [
+          application/json
         ],
         User-Agent: [
           Altinn.App.Integration.Tests
         ]
       }
     },
-    IsSuccessStatusCode: false
+    IsSuccessStatusCode: true
   },
-  Response: {}
+  Response: {
+    property1: 1,
+    property2: null,
+    property3: null
+  }
 }

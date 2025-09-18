@@ -4,7 +4,7 @@
     Content: {
       Headers: {
         Content-Length: [
-          500
+          534
         ],
         Content-Type: [
           application/json
@@ -67,7 +67,7 @@
     signedTime: DateTimeOffset_1,
     signeeInfo: {
       userId: null,
-      systemUserId: null,
+      systemUserId: Guid_1,
       personNumber: null,
       organisationNumber: null
     },
