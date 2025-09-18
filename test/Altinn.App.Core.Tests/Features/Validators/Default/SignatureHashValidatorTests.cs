@@ -119,7 +119,7 @@ public class SignatureHashValidatorTests
                     12345,
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
-                    It.Is<StorageAuthenticationMethod?>(auth => auth != null),
+                    It.Is<StorageAuthenticationMethod?>(auth => auth == StorageAuthenticationMethod.ServiceOwner()),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
