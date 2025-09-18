@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using DataType = Altinn.Platform.Storage.Interface.Models.DataType;
 
@@ -111,6 +112,7 @@ public sealed class PatchServiceTests : IDisposable
         services.AddSingleton(_appMetadataMock.Object);
         services.AddSingleton(_dataProcessorMock.Object);
         services.AddSingleton(_appResourcesMock.Object);
+        services.AddSingleton(_translationServiceMock.Object);
         services.AddSingleton(_dataClientMock.Object);
         services.AddSingleton(_instanceClientMock.Object);
         services.AddSingleton(_dataElementAccessCheckerMock.Object);
