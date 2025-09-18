@@ -170,6 +170,7 @@ internal sealed class SignatureHashValidator(
     /// </summary>
     /// <param name="digest">The hash code (digest) to format</param>
     /// <returns>String representation of the digest</returns>
+    /// <remarks>This mirrors how the altinn-storage formats the Sha digest when creating the signature document, and it must stay in sync.</remarks>
     private static string FormatShaDigest(byte[] digest)
     {
         return Convert.ToHexString(digest).ToLowerInvariant();
