@@ -304,9 +304,7 @@ public class SignatureHashValidatorTests
     public void ShouldRunForTask_Exception_BubblesUp()
     {
         var mockedException = new Exception("Exception bubbles up");
-        _processReaderMock
-            .Setup(x => x.GetAltinnTaskExtension("task"))
-            .Throws(mockedException);
+        _processReaderMock.Setup(x => x.GetAltinnTaskExtension("task")).Throws(mockedException);
 
         var thrownException = Assert.Throws<Exception>(() => _validator.ShouldRunForTask("task"));
 
