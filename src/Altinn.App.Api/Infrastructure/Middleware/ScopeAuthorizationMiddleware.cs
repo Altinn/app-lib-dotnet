@@ -506,16 +506,16 @@ internal sealed record ApiEndpointInfo(string Endpoint, ScopeRequirementMetadata
 internal readonly struct ApiEndpoint : IEquatable<ApiEndpoint>
 {
     private readonly RouteEndpoint _endpoint;
-    private readonly string _route;
     private readonly string _method;
+    private readonly string _route;
 
     public RouteEndpoint Endpoint => _endpoint;
 
     public ApiEndpoint(RouteEndpoint endpoint, string method)
     {
         _endpoint = endpoint;
-        _route = endpoint.RoutePattern.RawText ?? throw new Exception("Route pattern raw text is null");
         _method = method;
+        _route = endpoint.RoutePattern.RawText ?? throw new Exception("Route pattern raw text is null");
     }
 
     public bool Equals(ApiEndpoint other) =>
@@ -524,7 +524,13 @@ internal readonly struct ApiEndpoint : IEquatable<ApiEndpoint>
 
     public override bool Equals(object? obj) => obj is ApiEndpoint other && Equals(other);
 
-    public override int GetHashCode() => HashCode.Combine(_method, _route);
+    public override int GetHashCode()
+    {
+        HashCode hashCode = default;
+        hashCode.Add(_method, StringComparer.OrdinalIgnoreCase);
+        hashCode.Add(_route, StringComparer.Ordinal);
+        return hashCode.ToHashCode();
+    }
 
     public override string ToString() => $"{_method} {_route}";
 }
