@@ -28,7 +28,7 @@ internal static class Apis
 
         // GET endpoint with instanceGuid - should be protected with read scope
         using var getInstanceResponse = await fixture.Generic.Get(
-            $"/ttd/{fixture.App}/api/testing/{instanceGuid}",
+            $"/ttd/{fixture.App}/api/testing/authorization/{instanceGuid}",
             token
         );
         await verifier.Verify(
@@ -40,7 +40,7 @@ internal static class Apis
 
         // POST endpoint with instanceGuid - should be protected with write scope
         using var postInstanceResponse = await fixture.Generic.Post(
-            $"/ttd/{fixture.App}/api/testing/{instanceGuid}",
+            $"/ttd/{fixture.App}/api/testing/authorization/{instanceGuid}",
             token,
             new StringContent("{}", MediaTypeHeaderValue.Parse("application/json"))
         );
@@ -53,7 +53,7 @@ internal static class Apis
 
         // GET endpoint with instanceOwnerPartyId - should be protected with read scope
         using var getPartyResponse = await fixture.Generic.Get(
-            $"/ttd/{fixture.App}/api/testing/{instanceOwnerPartyId}",
+            $"/ttd/{fixture.App}/api/testing/authorization/{instanceOwnerPartyId}",
             token
         );
         await verifier.Verify(
@@ -65,7 +65,7 @@ internal static class Apis
 
         // POST endpoint with instanceOwnerPartyId - should be protected with write scope
         using var postPartyResponse = await fixture.Generic.Post(
-            $"/ttd/{fixture.App}/api/testing/{instanceOwnerPartyId}",
+            $"/ttd/{fixture.App}/api/testing/authorization/{instanceOwnerPartyId}",
             token,
             new StringContent("{}", MediaTypeHeaderValue.Parse("application/json"))
         );
@@ -77,7 +77,10 @@ internal static class Apis
         );
 
         // Anonymous endpoint - should NOT be protected
-        using var getPublicResponse = await fixture.Generic.Get($"/ttd/{fixture.App}/api/testing/public", token);
+        using var getPublicResponse = await fixture.Generic.Get(
+            $"/ttd/{fixture.App}/api/testing/authorization/public",
+            token
+        );
         await verifier.Verify(
             getPublicResponse,
             snapshotName: "GetPublic",

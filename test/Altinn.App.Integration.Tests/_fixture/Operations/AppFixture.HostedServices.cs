@@ -19,7 +19,7 @@ public partial class AppFixture : IAsyncDisposable
         public async Task<string> Get()
         {
             var client = _fixture.GetAppClient();
-            var endpoint = $"/ttd/{_fixture._app}/hostedservices";
+            var endpoint = $"/ttd/{_fixture._app}/api/testing/hostedservices";
             using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
             using var response = await client.SendAsync(request);
             Assert.True(response.IsSuccessStatusCode, "Failed to get hosted services");

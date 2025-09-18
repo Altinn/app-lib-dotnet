@@ -32,8 +32,7 @@
     <PackageReference Include="Altinn.Common.EFormidlingClient"/>
     <PackageReference Include="Altinn.Common.PEP"/>
     <PackageReference Include="Altinn.Platform.Models"/>
-    <!-- <PackageReference Include="Altinn.Platform.Storage.Interface"/> -->
-    <PackageReference Include="Altinn.Platform.Storage.Interface.Experimental"/>
+    <PackageReference Include="Altinn.Platform.Storage.Interface"/>
     <PackageReference Include="JsonPatch.Net"/>
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore"/>
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid"/>
@@ -75,5 +74,7 @@
     <InternalsVisibleTo Include="Altinn.App.Benchmarks" />
     <InternalsVisibleTo Include="Altinn.App.Tests.Common" />
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+    <InternalsVisibleTo Include="Altinn.Application.For.IntegrationTesting" />
+    <InternalsVisibleTo Include="Altinn.Application.For.IntegrationTesting.Scenario" />
   </ItemGroup>
 </Project>

@@ -95,4 +95,35 @@ public class CustomScopesTests(ITestOutputHelper _output, AppFixtureClassFixture
 
         await Apis.Call(fixture, verifier, token, instantiationData: null);
     }
+
+    [Fact]
+    public async Task Metadata_Custom()
+    {
+        await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic, scenario: "custom-scopes");
+        var fixture = fixtureScope.Fixture;
+        var verifier = fixture.ScopedVerifier;
+
+        var token = await fixture.Auth.GetUserToken(userId: 1337, scope: "custom:instances.read");
+        using var metadataResponse = await fixture.Generic.Get(
+            $"/ttd/{fixture.App}/api/testing/authorization/metadata",
+            token
+        );
+        using var metadataContent = await metadataResponse.Read<Argon.JToken>();
+        await verifier.Verify(metadataContent, snapshotName: "Metadata", scrubbers: null);
+    }
+
+    [Fact]
+    public async Task Metadata_Standard()
+    {
+        await using var fixture = await AppFixture.Create(_output, TestApps.Basic);
+        var verifier = fixture.ScopedVerifier;
+
+        var token = await fixture.Auth.GetUserToken(userId: 1337, scope: "altinn:portal/enduser");
+        using var metadataResponse = await fixture.Generic.Get(
+            $"/ttd/{fixture.App}/api/testing/authorization/metadata",
+            token
+        );
+        using var metadataContent = await metadataResponse.Read<Argon.JToken>();
+        await verifier.Verify(metadataContent, snapshotName: "Metadata", scrubbers: null);
+    }
 }

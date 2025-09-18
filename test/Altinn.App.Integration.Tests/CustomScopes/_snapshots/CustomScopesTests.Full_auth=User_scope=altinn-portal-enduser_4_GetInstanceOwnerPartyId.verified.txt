@@ -43,7 +43,7 @@
       Method: {
         Method: GET
       },
-      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/api/testing/501337,
+      RequestUri: http://local.altinn.cloud:<localtestPort>/ttd/basic/api/testing/authorization/501337,
       Headers: {
         Authorization: [
           Bearer <token>
