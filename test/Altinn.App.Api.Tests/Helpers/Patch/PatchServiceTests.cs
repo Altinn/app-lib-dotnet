@@ -76,10 +76,11 @@ public sealed class PatchServiceTests : IDisposable
             .Setup(a => a.GetModelType("Altinn.App.Core.Tests.Internal.Patch.PatchServiceTests+MyModel"))
             .Returns(typeof(MyModel))
             .Verifiable();
+        _formDataValidator.SetupGet(v => v.NoIncrementalValidation).Returns(false);
+        _formDataValidator.SetupGet(v => v.ShouldRunAfterRemovingHiddenData).Returns(false);
         _formDataValidator.Setup(fdv => fdv.DataType).Returns(_dataType.Id);
         _formDataValidator.Setup(fdv => fdv.ValidationSource).Returns("formDataValidator");
         _formDataValidator.Setup(fdv => fdv.HasRelevantChanges(It.IsAny<object>(), It.IsAny<object>())).Returns(true);
-        _formDataValidator.SetupGet(fdv => fdv.NoIncrementalValidation).Returns(false);
         _dataElementValidator.Setup(dev => dev.DataType).Returns(_dataType.Id);
         _dataElementValidator.Setup(dev => dev.ValidationSource).Returns("dataElementValidator");
         _dataElementValidator.SetupGet(fdv => fdv.NoIncrementalValidation).Returns(true);
