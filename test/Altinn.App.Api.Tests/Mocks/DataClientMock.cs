@@ -131,6 +131,40 @@ public class DataClientMock : IDataClient
         );
     }
 
+    public Task<Stream> GetBinaryDataStream(
+        string org,
+        string app,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        Guid dataId,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (cancellationToken.IsCancellationRequested)
+            return Task.FromCanceled<Stream>(cancellationToken);
+
+        string path = TestData.GetDataBlobPath(org, app, instanceOwnerPartyId, instanceGuid, dataId);
+
+        if (!File.Exists(path))
+        {
+#nullable disable
+            return Task.FromResult<Stream>(null);
+#nullable restore
+        }
+
+        var fs = new FileStream(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            bufferSize: 64 * 1024,
+            options: FileOptions.Asynchronous | FileOptions.SequentialScan
+        );
+
+        return Task.FromResult<Stream>(fs);
+    }
+
     public async Task<byte[]> GetDataBytes(
         string org,
         string app,

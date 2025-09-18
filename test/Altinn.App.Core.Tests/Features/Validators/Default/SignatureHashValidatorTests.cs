@@ -113,7 +113,7 @@ public class SignatureHashValidatorTests
 
         _dataClientMock.Verify(
             x =>
-                x.GetBinaryData(
+                x.GetBinaryDataStream(
                     "testorg",
                     "testapp",
                     12345,
@@ -144,7 +144,7 @@ public class SignatureHashValidatorTests
 
         _dataClientMock.Verify(
             x =>
-                x.GetBinaryData(
+                x.GetBinaryDataStream(
                     "testorg",
                     "testapp",
                     12345,
@@ -201,7 +201,7 @@ public class SignatureHashValidatorTests
         Assert.Empty(result);
         _dataClientMock.Verify(
             x =>
-                x.GetBinaryData(
+                x.GetBinaryDataStream(
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<int>(),
@@ -242,7 +242,7 @@ public class SignatureHashValidatorTests
         Assert.Empty(result);
         _dataClientMock.Verify(
             x =>
-                x.GetBinaryData(
+                x.GetBinaryDataStream(
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<int>(),
@@ -389,7 +389,7 @@ public class SignatureHashValidatorTests
 
         _dataClientMock
             .Setup(x =>
-                x.GetBinaryData(
+                x.GetBinaryDataStream(
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<int>(),

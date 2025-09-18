@@ -104,14 +104,14 @@ public static class HttpClientExtension
     }
 
     /// <summary>
-    /// Extension that add authorization header to request
+    /// Extension that adds authorization header to request and returns an unbuffered response
     /// </summary>
     /// <param name="httpClient">The HttpClient</param>
     /// <param name="authorizationToken">the authorization token (jwt)</param>
     /// <param name="requestUri">The request Uri</param>
     /// <param name="platformAccessToken">The platformAccess tokens</param>
     /// <returns>A HttpResponseMessage</returns>
-    public static async Task<HttpResponseMessage> GetStreamingAsync(
+    public static async Task<HttpResponseMessage> GetUnbufferedAsync(
         this HttpClient httpClient,
         string authorizationToken,
         string requestUri,
