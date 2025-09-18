@@ -301,15 +301,16 @@ public class SignatureHashValidatorTests
     }
 
     [Fact]
-    public void ShouldRunForTask_WithException_ReturnsFalse()
+    public void ShouldRunForTask_Exception_BubblesUp()
     {
+        var mockedException = new Exception("Exception bubbles up");
         _processReaderMock
             .Setup(x => x.GetAltinnTaskExtension("task"))
-            .Throws(new InvalidOperationException("Task not found"));
+            .Throws(mockedException);
 
-        bool result = _validator.ShouldRunForTask("task");
+        var thrownException = Assert.Throws<Exception>(() => _validator.ShouldRunForTask("task"));
 
-        Assert.False(result);
+        Assert.True(thrownException.Message == mockedException.Message);
     }
 
     [Fact]
