@@ -482,6 +482,127 @@ public class DataClientTests
 
     [Theory]
     [MemberData(nameof(AuthenticationTestCases))]
+    public async Task GetBinaryDataStream_returns_stream_of_binary_data_with_unbuffered_response(
+        AuthenticationTestCase? testCase
+    )
+    {
+        var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+        var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+        HttpRequestMessage? platformRequest = null;
+        int invocations = 0;
+
+        await using var fixture = Fixture.Create(
+            async (request, ct) =>
+            {
+                invocations++;
+                platformRequest = request;
+
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { Content = new StringContent("hello streaming world") };
+            }
+        );
+
+        var expectedUri = new Uri(
+            $"{ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}",
+            UriKind.RelativeOrAbsolute
+        );
+
+        await using var response = await fixture.DataClient.GetBinaryDataStream(
+            "ttd",
+            "app",
+            instanceIdentifier.InstanceOwnerPartyId,
+            instanceIdentifier.InstanceGuid,
+            dataGuid,
+            authenticationMethod: testCase?.AuthenticationMethod
+        );
+
+        invocations.Should().Be(1);
+        platformRequest?.Should().NotBeNull();
+        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
+
+        using StreamReader streamReader = new StreamReader(response);
+        var responseString = await streamReader.ReadToEndAsync();
+        responseString.Should().BeEquivalentTo("hello streaming world");
+    }
+
+    [Theory]
+    [MemberData(nameof(AuthenticationTestCases))]
+    public async Task GetBinaryDataStream_throws_PlatformHttpException_when_data_not_found(
+        AuthenticationTestCase? testCase
+    )
+    {
+        var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+        var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+        HttpRequestMessage? platformRequest = null;
+        int invocations = 0;
+
+        await using var fixture = Fixture.Create(
+            async (request, ct) =>
+            {
+                invocations++;
+                platformRequest = request;
+
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.NotFound };
+            }
+        );
+
+        var expectedUri = new Uri(
+            $"{ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}",
+            UriKind.RelativeOrAbsolute
+        );
+
+        var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () =>
+            await fixture.DataClient.GetBinaryDataStream(
+                "ttd",
+                "app",
+                instanceIdentifier.InstanceOwnerPartyId,
+                instanceIdentifier.InstanceGuid,
+                dataGuid,
+                authenticationMethod: testCase?.AuthenticationMethod
+            )
+        );
+
+        invocations.Should().Be(1);
+        platformRequest?.Should().NotBeNull();
+        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
+        actual.Should().NotBeNull();
+        actual.Response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetBinaryDataStream_throws_PlatformHttpException_when_server_error_returned_from_storage()
+    {
+        var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
+        var dataGuid = new Guid("67a5ef12-6e38-41f8-8b42-f91249ebcec0");
+        int invocations = 0;
+
+        await using var fixture = Fixture.Create(
+            async (request, ct) =>
+            {
+                invocations++;
+
+                await Task.CompletedTask;
+                return new HttpResponseMessage() { StatusCode = HttpStatusCode.InternalServerError };
+            }
+        );
+
+        var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () =>
+            await fixture.DataClient.GetBinaryDataStream(
+                "ttd",
+                "app",
+                instanceIdentifier.InstanceOwnerPartyId,
+                instanceIdentifier.InstanceGuid,
+                dataGuid
+            )
+        );
+        invocations.Should().Be(1);
+        actual.Should().NotBeNull();
+        actual.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+    }
+
+    [Theory]
+    [MemberData(nameof(AuthenticationTestCases))]
     public async Task GetBinaryDataList_returns_AttachemtList_when_DataElements_found(AuthenticationTestCase? testCase)
     {
         var instanceIdentifier = new InstanceIdentifier("501337/d3f3250d-705c-4683-a215-e05ebcbe6071");
