@@ -85,7 +85,7 @@ internal sealed class SignatureHashValidator(
 
             foreach (SignDocument.DataElementSignature dataElementSignature in dataElementSignatures)
             {
-                Stream dataStream = await dataClient.GetBinaryDataStream(
+                await using Stream dataStream = await dataClient.GetBinaryDataStream(
                     instance.Org,
                     instance.AppId,
                     instanceIdentifier.InstanceOwnerPartyId,
