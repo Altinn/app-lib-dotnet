@@ -745,6 +745,7 @@ public class InstancesController : ControllerBase
         {
             Instance instance = await _instanceClient.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid);
             SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
+            await RegisterEvent("app.instance.completeAndReadyForCleanup", instance);
 
             return Ok(instance);
         }
