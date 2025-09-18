@@ -230,12 +230,6 @@ public class DataClient : IDataClient
         {
             return await response.Content.ReadAsStreamAsync(cancellationToken);
         }
-        else if (response.StatusCode == HttpStatusCode.NotFound)
-        {
-#nullable disable
-            return null;
-#nullable restore
-        }
 
         throw await PlatformHttpException.CreateAsync(response);
     }

@@ -148,9 +148,7 @@ public class DataClientMock : IDataClient
 
         if (!File.Exists(path))
         {
-#nullable disable
-            return Task.FromResult<Stream>(null);
-#nullable restore
+            throw new FileNotFoundException($"Data element not found at path: {path}");
         }
 
         var fs = new FileStream(

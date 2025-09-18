@@ -24,6 +24,8 @@ internal sealed class SignatureHashValidator(
     ILogger<SignatureHashValidator> logger
 ) : IValidator
 {
+    private const string SigningTaskType = "signing";
+
     /// <summary>
     /// We implement <see cref="ShouldRunForTask"/> instead.
     /// </summary>
@@ -34,17 +36,8 @@ internal sealed class SignatureHashValidator(
     /// </summary>
     public bool ShouldRunForTask(string taskId)
     {
-        AltinnTaskExtension? taskConfig;
-        try
-        {
-            taskConfig = processReader.GetAltinnTaskExtension(taskId);
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-
-        return taskConfig?.TaskType is "signing";
+        AltinnTaskExtension? taskConfig = processReader.GetAltinnTaskExtension(taskId);
+        return taskConfig?.TaskType is SigningTaskType;
     }
 
     public bool NoIncrementalValidation => true;
@@ -64,7 +57,6 @@ internal sealed class SignatureHashValidator(
     )
     {
         Instance instance = dataAccessor.Instance;
-        var instanceIdentifier = new InstanceIdentifier(instance);
 
         AltinnSignatureConfiguration signingConfiguration =
             processReader.GetAltinnTaskExtension(taskId)?.SignatureConfiguration
@@ -85,34 +77,15 @@ internal sealed class SignatureHashValidator(
 
             foreach (SignDocument.DataElementSignature dataElementSignature in dataElementSignatures)
             {
-                await using Stream dataStream = await dataClient.GetBinaryDataStream(
-                    instance.Org,
-                    instance.AppId,
-                    instanceIdentifier.InstanceOwnerPartyId,
-                    instanceIdentifier.InstanceGuid,
-                    Guid.Parse(dataElementSignature.DataElementId),
-                    HasRestrictedRead(applicationMetadata, instance, dataElementSignature.DataElementId)
-                        ? StorageAuthenticationMethod.ServiceOwner()
-                        : null
+                ValidationIssue? validationIssue = await ValidateDataElementSignature(
+                    dataElementSignature,
+                    instance,
+                    applicationMetadata
                 );
 
-                string sha256Hash = await GenerateSha256Hash(dataStream);
-
-                if (sha256Hash != dataElementSignature.Sha256Hash)
+                if (validationIssue != null)
                 {
-                    logger.LogError(
-                        $"Found an invalid signature for data element {dataElementSignature.DataElementId} on instance {instance.Id}. Expected hash {dataElementSignature.Sha256Hash}, calculated hash {sha256Hash}."
-                    );
-
-                    return
-                    [
-                        new ValidationIssue
-                        {
-                            Code = ValidationIssueCodes.DataElementCodes.InvalidSignatureHash,
-                            Severity = ValidationIssueSeverity.Error,
-                            Description = ValidationIssueCodes.DataElementCodes.InvalidSignatureHash,
-                        },
-                    ];
+                    return [validationIssue];
                 }
             }
         }
@@ -120,6 +93,48 @@ internal sealed class SignatureHashValidator(
         logger.LogInformation("All signature hashes are valid for instance {InstanceId}", instance.Id);
 
         return [];
+    }
+
+    private async Task<ValidationIssue?> ValidateDataElementSignature(
+        SignDocument.DataElementSignature dataElementSignature,
+        Instance instance,
+        ApplicationMetadata applicationMetadata
+    )
+    {
+        var instanceIdentifier = new InstanceIdentifier(instance);
+
+        await using Stream dataStream = await dataClient.GetBinaryDataStream(
+            instance.Org,
+            instance.AppId,
+            instanceIdentifier.InstanceOwnerPartyId,
+            instanceIdentifier.InstanceGuid,
+            Guid.Parse(dataElementSignature.DataElementId),
+            HasRestrictedRead(applicationMetadata, instance, dataElementSignature.DataElementId)
+                ? StorageAuthenticationMethod.ServiceOwner()
+                : null
+        );
+
+        string sha256Hash = await GenerateSha256Hash(dataStream);
+
+        if (sha256Hash != dataElementSignature.Sha256Hash)
+        {
+            logger.LogError(
+                "Found an invalid signature for data element {DataElementId} on instance {InstanceId}. Expected hash {ExpectedHash}, calculated hash {CalculatedHash}",
+                dataElementSignature.DataElementId,
+                instance.Id,
+                dataElementSignature.Sha256Hash,
+                sha256Hash
+            );
+
+            return new ValidationIssue
+            {
+                Code = ValidationIssueCodes.DataElementCodes.InvalidSignatureHash,
+                Severity = ValidationIssueSeverity.Error,
+                Description = ValidationIssueCodes.DataElementCodes.InvalidSignatureHash,
+            };
+        }
+
+        return null;
     }
 
     private static bool HasRestrictedRead(
@@ -139,7 +154,7 @@ internal sealed class SignatureHashValidator(
             );
         }
 
-        return !string.IsNullOrEmpty(dataType?.ActionRequiredToRead);
+        return !string.IsNullOrEmpty(dataType.ActionRequiredToRead);
     }
 
     private static async Task<string> GenerateSha256Hash(Stream stream)
@@ -150,7 +165,7 @@ internal sealed class SignatureHashValidator(
     }
 
     /// <summary>
-    /// Formats a SHA digest with common best best practice:<br/>
+    /// Formats a SHA digest with common best practice:<br/>
     /// Lowercase hexadecimal representation without delimiters
     /// </summary>
     /// <param name="digest">The hash code (digest) to format</param>
