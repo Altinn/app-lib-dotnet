@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
-using System.Diagnostics;
+using System.Text;
+using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Cache;
@@ -26,15 +27,10 @@ internal static class ScopeAuthorizationDI
         return services;
     }
 
-    public static TBuilder AddScopesRequirementMetadata<TBuilder>(this TBuilder builder)
-        where TBuilder : IEndpointConventionBuilder
+    internal static IApplicationBuilder UseScopeAuthorization(this IApplicationBuilder app)
     {
-        builder.Add(endpointBuilder =>
-        {
-            endpointBuilder.Metadata.Add(new ScopeRequirementMetadata());
-        });
-
-        return builder;
+        app.UseMiddleware<ScopeAuthorizationMiddleware>();
+        return app;
     }
 }
 
@@ -46,11 +42,8 @@ internal sealed class ScopeRequirementMetadata()
     public FrozenSet<string>? RequiredScopesServiceOwners { get; internal set; }
 }
 
-internal sealed class ScopeAuthorizationMiddleware(RequestDelegate next, ILogger<ScopeAuthorizationMiddleware> logger)
+internal sealed class ScopeAuthorizationMiddleware(RequestDelegate _next)
 {
-    private readonly RequestDelegate _next = next;
-    private readonly ILogger<ScopeAuthorizationMiddleware> _logger = logger;
-
     public async Task InvokeAsync(HttpContext context)
     {
         var user = context.User;
@@ -67,13 +60,17 @@ internal sealed class ScopeAuthorizationMiddleware(RequestDelegate next, ILogger
                 return;
             }
 
+            var telemetry = context.RequestServices.GetService<Core.Features.Telemetry>();
+            using var activity = telemetry?.StartScopeAuthorizationActivity();
+            var logger = context.RequestServices.GetRequiredService<ILogger<ScopeAuthorizationMiddleware>>();
             var endpointObj = context.GetEndpoint();
             if (endpointObj is not RouteEndpoint routeEndpoint)
             {
-                throw new InvalidOperationException(
-                    "Invalid endpoint. Ensure the middleware is registered after routing"
-                );
+                logger.LogError("Invalid endpoint type: {EndpointType}", endpointObj?.GetType().FullName);
+                await _next(context);
+                return;
             }
+
             var apiEndpoint = new ApiEndpoint(routeEndpoint, context.Request.Method);
 
             // Get scopes from endpoint metadata
@@ -103,7 +100,7 @@ internal sealed class ScopeAuthorizationMiddleware(RequestDelegate next, ILogger
                         await translationService.TranslateTextKeyLenient(errorMessageTextResourceKey, lang)
                         ?? "Insufficient scope";
 
-                    _logger.LogWarning("User does not have required scope for endpoint '{Endpoint}'", apiEndpoint);
+                    logger.LogWarning("User does not have required scope for endpoint '{Endpoint}'", apiEndpoint);
 
                     context.Response.StatusCode = 403;
                     await context.Response.WriteAsJsonAsync(
@@ -120,7 +117,7 @@ internal sealed class ScopeAuthorizationMiddleware(RequestDelegate next, ILogger
                 }
                 else
                 {
-                    _logger.LogDebug("User has required scope for endpoint '{Endpoint}'", apiEndpoint);
+                    logger.LogDebug("User has required scope for endpoint '{Endpoint}'", apiEndpoint);
                 }
             }
         }
@@ -130,7 +127,7 @@ internal sealed class ScopeAuthorizationMiddleware(RequestDelegate next, ILogger
 
     private static bool HasAnyScope(in Scopes scopes, FrozenSet<string> requiredScopes)
     {
-        Debug.Assert(requiredScopes.Count > 0);
+        // TODO: alternate lookup to avoid alloc???? Not available in net8.0
         foreach (var scope in scopes)
         {
             if (requiredScopes.Contains(scope.ToString()))
@@ -148,26 +145,15 @@ internal sealed class ScopeAuthorizationService(
     IEnumerable<EndpointDataSource> _endpointDataSources,
     IHostApplicationLifetime _hostLifetime,
     IOptions<GeneralSettings> _generalSettings,
-    ILogger<ScopeAuthorizationService> _logger
+    ILogger<ScopeAuthorizationService> _logger,
+    Core.Features.Telemetry? _telemetry = null
 ) : IHostedService
 {
-    private readonly List<ApiEndpoint> _endpointsToUserAuthorize = [];
-    private readonly List<ApiEndpoint> _endpointsNotUserAuthorized = [];
-    private readonly List<ApiEndpoint> _endpointsToServiceOwnerAuthorize = [];
-    private readonly List<ApiEndpoint> _endpointsNotServiceOwnerAuthorized = [];
-    private readonly List<string> _endpointTypes = [];
     private readonly TaskCompletionSource _initialization = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private long _initializing;
-    private CancellationTokenRegistration? _startedListener = null;
+    private CancellationTokenRegistration? _startedListener;
 
-    internal bool HasDefinedCustomScopes { get; private set; }
-
-    public IReadOnlyList<ApiEndpoint>? EndpointsToUserAuthorize => _endpointsToUserAuthorize;
-    public IReadOnlyList<ApiEndpoint>? EndpointsNotUserAuthorized => _endpointsNotUserAuthorized;
-    public IReadOnlyList<ApiEndpoint>? EndpointsToServiceOwnerAuthorize => _endpointsToServiceOwnerAuthorize;
-    public IReadOnlyList<ApiEndpoint>? EndpointsNotServiceOwnerAuthorized => _endpointsNotServiceOwnerAuthorized;
-
-    private static readonly FrozenSet<string> _readHttpMethods = new[] { "GET", "HEAD", "OPTIONS" }.ToFrozenSet(
+    private readonly FrozenSet<string> _readHttpMethods = new[] { "GET", "HEAD", "OPTIONS" }.ToFrozenSet(
         StringComparer.OrdinalIgnoreCase
     );
 
@@ -177,15 +163,18 @@ internal sealed class ScopeAuthorizationService(
         Write,
     }
 
-    private static readonly FrozenDictionary<string, ScopeType> _manuallyIncludeActions = new Dictionary<
-        string,
-        ScopeType
-    >
+    private readonly FrozenDictionary<string, ScopeType> _manuallyIncludeActions = new Dictionary<string, ScopeType>
     {
-        ["Altinn.App.Api.Controllers.InstancesController.PostSimplified (Altinn.App.Api)"] = ScopeType.Write,
         ["Altinn.App.Api.Controllers.StatelessDataController.Get (Altinn.App.Api)"] = ScopeType.Read,
         ["Altinn.App.Api.Controllers.StatelessDataController.Post (Altinn.App.Api)"] = ScopeType.Read,
     }.ToFrozenDictionary(StringComparer.Ordinal);
+
+    private readonly FrozenSet<string> _instanceRelatedParameterNames = new HashSet<string>()
+    {
+        "instanceGuid",
+        "instanceId",
+        "instanceOwnerPartyId",
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     private FrozenDictionary<ApiEndpoint, ScopeRequirementMetadata>? _metadataLookup;
 
@@ -195,7 +184,7 @@ internal sealed class ScopeAuthorizationService(
             .OrderBy(kv => kv.Endpoint)
             .ToArray() ?? [];
 
-    public IReadOnlyList<string> EndpointTypes => _endpointTypes;
+    public bool HasDefinedCustomScopes { get; private set; }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -227,10 +216,6 @@ internal sealed class ScopeAuthorizationService(
 
     internal ScopeRequirementMetadata LookupMetadata(ApiEndpoint endpoint)
     {
-        // We have this secondary lookup in case the metadata was not added to the endpoint.
-        // All this code is supposed to work for all endpoints exposed throught ASP.NET Core,
-        // but there is no global way to define metadata for endpoints (i.e. IEndpointConventionBuilder that applies to all endpoints)
-        // So we have a fallback to this lookup which is also populated on initialization
         if (_metadataLookup is null)
             throw new InvalidOperationException("Scope authorization service is not initialized");
 
@@ -253,6 +238,7 @@ internal sealed class ScopeAuthorizationService(
         if (Interlocked.CompareExchange(ref _initializing, 1, 0) != 0)
             return _initialization.Task; // Being initialized by another thread
 
+        using var activity = _telemetry?.StartScopeAuthorizationServiceInitActivity();
         _logger.LogDebug("Starting scope authorization initialization");
         try
         {
@@ -267,9 +253,8 @@ internal sealed class ScopeAuthorizationService(
 
             _initialization.TrySetResult();
             _logger.LogInformation(
-                "Scope authorization initialized. Endpoints to authorize: {ToAuthorize}, Not authorized: {NotAuthorized}",
-                _endpointsToUserAuthorize.Count,
-                _endpointsNotUserAuthorized.Count
+                "Scope authorization initialized. Processed {EndpointCount} endpoints",
+                _metadataLookup?.Count ?? 0
             );
         }
         catch (Exception ex)
@@ -285,13 +270,12 @@ internal sealed class ScopeAuthorizationService(
     private void ProcessEndpoints(ApplicationMetadata appMetadata)
     {
         var metadataLookup = new Dictionary<ApiEndpoint, ScopeRequirementMetadata>();
-        var endpointTypes = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var endpointObj in _endpointDataSources.SelectMany(ed => ed.Endpoints))
+        var endpoints = _endpointDataSources.SelectMany(ed => ed.Endpoints).ToArray();
+        foreach (var endpointObj in endpoints)
         {
             if (endpointObj is not RouteEndpoint endpoint)
                 throw new Exception("Unexpected endpoint type: " + endpointObj.GetType().FullName);
 
-            endpointTypes.Add(endpoint.GetType().FullName ?? "Unknown");
             var httpMethods = GetEndpointHttpMethods(endpoint);
             foreach (var httpMethod in httpMethods)
             {
@@ -306,7 +290,7 @@ internal sealed class ScopeAuthorizationService(
                     && _manuallyIncludeActions.TryGetValue(endpoint.DisplayName, out var scopeType)
                 )
                 {
-                    ProcessEndpoint(appMetadata, metadata, scopeType, appMetadata.ApiScopes, apiEndpoint);
+                    ProcessEndpoint(appMetadata, metadata, scopeType, appMetadata.ApiScopes);
                     continue;
                 }
 
@@ -316,87 +300,77 @@ internal sealed class ScopeAuthorizationService(
                 // Check if endpoint should be authorized
                 if (ShouldAuthorizeEndpoint(endpoint))
                 {
-                    ProcessEndpoint(appMetadata, metadata, scopeType, appMetadata.ApiScopes, apiEndpoint);
-                }
-                else
-                {
-                    _endpointsNotUserAuthorized.Add(apiEndpoint);
-                    _endpointsNotServiceOwnerAuthorized.Add(apiEndpoint);
+                    ProcessEndpoint(appMetadata, metadata, scopeType, appMetadata.ApiScopes);
                 }
             }
         }
 
-        _endpointTypes.AddRange(endpointTypes.Order());
         _metadataLookup = metadataLookup.ToFrozenDictionary();
 
-        // Debug log endpoint authorization summary
-        if (_logger.IsEnabled(LogLevel.Debug))
+        if (_logger.IsEnabled(LogLevel.Debug) && HasDefinedCustomScopes)
         {
-            var authorizedEndpoints = string.Join(", ", _endpointsToUserAuthorize.Select(e => $"\n\t'{e}'"));
-            var notAuthorizedEndpoints = string.Join(", ", _endpointsNotUserAuthorized.Select(e => $"\n\t'{e}'"));
-            var serviceOwnerAuthorizedEndpoints = string.Join(
-                ", ",
-                _endpointsToServiceOwnerAuthorize.Select(e => $"\n\t'{e}'")
-            );
-            var serviceOwnerNotAuthorizedEndpoints = string.Join(
-                ", ",
-                _endpointsNotServiceOwnerAuthorized.Select(e => $"\n\t'{e}'")
-            );
+            endpoints = _endpointDataSources.SelectMany(ed => ed.Endpoints).ToArray();
 
-            // Collect actual computed scopes and error keys from endpoint metadata
-            var allUserScopes = new HashSet<string>();
-            var allServiceOwnerScopes = new HashSet<string>();
-            var userErrorKeys = new HashSet<string>();
-            var serviceOwnerErrorKeys = new HashSet<string>();
-
-            foreach (var endpoint in _endpointDataSources.SelectMany(ed => ed.Endpoints))
+            var message = new StringBuilder("Endpoint API scope authorization summary:\n");
+            foreach (var endpoint in endpoints)
             {
-                var metadata = endpoint.Metadata.GetMetadata<ScopeRequirementMetadata>();
-                if (metadata is not null)
+                var httpMethods = GetEndpointHttpMethods(endpoint);
+                foreach (var httpMethod in httpMethods)
                 {
-                    if (metadata.RequiredScopesUsers is not null)
+                    var apiEndpoint = new ApiEndpoint(
+                        endpoint as RouteEndpoint ?? throw new Exception("Not a route endpoint"),
+                        httpMethod
+                    );
+                    var metadata = _metadataLookup.GetValueOrDefault(apiEndpoint);
+                    if (metadata is not null)
                     {
-                        foreach (var scope in metadata.RequiredScopesUsers)
-                            allUserScopes.Add(scope);
+                        message.Append("\t- ");
+                        message.Append(apiEndpoint);
+                        message.Append(":\n");
+                        if (metadata.RequiredScopesUsers is not null)
+                        {
+                            message.Append("\t\t- User scopes: ");
+                            message.Append(string.Join(", ", metadata.RequiredScopesUsers.Order()));
+                            message.AppendLine();
+                        }
+                        else
+                        {
+                            message.AppendLine("\t\t- No user scopes");
+                        }
+                        if (metadata.RequiredScopesServiceOwners is not null)
+                        {
+                            message.Append("\t\t- Service owner scopes: ");
+                            message.Append(string.Join(", ", metadata.RequiredScopesServiceOwners.Order()));
+                            message.AppendLine();
+                        }
+                        else
+                        {
+                            message.AppendLine("\t\t- No Service owner scopes");
+                        }
+
+                        if (metadata.ErrorMessageTextResourceKeyUser is not null)
+                        {
+                            message.Append("\t\t- Error message resource key for missing/invalid user scope: ");
+                            message.AppendLine(metadata.ErrorMessageTextResourceKeyUser);
+                        }
+                        if (metadata.ErrorMessageTextResourceKeyServiceOwner is not null)
+                        {
+                            message.Append(
+                                "\t\t- Error message resource key for missing/invalid service owner scope: "
+                            );
+                            message.AppendLine(metadata.ErrorMessageTextResourceKeyServiceOwner);
+                        }
                     }
-                    if (metadata.RequiredScopesServiceOwners is not null)
+                    else
                     {
-                        foreach (var scope in metadata.RequiredScopesServiceOwners)
-                            allServiceOwnerScopes.Add(scope);
+                        message.Append("\t- ");
+                        message.Append(apiEndpoint);
+                        message.Append(": no scope authorization metadata specified\n");
                     }
-                    if (!string.IsNullOrEmpty(metadata.ErrorMessageTextResourceKeyUser))
-                        userErrorKeys.Add(metadata.ErrorMessageTextResourceKeyUser);
-                    if (!string.IsNullOrEmpty(metadata.ErrorMessageTextResourceKeyServiceOwner))
-                        serviceOwnerErrorKeys.Add(metadata.ErrorMessageTextResourceKeyServiceOwner);
                 }
             }
 
-            _logger.LogDebug(
-                "Endpoint API scope authorization summary (HasDefinedCustomScopes={HasDefinedCustomScopes}):\n"
-                    + "User-authorized endpoints ({UserAuthorizedCount}): [{UserAuthorized}]\n"
-                    + "User-not-authorized endpoints ({UserNotAuthorizedCount}): [{UserNotAuthorized}]\n"
-                    + "ServiceOwner-authorized endpoints ({ServiceOwnerAuthorizedCount}): [{ServiceOwnerAuthorized}]\n"
-                    + "ServiceOwner-not-authorized endpoints ({ServiceOwnerNotAuthorizedCount}): [{ServiceOwnerNotAuthorized}]\n"
-                    + "User scopes: [{UserScopes}]\n"
-                    + "Service owner scopes: [{ServiceOwnerScopes}]\n"
-                    + "User error message keys: [{UserErrorKeys}]\n"
-                    + "Service owner error message keys: [{ServiceOwnerErrorKeys}]\n"
-                    + "Endpoint types: [{EndpointTypes}]",
-                HasDefinedCustomScopes,
-                _endpointsToUserAuthorize.Count,
-                authorizedEndpoints,
-                _endpointsNotUserAuthorized.Count,
-                notAuthorizedEndpoints,
-                _endpointsToServiceOwnerAuthorize.Count,
-                serviceOwnerAuthorizedEndpoints,
-                _endpointsNotServiceOwnerAuthorized.Count,
-                serviceOwnerNotAuthorizedEndpoints,
-                string.Join(", ", allUserScopes.Order()),
-                string.Join(", ", allServiceOwnerScopes.Order()),
-                string.Join(", ", userErrorKeys.Order()),
-                string.Join(", ", serviceOwnerErrorKeys.Order()),
-                string.Join(", ", endpointTypes.Order())
-            );
+            _logger.LogDebug(message.ToString());
         }
     }
 
@@ -404,8 +378,7 @@ internal sealed class ScopeAuthorizationService(
         ApplicationMetadata appMetadata,
         ScopeRequirementMetadata metadata,
         ScopeType scopeType,
-        ApiScopesConfiguration? apiScopes,
-        ApiEndpoint apiEndpoint
+        ApiScopesConfiguration? apiScopes
     )
     {
         var fallbackTextResourceKey =
@@ -413,27 +386,17 @@ internal sealed class ScopeAuthorizationService(
         var usersScopeSet = CreateUsersScopesSet(scopeType, apiScopes?.Users);
         if (usersScopeSet is not null)
         {
-            _endpointsToUserAuthorize.Add(apiEndpoint);
             metadata.RequiredScopesUsers = usersScopeSet;
             metadata.ErrorMessageTextResourceKeyUser =
                 appMetadata.ApiScopes?.Users?.ErrorMessageTextResourceKey ?? fallbackTextResourceKey;
-        }
-        else
-        {
-            _endpointsNotUserAuthorized.Add(apiEndpoint);
         }
 
         var serviceOwnersScopeSet = CreateServiceOwnersScopesSet(scopeType, apiScopes?.ServiceOwners);
         if (serviceOwnersScopeSet is not null)
         {
-            _endpointsToServiceOwnerAuthorize.Add(apiEndpoint);
             metadata.RequiredScopesServiceOwners = serviceOwnersScopeSet;
             metadata.ErrorMessageTextResourceKeyServiceOwner =
                 appMetadata.ApiScopes?.ServiceOwners?.ErrorMessageTextResourceKey ?? fallbackTextResourceKey;
-        }
-        else
-        {
-            _endpointsNotServiceOwnerAuthorized.Add(apiEndpoint);
         }
     }
 
@@ -456,26 +419,23 @@ internal sealed class ScopeAuthorizationService(
         return httpMethods.Order().ToArray();
     }
 
-    private static bool ShouldAuthorizeEndpoint(Endpoint endpoint)
+    private bool ShouldAuthorizeEndpoint(RouteEndpoint endpoint)
     {
         // Skip endpoints with AllowAnonymous
         if (endpoint.Metadata.GetMetadata<AllowAnonymousAttribute>() is not null)
             return false;
 
-        // Check route parameters for instance-related endpoints
-        if (endpoint is RouteEndpoint routeEndpoint)
-        {
-            var routePattern = routeEndpoint.RoutePattern;
-            var hasInstanceParameters = routePattern.Parameters.Any(p =>
-                string.Equals(p.Name, "instanceGuid", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(p.Name, "instanceId", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(p.Name, "instanceOwnerPartyId", StringComparison.OrdinalIgnoreCase)
-            );
+        var routePattern = endpoint.RoutePattern;
+        if (routePattern.Parameters.Any(p => _instanceRelatedParameterNames.Contains(p.Name)))
+            return true;
 
-            return hasInstanceParameters;
-        }
-
-        return true;
+        return (
+            endpoint.Metadata.GetMetadata<ControllerActionDescriptor>() is { } descriptor
+            && (
+                descriptor.ControllerTypeInfo == typeof(InstancesController)
+                || descriptor.Parameters.Any(p => _instanceRelatedParameterNames.Contains(p.Name))
+            )
+        );
     }
 
     private FrozenSet<string>? CreateUsersScopesSet(ScopeType type, ApiScopes? apiScopes)

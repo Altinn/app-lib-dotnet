@@ -181,12 +181,7 @@ public static class TestingApis
                         serviceProvider.GetRequiredService<Altinn.App.Api.Infrastructure.Middleware.ScopeAuthorizationService>();
 
                     return Results.Ok(
-                        new
-                        {
-                            hasDefinedCustomScopes = service.HasDefinedCustomScopes,
-                            endpointTypes = service.EndpointTypes,
-                            metadata = service.Metadata,
-                        }
+                        new { hasDefinedCustomScopes = service.HasDefinedCustomScopes, metadata = service.Metadata }
                     );
                 }
             )

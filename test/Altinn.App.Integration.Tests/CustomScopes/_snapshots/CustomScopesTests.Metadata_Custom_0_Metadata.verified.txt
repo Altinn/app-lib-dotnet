@@ -57,9 +57,6 @@
   },
   Response: {
     hasDefinedCustomScopes: true,
-    endpointTypes: [
-      Microsoft.AspNetCore.Routing.RouteEndpoint
-    ],
     metadata: [
       {
         endpoint: DELETE {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid},
@@ -859,10 +856,15 @@
       {
         endpoint: POST {org}/{app}/instances,
         metadata: {
-          errorMessageTextResourceKeyUser: null,
-          errorMessageTextResourceKeyServiceOwner: null,
-          requiredScopesUsers: null,
-          requiredScopesServiceOwners: null
+          errorMessageTextResourceKeyUser: authorization.scopes.insufficient,
+          errorMessageTextResourceKeyServiceOwner: authorization.scopes.insufficient,
+          requiredScopesUsers: [
+            custom:instances.write,
+            altinn:portal/enduser
+          ],
+          requiredScopesServiceOwners: [
+            custom:serviceowner/instances.write
+          ]
         }
       },
       {

@@ -27,11 +27,11 @@ public static class WebApplicationBuilderExtensions
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseTelemetryEnricher();
-        app.UseMiddleware<ScopeAuthorizationMiddleware>();
+        app.UseScopeAuthorization();
 
         app.UseEndpoints(endpoints =>
         {
-            endpoints.MapControllers().AddScopesRequirementMetadata();
+            endpoints.MapControllers();
         });
         app.UseHealthChecks("/health");
         return app;

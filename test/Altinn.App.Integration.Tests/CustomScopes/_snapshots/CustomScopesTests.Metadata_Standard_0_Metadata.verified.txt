@@ -57,9 +57,6 @@
   },
   Response: {
     hasDefinedCustomScopes: false,
-    endpointTypes: [
-      Microsoft.AspNetCore.Routing.RouteEndpoint
-    ],
     metadata: [
       {
         endpoint: DELETE {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid},
