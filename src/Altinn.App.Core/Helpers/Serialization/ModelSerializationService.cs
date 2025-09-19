@@ -37,13 +37,31 @@ public class ModelSerializationService
     /// </summary>
     /// <param name="data">The binary data</param>
     /// <param name="dataType">The data type used to get content type and the classRef for the object to be returned</param>
+    /// <param name="contentType"></param>
     /// <returns>The model specified in </returns>
-    public object DeserializeFromStorage(ReadOnlySpan<byte> data, DataType dataType)
+    public object DeserializeFromStorage(
+        ReadOnlySpan<byte> data,
+        DataType dataType,
+        string? contentType = "application/xml"
+    )
     {
+        contentType ??= "application/xml";
+
+        if (dataType.AllowedContentTypes?.Contains(contentType) == false)
+        {
+            throw new InvalidOperationException(
+                $"Content type {contentType} is not allowed for data type {dataType.Id}"
+            );
+        }
+
         var type = GetModelTypeForDataType(dataType);
 
-        // TODO: support sending json to storage based on dataType.ContentTypes
-        return DeserializeXml(data, type);
+        return contentType switch
+        {
+            "application/xml" => DeserializeXml(data, type),
+            "application/json" => DeserializeJson(data, type),
+            _ => throw new InvalidOperationException($"Unsupported content type {contentType}"),
+        };
     }
 
     /// <summary>
@@ -51,7 +69,7 @@ public class ModelSerializationService
     /// </summary>
     /// <param name="model">The object to serialize (must match the classRef in DataType)</param>
     /// <param name="dataType">The data type</param>
-    /// <returns>the binary data and the content type (currently only application/xml, but likely also json in the future)</returns>
+    /// <returns>the binary data and the content type (application/xml or application/json)</returns>
     /// <exception cref="InvalidOperationException">If the classRef in dataType does not match type of the model</exception>
     public (ReadOnlyMemory<byte> data, string contentType) SerializeToStorage(object model, DataType dataType)
     {
@@ -63,8 +81,14 @@ public class ModelSerializationService
             );
         }
 
-        //TODO: support sending json to storage based on dataType.ContentTypes
-        return (SerializeToXml(model), "application/xml");
+        var contentType = dataType.AllowedContentTypes.FirstOrDefault() ?? "application/xml";
+
+        return contentType switch
+        {
+            "application/xml" => (SerializeToXml(model), contentType),
+            "application/json" => (SerializeToJson(model), contentType),
+            _ => throw new InvalidOperationException($"Unsupported content type {contentType}"),
+        };
     }
 
     /// <summary>

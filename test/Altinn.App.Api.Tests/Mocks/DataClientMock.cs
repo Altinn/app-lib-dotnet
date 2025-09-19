@@ -204,7 +204,7 @@ public class DataClientMock : IDataClient
         string dataPath = TestData.GetDataBlobPath(org, app, instanceOwnerPartyId, instanceGuid, dataId);
         var dataBytes = await File.ReadAllBytesAsync(dataPath, cancellationToken);
 
-        var formData = _modelSerialization.DeserializeFromStorage(dataBytes, dataType);
+        var formData = _modelSerialization.DeserializeFromStorage(dataBytes, dataType, dataElement?.ContentType);
 
         return formData ?? throw new Exception("Unable to deserialize form data");
     }

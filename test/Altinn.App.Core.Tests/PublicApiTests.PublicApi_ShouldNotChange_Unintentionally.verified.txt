@@ -2229,7 +2229,7 @@ namespace Altinn.App.Core.Helpers.Serialization
     public class ModelSerializationService
     {
         public ModelSerializationService(Altinn.App.Core.Internal.AppModel.IAppModel appModel, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
-        public object DeserializeFromStorage(System.ReadOnlySpan<byte> data, Altinn.Platform.Storage.Interface.Models.DataType dataType) { }
+        public object DeserializeFromStorage(System.ReadOnlySpan<byte> data, Altinn.Platform.Storage.Interface.Models.DataType dataType, string? contentType = "application/xml") { }
         public object DeserializeJson(System.ReadOnlySpan<byte> data, System.Type modelType) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Result.ServiceResult<object, Microsoft.AspNetCore.Mvc.ProblemDetails>> DeserializeSingleFromStream(System.IO.Stream body, string? contentType, Altinn.Platform.Storage.Interface.Models.DataType dataType) { }
         public object DeserializeXml(System.ReadOnlySpan<byte> data, System.Type modelType) { }

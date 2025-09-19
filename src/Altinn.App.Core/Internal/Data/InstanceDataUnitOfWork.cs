@@ -103,7 +103,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
                 return _modelSerializationService.DeserializeFromStorage(
                     binaryData.Span,
-                    this.GetDataType(dataElementIdentifier)
+                    this.GetDataType(dataElementIdentifier),
+                    GetDataElement(dataElementIdentifier).ContentType
                 );
             }
         );
@@ -359,7 +360,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                         // and deserializing twice is not a big deal
                         PreviousFormData = _modelSerializationService.DeserializeFromStorage(
                             cachedBinary.Span,
-                            dataType
+                            dataType,
+                            dataElement.ContentType
                         ),
                         CurrentBinaryData = currentBinary,
                         PreviousBinaryData = cachedBinary,
