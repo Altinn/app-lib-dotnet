@@ -10,28 +10,20 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Moq;
+using FluentAssertions;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
 public class InstancesController_AddCompleteConfirmationTests
 {
     [Fact]
-    public async Task AddCompleteConfirmation_SuccessfulCall_ReturnsOkResult()
+    public async Task SuccessfulCall_ReturnsOkResult()
     {
         // Arrange
         using var fixture = InstancesControllerFixture.Create();
-        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
 
-        // Set up HttpRequest mock for SelfLinkHelper
-        var requestMock = new Mock<HttpRequest>();
-        requestMock.SetupGet(r => r.Host).Returns(new HostString("localhost"));
-        requestMock.SetupGet(r => r.Path).Returns(new PathString("/ttd/test-app/instances"));
-
-        var httpContextMock = Mock.Get(controller.HttpContext);
-        httpContextMock.SetupGet(c => c.Request).Returns(requestMock.Object);
-
-        int instanceOwnerPartyId = 1337;
-        Guid instanceGuid = Guid.NewGuid();
+        const int instanceOwnerPartyId = 1337;
+        var instanceGuid = Guid.NewGuid();
 
         var expectedInstance = new Instance
         {
@@ -43,45 +35,45 @@ public class InstancesController_AddCompleteConfirmationTests
             },
         };
 
-        var instanceClientMock = fixture.Mock<IInstanceClient>();
-        instanceClientMock
+        fixture
+            .Mock<IInstanceClient>()
             .Setup(x => x.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid))
             .ReturnsAsync(expectedInstance);
 
-        var eventsClientMock = fixture.Mock<IEventsClient>();
-        eventsClientMock.Setup(x => x.AddEvent(It.IsAny<string>(), It.IsAny<Instance>())).ReturnsAsync("event-id");
+        fixture
+            .Mock<IEventsClient>()
+            .Setup(x => x.AddEvent(It.IsAny<string>(), It.IsAny<Instance>()))
+            .ReturnsAsync("event-id");
+
+        fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
 
         // Act
+        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
         var result = await controller.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid);
 
         // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnedInstance = Assert.IsType<Instance>(okResult.Value);
-        Assert.Equal(expectedInstance.Id, returnedInstance.Id);
+        var resultValue = result.Result.Should().BeOfType<OkObjectResult>().Which.Value;
+        resultValue.Should().NotBeNull();
+        var returnedInstance = resultValue.Should().BeOfType<Instance>().Which;
+        returnedInstance.Id.Should().Be(expectedInstance.Id);
 
-        instanceClientMock.Verify(x => x.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid), Times.Once);
+        fixture
+            .Mock<IInstanceClient>()
+            .Verify(x => x.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid), Times.Once);
+        fixture.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task AddCompleteConfirmation_InstanceClientThrowsException_ReturnsErrorResponse()
+    public async Task InstanceClientThrowsException_ReturnsErrorResponse()
     {
         // Arrange
         using var fixture = InstancesControllerFixture.Create();
-        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
 
-        // Set up HttpRequest mock for SelfLinkHelper
-        var requestMock = new Mock<HttpRequest>();
-        requestMock.SetupGet(r => r.Host).Returns(new HostString("localhost"));
-        requestMock.SetupGet(r => r.Path).Returns(new PathString("/ttd/test-app/instances"));
+        const int instanceOwnerPartyId = 1337;
+        var instanceGuid = Guid.NewGuid();
 
-        var httpContextMock = Mock.Get(controller.HttpContext);
-        httpContextMock.SetupGet(c => c.Request).Returns(requestMock.Object);
-
-        int instanceOwnerPartyId = 1337;
-        Guid instanceGuid = Guid.NewGuid();
-
-        var instanceClientMock = fixture.Mock<IInstanceClient>();
-        instanceClientMock
+        fixture
+            .Mock<IInstanceClient>()
             .Setup(x => x.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid))
             .ThrowsAsync(
                 new PlatformHttpException(
@@ -90,18 +82,24 @@ public class InstancesController_AddCompleteConfirmationTests
                 )
             );
 
+        fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
+
         // Act
+        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
         var result = await controller.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid);
 
         // Assert
-        var objectResult = Assert.IsType<ObjectResult>(result.Result);
-        Assert.Equal((int)HttpStatusCode.BadRequest, objectResult.StatusCode);
+        var resultValue = result.Result.Should().BeOfType<ObjectResult>().Which;
+        resultValue.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
 
-        instanceClientMock.Verify(x => x.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid), Times.Once);
+        fixture
+            .Mock<IInstanceClient>()
+            .Verify(x => x.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid), Times.Once);
+        fixture.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task AddCompleteConfirmation_SuccessfulCall_CallsAddEventWithCorrectEventType()
+    public async Task SuccessfulCall_CallsAddEventWithCorrectEventType()
     {
         // Arrange
         using var fixture = InstancesControllerFixture.Create();
@@ -110,18 +108,8 @@ public class InstancesController_AddCompleteConfirmationTests
         var appSettings = fixture.ServiceProvider.GetRequiredService<IOptions<AppSettings>>();
         appSettings.Value.RegisterEventsWithEventsComponent = true;
 
-        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
-
-        // Set up HttpRequest mock for SelfLinkHelper
-        var requestMock = new Mock<HttpRequest>();
-        requestMock.SetupGet(r => r.Host).Returns(new HostString("localhost"));
-        requestMock.SetupGet(r => r.Path).Returns(new PathString("/ttd/test-app/instances"));
-
-        var httpContextMock = Mock.Get(controller.HttpContext);
-        httpContextMock.SetupGet(c => c.Request).Returns(requestMock.Object);
-
-        int instanceOwnerPartyId = 1337;
-        Guid instanceGuid = Guid.NewGuid();
+        const int instanceOwnerPartyId = 1337;
+        var instanceGuid = Guid.NewGuid();
 
         var expectedInstance = new Instance
         {
@@ -133,30 +121,40 @@ public class InstancesController_AddCompleteConfirmationTests
             },
         };
 
-        var instanceClientMock = fixture.Mock<IInstanceClient>();
-        instanceClientMock
+        fixture
+            .Mock<IInstanceClient>()
             .Setup(x => x.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid))
             .ReturnsAsync(expectedInstance);
 
-        var eventsClientMock = fixture.Mock<IEventsClient>();
-        eventsClientMock.Setup(x => x.AddEvent(It.IsAny<string>(), It.IsAny<Instance>())).ReturnsAsync("event-id");
+        fixture
+            .Mock<IEventsClient>()
+            .Setup(x => x.AddEvent(It.IsAny<string>(), It.IsAny<Instance>()))
+            .ReturnsAsync("event-id");
+
+        fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
 
         // Act
+        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
         var result = await controller.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid);
 
         // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        Assert.NotNull(okResult.Value);
+        var resultValue = result.Result.Should().BeOfType<OkObjectResult>().Which.Value;
+        resultValue.Should().NotBeNull();
 
-        eventsClientMock.Verify(
-            x =>
-                x.AddEvent(
-                    "app.instance.completeAndReadyForCleanup",
-                    It.Is<Instance>(i => i.Id == expectedInstance.Id)
-                ),
-            Times.Once
-        );
+        fixture
+            .Mock<IEventsClient>()
+            .Verify(
+                x =>
+                    x.AddEvent(
+                        "app.instance.completeAndReadyForCleanup",
+                        It.Is<Instance>(i => i.Id == expectedInstance.Id)
+                    ),
+                Times.Once
+            );
 
-        instanceClientMock.Verify(x => x.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid), Times.Once);
+        fixture
+            .Mock<IInstanceClient>()
+            .Verify(x => x.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid), Times.Once);
+        fixture.VerifyNoOtherCalls();
     }
 }
