@@ -118,6 +118,21 @@ public class ModelSerializationServiceTests
     }
 
     [Fact]
+    public void SerializeToStorage_MultipleAllowedContentTypes_PicksTheFirstOne()
+    {
+        // Arrange
+        var testObject = new TestDataModel { Name = "Test", Value = 42 };
+
+        var dataType = CreateDataType(["application/json", "application/xml"]);
+
+        // Act
+        var (_, outputContentType) = _sut.SerializeToStorage(testObject, dataType);
+
+        // Assert
+        outputContentType.Should().Be("application/json");
+    }
+
+    [Fact]
     public void DeserializeFromStorage_ThrowsOnMismatchingModelType()
     {
         // Arrange

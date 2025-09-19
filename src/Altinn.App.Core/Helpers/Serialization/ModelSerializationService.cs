@@ -81,7 +81,7 @@ public class ModelSerializationService
             );
         }
 
-        var contentType = dataType.AllowedContentTypes.FirstOrDefault() ?? "application/xml";
+        var contentType = dataType.AllowedContentTypes?.FirstOrDefault() ?? "application/xml";
 
         return contentType switch
         {
