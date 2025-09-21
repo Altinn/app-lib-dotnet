@@ -135,9 +135,17 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         );
     }
 
+    // Non thread safe cache, because the previous data is always the same.
+    private PreviousDataAccessor? _previousDataAccessorCache;
+
     public IInstanceDataAccessor GetPreviousDataAccessor()
     {
-        return new PreviousDataAccessor(
+        if (_previousDataAccessorCache is not null)
+        {
+            return _previousDataAccessorCache;
+        }
+
+        _previousDataAccessorCache = new PreviousDataAccessor(
             this,
             _taskId,
             _appResources,
@@ -147,6 +155,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             _language,
             _telemetry
         );
+        return _previousDataAccessorCache;
     }
 
     /// <inheritdoc />
