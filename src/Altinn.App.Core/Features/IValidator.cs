@@ -40,11 +40,11 @@ public interface IValidator
     bool NoIncrementalValidation => false;
 
     /// <summary>
-    /// Indicates whether the validator should execute after removing data elements marked as hidden.
+    /// Indicates whether this validator should run against a cleaned view of the data where fields marked as hidden are removed.
     /// </summary>
     /// <remarks>
-    /// The default implementation returns <c>false</c>. Override this property in implementations if validation
-    /// needs to execute after hidden data removal.
+    /// Defaults to <c>false</c>. When <c>true</c>, the validation pipeline will supply a cleaned accessor for both
+    /// <see cref="Validate"/> and <see cref="HasRelevantChanges"/>, ensuring consistent visibility semantics.
     /// </remarks>
     bool ShouldRunAfterRemovingHiddenData => false;
 

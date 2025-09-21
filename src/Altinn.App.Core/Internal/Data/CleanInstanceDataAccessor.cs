@@ -83,8 +83,8 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
             dataElementIdentifier,
             async () =>
             {
-                var data = await _dataAccessor.GetFormDataWrapper(dataElementIdentifier);
-                var hiddenFields = await _hiddenFieldsTask.Value;
+                var data = await _dataAccessor.GetFormDataWrapper(dataElementIdentifier).ConfigureAwait(false);
+                var hiddenFields = await _hiddenFieldsTask.Value.ConfigureAwait(false);
                 return CleanModel(data.Copy(), dataElementIdentifier, hiddenFields, _rowRemovalOption);
             }
         );

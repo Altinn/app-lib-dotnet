@@ -22,7 +22,7 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
     private readonly ITranslationService _translationService;
     private readonly Telemetry? _telemetry;
 
-    private ConcurrentDictionary<DataElementIdentifier, Task<IFormDataWrapper>> _previousDataCache = new();
+    private readonly ConcurrentDictionary<DataElementIdentifier, Task<IFormDataWrapper>> _previousDataCache = new();
 
     public PreviousDataAccessor(
         IInstanceDataAccessor dataAccessor,
@@ -51,29 +51,31 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
 
     public async Task<object> GetFormData(DataElementIdentifier dataElementIdentifier)
     {
-        return (await GetFormDataWrapper(dataElementIdentifier)).BackingData<object>();
+        return (await GetFormDataWrapper(dataElementIdentifier).ConfigureAwait(false)).BackingData<object>();
     }
 
     public async Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier)
     {
-        var data = await _previousDataCache.GetOrAdd(
-            dataElementIdentifier,
-            async id =>
-            {
-                var dataType = this.GetDataType(id);
-                if (dataType.AppLogic?.ClassRef is null)
+        var data = await _previousDataCache
+            .GetOrAdd(
+                dataElementIdentifier,
+                async id =>
                 {
-                    throw new InvalidOperationException(
-                        $"Data element {id.Id} is of data type {dataType.Id} which doesn't have app logic in application metadata and cant be used as form data"
+                    var dataType = this.GetDataType(id);
+                    if (dataType.AppLogic?.ClassRef is null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Data element {id.Id} is of data type {dataType.Id} which doesn't have app logic in application metadata and cant be used as form data"
+                        );
+                    }
+
+                    var binaryData = await _dataAccessor.GetBinaryData(id).ConfigureAwait(false);
+                    return FormDataWrapperFactory.Create(
+                        _modelSerializationService.DeserializeFromStorage(binaryData.Span, dataType)
                     );
                 }
-
-                var binaryData = await _dataAccessor.GetBinaryData(id);
-                return FormDataWrapperFactory.Create(
-                    _modelSerializationService.DeserializeFromStorage(binaryData.Span, dataType)
-                );
-            }
-        );
+            )
+            .ConfigureAwait(false);
 
         return data.Copy();
     }
@@ -99,7 +101,7 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
 
     public async Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)
     {
-        return await _dataAccessor.GetBinaryData(dataElementIdentifier);
+        return await _dataAccessor.GetBinaryData(dataElementIdentifier).ConfigureAwait(false);
     }
 
     public DataElement GetDataElement(DataElementIdentifier dataElementIdentifier)

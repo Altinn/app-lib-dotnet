@@ -142,6 +142,25 @@ public class ValidatorFactory : IValidatorFactory
             validators.Add(new LegacyIInstanceValidatorFormDataValidator(_generalSettings, instanceValidator));
         }
 
+        ThrowIfDuplicateValidators(validators, taskId);
+
         return validators;
+    }
+
+    private static void ThrowIfDuplicateValidators(List<IValidator> validators, string taskId)
+    {
+        var sourceNames = validators.Select(v => v.ValidationSource).Distinct(StringComparer.OrdinalIgnoreCase);
+        if (sourceNames.Count() != validators.Count)
+        {
+            var duplicates = validators
+                .GroupBy(v => v.ValidationSource, StringComparer.OrdinalIgnoreCase)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key);
+
+            var sources = string.Join('\n', validators.Select(v => $"{v.ValidationSource} {v.GetType().FullName}"));
+            throw new InvalidOperationException(
+                $"Duplicate validators found for task {taskId}. Ensure that each validator has a unique ValidationSource.\n\n{string.Join(", ", duplicates)}\n\nAll sources:\n{sources}"
+            );
+        }
     }
 }

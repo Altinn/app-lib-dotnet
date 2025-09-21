@@ -240,7 +240,7 @@ public class TestCleanDataAccessor
         where T2 : class
     {
         var fixture = await DataAccessorFixture.CreateAsync(
-            [new("mainLayout", typeof(T1), MaxCount: 1), new("subLayout", typeof(T2), MaxCount: 1)],
+            [new("mainLayout", typeof(T1), MaxCount: 1), new("subLayout", typeof(T2), MaxCount: 0)],
             _outputHelper
         );
         fixture.AddFormData(data);

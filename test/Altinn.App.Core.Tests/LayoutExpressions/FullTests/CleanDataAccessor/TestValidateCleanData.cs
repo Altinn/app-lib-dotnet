@@ -72,12 +72,7 @@ public class TestValidateCleanData(ITestOutputHelper outputHelper)
                 new() { Name = "row5", HideRow = false },
             ],
         };
-        var subData1 = new SubModel()
-        {
-            SubPageTitle = "",
-            UnboundField = "unbound1",
-            // TODO: add more data
-        };
+        var subData1 = new SubModel() { SubPageTitle = "", UnboundField = "unbound1" };
         var subData2 = new SubModel()
         {
             HideSubPageTitle = false,
@@ -119,7 +114,6 @@ public class TestValidateCleanData(ITestOutputHelper outputHelper)
         {
             subElement.HideSubPageTitle = true;
         }
-        //TODO: add changes
 
         var changes = dataMutator.GetDataElementChanges(initializeAltinnRowId: true);
         if (incremental)

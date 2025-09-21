@@ -108,7 +108,7 @@ public sealed class DataAccessorFixture
         return fixture;
     }
 
-    public record LayoutSetSpec(string LayoutSetName, Type Type, int MaxCount);
+    public record LayoutSetSpec(string LayoutSetName, Type ModelType, int MaxCount);
 
     /// <summary>
     /// The first spec is the default layout set. The remaining can be referenced as subforms
@@ -147,13 +147,15 @@ public sealed class DataAccessorFixture
             {
                 Id = spec.LayoutSetName + "_dataType",
                 TaskId = TaskId,
-                AppLogic = new() { ClassRef = spec.Type.FullName },
+                AppLogic = new() { ClassRef = spec.ModelType.FullName },
                 MaxCount = spec.MaxCount,
             };
             ApplicationMetadata.DataTypes.Add(dataType);
 
-            AppModelMock.Setup(am => am.GetModelType(spec.Type.FullName!)).Returns(spec.Type);
-            AppModelMock.Setup(am => am.Create(spec.Type.FullName!)).Returns(Activator.CreateInstance(spec.Type)!);
+            AppModelMock.Setup(am => am.GetModelType(spec.ModelType.FullName!)).Returns(spec.ModelType);
+            AppModelMock
+                .Setup(am => am.Create(spec.ModelType.FullName!))
+                .Returns(Activator.CreateInstance(spec.ModelType)!);
 
             var layoutSet = new LayoutSetComponent(pages.ToList(), spec.LayoutSetName, dataType);
             layouts.Add(layoutSet);

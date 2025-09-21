@@ -61,7 +61,7 @@ public class ValidationService : IValidationService
         // Remove ignored validators
         if (ignoredValidators is not null)
             validators = validators.Where(v =>
-                !ignoredValidators.Contains(v.ValidationSource, StringComparer.InvariantCultureIgnoreCase)
+                !ignoredValidators.Contains(v.ValidationSource, StringComparer.OrdinalIgnoreCase)
             );
 
         var cleanAccessor = dataAccessor;
@@ -132,13 +132,9 @@ public class ValidationService : IValidationService
             .GetValidators(taskId)
             .Where(v =>
                 !v.NoIncrementalValidation
-                && !(
-                    ignoredValidators?.Contains(v.ValidationSource, StringComparer.InvariantCultureIgnoreCase) ?? false
-                )
+                && !(ignoredValidators?.Contains(v.ValidationSource, StringComparer.OrdinalIgnoreCase) ?? false)
             )
             .ToArray();
-
-        ThrowIfDuplicateValidators(validators, taskId);
 
         DataElementChanges cleanChanges = changes;
         IInstanceDataAccessor cleanAccessor = dataAccessor;
@@ -259,25 +255,6 @@ public class ValidationService : IValidationService
                     issue.Description = translated;
                 }
             }
-        }
-    }
-
-    private static void ThrowIfDuplicateValidators(IValidator[] validators, string taskId)
-    {
-        var sourceNames = validators
-            .Select(v => v.ValidationSource)
-            .Distinct(StringComparer.InvariantCultureIgnoreCase);
-        if (sourceNames.Count() != validators.Length)
-        {
-            var duplicates = validators
-                .GroupBy(v => v.ValidationSource, StringComparer.InvariantCultureIgnoreCase)
-                .Where(g => g.Count() > 1)
-                .Select(g => g.Key);
-
-            var sources = string.Join('\n', validators.Select(v => $"{v.ValidationSource} {v.GetType().FullName}"));
-            throw new InvalidOperationException(
-                $"Duplicate validators found for task {taskId}. Ensure that each validator has a unique ValidationSource.\n\n{string.Join(", ", duplicates)}"
-            );
         }
     }
 }

@@ -38,7 +38,8 @@ public interface IFormDataValidator
 
     /// <inheritdoc cref="IValidator.ShouldRunAfterRemovingHiddenData"/>
     /// <remarks>
-    /// By default <see cref="IFormDataValidator"/> will run on the full data
+    /// Defaults to full data. When <c>true</c>, the pipeline provides a cleaned data accessor to
+    /// both <see cref="ValidateFormData"/> and <see cref="HasRelevantChanges"/> for consistent visibility.
     /// </remarks>
     bool ShouldRunAfterRemovingHiddenData => false;
 
