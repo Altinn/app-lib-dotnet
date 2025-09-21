@@ -39,22 +39,29 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
         _rowRemovalOption = rowRemovalOption;
         _language = language;
         _telemetry = telemetry;
+        _translationService = translationService;
 
         LayoutModel? layouts = taskId is not null ? appResources.GetLayoutModelForTask(taskId) : null;
-        var state = new LayoutEvaluatorState(
-            dataAccessor,
-            layouts,
-            translationService,
-            frontEndSettings,
-            gatewayAction: null,
-            language
-        );
-        _hiddenFieldsTask = new(() =>
+        if (layouts is null)
         {
-            using var activity = telemetry?.StartRemoveHiddenDataForValidation();
-            return LayoutEvaluator.GetHiddenFieldsForRemoval(state);
-        });
-        _translationService = translationService;
+            _hiddenFieldsTask = new(() => Task.FromResult(new List<DataReference>()));
+        }
+        else
+        {
+            var state = new LayoutEvaluatorState(
+                dataAccessor,
+                layouts,
+                translationService,
+                frontEndSettings,
+                gatewayAction: null,
+                language
+            );
+            _hiddenFieldsTask = new(() =>
+            {
+                using var activity = telemetry?.StartRemoveHiddenDataForValidation();
+                return LayoutEvaluator.GetHiddenFieldsForRemoval(state);
+            });
+        }
     }
 
     private readonly DataElementCache<IFormDataWrapper> _cleanCache = new();
@@ -72,7 +79,7 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
 
     public async Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier)
     {
-        return await _cleanCache.GetOrCreate(
+        var dataWrapper = await _cleanCache.GetOrCreate(
             dataElementIdentifier,
             async () =>
             {
@@ -81,6 +88,8 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
                 return CleanModel(data.Copy(), dataElementIdentifier, hiddenFields, _rowRemovalOption);
             }
         );
+
+        return dataWrapper.Copy();
     }
 
     private static IFormDataWrapper CleanModel(

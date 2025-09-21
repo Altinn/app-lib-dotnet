@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,53 +13,6 @@ public class TestCleanDataAccessor
     public TestCleanDataAccessor(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
-    }
-
-    public record SubModel
-    {
-        public bool? HideSubPage { get; set; }
-        public bool? HideSubPageTitle { get; set; }
-        public string? SubPageTitle { get; set; }
-        public string? UnboundField { get; set; }
-
-        public bool? HideSubComponentGroup { get; set; }
-        public List<SubGroup?>? SubComponentGroup { get; set; }
-
-        public record SubGroup
-        {
-            [JsonPropertyName("altinnRowId")]
-            [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-            public Guid AltinnRowId { get; set; }
-
-            public bool? HideRow { get; set; }
-            public bool? HideName { get; set; }
-            public string? Name { get; set; }
-            public string? Description { get; set; }
-        }
-    }
-
-    public record MainModel
-    {
-        public bool? HideMainTitle { get; set; }
-        public string? MainTitle { get; set; }
-        public string? UnboundField { get; set; }
-        public bool? HidePage1 { get; set; }
-
-        public bool? HideMainComponentGroup { get; set; }
-        public List<MainComponentGroupItem?>? MainComponentGroup { get; set; }
-
-        public bool? HideSubLayout { get; set; }
-
-        public record MainComponentGroupItem
-        {
-            [JsonPropertyName("altinnRowId")]
-            [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-            public Guid AltinnRowId { get; set; }
-            public string? Name { get; set; }
-            public bool? HideRow { get; set; }
-            public string? Description { get; set; }
-            public bool? HideName { get; set; }
-        }
     }
 
     [Fact]
@@ -104,7 +56,7 @@ public class TestCleanDataAccessor
 
         var subData = new SubModel();
 
-        var expectedModel = JsonSerializer.Deserialize<MainModel>(JsonSerializer.SerializeToUtf8Bytes(data));
+        var expectedModel = JsonSerializer.Deserialize<MainModel>(JsonSerializer.SerializeToUtf8Bytes(data))!;
         var (cleanModel, cleanSubModels) = await GetMainAndSubClean(data, [subData]);
         var cleanSubModel = cleanSubModels.Single();
         // Assert
@@ -112,11 +64,8 @@ public class TestCleanDataAccessor
         Assert.NotSame(cleanSubModel, subData);
 
         // Make expected changes
-        // ReSharper disable PossibleNullReferenceException
-#nullable disable
         expectedModel.MainTitle = null;
         expectedModel.MainComponentGroup = null;
-#nullable restore
 
         Assert.Equivalent(expectedModel, cleanModel);
     }

@@ -72,7 +72,6 @@ public sealed class DataAccessorFixture
         ServiceCollection.AddSingleton(DataElementAccessCheckerMock.Object);
         ServiceCollection.AddSingleton<InstanceDataUnitOfWorkInitializer>();
         ServiceCollection.AddSingleton<ModelSerializationService>();
-        ServiceCollection.AddFakeLoggingWithXunit(outputHelper);
         ServiceCollection.AddTransient<IValidator, RequiredLayoutValidator>();
         ServiceCollection.AddTransient<IValidatorFactory, ValidatorFactory>();
         ServiceCollection.AddTransient<IValidationService, ValidationService>();

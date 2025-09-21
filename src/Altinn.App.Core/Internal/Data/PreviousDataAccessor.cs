@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
@@ -20,6 +21,8 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
     private readonly string? _language;
     private readonly ITranslationService _translationService;
     private readonly Telemetry? _telemetry;
+
+    private ConcurrentDictionary<DataElementIdentifier, Task<IFormDataWrapper>> _previousDataCache = new();
 
     public PreviousDataAccessor(
         IInstanceDataAccessor dataAccessor,
@@ -48,22 +51,31 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
 
     public async Task<object> GetFormData(DataElementIdentifier dataElementIdentifier)
     {
-        var dataType = this.GetDataType(dataElementIdentifier);
-        if (dataType.AppLogic?.ClassRef is null)
-        {
-            throw new InvalidOperationException(
-                $"Data element {dataElementIdentifier.Id} is of data type {dataType.Id} which doesn't have app logic in application metadata and cant be used as form data"
-            );
-        }
-
-        var binaryData = await _dataAccessor.GetBinaryData(dataElementIdentifier);
-        return _modelSerializationService.DeserializeFromStorage(binaryData.Span, dataType);
+        return (await GetFormDataWrapper(dataElementIdentifier)).BackingData<object>();
     }
 
     public async Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier)
     {
-        var dataModel = await GetFormData(dataElementIdentifier);
-        return FormDataWrapperFactory.Create(dataModel);
+        var data = await _previousDataCache.GetOrAdd(
+            dataElementIdentifier,
+            async id =>
+            {
+                var dataType = this.GetDataType(id);
+                if (dataType.AppLogic?.ClassRef is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Data element {id.Id} is of data type {dataType.Id} which doesn't have app logic in application metadata and cant be used as form data"
+                    );
+                }
+
+                var binaryData = await _dataAccessor.GetBinaryData(id);
+                return FormDataWrapperFactory.Create(
+                    _modelSerializationService.DeserializeFromStorage(binaryData.Span, dataType)
+                );
+            }
+        );
+
+        return data.Copy();
     }
 
     public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)

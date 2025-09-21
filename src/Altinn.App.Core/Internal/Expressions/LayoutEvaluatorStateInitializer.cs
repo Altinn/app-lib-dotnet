@@ -87,7 +87,7 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
 
         public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption)
         {
-            throw new NotSupportedException("Legacy single data accessor does not implement GetCleanAccessorForTask");
+            throw new NotSupportedException("Legacy single data accessor does not implement GetCleanAccessor");
         }
 
         public IInstanceDataAccessor GetPreviousDataAccessor()
