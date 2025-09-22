@@ -13,9 +13,16 @@ public static class LayoutEvaluator
     /// <summary>
     /// Get a list of fields that are only referenced in hidden components in <see cref="LayoutEvaluatorState" />
     /// </summary>
+    [Obsolete("Use the overload with evaluateRemoveWhenHidden parameter")]
+    public static async Task<List<DataReference>> GetHiddenFieldsForRemoval(LayoutEvaluatorState state) =>
+        await GetHiddenFieldsForRemoval(state, evaluateRemoveWhenHidden: false);
+
+    /// <summary>
+    /// Get a list of fields that are only referenced in hidden components in <see cref="LayoutEvaluatorState" />
+    /// </summary>
     public static async Task<List<DataReference>> GetHiddenFieldsForRemoval(
         LayoutEvaluatorState state,
-        bool evaluateRemoveWhenHidden = false
+        bool evaluateRemoveWhenHidden
     )
     {
         var hiddenModelBindings = new HashSet<DataReference>();
@@ -106,10 +113,17 @@ public static class LayoutEvaluator
     /// <summary>
     /// Remove fields that are only referenced from hidden fields from the data object in the state.
     /// </summary>
+    [Obsolete("Use the overload with evaluateRemoveWhenHidden parameter")]
+    public static async Task RemoveHiddenDataAsync(LayoutEvaluatorState state, RowRemovalOption rowRemovalOption) =>
+        await RemoveHiddenDataAsync(state, rowRemovalOption, evaluateRemoveWhenHidden: false);
+
+    /// <summary>
+    /// Remove fields that are only referenced from hidden fields from the data object in the state.
+    /// </summary>
     public static async Task RemoveHiddenDataAsync(
         LayoutEvaluatorState state,
         RowRemovalOption rowRemovalOption,
-        bool evaluateRemoveWhenHidden = false
+        bool evaluateRemoveWhenHidden
     )
     {
         var fields = await GetHiddenFieldsForRemoval(state, evaluateRemoveWhenHidden);

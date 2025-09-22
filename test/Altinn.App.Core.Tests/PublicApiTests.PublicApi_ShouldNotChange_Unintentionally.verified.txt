@@ -3058,10 +3058,14 @@ namespace Altinn.App.Core.Internal.Expressions
     }
     public static class LayoutEvaluator
     {
-        public static System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Layout.DataReference>> GetHiddenFieldsForRemoval(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, bool evaluateRemoveWhenHidden = false) { }
+        [System.Obsolete("Use the overload with evaluateRemoveWhenHidden parameter")]
+        public static System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Layout.DataReference>> GetHiddenFieldsForRemoval(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state) { }
+        public static System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Layout.DataReference>> GetHiddenFieldsForRemoval(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, bool evaluateRemoveWhenHidden) { }
         [System.Obsolete("Use the async version of this method RemoveHiddenDataAsync")]
         public static void RemoveHiddenData(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
-        public static System.Threading.Tasks.Task RemoveHiddenDataAsync(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption, bool evaluateRemoveWhenHidden = false) { }
+        [System.Obsolete("Use the overload with evaluateRemoveWhenHidden parameter")]
+        public static System.Threading.Tasks.Task RemoveHiddenDataAsync(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
+        public static System.Threading.Tasks.Task RemoveHiddenDataAsync(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption, bool evaluateRemoveWhenHidden) { }
         public static System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssue>> RunLayoutValidationsForRequired(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state) { }
     }
     public class LayoutEvaluatorState
