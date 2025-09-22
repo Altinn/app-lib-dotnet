@@ -9,14 +9,14 @@
     ReturnValue: true
   },
   {
-    Method: IValidator.get_NoIncrementalValidation(),
-    Arguments: {},
-    ReturnValue: false
-  },
-  {
     Method: IValidator.get_ValidationSource(),
     Arguments: {},
     ReturnValue: mockValidator
+  },
+  {
+    Method: IValidator.get_NoIncrementalValidation(),
+    Arguments: {},
+    ReturnValue: false
   },
   {
     Method: IValidator.get_ValidationSource(),

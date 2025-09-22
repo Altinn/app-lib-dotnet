@@ -3817,7 +3817,7 @@ namespace Altinn.App.Core.Internal.Validation
     }
     public class ValidatorFactory : Altinn.App.Core.Internal.Validation.IValidatorFactory
     {
-        public ValidatorFactory(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.GeneralSettings> generalSettings, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, System.IServiceProvider serviceProvider) { }
+        public ValidatorFactory(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.GeneralSettings> generalSettings, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, System.IServiceProvider serviceProvider, Microsoft.Extensions.Hosting.IHostEnvironment hostEnvironment) { }
         public System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.IValidator> GetValidators(string taskId) { }
     }
 }

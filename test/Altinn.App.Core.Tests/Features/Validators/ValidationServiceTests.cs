@@ -11,6 +11,7 @@ using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Moq;
 using Xunit.Abstractions;
 using Exception = System.Exception;
@@ -35,6 +36,7 @@ public class ValidationServiceTests : IAsyncLifetime
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
     private readonly Mock<ITranslationService> _translationServiceMock = new(MockBehavior.Loose);
     private readonly Mock<IDataElementAccessChecker> _dataElementAccessCheckerMock = new(MockBehavior.Strict);
+    private readonly Mock<IHostEnvironment> _hostEnvironmentMock = new(MockBehavior.Strict);
     private readonly InstanceDataAccessorFake _instanceDataAccessor;
     private readonly IServiceCollection _services = new ServiceCollection();
     private readonly Lazy<ServiceProvider> _serviceProvider;
@@ -44,9 +46,11 @@ public class ValidationServiceTests : IAsyncLifetime
         _dataElementAccessCheckerMock
             .Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>()))
             .ReturnsAsync(true);
+        _hostEnvironmentMock.SetupGet(h => h.EnvironmentName).Returns(Environments.Development);
 
         _instanceDataAccessor = new InstanceDataAccessorFake(_instance, _appMetadata, TaskId);
         _services.AddTransient<IValidationService, ValidationService>();
+        _services.AddSingleton(_hostEnvironmentMock.Object);
         _services.AddTelemetrySink();
         _services.AddFakeLoggingWithXunit(output);
         _services.AddTransient<IValidatorFactory, ValidatorFactory>();

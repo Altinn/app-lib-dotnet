@@ -20,6 +20,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit.Abstractions;
@@ -259,6 +260,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
     private readonly Mock<ITranslationService> _translationServiceMock = new(MockBehavior.Loose);
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new(MockBehavior.Loose);
     private readonly Mock<IDataElementAccessChecker> _dataElementAccessCheckerMock = new(MockBehavior.Strict);
+    private readonly Mock<IHostEnvironment> _hostEnvironmentMock = new(MockBehavior.Strict);
 
     private readonly IServiceCollection _services = new ServiceCollection();
     private static readonly JsonSerializerOptions _options = new()
@@ -292,6 +294,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
         _dataElementAccessCheckerMock
             .Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>()))
             .ReturnsAsync(true);
+        _hostEnvironmentMock.SetupGet(h => h.EnvironmentName).Returns("Development");
 
         _output = output;
         _services.AddAppImplementationFactory();
@@ -300,6 +303,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
         _services.AddSingleton(_translationServiceMock.Object);
         _services.AddSingleton(_httpContextAccessorMock.Object);
         _services.AddSingleton(_dataElementAccessCheckerMock.Object);
+        _services.AddSingleton(_hostEnvironmentMock.Object);
         _services.AddSingleton(fixture.App.Services.GetRequiredService<IObjectModelValidator>());
         _services.AddSingleton(_generalSettings);
         _services.AddTransient<IValidationService, ValidationService>();

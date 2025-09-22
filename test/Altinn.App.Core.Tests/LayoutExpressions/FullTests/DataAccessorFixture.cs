@@ -16,6 +16,7 @@ using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit.Abstractions;
@@ -40,6 +41,7 @@ public sealed class DataAccessorFixture
     public Mock<ITranslationService> TranslationServiceMock { get; } = new(MockBehavior.Strict);
 
     internal Mock<IDataElementAccessChecker> DataElementAccessCheckerMock { get; } = new(MockBehavior.Strict);
+    public Mock<IHostEnvironment> HostEnvironmentMock { get; } = new(MockBehavior.Strict);
 
     public FrontEndSettings FrontEndSettings { get; } = new();
     public GeneralSettings GeneralSettings { get; } = new();
@@ -70,6 +72,7 @@ public sealed class DataAccessorFixture
         ServiceCollection.AddSingleton(TranslationServiceMock.Object);
         ServiceCollection.AddSingleton(InstanceClientMock.Object);
         ServiceCollection.AddSingleton(DataElementAccessCheckerMock.Object);
+        ServiceCollection.AddSingleton(HostEnvironmentMock.Object);
         ServiceCollection.AddSingleton<InstanceDataUnitOfWorkInitializer>();
         ServiceCollection.AddSingleton<ModelSerializationService>();
         ServiceCollection.AddTransient<IValidator, RequiredLayoutValidator>();
@@ -95,6 +98,7 @@ public sealed class DataAccessorFixture
                     },
                 }
             );
+        HostEnvironmentMock.SetupGet(h => h.EnvironmentName).Returns("Development");
     }
 
     public static async Task<DataAccessorFixture> CreateAsync(
