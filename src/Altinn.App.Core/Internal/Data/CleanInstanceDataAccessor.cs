@@ -59,7 +59,7 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
             _hiddenFieldsTask = new(() =>
             {
                 using var activity = telemetry?.StartRemoveHiddenDataForValidation();
-                return LayoutEvaluator.GetHiddenFieldsForRemoval(state);
+                return LayoutEvaluator.GetHiddenFieldsForRemoval(state, evaluateRemoveWhenHidden: false);
             });
         }
     }

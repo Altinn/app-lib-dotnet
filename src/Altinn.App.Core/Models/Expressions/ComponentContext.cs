@@ -53,20 +53,44 @@ public sealed class ComponentContext
     /// </summary>
     public int[]? RowIndices { get; }
 
+    /// <summary>
+    /// Memoization for evaluation of hidden
+    /// </summary>
     private bool? _isHidden;
+
+    /// <summary>
+    /// Memoization for evaluation of removeWhenHidden
+    /// </summary>
+    private bool? _removeWhenHidden;
 
     /// <summary>
     /// Memoized way to check if the component is hidden
     /// </summary>
-    public async Task<bool> IsHidden()
+    public async Task<bool> IsHidden(bool evaluateRemoveWhenHidden)
+    {
+        if (evaluateRemoveWhenHidden)
+        {
+            // We will check parent removeWhenHidden when we check parent hidden
+            var removeWhenHidden = await GetMemoizedRemoveWhenHidden();
+            if (!removeWhenHidden)
+            {
+                return false;
+            }
+        }
+
+        // If the parent is hidden, this is also hidden
+        if (Parent is not null && await Parent.IsHidden(evaluateRemoveWhenHidden))
+        {
+            return true;
+        }
+
+        return await GetMemoizedIsHidden();
+    }
+
+    private async Task<bool> GetMemoizedIsHidden()
     {
         if (_isHidden.HasValue)
         {
-            return _isHidden.Value;
-        }
-        if (Parent is not null && await Parent.IsHidden())
-        {
-            _isHidden = true;
             return _isHidden.Value;
         }
 
@@ -86,10 +110,29 @@ public sealed class ComponentContext
             }
         }
 
-        var hidden = await ExpressionEvaluator.EvaluateBooleanExpression(State, this, "hidden", false);
-
-        _isHidden = hidden;
+        var isHidden = await ExpressionEvaluator.EvaluateBooleanExpression(State, this, "hidden", false);
+        _isHidden = isHidden;
         return _isHidden.Value;
+    }
+
+    private async Task<bool> GetMemoizedRemoveWhenHidden()
+    {
+        if (_removeWhenHidden.HasValue)
+        {
+            return _removeWhenHidden.Value;
+        }
+
+        var removeWhenHidden = await ExpressionEvaluator.EvaluateBooleanExpression(
+            State,
+            this,
+            "removeWhenHidden",
+            // Default return should match AppSettings.RemoveHiddenData,
+            // but currently we only run removal when it is true, so we set it to true here
+            defaultReturn: true
+        );
+
+        _removeWhenHidden = removeWhenHidden;
+        return _removeWhenHidden.Value;
     }
 
     /// <summary>
