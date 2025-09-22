@@ -2,7 +2,7 @@ using Altinn.App.Analyzers.SourceTextGenerator;
 using Altinn.App.Analyzers.Utils;
 using NanoJsonReader;
 
-namespace Altinn.App.Analyzers.IncrementalGenerator;
+namespace Altinn.App.Analyzers;
 
 /// <summary>
 /// Generate IFormDataWrapper implementations for classes in models/*.cs in the app.
@@ -249,6 +249,6 @@ public class FormDataWrapperGenerator : IIncrementalGenerator
             return;
 
         var sourceText = SourceTextGenerator.SourceTextGenerator.GenerateSourceText(node);
-        context.AddSource(node.Name + "FormDataWrapper.g.cs", sourceText);
+        context.AddSource(node.Name.Split('_').Last() + "FormDataWrapper.g.cs", sourceText);
     }
 }
