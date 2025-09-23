@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Mime;
@@ -215,16 +216,20 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
-        using var activity = _telemetry?.StartGetBinaryDataActivity(instanceGuid, dataId);
-        string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
-        string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
+        using Activity? activity = _telemetry?.StartGetBinaryDataActivity(instanceGuid, dataId);
+        var instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
+        var apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
             cancellationToken: cancellationToken
         );
 
-        HttpResponseMessage response = await _client.GetUnbufferedAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetStreamingAsync(
+            token,
+            apiUrl,
+            cancellationToken: cancellationToken
+        );
 
         if (response.IsSuccessStatusCode)
         {
