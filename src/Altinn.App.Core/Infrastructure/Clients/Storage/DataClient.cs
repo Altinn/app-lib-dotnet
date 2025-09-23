@@ -233,9 +233,19 @@ public class DataClient : IDataClient
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadAsStreamAsync(cancellationToken);
+            try
+            {
+                Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                return new ResponseWrapperStream(response, stream);
+            }
+            catch (Exception)
+            {
+                response.Dispose();
+                throw;
+            }
         }
 
+        response.Dispose();
         throw await PlatformHttpException.CreateAsync(response);
     }
 
