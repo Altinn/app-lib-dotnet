@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Models;
@@ -103,14 +104,24 @@ public sealed class BinaryDataChange : DataElementChange
 public sealed class FormDataChange : DataElementChange
 {
     /// <summary>
-    /// The state of the data element before the change
+    /// A POCO object representing the state of the data element before the change
     /// </summary>
-    public required object PreviousFormData { get; init; }
+    public object PreviousFormData => PreviousFormDataWrapper.BackingData<object>();
 
     /// <summary>
-    /// The state of the data element after the change
+    /// The previous form data wrapped in a <see cref="IFormDataWrapper"/>
     /// </summary>
-    public required object CurrentFormData { get; init; }
+    public required IFormDataWrapper PreviousFormDataWrapper { get; init; }
+
+    /// <summary>
+    /// A POCO object representing the state of the data element after the change
+    /// </summary>
+    public object CurrentFormData => CurrentFormDataWrapper.BackingData<object>();
+
+    /// <summary>
+    /// The data after the change wrapped in a <see cref="IFormDataWrapper"/>
+    /// </summary>
+    public required IFormDataWrapper CurrentFormDataWrapper { get; init; }
 
     /// <summary>
     /// The binary representation (for storage) of the data element before changes

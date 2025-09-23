@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -14,6 +15,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -78,6 +80,7 @@ public sealed class ValidationServiceTests : IDisposable
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
     private readonly Mock<IDataElementAccessChecker> _dataElementAccessCheckerMock = new(MockBehavior.Strict);
+    private readonly Mock<IHostEnvironment> _hostEnvironmentMock = new(MockBehavior.Strict);
 
     private readonly IInstanceDataAccessor _dataAccessor;
 
@@ -135,6 +138,7 @@ public sealed class ValidationServiceTests : IDisposable
         _dataElementAccessCheckerMock
             .Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>()))
             .ReturnsAsync(true);
+        _hostEnvironmentMock.SetupGet(h => h.EnvironmentName).Returns(Environments.Development);
 
         _modelSerialization = new ModelSerializationService(_appModelMock.Object);
         _dataAccessor = new InstanceDataUnitOfWork(
@@ -142,11 +146,13 @@ public sealed class ValidationServiceTests : IDisposable
             _dataClientMock.Object,
             _instanceClientMock.Object,
             _defaultAppMetadata,
+            _translationServiceMock.Object,
             _modelSerialization,
             null!,
             null!,
             DefaultTaskId,
-            DefaultLanguage
+            DefaultLanguage,
+            null
         );
         _serviceCollection.AddAppImplementationFactory();
         _serviceCollection.AddSingleton(_loggerMock.Object);
@@ -159,7 +165,9 @@ public sealed class ValidationServiceTests : IDisposable
         _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(_defaultAppMetadata);
         _serviceCollection.AddSingleton<IValidatorFactory, ValidatorFactory>();
         _serviceCollection.AddSingleton(_dataElementAccessCheckerMock.Object);
+        _serviceCollection.AddSingleton(_hostEnvironmentMock.Object);
         _serviceCollection.AddSingleton(Microsoft.Extensions.Options.Options.Create(new GeneralSettings()));
+        _serviceCollection.AddSingleton(Microsoft.Extensions.Options.Options.Create(new AppSettings()));
 
         // NeverUsedValidators
         _serviceCollection.AddSingleton(_taskValidatorNeverMock.Object);
@@ -234,13 +242,14 @@ public sealed class ValidationServiceTests : IDisposable
         string validationSource
     )
     {
+        formDataValidatorMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
+        formDataValidatorMock.SetupGet(v => v.ShouldRunAfterRemovingHiddenData).Returns(false);
+
         // DataType
         formDataValidatorMock.Setup(v => v.DataType).Returns(dataType);
 
         // ValidatorName (used for source)
         formDataValidatorMock.Setup(v => v.ValidationSource).Returns(validationSource);
-
-        formDataValidatorMock.SetupGet(v => v.NoIncrementalValidation).Returns(false);
     }
 
     private void SetupFormDataValidatorReturn(
@@ -369,8 +378,8 @@ public sealed class ValidationServiceTests : IDisposable
                         DataElement = _defaultDataElement,
                         DataType = _defaultDataType,
                         ContentType = "application/xml",
-                        PreviousFormData = previousData,
-                        CurrentFormData = data,
+                        PreviousFormDataWrapper = FormDataWrapperFactory.Create(previousData),
+                        CurrentFormDataWrapper = FormDataWrapperFactory.Create(data),
                         PreviousBinaryData = null,
                         CurrentBinaryData = null,
                     },
@@ -418,8 +427,8 @@ public sealed class ValidationServiceTests : IDisposable
                     DataElement = _defaultDataElement,
                     DataType = _defaultDataType,
                     ContentType = "application/xml",
-                    CurrentFormData = data,
-                    PreviousFormData = data,
+                    CurrentFormDataWrapper = FormDataWrapperFactory.Create(data),
+                    PreviousFormDataWrapper = FormDataWrapperFactory.Create(data),
                     PreviousBinaryData = null,
                     CurrentBinaryData = null,
                 },
@@ -431,11 +440,13 @@ public sealed class ValidationServiceTests : IDisposable
             _dataClientMock.Object,
             _instanceClientMock.Object,
             _defaultAppMetadata,
+            _translationServiceMock.Object,
             _modelSerialization,
             null!,
             null!,
             DefaultTaskId,
-            DefaultLanguage
+            DefaultLanguage,
+            null
         );
         var resultData = await validatorService.ValidateIncrementalFormData(
             dataAccessor,
@@ -513,11 +524,13 @@ public sealed class ValidationServiceTests : IDisposable
             _dataClientMock.Object,
             _instanceClientMock.Object,
             _defaultAppMetadata,
+            _translationServiceMock.Object,
             _modelSerialization,
             null!,
             null!,
             DefaultTaskId,
-            DefaultLanguage
+            DefaultLanguage,
+            null
         );
 
         var taskResult = await validationService.ValidateInstanceAtTask(
