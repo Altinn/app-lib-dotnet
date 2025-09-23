@@ -245,8 +245,9 @@ public class DataClient : IDataClient
             }
         }
 
+        var exception = await PlatformHttpException.CreateAsync(response);
         response.Dispose();
-        throw await PlatformHttpException.CreateAsync(response);
+        throw exception;
     }
 
     /// <inheritdoc />
