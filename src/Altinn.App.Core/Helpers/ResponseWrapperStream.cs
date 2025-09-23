@@ -15,6 +15,9 @@ internal sealed class ResponseWrapperStream : Stream
     /// <param name="innerStream">The inner stream to wrap and delegate operations to.</param>
     public ResponseWrapperStream(HttpResponseMessage response, Stream innerStream)
     {
+        ArgumentNullException.ThrowIfNull(response);
+        ArgumentNullException.ThrowIfNull(innerStream);
+        
         _response = response;
         _innerStream = innerStream;
     }
