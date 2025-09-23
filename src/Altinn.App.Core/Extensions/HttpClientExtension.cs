@@ -120,7 +120,7 @@ public static class HttpClientExtension
         string authorizationToken,
         string requestUri,
         string? platformAccessToken = null,
-        CancellationToken? cancellationToken = null
+        CancellationToken cancellationToken = default
     )
     {
         using HttpRequestMessage request = new(HttpMethod.Get, requestUri);
@@ -135,11 +135,7 @@ public static class HttpClientExtension
             request.Headers.Add(Constants.General.PlatformAccessTokenHeaderName, platformAccessToken);
         }
 
-        return await httpClient.SendAsync(
-            request,
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken ?? CancellationToken.None
-        );
+        return await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
     }
 
     /// <summary>
