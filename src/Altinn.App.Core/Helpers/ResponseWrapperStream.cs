@@ -72,6 +72,13 @@ internal sealed class ResponseWrapperStream : Stream
     public override void Flush() => _innerStream.Flush();
 
     /// <summary>
+    /// Asynchronously clears all buffers for this stream and causes any buffered data to be written to the underlying device.
+    /// </summary>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents the asynchronous flush operation.</returns>
+    public override Task FlushAsync(CancellationToken cancellationToken) => _innerStream.FlushAsync(cancellationToken);
+
+    /// <summary>
     /// Reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
     /// </summary>
     /// <param name="buffer">An array of bytes. When this method returns, the buffer contains the specified byte array with the values between offset and (offset + count - 1) replaced by the bytes read from the current source.</param>
@@ -83,6 +90,26 @@ internal sealed class ResponseWrapperStream : Stream
     /// <exception cref="ArgumentException">The sum of offset and count is larger than the buffer length.</exception>
     /// <exception cref="NotSupportedException">The stream does not support reading.</exception>
     public override int Read(byte[] buffer, int offset, int count) => _innerStream.Read(buffer, offset, count);
+
+    /// <summary>
+    /// Asynchronously reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
+    /// </summary>
+    /// <param name="buffer">The buffer to write the data into.</param>
+    /// <param name="offset">The byte offset in buffer at which to begin writing data from the stream.</param>
+    /// <param name="count">The maximum number of bytes to read.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents the asynchronous read operation. The value contains the total number of bytes read into the buffer.</returns>
+    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+        _innerStream.ReadAsync(buffer, offset, count, cancellationToken);
+
+    /// <summary>
+    /// Asynchronously reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
+    /// </summary>
+    /// <param name="buffer">The region of memory to write the data into.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents the asynchronous read operation. The value contains the total number of bytes read into the buffer.</returns>
+    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+        _innerStream.ReadAsync(buffer, cancellationToken);
 
     /// <summary>
     /// Sets the position within the current stream.
@@ -112,4 +139,24 @@ internal sealed class ResponseWrapperStream : Stream
     /// <exception cref="ArgumentException">The sum of offset and count is greater than the buffer length.</exception>
     /// <exception cref="NotSupportedException">The stream does not support writing.</exception>
     public override void Write(byte[] buffer, int offset, int count) => _innerStream.Write(buffer, offset, count);
+
+    /// <summary>
+    /// Asynchronously writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
+    /// </summary>
+    /// <param name="buffer">The buffer to write data from.</param>
+    /// <param name="offset">The zero-based byte offset in buffer from which to begin copying bytes to the stream.</param>
+    /// <param name="count">The number of bytes to write.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents the asynchronous write operation.</returns>
+    public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+        _innerStream.WriteAsync(buffer, offset, count, cancellationToken);
+
+    /// <summary>
+    /// Asynchronously writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
+    /// </summary>
+    /// <param name="buffer">The region of memory to write data from.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents the asynchronous write operation.</returns>
+    public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) =>
+        _innerStream.WriteAsync(buffer, cancellationToken);
 }
