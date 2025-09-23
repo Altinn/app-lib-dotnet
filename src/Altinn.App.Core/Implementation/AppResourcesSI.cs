@@ -239,7 +239,7 @@ public class AppResourcesSI : IAppResources
             foreach (string file in Directory.GetFiles(layoutsPath))
             {
                 string data = File.ReadAllText(file, Encoding.UTF8);
-                string name = file.Replace(layoutsPath, string.Empty).Replace(".json", string.Empty);
+                string name = Path.GetFileNameWithoutExtension(file);
                 // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 layouts.Add(name, JsonConvert.DeserializeObject<object>(data)!);
             }
@@ -299,7 +299,7 @@ public class AppResourcesSI : IAppResources
             foreach (string file in Directory.GetFiles(layoutsPath))
             {
                 string data = File.ReadAllText(file, Encoding.UTF8);
-                string name = file.Replace(layoutsPath, string.Empty).Replace(".json", string.Empty);
+                string name = Path.GetFileNameWithoutExtension(layoutsPath);
                 // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 layouts.Add(name, JsonConvert.DeserializeObject<object>(data)!);
             }
@@ -476,7 +476,7 @@ public class AppResourcesSI : IAppResources
 
     private static byte[] ReadFileContentsFromLegalPath(string legalPath, string filePath)
     {
-        var fullFileName = legalPath + filePath;
+        var fullFileName = Path.Join(legalPath, filePath);
         if (!PathHelper.ValidateLegalFilePath(legalPath, fullFileName))
         {
             throw new ArgumentException("Invalid argument", nameof(filePath));

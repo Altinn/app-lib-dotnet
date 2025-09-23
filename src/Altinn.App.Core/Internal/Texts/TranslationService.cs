@@ -183,7 +183,7 @@ internal class TranslationService : ITranslationService
             ?? GetBackendFallbackResource(key, language);
     }
 
-    private TextResourceElement? GetBackendFallbackResource(string key, string language)
+    private static TextResourceElement? GetBackendFallbackResource(string key, string language)
     {
         // When the list of backend text resources grows, we might want to have these in a separate file or similar.
         switch (key)

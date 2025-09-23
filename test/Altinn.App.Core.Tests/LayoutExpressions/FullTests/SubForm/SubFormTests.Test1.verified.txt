@@ -27,7 +27,7 @@
     CustomTextKey: backend.validation_errors.required,
     CustomTextParameters: {
       bindingName: simpleBinding,
-      componentID: Address,
+      componentId: Address,
       field: Address,
       layoutId: subFormLayout,
       pageId: SubPage
@@ -43,7 +43,7 @@
     CustomTextKey: backend.validation_errors.required,
     CustomTextParameters: {
       bindingName: simpleBinding,
-      componentID: Name,
+      componentId: Name,
       field: Name,
       layoutId: subFormLayout,
       pageId: SubPage
@@ -68,7 +68,7 @@
     CustomTextKey: backend.validation_errors.required,
     CustomTextParameters: {
       bindingName: simpleBinding,
-      componentID: Phone,
+      componentId: Phone,
       field: Phone,
       layoutId: subFormLayout,
       pageId: SubPage
@@ -84,7 +84,7 @@
     CustomTextKey: backend.validation_errors.required,
     CustomTextParameters: {
       bindingName: simpleBinding,
-      componentID: Email,
+      componentId: Email,
       field: Email,
       layoutId: subFormLayout,
       pageId: SubPage
@@ -118,7 +118,7 @@
     CustomTextKey: backend.validation_errors.required,
     CustomTextParameters: {
       bindingName: simpleBinding,
-      componentID: Address,
+      componentId: Address,
       field: Address,
       layoutId: subFormLayout,
       pageId: SubPage
@@ -134,7 +134,7 @@
     CustomTextKey: backend.validation_errors.required,
     CustomTextParameters: {
       bindingName: simpleBinding,
-      componentID: Name,
+      componentId: Name,
       field: Name,
       layoutId: subFormLayout,
       pageId: SubPage
@@ -159,7 +159,7 @@
     CustomTextKey: backend.validation_errors.required,
     CustomTextParameters: {
       bindingName: simpleBinding,
-      componentID: Phone,
+      componentId: Phone,
       field: Phone,
       layoutId: subFormLayout,
       pageId: SubPage
