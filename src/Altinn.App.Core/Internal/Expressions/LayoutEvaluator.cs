@@ -150,9 +150,16 @@ public static class LayoutEvaluator
                                 Severity = ValidationIssueSeverity.Error,
                                 DataElementId = field.DataElementIdentifier.ToString(),
                                 Field = field.Field,
-                                Description =
-                                    $"{field.Field} is required in component with id {context.Component.LayoutId}.{context.Component.PageId}.{context.Component.Id} for binding {bindingName}",
                                 Code = "required",
+                                CustomTextKey = "backend.validation_errors.required",
+                                CustomTextParameters = new()
+                                {
+                                    ["field"] = field.Field,
+                                    ["layoutId"] = context.Component.LayoutId,
+                                    ["pageId"] = context.Component.PageId,
+                                    ["componentId"] = context.Component.Id,
+                                    ["bindingName"] = bindingName,
+                                },
                             }
                         );
                     }
