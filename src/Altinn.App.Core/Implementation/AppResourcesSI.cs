@@ -299,7 +299,7 @@ public class AppResourcesSI : IAppResources
             foreach (string file in Directory.GetFiles(layoutsPath))
             {
                 string data = File.ReadAllText(file, Encoding.UTF8);
-                string name = Path.GetFileNameWithoutExtension(layoutsPath);
+                string name = Path.GetFileNameWithoutExtension(file);
                 // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
                 layouts.Add(name, JsonConvert.DeserializeObject<object>(data)!);
             }
