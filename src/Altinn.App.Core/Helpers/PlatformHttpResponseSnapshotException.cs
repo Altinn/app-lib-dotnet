@@ -22,22 +22,34 @@ public sealed class PlatformHttpResponseSnapshotException : PlatformHttpExceptio
     /// </summary>
     private const int MaxCapturedContentLength = 16 * 1024; // 16 KB
 
-    /// <summary>Gets the numeric HTTP status code.</summary>
+    /// <summary>
+    /// Gets the numeric HTTP status code.
+    /// </summary>
     public int StatusCode { get; }
 
-    /// <summary>Gets the reason phrase sent by the server, if any.</summary>
+    /// <summary>
+    /// Gets the reason phrase sent by the server, if any.
+    /// </summary>
     public string? ReasonPhrase { get; }
 
-    /// <summary>Gets the HTTP version used by the response (e.g. "1.1", "2.0").</summary>
+    /// <summary>
+    /// Gets the HTTP version used by the response (e.g. "1.1", "2.0").
+    /// </summary>
     public string HttpVersion { get; }
 
-    /// <summary>Gets a flattened string representation of all response, content, and trailing headers.</summary>
+    /// <summary>
+    /// Gets a flattened string representation of all response, content, and trailing headers.
+    /// </summary>
     public string Headers { get; }
 
-    /// <summary>Gets the response body content as a string.</summary>
+    /// <summary>
+    /// Gets the response body content as a string (possibly truncated).
+    /// </summary>
     public string Content { get; }
 
-    /// <summary>Gets a value indicating whether the content was truncated due to the configured maximum length.</summary>
+    /// <summary>
+    /// Gets a value indicating whether the content was truncated due to the configured maximum length.
+    /// </summary>
     public bool ContentTruncated { get; }
 
     /// <summary>
@@ -47,6 +59,7 @@ public sealed class PlatformHttpResponseSnapshotException : PlatformHttpExceptio
     /// </summary>
     /// <param name="response">The HTTP response to snapshot and dispose.</param>
     /// <param name="cancellationToken">A cancellation token to cancel reading the content.</param>
+    /// <returns>The constructed <see cref="PlatformHttpResponseSnapshotException"/>.</returns>
     public static async Task<PlatformHttpResponseSnapshotException> CreateAndDisposeHttpResponse(
         HttpResponseMessage response,
         CancellationToken cancellationToken = default
@@ -56,9 +69,10 @@ public sealed class PlatformHttpResponseSnapshotException : PlatformHttpExceptio
 
         try
         {
+            // Snapshot content first (handle null)
             string content = response.Content is null
                 ? string.Empty
-                : await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                : await response.Content.ReadAsStringAsync(cancellationToken);
 
             bool truncated = content.Length > MaxCapturedContentLength;
             if (truncated)
@@ -82,18 +96,15 @@ public sealed class PlatformHttpResponseSnapshotException : PlatformHttpExceptio
                 safeResponse.Headers.TryAddWithoutValidation(h.Key, h.Value);
             }
 
-            // Attach an empty content so we can preserve content headers without any live stream
-            safeResponse.Content = new ByteArrayContent(Array.Empty<byte>());
+            // Attach a diagnostic snapshot body for legacy consumers (text only, truncated)
+            string mediaType = response.Content?.Headers?.ContentType?.MediaType ?? "text/plain";
+            var safeContent = new StringContent(content, Encoding.UTF8, mediaType);
+            safeResponse.Content = safeContent;
 
-            if (response.Content is not null)
-            {
-                foreach (KeyValuePair<string, IEnumerable<string>> h in response.Content.Headers)
-                {
-                    safeResponse.Content.Headers.TryAddWithoutValidation(h.Key, h.Value);
-                }
-            }
+            // Important: do not copy content headers blindly (avoid Content-Length/Encoding mismatch).
+            // StringContent already sets Content-Type (with charset) appropriately.
 
-            // Copy trailing headers if present (available on HTTP/2+)
+            // Copy trailing headers if present (HTTP/2+)
             foreach (KeyValuePair<string, IEnumerable<string>> h in response.TrailingHeaders)
             {
                 safeResponse.TrailingHeaders.TryAddWithoutValidation(h.Key, h.Value);
@@ -123,7 +134,17 @@ public sealed class PlatformHttpResponseSnapshotException : PlatformHttpExceptio
         }
     }
 
-    /// <summary>Initializes a new instance of the <see cref="PlatformHttpResponseSnapshotException"/> class.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PlatformHttpResponseSnapshotException"/> class.
+    /// </summary>
+    /// <param name="safeResponse">A sanitized, non-streaming <see cref="HttpResponseMessage"/> suitable for legacy consumers.</param>
+    /// <param name="statusCode">The numeric HTTP status code.</param>
+    /// <param name="reasonPhrase">The reason phrase sent by the server, if any.</param>
+    /// <param name="httpVersion">The HTTP version used by the response.</param>
+    /// <param name="headers">A flattened string representation of response, content, and trailing headers.</param>
+    /// <param name="content">The response body content as a string (possibly truncated).</param>
+    /// <param name="contentTruncated">Whether the content was truncated.</param>
+    /// <param name="message">The exception message.</param>
     private PlatformHttpResponseSnapshotException(
         HttpResponseMessage safeResponse,
         int statusCode,
