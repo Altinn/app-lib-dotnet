@@ -1167,6 +1167,11 @@ public class DataClientTests
                 )
                 .ReturnsAsync(_testTokens.ServiceOwnerToken);
 
+            // Setup HttpClientFactory mock to return a streaming client
+            DelegatingHandlerStub streamingDelegatingHandler = new(dataClientDelegatingHandler);
+            HttpClient streamingHttpClient = new(streamingDelegatingHandler) { Timeout = TimeSpan.FromMinutes(30) };
+            mocks.HttpClientFactoryMock.Setup(x => x.CreateClient("DataClient.Streaming")).Returns(streamingHttpClient);
+
             var services = new ServiceCollection();
             services.Configure<PlatformSettings>(options => options.ApiStorageEndpoint = ApiStorageEndpoint);
             services.Configure<GeneralSettings>(options => options.HostName = "tt02.altinn.no");

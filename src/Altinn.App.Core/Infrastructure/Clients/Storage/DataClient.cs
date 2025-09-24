@@ -34,6 +34,7 @@ public class DataClient : IDataClient
     private readonly ModelSerializationService _modelSerializationService;
     private readonly Telemetry? _telemetry;
     private readonly HttpClient _client;
+    private readonly HttpClient _streamingClient;
 
     private readonly AuthenticationMethod _defaultAuthenticationMethod = StorageAuthenticationMethod.CurrentUser();
 
@@ -56,6 +57,18 @@ public class DataClient : IDataClient
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         _client = httpClient;
+
+        // Configure streaming client
+        var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+        _streamingClient = httpClientFactory.CreateClient("DataClient.Streaming");
+
+        _streamingClient.BaseAddress = new Uri(_platformSettings.ApiStorageEndpoint);
+        _streamingClient.DefaultRequestHeaders.Add(
+            General.SubscriptionKeyHeaderName,
+            _platformSettings.SubscriptionKey
+        );
+        _streamingClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        _streamingClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
     }
 
     /// <inheritdoc />
@@ -225,7 +238,7 @@ public class DataClient : IDataClient
             cancellationToken: cancellationToken
         );
 
-        HttpResponseMessage response = await _client.GetStreamingAsync(
+        HttpResponseMessage response = await _streamingClient.GetStreamingAsync(
             token,
             apiUrl,
             cancellationToken: cancellationToken
