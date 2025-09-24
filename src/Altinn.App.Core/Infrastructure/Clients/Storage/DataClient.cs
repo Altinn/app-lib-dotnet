@@ -247,7 +247,8 @@ public class DataClient : IDataClient
 
         throw await PlatformHttpResponseSnapshotException.CreateAndDisposeHttpResponse(
             response,
-            cancellationToken: cancellationToken);
+            cancellationToken: cancellationToken
+        );
     }
 
     /// <inheritdoc />

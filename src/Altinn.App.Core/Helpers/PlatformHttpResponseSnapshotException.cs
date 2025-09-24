@@ -1,87 +1,114 @@
 using System.Net.Http.Headers;
 using System.Text;
-using Altinn.App.Core.Exceptions;
 
 namespace Altinn.App.Core.Helpers;
 
 /// <summary>
 /// Exception that represents a failed HTTP call to the Altinn Platform,
-/// containing an immutable snapshot of the HTTP response.
+/// containing an immutable snapshot of the HTTP response, while remaining
+/// backward compatible with <see cref="PlatformHttpException"/>.
 /// <para>
-/// Unlike <see cref="PlatformHttpException"/>, this class does not hold on to a
-/// <see cref="HttpResponseMessage"/> instance. Instead, it copies relevant
-/// metadata and the response body into strings, making it safe to throw,
-/// log, and persist without leaking disposable resources.
+/// This class derives from <see cref="PlatformHttpException"/> so existing
+/// catch blocks continue to work. It passes a sanitized, non-streaming
+/// <see cref="HttpResponseMessage"/> to the base class to avoid keeping any
+/// live network resources, and it exposes string-based snapshot properties
+/// for safe logging and persistence.
 /// </para>
 /// </summary>
-public sealed class PlatformHttpResponseSnapshotException : AltinnException
+public sealed class PlatformHttpResponseSnapshotException : PlatformHttpException
 {
-    private const int MaxContentCharacters = 16 * 1024;
-
     /// <summary>
-    /// Gets the numeric HTTP status code.
+    /// The maximum number of characters captured from the response content.
     /// </summary>
+    private const int MaxCapturedContentLength = 16 * 1024; // 16 KB
+
+    /// <summary>Gets the numeric HTTP status code.</summary>
     public int StatusCode { get; }
 
-    /// <summary>
-    /// Gets the reason phrase sent by the server, if any.
-    /// </summary>
+    /// <summary>Gets the reason phrase sent by the server, if any.</summary>
     public string? ReasonPhrase { get; }
 
-    /// <summary>
-    /// Gets the HTTP version used by the response (e.g. "1.1", "2.0").
-    /// </summary>
+    /// <summary>Gets the HTTP version used by the response (e.g. "1.1", "2.0").</summary>
     public string HttpVersion { get; }
 
-    /// <summary>
-    /// Gets a flattened string representation of all response, content, and trailing headers.
-    /// </summary>
+    /// <summary>Gets a flattened string representation of all response, content, and trailing headers.</summary>
     public string Headers { get; }
 
-    /// <summary>
-    /// Gets the response body content as a string.
-    /// </summary>
+    /// <summary>Gets the response body content as a string.</summary>
     public string Content { get; }
 
-    /// <summary>
-    /// Gets a value indicating whether the content was truncated due to the configured maximum length.
-    /// </summary>
+    /// <summary>Gets a value indicating whether the content was truncated due to the configured maximum length.</summary>
     public bool ContentTruncated { get; }
 
     /// <summary>
     /// Creates a new <see cref="PlatformHttpResponseSnapshotException"/> by snapshotting
     /// the provided <see cref="HttpResponseMessage"/> into immutable string values,
-    /// and then disposes the response.
+    /// constructing a sanitized clone for the base class, and then disposing the original response.
     /// </summary>
     /// <param name="response">The HTTP response to snapshot and dispose.</param>
     /// <param name="cancellationToken">A cancellation token to cancel reading the content.</param>
     public static async Task<PlatformHttpResponseSnapshotException> CreateAndDisposeHttpResponse(
         HttpResponseMessage response,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentNullException.ThrowIfNull(response);
 
         try
         {
-            string content = await response.Content.ReadAsStringAsync(cancellationToken);
+            string content = response.Content is null
+                ? string.Empty
+                : await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
-            bool truncated = content.Length > MaxContentCharacters;
+            bool truncated = content.Length > MaxCapturedContentLength;
             if (truncated)
             {
-                content = content[..MaxContentCharacters];
+                content = content[..MaxCapturedContentLength];
             }
 
             string headers = FlattenHeaders(response.Headers, response.Content?.Headers, response.TrailingHeaders);
             string message = BuildMessage((int)response.StatusCode, response.ReasonPhrase, content, truncated);
 
+            // Build a sanitized, non-streaming HttpResponseMessage for the base class
+            var safeResponse = new HttpResponseMessage(response.StatusCode)
+            {
+                ReasonPhrase = response.ReasonPhrase,
+                Version = response.Version,
+            };
+
+            // Copy normal headers
+            foreach (KeyValuePair<string, IEnumerable<string>> h in response.Headers)
+            {
+                safeResponse.Headers.TryAddWithoutValidation(h.Key, h.Value);
+            }
+
+            // Attach an empty content so we can preserve content headers without any live stream
+            safeResponse.Content = new ByteArrayContent(Array.Empty<byte>());
+
+            if (response.Content is not null)
+            {
+                foreach (KeyValuePair<string, IEnumerable<string>> h in response.Content.Headers)
+                {
+                    safeResponse.Content.Headers.TryAddWithoutValidation(h.Key, h.Value);
+                }
+            }
+
+            // Copy trailing headers if present (available on HTTP/2+)
+            foreach (KeyValuePair<string, IEnumerable<string>> h in response.TrailingHeaders)
+            {
+                safeResponse.TrailingHeaders.TryAddWithoutValidation(h.Key, h.Value);
+            }
+
             return new PlatformHttpResponseSnapshotException(
+                safeResponse,
                 statusCode: (int)response.StatusCode,
                 reasonPhrase: response.ReasonPhrase,
                 httpVersion: response.Version?.ToString() ?? string.Empty,
                 headers: headers,
                 content: content,
                 contentTruncated: truncated,
-                message: message);
+                message: message
+            );
         }
         finally
         {
@@ -96,19 +123,22 @@ public sealed class PlatformHttpResponseSnapshotException : AltinnException
         }
     }
 
+    /// <summary>Initializes a new instance of the <see cref="PlatformHttpResponseSnapshotException"/> class.</summary>
     private PlatformHttpResponseSnapshotException(
+        HttpResponseMessage safeResponse,
         int statusCode,
         string? reasonPhrase,
         string httpVersion,
         string headers,
         string content,
         bool contentTruncated,
-        string message)
-        : base(message)
+        string message
+    )
+        : base(safeResponse, message)
     {
         StatusCode = statusCode;
         ReasonPhrase = reasonPhrase;
-        HttpVersion = httpVersion;
+        HttpVersion = string.IsNullOrEmpty(httpVersion) ? string.Empty : httpVersion;
         Headers = headers;
         Content = content;
         ContentTruncated = contentTruncated;
@@ -118,20 +148,19 @@ public sealed class PlatformHttpResponseSnapshotException : AltinnException
     {
         StringBuilder sb = new StringBuilder().Append(statusCode).Append(' ').Append(reason ?? string.Empty);
         if (string.IsNullOrEmpty(content))
-        {
             return sb.ToString();
-        }
 
         sb.Append(" - ").Append(content);
-        if (truncated) sb.Append("… [truncated]");
-
+        if (truncated)
+            sb.Append("… [truncated]");
         return sb.ToString();
     }
 
     private static string FlattenHeaders(
         HttpResponseHeaders? responseHeaders,
         HttpContentHeaders? contentHeaders,
-        HttpResponseHeaders? trailingHeaders)
+        HttpResponseHeaders? trailingHeaders
+    )
     {
         var sb = new StringBuilder();
 
@@ -143,11 +172,11 @@ public sealed class PlatformHttpResponseSnapshotException : AltinnException
 
         void Append(string prefix, IEnumerable<KeyValuePair<string, IEnumerable<string>>>? headers)
         {
-            if (headers is null) return;
+            if (headers is null)
+                return;
             foreach ((string key, IEnumerable<string> values) in headers)
             {
-                sb.Append(prefix).Append(": ").Append(key).Append(": ")
-                    .AppendLine(string.Join(", ", values));
+                sb.Append(prefix).Append(": ").Append(key).Append(": ").AppendLine(string.Join(", ", values));
             }
         }
     }

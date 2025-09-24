@@ -552,7 +552,7 @@ public class DataClientTests
             UriKind.RelativeOrAbsolute
         );
 
-        var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () =>
+        var actual = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
             await fixture.DataClient.GetBinaryDataStream(
                 "ttd",
                 "app",
@@ -587,7 +587,7 @@ public class DataClientTests
             }
         );
 
-        var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () =>
+        var actual = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
             await fixture.DataClient.GetBinaryDataStream(
                 "ttd",
                 "app",
