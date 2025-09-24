@@ -17,7 +17,7 @@ internal sealed class ResponseWrapperStream : Stream
     {
         ArgumentNullException.ThrowIfNull(response);
         ArgumentNullException.ThrowIfNull(innerStream);
-        
+
         _response = response;
         _innerStream = innerStream;
     }

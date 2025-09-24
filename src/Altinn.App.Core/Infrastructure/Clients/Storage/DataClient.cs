@@ -245,9 +245,9 @@ public class DataClient : IDataClient
             }
         }
 
-        var exception = await PlatformHttpException.CreateAsync(response);
-        response.Dispose();
-        throw exception;
+        throw await PlatformHttpResponseSnapshotException.CreateAndDisposeHttpResponse(
+            response,
+            cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />
