@@ -152,7 +152,7 @@ internal interface IProcessEngine
 internal sealed class ProcessEngine : IProcessEngine
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly Channel<ProcessEngineJob> _channel;
+    private readonly Channel<ProcessEngineJob> _inbox;
     private readonly ProcessEngineSettings _settings;
     private readonly TimeProvider _timeProvider;
     private CancellationTokenSource? _cancellationTokenSource;
@@ -173,7 +173,7 @@ internal sealed class ProcessEngine : IProcessEngine
         _taskHandler = serviceProvider.GetRequiredService<IProcessEngineTaskHandler>();
         _timeProvider = serviceProvider.GetService<TimeProvider>() ?? TimeProvider.System;
         _settings = serviceProvider.GetRequiredService<IOptions<ProcessEngineSettings>>().Value;
-        _channel = Channel.CreateBounded<ProcessEngineJob>(
+        _inbox = Channel.CreateBounded<ProcessEngineJob>(
             new BoundedChannelOptions(_settings.QueueCapacity)
             {
                 SingleReader = true,
@@ -256,13 +256,13 @@ internal sealed class ProcessEngine : IProcessEngine
     )
     {
         // TODO: persist to database if `updateDatabase` is true
-        await _channel.Writer.WriteAsync(job, cancellationToken);
+        await _inbox.Writer.WriteAsync(job, cancellationToken);
     }
 
     private ProcessEngineJob? DequeueJob()
     {
         // TODO: Do we persist this checkout in the db? Probably not
-        return _channel.Reader.TryRead(out var job) ? job : null;
+        return _inbox.Reader.TryRead(out var job) ? job : null;
     }
 
     private Task PopulateJobsFromStorage(CancellationToken cancellationToken)
@@ -303,6 +303,14 @@ internal sealed class ProcessEngine : IProcessEngine
         }
     }
 
+    private void TrackShouldRunResult(bool result)
+    {
+        if (answer is false)
+            LastAnswerWasNo = true;
+        else
+            LastAnswerWasNo = false;
+    }
+
     private async Task<bool> ShouldRun(CancellationToken cancellationToken)
     {
         // E.g. "do we hold the lock?"
@@ -313,6 +321,12 @@ internal sealed class ProcessEngine : IProcessEngine
         await Task.Delay(100, cancellationToken);
 
         _lastShouldRunResult = true;
+
+        if (_lastShouldRunResult is true && LastAnswerWasNo)
+        {
+            await PopulateJobsFromStorage(cancellationToken);
+        }
+
         return _lastShouldRunResult.Value;
     }
 
@@ -327,7 +341,7 @@ internal sealed class ProcessEngine : IProcessEngine
         var requeueJobs = new List<ProcessEngineJob>();
 
         // Loop over queue
-        while (_channel.Reader.Count > 0 && !cancellationToken.IsCancellationRequested)
+        while (_inbox.Reader.Count > 0 && !cancellationToken.IsCancellationRequested)
         {
             var job = DequeueJob();
             if (job is null)
