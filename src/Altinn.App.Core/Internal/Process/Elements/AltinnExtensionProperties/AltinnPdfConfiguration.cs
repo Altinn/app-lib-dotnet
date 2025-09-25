@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 /// <summary>
 /// Configuration properties for PDF in a process task
 /// </summary>
-public class AltinnPdfConfiguration
+public sealed class AltinnPdfConfiguration
 {
     /// <summary>
     /// Set the data type to use when storing the PDF. If not set, ref-data-as-pdf will be used.

@@ -3223,7 +3223,7 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
         [System.Xml.Serialization.XmlElement("paymentReceiptPdfDataType", Namespace="http://altinn.no/process")]
         public string? PaymentReceiptPdfDataType { get; set; }
     }
-    public class AltinnPdfConfiguration
+    public sealed class AltinnPdfConfiguration
     {
         public AltinnPdfConfiguration() { }
         [System.Xml.Serialization.XmlElement("dataTypeId", Namespace="http://altinn.no/process")]
