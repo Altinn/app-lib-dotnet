@@ -396,6 +396,14 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             new MemoryAsStream(bytes),
             authenticationMethod: GetAuthenticationMethod(change.DataType)
         );
+
+        if (change.Metadata is not null)
+        {
+            dataElement.Metadata = [.. change.Metadata];
+            change.Lock = true;
+            await _dataClient.Update(Instance, dataElement);
+        }
+
         _binaryCache.Set(dataElement, bytes);
         if (change is FormDataChange formDataChange)
         {

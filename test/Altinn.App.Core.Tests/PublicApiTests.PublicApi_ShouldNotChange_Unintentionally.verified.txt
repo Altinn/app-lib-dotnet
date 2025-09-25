@@ -3919,6 +3919,7 @@ namespace Altinn.App.Core.Models
         public Altinn.App.Core.Models.DataElementIdentifier DataElementIdentifier { get; }
         public required Altinn.Platform.Storage.Interface.Models.DataType DataType { get; init; }
         public required Altinn.App.Core.Models.ChangeType Type { get; init; }
+        public void AddMetadata(string key, string value) { }
     }
     public sealed class DataElementChanges
     {
