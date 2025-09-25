@@ -125,7 +125,7 @@ public class PdfService : IPdfService
 
         TextResource? textResource = await GetTextResource(instance, language);
 
-        var pdfContent = await GeneratePdfContent(instance, language, false, textResource, ct);
+        await using Stream pdfContent = await GeneratePdfContent(instance, language, false, textResource, ct);
 
         string fileName = GetFileName(instance, textResource, fileNameTextResourceElementId);
         await _dataClient.InsertBinaryData(
