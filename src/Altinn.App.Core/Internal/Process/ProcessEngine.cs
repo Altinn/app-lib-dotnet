@@ -392,7 +392,7 @@ public class ProcessEngine : IProcessEngine
             {
                 ErrorTitle = "User action not supported!",
                 ErrorMessage =
-                    $"Service tasks do not support running user actions! Received action param {request.Action}.",
+                    $"Service tasks do not support running user actions! Received action param {LogSanitizer.Sanitize(request.Action)}.",
                 ErrorType = ProcessErrorType.Conflict,
             };
 
