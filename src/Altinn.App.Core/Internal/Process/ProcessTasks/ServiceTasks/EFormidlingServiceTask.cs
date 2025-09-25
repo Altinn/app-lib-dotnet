@@ -11,7 +11,7 @@ internal interface IEFormidlingServiceTask : IServiceTask { }
 /// <summary>
 /// Service task that sends eFormidling shipment, if EFormidling is enabled in config.
 /// </summary>
-public class EFormidlingServiceTask : IEFormidlingServiceTask
+internal sealed class EFormidlingServiceTask : IEFormidlingServiceTask
 {
     private readonly ILogger<EFormidlingServiceTask> _logger;
     private readonly IEFormidlingService? _eFormidlingService;

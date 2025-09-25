@@ -3657,21 +3657,9 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
 }
 namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks
 {
-    public class EFormidlingServiceTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask, Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.IServiceTask
-    {
-        public EFormidlingServiceTask(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.EFormidlingServiceTask> logger, Altinn.App.Core.EFormidling.Interface.IEFormidlingService? eFormidlingService = null, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings>? appSettings = null) { }
-        public string Type { get; }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext context) { }
-    }
     public interface IServiceTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask
     {
         System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext context);
-    }
-    public class PdfServiceTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask, Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.IServiceTask
-    {
-        public PdfServiceTask(Altinn.App.Core.Internal.Pdf.IPdfService pdfService, Altinn.App.Core.Internal.Process.IProcessReader processReader, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.PdfServiceTask> logger) { }
-        public string Type { get; }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext context) { }
     }
     public sealed class ServiceTaskContext : System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext>
     {

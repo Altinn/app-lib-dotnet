@@ -10,7 +10,7 @@ internal interface IPdfServiceTask : IServiceTask { }
 /// <summary>
 /// Service task that generates PDFs for tasks specified in the process configuration.
 /// </summary>
-public class PdfServiceTask : IPdfServiceTask
+internal sealed class PdfServiceTask : IPdfServiceTask
 {
     private readonly IPdfService _pdfService;
     private readonly IProcessReader _processReader;
