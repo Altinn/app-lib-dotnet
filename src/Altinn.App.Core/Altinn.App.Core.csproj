@@ -78,5 +78,7 @@
     <InternalsVisibleTo Include="Altinn.App.Core.Tests" />
     <InternalsVisibleTo Include="Altinn.App.Clients.Fiks.Tests" />
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+    <InternalsVisibleTo Include="Altinn.Application.For.IntegrationTesting" />
+    <InternalsVisibleTo Include="Altinn.Application.For.IntegrationTesting.Scenario" />
   </ItemGroup>
 </Project>
