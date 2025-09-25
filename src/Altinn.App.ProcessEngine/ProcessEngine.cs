@@ -142,6 +142,46 @@ internal static class ProcessEngineJobExtensions
         job.Tasks.Where(x => !x.Status.IsDone()).OrderBy(x => x.ProcessingOrder);
 }
 
+internal sealed class BooleanBuffer
+{
+    private readonly Queue<bool> _queue;
+    private readonly int _maxSize;
+
+    public BooleanBuffer(int maxSize = 10)
+    {
+        _maxSize = maxSize;
+        _queue = new Queue<bool>(maxSize);
+    }
+
+    public void Add(bool value)
+    {
+        if (_queue.Count >= _maxSize)
+            _queue.Dequeue();
+
+        _queue.Enqueue(value);
+    }
+
+    public bool? Latest => _queue.LastOrDefault();
+    public bool? Previous => _queue.ElementAtOrDefault(_queue.Count - 2);
+
+    public int ConsecutiveFalseCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (var value in _queue.Reverse())
+            {
+                if (!value)
+                    count++;
+                else
+                    break;
+            }
+
+            return count;
+        }
+    }
+}
+
 internal interface IProcessEngine
 {
     Task Start(CancellationToken cancellationToken = default);
@@ -156,13 +196,10 @@ internal sealed class ProcessEngine : IProcessEngine
     private readonly ProcessEngineSettings _settings;
     private readonly TimeProvider _timeProvider;
     private CancellationTokenSource? _cancellationTokenSource;
-
-    // private TaskCompletionSource<bool>? _mainLoopTaskAwaiter;
     private Task? _mainLoopTask;
 
-    // private Task? _cleanupTask;
-    private bool? _lastShouldRunResult;
     private readonly IProcessEngineTaskHandler _taskHandler;
+    private readonly BooleanBuffer _enabledStatusHistory = new();
 
     private readonly SemaphoreSlim _cleanupLock = new(1, 1);
     private volatile bool _cleanupRequired;
@@ -235,8 +272,8 @@ internal sealed class ProcessEngine : IProcessEngine
         if (!request.IsValid())
             return ProcessEngineResponse.Rejected("Invalid task request");
 
-        _lastShouldRunResult ??= await ShouldRun(cancellationToken);
-        if (_lastShouldRunResult is false)
+        var enabled = _enabledStatusHistory.Latest ?? await ShouldRun(cancellationToken);
+        if (!enabled)
             return ProcessEngineResponse.Rejected(
                 "ProcessEngine is currently inactive. Did you call the right instance?"
             );
@@ -303,12 +340,12 @@ internal sealed class ProcessEngine : IProcessEngine
         }
     }
 
-    private void TrackShouldRunResult(bool result)
+    public static TimeSpan GetExponentialBackoff(int iteration)
     {
-        if (answer is false)
-            LastAnswerWasNo = true;
-        else
-            LastAnswerWasNo = false;
+        double baseDelaySeconds = 1.0;
+        double multiplier = Math.Pow(2, iteration - 2);
+
+        return TimeSpan.FromSeconds(baseDelaySeconds * multiplier);
     }
 
     private async Task<bool> ShouldRun(CancellationToken cancellationToken)
@@ -318,16 +355,31 @@ internal sealed class ProcessEngine : IProcessEngine
         // TODO: Implement logic to determine if the process engine should run
         // TODO: Some sort of progressive backoff if previous answer was "no"
 
-        await Task.Delay(100, cancellationToken);
+        bool enabled = await Task.Run(
+            async () =>
+            {
+                await Task.Delay(100, cancellationToken);
+                return true;
+            },
+            cancellationToken
+        );
 
-        _lastShouldRunResult = true;
+        _enabledStatusHistory.Add(enabled);
 
-        if (_lastShouldRunResult is true && LastAnswerWasNo)
+        // Populate queue if we just transitioned from disabled to enabled
+        if (_enabledStatusHistory is { Latest: true, Previous: false })
         {
             await PopulateJobsFromStorage(cancellationToken);
         }
 
-        return _lastShouldRunResult.Value;
+        // Progressive backoff we have been disabled for two or more consecutive checks
+        if (_enabledStatusHistory is { Latest: false, Previous: false })
+        {
+            TimeSpan backoff = GetExponentialBackoff(_enabledStatusHistory.ConsecutiveFalseCount);
+            await Task.Delay(backoff, cancellationToken);
+        }
+
+        return enabled;
     }
 
     private async Task MainLoop(CancellationToken cancellationToken)
@@ -394,6 +446,11 @@ internal sealed class ProcessEngine : IProcessEngine
 
             await UpdateJobInStorage(job, cancellationToken);
         }
+
+        /*
+         * TODO: Some sort of inbox -> internal queue strategy here.
+         * If the inbox is full, we cannot enqueue the jobs we just took out previously.
+         */
 
         // Requeue jobs that had failed tasks. Task status is already updated in db
         foreach (var job in requeueJobs)
