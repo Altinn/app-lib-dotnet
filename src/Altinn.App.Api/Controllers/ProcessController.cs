@@ -306,7 +306,7 @@ public class ProcessController : ControllerBase
         }
         catch (PlatformHttpException e)
         {
-            _logger.LogError("Platform exception when processing next. {message}", e.Message);
+            _logger.LogError("Platform exception when processing next. {Message}", e.Message);
             return HandlePlatformHttpException(e, "Process next failed.");
         }
         catch (Exception exception)
