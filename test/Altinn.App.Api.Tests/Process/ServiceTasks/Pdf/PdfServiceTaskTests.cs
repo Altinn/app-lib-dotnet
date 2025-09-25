@@ -155,7 +155,7 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
         responseAsString
             .Should()
             .Be(
-                "{\"title\":\"Service task failed!\",\"status\":500,\"detail\":\"Service task pdf returned a failed result!\"}"
+                "{\"title\":\"Service task failed!\",\"status\":500,\"detail\":\"Service task pdf failed with an exception!\"}"
             );
 
         // Double check that process did not move to the next task
