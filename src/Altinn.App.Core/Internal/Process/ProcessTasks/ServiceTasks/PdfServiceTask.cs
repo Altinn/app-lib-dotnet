@@ -35,14 +35,33 @@ public class PdfServiceTask : IPdfServiceTask
         string taskId = context.InstanceDataMutator.Instance.Process.CurrentTask.ElementId;
         Instance instance = context.InstanceDataMutator.Instance;
 
-        _logger.LogDebug("Calling PdfService for PDF Service Task {TaskId}.", taskId);
+        try
+        {
+            _logger.LogDebug("Calling PdfService for PDF Service Task {TaskId}.", taskId);
 
-        ValidAltinnPdfConfiguration config = GetValidAltinnPdfConfiguration(taskId);
-        await _pdfService.GenerateAndStorePdf(instance, taskId, config.Filename, context.CancellationToken);
+            ValidAltinnPdfConfiguration config = GetValidAltinnPdfConfiguration(taskId);
+            await _pdfService.GenerateAndStorePdf(
+                instance,
+                taskId,
+                config.DataTypeId,
+                config.Filename,
+                context.CancellationToken
+            );
 
-        _logger.LogDebug("Successfully called PdfService for PDF Service Task {TaskId}.", taskId);
+            _logger.LogDebug("Successfully called PdfService for PDF Service Task {TaskId}.", taskId);
 
-        return new ServiceTaskSuccessResult();
+            return ServiceTaskResult.Success();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occured while executing {Type} Service Task on taskId {TaskId}.",
+                Type,
+                taskId
+            );
+            return ServiceTaskResult.Failed();
+        }
     }
 
     private ValidAltinnPdfConfiguration GetValidAltinnPdfConfiguration(string taskId)

@@ -55,10 +55,24 @@ public class EFormidlingServiceTask : IEFormidlingServiceTask
             );
         }
 
-        _logger.LogDebug("Calling eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
-        await _eFormidlingService.SendEFormidlingShipment(instance);
-        _logger.LogDebug("Successfully called eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
+        try
+        {
+            _logger.LogDebug("Calling eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
+            await _eFormidlingService.SendEFormidlingShipment(instance);
+            _logger.LogDebug("Successfully called eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
 
-        return new ServiceTaskSuccessResult();
+            return ServiceTaskResult.Success();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occured while executing {Type} Service Task on taskId {TaskId}.",
+                Type,
+                taskId
+            );
+
+            return ServiceTaskResult.Failed();
+        }
     }
 }

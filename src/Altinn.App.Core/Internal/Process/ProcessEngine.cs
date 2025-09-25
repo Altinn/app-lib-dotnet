@@ -440,7 +440,7 @@ public class ProcessEngine : IProcessEngine
         catch (Exception ex)
         {
             activity?.Errored(ex);
-            _logger.LogError(ex, "Service task {ServiceTaskType} returned a failed result.", serviceTask.Type);
+            _logger.LogError(ex, "Service task {ServiceTaskType} returned an exception.", serviceTask.Type);
 
             return new ProcessChangeResult()
             {
