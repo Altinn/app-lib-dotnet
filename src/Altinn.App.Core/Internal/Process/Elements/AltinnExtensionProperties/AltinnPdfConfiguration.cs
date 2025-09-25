@@ -21,7 +21,10 @@ public class AltinnPdfConfiguration
 
     internal ValidAltinnPdfConfiguration Validate()
     {
-        return new ValidAltinnPdfConfiguration(DataTypeId, Filename);
+        string? normalizedDataTypeId = string.IsNullOrWhiteSpace(DataTypeId) ? null : DataTypeId.Trim();
+        string? normalizedFilename = string.IsNullOrWhiteSpace(Filename) ? null : Filename.Trim();
+
+        return new ValidAltinnPdfConfiguration(normalizedDataTypeId, normalizedFilename);
     }
 }
 
