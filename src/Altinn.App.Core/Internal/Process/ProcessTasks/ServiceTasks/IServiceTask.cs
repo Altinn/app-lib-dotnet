@@ -32,16 +32,23 @@ public sealed record ServiceTaskContext
 }
 
 /// <summary>
-/// This class represents the result of executing a service task.
+/// Base type for the result of executing a service task.
 /// </summary>
-public abstract class ServiceTaskResult { }
+public abstract record ServiceTaskResult
+{
+    /// <summary>Creates a successful result.</summary>
+    public static ServiceTaskSuccessResult Success() => new();
+
+    /// <summary>Creates a failed result.</summary>
+    public static ServiceTaskFailedResult Failed() => new();
+}
 
 /// <summary>
-/// This class represents a successful result of executing a service task.
+/// Represents a successful result of executing a service task.
 /// </summary>
-public sealed class ServiceTaskSuccessResult : ServiceTaskResult;
+public sealed record ServiceTaskSuccessResult : ServiceTaskResult;
 
 /// <summary>
-/// This class represents a failed result of executing a service task.
+/// Represents a failed result of executing a service task.
 /// </summary>
-public sealed class ServiceTaskFailedResult : ServiceTaskResult;
+public sealed record ServiceTaskFailedResult : ServiceTaskResult;
