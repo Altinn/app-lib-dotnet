@@ -48,7 +48,7 @@ internal sealed class PdfServiceTask : IPdfServiceTask
 
         _logger.LogDebug("Successfully called PdfService for PDF Service Task {TaskId}.", taskId);
 
-        return new ServiceTaskSuccessResult();
+        return ServiceTaskResult.Success();
     }
 
     private ValidAltinnPdfConfiguration GetValidAltinnPdfConfiguration(string taskId)

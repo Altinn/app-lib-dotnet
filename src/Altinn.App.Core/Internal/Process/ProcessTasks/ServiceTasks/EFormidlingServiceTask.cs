@@ -45,7 +45,7 @@ internal sealed class EFormidlingServiceTask : IEFormidlingServiceTask
             _logger.LogWarning(
                 "EFormidling has been added as a service task in the BPMN process definition but is not enabled in appsettings.json. No eFormidling shipment will be sent, but the service task will be completed."
             );
-            return new ServiceTaskSuccessResult();
+            return ServiceTaskResult.Success();
         }
 
         if (_eFormidlingService is null)
@@ -59,6 +59,6 @@ internal sealed class EFormidlingServiceTask : IEFormidlingServiceTask
         await _eFormidlingService.SendEFormidlingShipment(instance);
         _logger.LogDebug("Successfully called eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
 
-        return new ServiceTaskSuccessResult();
+        return ServiceTaskResult.Success();
     }
 }
