@@ -12,6 +12,7 @@ using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.App.Core.Helpers.Serialization;
+using Altinn.App.Core.Internal;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -181,6 +182,7 @@ internal sealed record TestFixture(
         builder.Services.AddTransient<InstanceDataUnitOfWorkInitializer>();
         builder.Services.AddSingleton<ModelSerializationService>();
         builder.Services.AddAppImplementationFactory();
+        builder.Services.AddRuntimeEnvironment();
 
         return new TestFixture(
             builder.Build(),
