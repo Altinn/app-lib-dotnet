@@ -1336,6 +1336,8 @@ namespace Altinn.App.Core.Features
         public static class Labels
         {
             public const string CorrespondenceId = "correspondence.id";
+            public const string FiksMessageId = "fiks.message.id";
+            public const string FiksMessageType = "fiks.message.type";
             public const string OrganisationName = "organisation.name";
             public const string OrganisationNumber = "organisation.number";
             public const string OrganisationSystemUserId = "organisation.systemuser.id";
@@ -3414,7 +3416,7 @@ namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask
     }
     public class EndTaskEventHandler : Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask.IEndTaskEventHandler
     {
-        public EndTaskEventHandler(Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskDataLocker processTaskDataLocker, Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskFinalizer processTaskFinisher, System.IServiceProvider serviceProvider, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask.EndTaskEventHandler> logger) { }
+        public EndTaskEventHandler(Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskDataLocker processTaskDataLocker, Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskFinalizer processTaskFinisher, System.IServiceProvider serviceProvider, Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask.EndTaskEventHandler> logger) { }
         public System.Threading.Tasks.Task Execute(Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask processTask, string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
     }
     public interface IAbandonTaskEventHandler
