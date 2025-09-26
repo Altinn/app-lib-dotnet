@@ -14,6 +14,8 @@ internal interface IProcessEngine
     Task<ProcessEngineResponse> EnqueueJob(ProcessEngineRequest request, CancellationToken cancellationToken = default);
 }
 
+// TODO: This is already a big boi. Partial classes? More services?
+
 internal sealed class ProcessEngine : IProcessEngine, IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
@@ -326,12 +328,9 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
             }
         }
 
-        /*
-         * TODO: Some sort of inbox -> internal queue strategy here.
-         * If the inbox is full, we cannot enqueue the jobs we just took out previously.
-         */
+        // Note: All task statuses are already updated in db
 
-        // Requeue jobs that had failed tasks. Task status is already updated in db
+        // Requeue jobs that had failed tasks first
         foreach (var job in requeueJobs)
         {
             await EnqueueJob(job, updateDatabase: false, cancellationToken);
