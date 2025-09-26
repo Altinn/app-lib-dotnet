@@ -21,9 +21,9 @@ internal sealed class PdfServiceTask : IPdfServiceTask
     /// </summary>
     public PdfServiceTask(IPdfService pdfService, IProcessReader processReader, ILogger<PdfServiceTask> logger)
     {
-        _logger = logger;
         _pdfService = pdfService;
         _processReader = processReader;
+        _logger = logger;
     }
 
     /// <inheritdoc />

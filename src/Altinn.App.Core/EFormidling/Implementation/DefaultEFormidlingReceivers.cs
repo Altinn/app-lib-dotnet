@@ -1,5 +1,4 @@
 using Altinn.App.Core.EFormidling.Interface;
-using Altinn.App.Core.Internal.App;
 using Altinn.Common.EFormidlingClient.Models.SBD;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -10,31 +9,25 @@ namespace Altinn.App.Core.EFormidling.Implementation;
 /// </summary>
 public class DefaultEFormidlingReceivers : IEFormidlingReceivers
 {
-    private readonly IAppMetadata _appMetadata;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultEFormidlingReceivers"/> class.
-    /// </summary>
-    /// <param name="appMetadata">Service for fetching application metadata</param>
-    public DefaultEFormidlingReceivers(IAppMetadata appMetadata)
-    {
-        _appMetadata = appMetadata;
-    }
-
     /// <inheritdoc />
-    public async Task<List<Receiver>> GetEFormidlingReceivers(Instance instance)
+    public Task<List<Receiver>> GetEFormidlingReceivers(Instance instance, string? receiverFromConfig = null)
     {
-        await Task.CompletedTask;
+        ArgumentNullException.ThrowIfNull(instance);
 
-        Identifier identifier = new Identifier
+        if (string.IsNullOrWhiteSpace(receiverFromConfig))
+        {
+            return Task.FromResult(new List<Receiver>());
+        }
+
+        var identifier = new Identifier
         {
             // 0192 prefix for all Norwegian organisations.
-            Value = $"0192:{(await _appMetadata.GetApplicationMetadata()).EFormidling.Receiver.Trim()}",
+            Value = $"0192:{receiverFromConfig.Trim()}",
             Authority = "iso6523-actorid-upis",
         };
 
-        Receiver receiver = new Receiver { Identifier = identifier };
+        var receiver = new Receiver { Identifier = identifier };
 
-        return new List<Receiver> { receiver };
+        return Task.FromResult<List<Receiver>>([receiver]);
     }
 }

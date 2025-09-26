@@ -1,8 +1,10 @@
 ﻿using System.Net;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Mocks;
+using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
 using Argon;
 using FluentAssertions;
@@ -23,6 +25,8 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
     private static readonly string _instanceId = $"{InstanceOwnerPartyId}/{_instanceGuid}";
 
     private readonly Mock<IEFormidlingService> _eFormidlingServiceMock = new Mock<IEFormidlingService>();
+    private readonly Mock<IEFormidlingConfigurationProvider> _eFormidlingConfigurationProviderMock =
+        new Mock<IEFormidlingConfigurationProvider>();
 
     public EFormidlingServiceTaskTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper)
@@ -30,6 +34,7 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         OverrideServicesForAllTests = (services) =>
         {
             services.AddSingleton(_eFormidlingServiceMock.Object);
+            services.AddSingleton(_eFormidlingConfigurationProviderMock.Object);
             services.AddTransient<IProcessClient, ProcessClientMock>();
         };
 
@@ -126,7 +131,9 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
 
         // Setup eFormidling service to throw exception
         _eFormidlingServiceMock
-            .Setup(x => x.SendEFormidlingShipment(It.IsAny<Instance>()))
+            .Setup(x =>
+                x.SendEFormidlingShipment(It.IsAny<Instance>(), It.IsAny<ValidAltinnEFormidlingConfiguration>())
+            )
             .ThrowsAsync(new Exception());
 
         using HttpClient client = GetRootedUserClient(Org, App);

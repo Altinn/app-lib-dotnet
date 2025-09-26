@@ -1,7 +1,7 @@
 ﻿using Altinn.App.Core.Configuration;
+using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
@@ -20,6 +20,7 @@ public class EFormidlingServiceTaskTests
     private readonly Mock<IOptions<AppSettings>> _appSettingsMock = new();
     private readonly Mock<IProcessReader> _processReaderMock = new();
     private readonly Mock<IHostEnvironment> _hostEnvironmentMock = new();
+    private readonly Mock<IEFormidlingConfigurationProvider> _eFormidlingConfigurationProvider = new();
     private readonly EFormidlingServiceTask _serviceTask;
 
     public EFormidlingServiceTaskTests()
@@ -30,7 +31,7 @@ public class EFormidlingServiceTaskTests
             _processReaderMock.Object,
             _hostEnvironmentMock.Object,
             _eFormidlingServiceMock.Object,
-            _appSettingsMock.Object
+            _eFormidlingConfigurationProvider.Object
         );
     }
 
@@ -49,7 +50,10 @@ public class EFormidlingServiceTaskTests
         await _serviceTask.Execute(parameters);
 
         // Assert
-        _eFormidlingServiceMock.Verify(x => x.SendEFormidlingShipment(instance), Times.Once);
+        _eFormidlingServiceMock.Verify(
+            x => x.SendEFormidlingShipment(instance, It.IsAny<ValidAltinnEFormidlingConfiguration>()),
+            Times.Once
+        );
         _loggerMock.Verify(
             x =>
                 x.Log(
@@ -83,7 +87,7 @@ public class EFormidlingServiceTaskTests
             _processReaderMock.Object,
             _hostEnvironmentMock.Object,
             null,
-            _appSettingsMock.Object
+            _eFormidlingConfigurationProvider.Object
         );
 
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
@@ -113,7 +117,10 @@ public class EFormidlingServiceTaskTests
         await _serviceTask.Execute(parameters);
 
         // Assert
-        _eFormidlingServiceMock.Verify(x => x.SendEFormidlingShipment(instance), Times.Once);
+        _eFormidlingServiceMock.Verify(
+            x => x.SendEFormidlingShipment(instance, It.IsAny<ValidAltinnEFormidlingConfiguration>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -143,7 +150,10 @@ public class EFormidlingServiceTaskTests
         await _serviceTask.Execute(parameters);
 
         // Assert
-        _eFormidlingServiceMock.Verify(x => x.SendEFormidlingShipment(instance), Times.Once);
+        _eFormidlingServiceMock.Verify(
+            x => x.SendEFormidlingShipment(instance, It.IsAny<ValidAltinnEFormidlingConfiguration>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -201,7 +211,10 @@ public class EFormidlingServiceTaskTests
         await _serviceTask.Execute(parameters);
 
         // Assert
-        _eFormidlingServiceMock.Verify(x => x.SendEFormidlingShipment(instance), Times.Once);
+        _eFormidlingServiceMock.Verify(
+            x => x.SendEFormidlingShipment(instance, It.IsAny<ValidAltinnEFormidlingConfiguration>()),
+            Times.Once
+        );
         _loggerMock.Verify(
             x =>
                 x.Log(
@@ -209,7 +222,10 @@ public class EFormidlingServiceTaskTests
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>(
                         (v, t) =>
-                            v.ToString()!.Contains("No eFormidling configuration found in BPMN for task taskId. Defaulting to enabled")
+                            v.ToString()!
+                                .Contains(
+                                    "No eFormidling configuration found in BPMN for task taskId. Defaulting to enabled"
+                                )
                     ),
                     It.IsAny<Exception>(),
                     It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
@@ -244,7 +260,10 @@ public class EFormidlingServiceTaskTests
         await _serviceTask.Execute(parameters);
 
         // Assert
-        _eFormidlingServiceMock.Verify(x => x.SendEFormidlingShipment(instance), Times.Once);
+        _eFormidlingServiceMock.Verify(
+            x => x.SendEFormidlingShipment(instance, It.IsAny<ValidAltinnEFormidlingConfiguration>()),
+            Times.Once
+        );
     }
 
     private static Instance GetInstance()

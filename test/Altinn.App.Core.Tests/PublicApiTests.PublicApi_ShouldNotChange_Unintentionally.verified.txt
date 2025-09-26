@@ -144,13 +144,14 @@ namespace Altinn.App.Core.EFormidling.Implementation
 {
     public class DefaultEFormidlingReceivers : Altinn.App.Core.EFormidling.Interface.IEFormidlingReceivers
     {
-        public DefaultEFormidlingReceivers(Altinn.App.Core.Internal.App.IAppMetadata appMetadata) { }
-        public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Common.EFormidlingClient.Models.SBD.Receiver>> GetEFormidlingReceivers(Altinn.Platform.Storage.Interface.Models.Instance instance) { }
+        public DefaultEFormidlingReceivers() { }
+        public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Common.EFormidlingClient.Models.SBD.Receiver>> GetEFormidlingReceivers(Altinn.Platform.Storage.Interface.Models.Instance instance, string? receiverFromConfig = null) { }
     }
     public class DefaultEFormidlingService : Altinn.App.Core.EFormidling.Interface.IEFormidlingService
     {
-        public DefaultEFormidlingService(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.EFormidling.Implementation.DefaultEFormidlingService> logger, Altinn.App.Core.Internal.Auth.IUserTokenProvider userTokenProvider, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.Data.IDataClient dataClient, Altinn.App.Core.Internal.Events.IEventsClient eventClient, System.IServiceProvider sp, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings>? appSettings = null, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings>? platformSettings = null, Altinn.Common.EFormidlingClient.IEFormidlingClient? eFormidlingClient = null, Altinn.Common.AccessTokenClient.Services.IAccessTokenGenerator? tokenGenerator = null) { }
+        public DefaultEFormidlingService(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.EFormidling.Implementation.DefaultEFormidlingService> logger, Altinn.App.Core.Internal.Auth.IUserTokenProvider userTokenProvider, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.Data.IDataClient dataClient, Altinn.App.Core.Internal.Events.IEventsClient eventClient, System.IServiceProvider sp, Altinn.App.Core.EFormidling.Implementation.IEFormidlingConfigurationProvider configurationProvider, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings>? appSettings = null, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings>? platformSettings = null, Altinn.Common.EFormidlingClient.IEFormidlingClient? eFormidlingClient = null, Altinn.Common.AccessTokenClient.Services.IAccessTokenGenerator? tokenGenerator = null) { }
         public System.Threading.Tasks.Task SendEFormidlingShipment(Altinn.Platform.Storage.Interface.Models.Instance instance) { }
+        public System.Threading.Tasks.Task SendEFormidlingShipment(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.ValidAltinnEFormidlingConfiguration configuration) { }
     }
     public class EformidlingDeliveryException : Altinn.App.Core.Exceptions.AltinnException
     {
@@ -171,6 +172,11 @@ namespace Altinn.App.Core.EFormidling.Implementation
         public string EventType { get; }
         public System.Threading.Tasks.Task<bool> ProcessEvent(Altinn.App.Core.Models.CloudEvent cloudEvent) { }
     }
+    public interface IEFormidlingConfigurationProvider
+    {
+        System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.ValidAltinnEFormidlingConfiguration> GetBpmnConfiguration(string taskId);
+        System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.ValidAltinnEFormidlingConfiguration> GetLegacyConfiguration();
+    }
 }
 namespace Altinn.App.Core.EFormidling.Interface
 {
@@ -183,11 +189,12 @@ namespace Altinn.App.Core.EFormidling.Interface
     }
     public interface IEFormidlingReceivers
     {
-        System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Common.EFormidlingClient.Models.SBD.Receiver>> GetEFormidlingReceivers(Altinn.Platform.Storage.Interface.Models.Instance instance);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Common.EFormidlingClient.Models.SBD.Receiver>> GetEFormidlingReceivers(Altinn.Platform.Storage.Interface.Models.Instance instance, string? receiverFromConfig = null);
     }
     public interface IEFormidlingService
     {
         System.Threading.Tasks.Task SendEFormidlingShipment(Altinn.Platform.Storage.Interface.Models.Instance instance);
+        System.Threading.Tasks.Task SendEFormidlingShipment(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.ValidAltinnEFormidlingConfiguration configuration);
     }
 }
 namespace Altinn.App.Core.Exceptions
@@ -3201,6 +3208,36 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
         [System.Xml.Serialization.XmlText]
         public string Value { get; set; }
     }
+    public class AltinnEFormidlingConfiguration
+    {
+        public AltinnEFormidlingConfiguration() { }
+        [System.Xml.Serialization.XmlElement(ElementName="dataTypes", Namespace="http://altinn.no/process")]
+        public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEFormidlingDataTypesConfig> DataTypes { get; set; }
+        [System.Xml.Serialization.XmlElement(ElementName="dpfShipmentType", Namespace="http://altinn.no/process")]
+        public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> DpfShipmentType { get; set; }
+        [System.Xml.Serialization.XmlElement(ElementName="enabled", Namespace="http://altinn.no/process")]
+        public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> Enabled { get; set; }
+        [System.Xml.Serialization.XmlElement(ElementName="process", Namespace="http://altinn.no/process")]
+        public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> Process { get; set; }
+        [System.Xml.Serialization.XmlElement(ElementName="receiver", Namespace="http://altinn.no/process")]
+        public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> Receiver { get; set; }
+        [System.Xml.Serialization.XmlElement(ElementName="securityLevel", Namespace="http://altinn.no/process")]
+        public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> SecurityLevel { get; set; }
+        [System.Xml.Serialization.XmlElement(ElementName="standard", Namespace="http://altinn.no/process")]
+        public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> Standard { get; set; }
+        [System.Xml.Serialization.XmlElement(ElementName="type", Namespace="http://altinn.no/process")]
+        public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> Type { get; set; }
+        [System.Xml.Serialization.XmlElement(ElementName="typeVersion", Namespace="http://altinn.no/process")]
+        public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> TypeVersion { get; set; }
+    }
+    public class AltinnEFormidlingDataTypesConfig
+    {
+        public AltinnEFormidlingDataTypesConfig() { }
+        [System.Xml.Serialization.XmlElement(ElementName="dataType", Namespace="http://altinn.no/process")]
+        public System.Collections.Generic.List<string> DataTypeIds { get; set; }
+        [System.Xml.Serialization.XmlAttribute("env")]
+        public string? Environment { get; set; }
+    }
     public sealed class AltinnEnvironmentConfig
     {
         public AltinnEnvironmentConfig() { }
@@ -3259,6 +3296,8 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
         [System.Xml.Serialization.XmlArray(ElementName="actions", IsNullable=true, Namespace="http://altinn.no/process")]
         [System.Xml.Serialization.XmlArrayItem(ElementName="action", Namespace="http://altinn.no/process")]
         public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnAction>? AltinnActions { get; set; }
+        [System.Xml.Serialization.XmlElement("eFormidlingConfig", Namespace="http://altinn.no/process")]
+        public Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEFormidlingConfiguration? EFormidlingConfiguration { get; set; }
         [System.Xml.Serialization.XmlElement("paymentConfig", Namespace="http://altinn.no/process")]
         public Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnPaymentConfiguration? PaymentConfiguration { get; set; }
         [System.Xml.Serialization.XmlElement("pdfConfig", Namespace="http://altinn.no/process")]
@@ -3267,6 +3306,18 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
         public Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnSignatureConfiguration? SignatureConfiguration { get; set; }
         [System.Xml.Serialization.XmlElement("taskType", Namespace="http://altinn.no/process")]
         public string? TaskType { get; set; }
+    }
+    public readonly struct ValidAltinnEFormidlingConfiguration : System.IEquatable<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.ValidAltinnEFormidlingConfiguration>
+    {
+        public ValidAltinnEFormidlingConfiguration(string? Receiver, string Process, string Standard, string TypeVersion, string Type, int SecurityLevel, string? DpfShipmentType, System.Collections.Generic.List<string> DataTypes) { }
+        public System.Collections.Generic.List<string> DataTypes { get; init; }
+        public string? DpfShipmentType { get; init; }
+        public string Process { get; init; }
+        public string? Receiver { get; init; }
+        public int SecurityLevel { get; init; }
+        public string Standard { get; init; }
+        public string Type { get; init; }
+        public string TypeVersion { get; init; }
     }
 }
 namespace Altinn.App.Core.Internal.Process.Elements
