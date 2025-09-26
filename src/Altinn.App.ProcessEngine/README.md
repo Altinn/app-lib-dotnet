@@ -1,5 +1,5 @@
 # ...
 
-![Overview](Overview.drawio.svg)
+![Overview](docs/overview.drawio.svg)
 
-![Sequence flow](SequenceFlow.drawio.svg)
+![Sequence flow](docs/sequenceFlow.drawio.svg)

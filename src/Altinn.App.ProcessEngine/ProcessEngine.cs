@@ -1,223 +1,48 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
-using Altinn.App.Core.Models;
-using Altinn.Platform.Storage.Interface.Models;
+using Altinn.App.ProcessEngine.Extensions;
+using Altinn.App.ProcessEngine.Models;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.ProcessEngine;
 
-/// <summary>
-/// The status of a request to the process engine.
-/// </summary>
-public enum ProcessEngineRequestStatus
-{
-    Accepted,
-    Rejected,
-}
-
-/// <summary>
-/// A request to enqueue one or more task in the process engine.
-/// </summary>
-public sealed record ProcessEngineRequest(
-    AppIdentifier AppIdentifier,
-    Instance Instance,
-    IEnumerable<ProcessEngineTaskRequest> Tasks
-)
-{
-    // TODO: Implement some basic validation here
-    public bool IsValid() => Tasks.Any();
-};
-
-/// <summary>
-/// Represents a single task to be processed by the process engine.
-/// </summary>
-public sealed record ProcessEngineTaskRequest(
-    string Identifier,
-    ProcessEngineTaskInstruction Instruction,
-    DateTimeOffset? StartTime = null
-);
-
-/// <summary>
-/// The response from the process engine for a <see cref="ProcessEngineRequest"/>.
-/// </summary>
-public sealed record ProcessEngineResponse(ProcessEngineRequestStatus Status, string? Message = null)
-{
-    public static ProcessEngineResponse Accepted(string? message = null) =>
-        new(ProcessEngineRequestStatus.Accepted, message);
-
-    public static ProcessEngineResponse Rejected(string? message = null) =>
-        new(ProcessEngineRequestStatus.Rejected, message);
-};
-
-public abstract record ProcessEngineTaskInstruction
-{
-    private ProcessEngineTaskInstruction() { }
-
-    public sealed record MoveProcessForward(string From, string To, string? Action = null)
-        : ProcessEngineTaskInstruction;
-
-    public sealed record ExecuteServiceTask(string Identifier) : ProcessEngineTaskInstruction;
-
-    public sealed record ExecuteInterfaceHooks(object Something) : ProcessEngineTaskInstruction;
-
-    public sealed record SendCorrespondence(object Something) : ProcessEngineTaskInstruction;
-
-    public sealed record SendEformidling(object Something) : ProcessEngineTaskInstruction;
-
-    public sealed record SendFiksArkiv(object Something) : ProcessEngineTaskInstruction;
-
-    public sealed record PublishAltinnEvent(object Something) : ProcessEngineTaskInstruction;
-}
-
-// [Flags]
-// internal enum ProcessEngineItemStatus
-// {
-//     Enqueued = 0,
-//     Processing = 1 << 0,
-//     Requeued = 1 << 1,
-//     Completed = 1 << 2,
-//     Failed = 1 << 3,
-//     Canceled = 1 << 4,
-// }
-internal enum ProcessEngineItemStatus
-{
-    Enqueued = 0,
-    Processing = 1,
-    Requeued = 2,
-    Completed = 3,
-    Failed = 4,
-    Canceled = 5,
-}
-
-internal static class ProcessEngineItemStatusExtensions
-{
-    public static bool IsDone(this ProcessEngineItemStatus status) =>
-        status
-            is ProcessEngineItemStatus.Completed
-                or ProcessEngineItemStatus.Failed
-                or ProcessEngineItemStatus.Canceled;
-}
-
-internal sealed record ProcessEngineJob
-{
-    public ProcessEngineItemStatus Status { get; set; }
-    public required AppIdentifier AppIdentifier { get; init; }
-    public required Instance Instance { get; init; }
-    public required List<ProcessEngineTask> Tasks { get; init; }
-    public DateTimeOffset EnqueuedAt { get; init; } = DateTimeOffset.UtcNow;
-
-    public static ProcessEngineJob FromRequest(ProcessEngineRequest request) =>
-        new()
-        {
-            AppIdentifier = request.AppIdentifier,
-            Instance = request.Instance,
-            Tasks = request.Tasks.Select(ProcessEngineTask.FromRequest).ToList(),
-        };
-};
-
-internal sealed record ProcessEngineTask
-{
-    public ProcessEngineItemStatus Status { get; set; }
-    public required string Identifier { get; init; }
-    public required int ProcessingOrder { get; init; }
-    public required ProcessEngineTaskInstruction Instruction { get; init; }
-    public DateTimeOffset? StartTime { get; init; }
-    public int RequeueCount { get; set; }
-
-    public static ProcessEngineTask FromRequest(ProcessEngineTaskRequest request, int index) =>
-        new()
-        {
-            Identifier = request.Identifier,
-            StartTime = request.StartTime,
-            ProcessingOrder = index,
-            Instruction = request.Instruction,
-        };
-};
-
-internal static class ProcessEngineJobExtensions
-{
-    public static IOrderedEnumerable<ProcessEngineTask> OrderedTasks(this ProcessEngineJob job) =>
-        job.Tasks.OrderBy(t => t.ProcessingOrder);
-
-    public static IOrderedEnumerable<ProcessEngineTask> OrderedIncompleteTasks(this ProcessEngineJob job) =>
-        job.Tasks.Where(x => !x.Status.IsDone()).OrderBy(x => x.ProcessingOrder);
-}
-
-internal sealed class BooleanBuffer
-{
-    private readonly Queue<bool> _queue;
-    private readonly int _maxSize;
-
-    public BooleanBuffer(int maxSize = 10)
-    {
-        _maxSize = maxSize;
-        _queue = new Queue<bool>(maxSize);
-    }
-
-    public void Add(bool value)
-    {
-        if (_queue.Count >= _maxSize)
-            _queue.Dequeue();
-
-        _queue.Enqueue(value);
-    }
-
-    public bool? Latest => _queue.LastOrDefault();
-    public bool? Previous => _queue.ElementAtOrDefault(_queue.Count - 2);
-
-    public int ConsecutiveFalseCount
-    {
-        get
-        {
-            int count = 0;
-            foreach (var value in _queue.Reverse())
-            {
-                if (!value)
-                    count++;
-                else
-                    break;
-            }
-
-            return count;
-        }
-    }
-}
-
 internal interface IProcessEngine
 {
+    ProcessEngineHealthStatus Status { get; }
     Task Start(CancellationToken cancellationToken = default);
     Task Stop();
     Task<ProcessEngineResponse> EnqueueJob(ProcessEngineRequest request, CancellationToken cancellationToken = default);
 }
 
-internal sealed class ProcessEngine : IProcessEngine
+internal sealed class ProcessEngine : IProcessEngine, IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly Channel<ProcessEngineJob> _inbox;
     private readonly ProcessEngineSettings _settings;
     private readonly TimeProvider _timeProvider;
-    private CancellationTokenSource? _cancellationTokenSource;
-    private Task? _mainLoopTask;
-
+    private readonly ILogger<ProcessEngine> _logger;
     private readonly IProcessEngineTaskHandler _taskHandler;
     private readonly BooleanBuffer _enabledStatusHistory = new();
-
     private readonly SemaphoreSlim _cleanupLock = new(1, 1);
+
+    private Channel<ProcessEngineJob> _inbox;
+    private CancellationTokenSource? _cancellationTokenSource;
+    private Task? _mainLoopTask;
+    private SemaphoreSlim _inboxCapacityLimit;
     private volatile bool _cleanupRequired;
+    private bool _disposed;
+
+    // TODO: Is this overengineered? Maybe we only care if it's running or not?
+    public ProcessEngineHealthStatus Status { get; private set; } = ProcessEngineHealthStatus.Healthy;
 
     public ProcessEngine(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
+        _logger = serviceProvider.GetRequiredService<ILogger<ProcessEngine>>();
         _taskHandler = serviceProvider.GetRequiredService<IProcessEngineTaskHandler>();
         _timeProvider = serviceProvider.GetService<TimeProvider>() ?? TimeProvider.System;
         _settings = serviceProvider.GetRequiredService<IOptions<ProcessEngineSettings>>().Value;
-        _inbox = Channel.CreateBounded<ProcessEngineJob>(
-            new BoundedChannelOptions(_settings.QueueCapacity)
-            {
-                SingleReader = true,
-                SingleWriter = false,
-                FullMode = BoundedChannelFullMode.Wait,
-            }
-        );
+
+        InitializeInbox();
     }
 
     public async Task Start(CancellationToken cancellationToken = default)
@@ -225,6 +50,7 @@ internal sealed class ProcessEngine : IProcessEngine
         if (_cancellationTokenSource is not null || _mainLoopTask is not null)
             await Stop();
 
+        Status |= ProcessEngineHealthStatus.Running;
         _cleanupRequired = true;
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
@@ -235,13 +61,30 @@ internal sealed class ProcessEngine : IProcessEngine
                 {
                     while (!_cancellationTokenSource.IsCancellationRequested)
                     {
-                        await MainLoop(_cancellationTokenSource.Token);
+                        try
+                        {
+                            await MainLoop(_cancellationTokenSource.Token);
+                            Status &= ~ProcessEngineHealthStatus.Unhealthy;
+                            Status |= ProcessEngineHealthStatus.Healthy;
+                            Status |= ProcessEngineHealthStatus.Running;
+                        }
+                        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested) { }
+                        catch (Exception e)
+                        {
+                            _logger.LogError(
+                                e,
+                                "The process engine encountered an unhandled exception: {Message}",
+                                e.Message
+                            );
+
+                            Status |= ProcessEngineHealthStatus.Unhealthy;
+                        }
                     }
                 }
-                catch (OperationCanceledException) { }
                 finally
                 {
                     await Cleanup();
+                    Status &= ~ProcessEngineHealthStatus.Running;
                 }
             },
             _cancellationTokenSource.Token
@@ -250,18 +93,23 @@ internal sealed class ProcessEngine : IProcessEngine
 
     public async Task Stop()
     {
-        // Already stopped
-        if (_cancellationTokenSource is null || _cancellationTokenSource.IsCancellationRequested)
+        if (!Status.HasFlag(ProcessEngineHealthStatus.Running))
             return;
 
         try
         {
-            await _cancellationTokenSource.CancelAsync();
+            if (_cancellationTokenSource is not null)
+                await _cancellationTokenSource.CancelAsync();
 
             if (_mainLoopTask?.IsCompleted is false)
                 await _mainLoopTask;
         }
         catch (OperationCanceledException) { }
+        finally
+        {
+            Status &= ~ProcessEngineHealthStatus.Running;
+            Status |= ProcessEngineHealthStatus.Stopped;
+        }
     }
 
     public async Task<ProcessEngineResponse> EnqueueJob(
@@ -270,9 +118,12 @@ internal sealed class ProcessEngine : IProcessEngine
     )
     {
         if (!request.IsValid())
-            return ProcessEngineResponse.Rejected("Invalid task request");
+            return ProcessEngineResponse.Rejected("Invalid request");
 
-        var enabled = _enabledStatusHistory.Latest ?? await ShouldRun(cancellationToken);
+        if (_mainLoopTask is null)
+            return ProcessEngineResponse.Rejected("Process engine is not running. Did you call Start()?");
+
+        var enabled = await _enabledStatusHistory.Latest() ?? await ShouldRun(cancellationToken);
         if (!enabled)
             return ProcessEngineResponse.Rejected(
                 "ProcessEngine is currently inactive. Did you call the right instance?"
@@ -280,11 +131,23 @@ internal sealed class ProcessEngine : IProcessEngine
 
         // TODO: Duplication check? If we already have an active job with some form of calculated ID, disallow enqueue
 
-        var taskCollection = ProcessEngineJob.FromRequest(request);
-        await EnqueueJob(taskCollection, true, cancellationToken);
+        await AcquireJobSlot(cancellationToken); // Only acquire slots for public requests
+        await EnqueueJob(ProcessEngineJob.FromRequest(request), true, cancellationToken);
 
         return ProcessEngineResponse.Accepted();
     }
+
+    private async Task AcquireJobSlot(CancellationToken cancellationToken = default)
+    {
+        await _inboxCapacityLimit.WaitAsync(cancellationToken);
+
+        if (_inbox.Reader.Count >= _settings.QueueCapacity)
+            Status |= ProcessEngineHealthStatus.QueueFull;
+        else
+            Status &= ~ProcessEngineHealthStatus.QueueFull;
+    }
+
+    private void ReleaseJobSlot() => _inboxCapacityLimit.Release();
 
     private async Task EnqueueJob(
         ProcessEngineJob job,
@@ -320,32 +183,13 @@ internal sealed class ProcessEngine : IProcessEngine
         return Task.CompletedTask;
     }
 
-    private async Task Cleanup()
-    {
-        await _cleanupLock.WaitAsync();
-
-        try
-        {
-            if (!_cleanupRequired)
-                return;
-
-            _cleanupRequired = false;
-            _mainLoopTask = null;
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = null;
-        }
-        finally
-        {
-            _cleanupLock.Release();
-        }
-    }
-
-    public static TimeSpan GetExponentialBackoff(int iteration)
+    public static Task ExponentialBackoffDelay(int iteration, CancellationToken cancellationToken)
     {
         double baseDelaySeconds = 1.0;
         double multiplier = Math.Pow(2, iteration - 2);
+        TimeSpan delay = TimeSpan.FromSeconds(baseDelaySeconds * multiplier);
 
-        return TimeSpan.FromSeconds(baseDelaySeconds * multiplier);
+        return Task.Delay(delay, cancellationToken);
     }
 
     private async Task<bool> ShouldRun(CancellationToken cancellationToken)
@@ -364,29 +208,71 @@ internal sealed class ProcessEngine : IProcessEngine
             cancellationToken
         );
 
-        _enabledStatusHistory.Add(enabled);
+        await _enabledStatusHistory.Add(enabled);
+
+        var latest = await _enabledStatusHistory.Latest();
+        var previous = await _enabledStatusHistory.Previous();
 
         // Populate queue if we just transitioned from disabled to enabled
-        if (_enabledStatusHistory is { Latest: true, Previous: false })
+        if (latest is true && previous is false)
         {
             await PopulateJobsFromStorage(cancellationToken);
         }
 
         // Progressive backoff we have been disabled for two or more consecutive checks
-        if (_enabledStatusHistory is { Latest: false, Previous: false })
+        if (latest is false && previous is false)
         {
-            TimeSpan backoff = GetExponentialBackoff(_enabledStatusHistory.ConsecutiveFalseCount);
-            await Task.Delay(backoff, cancellationToken);
+            int iteration = await _enabledStatusHistory.ConsecutiveFalseCount();
+            await ExponentialBackoffDelay(iteration, cancellationToken);
         }
 
         return enabled;
+    }
+
+    [MemberNotNull(nameof(_inbox), nameof(_inboxCapacityLimit))]
+    private void InitializeInbox()
+    {
+        _inbox = Channel.CreateUnbounded<ProcessEngineJob>(
+            new UnboundedChannelOptions { SingleReader = true, SingleWriter = false }
+        );
+        _inboxCapacityLimit = new SemaphoreSlim(_settings.QueueCapacity, _settings.QueueCapacity);
+    }
+
+    private async Task Cleanup()
+    {
+        await _cleanupLock.WaitAsync();
+
+        try
+        {
+            if (!_cleanupRequired)
+                return;
+
+            _cleanupRequired = false;
+            _mainLoopTask = null;
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = null;
+
+            await _enabledStatusHistory.Clear();
+
+            _inbox.Writer.Complete();
+            _inboxCapacityLimit.Dispose();
+
+            InitializeInbox();
+        }
+        finally
+        {
+            _cleanupLock.Release();
+        }
     }
 
     private async Task MainLoop(CancellationToken cancellationToken)
     {
         // Should we run?
         if (!await ShouldRun(cancellationToken))
+        {
+            Status |= ProcessEngineHealthStatus.Disabled;
             return;
+        }
 
         // Trackers for reentry
         var unprocessableJobs = new List<ProcessEngineJob>();
@@ -403,6 +289,7 @@ internal sealed class ProcessEngine : IProcessEngine
             if (!job.OrderedIncompleteTasks().Any())
             {
                 await UpdateJobInStorage(job with { Status = ProcessEngineItemStatus.Completed }, cancellationToken);
+                ReleaseJobSlot();
                 break;
             }
 
@@ -417,7 +304,9 @@ internal sealed class ProcessEngine : IProcessEngine
                     break;
                 }
 
+                // Process task
                 var result = await _taskHandler.Execute(task, cancellationToken);
+
                 if (result.IsSuccess())
                 {
                     task.Status = ProcessEngineItemStatus.Completed;
@@ -435,16 +324,6 @@ internal sealed class ProcessEngine : IProcessEngine
                 requeueJobs.Add(job);
                 break;
             }
-
-            // Update job status
-            if (job.Status != ProcessEngineItemStatus.Failed)
-            {
-                job.Status = job.OrderedIncompleteTasks().Any()
-                    ? ProcessEngineItemStatus.Requeued
-                    : ProcessEngineItemStatus.Completed;
-            }
-
-            await UpdateJobInStorage(job, cancellationToken);
         }
 
         /*
@@ -465,6 +344,19 @@ internal sealed class ProcessEngine : IProcessEngine
         }
 
         // Small delay before next iteration
-        await Task.Delay(100, cancellationToken);
+        await Task.Delay(200, cancellationToken);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        _cancellationTokenSource?.Dispose();
+        _mainLoopTask?.Dispose();
+        _enabledStatusHistory.Dispose();
+        _cleanupLock.Dispose();
+        _inboxCapacityLimit.Dispose();
     }
 }
