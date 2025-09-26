@@ -19,7 +19,7 @@ public interface IEFormidlingReceivers
     /// </para>
     /// </remarks>
     /// <param name="instance">Instance data</param>
-    /// <param name="receiverFromConfig">Optional receiver organization number from static configuration.</param>
+    /// <param name="receiverFromConfig">Optional receiver organization number from static configuration (bpmn service task or applicationMetadata.json).</param>
     /// <returns>List of eFormidling receivers</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="instance"/> is null</exception>
     public Task<List<Receiver>> GetEFormidlingReceivers(Instance instance, string? receiverFromConfig = null);
