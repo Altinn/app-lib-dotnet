@@ -11,12 +11,16 @@ namespace Altinn.App.Core.EFormidling.Interface;
 public interface IEFormidlingReceivers
 {
     /// <summary>
-    /// Gets a list of eFormidling shipment receivers
+    /// Gets a list of eFormidling shipment receivers.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Note that the identifier value property on the receiver objects should be prefixed with `0192:` for Norwegian organisations.
+    /// </para>
     /// </remarks>
     /// <param name="instance">Instance data</param>
+    /// <param name="receiverFromConfig">Optional receiver organization number from static configuration (bpmn service task or applicationMetadata.json).</param>
     /// <returns>List of eFormidling receivers</returns>
-    public Task<List<Receiver>> GetEFormidlingReceivers(Instance instance);
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="instance"/> is null</exception>
+    public Task<List<Receiver>> GetEFormidlingReceivers(Instance instance, string? receiverFromConfig = null);
 }

@@ -72,26 +72,21 @@ public class PdfService : IPdfService
     {
         using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
 
-        HttpContext? httpContext = _httpContextAccessor.HttpContext;
-        var queries = httpContext?.Request.Query;
-        var auth = _authenticationContext.Current;
+        await GenerateAndStorePdfInternal(instance, taskId, null, null, ct);
+    }
 
-        var language = GetOverriddenLanguage(queries) ?? await auth.GetLanguage();
+    /// <inheritdoc/>
+    public async Task GenerateAndStorePdf(
+        Instance instance,
+        string taskId,
+        string? dataTypeId,
+        string? fileNameTextResourceElementId,
+        CancellationToken ct = default
+    )
+    {
+        using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
 
-        TextResource? textResource = await GetTextResource(instance, language);
-
-        var pdfContent = await GeneratePdfContent(instance, language, false, textResource, ct);
-
-        string fileName = GetFileName(instance, textResource);
-        await _dataClient.InsertBinaryData(
-            instance.Id,
-            PdfElementType,
-            PdfContentType,
-            fileName,
-            pdfContent,
-            taskId,
-            cancellationToken: ct
-        );
+        await GenerateAndStorePdfInternal(instance, taskId, dataTypeId, fileNameTextResourceElementId, ct);
     }
 
     /// <inheritdoc/>
@@ -114,6 +109,36 @@ public class PdfService : IPdfService
     public async Task<Stream> GeneratePdf(Instance instance, string taskId, CancellationToken ct)
     {
         return await GeneratePdf(instance, taskId, false, ct);
+    }
+
+    private async Task GenerateAndStorePdfInternal(
+        Instance instance,
+        string taskId,
+        string? dataTypeId,
+        string? fileNameTextResourceElementId,
+        CancellationToken ct = default
+    )
+    {
+        HttpContext? httpContext = _httpContextAccessor.HttpContext;
+        var queries = httpContext?.Request.Query;
+        var auth = _authenticationContext.Current;
+
+        var language = GetOverriddenLanguage(queries) ?? await auth.GetLanguage();
+
+        TextResource? textResource = await GetTextResource(instance, language);
+
+        await using Stream pdfContent = await GeneratePdfContent(instance, language, false, textResource, ct);
+
+        string fileName = GetFileName(instance, textResource, fileNameTextResourceElementId);
+        await _dataClient.InsertBinaryData(
+            instance.Id,
+            dataTypeId ?? PdfElementType,
+            PdfContentType,
+            fileName,
+            pdfContent,
+            taskId,
+            cancellationToken: ct
+        );
     }
 
     private async Task<Stream> GeneratePdfContent(
@@ -200,10 +225,26 @@ public class PdfService : IPdfService
         return textResource;
     }
 
-    private static string GetFileName(Instance instance, TextResource? textResource)
+    private static string GetFileName(
+        Instance instance,
+        TextResource? textResource,
+        string? fileNameTextResourceElementId = null
+    )
     {
+        if (!string.IsNullOrEmpty(fileNameTextResourceElementId))
+        {
+            TextResourceElement? textResourceElement = textResource?.Resources.Find(textResourceElement =>
+                textResourceElement.Id.Equals(fileNameTextResourceElementId, StringComparison.Ordinal)
+            );
+
+            if (textResourceElement is not null)
+                return GetValidFileName(textResourceElement.Value);
+
+            return GetValidFileName(fileNameTextResourceElementId);
+        }
+
         string app = instance.AppId.Split("/")[1];
-        string fileName = $"{app}.pdf";
+        var fileName = $"{app}.pdf";
 
         if (textResource is null)
         {
@@ -261,6 +302,16 @@ public class PdfService : IPdfService
     private static string GetValidFileName(string fileName)
     {
         fileName = Uri.EscapeDataString(fileName.AsFileName(false));
+        return AddPdfFileTypeIfMissing(fileName);
+    }
+
+    private static string AddPdfFileTypeIfMissing(string fileName)
+    {
+        if (!fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            return fileName + ".pdf";
+        }
+
         return fileName;
     }
 
