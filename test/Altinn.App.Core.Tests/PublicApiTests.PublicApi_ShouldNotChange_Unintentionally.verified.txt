@@ -1190,11 +1190,13 @@ namespace Altinn.App.Core.Features
     }
     public interface IInstanceDataAccessor
     {
+        System.Collections.Generic.IReadOnlyDictionary<Altinn.Platform.Storage.Interface.Models.DataType, Altinn.App.Core.Features.StorageAuthenticationMethod> AuthenticationMethodOverrides { get; }
         Altinn.Platform.Storage.Interface.Models.Instance Instance { get; }
         System.Threading.Tasks.Task<System.ReadOnlyMemory<byte>> GetBinaryData(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
         Altinn.Platform.Storage.Interface.Models.DataElement GetDataElement(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
         Altinn.Platform.Storage.Interface.Models.DataType? GetDataType(string dataTypeId);
         System.Threading.Tasks.Task<object> GetFormData(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
+        void OverrideAuthenticationMethod(Altinn.Platform.Storage.Interface.Models.DataType dataType, Altinn.App.Core.Features.StorageAuthenticationMethod method);
     }
     public static class IInstanceDataAccessorExtensions
     {
@@ -3118,7 +3120,7 @@ namespace Altinn.App.Core.Internal.Pdf
     public interface IPdfService
     {
         System.Threading.Tasks.Task GenerateAndStorePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, System.Threading.CancellationToken ct);
-        System.Threading.Tasks.Task GenerateAndStorePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, string? fileNameTextResourceElementId, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task GenerateAndStorePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, string? dataTypeId, string? fileNameTextResourceElementId, System.Threading.CancellationToken ct = default);
         System.Threading.Tasks.Task<System.IO.Stream> GeneratePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, System.Threading.CancellationToken ct);
         System.Threading.Tasks.Task<System.IO.Stream> GeneratePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, bool isPreview, System.Threading.CancellationToken ct);
     }
@@ -3140,7 +3142,7 @@ namespace Altinn.App.Core.Internal.Pdf
     {
         public PdfService(Altinn.App.Core.Internal.App.IAppResources appResources, Altinn.App.Core.Internal.Data.IDataClient dataClient, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, Altinn.App.Core.Internal.Pdf.IPdfGeneratorClient pdfGeneratorClient, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Internal.Pdf.PdfGeneratorSettings> pdfGeneratorSettings, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.GeneralSettings> generalSettings, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Pdf.PdfService> logger, Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
         public System.Threading.Tasks.Task GenerateAndStorePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, System.Threading.CancellationToken ct) { }
-        public System.Threading.Tasks.Task GenerateAndStorePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, string? fileNameTextResourceElementId, System.Threading.CancellationToken ct = default) { }
+        public System.Threading.Tasks.Task GenerateAndStorePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, string? dataTypeId, string? fileNameTextResourceElementId, System.Threading.CancellationToken ct = default) { }
         public System.Threading.Tasks.Task<System.IO.Stream> GeneratePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, System.Threading.CancellationToken ct) { }
         public System.Threading.Tasks.Task<System.IO.Stream> GeneratePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, bool isPreview, System.Threading.CancellationToken ct) { }
     }
@@ -3224,6 +3226,8 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
     public class AltinnPdfConfiguration
     {
         public AltinnPdfConfiguration() { }
+        [System.Xml.Serialization.XmlElement("dataTypeId", Namespace="http://altinn.no/process")]
+        public string? DataTypeId { get; set; }
         [System.Xml.Serialization.XmlElement("filename", Namespace="http://altinn.no/process")]
         public string? Filename { get; set; }
     }
@@ -3653,21 +3657,9 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
 }
 namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks
 {
-    public class EFormidlingServiceTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask, Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.IServiceTask
-    {
-        public EFormidlingServiceTask(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.EFormidlingServiceTask> logger, Altinn.App.Core.EFormidling.Interface.IEFormidlingService? eFormidlingService = null, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings>? appSettings = null) { }
-        public string Type { get; }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext context) { }
-    }
     public interface IServiceTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask
     {
         System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext context);
-    }
-    public class PdfServiceTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask, Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.IServiceTask
-    {
-        public PdfServiceTask(Altinn.App.Core.Internal.Pdf.IPdfService pdfService, Altinn.App.Core.Internal.Process.IProcessReader processReader, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.PdfServiceTask> logger) { }
-        public string Type { get; }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext context) { }
     }
     public sealed class ServiceTaskContext : System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext>
     {
@@ -3675,15 +3667,17 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks
         public System.Threading.CancellationToken CancellationToken { get; init; }
         public required Altinn.App.Core.Features.IInstanceDataMutator InstanceDataMutator { get; init; }
     }
-    public sealed class ServiceTaskFailedResult : Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult
+    public sealed class ServiceTaskFailedResult : Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult, System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskFailedResult>
     {
         public ServiceTaskFailedResult() { }
     }
-    public abstract class ServiceTaskResult
+    public abstract class ServiceTaskResult : System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult>
     {
         protected ServiceTaskResult() { }
+        public static Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskFailedResult Failed() { }
+        public static Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskSuccessResult Success() { }
     }
-    public sealed class ServiceTaskSuccessResult : Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult
+    public sealed class ServiceTaskSuccessResult : Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult, System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskSuccessResult>
     {
         public ServiceTaskSuccessResult() { }
     }

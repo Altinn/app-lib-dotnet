@@ -56,6 +56,7 @@ public class PdfServiceTaskTests
                 x.GenerateAndStorePdf(
                     instance,
                     instance.Process.CurrentTask.ElementId,
+                    null,
                     FileName,
                     It.IsAny<CancellationToken>()
                 ),

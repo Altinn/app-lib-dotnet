@@ -10,7 +10,7 @@ internal interface IPdfServiceTask : IServiceTask { }
 /// <summary>
 /// Service task that generates PDFs for tasks specified in the process configuration.
 /// </summary>
-public class PdfServiceTask : IPdfServiceTask
+internal sealed class PdfServiceTask : IPdfServiceTask
 {
     private readonly IPdfService _pdfService;
     private readonly IProcessReader _processReader;
@@ -38,11 +38,17 @@ public class PdfServiceTask : IPdfServiceTask
         _logger.LogDebug("Calling PdfService for PDF Service Task {TaskId}.", taskId);
 
         ValidAltinnPdfConfiguration config = GetValidAltinnPdfConfiguration(taskId);
-        await _pdfService.GenerateAndStorePdf(instance, taskId, config.Filename, context.CancellationToken);
+        await _pdfService.GenerateAndStorePdf(
+            instance,
+            taskId,
+            config.DataTypeId,
+            config.Filename,
+            context.CancellationToken
+        );
 
         _logger.LogDebug("Successfully called PdfService for PDF Service Task {TaskId}.", taskId);
 
-        return new ServiceTaskSuccessResult();
+        return ServiceTaskResult.Success();
     }
 
     private ValidAltinnPdfConfiguration GetValidAltinnPdfConfiguration(string taskId)

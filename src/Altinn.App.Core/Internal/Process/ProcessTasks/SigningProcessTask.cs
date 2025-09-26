@@ -56,10 +56,10 @@ internal sealed class SigningProcessTask : IProcessTask
     {
         using var cts = new CancellationTokenSource();
 
-        AltinnSignatureConfiguration signatureConfiguration = GetAltinnSignatureConfiguration(taskId);
+        AltinnSignatureConfiguration signingConfiguration = GetAltinnSignatureConfiguration(taskId);
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
 
-        ValidateSigningConfiguration(appMetadata, signatureConfiguration);
+        ValidateSigningConfiguration(appMetadata, signingConfiguration);
 
         InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
             instance,
@@ -67,12 +67,13 @@ internal sealed class SigningProcessTask : IProcessTask
             null
         );
 
+        // Initialize delegated signing if configured
         if (
-            signatureConfiguration.SigneeProviderId is not null
-            && signatureConfiguration.SigneeStatesDataTypeId is not null
+            signingConfiguration.SigneeProviderId is not null
+            && signingConfiguration.SigneeStatesDataTypeId is not null
         )
         {
-            await InitialiseRuntimeDelegatedSigning(cachedDataMutator, signatureConfiguration, cts.Token);
+            await InitialiseRuntimeDelegatedSigning(cachedDataMutator, signingConfiguration, cts.Token);
         }
 
         DataElementChanges changes = cachedDataMutator.GetDataElementChanges(false);
