@@ -1,55 +1,34 @@
-using System.Collections.Frozen;
-using System.Diagnostics;
 using Altinn.App.Core.Features;
 
 namespace Altinn.App.Core.Helpers.DataModel;
 
-internal static class FormDataWrapperFactory
+/// <summary>
+/// Provides a factory for creating instances of <see cref="IFormDataWrapper"/> specific to a data model type.
+/// This ensures custom wrappers can be used for form data serialization or deserialization when required.
+/// </summary>
+public static class FormDataWrapperFactory
 {
-    private static readonly FrozenDictionary<Type, Type> _pathAccessors = InitializePathAccessorLookup();
+    private static readonly Dictionary<Type, Func<object, IFormDataWrapper>> _dataWrappers = [];
 
-    private static FrozenDictionary<Type, Type> InitializePathAccessorLookup()
+    /// <summary>
+    /// Registers a factory for creating instances of <see cref="IFormDataWrapper"/> for a specific type.
+    /// </summary>
+    /// <typeparam name="T">The type for which the factory is being registered. It must not be null.</typeparam>
+    /// <param name="factory">A function that takes an object of type T and returns an instance of <see cref="IFormDataWrapper"/>.</param>
+    public static void Register<T>(Func<object, IFormDataWrapper> factory)
+        where T : notnull
     {
-        var interfaceType = typeof(IFormDataWrapper<>);
-        return AppDomain
-            .CurrentDomain.GetAssemblies()
-            .SelectMany(a =>
-            {
-                List<KeyValuePair<Type, Type>> pathAccessors = new();
-                try
-                {
-                    var assemblyTypes = a.GetExportedTypes();
-                    foreach (var type in assemblyTypes)
-                    {
-                        var formDataWrapperInterface = type.GetInterfaces()
-                            .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == interfaceType);
-                        if (formDataWrapperInterface is not null)
-                        {
-                            pathAccessors.Add(
-                                KeyValuePair.Create(formDataWrapperInterface.GenericTypeArguments[0], type)
-                            );
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    // Just ignore it if we can't load the assembly types for some reason
-                    // It is likely not the relevant assembly anyway
-                }
-
-                return pathAccessors;
-            })
-            .ToFrozenDictionary();
+        _dataWrappers[typeof(T)] = factory;
     }
 
-    public static IFormDataWrapper Create(object dataModel)
+    internal static IFormDataWrapper Create(object dataModel)
     {
-        if (_pathAccessors.TryGetValue(dataModel.GetType(), out var accessorType))
+        if (_dataWrappers.TryGetValue(dataModel.GetType(), out var accessorType))
         {
-            return Activator.CreateInstance(accessorType, dataModel) as IFormDataWrapper
-                ?? throw new UnreachableException($"Failed to create path accessor for {dataModel.GetType().FullName}");
+            return accessorType(dataModel);
         }
 
+        // TODO: Do some sort of startup validation to ensure that all data model types have a registered wrapper?
         return new ReflectionFormDataWrapper(dataModel);
     }
 }

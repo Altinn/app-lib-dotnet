@@ -826,6 +826,12 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
 
         return index;
     }
+
+    [global::System.Runtime.CompilerServices.ModuleInitializer]
+    internal static void Register()
+    {
+        global::Altinn.App.Core.Helpers.DataModel.FormDataWrapperFactory.Register<global::Altinn.App.SourceGenerator.Integration.Tests.Models.Skjema>(dataModel => new Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper(dataModel));
+    }
 }
 
 // --------------------------------------------------

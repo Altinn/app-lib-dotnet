@@ -180,6 +180,12 @@ public sealed class Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper
 
         return index;
     }
+
+    [global::System.Runtime.CompilerServices.ModuleInitializer]
+    internal static void Register()
+    {
+        global::Altinn.App.Core.Helpers.DataModel.FormDataWrapperFactory.Register<global::Altinn.App.SourceGenerator.Tests.Empty>(dataModel => new Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper(dataModel));
+    }
 }
 
 // --------------------------------------------------

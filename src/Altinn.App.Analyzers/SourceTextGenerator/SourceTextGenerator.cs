@@ -126,6 +126,12 @@ public static class SourceTextGenerator
                     return index;
                 }
 
+                [global::System.Runtime.CompilerServices.ModuleInitializer]
+                internal static void Register()
+                {
+                    global::Altinn.App.Core.Helpers.DataModel.FormDataWrapperFactory.Register<{{rootNode.TypeName}}>(dataModel => new {{className}}(dataModel));
+                }
+
             """
         );
         builder.Append("}\r\n");
