@@ -74,7 +74,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         IOptions<FrontEndSettings> frontEndSettings,
         string? taskId,
         string? language,
-        Telemetry? telemetry
+        Telemetry? telemetry = null
     )
     {
         if (instance.Id is not null)

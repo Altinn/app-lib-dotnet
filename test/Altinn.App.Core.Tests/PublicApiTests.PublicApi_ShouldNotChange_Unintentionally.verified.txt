@@ -2225,8 +2225,7 @@ namespace Altinn.App.Core.Helpers
 }
 namespace Altinn.App.Core.Helpers.DataModel
 {
-    [System.Obsolete("This class is deprecated and will be removed in a future version. Use the new Lay" +
-        "outEvaluatorState instead.")]
+    [System.Obsolete("This class is no longer in use by altinn and will be removed in a future version")]
     public class DataModel
     {
         public DataModel(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor) { }
@@ -2252,6 +2251,11 @@ namespace Altinn.App.Core.Helpers.DataModel
         public int? GetModelDataCount(string field, System.ReadOnlySpan<int> rowIndexes = default) { }
         public string[] GetResolvedKeys(string field) { }
         public void RemoveField(string field, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
+    }
+    public static class FormDataWrapperFactory
+    {
+        public static void Register<T>(System.Func<object, Altinn.App.Core.Features.IFormDataWrapper> factory)
+            where T :  notnull { }
     }
     public class ReflectionFormDataWrapper : Altinn.App.Core.Features.IFormDataWrapper
     {

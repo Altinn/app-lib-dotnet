@@ -73,7 +73,7 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
     public IReadOnlyCollection<DataType> DataTypes => _dataAccessor.DataTypes;
 
     public IReadOnlyDictionary<DataType, StorageAuthenticationMethod> AuthenticationMethodOverrides =>
-        throw new NotImplementedException();
+        _dataAccessor.AuthenticationMethodOverrides;
 
     public async Task<object> GetFormData(DataElementIdentifier dataElementIdentifier)
     {
