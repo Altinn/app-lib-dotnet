@@ -134,7 +134,7 @@ public class EFormidlingConfigurationProviderTests
         // Act & Assert
         var act = async () => await _provider.GetBpmnConfiguration(taskId);
         await act.Should()
-            .ThrowAsync<InvalidOperationException>()
+            .ThrowAsync<ApplicationConfigException>()
             .WithMessage("No eFormidling configuration found in BPMN for task Task_1");
     }
 
@@ -151,7 +151,7 @@ public class EFormidlingConfigurationProviderTests
         // Act & Assert
         var act = async () => await _provider.GetBpmnConfiguration(taskId);
         await act.Should()
-            .ThrowAsync<InvalidOperationException>()
+            .ThrowAsync<ApplicationConfigException>()
             .WithMessage("No eFormidling configuration found in BPMN for task Task_1");
     }
 

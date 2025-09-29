@@ -52,6 +52,11 @@ internal sealed class EFormidlingConfigurationProvider : IEFormidlingConfigurati
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
         EFormidlingContract? eFormidling = applicationMetadata.EFormidling;
 
+        if (eFormidling is null)
+        {
+            throw new ApplicationConfigException($"No legacy eFormidling configuration found in application metadata.");
+        }
+
         return new ValidAltinnEFormidlingConfiguration(
             eFormidling.Receiver,
             eFormidling.Process,
@@ -66,11 +71,13 @@ internal sealed class EFormidlingConfigurationProvider : IEFormidlingConfigurati
 
     public Task<ValidAltinnEFormidlingConfiguration> GetBpmnConfiguration(string taskId)
     {
+        ArgumentNullException.ThrowIfNull(taskId);
+
         AltinnTaskExtension? taskExtension = _processReader.GetAltinnTaskExtension(taskId);
         AltinnEFormidlingConfiguration? eFormidlingConfig = taskExtension?.EFormidlingConfiguration;
 
-        if (eFormidlingConfig == null)
-            throw new InvalidOperationException($"No eFormidling configuration found in BPMN for task {taskId}");
+        if (eFormidlingConfig is null)
+            throw new ApplicationConfigException($"No eFormidling configuration found in BPMN for task {taskId}");
 
         HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
         ValidAltinnEFormidlingConfiguration validConfig = eFormidlingConfig.Validate(env);
