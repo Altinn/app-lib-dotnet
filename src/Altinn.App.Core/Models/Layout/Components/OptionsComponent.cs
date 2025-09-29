@@ -10,81 +10,100 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
     /// <summary>
     /// The ID that references <see cref="Altinn.App.Core.Features.IAppOptionsProvider.Id" /> and <see cref="Altinn.App.Core.Features.IInstanceAppOptionsProvider.Id" />
     /// </summary>
-    public string? OptionsId { get; }
+    public required string? OptionsId { get; init; }
 
     /// <summary>
     /// Alternaltive to <see cref="OptionsId" /> where the options are listed inline instead of referencing an external generator
     /// </summary>
-    public List<AppOption>? Options { get; }
+    public required List<AppOption>? Options { get; init; }
 
     /// <summary>
     /// Alternaltive to <see cref="OptionsId" /> where the options are sourced from a repeating group in the datamodel
     /// </summary>
-    public OptionsSource? OptionsSource { get; }
+    public required OptionsSource? OptionsSource { get; init; }
 
     /// <summary>
     /// Is the component referencing a secure code list (uses security context of the instance)
     /// </summary>
-    public bool Secure { get; }
+    public required bool Secure { get; init; }
 
     /// <summary>
-    /// Constructor
+    /// Parser for OptionsComponent
     /// </summary>
-    public OptionsComponent(JsonElement componentElement, string pageId, string layoutId)
-        : base(componentElement, pageId, layoutId)
+    public static OptionsComponent Parse(JsonElement componentElement, string pageId, string layoutId)
     {
-        if (componentElement.TryGetProperty("optionsId", out JsonElement optionsIdElement))
-        {
-            OptionsId = optionsIdElement.GetString();
-        }
+        var optionsId = ParseStringOrNull(componentElement, "optionsId");
 
-        if (componentElement.TryGetProperty("options", out JsonElement optionsElement))
-        {
-            Options =
-                optionsElement.Deserialize<List<AppOption>>()
-                ?? throw new JsonException("Failed to deserialize options in OptionsComponent.");
-        }
+        var options = ParseOrNull<List<AppOption>>(componentElement, "options");
+        var optionsSource = ParseOrNull<OptionsSource>(componentElement, "source");
+        var secure = ParseBoolOrNull(componentElement, "secure") ?? false;
 
-        if (componentElement.TryGetProperty("source", out JsonElement optionsSourceElement))
+        if (optionsId is null && options is null && optionsSource is null)
         {
-            OptionsSource =
-                optionsSourceElement.Deserialize<OptionsSource>()
-                ?? throw new JsonException("Failed to deserialize optionsSource in OptionsComponent.");
-        }
-
-        Secure =
-            componentElement.TryGetProperty("secure", out JsonElement secureElement)
-            && secureElement.ValueKind == JsonValueKind.True;
-
-        if (OptionsId is null && Options is null && OptionsSource is null)
-        {
+            var id = ParseId(componentElement);
             throw new JsonException(
-                $"\"optionsId\" or \"options\" or \"source\" is required on checkboxes, radiobuttons and dropdowns in component {pageId}.{Id}"
+                $"\"optionsId\" or \"options\" or \"source\" is required on checkboxes, radiobuttons and dropdowns in component {layoutId}.{pageId}.{id}"
             );
         }
-        if (OptionsId is not null && Options is not null)
+        if (optionsId is not null && options is not null)
         {
             throw new JsonException("\"optionsId\" and \"options\" can't both be specified");
         }
-        if (OptionsId is not null && OptionsSource is not null)
+        if (optionsId is not null && optionsSource is not null)
         {
             throw new JsonException("\"optionsId\" and \"source\" can't both be specified");
         }
-        if (OptionsSource is not null && Options is not null)
+        if (optionsSource is not null && options is not null)
         {
             throw new JsonException("\"source\" and \"options\" can't both be specified");
         }
-        if (Options is not null && Secure)
+        if (options is not null && secure)
         {
             throw new JsonException("\"secure\": true is invalid for components with literal \"options\"");
         }
-        if (OptionsSource is not null && Secure)
+        if (optionsSource is not null && secure)
         {
             throw new JsonException(
                 "\"secure\": true is invalid for components that reference a repeating group \"source\""
             );
         }
+
+        return new OptionsComponent()
+        {
+            // BaseComponent properties
+            Id = ParseId(componentElement),
+            PageId = pageId,
+            LayoutId = layoutId,
+            Type = ParseType(componentElement),
+            Required = ParseRequiredExpression(componentElement),
+            ReadOnly = ParseReadOnlyExpression(componentElement),
+            Hidden = ParseHiddenExpression(componentElement),
+            RemoveWhenHidden = ParseRemoveWhenHiddenExpression(componentElement),
+            DataModelBindings = ParseDataModelBindings(componentElement),
+            TextResourceBindings = ParseTextResourceBindings(componentElement),
+            // OptionsComponent properties
+            Options = options,
+            OptionsId = optionsId,
+            OptionsSource = optionsSource,
+            Secure = secure,
+        };
     }
+
+    private static string? ParseStringOrNull(JsonElement componentElement, string propertyName) =>
+        componentElement.TryGetProperty(propertyName, out JsonElement optionsIdElement)
+            ? optionsIdElement.GetString()
+            : null;
+
+    private static bool? ParseBoolOrNull(JsonElement componentElement, string propertyName) =>
+        componentElement.TryGetProperty(propertyName, out JsonElement optionsIdElement)
+            ? optionsIdElement.GetBoolean()
+            : null;
+
+    private static T? ParseOrNull<T>(JsonElement componentElement, string propertyName)
+        where T : class =>
+        componentElement.TryGetProperty(propertyName, out JsonElement optionsIdElement)
+            ? optionsIdElement.Deserialize<T>()
+            : null;
 }
 
 /// <summary>

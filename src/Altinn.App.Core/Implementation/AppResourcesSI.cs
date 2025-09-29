@@ -379,7 +379,7 @@ public class AppResourcesSI : IAppResources
                 pageBytes,
                 new JsonDocumentOptions() { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip }
             );
-            pages.Add(new PageComponent(document.RootElement, page, layoutSet.Id));
+            pages.Add(PageComponent.Parse(document.RootElement, page, layoutSet.Id));
         }
 
         // First look at the specified data type, but

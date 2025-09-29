@@ -142,7 +142,7 @@ public sealed class DataAccessorFixture
                         Path.Join(directory, spec.LayoutSetName, $"{pageName}.json")
                     );
                     using var document = JsonDocument.Parse(pageText);
-                    var pageComponent = new PageComponent(document.RootElement, pageName!, spec.LayoutSetName);
+                    var pageComponent = PageComponent.Parse(document.RootElement, pageName!, spec.LayoutSetName);
                     return pageComponent;
                 })
             );

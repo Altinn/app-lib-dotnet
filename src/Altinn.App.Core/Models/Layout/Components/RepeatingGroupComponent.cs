@@ -1,60 +1,84 @@
 using System.Text.Json;
-using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout.Components;
 
 /// <summary>
-/// Component specialisation for repeating groups with maxCount > 1
+/// Component specialization for repeating groups with maxCount > 1
 /// </summary>
 public sealed class RepeatingGroupComponent : Base.RepeatingReferenceComponent
 {
     /// <summary>
-    /// Constructor for RepeatingGroupComponent
+    /// Parser for RepeatingGroupComponent
     /// </summary>
-    public RepeatingGroupComponent(JsonElement componentElement, string pageId, string layoutId, int maxCount)
-        : base(componentElement, pageId, layoutId)
+    public static RepeatingGroupComponent Parse(
+        JsonElement componentElement,
+        string pageId,
+        string layoutId,
+        int maxCount
+    )
     {
-        MaxCount = maxCount;
+        var id = ParseId(componentElement);
+        var type = ParseType(componentElement);
+        var dataModelBindings = ParseDataModelBindings(componentElement);
+
         if (
             !componentElement.TryGetProperty("children", out JsonElement childIdsElement)
             || childIdsElement.ValueKind != JsonValueKind.Array
         )
         {
-            throw new JsonException($"{Type} must have a \"children\" property that contains a list of strings.");
+            throw new JsonException($"{type} must have a \"children\" property that contains a list of strings.");
         }
 
-        if (!DataModelBindings.TryGetValue("group", out var groupBinding))
+        if (!dataModelBindings.TryGetValue("group", out var groupModelBinding))
         {
-            throw new JsonException($"{Type} must have a 'group' data model binding.");
+            throw new JsonException($"{type} must have a 'group' data model binding.");
         }
 
-        if (string.IsNullOrWhiteSpace(groupBinding.Field))
+        if (string.IsNullOrWhiteSpace(groupModelBinding.Field))
         {
             throw new JsonException(
-                $"Component {layoutId}.{pageId}.{Id} must have 'dataModelBindings.group' which is a non-empty string or object with a non-empty 'field'."
+                $"Component {layoutId}.{pageId}.{id} must have 'dataModelBindings.group' which is a non-empty string or object with a non-empty 'field'."
             );
         }
 
-        GroupModelBinding = groupBinding;
+        var repeatingChildReferences = ParseChildReferences(componentElement, layoutId, pageId);
 
-        RepeatingChildReferences = GetChildrenWithoutMultipageGroupIndex(componentElement, "children");
+        var rowsBefore = ParseGridConfig("rowsBefore", componentElement);
 
-        HiddenRow = componentElement.TryGetProperty("hiddenRow", out JsonElement hiddenRowElement)
-            ? ExpressionConverter.ReadStatic(hiddenRowElement)
-            : Expression.False;
-        RowsBefore = ParseGridConfig("rowsBefore", componentElement);
+        var rowsAfter = ParseGridConfig("rowsAfter", componentElement);
 
-        RowsAfter = ParseGridConfig("rowsAfter", componentElement);
-
-        BeforeChildReferences = RowsBefore
+        var beforeChildReferences = rowsBefore
             .SelectMany(row => row.Cells?.Select(cell => cell?.ComponentId) ?? [])
             .OfType<string>()
             .ToList();
 
-        AfterChildReferences = RowsAfter
+        var afterChildReferences = rowsAfter
             .SelectMany(row => row.Cells?.Select(cell => cell?.ComponentId) ?? [])
             .OfType<string>()
             .ToList();
+
+        return new RepeatingGroupComponent
+        {
+            Id = id,
+            Type = type,
+            PageId = pageId,
+            LayoutId = layoutId,
+            Required = ParseRequiredExpression(componentElement),
+            ReadOnly = ParseReadOnlyExpression(componentElement),
+            Hidden = ParseHiddenExpression(componentElement),
+            RemoveWhenHidden = ParseRemoveWhenHiddenExpression(componentElement),
+            DataModelBindings = dataModelBindings,
+            TextResourceBindings = ParseTextResourceBindings(componentElement),
+            // RepeatingGroupComponent properties
+            MaxCount = maxCount,
+            GroupModelBinding = groupModelBinding,
+            RepeatingChildReferences = repeatingChildReferences,
+            HiddenRow = ParseExpression(componentElement, "hiddenRow"),
+            RowsBefore = rowsBefore,
+            RowsAfter = rowsAfter,
+            BeforeChildReferences = beforeChildReferences,
+            AfterChildReferences = afterChildReferences,
+        };
     }
 
     private static List<GridComponent.GridRowConfig> ParseGridConfig(string propertyName, JsonElement componentElement)
@@ -80,30 +104,15 @@ public sealed class RepeatingGroupComponent : Base.RepeatingReferenceComponent
     /// <summary>
     /// Maximum number of repetitions of this repeating group
     /// </summary>
-    public int MaxCount { get; }
+    public required int MaxCount { get; init; }
 
     /// <summary>
     /// List of rows before the repeating group, used to associate components that are not repeated to the repeating group for layout purposes
     /// </summary>
-    public IReadOnlyList<GridComponent.GridRowConfig> RowsBefore { get; }
+    public required IReadOnlyList<GridComponent.GridRowConfig> RowsBefore { get; init; }
 
     /// <summary>
     /// List of rows after the repeating group, used to associate components that are not repeated to the repeating group for layout purposes
     /// </summary>
-    public IReadOnlyList<GridComponent.GridRowConfig> RowsAfter { get; }
-
-    /// <inheritdoc />
-    public override ModelBinding GroupModelBinding { get; }
-
-    /// <inheritdoc />
-    public override Expression HiddenRow { get; }
-
-    /// <inheritdoc />
-    public override IReadOnlyList<string> RepeatingChildReferences { get; }
-
-    /// <inheritdoc />
-    public override IReadOnlyList<string> BeforeChildReferences { get; }
-
-    /// <inheritdoc />
-    public override IReadOnlyList<string> AfterChildReferences { get; }
+    public required IReadOnlyList<GridComponent.GridRowConfig> RowsAfter { get; init; }
 }

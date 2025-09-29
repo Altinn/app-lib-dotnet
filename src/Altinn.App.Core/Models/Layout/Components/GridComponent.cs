@@ -10,33 +10,45 @@ namespace Altinn.App.Core.Models.Layout.Components;
 public sealed class GridComponent : SimpleReferenceComponent
 {
     /// <summary>
-    /// Constructor for GridComponent
+    /// Parser for GridComponent
     /// </summary>
-    public GridComponent(JsonElement componentElement, string pageId, string layoutId)
-        : base(componentElement, pageId, layoutId)
+    public static GridComponent Parse(JsonElement componentElement, string pageId, string layoutId)
     {
+        var id = ParseId(componentElement);
+        var type = ParseType(componentElement);
+
         if (!componentElement.TryGetProperty("rows", out JsonElement rowsElement))
         {
             throw new JsonException("GridComponent must have a \"rows\" property.");
         }
 
-        Rows =
+        var rows =
             rowsElement.Deserialize<List<GridRowConfig>>()
             ?? throw new JsonException("Failed to deserialize rows in GridComponent.");
 
-        // Extract component IDs from the Components in the grid so that they can be claimed and used
-        // when getting contexts.
-        // cells might not reference components, so we filter out nulls with OfType<string>()
-        ChildReferences = Rows.SelectMany(r => r.Cells).Select(c => c?.ComponentId).OfType<string>().ToList();
+        return new GridComponent
+        {
+            // BaseComponent properties
+            Id = id,
+            Type = type,
+            PageId = pageId,
+            LayoutId = layoutId,
+            Required = ParseRequiredExpression(componentElement),
+            ReadOnly = ParseReadOnlyExpression(componentElement),
+            Hidden = ParseHiddenExpression(componentElement),
+            RemoveWhenHidden = ParseRemoveWhenHiddenExpression(componentElement),
+            DataModelBindings = ParseDataModelBindings(componentElement),
+            TextResourceBindings = ParseTextResourceBindings(componentElement),
+            // GridComponent properties
+            Rows = rows,
+            ChildReferences = rows.SelectMany(r => r.Cells).Select(c => c?.ComponentId).OfType<string>().ToList(),
+        };
     }
 
     /// <summary>
     /// Content from the "rows" property in the JSON representation of the grid component.
     /// </summary>
-    public List<GridRowConfig> Rows { get; }
-
-    /// <inheritdoc />
-    public override IReadOnlyCollection<string> ChildReferences { get; }
+    public required List<GridRowConfig> Rows { get; init; }
 
     /// <summary>
     /// Class for parsing a Grid component's rows and cells and extracting the child component IDs

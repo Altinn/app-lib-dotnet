@@ -309,7 +309,7 @@ public class TestFunctions
             var layoutId = "layout";
 
             var layout = new LayoutSetComponent(
-                [new PageComponent(document.RootElement, pageId, layoutId)],
+                [PageComponent.Parse(document.RootElement, pageId, layoutId)],
                 layoutId,
                 dataTypes[0]
             );

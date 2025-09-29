@@ -29,7 +29,7 @@ public sealed class LayoutSetComponent
         DataType defaultDataType
     )
     {
-        _pages = layouts.Select(kvp => new PageComponent(kvp.Value, kvp.Key, layoutSetId)).ToList();
+        _pages = layouts.Select(kvp => PageComponent.Parse(kvp.Value, kvp.Key, layoutSetId)).ToList();
         _pagesLookup = _pages.ToDictionary(p => p.PageId);
         Id = layoutSetId;
         DefaultDataType = defaultDataType;

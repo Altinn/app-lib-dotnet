@@ -1,6 +1,4 @@
-using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
 
@@ -13,35 +11,29 @@ namespace Altinn.App.Core.Models.Layout.Components.Base;
 public abstract class RepeatingReferenceComponent : BaseComponent
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="RepeatingReferenceComponent"/> class
-    /// </summary>
-    protected RepeatingReferenceComponent(JsonElement componentElement, string pageId, string layoutId)
-        : base(componentElement, pageId, layoutId) { }
-
-    /// <summary>
     /// Model binding for the group that defines the number of repetitions of the repeating group.
     /// </summary>
-    public abstract ModelBinding GroupModelBinding { get; }
+    public required ModelBinding GroupModelBinding { get; init; }
 
     /// <summary>
     /// The expression that determines if the row is hidden.
     /// </summary>
-    public abstract Expression HiddenRow { get; }
+    public required Expression HiddenRow { get; init; }
 
     /// <summary>
     /// List of references to child components that are repeated for each row in the repeating group.
     /// </summary>
-    public abstract IReadOnlyList<string> RepeatingChildReferences { get; }
+    public required IReadOnlyList<string> RepeatingChildReferences { get; init; }
 
     /// <summary>
     /// References to child components that are not repeated and comes before the repeating group
     /// </summary>
-    public abstract IReadOnlyList<string> BeforeChildReferences { get; }
+    public required IReadOnlyList<string> BeforeChildReferences { get; init; }
 
     /// <summary>
     /// References to child components that are not repeated and comes after the repeating group
     /// </summary>
-    public abstract IReadOnlyList<string> AfterChildReferences { get; }
+    public required IReadOnlyList<string> AfterChildReferences { get; init; }
 
     // References to the components that are used for the child contexts of this component
     private Dictionary<string, BaseComponent>? _claimedChildrenLookup;
@@ -132,14 +124,19 @@ public abstract class RepeatingReferenceComponent : BaseComponent
         for (int i = 0; i < rowCount; i++)
         {
             var subRowIndexes = GetSubRowIndexes(rowIndexes, i);
-            var rowComponent = new RepeatingGroupRowComponent(
-                $"{Id}__group_row_{i}",
-                PageId,
-                LayoutId,
-                DataModelBindings,
-                HiddenRow,
-                RemoveWhenHidden
-            );
+            var rowComponent = new RepeatingGroupRowComponent
+            {
+                Id = $"{Id}__group_row_{i}",
+                PageId = PageId,
+                LayoutId = LayoutId,
+                DataModelBindings = DataModelBindings,
+                Hidden = HiddenRow,
+                RemoveWhenHidden = RemoveWhenHidden,
+                Type = "repeatingGroupRow",
+                ReadOnly = Expression.False, // We don't have a row level readOnly, only at the group or child component level
+                Required = Expression.False, // We don't have a row level required, only at the group or child component level
+                TextResourceBindings = TextResourceBindings,
+            };
             List<ComponentContext> rowChildren = [];
             foreach (var componentId in RepeatingChildReferences)
             {
@@ -206,32 +203,6 @@ public abstract class RepeatingReferenceComponent : BaseComponent
 /// </summary>
 public class RepeatingGroupRowComponent : BaseComponent
 {
-    /// <summary>
-    /// Represents a dynamically created component for each row in a repeating group.
-    /// These components are not directly defined in the JSON layout but are generated
-    /// during runtime to manage the context of repeating group rows.
-    /// </summary>
-    public RepeatingGroupRowComponent(
-        string id,
-        string pageId,
-        string layoutId,
-        IReadOnlyDictionary<string, ModelBinding> dataModelBindings,
-        Expression hiddenRow,
-        Expression removeWhenHidden
-    )
-        : base(
-            id,
-            pageId,
-            layoutId,
-            "repeatingGroupRow",
-            required: Expression.False,
-            readOnly: Expression.False,
-            hidden: hiddenRow,
-            removeWhenHidden,
-            dataModelBindings,
-            ImmutableDictionary<string, Expression>.Empty
-        ) { }
-
     /// <inheritdoc />
     public override Task<ComponentContext> GetContext(
         LayoutEvaluatorState state,

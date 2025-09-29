@@ -14,8 +14,7 @@ public sealed class SubFormComponent : Base.BaseComponent
     /// <remarks>
     /// Note that some properties are commented out, as they are currently not used, and might allow expressions in the future
     /// </remarks>
-    public SubFormComponent(JsonElement componentElement, string pageId, string layoutId)
-        : base(componentElement, pageId, layoutId)
+    public static SubFormComponent Parse(JsonElement componentElement, string pageId, string layoutId)
     {
         if (
             !componentElement.TryGetProperty("layoutSet", out JsonElement layoutSetIdElement)
@@ -24,13 +23,30 @@ public sealed class SubFormComponent : Base.BaseComponent
         {
             throw new ArgumentException("SubFormComponent must have a string 'layoutSet' property.");
         }
-        LayoutSetId = layoutSetIdElement.GetString() ?? throw new UnreachableException();
+        var layoutSetId = layoutSetIdElement.GetString() ?? throw new UnreachableException();
+
+        return new SubFormComponent()
+        {
+            // BaseComponent properties
+            Id = ParseId(componentElement),
+            Type = ParseType(componentElement),
+            PageId = pageId,
+            LayoutId = layoutId,
+            Required = ParseRequiredExpression(componentElement),
+            ReadOnly = ParseReadOnlyExpression(componentElement),
+            Hidden = ParseHiddenExpression(componentElement),
+            RemoveWhenHidden = ParseRemoveWhenHiddenExpression(componentElement),
+            DataModelBindings = ParseDataModelBindings(componentElement),
+            TextResourceBindings = ParseTextResourceBindings(componentElement),
+            // SubFormComponent properties
+            LayoutSetId = layoutSetId,
+        };
     }
 
     /// <summary>
     /// The layout set to load for this subform
     /// </summary>
-    public string LayoutSetId { get; }
+    public required string LayoutSetId { get; init; }
 
     /// <inheritdoc />
     public override async Task<ComponentContext> GetContext(

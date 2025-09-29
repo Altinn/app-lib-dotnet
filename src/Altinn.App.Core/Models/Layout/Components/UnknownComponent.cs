@@ -9,8 +9,23 @@ namespace Altinn.App.Core.Models.Layout.Components;
 internal sealed class UnknownComponent : Base.NoReferenceComponent
 {
     /// <summary>
-    /// Constructor for UnknownComponent
+    /// Parser for UnknownComponent
     /// </summary>
-    public UnknownComponent(JsonElement componentElement, string pageId, string layoutId)
-        : base(componentElement, pageId, layoutId) { }
+    public static UnknownComponent Parse(JsonElement componentElement, string pageId, string layoutId)
+    {
+        return new UnknownComponent()
+        {
+            // BaseComponent properties
+            Id = ParseId(componentElement),
+            PageId = pageId,
+            LayoutId = layoutId,
+            Type = ParseType(componentElement),
+            Required = ParseRequiredExpression(componentElement),
+            ReadOnly = ParseReadOnlyExpression(componentElement),
+            Hidden = ParseHiddenExpression(componentElement),
+            RemoveWhenHidden = ParseRemoveWhenHiddenExpression(componentElement),
+            DataModelBindings = ParseDataModelBindings(componentElement),
+            TextResourceBindings = ParseTextResourceBindings(componentElement),
+        };
+    }
 }

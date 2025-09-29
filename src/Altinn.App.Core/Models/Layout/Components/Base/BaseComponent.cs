@@ -13,120 +13,54 @@ namespace Altinn.App.Core.Models.Layout.Components.Base;
 public abstract class BaseComponent
 {
     /// <summary>
-    /// Constructor that initializes from a JsonElement
-    /// </summary>
-    protected BaseComponent(JsonElement componentElement, string pageId, string layoutId)
-    {
-        if (
-            !componentElement.TryGetProperty("id", out JsonElement idElement)
-            || idElement.ValueKind != JsonValueKind.String
-        )
-        {
-            throw new JsonException($"Component must have a string 'id' property. Was {idElement.ValueKind}");
-        }
-
-        Id = idElement.GetString() ?? throw new UnreachableException();
-
-        if (
-            !componentElement.TryGetProperty("type", out JsonElement typeElement)
-            || typeElement.ValueKind != JsonValueKind.String
-        )
-        {
-            throw new JsonException($"Component must have a string 'type' property. Was {typeElement.ValueKind}");
-        }
-
-        Type = typeElement.GetString() ?? throw new UnreachableException();
-
-        DataModelBindings = DeserializeModelBindings(componentElement);
-
-        TextResourceBindings = DeserializeTextResourceBindings(componentElement);
-
-        Hidden = ParseExpression(componentElement, "hidden");
-        Required = ParseExpression(componentElement, "required");
-        ReadOnly = ParseExpression(componentElement, "readOnly");
-        RemoveWhenHidden = ParseExpression(componentElement, "removeWhenHidden");
-
-        PageId = pageId;
-        LayoutId = layoutId;
-    }
-
-    /// <summary>
-    /// Explicit constructor for BaseComponent, used by derived classes that do not need to parse from JsonElement.
-    /// </summary>
-    protected BaseComponent(
-        string id,
-        string pageId,
-        string layoutId,
-        string type,
-        Expression required,
-        Expression readOnly,
-        Expression hidden,
-        Expression removeWhenHidden,
-        IReadOnlyDictionary<string, ModelBinding> dataModelBindings,
-        IReadOnlyDictionary<string, Expression> textResourceBindings
-    )
-    {
-        Id = id;
-        PageId = pageId;
-        LayoutId = layoutId;
-        Type = type;
-        DataModelBindings = dataModelBindings;
-        TextResourceBindings = textResourceBindings;
-        Required = required;
-        ReadOnly = readOnly;
-        Hidden = hidden;
-        RemoveWhenHidden = removeWhenHidden;
-    }
-
-    /// <summary>
     /// ID of the component (or pageName for pages)
     /// </summary>
-    public string Id { get; }
+    public required string Id { get; init; }
 
     /// <summary>
     /// The name of the page for the component
     /// </summary>
-    public string PageId { get; }
+    public required string PageId { get; init; }
 
     /// <summary>
     /// Name of the layout that this component is part of
     /// </summary>
-    public string LayoutId { get; }
+    public required string LayoutId { get; init; }
 
     /// <summary>
     /// Component type as written in the json file
     /// </summary>
-    public string Type { get; }
+    public required string Type { get; init; }
 
     /// <summary>
     /// Layout Expression that can be evaluated to see if the component should be hidden
     /// </summary>
-    public Expression Hidden { get; }
+    public required Expression Hidden { get; init; }
 
     /// <summary>
     /// Signal whether the data referenced by this component should be removed at the end of the task.
     /// </summary>
-    public Expression RemoveWhenHidden { get; }
+    public required Expression RemoveWhenHidden { get; init; }
 
     /// <summary>
     /// Layout Expression that can be evaluated to see if the component should be required
     /// </summary>
-    public Expression Required { get; }
+    public required Expression Required { get; init; }
 
     /// <summary>
     /// Layout Expression that can be evaluated to see if the component should be readOnly
     /// </summary>
-    public Expression ReadOnly { get; }
+    public required Expression ReadOnly { get; init; }
 
     /// <summary>
     /// Data model bindings for the component or group
     /// </summary>
-    public IReadOnlyDictionary<string, ModelBinding> DataModelBindings { get; }
+    public required IReadOnlyDictionary<string, ModelBinding> DataModelBindings { get; init; }
 
     /// <summary>
     /// The text resource bindings for the component.
     /// </summary>
-    public IReadOnlyDictionary<string, Expression> TextResourceBindings { get; }
+    public required IReadOnlyDictionary<string, Expression> TextResourceBindings { get; init; }
 
     /// <summary>
     /// Creates a context for the component based on the provided parameters.
@@ -154,6 +88,38 @@ public abstract class BaseComponent
     );
 
     /// <summary>
+    /// Parse the Id property from a JsonElement
+    /// </summary>
+    protected static string ParseId(JsonElement componentElement)
+    {
+        if (
+            !componentElement.TryGetProperty("id", out JsonElement idElement)
+            || idElement.ValueKind != JsonValueKind.String
+        )
+        {
+            throw new JsonException($"Component must have a string 'id' property. Was {idElement.ValueKind}");
+        }
+
+        return idElement.GetString() ?? throw new UnreachableException();
+    }
+
+    /// <summary>
+    /// Parse the Type property from a JsonElement
+    /// </summary>
+    protected static string ParseType(JsonElement componentElement)
+    {
+        if (
+            !componentElement.TryGetProperty("type", out JsonElement typeElement)
+            || typeElement.ValueKind != JsonValueKind.String
+        )
+        {
+            throw new JsonException($"Component must have a string 'type' property. Was {typeElement.ValueKind}");
+        }
+
+        return typeElement.GetString() ?? throw new UnreachableException();
+    }
+
+    /// <summary>
     /// Helper method to parse an expression from a JSON element.
     /// </summary>
     protected static Expression ParseExpression(JsonElement componentElement, string property)
@@ -166,7 +132,34 @@ public abstract class BaseComponent
         return new Expression(ExpressionValue.Undefined);
     }
 
-    private static IReadOnlyDictionary<string, ModelBinding> DeserializeModelBindings(JsonElement element)
+    /// <summary>
+    /// Parses the 'required' expression from a JSON element.
+    /// </summary>
+    protected static Expression ParseRequiredExpression(JsonElement componentElement) =>
+        ParseExpression(componentElement, "required");
+
+    /// <summary>
+    /// Parses the 'readOnly' expression from a JSON element.
+    /// </summary>
+    protected static Expression ParseReadOnlyExpression(JsonElement componentElement) =>
+        ParseExpression(componentElement, "readOnly");
+
+    /// <summary>
+    /// Parses the 'hidden' expression from a JSON element.
+    /// </summary>
+    protected static Expression ParseHiddenExpression(JsonElement componentElement) =>
+        ParseExpression(componentElement, "hidden");
+
+    /// <summary>
+    /// Parses the 'removeWhenHidden' expression from a JSON element.
+    /// </summary>
+    protected static Expression ParseRemoveWhenHiddenExpression(JsonElement componentElement) =>
+        ParseExpression(componentElement, "removeWhenHidden");
+
+    /// <summary>
+    /// Parses the data model bindings from a JSON element.
+    /// </summary>
+    protected static IReadOnlyDictionary<string, ModelBinding> ParseDataModelBindings(JsonElement element)
     {
         if (
             !element.TryGetProperty("dataModelBindings", out JsonElement dataModelBindingsElement)
@@ -201,7 +194,10 @@ public abstract class BaseComponent
         return modelBindings;
     }
 
-    private static Dictionary<string, Expression> DeserializeTextResourceBindings(JsonElement element)
+    /// <summary>
+    /// Parses the text resource bindings from a JSON element.
+    /// </summary>
+    protected static Dictionary<string, Expression> ParseTextResourceBindings(JsonElement element)
     {
         if (
             !element.TryGetProperty("textResourceBindings", out JsonElement textResourceBindingsElement)
@@ -221,18 +217,33 @@ public abstract class BaseComponent
     }
 
     /// <summary>
+    /// Parses the child references from a JSON element.
     /// Extracts the child component IDs from a JSON element, stripping any multipage group index.
     /// </summary>
-    protected List<string> GetChildrenWithoutMultipageGroupIndex(JsonElement component, string property)
+    protected static List<string> ParseChildReferences(JsonElement componentElement, string layoutId, string pageId)
     {
-        if (!component.TryGetProperty(property, out JsonElement children) || children.ValueKind != JsonValueKind.Array)
+        if (
+            !componentElement.TryGetProperty("children", out JsonElement childrenElement)
+            || childrenElement.ValueKind != JsonValueKind.Array
+        )
         {
-            throw new JsonException($"Component of {Type} must have a \"{property}\" property of type array.");
+            throw new JsonException($"Component {layoutId}.{pageId} must have a \"children\" property of type array.");
         }
 
-        return children.EnumerateArray().Select(StripPageIndexForGroupChild).ToList();
+        var childReferences = new List<string>();
+        foreach (var child in childrenElement.EnumerateArray())
+        {
+            childReferences.Add(StripPageIndexForGroupChild(child));
+        }
+
+        return childReferences;
     }
 
+    /// <summary>
+    /// Utility function to strip the page index from a child ID in a multipage group.
+    /// If the child ID is in the format "pageNumber:childId", it returns "childId".
+    /// If the child ID does not contain a colon or the part before the colon is not a number, it returns the original child ID.
+    /// </summary>
     private static string StripPageIndexForGroupChild(JsonElement child)
     {
         // Group children on multipage groups have the format "pageNumber:childId" (eg "1:child1")

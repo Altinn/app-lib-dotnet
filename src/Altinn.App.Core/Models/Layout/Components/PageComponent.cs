@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
@@ -12,22 +11,20 @@ namespace Altinn.App.Core.Models.Layout.Components;
 public sealed class PageComponent : Base.BaseComponent
 {
     /// <summary>
-    /// Constructor for PageComponent
+    /// Parser for PageComponent
     /// </summary>
-    public PageComponent(JsonElement outerElement, string pageId, string layoutId)
-        : base(
-            pageId,
-            pageId,
-            layoutId,
-            "page",
-            required: Expression.False,
-            readOnly: Expression.False,
-            hidden: ParseHiddenExpressionAndValidateJsonElement(outerElement, out JsonElement dataElement),
-            removeWhenHidden: Expression.Null,
-            dataModelBindings: ImmutableDictionary<string, ModelBinding>.Empty,
-            textResourceBindings: ImmutableDictionary<string, Expression>.Empty
-        )
+    public static PageComponent Parse(JsonElement outerElement, string pageId, string layoutId)
     {
+        if (outerElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new JsonException("Layout file must be an object.");
+        }
+
+        if (!outerElement.TryGetProperty("data", out var dataElement) || dataElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new JsonException("Layout file must have a \"data\" property of type object.");
+        }
+
         if (
             !dataElement.TryGetProperty("layout", out JsonElement componentsElement)
             || componentsElement.ValueKind != JsonValueKind.Array
@@ -35,6 +32,7 @@ public sealed class PageComponent : Base.BaseComponent
         {
             throw new JsonException("PageComponent must have a \"layout\" property of type array.");
         }
+        var hidden = ParseHiddenExpression(dataElement);
 
         List<Base.BaseComponent> componentList = [];
 
@@ -45,17 +43,7 @@ public sealed class PageComponent : Base.BaseComponent
                 throw new JsonException("Each component in the \"layout\" array must be an object.");
             }
 
-            if (
-                !componentElement.TryGetProperty("type", out JsonElement typeElement)
-                || typeElement.ValueKind != JsonValueKind.String
-            )
-            {
-                throw new JsonException(
-                    "Each component in the \"layout\" must have a \"type\" property of type string."
-                );
-            }
-
-            var type = typeElement.GetString() ?? throw new UnreachableException();
+            var type = ParseType(componentElement);
 
             var maxCount =
                 componentElement.TryGetProperty("maxCount", out JsonElement maxCountElement)
@@ -65,26 +53,27 @@ public sealed class PageComponent : Base.BaseComponent
             // ensure maxCount is positive
             if (maxCount < 0)
             {
+                var id = ParseId(componentElement);
                 throw new JsonException(
-                    $"Component {layoutId}.{pageId}.{Id} has invalid maxCount={maxCount}, must be positive."
+                    $"Component {layoutId}.{pageId}.{id} has invalid maxCount={maxCount}, must be positive."
                 );
             }
 
             Base.BaseComponent component = type.ToLowerInvariant() switch
             {
-                "group" when maxCount == 1 => new NonRepeatingGroupComponent(componentElement, pageId, layoutId),
-                "group" => new RepeatingGroupComponent(componentElement, pageId, layoutId, maxCount),
-                "repeatinggroup" => new RepeatingGroupComponent(componentElement, pageId, layoutId, maxCount),
-                "accordion" => new NonRepeatingGroupComponent(componentElement, pageId, layoutId),
-                "grid" => new GridComponent(componentElement, pageId, layoutId),
-                "subform" => new SubFormComponent(componentElement, pageId, layoutId),
-                "tabs" => new TabsComponent(componentElement, pageId, layoutId),
-                "cards" => new CardsComponent(componentElement, pageId, layoutId),
-                "checkboxes" => new OptionsComponent(componentElement, pageId, layoutId),
-                "radiobuttons" => new OptionsComponent(componentElement, pageId, layoutId),
-                "dropdown" => new OptionsComponent(componentElement, pageId, layoutId),
-                "multipleselect" => new OptionsComponent(componentElement, pageId, layoutId),
-                _ => new UnknownComponent(componentElement, pageId, layoutId),
+                "group" when maxCount == 1 => NonRepeatingGroupComponent.Parse(componentElement, pageId, layoutId),
+                "group" => RepeatingGroupComponent.Parse(componentElement, pageId, layoutId, maxCount),
+                "repeatinggroup" => RepeatingGroupComponent.Parse(componentElement, pageId, layoutId, maxCount),
+                "accordion" => NonRepeatingGroupComponent.Parse(componentElement, pageId, layoutId),
+                "grid" => GridComponent.Parse(componentElement, pageId, layoutId),
+                "subform" => SubFormComponent.Parse(componentElement, pageId, layoutId),
+                "tabs" => TabsComponent.Parse(componentElement, pageId, layoutId),
+                "cards" => CardsComponent.Parse(componentElement, pageId, layoutId),
+                "checkboxes" => OptionsComponent.Parse(componentElement, pageId, layoutId),
+                "radiobuttons" => OptionsComponent.Parse(componentElement, pageId, layoutId),
+                "dropdown" => OptionsComponent.Parse(componentElement, pageId, layoutId),
+                "multipleselect" => OptionsComponent.Parse(componentElement, pageId, layoutId),
+                _ => UnknownComponent.Parse(componentElement, pageId, layoutId),
             };
 
             componentList.Add(component);
@@ -108,32 +97,28 @@ public sealed class PageComponent : Base.BaseComponent
         }
 
         // Preserve order but remove components that have been claimed
-        Components = componentList.Where(c => !claimedComponentIds.ContainsKey(c.Id)).ToList();
-    }
-
-    // Silly way to run code before the base constructor is called.
-    private static Expression ParseHiddenExpressionAndValidateJsonElement(
-        JsonElement outerElement,
-        out JsonElement dataElement
-    )
-    {
-        if (outerElement.ValueKind != JsonValueKind.Object)
+        return new PageComponent()
         {
-            throw new JsonException("Layout file must be an object.");
-        }
-
-        if (!outerElement.TryGetProperty("data", out dataElement) || dataElement.ValueKind != JsonValueKind.Object)
-        {
-            throw new JsonException("Layout file must have a \"data\" property of type object.");
-        }
-
-        return ParseExpression(dataElement, "hidden");
+            // BaseComponent properties
+            Id = pageId,
+            PageId = pageId,
+            LayoutId = layoutId,
+            Type = "page",
+            Required = Expression.False,
+            ReadOnly = Expression.False,
+            Hidden = hidden,
+            RemoveWhenHidden = Expression.Null,
+            DataModelBindings = ImmutableDictionary<string, ModelBinding>.Empty,
+            TextResourceBindings = ImmutableDictionary<string, Expression>.Empty,
+            // Custom properties
+            Components = componentList.Where(c => !claimedComponentIds.ContainsKey(c.Id)).ToList(),
+        };
     }
 
     /// <summary>
     /// List of the components that are part of this page.
     /// </summary>
-    public IReadOnlyList<Base.BaseComponent> Components { get; private init; }
+    public required IReadOnlyList<Base.BaseComponent> Components { get; init; }
 
     /// <inheritdoc />
     public override async Task<ComponentContext> GetContext(

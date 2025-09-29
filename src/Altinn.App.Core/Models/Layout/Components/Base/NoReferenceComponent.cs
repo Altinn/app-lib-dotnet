@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
 
@@ -9,10 +8,6 @@ namespace Altinn.App.Core.Models.Layout.Components.Base;
 /// </summary>
 public abstract class NoReferenceComponent : BaseComponent
 {
-    /// <inheritdoc />
-    protected NoReferenceComponent(JsonElement componentElement, string pageId, string layoutId)
-        : base(componentElement, pageId, layoutId) { }
-
     /// <summary>
     /// No children to claim for NoReferenceComponent
     /// </summary>

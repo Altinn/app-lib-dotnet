@@ -22,7 +22,7 @@ public class PageComponentConverterTests
 
         if (testCase.Valid)
         {
-            var page = new PageComponent(testCase.Layout, "testPage", "testLayout");
+            var page = PageComponent.Parse(testCase.Layout, "testPage", "testLayout");
             if (testCase.ExpectedHierarchy is not null)
             {
                 var hierarchy = GenerateTestHierarchy(page);
@@ -31,7 +31,7 @@ public class PageComponentConverterTests
         }
         else
         {
-            var exception = Record.Exception(() => new PageComponent(testCase.Layout, "testPage", "testLayout"));
+            var exception = Record.Exception(() => PageComponent.Parse(testCase.Layout, "testPage", "testLayout"));
             exception.Should().NotBeNull();
         }
     }

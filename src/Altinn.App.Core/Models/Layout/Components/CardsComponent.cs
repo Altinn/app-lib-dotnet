@@ -10,30 +10,46 @@ namespace Altinn.App.Core.Models.Layout.Components;
 public sealed class CardsComponent : SimpleReferenceComponent
 {
     /// <summary>
-    /// Constructor for CardsComponent
+    /// Parser for CardsComponent from a JsonElement
     /// </summary>
-    public CardsComponent(JsonElement componentElement, string pageId, string layoutId)
-        : base(componentElement, pageId, layoutId)
+    public static CardsComponent Parse(JsonElement componentElement, string pageId, string layoutId)
     {
+        var id = ParseId(componentElement);
+        var type = ParseType(componentElement);
         if (!componentElement.TryGetProperty("cards", out JsonElement cardsElement))
         {
-            throw new JsonException($"{Type} component must have a \"cards\" property.");
+            throw new JsonException(
+                $"Component {layoutId}.{pageId}.{id} of type {type} component must have a \"cards\" property."
+            );
         }
 
-        Cards =
+        var cards =
             cardsElement.Deserialize<List<CardsConfig>>()
             ?? throw new JsonException("Failed to deserialize cards in CardsComponent.");
 
-        ChildReferences = Cards.SelectMany(t => t.Children ?? []).ToList();
+        return new CardsComponent()
+        {
+            // BaseComponent properties
+            Id = id,
+            Type = type,
+            PageId = pageId,
+            LayoutId = layoutId,
+            Required = ParseRequiredExpression(componentElement),
+            ReadOnly = ParseReadOnlyExpression(componentElement),
+            Hidden = ParseHiddenExpression(componentElement),
+            RemoveWhenHidden = ParseRemoveWhenHiddenExpression(componentElement),
+            DataModelBindings = ParseDataModelBindings(componentElement),
+            TextResourceBindings = ParseTextResourceBindings(componentElement),
+            // CardsComponent properties
+            Cards = cards,
+            ChildReferences = cards.SelectMany(t => t.Children ?? []).ToList(),
+        };
     }
-
-    /// <inheritdoc />
-    public override IReadOnlyCollection<string> ChildReferences { get; }
 
     /// <summary>
     /// Configuration for the cards in the CardsComponent.
     /// </summary>
-    public IReadOnlyCollection<CardsConfig> Cards { get; }
+    public required IReadOnlyCollection<CardsConfig> Cards { get; init; }
 }
 
 /// <summary>

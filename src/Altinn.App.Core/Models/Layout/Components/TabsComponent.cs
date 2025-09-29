@@ -10,30 +10,47 @@ namespace Altinn.App.Core.Models.Layout.Components;
 public sealed class TabsComponent : SimpleReferenceComponent
 {
     /// <summary>
-    /// Constructor for TabsComponent
+    /// Parser for TabsComponent
     /// </summary>
-    public TabsComponent(JsonElement componentElement, string pageId, string layoutId)
-        : base(componentElement, pageId, layoutId)
+    public static TabsComponent Parse(JsonElement componentElement, string pageId, string layoutId)
+    {
+        var tabs = ParseTabs(componentElement, pageId, layoutId);
+        return new TabsComponent()
+        {
+            // BaseComponent properties
+            Id = ParseId(componentElement),
+            Type = ParseType(componentElement),
+            PageId = pageId,
+            LayoutId = layoutId,
+            Required = ParseRequiredExpression(componentElement),
+            ReadOnly = ParseReadOnlyExpression(componentElement),
+            Hidden = ParseHiddenExpression(componentElement),
+            RemoveWhenHidden = ParseRemoveWhenHiddenExpression(componentElement),
+            DataModelBindings = ParseDataModelBindings(componentElement),
+            TextResourceBindings = ParseTextResourceBindings(componentElement),
+            // TabsComponent properties
+            Tabs = tabs,
+            ChildReferences = tabs.SelectMany(t => t.Children ?? []).ToList(),
+        };
+    }
+
+    private static List<TabsConfig> ParseTabs(JsonElement componentElement, string pageId, string layoutId)
     {
         if (!componentElement.TryGetProperty("tabs", out JsonElement tabsElement))
         {
-            throw new JsonException($"{Type} component must have a \"tabs\" property.");
+            var id = ParseId(componentElement);
+            var type = ParseType(componentElement);
+            throw new JsonException($"{type} component must have a \"tabs\" property.");
         }
 
-        Tabs =
-            tabsElement.Deserialize<List<TabsConfig>>()
+        return tabsElement.Deserialize<List<TabsConfig>>()
             ?? throw new JsonException("Failed to deserialize tabs in TabsComponent.");
-
-        ChildReferences = Tabs.SelectMany(t => t.Children ?? []).ToList();
     }
-
-    /// <inheritdoc />
-    public override IReadOnlyCollection<string> ChildReferences { get; }
 
     /// <summary>
     /// Configuration for the tabs in the TabsComponent.
     /// </summary>
-    public IReadOnlyCollection<TabsConfig> Tabs { get; }
+    public required IReadOnlyCollection<TabsConfig> Tabs { get; init; }
 }
 
 /// <summary>

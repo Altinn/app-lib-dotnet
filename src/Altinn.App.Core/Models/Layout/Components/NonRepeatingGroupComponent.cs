@@ -9,19 +9,30 @@ namespace Altinn.App.Core.Models.Layout.Components;
 public sealed class NonRepeatingGroupComponent : SimpleReferenceComponent
 {
     /// <summary>
-    /// Constructor for NonRepeatingGroupComponent
+    /// Parser for NonRepeatingGroupComponent.
     /// </summary>
-    public NonRepeatingGroupComponent(JsonElement componentElement, string pageId, string layoutId)
-        : base(componentElement, pageId, layoutId)
+    public static NonRepeatingGroupComponent Parse(JsonElement componentElement, string pageId, string layoutId)
     {
-        if (!componentElement.TryGetProperty("children", out JsonElement childIdsElement))
+        var id = ParseId(componentElement);
+        var type = ParseType(componentElement);
+
+        var children = ParseChildReferences(componentElement, pageId, layoutId);
+
+        return new NonRepeatingGroupComponent()
         {
-            throw new JsonException($"{Type} component must have a \"children\" property.");
-        }
-
-        ChildReferences = GetChildrenWithoutMultipageGroupIndex(componentElement, "children");
+            // BaseComponent properties
+            Id = id,
+            Type = type,
+            PageId = pageId,
+            LayoutId = layoutId,
+            Required = ParseRequiredExpression(componentElement),
+            ReadOnly = ParseReadOnlyExpression(componentElement),
+            Hidden = ParseHiddenExpression(componentElement),
+            RemoveWhenHidden = ParseRemoveWhenHiddenExpression(componentElement),
+            DataModelBindings = ParseDataModelBindings(componentElement),
+            TextResourceBindings = ParseTextResourceBindings(componentElement),
+            // GridComponent properties
+            ChildReferences = children,
+        };
     }
-
-    /// <inheritdoc />
-    public override IReadOnlyCollection<string> ChildReferences { get; }
 }

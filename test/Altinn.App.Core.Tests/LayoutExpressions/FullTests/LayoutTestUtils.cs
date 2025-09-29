@@ -85,7 +85,7 @@ public static class LayoutTestUtils
 
             using var document = JsonDocument.Parse(layoutBytes, _options);
 
-            pages.Add(new PageComponent(document.RootElement, pageName, "layout"));
+            pages.Add(PageComponent.Parse(document.RootElement, pageName, "layout"));
         }
         var dataType = new DataType() { Id = DataTypeId };
         var layout = new LayoutSetComponent(pages, "layout", dataType);

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
 
@@ -9,14 +8,10 @@ namespace Altinn.App.Core.Models.Layout.Components.Base;
 /// </summary>
 public abstract class SimpleReferenceComponent : BaseComponent
 {
-    /// <inheritdoc />
-    protected SimpleReferenceComponent(JsonElement componentElement, string pageId, string layoutId)
-        : base(componentElement, pageId, layoutId) { }
-
     /// <summary>
     /// Collection of IDs for children that should be claimed.
     /// </summary>
-    public abstract IReadOnlyCollection<string> ChildReferences { get; }
+    public required IReadOnlyCollection<string> ChildReferences { get; init; }
 
     private IReadOnlyDictionary<string, BaseComponent>? _claimedChildrenLookup;
 
