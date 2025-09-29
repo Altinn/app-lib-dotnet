@@ -102,6 +102,7 @@ public class EFormidlingConfigurationProviderTests
                 Type = CreateEnvironmentConfig("arkivmelding"),
                 SecurityLevel = CreateEnvironmentConfig("3"),
                 DpfShipmentType = CreateEnvironmentConfig("altinn3.skjema"),
+                Receiver = CreateEnvironmentConfig("123456789"),
             },
         };
 
@@ -119,6 +120,7 @@ public class EFormidlingConfigurationProviderTests
         result.Type.Should().Be("arkivmelding");
         result.SecurityLevel.Should().Be(3);
         result.DpfShipmentType.Should().Be("altinn3.skjema");
+        result.Receiver.Should().Be("123456789");
     }
 
     [Fact]

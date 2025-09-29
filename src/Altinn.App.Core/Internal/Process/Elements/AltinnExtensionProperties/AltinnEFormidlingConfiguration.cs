@@ -68,7 +68,7 @@ public class AltinnEFormidlingConfiguration
     {
         List<string>? errorMessages = null;
 
-        string? receiver = GetConfigValue(Process, env);
+        string? receiver = GetConfigValue(Receiver, env);
 
         string? process = GetConfigValue(Process, env);
         if (process.IsNullOrWhitespace(ref errorMessages, $"No Process configuration found for environment {env}"))
