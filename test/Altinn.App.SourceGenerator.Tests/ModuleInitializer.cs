@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+using DiffEngine;
+
 namespace Altinn.App.SourceGenerator.Tests;
 
 internal static class ModuleInitializer
