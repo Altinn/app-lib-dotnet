@@ -38,7 +38,6 @@ public sealed class TabsComponent : SimpleReferenceComponent
     {
         if (!componentElement.TryGetProperty("tabs", out JsonElement tabsElement))
         {
-            var id = ParseId(componentElement);
             var type = ParseType(componentElement);
             throw new JsonException($"{type} component must have a \"tabs\" property.");
         }
