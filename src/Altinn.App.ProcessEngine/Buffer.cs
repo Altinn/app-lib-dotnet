@@ -1,8 +1,9 @@
 namespace Altinn.App.ProcessEngine;
 
-internal sealed class BooleanBuffer(int maxSize = 10) : IDisposable
+internal sealed class Buffer<T>(int maxSize = 10) : IDisposable
+    where T : struct
 {
-    private readonly Queue<bool> _queue = new(maxSize);
+    private readonly Queue<T> _queue = new(maxSize);
     private readonly SemaphoreSlim _lock = new(1, 1);
 
     private async Task ExecuteLocked(Action action)
@@ -18,7 +19,7 @@ internal sealed class BooleanBuffer(int maxSize = 10) : IDisposable
         }
     }
 
-    private async Task<T> ExecuteLocked<T>(Func<T> func)
+    private async Task<TResult> ExecuteLocked<TResult>(Func<TResult> func)
     {
         await _lock.WaitAsync();
         try
@@ -31,7 +32,7 @@ internal sealed class BooleanBuffer(int maxSize = 10) : IDisposable
         }
     }
 
-    public Task Add(bool value) =>
+    public Task Add(T value) =>
         ExecuteLocked(() =>
         {
             if (_queue.Count >= maxSize)
@@ -42,17 +43,18 @@ internal sealed class BooleanBuffer(int maxSize = 10) : IDisposable
 
     public Task Clear() => ExecuteLocked(() => _queue.Clear());
 
-    public Task<bool?> Latest() => ExecuteLocked<bool?>(() => _queue.LastOrDefault());
+    public Task<T?> Latest() => ExecuteLocked<T?>(() => _queue.LastOrDefault());
 
-    public Task<bool?> Previous() => ExecuteLocked<bool?>(() => _queue.ElementAtOrDefault(_queue.Count - 2));
+    public Task<T?> Previous() => ExecuteLocked<T?>(() => _queue.ElementAtOrDefault(_queue.Count - 2));
 
-    public Task<int> ConsecutiveFalseCount() =>
+    public Task<int> ConsecutiveCount(Func<T, bool> predicate) =>
         ExecuteLocked(() =>
         {
             int count = 0;
             foreach (var value in _queue.Reverse())
             {
-                if (!value)
+                bool result = predicate(value);
+                if (result)
                     count++;
                 else
                     break;
@@ -61,8 +63,5 @@ internal sealed class BooleanBuffer(int maxSize = 10) : IDisposable
             return count;
         });
 
-    public void Dispose()
-    {
-        _lock.Dispose();
-    }
+    public void Dispose() => _lock.Dispose();
 }

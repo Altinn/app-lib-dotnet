@@ -14,10 +14,12 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
     private readonly TimeProvider _timeProvider;
     private readonly ProcessEngineSettings _settings;
     private readonly ILogger<ProcessEngineTaskHandler> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public ProcessEngineTaskHandler(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
+        _httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
         _timeProvider = serviceProvider.GetService<TimeProvider>() ?? TimeProvider.System;
         _settings = serviceProvider.GetRequiredService<IOptions<ProcessEngineSettings>>().Value;
         _logger = serviceProvider.GetRequiredService<ILogger<ProcessEngineTaskHandler>>();
@@ -25,17 +27,28 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
 
     public async Task<ProcessEngineExecutionResult> Execute(ProcessEngineTask task, CancellationToken cancellationToken)
     {
-        return task.Instruction switch
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(task.Command.MaxExecutionTime ?? _settings.DefaultTaskExecutionTimeout);
+
+        try
         {
-            ProcessEngineTaskInstruction.MoveProcessForward => await MoveProcessForward(task, cancellationToken),
-            ProcessEngineTaskInstruction.ExecuteServiceTask => await ExecuteServiceTask(task, cancellationToken),
-            ProcessEngineTaskInstruction.ExecuteInterfaceHooks => await ExecuteInterfaceHooks(task, cancellationToken),
-            ProcessEngineTaskInstruction.SendCorrespondence => await SendCorrespondence(task, cancellationToken),
-            ProcessEngineTaskInstruction.SendEformidling => await SendEformidling(task, cancellationToken),
-            ProcessEngineTaskInstruction.SendFiksArkiv => await SendFiksArkiv(task, cancellationToken),
-            ProcessEngineTaskInstruction.PublishAltinnEvent => await PublishAltinnEvent(task, cancellationToken),
-            _ => throw new InvalidOperationException($"Unknown instruction: {task.Instruction}"),
-        };
+            return task.Command switch
+            {
+                ProcessEngineTaskCommand.MoveProcessForward => await MoveProcessForward(task, cts.Token),
+                ProcessEngineTaskCommand.ExecuteServiceTask => await ExecuteServiceTask(task, cts.Token),
+                ProcessEngineTaskCommand.ExecuteInterfaceHooks => await ExecuteInterfaceHooks(task, cts.Token),
+                ProcessEngineTaskCommand.SendCorrespondence => await SendCorrespondence(task, cts.Token),
+                ProcessEngineTaskCommand.SendEformidling => await SendEformidling(task, cts.Token),
+                ProcessEngineTaskCommand.SendFiksArkiv => await SendFiksArkiv(task, cts.Token),
+                ProcessEngineTaskCommand.PublishAltinnEvent => await PublishAltinnEvent(task, cts.Token),
+                _ => throw new InvalidOperationException($"Unknown instruction: {task.Command}"),
+            };
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error executing task {Task}: {Message}", task, e.Message);
+            return ProcessEngineExecutionResult.Error(e.Message);
+        }
     }
 
     private ValueTask<ProcessEngineExecutionResult> PublishAltinnEvent(

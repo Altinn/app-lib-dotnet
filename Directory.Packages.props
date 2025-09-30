@@ -63,6 +63,8 @@
     <PackageVersion Include="Xunit.Combinatorial" Version="1.6.24" />
     <PackageVersion Include="System.IO.Hashing" Version="9.0.8" />
     <PackageVersion Include="PublicApiGenerator" Version="11.4.6" />
+    <PackageVersion Include="Polly.Testing" Version="8.5.2" />
+    <PackageVersion Include="Polly.Extensions" Version="8.5.2" />
   </ItemGroup>
   <ItemGroup>
     <!-- Transitive dependecies for JWTCookieAuthentication -->

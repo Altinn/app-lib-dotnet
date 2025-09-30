@@ -23,8 +23,12 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IProcessEngineTaskHandler _taskHandler;
-    private readonly BooleanBuffer _enabledStatusHistory = new();
+    private readonly Buffer<bool> _enabledStatusHistory = new();
     private readonly SemaphoreSlim _cleanupLock = new(1, 1);
+    private readonly ProcessEngineRetryStrategy _statusCheckBackoffStrategy = new(
+        ProcessEngineBackoffType.Exponential,
+        Delay: TimeSpan.FromSeconds(1)
+    );
 
     private Channel<ProcessEngineJob> _inbox;
     private CancellationTokenSource? _cancellationTokenSource;
@@ -133,13 +137,13 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
 
         // TODO: Duplication check? If we already have an active job with some form of calculated ID, disallow enqueue
 
-        await AcquireJobSlot(cancellationToken); // Only acquire slots for public requests
+        await AcquireQueueSlot(cancellationToken); // Only acquire slots for public requests
         await EnqueueJob(ProcessEngineJob.FromRequest(request), true, cancellationToken);
 
         return ProcessEngineResponse.Accepted();
     }
 
-    private async Task AcquireJobSlot(CancellationToken cancellationToken = default)
+    private async Task AcquireQueueSlot(CancellationToken cancellationToken = default)
     {
         await _inboxCapacityLimit.WaitAsync(cancellationToken);
 
@@ -149,7 +153,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
             Status &= ~ProcessEngineHealthStatus.QueueFull;
     }
 
-    private void ReleaseJobSlot() => _inboxCapacityLimit.Release();
+    private void ReleaseQueueSlot() => _inboxCapacityLimit.Release();
 
     private async Task EnqueueJob(
         ProcessEngineJob job,
@@ -175,6 +179,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
 
     private Task UpdateJobInStorage(ProcessEngineJob job, CancellationToken cancellationToken)
     {
+        // TODO: Should we update the `Instance` with something here too? Like if the job has failed, etc
         // TODO: This must be a resilient call to db
         return Task.CompletedTask;
     }
@@ -185,15 +190,6 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         return Task.CompletedTask;
     }
 
-    public static Task ExponentialBackoffDelay(int iteration, CancellationToken cancellationToken)
-    {
-        double baseDelaySeconds = 1.0;
-        double multiplier = Math.Pow(2, iteration - 2);
-        TimeSpan delay = TimeSpan.FromSeconds(baseDelaySeconds * multiplier);
-
-        return Task.Delay(delay, cancellationToken);
-    }
-
     private async Task<bool> ShouldRun(CancellationToken cancellationToken)
     {
         // E.g. "do we hold the lock?"
@@ -201,7 +197,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         // TODO: Implement logic to determine if the process engine should run
         // TODO: Some sort of progressive backoff if previous answer was "no"
 
-        bool enabled = await Task.Run(
+        bool placeholderEnabledResponse = await Task.Run(
             async () =>
             {
                 await Task.Delay(100, cancellationToken);
@@ -210,7 +206,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
             cancellationToken
         );
 
-        await _enabledStatusHistory.Add(enabled);
+        await _enabledStatusHistory.Add(placeholderEnabledResponse);
 
         var latest = await _enabledStatusHistory.Latest();
         var previous = await _enabledStatusHistory.Previous();
@@ -224,11 +220,12 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         // Progressive backoff we have been disabled for two or more consecutive checks
         if (latest is false && previous is false)
         {
-            int iteration = await _enabledStatusHistory.ConsecutiveFalseCount();
-            await ExponentialBackoffDelay(iteration, cancellationToken);
+            int iteration = await _enabledStatusHistory.ConsecutiveCount(x => !x);
+            var backoffDelay = _statusCheckBackoffStrategy.CalculateDelay(iteration);
+            await Task.Delay(backoffDelay, cancellationToken);
         }
 
-        return enabled;
+        return placeholderEnabledResponse;
     }
 
     [MemberNotNull(nameof(_inbox), nameof(_inboxCapacityLimit))]
@@ -287,48 +284,86 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
             if (job is null)
                 break;
 
-            // No more tasks to process, mark job as completed
-            if (!job.OrderedIncompleteTasks().Any())
-            {
-                await UpdateJobInStorage(job with { Status = ProcessEngineItemStatus.Completed }, cancellationToken);
-                ReleaseJobSlot();
-                break;
-            }
+            bool jobIsUnprocessable = false;
 
             // TODO: Might need more parallelism here. One thread per instance? Per job?
             // TODO: PS tasks cannot be concurrent, they must be sequential
             foreach (var task in job.OrderedIncompleteTasks())
             {
                 // Not time to process yet
-                if (task.StartTime.HasValue && task.StartTime > _timeProvider.GetUtcNow())
+                if (task.IsReadyForExecution(_timeProvider))
                 {
-                    unprocessableJobs.Add(job);
+                    jobIsUnprocessable = true;
                     break;
                 }
 
-                // Process task
-                var result = await _taskHandler.Execute(task, cancellationToken);
+                // Already processing and not finished
+                if (task.ExecutionTask?.IsCompleted is false)
+                {
+                    jobIsUnprocessable = true;
+                    break;
+                }
 
+                // Execute job instructions
+                task.ExecutionTask ??= _taskHandler.Execute(task, cancellationToken);
+
+                // Background wait
+                if (
+                    !task.ExecutionTask.IsCompleted
+                    && task.Command.ExecutionStrategy == ProcessEngineTaskExecutionStrategy.PeriodicPolling
+                )
+                {
+                    task.Status = ProcessEngineItemStatus.Processing; // Don't persist this, we're dependent on the in-memory task anyway
+                    break;
+                }
+
+                // Foreground wait
+                var result = await task.ExecutionTask;
                 if (result.IsSuccess())
                 {
+                    task.ExecutionTask.Dispose();
                     task.Status = ProcessEngineItemStatus.Completed;
                     await UpdateTaskInStorage(task, cancellationToken);
                     continue;
                 }
 
-                // TODO: Logic to determine if we should requeue or fail
-                // TODO: Progressive backoff delay?
-                // TODO: If we fail, also fail the entire job
-                task.Status = ProcessEngineItemStatus.Requeued;
+                // Error handling
+                _logger.LogError("Task {Task} failed: {ErrorMessage}", task, result.Message);
                 task.RequeueCount++;
+                task.ExecutionTask.Dispose();
+                task.ExecutionTask = null;
+
+                var retryStrategy = task.RetryStrategy ?? _settings.DefaultTaskRetryStrategy;
+                if (retryStrategy.CanRetry(task.RequeueCount))
+                {
+                    task.Status = ProcessEngineItemStatus.Requeued;
+                    task.BackoffUntil = _timeProvider.GetUtcNow().Add(retryStrategy.CalculateDelay(task.RequeueCount));
+                }
+                else
+                {
+                    task.Status = ProcessEngineItemStatus.Failed;
+                }
 
                 await UpdateTaskInStorage(task, cancellationToken);
-                requeueJobs.Add(job);
                 break;
             }
-        }
 
-        // Note: All task statuses are already updated in db
+            // Job is unprocessable
+            if (jobIsUnprocessable)
+            {
+                unprocessableJobs.Add(job);
+                continue;
+            }
+
+            // Job needs requeue or is done
+            job.Status = job.OverallStatus();
+            await UpdateJobInStorage(job, cancellationToken);
+
+            if (job.Status.IsDone())
+                ReleaseQueueSlot();
+            else
+                requeueJobs.Add(job);
+        }
 
         // Requeue jobs that had failed tasks first
         foreach (var job in requeueJobs)
@@ -343,7 +378,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         }
 
         // Small delay before next iteration
-        await Task.Delay(200, cancellationToken);
+        await Task.Delay(100, cancellationToken);
     }
 
     public void Dispose()

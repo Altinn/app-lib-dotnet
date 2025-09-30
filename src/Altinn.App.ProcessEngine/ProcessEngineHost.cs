@@ -1,5 +1,5 @@
 ﻿using Altinn.App.ProcessEngine.Exceptions;
-using Altinn.App.ProcessEngine.Models;
+using Altinn.App.ProcessEngine.Extensions;
 
 namespace Altinn.App.ProcessEngine;
 
@@ -26,13 +26,13 @@ internal sealed class ProcessEngineHost(IServiceProvider serviceProvider) : Back
             await Task.Delay(healthCheckInterval, stoppingToken);
             var status = _processEngine.Status;
 
-            if (QueueIsFull(status))
+            if (status.HasFullQueue())
                 _logger.LogWarning(
                     "Process engine has backpressure, processing queue is full. Current status: {HealthStatus}",
                     status
                 );
 
-            if (IsHealthy(status))
+            if (status.IsDisabled() || status.IsHealthy())
             {
                 if (failCount > 0)
                     _logger.LogInformation(
@@ -62,10 +62,4 @@ internal sealed class ProcessEngineHost(IServiceProvider serviceProvider) : Back
 
         _logger.LogInformation("Process engine host shutting down.");
     }
-
-    private static bool IsHealthy(ProcessEngineHealthStatus status) =>
-        status.HasFlag(ProcessEngineHealthStatus.Running) && !status.HasFlag(ProcessEngineHealthStatus.Unhealthy);
-
-    private static bool QueueIsFull(ProcessEngineHealthStatus status) =>
-        status.HasFlag(ProcessEngineHealthStatus.QueueFull);
 }

@@ -3,11 +3,9 @@ using Altinn.App.ProcessEngine.Models;
 
 namespace Altinn.App.ProcessEngine.Extensions;
 
-internal static class ServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
-    // TODO: Add builder pattern like for FiksIO client
-
-    public static IServiceCollection AddProcessEngine(this IServiceCollection services)
+    internal static IServiceCollection AddProcessEngine(this IServiceCollection services)
     {
         if (services.IsConfigured<ProcessEngineSettings>() is false)
         {
@@ -25,6 +23,15 @@ internal static class ServiceCollectionExtensions
     {
         services.AddOptions<ProcessEngineSettings>().BindConfiguration(configSectionPath);
 
+        return services;
+    }
+
+    public static IServiceCollection ConfigureProcessEngine(
+        this IServiceCollection services,
+        Action<ProcessEngineSettings> configureOptions
+    )
+    {
+        services.AddOptions<ProcessEngineSettings>().Configure(configureOptions);
         return services;
     }
 }
