@@ -2,13 +2,13 @@
 using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.EFormidling.Interface;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Internal.Process.ServiceTasks;
@@ -17,10 +17,8 @@ public class EFormidlingServiceTaskTests
 {
     private readonly Mock<ILogger<EFormidlingServiceTask>> _loggerMock = new();
     private readonly Mock<IEFormidlingService> _eFormidlingServiceMock = new();
-    private readonly Mock<IOptions<AppSettings>> _appSettingsMock = new();
     private readonly Mock<IProcessReader> _processReaderMock = new();
     private readonly Mock<IHostEnvironment> _hostEnvironmentMock = new();
-    private readonly Mock<IEFormidlingConfigurationProvider> _eFormidlingConfigurationProvider = new();
     private readonly EFormidlingServiceTask _serviceTask;
 
     public EFormidlingServiceTaskTests()
@@ -30,15 +28,13 @@ public class EFormidlingServiceTaskTests
             _loggerMock.Object,
             _processReaderMock.Object,
             _hostEnvironmentMock.Object,
-            _eFormidlingServiceMock.Object,
-            _eFormidlingConfigurationProvider.Object
+            _eFormidlingServiceMock.Object
         );
     }
 
     [Fact]
     public async Task Execute_Should_BeEnabled_When_NoBpmnConfig()
     {
-        // Arrange
         Instance instance = GetInstance();
 
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
@@ -46,31 +42,8 @@ public class EFormidlingServiceTaskTests
 
         var parameters = new ServiceTaskContext { InstanceDataMutator = instanceMutatorMock.Object };
 
-        // Act
-        await _serviceTask.Execute(parameters);
-
-        // Assert
-        _eFormidlingServiceMock.Verify(
-            x => x.SendEFormidlingShipment(instance, It.IsAny<ValidAltinnEFormidlingConfiguration>()),
-            Times.Once
-        );
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Debug,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (v, t) =>
-                            v.ToString()!
-                                .Contains(
-                                    "No eFormidling configuration found in BPMN for task taskId. Defaulting to enabled"
-                                )
-                    ),
-                    It.IsAny<Exception>(),
-                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
-                ),
-            Times.Once
-        );
+        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(() => _serviceTask.Execute(parameters));
+        Assert.Contains("No eFormidling configuration found in BPMN for task", exception.Message);
     }
 
     [Fact]
@@ -79,15 +52,11 @@ public class EFormidlingServiceTaskTests
         // Arrange
         Instance instance = GetInstance();
 
-        var appSettings = new AppSettings { EnableEFormidling = true };
-        _appSettingsMock.Setup(x => x.Value).Returns(appSettings);
-
         var serviceTask = new EFormidlingServiceTask(
             _loggerMock.Object,
             _processReaderMock.Object,
             _hostEnvironmentMock.Object,
-            null,
-            _eFormidlingConfigurationProvider.Object
+            null
         );
 
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
@@ -105,13 +74,13 @@ public class EFormidlingServiceTaskTests
         // Arrange
         Instance instance = GetInstance();
 
-        var appSettings = new AppSettings { EnableEFormidling = true };
-        _appSettingsMock.Setup(x => x.Value).Returns(appSettings);
-
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
         instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
 
         var parameters = new ServiceTaskContext { InstanceDataMutator = instanceMutatorMock.Object };
+
+        var taskExtension = new AltinnTaskExtension { EFormidlingConfiguration = GetConfig() };
+        _processReaderMock.Setup(x => x.GetAltinnTaskExtension("taskId")).Returns(taskExtension);
 
         // Act
         await _serviceTask.Execute(parameters);
@@ -123,20 +92,32 @@ public class EFormidlingServiceTaskTests
         );
     }
 
+    private static AltinnEFormidlingConfiguration GetConfig(bool enabled = true)
+    {
+        return new AltinnEFormidlingConfiguration
+        {
+            Enabled = [new AltinnEnvironmentConfig { Value = enabled.ToString() }],
+            Process = [new AltinnEnvironmentConfig { Value = "process" }],
+            Standard = [new AltinnEnvironmentConfig { Value = "standard" }],
+            TypeVersion = [new AltinnEnvironmentConfig { Value = "1.0" }],
+            Type = [new AltinnEnvironmentConfig { Value = "type" }],
+            SecurityLevel = [new AltinnEnvironmentConfig { Value = "3" }],
+            DpfShipmentType = [new AltinnEnvironmentConfig { Value = "dpfShipmentType" }],
+        };
+    }
+
     [Fact]
     public async Task Execute_Should_UseEnvironmentSpecificBpmnConfig_When_Configured()
     {
         // Arrange
         Instance instance = GetInstance();
 
-        var eFormidlingConfig = new AltinnEFormidlingConfiguration
-        {
-            Enabled =
-            [
-                new AltinnEnvironmentConfig { Environment = "prod", Value = "true" },
-                new AltinnEnvironmentConfig { Environment = "staging", Value = "false" },
-            ],
-        };
+        AltinnEFormidlingConfiguration eFormidlingConfig = GetConfig();
+        eFormidlingConfig.Enabled =
+        [
+            new AltinnEnvironmentConfig { Environment = "prod", Value = "true" },
+            new AltinnEnvironmentConfig { Environment = "staging", Value = "false" },
+        ];
 
         var taskExtension = new AltinnTaskExtension { EFormidlingConfiguration = eFormidlingConfig };
         _processReaderMock.Setup(x => x.GetAltinnTaskExtension("taskId")).Returns(taskExtension);
@@ -162,12 +143,7 @@ public class EFormidlingServiceTaskTests
         // Arrange
         Instance instance = GetInstance();
 
-        var eFormidlingConfig = new AltinnEFormidlingConfiguration
-        {
-            Enabled = [new AltinnEnvironmentConfig { Environment = "prod", Value = "false" }],
-        };
-
-        var taskExtension = new AltinnTaskExtension { EFormidlingConfiguration = eFormidlingConfig };
+        var taskExtension = new AltinnTaskExtension { EFormidlingConfiguration = GetConfig(enabled: false) };
         _processReaderMock.Setup(x => x.GetAltinnTaskExtension("taskId")).Returns(taskExtension);
 
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
@@ -194,59 +170,16 @@ public class EFormidlingServiceTaskTests
     }
 
     [Fact]
-    public async Task Execute_Should_BeEnabled_When_NoBpmnConfigExplicit()
-    {
-        // Arrange
-        Instance instance = GetInstance();
-
-        // No BPMN configuration (explicit null)
-        _processReaderMock.Setup(x => x.GetAltinnTaskExtension("taskId")).Returns((AltinnTaskExtension?)null);
-
-        var instanceMutatorMock = new Mock<IInstanceDataMutator>();
-        instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
-
-        var parameters = new ServiceTaskContext { InstanceDataMutator = instanceMutatorMock.Object };
-
-        // Act
-        await _serviceTask.Execute(parameters);
-
-        // Assert
-        _eFormidlingServiceMock.Verify(
-            x => x.SendEFormidlingShipment(instance, It.IsAny<ValidAltinnEFormidlingConfiguration>()),
-            Times.Once
-        );
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Debug,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (v, t) =>
-                            v.ToString()!
-                                .Contains(
-                                    "No eFormidling configuration found in BPMN for task taskId. Defaulting to enabled"
-                                )
-                    ),
-                    It.IsAny<Exception>(),
-                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
-                ),
-            Times.Once
-        );
-    }
-
-    [Fact]
     public async Task Execute_Should_UseGlobalBpmnConfig_When_NoEnvironmentSpecific()
     {
         // Arrange
         Instance instance = GetInstance();
 
-        var eFormidlingConfig = new AltinnEFormidlingConfiguration
-        {
-            Enabled =
-            [
-                new AltinnEnvironmentConfig { Value = "true" }, // Global config (no env specified)
-            ],
-        };
+        AltinnEFormidlingConfiguration eFormidlingConfig = GetConfig();
+        eFormidlingConfig.Enabled =
+        [
+            new AltinnEnvironmentConfig { Value = "true" }, // Global config (no env specified)
+        ];
 
         var taskExtension = new AltinnTaskExtension { EFormidlingConfiguration = eFormidlingConfig };
         _processReaderMock.Setup(x => x.GetAltinnTaskExtension("taskId")).Returns(taskExtension);

@@ -150,7 +150,7 @@ namespace Altinn.App.Core.EFormidling.Implementation
     }
     public class DefaultEFormidlingService : Altinn.App.Core.EFormidling.Interface.IEFormidlingService
     {
-        public DefaultEFormidlingService(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.EFormidling.Implementation.DefaultEFormidlingService> logger, Altinn.App.Core.Internal.Auth.IUserTokenProvider userTokenProvider, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.Data.IDataClient dataClient, Altinn.App.Core.Internal.Events.IEventsClient eventClient, System.IServiceProvider sp, Altinn.App.Core.EFormidling.Implementation.IEFormidlingConfigurationProvider configurationProvider, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings>? appSettings = null, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings>? platformSettings = null, Altinn.Common.EFormidlingClient.IEFormidlingClient? eFormidlingClient = null, Altinn.Common.AccessTokenClient.Services.IAccessTokenGenerator? tokenGenerator = null) { }
+        public DefaultEFormidlingService(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.EFormidling.Implementation.DefaultEFormidlingService> logger, Altinn.App.Core.Internal.Auth.IUserTokenProvider userTokenProvider, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.Data.IDataClient dataClient, Altinn.App.Core.Internal.Events.IEventsClient eventClient, System.IServiceProvider sp, Altinn.App.Core.EFormidling.Implementation.IEFormidlingLegacyConfigurationProvider configurationProvider, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings>? appSettings = null, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings>? platformSettings = null, Altinn.Common.EFormidlingClient.IEFormidlingClient? eFormidlingClient = null, Altinn.Common.AccessTokenClient.Services.IAccessTokenGenerator? tokenGenerator = null) { }
         public System.Threading.Tasks.Task SendEFormidlingShipment(Altinn.Platform.Storage.Interface.Models.Instance instance) { }
         public System.Threading.Tasks.Task SendEFormidlingShipment(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.ValidAltinnEFormidlingConfiguration configuration) { }
     }
@@ -173,9 +173,8 @@ namespace Altinn.App.Core.EFormidling.Implementation
         public string EventType { get; }
         public System.Threading.Tasks.Task<bool> ProcessEvent(Altinn.App.Core.Models.CloudEvent cloudEvent) { }
     }
-    public interface IEFormidlingConfigurationProvider
+    public interface IEFormidlingLegacyConfigurationProvider
     {
-        System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.ValidAltinnEFormidlingConfiguration> GetBpmnConfiguration(string taskId);
         System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.ValidAltinnEFormidlingConfiguration> GetLegacyConfiguration();
     }
 }
@@ -3311,9 +3310,10 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
     }
     public readonly struct ValidAltinnEFormidlingConfiguration : System.IEquatable<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.ValidAltinnEFormidlingConfiguration>
     {
-        public ValidAltinnEFormidlingConfiguration(string? Receiver, string Process, string Standard, string TypeVersion, string Type, int SecurityLevel, string? DpfShipmentType, System.Collections.Generic.List<string> DataTypes) { }
+        public ValidAltinnEFormidlingConfiguration(bool Enabled, string? Receiver, string Process, string Standard, string TypeVersion, string Type, int SecurityLevel, string? DpfShipmentType, System.Collections.Generic.List<string> DataTypes) { }
         public System.Collections.Generic.List<string> DataTypes { get; init; }
         public string? DpfShipmentType { get; init; }
+        public bool Enabled { get; init; }
         public string Process { get; init; }
         public string? Receiver { get; init; }
         public int SecurityLevel { get; init; }

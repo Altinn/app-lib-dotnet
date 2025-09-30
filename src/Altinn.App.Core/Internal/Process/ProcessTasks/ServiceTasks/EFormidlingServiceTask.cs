@@ -1,6 +1,6 @@
 using Altinn.App.Core.Constants;
-using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.EFormidling.Interface;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
@@ -19,7 +19,6 @@ internal sealed class EFormidlingServiceTask : IEFormidlingServiceTask
     private readonly IProcessReader _processReader;
     private readonly IHostEnvironment _hostEnvironment;
     private readonly IEFormidlingService? _eFormidlingService;
-    private readonly IEFormidlingConfigurationProvider? _eFormidlingConfigurationProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EFormidlingServiceTask"/> class.
@@ -28,15 +27,13 @@ internal sealed class EFormidlingServiceTask : IEFormidlingServiceTask
         ILogger<EFormidlingServiceTask> logger,
         IProcessReader processReader,
         IHostEnvironment hostEnvironment,
-        IEFormidlingService? eFormidlingService = null,
-        IEFormidlingConfigurationProvider? eFormidlingConfigurationProvider = null
+        IEFormidlingService? eFormidlingService = null
     )
     {
         _logger = logger;
         _processReader = processReader;
         _hostEnvironment = hostEnvironment;
         _eFormidlingService = eFormidlingService;
-        _eFormidlingConfigurationProvider = eFormidlingConfigurationProvider;
     }
 
     /// <inheritdoc />
@@ -52,17 +49,11 @@ internal sealed class EFormidlingServiceTask : IEFormidlingServiceTask
             );
         }
 
-        if (_eFormidlingConfigurationProvider is null)
-        {
-            throw new ProcessException(
-                $"No implementation of {nameof(IEFormidlingConfigurationProvider)} has been added to the DI container. Use AddEFormidlingServices2<TM,TR> to register eFormidling services."
-            );
-        }
-
         string taskId = context.InstanceDataMutator.Instance.Process.CurrentTask.ElementId;
         Instance instance = context.InstanceDataMutator.Instance;
+        ValidAltinnEFormidlingConfiguration configuration = await GetValidAltinnEFormidlingConfiguration(taskId);
 
-        if (!IsEFormidlingEnabled(taskId))
+        if (!configuration.Enabled)
         {
             _logger.LogInformation(
                 "EFormidling is disabled for task {TaskId}. No eFormidling shipment will be sent, but the service task will be completed.",
@@ -71,9 +62,6 @@ internal sealed class EFormidlingServiceTask : IEFormidlingServiceTask
             return ServiceTaskResult.Success();
         }
 
-        ValidAltinnEFormidlingConfiguration configuration =
-            await _eFormidlingConfigurationProvider.GetBpmnConfiguration(taskId);
-
         _logger.LogDebug("Calling eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
         await _eFormidlingService.SendEFormidlingShipment(instance, configuration);
         _logger.LogDebug("Successfully called eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
@@ -81,41 +69,19 @@ internal sealed class EFormidlingServiceTask : IEFormidlingServiceTask
         return ServiceTaskResult.Success();
     }
 
-    /// <summary>
-    /// Checks if eFormidling service task is enabled. Even if eFormidling has been added as a service task to the process, it can be disabled for certain environments.
-    /// </summary>
-    /// <param name="taskId"></param>
-    /// <returns></returns>
-    private bool IsEFormidlingEnabled(string taskId)
+    private Task<ValidAltinnEFormidlingConfiguration> GetValidAltinnEFormidlingConfiguration(string taskId)
     {
-        AltinnTaskExtension? altinnTaskExtension = _processReader.GetAltinnTaskExtension(taskId);
-        AltinnEFormidlingConfiguration? eFormidlingConfiguration = altinnTaskExtension?.EFormidlingConfiguration;
+        ArgumentNullException.ThrowIfNull(taskId);
 
-        // If no BPMN configuration is specified, default to enabled
-        if (eFormidlingConfiguration?.Enabled.Count is 0 or null)
-        {
-            _logger.LogDebug(
-                "No eFormidling configuration found in BPMN for task {TaskId}. Defaulting to enabled. Add <altinn:eFormidlingConfig><altinn:enabled env=\"staging\">false</altinn:enabled></altinn:eFormidlingConfig> to disable for specific environments.",
-                taskId
-            );
-            return true;
-        }
+        AltinnTaskExtension? taskExtension = _processReader.GetAltinnTaskExtension(taskId);
+        AltinnEFormidlingConfiguration? eFormidlingConfig = taskExtension?.EFormidlingConfiguration;
+
+        if (eFormidlingConfig is null)
+            throw new ApplicationConfigException($"No eFormidling configuration found in BPMN for task {taskId}");
 
         HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
-        AltinnEnvironmentConfig? enabledConfig = AltinnTaskExtension.GetConfigForEnvironment(
-            env,
-            eFormidlingConfiguration.Enabled
-        );
+        ValidAltinnEFormidlingConfiguration validConfig = eFormidlingConfig.Validate(env);
 
-        if (enabledConfig?.Value is null)
-        {
-            _logger.LogWarning(
-                "EFormidling configuration is present in BPMN but no matching environment configuration found for environment '{Environment}'. EFormidling will be disabled.",
-                env
-            );
-            return false;
-        }
-
-        return bool.TryParse(enabledConfig.Value, out bool enabled) && enabled;
+        return Task.FromResult(validConfig);
     }
 }

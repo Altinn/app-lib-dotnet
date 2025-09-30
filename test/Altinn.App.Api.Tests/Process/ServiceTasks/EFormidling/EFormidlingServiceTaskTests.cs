@@ -24,9 +24,7 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
     private static readonly Guid _instanceGuid = new("b1af1cfd-db99-45f9-9625-9dfa1223485f");
     private static readonly string _instanceId = $"{InstanceOwnerPartyId}/{_instanceGuid}";
 
-    private readonly Mock<IEFormidlingService> _eFormidlingServiceMock = new Mock<IEFormidlingService>();
-    private readonly Mock<IEFormidlingConfigurationProvider> _eFormidlingConfigurationProviderMock =
-        new Mock<IEFormidlingConfigurationProvider>();
+    private readonly Mock<IEFormidlingService> _eFormidlingServiceMock = new();
 
     public EFormidlingServiceTaskTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper)
@@ -34,7 +32,6 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
         OverrideServicesForAllTests = (services) =>
         {
             services.AddSingleton(_eFormidlingServiceMock.Object);
-            services.AddSingleton(_eFormidlingConfigurationProviderMock.Object);
             services.AddTransient<IProcessClient, ProcessClientMock>();
         };
 

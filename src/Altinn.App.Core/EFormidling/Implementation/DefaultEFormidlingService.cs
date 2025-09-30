@@ -35,7 +35,7 @@ public class DefaultEFormidlingService : IEFormidlingService
     private readonly IDataClient _dataClient;
     private readonly IEventsClient _eventClient;
     private readonly AppImplementationFactory _appImplementationFactory;
-    private readonly IEFormidlingConfigurationProvider _configurationProvider;
+    private readonly IEFormidlingLegacyConfigurationProvider _configurationProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultEFormidlingService"/> class.
@@ -47,7 +47,7 @@ public class DefaultEFormidlingService : IEFormidlingService
         IDataClient dataClient,
         IEventsClient eventClient,
         IServiceProvider sp,
-        IEFormidlingConfigurationProvider configurationProvider,
+        IEFormidlingLegacyConfigurationProvider configurationProvider,
         IOptions<AppSettings>? appSettings = null,
         IOptions<PlatformSettings>? platformSettings = null,
         IEFormidlingClient? eFormidlingClient = null,

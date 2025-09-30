@@ -76,7 +76,7 @@ public class DefaultEFormidlingServiceTests
         var tokenGenerator = new Mock<IAccessTokenGenerator>();
         var processReader = new Mock<IProcessReader>();
         var hostEnvironment = new Mock<IHostEnvironment>();
-        var configurationProvider = new Mock<IEFormidlingConfigurationProvider>();
+        var eFormidlingLegacyConfigProvider = new Mock<IEFormidlingLegacyConfigurationProvider>();
 
         var instanceGuid = Guid.Parse("41C1099C-7EDD-47F5-AD1F-6267B497796F");
         var instance = new Instance
@@ -166,6 +166,21 @@ public class DefaultEFormidlingServiceTests
             {
                 return (EFormidlingMetadataFilename, Stream.Null);
             });
+        eFormidlingLegacyConfigProvider
+            .Setup(cp => cp.GetLegacyConfiguration())
+            .ReturnsAsync(
+                new ValidAltinnEFormidlingConfiguration(
+                    true,
+                    null,
+                    "urn:no:difi:profile:arkivmelding:plan:3.0",
+                    "urn:no:difi:arkivmelding:xsd::arkivmelding",
+                    "v8",
+                    "arkivmelding",
+                    3,
+                    null,
+                    [ModelDataType, FileAttachmentsDataType]
+                )
+            );
         dataClient
             .Setup(x =>
                 x.GetBinaryData(
@@ -180,38 +195,21 @@ public class DefaultEFormidlingServiceTests
             )
             .ReturnsAsync(Stream.Null);
 
-        // Setup configuration provider to return legacy configuration
-        configurationProvider
-            .Setup(cp => cp.GetLegacyConfiguration())
-            .ReturnsAsync(
-                new ValidAltinnEFormidlingConfiguration(
-                    null, // Receiver (matches the test data which has no Receiver)
-                    "urn:no:difi:profile:arkivmelding:plan:3.0", // Process
-                    "urn:no:difi:arkivmelding:xsd::arkivmelding", // Standard
-                    "v8", // TypeVersion
-                    "arkivmelding", // Type
-                    3, // SecurityLevel
-                    null, // DpfShipmentType (matches test data which has no DPFShipmentType)
-                    new List<string> { ModelDataType, FileAttachmentsDataType } // DataTypes
-                )
-            );
-
         setupEFormidlingClient?.Invoke(eFormidlingClient);
 
         services.TryAddTransient(_ => userTokenProvider.Object);
         services.TryAddTransient(_ => appMetadata.Object);
         services.TryAddTransient(_ => dataClient.Object);
         services.TryAddTransient(_ => eFormidlingReceivers.Object);
+        services.TryAddTransient(_ => eFormidlingMetadata.Object);
+        services.TryAddTransient(_ => eFormidlingLegacyConfigProvider.Object);
         services.TryAddTransient(_ => eventClient.Object);
         services.TryAddTransient(_ => appSettings);
         services.TryAddTransient(_ => platformSettings);
         services.TryAddTransient(_ => eFormidlingClient.Object);
         services.TryAddTransient(_ => tokenGenerator.Object);
-        services.TryAddTransient(_ => eFormidlingMetadata.Object);
         services.TryAddTransient(_ => processReader.Object);
         services.TryAddTransient(_ => hostEnvironment.Object);
-        services.TryAddTransient(_ => configurationProvider.Object);
-
         services.TryAddTransient<IEFormidlingService, DefaultEFormidlingService>();
 
         var serviceProvider = services.BuildStrictServiceProvider();

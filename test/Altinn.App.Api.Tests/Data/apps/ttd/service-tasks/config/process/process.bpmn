@@ -43,6 +43,20 @@
             <bpmn:extensionElements>
                 <altinn:taskExtension>
                     <altinn:taskType>eFormidling</altinn:taskType>
+                    <altinn:eFormidlingConfig>
+                        <altinn:enabled>true</altinn:enabled>
+                        <altinn:receiver>123456789</altinn:receiver>
+                        <altinn:process>urn:no:difi:profile:arkivmelding:administrasjon:ver1.0</altinn:process>
+                        <altinn:standard>urn:no:difi:arkivmelding:xsd::arkivmelding</altinn:standard>
+                        <altinn:typeVersion>2.0</altinn:typeVersion>
+                        <altinn:type>arkivmelding</altinn:type>
+                        <altinn:securityLevel>3</altinn:securityLevel>
+                        <altinn:dpfShipmentType>digital</altinn:dpfShipmentType>
+                        <altinn:dataTypes>
+                            <altinn:dataType>model</altinn:dataType>
+                            <altinn:dataType>ref-data-as-pdf</altinn:dataType>
+                        </altinn:dataTypes>
+                    </altinn:eFormidlingConfig>
                 </altinn:taskExtension>
             </bpmn:extensionElements>
         </bpmn:serviceTask>
