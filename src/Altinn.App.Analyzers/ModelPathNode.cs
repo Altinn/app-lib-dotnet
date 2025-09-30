@@ -48,17 +48,17 @@ public record ModelPathNode
     /// <summary>
     /// The name used in json to access this property. The [JsonPropertyName("")] value.
     /// </summary>
-    public string JsonName { get; init; }
+    public string JsonName { get; }
 
     /// <summary>
     /// The name used in C# to access this property. Used for direct access in source generated code.
     /// </summary>
-    public string CSharpName { get; init; }
+    public string CSharpName { get; }
 
     /// <summary>
     /// The FullName for the type of the property or element of list including global::.
     /// </summary>
-    public string TypeName { get; init; }
+    public string TypeName { get; }
 
     /// <summary>
     /// If this is a list property, this is the type of the list. (eg System.Collections.Generic.List)
@@ -66,7 +66,7 @@ public record ModelPathNode
     /// <remarks>
     /// We assume this is a subtype of <see cref="ICollection{T}"/>
     /// </remarks>
-    public string? ListType { get; init; }
+    public string? ListType { get; }
 
     /// <summary>
     /// The sub properties of this node.

@@ -1,9 +1,10 @@
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Text.Json.Serialization;
-using Altinn.App.Analyzers;
+using Altinn.App.Analyzers.FormDataWrapper;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Altinn.App.SourceGenerator.Tests;
 
@@ -48,7 +49,7 @@ public class DiagnosticTests
         """;
 
     [Fact]
-    public void RunNoDiagnostic()
+    public async Task RunNoDiagnostic()
     {
         var applicationMetadata = """
             {
@@ -71,7 +72,6 @@ public class DiagnosticTests
                             "classRef": null,
                         }
                     },
-                    null,
                     {
                         "id": "form",
                         "appLogic": {
@@ -83,7 +83,7 @@ public class DiagnosticTests
 
             """;
 
-        var diagnostics = RunFormDataWrapper([Source], applicationMetadata);
+        var diagnostics = await RunFormDataWrapperAnalyzer([Source], applicationMetadata);
         Assert.Empty(diagnostics);
     }
 
@@ -107,7 +107,7 @@ public class DiagnosticTests
 
             """;
 
-        var diagnostics = RunFormDataWrapper([Source], applicationMetadata);
+        var diagnostics = RunFormDataWrapperAnalyzer([Source], applicationMetadata);
         await Verify(diagnostics);
     }
 
@@ -121,7 +121,7 @@ public class DiagnosticTests
 
             """;
 
-        var diagnostics = RunFormDataWrapper([Source], applicationMetadata);
+        var diagnostics = RunFormDataWrapperAnalyzer([Source], applicationMetadata);
         await Verify(diagnostics);
     }
 
@@ -136,12 +136,12 @@ public class DiagnosticTests
 
             """;
 
-        var diagnostics = RunFormDataWrapper([Source], applicationMetadata);
+        var diagnostics = await RunFormDataWrapperAnalyzer([Source], applicationMetadata);
         await Verify(diagnostics);
     }
 
     [Fact]
-    public void RunJsonEmptyDataTypes()
+    public async Task RunJsonEmptyDataTypes()
     {
         var applicationMetadata = """
             {
@@ -152,7 +152,7 @@ public class DiagnosticTests
 
             """;
 
-        var diagnostics = RunFormDataWrapper([Source], applicationMetadata);
+        var diagnostics = await RunFormDataWrapperAnalyzer([Source], applicationMetadata);
         Assert.Empty(diagnostics);
     }
 
@@ -161,7 +161,7 @@ public class DiagnosticTests
     {
         var applicationMetadata = "null";
 
-        var diagnostics = RunFormDataWrapper([Source], applicationMetadata);
+        var diagnostics = await RunFormDataWrapperAnalyzer([Source], applicationMetadata);
         await Verify(diagnostics);
     }
 
@@ -170,11 +170,42 @@ public class DiagnosticTests
     {
         string? applicationMetadata = null;
 
-        var diagnostics = RunFormDataWrapper([Source], applicationMetadata);
+        var diagnostics = await RunFormDataWrapperAnalyzer([Source], applicationMetadata);
         await Verify(diagnostics);
     }
 
-    static ImmutableArray<Diagnostic> RunFormDataWrapper(string[] syntax, string? applicationMetadata)
+    [Fact]
+    public async Task NoAppMetadataFile()
+    {
+        var diagnostics = await RunFormDataWrapperAnalyzer([CSharpSyntaxTree.ParseText(Source)], []);
+        await Verify(diagnostics);
+    }
+
+    [Fact]
+    public async Task MultipleAppMetadataFile()
+    {
+        var applicationMetadata = """
+            {
+                "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/application/application-metadata.schema.v1.json",
+                "id": "ttd/source-generator-test",
+                "dataTypes": []
+            }
+
+            """;
+        var diagnostics = await RunFormDataWrapperAnalyzer(
+            [CSharpSyntaxTree.ParseText(Source)],
+            [
+                new AdditionalTextImplementation(applicationMetadata, "C:\\temp\\config\\applicationmetadata.json"),
+                new AdditionalTextImplementation(applicationMetadata, "C:\\temp2\\config\\applicationmetadata.json"),
+            ]
+        );
+        await Verify(diagnostics);
+    }
+
+    private static async Task<ImmutableArray<Diagnostic>> RunFormDataWrapperAnalyzer(
+        IEnumerable<SyntaxTree> syntaxTrees,
+        ImmutableArray<AdditionalText> additionalFiles
+    )
     {
         var currentAssembly = Assembly.GetAssembly(typeof(Skjema));
         // Get references so that the test compilation can reference system libraries
@@ -185,25 +216,22 @@ public class DiagnosticTests
             .Select(static assembly => MetadataReference.CreateFromFile(assembly.Location))
             .Concat([MetadataReference.CreateFromFile(typeof(JsonPropertyNameAttribute).Assembly.Location)]);
 
-        var sources = syntax
-            .Select(s => CSharpSyntaxTree.ParseText(s, path: "/Altinn/ttd/altinn-app-frontend/models/Models.cs"))
-            .ToArray();
-        var compilation = CSharpCompilation.Create(
-            "name",
-            sources,
-            references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-        );
-        var generator = new FormDataWrapperGenerator();
+        return await CSharpCompilation
+            .Create("name", syntaxTrees, references, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .WithAnalyzers([new FormDataWrapperAnalyzer()], new AnalyzerOptions(additionalFiles))
+            .GetAllDiagnosticsAsync();
+    }
 
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
-        driver = driver.AddAdditionalTexts(
+    private static async Task<ImmutableArray<Diagnostic>> RunFormDataWrapperAnalyzer(
+        string[] syntax,
+        string? applicationMetadata
+    )
+    {
+        return await RunFormDataWrapperAnalyzer(
+            syntax.Select(
+                (s, i) => CSharpSyntaxTree.ParseText(s, path: $"/Altinn/ttd/altinn-app-frontend/models/Models{i}.cs")
+            ),
             [new AdditionalTextImplementation(applicationMetadata, "C:\\temp\\config\\applicationmetadata.json")]
         );
-        var results = driver.RunGenerators(compilation);
-
-        var runResult = results.GetRunResult();
-
-        return runResult.Diagnostics;
     }
 }
