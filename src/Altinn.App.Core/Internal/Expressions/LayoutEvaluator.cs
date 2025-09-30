@@ -193,6 +193,8 @@ public static class LayoutEvaluator
                                     ["pageId"] = context.Component.PageId,
                                     ["componentId"] = context.Component.Id,
                                     ["bindingName"] = bindingName,
+                                    ["elementTitle"] = await state.TranslateText(context.Component.TextResourceBindings["title"].ToString(), context),
+                                    ["pageName"] = await state.TranslateText(field.Field, context)
                                 },
                             }
                         );
