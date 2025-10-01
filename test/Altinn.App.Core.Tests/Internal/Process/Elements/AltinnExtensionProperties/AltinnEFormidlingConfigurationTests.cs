@@ -23,7 +23,7 @@ public class AltinnEFormidlingConfigurationTests
         ValidAltinnEFormidlingConfiguration result = config.Validate(HostingEnvironment.Production);
 
         // Assert
-        Assert.True(result.Enabled);
+        Assert.False(result.Disabled);
         Assert.Null(result.Receiver);
         Assert.Equal("process-value", result.Process);
         Assert.Equal("standard-value", result.Standard);
@@ -60,12 +60,12 @@ public class AltinnEFormidlingConfigurationTests
     }
 
     [Fact]
-    public void Validate_WithEnabledTrue_ReturnsEnabledTrue()
+    public void Validate_WithDisabledTrue_ReturnsDisabledTrue()
     {
         // Arrange
         var config = new AltinnEFormidlingConfiguration
         {
-            Enabled = [new AltinnEnvironmentConfig { Value = "true" }],
+            Disabled = [new AltinnEnvironmentConfig { Value = "true" }],
             Process = [new AltinnEnvironmentConfig { Value = "process-value" }],
             Standard = [new AltinnEnvironmentConfig { Value = "standard-value" }],
             TypeVersion = [new AltinnEnvironmentConfig { Value = "1.0" }],
@@ -77,16 +77,16 @@ public class AltinnEFormidlingConfigurationTests
         ValidAltinnEFormidlingConfiguration result = config.Validate(HostingEnvironment.Production);
 
         // Assert
-        Assert.True(result.Enabled);
+        Assert.True(result.Disabled);
     }
 
     [Fact]
-    public void Validate_WithEnabledFalse_ReturnsEnabledFalse()
+    public void Validate_WithDisabledFalse_ReturnsDisabledFalse()
     {
         // Arrange
         var config = new AltinnEFormidlingConfiguration
         {
-            Enabled = [new AltinnEnvironmentConfig { Value = "false" }],
+            Disabled = [new AltinnEnvironmentConfig { Value = "false" }],
             Process = [new AltinnEnvironmentConfig { Value = "process-value" }],
             Standard = [new AltinnEnvironmentConfig { Value = "standard-value" }],
             TypeVersion = [new AltinnEnvironmentConfig { Value = "1.0" }],
@@ -98,11 +98,11 @@ public class AltinnEFormidlingConfigurationTests
         ValidAltinnEFormidlingConfiguration result = config.Validate(HostingEnvironment.Production);
 
         // Assert
-        Assert.False(result.Enabled);
+        Assert.False(result.Disabled);
     }
 
     [Fact]
-    public void Validate_WithoutEnabledField_DefaultsToTrue()
+    public void Validate_WithoutDisabledField_DefaultsToFalse()
     {
         // Arrange
         var config = new AltinnEFormidlingConfiguration
@@ -118,7 +118,7 @@ public class AltinnEFormidlingConfigurationTests
         ValidAltinnEFormidlingConfiguration result = config.Validate(HostingEnvironment.Production);
 
         // Assert
-        Assert.True(result.Enabled);
+        Assert.False(result.Disabled);
     }
 
     [Fact]

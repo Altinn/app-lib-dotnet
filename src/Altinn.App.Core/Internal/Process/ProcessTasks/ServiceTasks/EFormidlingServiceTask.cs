@@ -53,7 +53,7 @@ internal sealed class EFormidlingServiceTask : IEFormidlingServiceTask
         Instance instance = context.InstanceDataMutator.Instance;
         ValidAltinnEFormidlingConfiguration configuration = await GetValidAltinnEFormidlingConfiguration(taskId);
 
-        if (!configuration.Enabled)
+        if (configuration.Disabled)
         {
             _logger.LogInformation(
                 "EFormidling is disabled for task {TaskId}. No eFormidling shipment will be sent, but the service task will be completed.",

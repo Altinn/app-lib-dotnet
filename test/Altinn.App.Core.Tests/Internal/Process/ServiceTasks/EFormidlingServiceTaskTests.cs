@@ -90,11 +90,11 @@ public class EFormidlingServiceTaskTests
         );
     }
 
-    private static AltinnEFormidlingConfiguration GetConfig(bool enabled = true)
+    private static AltinnEFormidlingConfiguration GetConfig(bool disabled = false)
     {
         return new AltinnEFormidlingConfiguration
         {
-            Enabled = [new AltinnEnvironmentConfig { Value = enabled.ToString() }],
+            Disabled = [new AltinnEnvironmentConfig { Value = disabled.ToString() }],
             Process = [new AltinnEnvironmentConfig { Value = "process" }],
             Standard = [new AltinnEnvironmentConfig { Value = "standard" }],
             TypeVersion = [new AltinnEnvironmentConfig { Value = "1.0" }],
@@ -111,10 +111,10 @@ public class EFormidlingServiceTaskTests
         Instance instance = GetInstance();
 
         AltinnEFormidlingConfiguration eFormidlingConfig = GetConfig();
-        eFormidlingConfig.Enabled =
+        eFormidlingConfig.Disabled =
         [
-            new AltinnEnvironmentConfig { Environment = "prod", Value = "true" },
-            new AltinnEnvironmentConfig { Environment = "staging", Value = "false" },
+            new AltinnEnvironmentConfig { Environment = "prod", Value = "false" },
+            new AltinnEnvironmentConfig { Environment = "staging", Value = "true" },
         ];
 
         var taskExtension = new AltinnTaskExtension { EFormidlingConfiguration = eFormidlingConfig };
@@ -141,7 +141,7 @@ public class EFormidlingServiceTaskTests
         // Arrange
         Instance instance = GetInstance();
 
-        var taskExtension = new AltinnTaskExtension { EFormidlingConfiguration = GetConfig(enabled: false) };
+        var taskExtension = new AltinnTaskExtension { EFormidlingConfiguration = GetConfig(disabled: true) };
         _processReaderMock.Setup(x => x.GetAltinnTaskExtension("taskId")).Returns(taskExtension);
 
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
@@ -174,9 +174,9 @@ public class EFormidlingServiceTaskTests
         Instance instance = GetInstance();
 
         AltinnEFormidlingConfiguration eFormidlingConfig = GetConfig();
-        eFormidlingConfig.Enabled =
+        eFormidlingConfig.Disabled =
         [
-            new AltinnEnvironmentConfig { Value = "true" }, // Global config (no env specified)
+            new AltinnEnvironmentConfig { Value = "false" }, // Global config (no env specified)
         ];
 
         var taskExtension = new AltinnTaskExtension { EFormidlingConfiguration = eFormidlingConfig };

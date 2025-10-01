@@ -10,10 +10,10 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 public sealed class AltinnEFormidlingConfiguration
 {
     /// <summary>
-    /// Can be used to disable eFormidling in specific environments. If omitted, defaults to true.
+    /// Can be used to disable eFormidling in specific environments. If omitted, defaults to false (eFormidling is enabled by default).
     /// </summary>
-    [XmlElement(ElementName = "enabled", Namespace = "http://altinn.no/process")]
-    public List<AltinnEnvironmentConfig> Enabled { get; set; } = [];
+    [XmlElement(ElementName = "disabled", Namespace = "http://altinn.no/process")]
+    public List<AltinnEnvironmentConfig> Disabled { get; set; } = [];
 
     /// <summary>
     /// The organization number of the receiver of the eFormidling message. Can be omitted.
@@ -67,9 +67,9 @@ public sealed class AltinnEFormidlingConfiguration
     {
         var validator = new ConfigValidator(env);
 
-        // Default 'enabled' to true if not specified.
-        string? enabledValue = GetOptionalConfig(Enabled, env);
-        bool enabled = string.IsNullOrWhiteSpace(enabledValue) || bool.Parse(enabledValue);
+        // Default 'disabled' to false if not specified (eFormidling is enabled by default).
+        string? disabledValue = GetOptionalConfig(Disabled, env);
+        bool disabled = !string.IsNullOrWhiteSpace(disabledValue) && bool.Parse(disabledValue);
 
         string? receiver = GetOptionalConfig(Receiver, env);
         string process = GetRequiredConfig(Process, validator, nameof(Process));
@@ -83,7 +83,7 @@ public sealed class AltinnEFormidlingConfiguration
         validator.ThrowIfErrors();
 
         return new ValidAltinnEFormidlingConfiguration(
-            enabled,
+            disabled,
             receiver,
             process,
             standard,
@@ -219,7 +219,7 @@ public class AltinnEFormidlingDataTypesConfig
 /// <summary>
 /// Validated eFormidling configuration with all required fields guaranteed to be non-null
 /// </summary>
-/// <param name="Enabled">Whether eFormidling should be sent for the current environment. Only used in service task context, ignored by legacy code.</param>
+/// <param name="Disabled">Whether eFormidling should be disabled for the current environment. Only used in service task context, ignored by legacy code.</param>
 /// <param name="Receiver">The organization number of the receiver. Only Norwegian organizations supported. (Can be omitted)</param>
 /// <param name="Process">The process identifier for the eFormidling message</param>
 /// <param name="Standard">The standard identifier for the document</param>
@@ -229,7 +229,7 @@ public class AltinnEFormidlingDataTypesConfig
 /// <param name="DpfShipmentType">Optional DPF shipment type for the eFormidling message</param>
 /// <param name="DataTypes">List of data type IDs to include in the eFormidling shipment</param>
 public readonly record struct ValidAltinnEFormidlingConfiguration(
-    bool Enabled,
+    bool Disabled,
     string? Receiver,
     string Process,
     string Standard,

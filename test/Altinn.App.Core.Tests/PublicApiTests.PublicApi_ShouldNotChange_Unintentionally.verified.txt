@@ -3214,10 +3214,10 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
         public AltinnEFormidlingConfiguration() { }
         [System.Xml.Serialization.XmlElement(ElementName="dataTypes", Namespace="http://altinn.no/process")]
         public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEFormidlingDataTypesConfig> DataTypes { get; set; }
+        [System.Xml.Serialization.XmlElement(ElementName="disabled", Namespace="http://altinn.no/process")]
+        public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> Disabled { get; set; }
         [System.Xml.Serialization.XmlElement(ElementName="dpfShipmentType", Namespace="http://altinn.no/process")]
         public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> DpfShipmentType { get; set; }
-        [System.Xml.Serialization.XmlElement(ElementName="enabled", Namespace="http://altinn.no/process")]
-        public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> Enabled { get; set; }
         [System.Xml.Serialization.XmlElement(ElementName="process", Namespace="http://altinn.no/process")]
         public System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.AltinnEnvironmentConfig> Process { get; set; }
         [System.Xml.Serialization.XmlElement(ElementName="receiver", Namespace="http://altinn.no/process")]
@@ -3310,10 +3310,10 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
     }
     public readonly struct ValidAltinnEFormidlingConfiguration : System.IEquatable<Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties.ValidAltinnEFormidlingConfiguration>
     {
-        public ValidAltinnEFormidlingConfiguration(bool Enabled, string? Receiver, string Process, string Standard, string TypeVersion, string Type, int SecurityLevel, string? DpfShipmentType, System.Collections.Generic.List<string> DataTypes) { }
+        public ValidAltinnEFormidlingConfiguration(bool Disabled, string? Receiver, string Process, string Standard, string TypeVersion, string Type, int SecurityLevel, string? DpfShipmentType, System.Collections.Generic.List<string> DataTypes) { }
         public System.Collections.Generic.List<string> DataTypes { get; init; }
+        public bool Disabled { get; init; }
         public string? DpfShipmentType { get; init; }
-        public bool Enabled { get; init; }
         public string Process { get; init; }
         public string? Receiver { get; init; }
         public int SecurityLevel { get; init; }
