@@ -77,4 +77,16 @@ public class EFormidlingIeFormidlingLegacyConfigurationProviderTests
         // Assert
         Assert.Empty(result.DataTypes);
     }
+
+    [Fact]
+    public async Task GetLegacyConfiguration_WhenEFormidlingIsNull_ThrowsApplicationConfigException()
+    {
+        // Arrange
+        var applicationMetadata = new ApplicationMetadata("tdd/test") { EFormidling = null };
+
+        _appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ApplicationConfigException>(() => _provider.GetLegacyConfiguration());
+    }
 }
