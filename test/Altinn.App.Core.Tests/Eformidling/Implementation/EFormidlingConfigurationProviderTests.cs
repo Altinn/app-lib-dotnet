@@ -25,6 +25,7 @@ public class EFormidlingIeFormidlingLegacyConfigurationProviderTests
         {
             EFormidling = new EFormidlingContract
             {
+                Receiver = "123456789",
                 Process = "urn:no:difi:profile:arkivmelding:administrasjon:ver1.0",
                 Standard = "urn:no:difi:arkivmelding:xsd::arkivmelding",
                 TypeVersion = "2.0",
@@ -41,6 +42,7 @@ public class EFormidlingIeFormidlingLegacyConfigurationProviderTests
         ValidAltinnEFormidlingConfiguration result = await _provider.GetLegacyConfiguration();
 
         // Assert
+        Assert.Equal("123456789", result.Receiver);
         Assert.Equal("urn:no:difi:profile:arkivmelding:administrasjon:ver1.0", result.Process);
         Assert.Equal("urn:no:difi:arkivmelding:xsd::arkivmelding", result.Standard);
         Assert.Equal("2.0", result.TypeVersion);
