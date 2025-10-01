@@ -4,7 +4,7 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Models.Layout;
 
-namespace Altinn.App.Core.Features;
+namespace Altinn.App.Core.Internal.Data;
 
 /// <summary>
 /// Interface for a wrapper around a data model, that allows for easy access to fields and rows in the model.
@@ -115,18 +115,16 @@ internal static class FormDataWrapperExtensions
             var indexedPath = formDataWrapper.AddIndexToPath(path, rowIndexes, buffer);
             return indexedPath.IsEmpty ? null : formDataWrapper.Get(indexedPath);
         }
-        else
+
+        char[] pool = System.Buffers.ArrayPool<char>.Shared.Rent(len);
+        try
         {
-            char[] pool = System.Buffers.ArrayPool<char>.Shared.Rent(len);
-            try
-            {
-                var indexedPath = formDataWrapper.AddIndexToPath(path, rowIndexes, pool);
-                return indexedPath.IsEmpty ? null : formDataWrapper.Get(indexedPath);
-            }
-            finally
-            {
-                System.Buffers.ArrayPool<char>.Shared.Return(pool);
-            }
+            var indexedPath = formDataWrapper.AddIndexToPath(path, rowIndexes, pool);
+            return indexedPath.IsEmpty ? null : formDataWrapper.Get(indexedPath);
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<char>.Shared.Return(pool);
         }
     }
 

@@ -1,6 +1,4 @@
-using Altinn.App.Core.Features;
-
-namespace Altinn.App.Core.Helpers.DataModel;
+namespace Altinn.App.Core.Internal.Data;
 
 /// <summary>
 /// Provides a factory for creating instances of <see cref="IFormDataWrapper"/> specific to a data model type.

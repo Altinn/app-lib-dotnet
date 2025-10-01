@@ -2,9 +2,10 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Altinn.App.Core.Features;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Helpers.DataModel;
 
-namespace Altinn.App.Core.Helpers.DataModel;
+namespace Altinn.App.Core.Internal.Data;
 
 /// <summary>
 /// Get data fields from a model, using string keys (like "Bedrifter[1].Ansatte[1].Alder")

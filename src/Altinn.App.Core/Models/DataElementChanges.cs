@@ -1,4 +1,4 @@
-using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Data;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Models;

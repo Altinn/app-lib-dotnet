@@ -9,7 +9,6 @@ using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
-using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Models.Validation;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.App.Core.Tests.TestUtils;

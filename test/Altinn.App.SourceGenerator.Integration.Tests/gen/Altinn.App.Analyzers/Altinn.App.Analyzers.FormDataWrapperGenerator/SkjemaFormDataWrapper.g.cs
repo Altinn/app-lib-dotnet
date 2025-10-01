@@ -4,7 +4,7 @@
 [global::System.CodeDom.Compiler.GeneratedCode("Altinn.App.Analyzers", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper
-    : global::Altinn.App.Core.Features.IFormDataWrapper
+    : global::Altinn.App.Core.Internal.Data.IFormDataWrapper
 {
     private readonly global::Altinn.App.SourceGenerator.Integration.Tests.Models.Skjema _dataModel;
 
@@ -402,7 +402,7 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
     #region Copy
 
     /// <inheritdoc />
-    public global::Altinn.App.Core.Features.IFormDataWrapper Copy()
+    public global::Altinn.App.Core.Internal.Data.IFormDataWrapper Copy()
     {
         return new Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper(CopyRecursive(_dataModel));
     }
@@ -821,7 +821,7 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
     [global::System.Runtime.CompilerServices.ModuleInitializer]
     internal static void Register()
     {
-        global::Altinn.App.Core.Helpers.DataModel.FormDataWrapperFactory.Register<global::Altinn.App.SourceGenerator.Integration.Tests.Models.Skjema>(dataModel => new Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper(dataModel));
+        global::Altinn.App.Core.Internal.Data.FormDataWrapperFactory.Register<global::Altinn.App.SourceGenerator.Integration.Tests.Models.Skjema>(dataModel => new Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper(dataModel));
     }
 }
 

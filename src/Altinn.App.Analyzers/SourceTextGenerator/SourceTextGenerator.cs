@@ -24,7 +24,7 @@ public static class SourceTextGenerator
             [global::System.CodeDom.Compiler.GeneratedCode("Altinn.App.Analyzers", "{{_sourceGeneratorVersion}}")]
             [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
             public sealed class {{className}}
-                : global::Altinn.App.Core.Features.IFormDataWrapper
+                : global::Altinn.App.Core.Internal.Data.IFormDataWrapper
             {
                 private readonly {{rootNode.TypeName}} _dataModel;
 
@@ -126,7 +126,7 @@ public static class SourceTextGenerator
                 [global::System.Runtime.CompilerServices.ModuleInitializer]
                 internal static void Register()
                 {
-                    global::Altinn.App.Core.Helpers.DataModel.FormDataWrapperFactory.Register<{{rootNode.TypeName}}>(dataModel => new {{className}}(dataModel));
+                    global::Altinn.App.Core.Internal.Data.FormDataWrapperFactory.Register<{{rootNode.TypeName}}>(dataModel => new {{className}}(dataModel));
                 }
 
             """

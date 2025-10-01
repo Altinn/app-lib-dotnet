@@ -1184,18 +1184,6 @@ namespace Altinn.App.Core.Features
         bool HasRelevantChanges(object current, object previous);
         System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssue>> ValidateFormData(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataElement dataElement, object data, string? language);
     }
-    public interface IFormDataWrapper
-    {
-        System.Type BackingDataType { get; }
-        System.ReadOnlySpan<char> AddIndexToPath(System.ReadOnlySpan<char> path, System.ReadOnlySpan<int> rowIndexes, System.Span<char> buffer);
-        T BackingData<T>()
-            where T :  class;
-        Altinn.App.Core.Features.IFormDataWrapper Copy();
-        object? Get(System.ReadOnlySpan<char> path);
-        void InitializeAltinnRowIds();
-        void RemoveAltinnRowIds();
-        void RemoveField(System.ReadOnlySpan<char> path, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption);
-    }
     public interface IInstanceAppOptionsProvider
     {
         string Id { get; }
@@ -2239,11 +2227,6 @@ namespace Altinn.App.Core.Helpers.DataModel
         public string[] GetResolvedKeys(string field) { }
         public void RemoveField(string field, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
     }
-    public static class FormDataWrapperFactory
-    {
-        public static void Register<T>(System.Func<object, Altinn.App.Core.Features.IFormDataWrapper> factory)
-            where T :  notnull { }
-    }
 }
 namespace Altinn.App.Core.Helpers.Extensions
 {
@@ -2931,6 +2914,11 @@ namespace Altinn.App.Core.Internal.Auth
 }
 namespace Altinn.App.Core.Internal.Data
 {
+    public static class FormDataWrapperFactory
+    {
+        public static void Register<T>(System.Func<object, Altinn.App.Core.Internal.Data.IFormDataWrapper> factory)
+            where T :  notnull { }
+    }
     public interface IDataClient
     {
         [System.Obsolete("Use method DeleteData with delayed=false instead.", true)]
@@ -2966,6 +2954,18 @@ namespace Altinn.App.Core.Internal.Data
         System.Threading.Tasks.Task<System.ValueTuple<System.Guid, T?>> GetByType<T>(Altinn.Platform.Storage.Interface.Models.Instance instance, string dataTypeId);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertJsonObject(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string dataTypeId, object data);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateJsonObject(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string dataTypeId, System.Guid dataElementId, object data);
+    }
+    public interface IFormDataWrapper
+    {
+        System.Type BackingDataType { get; }
+        System.ReadOnlySpan<char> AddIndexToPath(System.ReadOnlySpan<char> path, System.ReadOnlySpan<int> rowIndexes, System.Span<char> buffer);
+        T BackingData<T>()
+            where T :  class;
+        Altinn.App.Core.Internal.Data.IFormDataWrapper Copy();
+        object? Get(System.ReadOnlySpan<char> path);
+        void InitializeAltinnRowIds();
+        void RemoveAltinnRowIds();
+        void RemoveField(System.ReadOnlySpan<char> path, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption);
     }
 }
 namespace Altinn.App.Core.Internal.Events
@@ -4002,7 +4002,7 @@ namespace Altinn.App.Core.Models
     {
         public System.ReadOnlyMemory<byte>? CurrentBinaryData { get; }
         public object CurrentFormData { get; }
-        public Altinn.App.Core.Features.IFormDataWrapper CurrentFormDataWrapper { get; }
+        public Altinn.App.Core.Internal.Data.IFormDataWrapper CurrentFormDataWrapper { get; }
         public System.ReadOnlyMemory<byte> PreviousBinaryData { get; }
         public object PreviousFormData { get; }
     }

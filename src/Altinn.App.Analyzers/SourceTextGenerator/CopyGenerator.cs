@@ -10,7 +10,7 @@ internal static class CopyGenerator
             $$"""
 
                 /// <inheritdoc />
-                public global::Altinn.App.Core.Features.IFormDataWrapper Copy()
+                public global::Altinn.App.Core.Internal.Data.IFormDataWrapper Copy()
                 {
                     return new {{generatedWrapperClassName}}(CopyRecursive(_dataModel));
                 }

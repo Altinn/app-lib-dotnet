@@ -1,6 +1,4 @@
-using System;
-using Altinn.App.Core.Features;
-using Altinn.App.Core.Helpers.DataModel;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.SourceGenerator.Integration.Tests.Models;
 using Xunit;
 

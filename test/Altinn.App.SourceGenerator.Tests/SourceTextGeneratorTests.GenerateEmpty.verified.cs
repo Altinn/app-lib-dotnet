@@ -4,7 +4,7 @@
 [global::System.CodeDom.Compiler.GeneratedCode("Altinn.App.Analyzers", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public sealed class Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper
-    : global::Altinn.App.Core.Features.IFormDataWrapper
+    : global::Altinn.App.Core.Internal.Data.IFormDataWrapper
 {
     private readonly global::Altinn.App.SourceGenerator.Tests.Empty _dataModel;
 
@@ -83,7 +83,7 @@ public sealed class Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper
     #region Copy
 
     /// <inheritdoc />
-    public global::Altinn.App.Core.Features.IFormDataWrapper Copy()
+    public global::Altinn.App.Core.Internal.Data.IFormDataWrapper Copy()
     {
         return new Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper(CopyRecursive(_dataModel));
     }
@@ -175,7 +175,7 @@ public sealed class Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper
     [global::System.Runtime.CompilerServices.ModuleInitializer]
     internal static void Register()
     {
-        global::Altinn.App.Core.Helpers.DataModel.FormDataWrapperFactory.Register<global::Altinn.App.SourceGenerator.Tests.Empty>(dataModel => new Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper(dataModel));
+        global::Altinn.App.Core.Internal.Data.FormDataWrapperFactory.Register<global::Altinn.App.SourceGenerator.Tests.Empty>(dataModel => new Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper(dataModel));
     }
 }
 

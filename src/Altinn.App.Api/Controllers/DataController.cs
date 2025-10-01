@@ -13,7 +13,6 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.FileAnalysis;
 using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;

@@ -1,6 +1,6 @@
 using System;
-using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers.DataModel;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.SourceGenerator.Integration.Tests.Models;
 using Xunit;
 
@@ -36,7 +36,39 @@ public class TestGeneratedGetter
                 ],
             },
         ],
+        EierAdresse = null,
     };
+
+    [Fact]
+    public void TestGetWithTypeExtensions()
+    {
+        IFormDataWrapper dataWrapper = new Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper(
+            _skjema
+        );
+
+        Assert.Equal("1243", dataWrapper.Get<string>("skjemanummer"));
+
+        _skjema.Skjemanummer = null;
+        Assert.Null(dataWrapper.Get<string>("skjemanummer"));
+
+        Assert.Throws<ArgumentException>(() => dataWrapper.Get<string>("skjemainnhold[0].alder"));
+        Assert.Equal(42, dataWrapper.Get<int>("skjemainnhold[0].alder"));
+        Assert.Null(dataWrapper.Get<int?>("skjemainnhold[3].alder"));
+        Assert.Equal(0, dataWrapper.Get<int>("skjemainnhold[3].alder"));
+    }
+
+    [Fact]
+    public void TestGetWithLongPath()
+    {
+        // Just ensure coverage when path is longer than we want to stackalloc
+        IFormDataWrapper dataWrapper = new Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper(
+            _skjema
+        );
+        var minLengthToUseBufferInsteadOfStackalloc = 512;
+        var tooLongPath = new string('s', minLengthToUseBufferInsteadOfStackalloc);
+        var actual = dataWrapper.Get(tooLongPath, [1, 3, 4]);
+        Assert.Null(actual);
+    }
 
     [Theory]
     [InlineData("skjemanummer", "1243")]

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
-using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.App.Core.Tests.TestUtils;

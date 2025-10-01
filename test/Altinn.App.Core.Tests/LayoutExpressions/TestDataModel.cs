@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.DataModel;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using FluentAssertions;
 using Newtonsoft.Json;
