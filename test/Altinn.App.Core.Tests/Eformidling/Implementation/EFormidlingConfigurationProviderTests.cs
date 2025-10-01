@@ -1,11 +1,8 @@
 using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using FluentAssertions;
-using Microsoft.Extensions.Hosting;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Eformidling.Implementation;
@@ -44,14 +41,13 @@ public class EFormidlingIeFormidlingLegacyConfigurationProviderTests
         ValidAltinnEFormidlingConfiguration result = await _provider.GetLegacyConfiguration();
 
         // Assert
-        result.Should().NotBeNull();
-        result.Process.Should().Be("urn:no:difi:profile:arkivmelding:administrasjon:ver1.0");
-        result.Standard.Should().Be("urn:no:difi:arkivmelding:xsd::arkivmelding");
-        result.TypeVersion.Should().Be("2.0");
-        result.Type.Should().Be("arkivmelding");
-        result.SecurityLevel.Should().Be(3);
-        result.DpfShipmentType.Should().Be("altinn3.skjema");
-        result.DataTypes.Should().BeEquivalentTo("datatype1", "datatype2");
+        Assert.Equal("urn:no:difi:profile:arkivmelding:administrasjon:ver1.0", result.Process);
+        Assert.Equal("urn:no:difi:arkivmelding:xsd::arkivmelding", result.Standard);
+        Assert.Equal("2.0", result.TypeVersion);
+        Assert.Equal("arkivmelding", result.Type);
+        Assert.Equal(3, result.SecurityLevel);
+        Assert.Equal("altinn3.skjema", result.DpfShipmentType);
+        Assert.Equal(new[] { "datatype1", "datatype2" }, result.DataTypes);
     }
 
     [Fact]
@@ -77,6 +73,6 @@ public class EFormidlingIeFormidlingLegacyConfigurationProviderTests
         ValidAltinnEFormidlingConfiguration result = await _provider.GetLegacyConfiguration();
 
         // Assert
-        result.DataTypes.Should().BeEmpty();
+        Assert.Empty(result.DataTypes);
     }
 }
