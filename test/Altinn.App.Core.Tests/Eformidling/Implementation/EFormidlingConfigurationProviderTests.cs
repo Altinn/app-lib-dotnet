@@ -7,14 +7,14 @@ using Moq;
 
 namespace Altinn.App.Core.Tests.Eformidling.Implementation;
 
-public class EFormidlingIeFormidlingLegacyConfigurationProviderTests
+public class EFormidlingLegacyConfigurationProviderTests
 {
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
-    private readonly EFormidlingIeFormidlingLegacyConfigurationProvider _provider;
+    private readonly EFormidlingLegacyConfigurationProvider _provider;
 
-    public EFormidlingIeFormidlingLegacyConfigurationProviderTests()
+    public EFormidlingLegacyConfigurationProviderTests()
     {
-        _provider = new EFormidlingIeFormidlingLegacyConfigurationProvider(_appMetadataMock.Object);
+        _provider = new EFormidlingLegacyConfigurationProvider(_appMetadataMock.Object);
     }
 
     [Fact]

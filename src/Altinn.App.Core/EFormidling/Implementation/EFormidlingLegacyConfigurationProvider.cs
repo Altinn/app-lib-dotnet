@@ -20,11 +20,11 @@ public interface IEFormidlingLegacyConfigurationProvider
 }
 
 /// <inheritdoc />
-internal sealed class EFormidlingIeFormidlingLegacyConfigurationProvider : IEFormidlingLegacyConfigurationProvider
+internal sealed class EFormidlingLegacyConfigurationProvider : IEFormidlingLegacyConfigurationProvider
 {
     private readonly IAppMetadata _appMetadata;
 
-    public EFormidlingIeFormidlingLegacyConfigurationProvider(IAppMetadata appMetadata)
+    public EFormidlingLegacyConfigurationProvider(IAppMetadata appMetadata)
     {
         _appMetadata = appMetadata;
     }

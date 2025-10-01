@@ -3209,7 +3209,7 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
         [System.Xml.Serialization.XmlText]
         public string Value { get; set; }
     }
-    public class AltinnEFormidlingConfiguration
+    public sealed class AltinnEFormidlingConfiguration
     {
         public AltinnEFormidlingConfiguration() { }
         [System.Xml.Serialization.XmlElement(ElementName="dataTypes", Namespace="http://altinn.no/process")]

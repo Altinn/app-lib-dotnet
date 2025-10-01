@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Xml.Serialization;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Internal.App;
@@ -8,7 +7,7 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 /// <summary>
 /// Configuration properties for eFormidling in a process task. All properties support environment-specific values using 'env' attributes.
 /// </summary>
-public class AltinnEFormidlingConfiguration
+public sealed class AltinnEFormidlingConfiguration
 {
     /// <summary>
     /// Can be used to disable eFormidling in specific environments. If omitted, defaults to true.
@@ -66,54 +65,22 @@ public class AltinnEFormidlingConfiguration
 
     internal ValidAltinnEFormidlingConfiguration Validate(HostingEnvironment env)
     {
-        List<string>? errorMessages = null;
+        var validator = new ConfigValidator(env);
 
         // Default 'enabled' to true if not specified.
-        string? enabledValue = GetConfigValue(Enabled, env);
+        string? enabledValue = GetOptionalConfig(Enabled, env);
         bool enabled = string.IsNullOrWhiteSpace(enabledValue) || bool.Parse(enabledValue);
 
-        string? receiver = GetConfigValue(Receiver, env);
-
-        string? process = GetConfigValue(Process, env);
-        if (process.IsNullOrWhitespace(ref errorMessages, $"No Process configuration found for environment {env}"))
-            ThrowApplicationConfigException(errorMessages);
-
-        string? standard = GetConfigValue(Standard, env);
-        if (standard.IsNullOrWhitespace(ref errorMessages, $"No Standard configuration found for environment {env}"))
-            ThrowApplicationConfigException(errorMessages);
-
-        string? typeVersion = GetConfigValue(TypeVersion, env);
-        if (
-            typeVersion.IsNullOrWhitespace(
-                ref errorMessages,
-                $"No TypeVersion configuration found for environment {env}"
-            )
-        )
-            ThrowApplicationConfigException(errorMessages);
-
-        string? type = GetConfigValue(Type, env);
-        if (type.IsNullOrWhitespace(ref errorMessages, $"No Type configuration found for environment {env}"))
-            ThrowApplicationConfigException(errorMessages);
-
-        string? securityLevelValue = GetConfigValue(SecurityLevel, env);
-        if (
-            securityLevelValue.IsNullOrWhitespace(
-                ref errorMessages,
-                $"No SecurityLevel configuration found for environment {env}"
-            )
-        )
-            ThrowApplicationConfigException(errorMessages);
-
-        if (!int.TryParse(securityLevelValue, out int securityLevel))
-        {
-            errorMessages ??= new List<string>(1);
-            errorMessages.Add($"SecurityLevel must be a valid integer for environment {env}");
-            ThrowApplicationConfigException(errorMessages);
-        }
-
-        string? dpfShipmentType = GetConfigValue(DpfShipmentType, env);
-
+        string? receiver = GetOptionalConfig(Receiver, env);
+        string process = GetRequiredConfig(Process, validator, nameof(Process));
+        string standard = GetRequiredConfig(Standard, validator, nameof(Standard));
+        string typeVersion = GetRequiredConfig(TypeVersion, validator, nameof(TypeVersion));
+        string type = GetRequiredConfig(Type, validator, nameof(Type));
+        int securityLevel = GetRequiredIntConfig(SecurityLevel, validator, nameof(SecurityLevel));
+        string? dpfShipmentType = GetOptionalConfig(DpfShipmentType, env);
         List<string> dataTypes = GetDataTypesForEnvironment(env);
+
+        validator.ThrowIfErrors();
 
         return new ValidAltinnEFormidlingConfiguration(
             enabled,
@@ -128,18 +95,75 @@ public class AltinnEFormidlingConfiguration
         );
     }
 
-    [DoesNotReturn]
-    private static void ThrowApplicationConfigException(List<string> errorMessages)
+    private static string? GetOptionalConfig(List<AltinnEnvironmentConfig> configs, HostingEnvironment env)
     {
-        throw new ApplicationConfigException(
-            "eFormidling process task configuration is not valid: " + string.Join(",\n", errorMessages)
-        );
+        return AltinnTaskExtension.GetConfigForEnvironment(env, configs)?.Value;
     }
 
-    private static string? GetConfigValue(List<AltinnEnvironmentConfig> configs, HostingEnvironment env)
+    private static string GetRequiredConfig(
+        List<AltinnEnvironmentConfig> configs,
+        ConfigValidator validator,
+        string fieldName
+    )
     {
-        AltinnEnvironmentConfig? config = AltinnTaskExtension.GetConfigForEnvironment(env, configs);
-        return config?.Value;
+        string? value = GetOptionalConfig(configs, validator.Environment);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            validator.AddError($"No {fieldName} configuration found for environment {validator.Environment}");
+            return string.Empty;
+        }
+
+        return value;
+    }
+
+    private static int GetRequiredIntConfig(
+        List<AltinnEnvironmentConfig> configs,
+        ConfigValidator validator,
+        string fieldName
+    )
+    {
+        string? value = GetOptionalConfig(configs, validator.Environment);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            validator.AddError($"No {fieldName} configuration found for environment {validator.Environment}");
+            return 0;
+        }
+
+        if (!int.TryParse(value, out int result))
+        {
+            validator.AddError($"{fieldName} must be a valid integer for environment {validator.Environment}");
+            return 0;
+        }
+
+        return result;
+    }
+
+    private sealed class ConfigValidator
+    {
+        private List<string>? _errors;
+
+        public HostingEnvironment Environment { get; }
+
+        public ConfigValidator(HostingEnvironment environment)
+        {
+            Environment = environment;
+        }
+
+        public void AddError(string message)
+        {
+            _errors ??= [];
+            _errors.Add(message);
+        }
+
+        public void ThrowIfErrors()
+        {
+            if (_errors is not null)
+            {
+                throw new ApplicationConfigException(
+                    "eFormidling process task configuration is not valid: " + string.Join(",\n", _errors)
+                );
+            }
+        }
     }
 
     /// <summary>
