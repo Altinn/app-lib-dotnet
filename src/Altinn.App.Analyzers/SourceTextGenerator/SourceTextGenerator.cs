@@ -24,7 +24,7 @@ public static class SourceTextGenerator
             [global::System.CodeDom.Compiler.GeneratedCode("Altinn.App.Analyzers", "{{_sourceGeneratorVersion}}")]
             [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
             public sealed class {{className}}
-                : global::Altinn.App.Core.Features.IFormDataWrapper<{{rootNode.TypeName}}>
+                : global::Altinn.App.Core.Features.IFormDataWrapper
             {
                 private readonly {{rootNode.TypeName}} _dataModel;
 
@@ -65,9 +65,6 @@ public static class SourceTextGenerator
         builder.Append("    #region AltinnRowIds\r\n");
         AltinnRowIdsGenerator.Generate(builder, rootNode);
         builder.Append("\r\n    #endregion AltinnRowIds\r\n");
-        builder.Append("    #region XmlStorage\r\n");
-        PrepareModelForXmlStorageGenerator.Generate(builder, rootNode);
-        builder.Append("\r\n    #endregion XmlStorage\r\n");
 
         builder.Append(
             $$"""

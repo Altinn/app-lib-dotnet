@@ -9,7 +9,7 @@ namespace Altinn.App.Core.Helpers.DataModel;
 /// <summary>
 /// Get data fields from a model, using string keys (like "Bedrifter[1].Ansatte[1].Alder")
 /// </summary>
-public class ReflectionFormDataWrapper : IFormDataWrapper
+internal class ReflectionFormDataWrapper : IFormDataWrapper
 {
     private readonly object _dataModel;
 

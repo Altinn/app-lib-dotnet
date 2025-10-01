@@ -213,19 +213,17 @@ public class ValidationService : IValidationService
             if (change is FormDataChange { DataElement: not null } fdc)
             {
                 cleanedChangeList.Add(
-                    new FormDataChange()
-                    {
-                        ContentType = fdc.ContentType,
-                        DataElement = fdc.DataElement,
-                        DataType = fdc.DataType,
-                        Type = fdc.Type,
-
-                        PreviousFormDataWrapper = await previousAccessor.GetFormDataWrapper(fdc.DataElementIdentifier),
-                        CurrentFormDataWrapper = await cleanAccessor.GetFormDataWrapper(fdc.DataElementIdentifier),
+                    new FormDataChange(
+                        contentType: fdc.ContentType,
+                        dataElement: fdc.DataElement,
+                        dataType: fdc.DataType,
+                        type: fdc.Type,
+                        previousFormDataWrapper: await previousAccessor.GetFormDataWrapper(fdc.DataElementIdentifier),
+                        currentFormDataWrapper: await cleanAccessor.GetFormDataWrapper(fdc.DataElementIdentifier),
                         // The binary data is kept as is, because logic is assumed to not use it
-                        CurrentBinaryData = fdc.CurrentBinaryData,
-                        PreviousBinaryData = fdc.PreviousBinaryData,
-                    }
+                        currentBinaryData: fdc.CurrentBinaryData,
+                        previousBinaryData: fdc.PreviousBinaryData
+                    )
                 );
             }
             else

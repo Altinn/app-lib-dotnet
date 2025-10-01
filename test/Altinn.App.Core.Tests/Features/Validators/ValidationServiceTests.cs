@@ -444,28 +444,26 @@ public class ValidationServiceTests : IAsyncLifetime
 
         var changes = new DataElementChanges(
             [
-                new FormDataChange()
-                {
-                    Type = ChangeType.Updated,
-                    DataElement = dataElement,
-                    DataType = _instanceDataAccessor.GetDataType(dataElement),
-                    ContentType = "text/plain",
-                    CurrentFormDataWrapper = FormDataWrapperFactory.Create("currentValue"),
-                    PreviousFormDataWrapper = FormDataWrapperFactory.Create("previousValue"),
-                    CurrentBinaryData = default,
-                    PreviousBinaryData = default,
-                },
-                new FormDataChange()
-                {
-                    Type = ChangeType.Updated,
-                    DataElement = dataElementNoValidation,
-                    DataType = _instanceDataAccessor.GetDataType(dataElement),
-                    ContentType = "text/plain",
-                    CurrentFormDataWrapper = FormDataWrapperFactory.Create("currentValue"),
-                    PreviousFormDataWrapper = FormDataWrapperFactory.Create("previousValue"),
-                    CurrentBinaryData = null,
-                    PreviousBinaryData = null,
-                },
+                new FormDataChange(
+                    type: ChangeType.Updated,
+                    dataElement: dataElement,
+                    dataType: _instanceDataAccessor.GetDataType(dataElement),
+                    contentType: "text/plain",
+                    currentFormDataWrapper: FormDataWrapperFactory.Create("currentValue"),
+                    previousFormDataWrapper: FormDataWrapperFactory.Create("previousValue"),
+                    currentBinaryData: null,
+                    previousBinaryData: default
+                ),
+                new FormDataChange(
+                    type: ChangeType.Updated,
+                    dataElement: dataElementNoValidation,
+                    dataType: _instanceDataAccessor.GetDataType(dataElement),
+                    contentType: "text/plain",
+                    currentFormDataWrapper: FormDataWrapperFactory.Create("currentValue"),
+                    previousFormDataWrapper: FormDataWrapperFactory.Create("previousValue"),
+                    currentBinaryData: null,
+                    previousBinaryData: null
+                ),
             ]
         );
 

@@ -148,17 +148,16 @@ public class RequiredValidatorTests
         var validationService = sp.GetRequiredService<IValidationService>();
         var changes = new DataElementChanges(
             [
-                new FormDataChange()
-                {
-                    ContentType = "application/xml",
-                    DataType = dataMutator.GetDataType("mainLayout_dataType"),
-                    DataElement = null,
-                    CurrentBinaryData = null,
-                    PreviousBinaryData = null,
-                    CurrentFormDataWrapper = FormDataWrapperFactory.Create(data),
-                    PreviousFormDataWrapper = FormDataWrapperFactory.Create(new Model()),
-                    Type = ChangeType.Created,
-                },
+                new FormDataChange(
+                    contentType: "application/xml",
+                    dataType: dataMutator.GetDataType("mainLayout_dataType"),
+                    dataElement: null,
+                    currentBinaryData: null,
+                    previousBinaryData: null,
+                    currentFormDataWrapper: FormDataWrapperFactory.Create(data),
+                    previousFormDataWrapper: FormDataWrapperFactory.Create(new Model()),
+                    type: ChangeType.Created
+                ),
             ]
         );
         var incrementalIssues = await validationService.ValidateIncrementalFormData(

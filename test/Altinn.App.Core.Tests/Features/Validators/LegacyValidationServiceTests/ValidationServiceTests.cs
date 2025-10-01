@@ -372,17 +372,16 @@ public sealed class ValidationServiceTests : IDisposable
             "Task_1",
             new DataElementChanges(
                 [
-                    new FormDataChange()
-                    {
-                        Type = ChangeType.Updated,
-                        DataElement = _defaultDataElement,
-                        DataType = _defaultDataType,
-                        ContentType = "application/xml",
-                        PreviousFormDataWrapper = FormDataWrapperFactory.Create(previousData),
-                        CurrentFormDataWrapper = FormDataWrapperFactory.Create(data),
-                        PreviousBinaryData = null,
-                        CurrentBinaryData = null,
-                    },
+                    new FormDataChange(
+                        type: ChangeType.Updated,
+                        dataElement: _defaultDataElement,
+                        dataType: _defaultDataType,
+                        contentType: "application/xml",
+                        previousFormDataWrapper: FormDataWrapperFactory.Create(previousData),
+                        currentFormDataWrapper: FormDataWrapperFactory.Create(data),
+                        previousBinaryData: null,
+                        currentBinaryData: null
+                    ),
                 ]
             ),
             null,
@@ -421,17 +420,16 @@ public sealed class ValidationServiceTests : IDisposable
         var data = new MyModel { Name = "Kari" };
         DataElementChanges dataElementChanges = new(
             [
-                new FormDataChange()
-                {
-                    Type = ChangeType.Updated,
-                    DataElement = _defaultDataElement,
-                    DataType = _defaultDataType,
-                    ContentType = "application/xml",
-                    CurrentFormDataWrapper = FormDataWrapperFactory.Create(data),
-                    PreviousFormDataWrapper = FormDataWrapperFactory.Create(data),
-                    PreviousBinaryData = null,
-                    CurrentBinaryData = null,
-                },
+                new FormDataChange(
+                    type: ChangeType.Updated,
+                    dataElement: _defaultDataElement,
+                    dataType: _defaultDataType,
+                    contentType: "application/xml",
+                    currentFormDataWrapper: FormDataWrapperFactory.Create(data),
+                    previousFormDataWrapper: FormDataWrapperFactory.Create(data),
+                    previousBinaryData: null,
+                    currentBinaryData: null
+                ),
             ]
         );
         SetupDataClient(data);

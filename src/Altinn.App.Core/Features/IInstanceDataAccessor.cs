@@ -31,7 +31,7 @@ public interface IInstanceDataAccessor
     /// </summary>
     /// <returns>The deserialized data model for this data element</returns>
     /// <exception cref="InvalidOperationException">when identifier does not exist in instance.Data with an applogic data type</exception>
-    Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier);
+    internal Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier);
 
     /// <summary>
     /// Get a <see cref="IInstanceDataAccessor"/> that provides access to the cleaned data (where all fields marked as "hidden" are removed).
@@ -43,7 +43,7 @@ public interface IInstanceDataAccessor
     /// Get a <see cref="IInstanceDataAccessor"/> that provides access to the
     /// storage persisted before any in-memory changes in this request.
     /// </summary>
-    IInstanceDataAccessor GetPreviousDataAccessor();
+    internal IInstanceDataAccessor GetPreviousDataAccessor();
 
     /// <summary>
     /// Gets the raw binary data from a DataElement.

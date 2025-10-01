@@ -232,17 +232,16 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         ObjectUtils.InitializeAltinnRowId(model);
         var (bytes, contentType) = _modelSerializationService.SerializeToStorage(model, dataType);
 
-        FormDataChange change = new FormDataChange
-        {
-            Type = ChangeType.Created,
-            DataElement = null,
-            DataType = dataType,
-            ContentType = contentType,
-            CurrentFormDataWrapper = FormDataWrapperFactory.Create(model),
-            PreviousFormDataWrapper = FormDataWrapperFactory.Create(_modelSerializationService.GetEmpty(dataType)),
-            CurrentBinaryData = bytes,
-            PreviousBinaryData = default, // empty memory reference
-        };
+        FormDataChange change = new FormDataChange(
+            type: ChangeType.Created,
+            dataElement: null,
+            dataType: dataType,
+            contentType: contentType,
+            currentFormDataWrapper: FormDataWrapperFactory.Create(model),
+            previousFormDataWrapper: FormDataWrapperFactory.Create(_modelSerializationService.GetEmpty(dataType)),
+            currentBinaryData: bytes,
+            previousBinaryData: default // empty memory reference
+        );
         _changesForCreation.Add(change);
         return change;
     }
@@ -277,15 +276,14 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             );
         }
 
-        BinaryDataChange change = new BinaryDataChange
-        {
-            Type = ChangeType.Created,
-            DataElement = null, // Not yet saved to storage
-            DataType = dataType,
-            FileName = filename,
-            ContentType = contentType,
-            CurrentBinaryData = bytes,
-        };
+        BinaryDataChange change = new BinaryDataChange(
+            type: ChangeType.Created,
+            dataElement: null, // Not yet saved to storage
+            dataType: dataType,
+            fileName: filename,
+            contentType: contentType,
+            currentBinaryData: bytes
+        );
         _changesForCreation.Add(change);
         return change;
     }
@@ -305,37 +303,35 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         if (dataType.AppLogic?.ClassRef is null)
         {
             _changesForDeletion.Add(
-                new BinaryDataChange()
-                {
-                    Type = ChangeType.Deleted,
-                    DataElement = dataElement,
-                    DataType = dataType,
-                    FileName = dataElement.Filename,
-                    ContentType = dataElement.ContentType,
-                    CurrentBinaryData = ReadOnlyMemory<byte>.Empty,
-                }
+                new BinaryDataChange(
+                    type: ChangeType.Deleted,
+                    dataElement: dataElement,
+                    dataType: dataType,
+                    fileName: dataElement.Filename,
+                    contentType: dataElement.ContentType,
+                    currentBinaryData: ReadOnlyMemory<byte>.Empty
+                )
             );
         }
         else
         {
             _changesForDeletion.Add(
-                new FormDataChange()
-                {
-                    Type = ChangeType.Deleted,
-                    DataElement = dataElement,
-                    DataType = dataType,
-                    ContentType = dataElement.ContentType,
-                    CurrentFormDataWrapper = _formDataCache.TryGetCachedValue(dataElementIdentifier, out var cfd)
+                new FormDataChange(
+                    type: ChangeType.Deleted,
+                    dataElement: dataElement,
+                    dataType: dataType,
+                    contentType: dataElement.ContentType,
+                    currentFormDataWrapper: _formDataCache.TryGetCachedValue(dataElementIdentifier, out var cfd)
                         ? cfd
                         : FormDataWrapperFactory.Create(_modelSerializationService.GetEmpty(dataType)),
-                    PreviousFormDataWrapper = FormDataWrapperFactory.Create(
+                    previousFormDataWrapper: FormDataWrapperFactory.Create(
                         _modelSerializationService.GetEmpty(dataType)
                     ),
-                    CurrentBinaryData = ReadOnlyMemory<byte>.Empty,
-                    PreviousBinaryData = _binaryCache.TryGetCachedValue(dataElementIdentifier, out var value)
+                    currentBinaryData: ReadOnlyMemory<byte>.Empty,
+                    previousBinaryData: _binaryCache.TryGetCachedValue(dataElementIdentifier, out var value)
                         ? value
-                        : null,
-                }
+                        : null
+                )
             );
         }
     }
@@ -407,21 +403,20 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             if (!currentBinary.Span.SequenceEqual(cachedBinary.Span))
             {
                 changes.Add(
-                    new FormDataChange()
-                    {
-                        Type = ChangeType.Updated,
-                        DataElement = dataElement,
-                        ContentType = dataElement.ContentType,
-                        DataType = dataType,
-                        CurrentFormDataWrapper = dataWrapper,
+                    new FormDataChange(
+                        type: ChangeType.Updated,
+                        dataElement: dataElement,
+                        contentType: dataElement.ContentType,
+                        dataType: dataType,
+                        currentFormDataWrapper: dataWrapper,
                         // For patch requests we could get the previous data from the patch, but it's not available here
                         // and deserializing twice is not a big deal
-                        PreviousFormDataWrapper = FormDataWrapperFactory.Create(
+                        previousFormDataWrapper: FormDataWrapperFactory.Create(
                             _modelSerializationService.DeserializeFromStorage(cachedBinary.Span, dataType)
                         ),
-                        CurrentBinaryData = currentBinary,
-                        PreviousBinaryData = cachedBinary,
-                    }
+                        currentBinaryData: currentBinary,
+                        previousBinaryData: cachedBinary
+                    )
                 );
             }
         }

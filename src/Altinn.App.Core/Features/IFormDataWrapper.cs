@@ -72,24 +72,12 @@ public interface IFormDataWrapper
     /// Set all Guid AltinnRowId fields that are Guid.Empty to Guid.NewGuid (so that we have an addressable id for the row when diffing for patches)
     /// </summary>
     void InitializeAltinnRowIds();
-
-    /// <summary>
-    /// Xml serialization-deserialization does not preserve all properties, and we sometimes need
-    /// to know how it looks when it comes back from storage.
-    /// </summary>
-    /// <remarks>
-    /// * Recursively initialize all <see cref="List{T}"/> properties on the object that are currently null
-    /// * Ensure that all string properties with `[XmlTextAttribute]` that are empty or whitespace are set to null
-    /// * If a class has `[XmlTextAttribute]` and no value, set the parent property to null (if the other properties has [BindNever] attribute)
-    /// * If a property has a `ShouldSerialize{PropertyName}` method that returns false, set the property to default value
-    /// </remarks>
-    void PrepareModelForXmlStorage();
 }
 
 /// <summary>
 /// Extension methods for <see cref="IFormDataWrapper"/>
 /// </summary>
-public static class FormDataWrapperExtensions
+internal static class FormDataWrapperExtensions
 {
     /// <summary>
     /// Get the value at the given path directly as the type T. Same as (T)Get(path, rowIndexes)
@@ -281,10 +269,3 @@ public static class FormDataWrapperExtensions
         return path.Length + rowIndexes.Length * maxIntStringLength;
     }
 }
-
-/// <summary>
-/// Marker interface for <see cref="FormDataWrapperFactory.Create"/> to find the correct implementation during assembly scanning
-/// </summary>
-/// <typeparam name="T"></typeparam>
-public interface IFormDataWrapper<T> : IFormDataWrapper
-    where T : class, new() { }

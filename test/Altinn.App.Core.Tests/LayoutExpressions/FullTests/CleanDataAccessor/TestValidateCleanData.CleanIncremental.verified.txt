@@ -71,9 +71,6 @@
                 ],
                 HideSubLayout: false
               },
-              PreviousFormDataWrapper: {
-                BackingDataType: MainModel
-              },
               CurrentFormData: {
                 HideMainTitle: true,
                 HidePage1: false,
@@ -146,9 +143,6 @@
                 SubPageTitle: ,
                 UnboundField: unbound1
               },
-              PreviousFormDataWrapper: {
-                BackingDataType: SubModel
-              },
               CurrentFormData: {
                 HideSubPageTitle: true,
                 UnboundField: unbound1
@@ -202,9 +196,6 @@
                     Name: subGroup1
                   }
                 ]
-              },
-              PreviousFormDataWrapper: {
-                BackingDataType: SubModel
               },
               CurrentFormData: {
                 HideSubPageTitle: true,

@@ -1140,14 +1140,6 @@ namespace Altinn.App.Core.Features
     {
         public const string JsonObjectInDataResponse = "JsonObjectInDataResponse";
     }
-    public static class FormDataWrapperExtensions
-    {
-        public static string? AddIndexToPath(this Altinn.App.Core.Features.IFormDataWrapper formDataWrapper, System.ReadOnlySpan<char> path, System.ReadOnlySpan<int> rowIndexes) { }
-        public static object? Get(this Altinn.App.Core.Features.IFormDataWrapper formDataWrapper, System.ReadOnlySpan<char> path, System.ReadOnlySpan<int> rowIndexes = default) { }
-        public static T? Get<T>(this Altinn.App.Core.Features.IFormDataWrapper formDataWrapper, System.ReadOnlySpan<char> path = default, System.ReadOnlySpan<int> rowIndexes = default) { }
-        public static Altinn.App.Core.Models.Layout.DataReference[] GetResolvedKeys(this Altinn.App.Core.Features.IFormDataWrapper formDataWrapper, Altinn.App.Core.Models.Layout.DataReference reference) { }
-        public static int? GetRowCount(this Altinn.App.Core.Features.IFormDataWrapper formDataWrapper, System.ReadOnlySpan<char> path, System.ReadOnlySpan<int> rowIndexes) { }
-    }
     public interface IAppOptionsProvider
     {
         string Id { get; }
@@ -1201,12 +1193,9 @@ namespace Altinn.App.Core.Features
         Altinn.App.Core.Features.IFormDataWrapper Copy();
         object? Get(System.ReadOnlySpan<char> path);
         void InitializeAltinnRowIds();
-        void PrepareModelForXmlStorage();
         void RemoveAltinnRowIds();
         void RemoveField(System.ReadOnlySpan<char> path, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption);
     }
-    public interface IFormDataWrapper<T> : Altinn.App.Core.Features.IFormDataWrapper
-        where T :  class, new () { }
     public interface IInstanceAppOptionsProvider
     {
         string Id { get; }
@@ -1221,8 +1210,6 @@ namespace Altinn.App.Core.Features
         Altinn.App.Core.Features.IInstanceDataAccessor GetCleanAccessor(Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption = 1);
         Altinn.Platform.Storage.Interface.Models.DataElement GetDataElement(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
         System.Threading.Tasks.Task<object> GetFormData(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
-        System.Threading.Tasks.Task<Altinn.App.Core.Features.IFormDataWrapper> GetFormDataWrapper(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
-        Altinn.App.Core.Features.IInstanceDataAccessor GetPreviousDataAccessor();
         void OverrideAuthenticationMethod(Altinn.Platform.Storage.Interface.Models.DataType dataType, Altinn.App.Core.Features.StorageAuthenticationMethod method);
     }
     public static class IInstanceDataAccessorExtensions
@@ -2256,20 +2243,6 @@ namespace Altinn.App.Core.Helpers.DataModel
     {
         public static void Register<T>(System.Func<object, Altinn.App.Core.Features.IFormDataWrapper> factory)
             where T :  notnull { }
-    }
-    public class ReflectionFormDataWrapper : Altinn.App.Core.Features.IFormDataWrapper
-    {
-        public ReflectionFormDataWrapper(object dataModel) { }
-        public System.Type BackingDataType { get; }
-        public System.ReadOnlySpan<char> AddIndexToPath(System.ReadOnlySpan<char> path, System.ReadOnlySpan<int> rowIndexes, System.Span<char> buffer) { }
-        public T BackingData<T>()
-            where T :  class { }
-        public Altinn.App.Core.Features.IFormDataWrapper Copy() { }
-        public object? Get(System.ReadOnlySpan<char> path) { }
-        public void InitializeAltinnRowIds() { }
-        public void PrepareModelForXmlStorage() { }
-        public void RemoveAltinnRowIds() { }
-        public void RemoveField(System.ReadOnlySpan<char> path, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
     }
 }
 namespace Altinn.App.Core.Helpers.Extensions
@@ -3934,9 +3907,8 @@ namespace Altinn.App.Core.Models
     }
     public sealed class BinaryDataChange : Altinn.App.Core.Models.DataElementChange
     {
-        public BinaryDataChange() { }
-        public required System.ReadOnlyMemory<byte> CurrentBinaryData { get; init; }
-        public required string? FileName { get; init; }
+        public System.ReadOnlyMemory<byte> CurrentBinaryData { get; }
+        public string? FileName { get; }
     }
     public class CalculationResult : Altinn.Platform.Storage.Interface.Models.DataElement
     {
@@ -3982,12 +3954,11 @@ namespace Altinn.App.Core.Models
     }
     public abstract class DataElementChange
     {
-        protected DataElementChange() { }
-        public required string ContentType { get; init; }
-        public required Altinn.Platform.Storage.Interface.Models.DataElement? DataElement { get; set; }
+        public string ContentType { get; }
+        public Altinn.Platform.Storage.Interface.Models.DataElement? DataElement { get; }
         public Altinn.App.Core.Models.DataElementIdentifier DataElementIdentifier { get; }
-        public required Altinn.Platform.Storage.Interface.Models.DataType DataType { get; init; }
-        public required Altinn.App.Core.Models.ChangeType Type { get; init; }
+        public Altinn.Platform.Storage.Interface.Models.DataType DataType { get; }
+        public Altinn.App.Core.Models.ChangeType Type { get; }
     }
     public sealed class DataElementChanges
     {
@@ -4029,13 +4000,11 @@ namespace Altinn.App.Core.Models
     }
     public sealed class FormDataChange : Altinn.App.Core.Models.DataElementChange
     {
-        public FormDataChange() { }
-        public required System.ReadOnlyMemory<byte>? CurrentBinaryData { get; init; }
+        public System.ReadOnlyMemory<byte>? CurrentBinaryData { get; }
         public object CurrentFormData { get; }
-        public required Altinn.App.Core.Features.IFormDataWrapper CurrentFormDataWrapper { get; init; }
-        public required System.ReadOnlyMemory<byte> PreviousBinaryData { get; init; }
+        public Altinn.App.Core.Features.IFormDataWrapper CurrentFormDataWrapper { get; }
+        public System.ReadOnlyMemory<byte> PreviousBinaryData { get; }
         public object PreviousFormData { get; }
-        public required Altinn.App.Core.Features.IFormDataWrapper PreviousFormDataWrapper { get; init; }
     }
     public interface ILanguageCodeStandard
     {

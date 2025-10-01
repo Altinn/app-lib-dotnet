@@ -5,7 +5,7 @@
 [global::System.CodeDom.Compiler.GeneratedCode("Altinn.App.Analyzers", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public sealed class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
-    : global::Altinn.App.Core.Features.IFormDataWrapper<global::Altinn.App.SourceGenerator.Tests.Skjema>
+    : global::Altinn.App.Core.Features.IFormDataWrapper
 {
     private readonly global::Altinn.App.SourceGenerator.Tests.Skjema _dataModel;
 
@@ -764,15 +764,6 @@ public sealed class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
     }
 
     #endregion AltinnRowIds
-    #region XmlStorage
-
-    /// <inheritdoc />
-    public void PrepareModelForXmlStorage()
-    {
-        global::Altinn.App.Core.Helpers.ObjectUtils.PrepareModelForXmlStorage(_dataModel);
-    }
-
-    #endregion XmlStorage
     public static global::System.ReadOnlySpan<char> ParseSegment(global::System.ReadOnlySpan<char> path, int offset, out int nextOffset, out int literalIndex)
     {
         if (offset < 0 || offset >= path.Length)
