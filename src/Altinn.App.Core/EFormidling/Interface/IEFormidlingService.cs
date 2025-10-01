@@ -9,7 +9,7 @@ namespace Altinn.App.Core.EFormidling.Interface;
 public interface IEFormidlingService
 {
     /// <summary>
-    /// Send the eFormidling shipment using ApplicationMetadata configuration (legacy)
+    /// Send the eFormidling shipment
     /// </summary>
     /// <param name="instance">Instance data</param>
     /// <returns></returns>
@@ -17,8 +17,6 @@ public interface IEFormidlingService
 
     /// <summary>
     /// Send the eFormidling shipment with explicit configuration context.
-    /// Default implementation calls the legacy method for backward compatibility.
-    /// Override this method to support BPMN-based configuration.
     /// </summary>
     /// <param name="instance">Instance data</param>
     /// <param name="configuration">A valid config for eFormidling.</param>
