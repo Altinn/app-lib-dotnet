@@ -136,6 +136,16 @@
       HasParent: true
     },
     {
+      Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 1
+        }
+      ],
+      HasParent: true
+    },
+    {
       Name: PUT {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next,
       Kind: Server,
       IdFormat: W3C,
@@ -377,6 +387,9 @@
           validation.issue_count: 0
         },
         {
+          validator.remove_hidden_data: false
+        },
+        {
           validator.source: Required
         },
         {
@@ -391,6 +404,9 @@
       Tags: [
         {
           validation.issue_count: 0
+        },
+        {
+          validator.remove_hidden_data: false
         },
         {
           validator.source: Expression
@@ -409,6 +425,9 @@
           validation.issue_count: 0
         },
         {
+          validator.remove_hidden_data: false
+        },
+        {
           validator.source: Altinn.App.Core.Features.Validation.Default.DefaultTaskValidator-*
         },
         {
@@ -423,6 +442,9 @@
       Tags: [
         {
           validation.issue_count: 0
+        },
+        {
+          validator.remove_hidden_data: false
         },
         {
           validator.source: Altinn.App.Core.Features.Validation.Default.DefaultDataElementValidator-*
@@ -441,6 +463,9 @@
           validation.issue_count: 0
         },
         {
+          validator.remove_hidden_data: false
+        },
+        {
           validator.source: DataAnnotations
         },
         {
@@ -455,6 +480,9 @@
       Tags: [
         {
           validation.issue_count: 0
+        },
+        {
+          validator.remove_hidden_data: false
         },
         {
           validator.source: Not a valid validation source

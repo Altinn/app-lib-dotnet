@@ -221,6 +221,9 @@
           validation.issue_count: 0
         },
         {
+          validator.remove_hidden_data: false
+        },
+        {
           validator.source: Required
         },
         {
@@ -235,6 +238,9 @@
       Tags: [
         {
           validation.issue_count: 0
+        },
+        {
+          validator.remove_hidden_data: false
         },
         {
           validator.source: Expression
@@ -253,6 +259,9 @@
           validation.issue_count: 0
         },
         {
+          validator.remove_hidden_data: false
+        },
+        {
           validator.source: Altinn.App.Core.Features.Validation.Default.DefaultTaskValidator-*
         },
         {
@@ -267,6 +276,9 @@
       Tags: [
         {
           validation.issue_count: 0
+        },
+        {
+          validator.remove_hidden_data: false
         },
         {
           validator.source: Altinn.App.Core.Features.Validation.Default.DefaultDataElementValidator-*
@@ -285,6 +297,9 @@
           validation.issue_count: 0
         },
         {
+          validator.remove_hidden_data: false
+        },
+        {
           validator.source: DataAnnotations
         },
         {
@@ -301,6 +316,9 @@
           validation.issue_count: 0
         },
         {
+          validator.remove_hidden_data: false
+        },
+        {
           validator.source: Not a valid validation source
         },
         {
@@ -315,6 +333,9 @@
       Tags: [
         {
           validation.issue_count: 1
+        },
+        {
+          validator.remove_hidden_data: false
         },
         {
           validator.source: test-source
