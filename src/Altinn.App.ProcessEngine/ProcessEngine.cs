@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 using Altinn.App.ProcessEngine.Extensions;
@@ -31,7 +32,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         Delay: TimeSpan.FromSeconds(1)
     );
 
-    private Channel<ProcessEngineJob> _inbox;
+    private ConcurrentQueue<ProcessEngineJob> _inbox;
     private CancellationTokenSource? _cancellationTokenSource;
     private Task? _mainLoopTask;
     private SemaphoreSlim _inboxCapacityLimit;
@@ -40,7 +41,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
 
     // TODO: Is this overengineered? Maybe we only care if it's running or not?
     public ProcessEngineHealthStatus Status { get; private set; } = ProcessEngineHealthStatus.Healthy;
-    public int InboxCount => Settings.QueueCapacity - _inboxCapacityLimit.CurrentCount;
+    public int InboxCount => _inbox.Count;
     public ProcessEngineSettings Settings { get; }
 
     public ProcessEngine(IServiceProvider serviceProvider)
@@ -177,19 +178,12 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        // TODO: persist to database if `updateDatabase` is true
         _logger.LogDebug("(internal) Enqueuing job {Job}. Update database: {UpdateDb}", job, updateDatabase);
-        await _inbox.Writer.WriteAsync(job, cancellationToken);
-    }
 
-    private ProcessEngineJob? DequeueJob()
-    {
-        // TODO: Do we persist this checkout in the db? Probably not
+        // TODO: persist to database if `updateDatabase` is true
+        await Task.CompletedTask;
 
-        _ = _inbox.Reader.TryRead(out var job);
-        _logger.LogDebug("(internal) Dequeuing job. Got {Job}", job);
-
-        return job;
+        _inbox.Enqueue(job);
     }
 
     private Task PopulateJobsFromStorage(CancellationToken cancellationToken)
@@ -264,37 +258,8 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
     [MemberNotNull(nameof(_inbox), nameof(_inboxCapacityLimit))]
     private void InitializeInbox()
     {
-        _inbox = Channel.CreateUnbounded<ProcessEngineJob>(
-            new UnboundedChannelOptions { SingleReader = true, SingleWriter = false }
-        );
+        _inbox = new ConcurrentQueue<ProcessEngineJob>();
         _inboxCapacityLimit = new SemaphoreSlim(Settings.QueueCapacity, Settings.QueueCapacity);
-    }
-
-    private async Task Cleanup()
-    {
-        await _cleanupLock.WaitAsync();
-
-        try
-        {
-            if (!_cleanupRequired)
-                return;
-
-            _cleanupRequired = false;
-            _mainLoopTask = null;
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = null;
-
-            await _enabledStatusHistory.Clear();
-
-            _inbox.Writer.Complete();
-            _inboxCapacityLimit.Dispose();
-
-            InitializeInbox();
-        }
-        finally
-        {
-            _cleanupLock.Release();
-        }
     }
 
     private async Task<bool> HaveJobs(CancellationToken cancellationToken)
@@ -317,6 +282,14 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         return haveJobs;
     }
 
+    private IEnumerable<ProcessEngineJob> DequeueAllJobs()
+    {
+        while (_inbox.TryDequeue(out var job))
+        {
+            yield return job;
+        }
+    }
+
     private async Task MainLoop(CancellationToken cancellationToken)
     {
         _logger.LogDebug("Entering MainLoop. Inbox count: {InboxCount}", InboxCount);
@@ -329,131 +302,20 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         if (!await HaveJobs(cancellationToken))
             return;
 
-        // Trackers for reentry
-        var unprocessableJobs = new List<ProcessEngineJob>();
-        var requeueJobs = new List<ProcessEngineJob>();
-
-        // Loop over queue
-        _logger.LogDebug("Starting job processing loop");
-        while (InboxCount > 0 && !cancellationToken.IsCancellationRequested)
-        {
-            _logger.LogDebug("Processing jobs. Queue size: {InboxCount}", InboxCount);
-
-            var job = DequeueJob();
-            if (job is null)
-                break;
-
-            bool jobIsUnprocessable = false;
-
-            // TODO: Might need more parallelism here. One thread per instance? Per job?
-            // TODO: PS tasks cannot be concurrent, they must be sequential
-            _logger.LogDebug("Entering task processing loop for job {Job}", job);
-            foreach (var task in job.OrderedIncompleteTasks())
+        // Process jobs in parallel
+        _logger.LogDebug("Processing jobs. Queue size: {InboxCount}", InboxCount);
+        ConcurrentBag<ProcessEngineJob> requeue = [];
+        await Parallel.ForEachAsync(
+            DequeueAllJobs(),
+            cancellationToken,
+            async (item, ct) =>
             {
-                _logger.LogDebug("Processing task: {Task}", task);
-
-                // Not time to process yet
-                if (!task.IsReadyForExecution(_timeProvider))
-                {
-                    _logger.LogDebug("Task not ready for execution");
-                    jobIsUnprocessable = true;
-                    break;
-                }
-
-                // Already processing and not finished
-                if (task.ExecutionTask?.IsCompleted is false)
-                {
-                    _logger.LogDebug("Task is already processing, but not yet finished");
-                    jobIsUnprocessable = true;
-                    break;
-                }
-
-                // Execute job instructions
-                task.ExecutionTask ??= _taskHandler.Execute(task, cancellationToken);
-
-                // Background wait
-                if (
-                    !task.ExecutionTask.IsCompleted
-                    && task.Command.ExecutionStrategy == ProcessEngineTaskExecutionStrategy.PeriodicPolling
-                )
-                {
-                    _logger.LogDebug("Performing background wait for task {Task}", task);
-                    task.Status = ProcessEngineItemStatus.Processing; // Don't persist this, we're dependent on the in-memory task anyway
-                    break;
-                }
-
-                // Foreground wait
-                var result = await task.ExecutionTask;
-                if (result.IsSuccess())
-                {
-                    _logger.LogDebug("Task {Task} completed successfully", task);
-                    task.ExecutionTask.Dispose();
-                    task.Status = ProcessEngineItemStatus.Completed;
-                    await UpdateTaskInStorage(task, cancellationToken);
-                    continue;
-                }
-
-                // Error handling
-                _logger.LogError("Task {Task} failed: {ErrorMessage}", task, result.Message);
-                task.RequeueCount++;
-                task.ExecutionTask.Dispose();
-                task.ExecutionTask = null;
-
-                var retryStrategy = task.RetryStrategy ?? Settings.DefaultTaskRetryStrategy;
-                if (retryStrategy.CanRetry(task.RequeueCount))
-                {
-                    _logger.LogDebug("Requeuing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
-                    task.Status = ProcessEngineItemStatus.Requeued;
-                    task.BackoffUntil = _timeProvider.GetUtcNow().Add(retryStrategy.CalculateDelay(task.RequeueCount));
-                }
-                else
-                {
-                    _logger.LogError("Failing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
-                    task.Status = ProcessEngineItemStatus.Failed;
-                }
-
-                await UpdateTaskInStorage(task, cancellationToken);
-                break;
+                await ProcessJob(item, requeue, ct);
             }
-
-            // Job is unprocessable
-            if (jobIsUnprocessable)
-            {
-                _logger.LogDebug("Job {Job} is unprocessable at this time. Slating for requeue", job);
-                unprocessableJobs.Add(job);
-                continue;
-            }
-
-            // Job needs requeue or is done
-            job.Status = job.OverallStatus();
-            await UpdateJobInStorage(job, cancellationToken);
-
-            if (job.Status.IsDone())
-            {
-                _logger.LogDebug("Job {Job} is done", job);
-                ReleaseQueueSlot();
-            }
-            else
-            {
-                _logger.LogDebug("Job {Job} is still processing, slating for requeue", job);
-                requeueJobs.Add(job);
-            }
-        }
-
-        _logger.LogDebug(
-            "Performing requeues. Jobs with failed tasks: {RequeueCount}, unprocessable jobs: {UnprocessableCount}",
-            requeueJobs.Count,
-            unprocessableJobs.Count
         );
 
-        // Requeue jobs that had failed tasks first
-        foreach (var job in requeueJobs)
-        {
-            await EnqueueJob(job, updateDatabase: false, cancellationToken);
-        }
-
-        // Requeue jobs that were not ready to be processed
-        foreach (var job in unprocessableJobs)
+        // Requeue jobs
+        foreach (var job in requeue)
         {
             await EnqueueJob(job, updateDatabase: false, cancellationToken);
         }
@@ -461,6 +323,137 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         // Small delay before next iteration
         _logger.LogDebug("Tiny nap");
         await Task.Delay(100, cancellationToken);
+    }
+
+    private async Task ProcessJob(
+        ProcessEngineJob job,
+        ConcurrentBag<ProcessEngineJob> requeue,
+        CancellationToken cancellationToken
+    )
+    {
+        _logger.LogDebug("Processing job: {Job}", job);
+
+        foreach (var task in job.OrderedIncompleteTasks())
+        {
+            _logger.LogDebug("Processing task: {Task}", task);
+
+            // Not time to process yet
+            if (!task.IsReadyForExecution(_timeProvider))
+            {
+                _logger.LogDebug("Task not ready for execution");
+                break;
+            }
+
+            // Already processing and not finished
+            if (task.ExecutionTask?.IsCompleted is false)
+            {
+                _logger.LogDebug("Task is already processing, but not yet finished");
+                break;
+            }
+
+            // Execute job instructions
+            task.ExecutionTask ??= _taskHandler.Execute(task, cancellationToken);
+
+            // Background wait
+            if (
+                !task.ExecutionTask.IsCompleted
+                && task.Command.ExecutionStrategy == ProcessEngineTaskExecutionStrategy.PeriodicPolling
+            )
+            {
+                _logger.LogDebug("Performing background wait for task {Task}", task);
+                task.Status = ProcessEngineItemStatus.Processing; // Don't persist this, we're dependent on the in-memory task anyway
+                break;
+            }
+
+            // Foreground wait
+            var result = await task.ExecutionTask;
+
+            // Success
+            if (result.IsSuccess())
+            {
+                await TaskSucceeded(task);
+                continue;
+            }
+
+            // Error
+            await TaskFailed(task);
+            break;
+        }
+
+        // Job needs requeue or is done
+        job.Status = job.OverallStatus();
+        await UpdateJobInStorage(job, cancellationToken);
+
+        if (job.Status.IsDone())
+        {
+            _logger.LogDebug("Job {Job} is done", job);
+            ReleaseQueueSlot();
+        }
+        else
+        {
+            _logger.LogDebug("Job {Job} is still processing, slating for requeue", job);
+            requeue.Add(job);
+        }
+
+        return;
+
+        async Task TaskSucceeded(ProcessEngineTask task)
+        {
+            _logger.LogDebug("Task {Task} completed successfully", task);
+            task.ExecutionTask?.Dispose();
+            task.ExecutionTask = null;
+            task.Status = ProcessEngineItemStatus.Completed;
+            await UpdateTaskInStorage(task, cancellationToken);
+        }
+
+        async Task TaskFailed(ProcessEngineTask task)
+        {
+            task.RequeueCount++;
+            task.ExecutionTask?.Dispose();
+            task.ExecutionTask = null;
+
+            var retryStrategy = task.RetryStrategy ?? Settings.DefaultTaskRetryStrategy;
+            if (retryStrategy.CanRetry(task.RequeueCount))
+            {
+                _logger.LogDebug("Requeuing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
+                task.Status = ProcessEngineItemStatus.Requeued;
+                task.BackoffUntil = _timeProvider.GetUtcNow().Add(retryStrategy.CalculateDelay(task.RequeueCount));
+            }
+            else
+            {
+                _logger.LogError("Failing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
+                task.Status = ProcessEngineItemStatus.Failed;
+            }
+
+            await UpdateTaskInStorage(task, cancellationToken);
+        }
+    }
+
+    private async Task Cleanup()
+    {
+        await _cleanupLock.WaitAsync();
+
+        try
+        {
+            if (!_cleanupRequired)
+                return;
+
+            _cleanupRequired = false;
+            _mainLoopTask = null;
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = null;
+
+            await _enabledStatusHistory.Clear();
+
+            _inbox.Clear();
+            _inboxCapacityLimit.Dispose();
+
+            InitializeInbox();
+        }
+        finally
+        {
+            _cleanupLock.Release();
+        }
     }
 
     public void Dispose()
