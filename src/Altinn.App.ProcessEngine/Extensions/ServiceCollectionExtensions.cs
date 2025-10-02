@@ -5,7 +5,7 @@ namespace Altinn.App.ProcessEngine.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    internal static IServiceCollection AddProcessEngine(this IServiceCollection services)
+    public static IServiceCollection AddProcessEngine(this IServiceCollection services)
     {
         if (services.IsConfigured<ProcessEngineSettings>() is false)
         {

@@ -5,7 +5,7 @@ namespace Altinn.App.ProcessEngine.Extensions;
 internal static class ProcessEngineRetryStrategyExtensions
 {
     public static bool CanRetry(this ProcessEngineRetryStrategy strategy, int iteration) =>
-        !strategy.MaxRetries.HasValue || strategy.MaxRetries < iteration;
+        !strategy.MaxRetries.HasValue || strategy.MaxRetries > iteration;
 
     public static TimeSpan CalculateDelay(this ProcessEngineRetryStrategy strategy, int iteration)
     {

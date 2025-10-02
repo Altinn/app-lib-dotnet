@@ -351,7 +351,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
                 _logger.LogDebug("Processing task: {Task}", task);
 
                 // Not time to process yet
-                if (task.IsReadyForExecution(_timeProvider))
+                if (!task.IsReadyForExecution(_timeProvider))
                 {
                     _logger.LogDebug("Task not ready for execution");
                     jobIsUnprocessable = true;
@@ -400,13 +400,13 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
                 var retryStrategy = task.RetryStrategy ?? _settings.DefaultTaskRetryStrategy;
                 if (retryStrategy.CanRetry(task.RequeueCount))
                 {
-                    _logger.LogDebug("Requeuing task {Task}", task);
+                    _logger.LogDebug("Requeuing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
                     task.Status = ProcessEngineItemStatus.Requeued;
                     task.BackoffUntil = _timeProvider.GetUtcNow().Add(retryStrategy.CalculateDelay(task.RequeueCount));
                 }
                 else
                 {
-                    _logger.LogWarning("Failing task {Task}", task);
+                    _logger.LogError("Failing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
                     task.Status = ProcessEngineItemStatus.Failed;
                 }
 

@@ -44,7 +44,7 @@ public class ProcessEngineController : ControllerBase
                 new ProcessEngineTaskRequest(
                     "task-identifier",
                     new ProcessEngineTaskCommand.MoveProcessForward("Task_1", "Task_2"),
-                    RetryStrategy: ProcessEngineRetryStrategy.Linear(TimeSpan.FromSeconds(1), 10)
+                    RetryStrategy: ProcessEngineRetryStrategy.Constant(TimeSpan.FromSeconds(1), 10)
                 ),
             ]
         );
