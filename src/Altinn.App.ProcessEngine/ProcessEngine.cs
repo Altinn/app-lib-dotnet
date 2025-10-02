@@ -39,6 +39,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
 
     // TODO: Is this overengineered? Maybe we only care if it's running or not?
     public ProcessEngineHealthStatus Status { get; private set; } = ProcessEngineHealthStatus.Healthy;
+    public int InboxCount => _settings.QueueCapacity - _inboxCapacityLimit.CurrentCount;
 
     public ProcessEngine(IServiceProvider serviceProvider)
     {
@@ -53,6 +54,8 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
 
     public async Task Start(CancellationToken cancellationToken = default)
     {
+        _logger.LogDebug("Starting process engine");
+
         if (_cancellationTokenSource is not null || _mainLoopTask is not null)
             await Stop();
 
@@ -99,6 +102,8 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
 
     public async Task Stop()
     {
+        _logger.LogDebug("(public) Stopping process engine");
+
         if (!Status.HasFlag(ProcessEngineHealthStatus.Running))
             return;
 
@@ -123,6 +128,8 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         CancellationToken cancellationToken = default
     )
     {
+        _logger.LogDebug("(public) Enqueuing job {JobIdentifier}", request.JobIdentifier);
+
         if (!request.IsValid())
             return ProcessEngineResponse.Rejected("Invalid request");
 
@@ -132,7 +139,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         var enabled = await _enabledStatusHistory.Latest() ?? await ShouldRun(cancellationToken);
         if (!enabled)
             return ProcessEngineResponse.Rejected(
-                "ProcessEngine is currently inactive. Did you call the right instance?"
+                "Process engine is currently inactive. Did you call the right instance?"
             );
 
         // TODO: Duplication check? If we already have an active job with some form of calculated ID, disallow enqueue
@@ -145,15 +152,22 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
 
     private async Task AcquireQueueSlot(CancellationToken cancellationToken = default)
     {
+        _logger.LogDebug("Acquiring queue slot");
         await _inboxCapacityLimit.WaitAsync(cancellationToken);
 
-        if (_inbox.Reader.Count >= _settings.QueueCapacity)
+        if (InboxCount >= _settings.QueueCapacity)
             Status |= ProcessEngineHealthStatus.QueueFull;
         else
             Status &= ~ProcessEngineHealthStatus.QueueFull;
+
+        _logger.LogDebug("Status after acquiring slot: {Status}", Status);
     }
 
-    private void ReleaseQueueSlot() => _inboxCapacityLimit.Release();
+    private void ReleaseQueueSlot()
+    {
+        _logger.LogDebug("Releasing queue slot");
+        _inboxCapacityLimit.Release();
+    }
 
     private async Task EnqueueJob(
         ProcessEngineJob job,
@@ -162,18 +176,24 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
     )
     {
         // TODO: persist to database if `updateDatabase` is true
+        _logger.LogDebug("(internal) Enqueuing job {Job}. Update database: {UpdateDb}", job, updateDatabase);
         await _inbox.Writer.WriteAsync(job, cancellationToken);
     }
 
     private ProcessEngineJob? DequeueJob()
     {
         // TODO: Do we persist this checkout in the db? Probably not
-        return _inbox.Reader.TryRead(out var job) ? job : null;
+
+        _ = _inbox.Reader.TryRead(out var job);
+        _logger.LogDebug("(internal) Dequeuing job. Got {Job}", job);
+
+        return job;
     }
 
     private Task PopulateJobsFromStorage(CancellationToken cancellationToken)
     {
         // TODO: Populate the queue from the database. This must be a resilient call to db
+        _logger.LogDebug("Populating jobs from storage");
         return Task.CompletedTask;
     }
 
@@ -181,21 +201,21 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
     {
         // TODO: Should we update the `Instance` with something here too? Like if the job has failed, etc
         // TODO: This must be a resilient call to db
+        _logger.LogDebug("Updating job in storage: {Job}", job);
         return Task.CompletedTask;
     }
 
     private Task UpdateTaskInStorage(ProcessEngineTask task, CancellationToken cancellationToken)
     {
         // TODO: This must be a resilient call to db
+        _logger.LogDebug("Updating task in storage: {Task}", task);
         return Task.CompletedTask;
     }
 
     private async Task<bool> ShouldRun(CancellationToken cancellationToken)
     {
         // E.g. "do we hold the lock?"
-
-        // TODO: Implement logic to determine if the process engine should run
-        // TODO: Some sort of progressive backoff if previous answer was "no"
+        _logger.LogDebug("Checking if process engine should run");
 
         bool placeholderEnabledResponse = await Task.Run(
             async () =>
@@ -213,18 +233,29 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
 
         // Populate queue if we just transitioned from disabled to enabled
         if (latest is true && previous is false)
-        {
             await PopulateJobsFromStorage(cancellationToken);
-        }
 
         // Progressive backoff we have been disabled for two or more consecutive checks
         if (latest is false && previous is false)
         {
             int iteration = await _enabledStatusHistory.ConsecutiveCount(x => !x);
             var backoffDelay = _statusCheckBackoffStrategy.CalculateDelay(iteration);
+
+            _logger.LogInformation("Process engine is disabled. Backing off for {BackoffDelay}", backoffDelay);
             await Task.Delay(backoffDelay, cancellationToken);
         }
 
+        // Update status
+        if (placeholderEnabledResponse)
+        {
+            Status &= ~ProcessEngineHealthStatus.Disabled;
+            _logger.LogDebug("Process engine is enabled");
+        }
+        else
+        {
+            Status |= ProcessEngineHealthStatus.Disabled;
+            _logger.LogDebug("Process engine is disabled");
+        }
         return placeholderEnabledResponse;
     }
 
@@ -264,22 +295,48 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         }
     }
 
+    private async Task<bool> HaveJobs(CancellationToken cancellationToken)
+    {
+        _logger.LogDebug("Checking if we have jobs to process");
+        bool haveJobs = InboxCount > 0;
+
+        if (haveJobs)
+        {
+            _logger.LogDebug("We have jobs to process: {InboxCount}", InboxCount);
+            Status &= ~ProcessEngineHealthStatus.Idle;
+        }
+        else
+        {
+            _logger.LogDebug("No jobs to process, taking a short nap");
+            Status |= ProcessEngineHealthStatus.Idle;
+            await Task.Delay(500, cancellationToken);
+        }
+
+        return haveJobs;
+    }
+
     private async Task MainLoop(CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Entering MainLoop. Inbox count: {InboxCount}", InboxCount);
+
         // Should we run?
         if (!await ShouldRun(cancellationToken))
-        {
-            Status |= ProcessEngineHealthStatus.Disabled;
             return;
-        }
+
+        // Do we have jobs to process?
+        if (!await HaveJobs(cancellationToken))
+            return;
 
         // Trackers for reentry
         var unprocessableJobs = new List<ProcessEngineJob>();
         var requeueJobs = new List<ProcessEngineJob>();
 
         // Loop over queue
-        while (_inbox.Reader.Count > 0 && !cancellationToken.IsCancellationRequested)
+        _logger.LogDebug("Starting job processing loop");
+        while (InboxCount > 0 && !cancellationToken.IsCancellationRequested)
         {
+            _logger.LogDebug("Processing jobs. Queue size: {InboxCount}", InboxCount);
+
             var job = DequeueJob();
             if (job is null)
                 break;
@@ -288,11 +345,15 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
 
             // TODO: Might need more parallelism here. One thread per instance? Per job?
             // TODO: PS tasks cannot be concurrent, they must be sequential
+            _logger.LogDebug("Entering task processing loop for job {Job}", job);
             foreach (var task in job.OrderedIncompleteTasks())
             {
+                _logger.LogDebug("Processing task: {Task}", task);
+
                 // Not time to process yet
                 if (task.IsReadyForExecution(_timeProvider))
                 {
+                    _logger.LogDebug("Task not ready for execution");
                     jobIsUnprocessable = true;
                     break;
                 }
@@ -300,6 +361,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
                 // Already processing and not finished
                 if (task.ExecutionTask?.IsCompleted is false)
                 {
+                    _logger.LogDebug("Task is already processing, but not yet finished");
                     jobIsUnprocessable = true;
                     break;
                 }
@@ -313,6 +375,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
                     && task.Command.ExecutionStrategy == ProcessEngineTaskExecutionStrategy.PeriodicPolling
                 )
                 {
+                    _logger.LogDebug("Performing background wait for task {Task}", task);
                     task.Status = ProcessEngineItemStatus.Processing; // Don't persist this, we're dependent on the in-memory task anyway
                     break;
                 }
@@ -321,6 +384,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
                 var result = await task.ExecutionTask;
                 if (result.IsSuccess())
                 {
+                    _logger.LogDebug("Task {Task} completed successfully", task);
                     task.ExecutionTask.Dispose();
                     task.Status = ProcessEngineItemStatus.Completed;
                     await UpdateTaskInStorage(task, cancellationToken);
@@ -336,11 +400,13 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
                 var retryStrategy = task.RetryStrategy ?? _settings.DefaultTaskRetryStrategy;
                 if (retryStrategy.CanRetry(task.RequeueCount))
                 {
+                    _logger.LogDebug("Requeuing task {Task}", task);
                     task.Status = ProcessEngineItemStatus.Requeued;
                     task.BackoffUntil = _timeProvider.GetUtcNow().Add(retryStrategy.CalculateDelay(task.RequeueCount));
                 }
                 else
                 {
+                    _logger.LogWarning("Failing task {Task}", task);
                     task.Status = ProcessEngineItemStatus.Failed;
                 }
 
@@ -351,6 +417,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
             // Job is unprocessable
             if (jobIsUnprocessable)
             {
+                _logger.LogDebug("Job {Job} is unprocessable at this time. Slating for requeue", job);
                 unprocessableJobs.Add(job);
                 continue;
             }
@@ -360,10 +427,22 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
             await UpdateJobInStorage(job, cancellationToken);
 
             if (job.Status.IsDone())
+            {
+                _logger.LogDebug("Job {Job} is done", job);
                 ReleaseQueueSlot();
+            }
             else
+            {
+                _logger.LogDebug("Job {Job} is still processing, slating for requeue", job);
                 requeueJobs.Add(job);
+            }
         }
+
+        _logger.LogDebug(
+            "Performing requeues. Jobs with failed tasks: {RequeueCount}, unprocessable jobs: {UnprocessableCount}",
+            requeueJobs.Count,
+            unprocessableJobs.Count
+        );
 
         // Requeue jobs that had failed tasks first
         foreach (var job in requeueJobs)
@@ -378,6 +457,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         }
 
         // Small delay before next iteration
+        _logger.LogDebug("Tiny nap");
         await Task.Delay(100, cancellationToken);
     }
 

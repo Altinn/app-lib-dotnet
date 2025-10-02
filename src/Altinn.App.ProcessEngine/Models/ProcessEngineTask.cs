@@ -20,9 +20,10 @@ internal sealed record ProcessEngineTask
             StartTime = request.StartTime,
             ProcessingOrder = index,
             Command = request.Command,
+            RetryStrategy = request.RetryStrategy,
         };
 
-    public override string ToString() => $"{nameof(ProcessEngineTask)}.{Command.GetType()}: {Identifier}";
+    public override string ToString() => $"{nameof(ProcessEngineTask)}.{Command.GetType()}: {Identifier} ({Status})";
 
     public bool Equals(ProcessEngineTask? other) =>
         other?.Identifier.Equals(Identifier, StringComparison.OrdinalIgnoreCase) is true;

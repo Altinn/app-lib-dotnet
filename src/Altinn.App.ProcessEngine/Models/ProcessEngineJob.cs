@@ -1,4 +1,3 @@
-using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.ProcessEngine.Models;
@@ -6,7 +5,7 @@ namespace Altinn.App.ProcessEngine.Models;
 internal sealed record ProcessEngineJob
 {
     public ProcessEngineItemStatus Status { get; set; }
-    public required AppIdentifier AppIdentifier { get; init; }
+    public required string Identifier { get; init; }
     public required Instance Instance { get; init; }
     public required IReadOnlyList<ProcessEngineTask> Tasks { get; init; }
     public DateTimeOffset EnqueuedAt { get; init; } = DateTimeOffset.UtcNow;
@@ -15,8 +14,15 @@ internal sealed record ProcessEngineJob
     public static ProcessEngineJob FromRequest(ProcessEngineRequest request) =>
         new()
         {
-            AppIdentifier = request.AppIdentifier,
+            Identifier = request.JobIdentifier,
             Instance = request.Instance,
             Tasks = request.Tasks.Select(ProcessEngineTask.FromRequest).ToList(),
         };
+
+    public override string ToString() => $"{nameof(ProcessEngineJob)}: {Identifier} ({Status})";
+
+    public bool Equals(ProcessEngineJob? other) =>
+        other?.Identifier.Equals(Identifier, StringComparison.OrdinalIgnoreCase) is true;
+
+    public override int GetHashCode() => Identifier.GetHashCode();
 };

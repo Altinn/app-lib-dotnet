@@ -6,5 +6,6 @@ namespace Altinn.App.ProcessEngine.Models;
 public sealed record ProcessEngineTaskRequest(
     string Identifier,
     ProcessEngineTaskCommand Command,
-    DateTimeOffset? StartTime = null
+    DateTimeOffset? StartTime = null,
+    ProcessEngineRetryStrategy? RetryStrategy = null
 );

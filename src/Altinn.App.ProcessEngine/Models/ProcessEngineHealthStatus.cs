@@ -10,4 +10,5 @@ internal enum ProcessEngineHealthStatus
     Stopped = 1 << 3,
     QueueFull = 1 << 4,
     Disabled = 1 << 5,
+    Idle = 1 << 6,
 }

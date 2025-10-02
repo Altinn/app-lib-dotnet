@@ -15,6 +15,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IProcessEngine, ProcessEngine>();
         services.AddSingleton<IProcessEngineTaskHandler, ProcessEngineTaskHandler>();
         services.AddHostedService<ProcessEngineHost>();
+        // services.AddControllers().AddApplicationPart(typeof(EngineController).Assembly);
 
         return services;
     }

@@ -8,10 +8,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Controllers\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Altinn.Platform.Storage.Interface" />
       <PackageReference Include="Polly.Extensions" />
     </ItemGroup>
@@ -19,5 +15,9 @@
     <ItemGroup>
       <ProjectReference Include="..\Altinn.App.Core\Altinn.App.Core.csproj" />
     </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Altinn.App.Api" />
+  </ItemGroup>
 
 </Project>

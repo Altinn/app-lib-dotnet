@@ -1,0 +1,55 @@
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Instances;
+using Altinn.App.ProcessEngine.Extensions;
+using Altinn.App.ProcessEngine.Models;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Altinn.App.ProcessEngine.Controllers;
+
+[ApiController]
+[Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engine")]
+public class ProcessEngineController : ControllerBase
+{
+    private readonly ILogger<ProcessEngineController> _logger;
+    private readonly IProcessEngine _processEngine;
+    private readonly IInstanceClient _instanceClient;
+    private readonly IAppMetadata _appMetadata;
+    private readonly IServiceProvider _serviceProvider;
+
+    /// <summary>
+    /// The data controller is responsible for adding business logic to the data elements.
+    /// </summary>
+    public ProcessEngineController(IServiceProvider serviceProvider, ILogger<ProcessEngineController> logger)
+    {
+        _logger = logger;
+        _serviceProvider = serviceProvider;
+        _processEngine = serviceProvider.GetRequiredService<IProcessEngine>();
+        _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
+        _appMetadata = serviceProvider.GetRequiredService<IAppMetadata>();
+    }
+
+    [HttpPost("test")]
+    public async Task<ActionResult> Post(
+        [FromRoute] string org,
+        [FromRoute] string app,
+        [FromRoute] int instanceOwnerPartyId,
+        [FromRoute] Guid instanceGuid
+    )
+    {
+        var instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        var request = new ProcessEngineRequest(
+            "job-identifier",
+            instance,
+            [
+                new ProcessEngineTaskRequest(
+                    "task-identifier",
+                    new ProcessEngineTaskCommand.MoveProcessForward("Task_1", "Task_2"),
+                    RetryStrategy: ProcessEngineRetryStrategy.Linear(TimeSpan.FromSeconds(1), 10)
+                ),
+            ]
+        );
+        var response = await _processEngine.EnqueueJob(request);
+
+        return response.IsAccepted() ? Ok() : BadRequest(response.Message);
+    }
+}

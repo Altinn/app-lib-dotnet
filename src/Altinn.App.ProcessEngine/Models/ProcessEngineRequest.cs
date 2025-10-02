@@ -1,4 +1,3 @@
-using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.ProcessEngine.Models;
@@ -7,7 +6,7 @@ namespace Altinn.App.ProcessEngine.Models;
 /// A request to enqueue one or more task in the process engine.
 /// </summary>
 public sealed record ProcessEngineRequest(
-    AppIdentifier AppIdentifier,
+    string JobIdentifier,
     Instance Instance,
     IEnumerable<ProcessEngineTaskRequest> Tasks
 )
