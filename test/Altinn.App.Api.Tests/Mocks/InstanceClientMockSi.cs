@@ -381,7 +381,7 @@ public class InstanceClientMockSi : IInstanceClient
         // mock does not set last changed by, but this is set by the platform.
         storedInstance.LastChangedBy = string.Empty;
 
-        File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
 
         return await GetInstance(storedInstance);
     }
