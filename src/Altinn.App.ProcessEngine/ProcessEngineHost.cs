@@ -14,6 +14,7 @@ internal sealed class ProcessEngineHost(IServiceProvider serviceProvider) : Back
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("Starting process engine.");
+        _logger.LogInformation("API key is {ApiKey}", _processEngine.Settings.ApiKey);
         await _processEngine.Start(stoppingToken);
         _logger.LogInformation("Process engine initialized.");
 

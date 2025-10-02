@@ -16,7 +16,6 @@ using Altinn.App.Core.Features.Correspondence.Extensions;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Models;
-using Altinn.App.ProcessEngine.Controllers;
 using Altinn.App.ProcessEngine.Extensions;
 using Altinn.Common.PEP.Authorization;
 using Altinn.Common.PEP.Clients;
@@ -63,7 +62,6 @@ public static class ServiceCollectionExtensions
 
         mvcBuilder
             .AddApplicationPart(typeof(InstancesController).Assembly)
-            .AddApplicationPart(typeof(ProcessEngineController).Assembly)
             .AddXmlSerializerFormatters()
             .AddJsonOptions(
                 JsonSettingNames.AltinnApi,

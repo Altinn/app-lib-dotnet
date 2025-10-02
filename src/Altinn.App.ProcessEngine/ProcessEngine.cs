@@ -8,7 +8,9 @@ namespace Altinn.App.ProcessEngine;
 
 internal interface IProcessEngine
 {
+    ProcessEngineSettings Settings { get; }
     ProcessEngineHealthStatus Status { get; }
+    int InboxCount { get; }
     Task Start(CancellationToken cancellationToken = default);
     Task Stop();
     Task<ProcessEngineResponse> EnqueueJob(ProcessEngineRequest request, CancellationToken cancellationToken = default);
@@ -19,7 +21,6 @@ internal interface IProcessEngine
 internal sealed class ProcessEngine : IProcessEngine, IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly ProcessEngineSettings _settings;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IProcessEngineTaskHandler _taskHandler;
@@ -39,7 +40,8 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
 
     // TODO: Is this overengineered? Maybe we only care if it's running or not?
     public ProcessEngineHealthStatus Status { get; private set; } = ProcessEngineHealthStatus.Healthy;
-    public int InboxCount => _settings.QueueCapacity - _inboxCapacityLimit.CurrentCount;
+    public int InboxCount => Settings.QueueCapacity - _inboxCapacityLimit.CurrentCount;
+    public ProcessEngineSettings Settings { get; }
 
     public ProcessEngine(IServiceProvider serviceProvider)
     {
@@ -47,7 +49,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         _logger = serviceProvider.GetRequiredService<ILogger<ProcessEngine>>();
         _taskHandler = serviceProvider.GetRequiredService<IProcessEngineTaskHandler>();
         _timeProvider = serviceProvider.GetService<TimeProvider>() ?? TimeProvider.System;
-        _settings = serviceProvider.GetRequiredService<IOptions<ProcessEngineSettings>>().Value;
+        Settings = serviceProvider.GetRequiredService<IOptions<ProcessEngineSettings>>().Value;
 
         InitializeInbox();
     }
@@ -155,7 +157,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         _logger.LogDebug("Acquiring queue slot");
         await _inboxCapacityLimit.WaitAsync(cancellationToken);
 
-        if (InboxCount >= _settings.QueueCapacity)
+        if (InboxCount >= Settings.QueueCapacity)
             Status |= ProcessEngineHealthStatus.QueueFull;
         else
             Status &= ~ProcessEngineHealthStatus.QueueFull;
@@ -265,7 +267,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         _inbox = Channel.CreateUnbounded<ProcessEngineJob>(
             new UnboundedChannelOptions { SingleReader = true, SingleWriter = false }
         );
-        _inboxCapacityLimit = new SemaphoreSlim(_settings.QueueCapacity, _settings.QueueCapacity);
+        _inboxCapacityLimit = new SemaphoreSlim(Settings.QueueCapacity, Settings.QueueCapacity);
     }
 
     private async Task Cleanup()
@@ -397,7 +399,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
                 task.ExecutionTask.Dispose();
                 task.ExecutionTask = null;
 
-                var retryStrategy = task.RetryStrategy ?? _settings.DefaultTaskRetryStrategy;
+                var retryStrategy = task.RetryStrategy ?? Settings.DefaultTaskRetryStrategy;
                 if (retryStrategy.CanRetry(task.RequeueCount))
                 {
                     _logger.LogDebug("Requeuing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
