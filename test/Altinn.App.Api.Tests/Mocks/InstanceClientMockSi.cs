@@ -21,7 +21,7 @@ public class InstanceClientMockSi : IInstanceClient
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public Task<Instance> CreateInstance(string org, string app, Instance instance)
+    public async Task<Instance> CreateInstance(string org, string app, Instance instance)
     {
         string partyId = instance.InstanceOwner.PartyId;
         Guid instanceGuid = Guid.NewGuid();
@@ -35,7 +35,7 @@ public class InstanceClientMockSi : IInstanceClient
             Path.GetDirectoryName(instancePath)
             ?? throw new IOException($"Could not get directory name of specified path {instancePath}");
         _ = Directory.CreateDirectory(directory);
-        File.WriteAllText(instancePath, instance.ToString());
+        await File.WriteAllTextAsync(instancePath, instance.ToString());
 
         _logger.LogInformation(
             "Created instance for app {org}/{app}. writing to path: {instancePath}",
@@ -44,7 +44,7 @@ public class InstanceClientMockSi : IInstanceClient
             instancePath
         );
 
-        return Task.FromResult(instance);
+        return instance;
     }
 
     /// <inheritdoc />
@@ -58,22 +58,22 @@ public class InstanceClientMockSi : IInstanceClient
         return await GetInstance(app, org, instanceOwnerId, instanceGuid);
     }
 
-    public Task<Instance> GetInstance(string app, string org, int instanceOwnerPartyId, Guid instanceId)
+    public async Task<Instance> GetInstance(string app, string org, int instanceOwnerPartyId, Guid instanceId)
     {
-        Instance instance = GetTestInstance(app, org, instanceOwnerPartyId, instanceId);
+        Instance instance = await GetTestInstance(app, org, instanceOwnerPartyId, instanceId);
 
         if (instance is null)
         {
             throw new IOException($"Could not load instance {instanceId} from app {org}/{app}");
         }
 
-        instance.Data = GetDataElements(org, app, instanceOwnerPartyId, instanceId);
+        instance.Data = await GetDataElements(org, app, instanceOwnerPartyId, instanceId);
         (instance.LastChangedBy, instance.LastChanged) = FindLastChanged(instance);
 
-        return Task.FromResult(instance);
+        return instance;
     }
 
-    public Task<Instance> UpdateProcess(Instance instance)
+    public async Task<Instance> UpdateProcess(Instance instance)
     {
         ProcessState process = instance.Process;
 
@@ -92,7 +92,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find instance {instance.Id} on path {instancePath}");
         }
 
-        string content = File.ReadAllText(instancePath);
+        string content = await File.ReadAllTextAsync(instancePath);
 
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
@@ -111,9 +111,9 @@ public class InstanceClientMockSi : IInstanceClient
         storedInstance.Process = process;
         storedInstance.LastChanged = DateTime.UtcNow;
 
-        File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
 
-        return Task.FromResult(storedInstance);
+        return storedInstance;
     }
 
     public Task<Instance> UpdateProcessAndEvents(Instance instance, List<InstanceEvent> events)
@@ -121,7 +121,7 @@ public class InstanceClientMockSi : IInstanceClient
         return UpdateProcess(instance);
     }
 
-    private static Instance GetTestInstance(string app, string org, int instanceOwnerId, Guid instanceId)
+    private static async Task<Instance> GetTestInstance(string app, string org, int instanceOwnerId, Guid instanceId)
     {
         string instancePath = GetInstancePath(app, org, instanceOwnerId, instanceId);
         if (!File.Exists(instancePath))
@@ -129,7 +129,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance {instanceId} on specified path {instancePath}.");
         }
 
-        string content = File.ReadAllText(instancePath);
+        string content = await File.ReadAllTextAsync(instancePath);
         Instance instance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -172,7 +172,7 @@ public class InstanceClientMockSi : IInstanceClient
             ) + Path.DirectorySeparatorChar;
     }
 
-    private List<DataElement> GetDataElements(string org, string app, int instanceOwnerId, Guid instanceId)
+    private async Task<List<DataElement>> GetDataElements(string org, string app, int instanceOwnerId, Guid instanceId)
     {
         string path = GetDataPath(org, app, instanceOwnerId, instanceId);
 
@@ -190,7 +190,7 @@ public class InstanceClientMockSi : IInstanceClient
                 continue;
             }
 
-            string content = File.ReadAllText(file);
+            string content = await File.ReadAllTextAsync(file);
             DataElement dataElement =
                 JsonConvert.DeserializeObject<DataElement>(content)
                 ?? throw new InvalidDataException($"Something went wrong deserializing json for data from path {file}");
@@ -225,7 +225,7 @@ public class InstanceClientMockSi : IInstanceClient
             case "1337/66233fb5-a9f2-45d4-90b1-f6d93ad40713":
                 org = "tdd";
                 app = "endring-av-navn";
-                instance = GetTestInstance(app, org, instanceOwnerPartyId, instanceGuid);
+                instance = await GetTestInstance(app, org, instanceOwnerPartyId, instanceGuid);
                 break;
             default:
                 org = string.Empty;
@@ -238,7 +238,7 @@ public class InstanceClientMockSi : IInstanceClient
             new CompleteConfirmation { StakeholderId = org },
         };
 
-        return await Task.FromResult(instance);
+        return instance;
     }
 
     public async Task<Instance> UpdateReadStatus(int instanceOwnerPartyId, Guid instanceGuid, string readStatus)
@@ -258,7 +258,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = File.ReadAllText(instancePath);
+        string content = await File.ReadAllTextAsync(instancePath);
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -268,8 +268,8 @@ public class InstanceClientMockSi : IInstanceClient
         storedInstance.Status ??= new InstanceStatus();
         storedInstance.Status.ReadStatus = newStatus;
 
-        File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
-        return await Task.FromResult(storedInstance);
+        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
+        return storedInstance;
     }
 
     public async Task<Instance> UpdateSubstatus(int instanceOwnerPartyId, Guid instanceGuid, Substatus substatus)
@@ -290,7 +290,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = File.ReadAllText(instancePath);
+        string content = await File.ReadAllTextAsync(instancePath);
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -304,7 +304,7 @@ public class InstanceClientMockSi : IInstanceClient
         // mock does not set last changed by, but this is set by the platform.
         storedInstance.LastChangedBy = string.Empty;
 
-        File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
         return await GetInstance(storedInstance);
     }
 
@@ -320,7 +320,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = File.ReadAllText(instancePath);
+        string content = await File.ReadAllTextAsync(instancePath);
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -344,7 +344,7 @@ public class InstanceClientMockSi : IInstanceClient
         // mock does not set last changed by, but this is set by the platform.
         storedInstance.LastChangedBy = string.Empty;
 
-        File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
 
         return await GetInstance(storedInstance);
     }
@@ -357,7 +357,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = File.ReadAllText(instancePath);
+        string content = await File.ReadAllTextAsync(instancePath);
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -386,7 +386,7 @@ public class InstanceClientMockSi : IInstanceClient
         return await GetInstance(storedInstance);
     }
 
-    public Task<Instance> DeleteInstance(int instanceOwnerPartyId, Guid instanceGuid, bool hard)
+    public async Task<Instance> DeleteInstance(int instanceOwnerPartyId, Guid instanceGuid, bool hard)
     {
         string instancePath = GetInstancePath(instanceOwnerPartyId, instanceGuid);
         if (!File.Exists(instancePath))
@@ -394,7 +394,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = File.ReadAllText(instancePath);
+        string content = await File.ReadAllTextAsync(instancePath);
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -415,9 +415,9 @@ public class InstanceClientMockSi : IInstanceClient
         // mock does not set last changed by, but this is set by the platform.
         storedInstance.LastChangedBy = string.Empty;
 
-        File.WriteAllText(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
 
-        return Task.FromResult(storedInstance);
+        return storedInstance;
     }
 
     /// <summary>
@@ -497,7 +497,7 @@ public class InstanceClientMockSi : IInstanceClient
 
             foreach (var file in instanceFiles)
             {
-                string content = File.ReadAllText(file);
+                string content = await File.ReadAllTextAsync(file);
                 Instance? instance = JsonConvert.DeserializeObject<Instance>(content);
                 if (instance != null && instance.Id != null)
                 {
