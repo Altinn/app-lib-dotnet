@@ -198,7 +198,6 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
     [Fact]
     public async Task PostNewInstanceWithInvalidData_EnsureInvalidResponse()
     {
-        // Should probably be BadRequest, but this is what the current implementation returns
         // Setup test data
         string org = "tdd";
         string app = "contributer-restriction";
@@ -217,8 +216,8 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
             content
         );
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
-        createResponse.StatusCode.Should().Be(HttpStatusCode.InternalServerError, createResponseContent);
-        createResponseContent.Should().Contain("Instantiation of data elements failed");
+        createResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest, createResponseContent);
+        createResponseContent.Should().Contain("Failed to deserialize XML");
     }
 
     [Fact]
