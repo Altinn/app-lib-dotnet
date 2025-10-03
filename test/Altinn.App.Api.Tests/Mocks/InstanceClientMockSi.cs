@@ -92,7 +92,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find instance {instance.Id} on path {instancePath}");
         }
 
-        string content = await File.ReadAllTextAsync(instancePath);
+        string content = await ReadAllTextWithRetry(instancePath);
 
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
@@ -129,7 +129,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance {instanceId} on specified path {instancePath}.");
         }
 
-        string content = await File.ReadAllTextAsync(instancePath);
+        string content = await ReadAllTextWithRetry(instancePath);
         Instance instance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -190,7 +190,7 @@ public class InstanceClientMockSi : IInstanceClient
                 continue;
             }
 
-            string content = await File.ReadAllTextAsync(file);
+            string content = await ReadAllTextWithRetry(file);
             DataElement dataElement =
                 JsonConvert.DeserializeObject<DataElement>(content)
                 ?? throw new InvalidDataException($"Something went wrong deserializing json for data from path {file}");
@@ -258,7 +258,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = await File.ReadAllTextAsync(instancePath);
+        string content = await ReadAllTextWithRetry(instancePath);
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -290,7 +290,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = await File.ReadAllTextAsync(instancePath);
+        string content = await ReadAllTextWithRetry(instancePath);
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -320,7 +320,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = await File.ReadAllTextAsync(instancePath);
+        string content = await ReadAllTextWithRetry(instancePath);
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -357,7 +357,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = await File.ReadAllTextAsync(instancePath);
+        string content = await ReadAllTextWithRetry(instancePath);
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -394,7 +394,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = await File.ReadAllTextAsync(instancePath);
+        string content = await ReadAllTextWithRetry(instancePath);
         Instance storedInstance =
             JsonConvert.DeserializeObject<Instance>(content)
             ?? throw new InvalidDataException(
@@ -497,7 +497,7 @@ public class InstanceClientMockSi : IInstanceClient
 
             foreach (var file in instanceFiles)
             {
-                string content = await File.ReadAllTextAsync(file);
+                string content = await ReadAllTextWithRetry(file);
                 Instance? instance = JsonConvert.DeserializeObject<Instance>(content);
                 if (instance != null && instance.Id != null)
                 {
@@ -592,5 +592,26 @@ public class InstanceClientMockSi : IInstanceClient
         );
 
         return (lastChangedBy, lastChanged);
+    }
+
+    private static async Task<string> ReadAllTextWithRetry(string path)
+    {
+        var retries = 10;
+        while (true)
+        {
+            try
+            {
+                return await File.ReadAllTextAsync(path);
+            }
+            catch (IOException e)
+            {
+                if (retries < 0)
+                {
+                    throw new IOException($"Could not read file {path}", e);
+                }
+                await Task.Delay(10);
+            }
+            retries--;
+        }
     }
 }
