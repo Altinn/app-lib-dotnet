@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
-using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Instances;
+// using Altinn.App.Core.Internal.App;
+// using Altinn.App.Core.Internal.Instances;
 using Altinn.App.ProcessEngine.Constants;
 using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
@@ -14,12 +14,13 @@ namespace Altinn.App.ProcessEngine.Controllers;
 [ApiController]
 [Authorize(AuthenticationSchemes = AuthConstants.ApiKeySchemeName)]
 [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engine")]
-public class ProcessEngineController : ControllerBase
+internal class ProcessEngineController : ControllerBase
 {
     private readonly ILogger<ProcessEngineController> _logger;
     private readonly IProcessEngine _processEngine;
-    private readonly IInstanceClient _instanceClient;
-    private readonly IAppMetadata _appMetadata;
+
+    // private readonly IInstanceClient _instanceClient;
+    // private readonly IAppMetadata _appMetadata;
     private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
@@ -30,8 +31,8 @@ public class ProcessEngineController : ControllerBase
         _logger = logger;
         _serviceProvider = serviceProvider;
         _processEngine = serviceProvider.GetRequiredService<IProcessEngine>();
-        _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
-        _appMetadata = serviceProvider.GetRequiredService<IAppMetadata>();
+        // _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
+        // _appMetadata = serviceProvider.GetRequiredService<IAppMetadata>();
     }
 
     [HttpPost("test")]

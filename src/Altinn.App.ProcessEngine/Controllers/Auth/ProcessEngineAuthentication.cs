@@ -5,7 +5,7 @@ using Altinn.App.ProcessEngine.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.ProcessEngine;
+namespace Altinn.App.ProcessEngine.Controllers.Auth;
 
 internal class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {

@@ -68,7 +68,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Altinn.App.Api" />
-    <InternalsVisibleTo Include="Altinn.App.ProcessEngine" />
     <InternalsVisibleTo Include="$(AssemblyName).Tests" />
     <InternalsVisibleTo Include="Altinn.App.Api.Tests" />
     <InternalsVisibleTo Include="Altinn.App.Benchmarks" />

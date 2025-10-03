@@ -1,6 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
-using System.Threading.Channels;
 using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.Extensions.Options;
@@ -17,9 +15,7 @@ internal interface IProcessEngine
     Task<ProcessEngineResponse> EnqueueJob(ProcessEngineRequest request, CancellationToken cancellationToken = default);
 }
 
-// TODO: This is already a big boi. Partial classes? More services?
-
-internal sealed class ProcessEngine : IProcessEngine, IDisposable
+internal partial class ProcessEngine : IProcessEngine, IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly TimeProvider _timeProvider;
@@ -29,7 +25,8 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
     private readonly SemaphoreSlim _cleanupLock = new(1, 1);
     private readonly ProcessEngineRetryStrategy _statusCheckBackoffStrategy = new(
         ProcessEngineBackoffType.Exponential,
-        Delay: TimeSpan.FromSeconds(1)
+        Delay: TimeSpan.FromSeconds(1),
+        MaxDelay: TimeSpan.FromMinutes(1)
     );
 
     private ConcurrentQueue<ProcessEngineJob> _inbox;
@@ -39,8 +36,7 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
     private volatile bool _cleanupRequired;
     private bool _disposed;
 
-    // TODO: Is this overengineered? Maybe we only care if it's running or not?
-    public ProcessEngineHealthStatus Status { get; private set; } = ProcessEngineHealthStatus.Healthy;
+    public ProcessEngineHealthStatus Status { get; private set; }
     public int InboxCount => _inbox.Count;
     public ProcessEngineSettings Settings { get; }
 
@@ -55,164 +51,12 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         InitializeInbox();
     }
 
-    public async Task Start(CancellationToken cancellationToken = default)
-    {
-        _logger.LogDebug("Starting process engine");
-
-        if (_cancellationTokenSource is not null || _mainLoopTask is not null)
-            await Stop();
-
-        Status |= ProcessEngineHealthStatus.Running;
-        _cleanupRequired = true;
-        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-        _mainLoopTask = Task.Run(
-            async () =>
-            {
-                try
-                {
-                    while (!_cancellationTokenSource.IsCancellationRequested)
-                    {
-                        try
-                        {
-                            await MainLoop(_cancellationTokenSource.Token);
-                            Status &= ~ProcessEngineHealthStatus.Unhealthy;
-                            Status |= ProcessEngineHealthStatus.Healthy;
-                            Status |= ProcessEngineHealthStatus.Running;
-                        }
-                        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested) { }
-                        catch (Exception e)
-                        {
-                            _logger.LogError(
-                                e,
-                                "The process engine encountered an unhandled exception: {Message}",
-                                e.Message
-                            );
-
-                            Status |= ProcessEngineHealthStatus.Unhealthy;
-                        }
-                    }
-                }
-                finally
-                {
-                    await Cleanup();
-                    Status &= ~ProcessEngineHealthStatus.Running;
-                }
-            },
-            _cancellationTokenSource.Token
-        );
-    }
-
-    public async Task Stop()
-    {
-        _logger.LogDebug("(public) Stopping process engine");
-
-        if (!Status.HasFlag(ProcessEngineHealthStatus.Running))
-            return;
-
-        try
-        {
-            if (_cancellationTokenSource is not null)
-                await _cancellationTokenSource.CancelAsync();
-
-            if (_mainLoopTask?.IsCompleted is false)
-                await _mainLoopTask;
-        }
-        catch (OperationCanceledException) { }
-        finally
-        {
-            Status &= ~ProcessEngineHealthStatus.Running;
-            Status |= ProcessEngineHealthStatus.Stopped;
-        }
-    }
-
-    public async Task<ProcessEngineResponse> EnqueueJob(
-        ProcessEngineRequest request,
-        CancellationToken cancellationToken = default
-    )
-    {
-        _logger.LogDebug("(public) Enqueuing job {JobIdentifier}", request.JobIdentifier);
-
-        if (!request.IsValid())
-            return ProcessEngineResponse.Rejected("Invalid request");
-
-        if (_mainLoopTask is null)
-            return ProcessEngineResponse.Rejected("Process engine is not running. Did you call Start()?");
-
-        var enabled = await _enabledStatusHistory.Latest() ?? await ShouldRun(cancellationToken);
-        if (!enabled)
-            return ProcessEngineResponse.Rejected(
-                "Process engine is currently inactive. Did you call the right instance?"
-            );
-
-        // TODO: Duplication check? If we already have an active job with some form of calculated ID, disallow enqueue
-
-        await AcquireQueueSlot(cancellationToken); // Only acquire slots for public requests
-        await EnqueueJob(ProcessEngineJob.FromRequest(request), true, cancellationToken);
-
-        return ProcessEngineResponse.Accepted();
-    }
-
-    private async Task AcquireQueueSlot(CancellationToken cancellationToken = default)
-    {
-        _logger.LogDebug("Acquiring queue slot");
-        await _inboxCapacityLimit.WaitAsync(cancellationToken);
-
-        if (InboxCount >= Settings.QueueCapacity)
-            Status |= ProcessEngineHealthStatus.QueueFull;
-        else
-            Status &= ~ProcessEngineHealthStatus.QueueFull;
-
-        _logger.LogDebug("Status after acquiring slot: {Status}", Status);
-    }
-
-    private void ReleaseQueueSlot()
-    {
-        _logger.LogDebug("Releasing queue slot");
-        _inboxCapacityLimit.Release();
-    }
-
-    private async Task EnqueueJob(
-        ProcessEngineJob job,
-        bool updateDatabase = true,
-        CancellationToken cancellationToken = default
-    )
-    {
-        _logger.LogDebug("(internal) Enqueuing job {Job}. Update database: {UpdateDb}", job, updateDatabase);
-
-        // TODO: persist to database if `updateDatabase` is true
-        await Task.CompletedTask;
-
-        _inbox.Enqueue(job);
-    }
-
-    private Task PopulateJobsFromStorage(CancellationToken cancellationToken)
-    {
-        // TODO: Populate the queue from the database. This must be a resilient call to db
-        _logger.LogDebug("Populating jobs from storage");
-        return Task.CompletedTask;
-    }
-
-    private Task UpdateJobInStorage(ProcessEngineJob job, CancellationToken cancellationToken)
-    {
-        // TODO: Should we update the `Instance` with something here too? Like if the job has failed, etc
-        // TODO: This must be a resilient call to db
-        _logger.LogDebug("Updating job in storage: {Job}", job);
-        return Task.CompletedTask;
-    }
-
-    private Task UpdateTaskInStorage(ProcessEngineTask task, CancellationToken cancellationToken)
-    {
-        // TODO: This must be a resilient call to db
-        _logger.LogDebug("Updating task in storage: {Task}", task);
-        return Task.CompletedTask;
-    }
-
     private async Task<bool> ShouldRun(CancellationToken cancellationToken)
     {
         // E.g. "do we hold the lock?"
         _logger.LogDebug("Checking if process engine should run");
 
+        // TODO: Replace this with actual check
         bool placeholderEnabledResponse = await Task.Run(
             async () =>
             {
@@ -255,13 +99,6 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         return placeholderEnabledResponse;
     }
 
-    [MemberNotNull(nameof(_inbox), nameof(_inboxCapacityLimit))]
-    private void InitializeInbox()
-    {
-        _inbox = new ConcurrentQueue<ProcessEngineJob>();
-        _inboxCapacityLimit = new SemaphoreSlim(Settings.QueueCapacity, Settings.QueueCapacity);
-    }
-
     private async Task<bool> HaveJobs(CancellationToken cancellationToken)
     {
         _logger.LogDebug("Checking if we have jobs to process");
@@ -280,14 +117,6 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
         }
 
         return haveJobs;
-    }
-
-    private IEnumerable<ProcessEngineJob> DequeueAllJobs()
-    {
-        while (_inbox.TryDequeue(out var job))
-        {
-            yield return job;
-        }
     }
 
     private async Task MainLoop(CancellationToken cancellationToken)
@@ -427,45 +256,5 @@ internal sealed class ProcessEngine : IProcessEngine, IDisposable
 
             await UpdateTaskInStorage(task, cancellationToken);
         }
-    }
-
-    private async Task Cleanup()
-    {
-        await _cleanupLock.WaitAsync();
-
-        try
-        {
-            if (!_cleanupRequired)
-                return;
-
-            _cleanupRequired = false;
-            _mainLoopTask = null;
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = null;
-
-            await _enabledStatusHistory.Clear();
-
-            _inbox.Clear();
-            _inboxCapacityLimit.Dispose();
-
-            InitializeInbox();
-        }
-        finally
-        {
-            _cleanupLock.Release();
-        }
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-            return;
-
-        _disposed = true;
-        _cancellationTokenSource?.Dispose();
-        _mainLoopTask?.Dispose();
-        _enabledStatusHistory.Dispose();
-        _cleanupLock.Dispose();
-        _inboxCapacityLimit.Dispose();
     }
 }

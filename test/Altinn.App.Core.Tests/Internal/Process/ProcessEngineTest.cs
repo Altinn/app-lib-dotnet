@@ -28,6 +28,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
 using Xunit.Abstractions;
+using LegacyProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
 
 namespace Altinn.App.Core.Tests.Internal.Process;
 
@@ -47,7 +48,7 @@ public sealed class ProcessEngineTest
     public async Task StartProcess_returns_unsuccessful_when_process_already_started()
     {
         using var fixture = Fixture.Create();
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
         Instance instance = new Instance()
         {
             Id = _instanceId,
@@ -69,7 +70,7 @@ public sealed class ProcessEngineTest
         var services = new ServiceCollection();
         services.AddSingleton(processReaderMock.Object);
         using var fixture = Fixture.Create(services);
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
         Instance instance = new Instance() { Id = _instanceId, AppId = "org/app" };
         ProcessStartRequest processStartRequest = new ProcessStartRequest()
         {
@@ -87,7 +88,7 @@ public sealed class ProcessEngineTest
     public async Task StartProcess_starts_process_and_moves_to_first_task_without_event_dispatch_when_dryrun()
     {
         using var fixture = Fixture.Create();
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
         Instance instance = new Instance()
         {
             Id = _instanceId,
@@ -129,7 +130,7 @@ public sealed class ProcessEngineTest
             _ => throw new NotImplementedException(),
         };
         var instanceOwnerPartyIdStr = instanceOwnerPartyId.ToString(CultureInfo.InvariantCulture);
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
         Instance instance = new Instance()
         {
             Id = $"{instanceOwnerPartyIdStr}/{_instanceGuid}",
@@ -255,7 +256,7 @@ public sealed class ProcessEngineTest
     public async Task StartProcess_starts_process_and_moves_to_first_task_with_prefill()
     {
         using var fixture = Fixture.Create();
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
         Instance instance = new Instance()
         {
             Id = _instanceId,
@@ -409,7 +410,7 @@ public sealed class ProcessEngineTest
     )
     {
         using var fixture = Fixture.Create();
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -461,7 +462,7 @@ public sealed class ProcessEngineTest
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("org/app"));
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -533,7 +534,7 @@ public sealed class ProcessEngineTest
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("org/app"));
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -600,7 +601,7 @@ public sealed class ProcessEngineTest
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("org/app"));
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -764,7 +765,7 @@ public sealed class ProcessEngineTest
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("org/app"));
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
         Instance instance = new Instance()
         {
             Id = _instanceId,
@@ -935,7 +936,7 @@ public sealed class ProcessEngineTest
                 .Verifiable(Times.Once);
         }
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
         InstanceOwner instanceOwner = new() { PartyId = _instanceOwnerPartyId.ToString() };
         Instance instance = new Instance()
         {
@@ -1160,7 +1161,7 @@ public sealed class ProcessEngineTest
             },
         };
         using var fixture = Fixture.Create(updatedInstance: updatedInstance);
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, Prefill = prefill };
         Instance result = await processEngine.HandleEventsAndUpdateStorage(
             processStartRequest.Instance,
@@ -1192,7 +1193,8 @@ public sealed class ProcessEngineTest
 
     private sealed record Fixture(IServiceProvider ServiceProvider) : IDisposable
     {
-        public ProcessEngine ProcessEngine => (ProcessEngine)ServiceProvider.GetRequiredService<IProcessEngine>();
+        public LegacyProcessEngine ProcessEngine =>
+            (LegacyProcessEngine)ServiceProvider.GetRequiredService<IProcessEngine>();
 
         public TelemetrySink TelemetrySink => ServiceProvider.GetRequiredService<TelemetrySink>();
 
@@ -1215,7 +1217,7 @@ public sealed class ProcessEngineTest
             if (withTelemetry)
                 services.AddTelemetrySink();
 
-            services.TryAddTransient<IProcessEngine, ProcessEngine>();
+            services.TryAddTransient<IProcessEngine, LegacyProcessEngine>();
             services.TryAddTransient<UserActionService>();
 
             Mock<IProcessReader> processReaderMock = new();

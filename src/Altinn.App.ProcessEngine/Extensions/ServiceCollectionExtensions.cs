@@ -1,8 +1,10 @@
-using Altinn.App.Core.Extensions;
+//using Altinn.App.Core.Extensions;
 using Altinn.App.ProcessEngine.Constants;
+using Altinn.App.ProcessEngine.Controllers.Auth;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.ProcessEngine.Extensions;
 
@@ -44,5 +46,14 @@ public static class ServiceCollectionExtensions
     {
         services.AddOptions<ProcessEngineSettings>().Configure(configureOptions);
         return services;
+    }
+
+    internal static bool IsConfigured<TOptions>(this IServiceCollection services)
+        where TOptions : class
+    {
+        return services.Any(d =>
+            d.ServiceType == typeof(IConfigureOptions<TOptions>)
+            || d.ServiceType == typeof(IOptionsChangeTokenSource<TOptions>)
+        );
     }
 }

@@ -29,7 +29,8 @@ internal sealed class ProcessEngineHost(IServiceProvider serviceProvider) : Back
 
             if (status.HasFullQueue())
                 _logger.LogWarning(
-                    "Process engine has backpressure, processing queue is full. Current status: {HealthStatus}",
+                    "Process engine has backpressure, processing queue is full ({InboxCount}). Current status: {HealthStatus}",
+                    _processEngine.InboxCount,
                     status
                 );
 
@@ -42,6 +43,7 @@ internal sealed class ProcessEngineHost(IServiceProvider serviceProvider) : Back
                     );
 
                 failCount = 0;
+                _logger.LogDebug("Process engine inbox count: {InboxCount}", _processEngine.InboxCount);
             }
             else
             {
