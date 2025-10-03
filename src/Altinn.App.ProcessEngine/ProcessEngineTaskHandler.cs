@@ -34,6 +34,7 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         {
             return task.Command switch
             {
+                ProcessEngineTaskCommand.HappyPath cmd => await HappyPath(cmd, task, cts.Token),
                 ProcessEngineTaskCommand.MoveProcessForward => await MoveProcessForward(task, cts.Token),
                 ProcessEngineTaskCommand.ExecuteServiceTask => await ExecuteServiceTask(task, cts.Token),
                 ProcessEngineTaskCommand.ExecuteInterfaceHooks => await ExecuteInterfaceHooks(task, cts.Token),
@@ -49,6 +50,16 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
             _logger.LogError(e, "Error executing task {Task}: {Message}", task, e.Message);
             return ProcessEngineExecutionResult.Error(e.Message);
         }
+    }
+
+    private async Task<ProcessEngineExecutionResult> HappyPath(
+        ProcessEngineTaskCommand.HappyPath command,
+        ProcessEngineTask task,
+        CancellationToken cancellationToken
+    )
+    {
+        await Task.Delay(command.Duration, cancellationToken);
+        return ProcessEngineExecutionResult.Success();
     }
 
     private ValueTask<ProcessEngineExecutionResult> PublishAltinnEvent(

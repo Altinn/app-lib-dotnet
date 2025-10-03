@@ -121,7 +121,11 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
 
     private async Task MainLoop(CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Entering MainLoop. Inbox count: {InboxCount}", InboxCount);
+        _logger.LogDebug(
+            "Entering MainLoop. Inbox count: {InboxCount}. Queue slots taken: {OccupiedQueueSlots}",
+            InboxCount,
+            _inboxCapacityLimit.CurrentCount
+        );
 
         // Should we run?
         if (!await ShouldRun(cancellationToken))

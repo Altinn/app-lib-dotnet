@@ -24,4 +24,6 @@ public sealed record ProcessEngineRetryStrategy(
 
     public static ProcessEngineRetryStrategy Fixed(TimeSpan delay, int? maxRetries = null) =>
         Constant(delay, maxRetries);
+
+    public static ProcessEngineRetryStrategy None() => new(ProcessEngineBackoffType.Constant, TimeSpan.Zero, 0);
 }

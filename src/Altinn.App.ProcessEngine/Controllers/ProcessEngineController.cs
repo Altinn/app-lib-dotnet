@@ -35,13 +35,31 @@ public class ProcessEngineController : ControllerBase
         // _appMetadata = serviceProvider.GetRequiredService<IAppMetadata>();
     }
 
+    private sealed record TestScenario(ProcessEngineTaskCommand Command, ProcessEngineRetryStrategy RetryStrategy);
+
+    private readonly IReadOnlyList<TestScenario> _testScenarios =
+    [
+        new(
+            new ProcessEngineTaskCommand.MoveProcessForward("a", "b"),
+            ProcessEngineRetryStrategy.Constant(TimeSpan.FromSeconds(1), 10)
+        ),
+        new(
+            new ProcessEngineTaskCommand.HappyPath(
+                TimeSpan.FromSeconds(1),
+                ProcessEngineTaskExecutionStrategy.PeriodicPolling
+            ),
+            ProcessEngineRetryStrategy.None()
+        ),
+    ];
+
     [HttpPost("test")]
-    public async Task<ActionResult> Post(
+    public async Task<ActionResult> Test(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromQuery] int numJobs = 1
+        [FromQuery] int numJobs = 1000,
+        [FromQuery] int testScenario = 0
     )
     {
         // TODO: InstanceClient needs the ability to use Maskinporten auth
@@ -61,12 +79,8 @@ public class ProcessEngineController : ControllerBase
                 [
                     new ProcessEngineTaskRequest(
                         $"task-identifier-{i}",
-                        new ProcessEngineTaskCommand.MoveProcessForward("Task_1", "Task_2"),
-                        RetryStrategy: ProcessEngineRetryStrategy.Constant(TimeSpan.FromSeconds(1), 10)
-                    ),
-                    new ProcessEngineTaskRequest(
-                        "doesnt-matter-since-the-other-will-fail",
-                        new ProcessEngineTaskCommand.ExecuteServiceTask(string.Empty)
+                        _testScenarios[testScenario].Command,
+                        RetryStrategy: _testScenarios[testScenario].RetryStrategy
                     ),
                 ]
             ));
