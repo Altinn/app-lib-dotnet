@@ -9,6 +9,7 @@ namespace Altinn.App.Core.Internal.Data;
 internal sealed class DataElementCache<T>
 {
     private readonly Dictionary<Guid, Lazy<Task<T>>> _cache = [];
+    private readonly List<DataElementIdentifier> _keys = [];
 
     public async Task<T> GetOrCreate(DataElementIdentifier key, Func<Task<T>> valueFactory)
     {
@@ -19,6 +20,7 @@ internal sealed class DataElementCache<T>
             {
                 lazyTask = new Lazy<Task<T>>(valueFactory);
                 _cache.Add(key.Guid, lazyTask);
+                _keys.Add(key);
             }
         }
         return await lazyTask.Value.ConfigureAwait(false);
@@ -29,6 +31,10 @@ internal sealed class DataElementCache<T>
         lock (_cache)
         {
             _cache[key.Guid] = new Lazy<Task<T>>(Task.FromResult(data));
+            if (!_keys.Contains(key))
+            {
+                _keys.Add(key);
+            }
         }
     }
 
@@ -47,5 +53,22 @@ internal sealed class DataElementCache<T>
         }
         value = default;
         return false;
+    }
+
+    public IEnumerable<(DataElementIdentifier, T)> GetCachedEntries()
+    {
+        List<DataElementIdentifier> entries;
+        lock (_cache)
+        {
+            entries = _keys.ToList();
+        }
+
+        foreach (var entry in entries)
+        {
+            if (TryGetCachedValue(entry, out var value))
+            {
+                yield return (entry, value);
+            }
+        }
     }
 }
