@@ -14,7 +14,7 @@ namespace Altinn.App.ProcessEngine.Controllers;
 [ApiController]
 [Authorize(AuthenticationSchemes = AuthConstants.ApiKeySchemeName)]
 [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engine")]
-internal class ProcessEngineController : ControllerBase
+public class ProcessEngineController : ControllerBase
 {
     private readonly ILogger<ProcessEngineController> _logger;
     private readonly IProcessEngine _processEngine;

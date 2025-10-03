@@ -15,6 +15,7 @@ internal sealed class ProcessEngineHost(IServiceProvider serviceProvider) : Back
     {
         _logger.LogInformation("Starting process engine.");
         _logger.LogInformation("API key is {ApiKey}", _processEngine.Settings.ApiKey);
+        _logger.LogInformation("Degree of parallelism: {MaxParallelJobs}", Environment.ProcessorCount);
         await _processEngine.Start(stoppingToken);
         _logger.LogInformation("Process engine initialized.");
 

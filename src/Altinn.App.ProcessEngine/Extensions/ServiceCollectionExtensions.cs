@@ -1,5 +1,6 @@
 //using Altinn.App.Core.Extensions;
 using Altinn.App.ProcessEngine.Constants;
+using Altinn.App.ProcessEngine.Controllers;
 using Altinn.App.ProcessEngine.Controllers.Auth;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.AspNetCore.Authentication;
@@ -27,7 +28,7 @@ public static class ServiceCollectionExtensions
 
         services
             .AddControllers()
-            .PartManager.ApplicationParts.Add(new AssemblyPart(typeof(ApiKeyAuthenticationHandler).Assembly));
+            .PartManager.ApplicationParts.Add(new AssemblyPart(typeof(ProcessEngineController).Assembly));
 
         return services;
     }
