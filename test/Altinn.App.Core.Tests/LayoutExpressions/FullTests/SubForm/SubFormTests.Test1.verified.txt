@@ -30,7 +30,8 @@
       componentId: Address,
       field: Address,
       layoutId: subFormLayout,
-      pageId: SubPage
+      pageId: SubPage,
+      pageName: SubPage
     }
   },
   {
@@ -46,7 +47,8 @@
       componentId: Name,
       field: Name,
       layoutId: subFormLayout,
-      pageId: SubPage
+      pageId: SubPage,
+      pageName: SubPage
     }
   },
   {
@@ -71,7 +73,8 @@
       componentId: Phone,
       field: Phone,
       layoutId: subFormLayout,
-      pageId: SubPage
+      pageId: SubPage,
+      pageName: SubPage
     }
   },
   {
@@ -87,7 +90,8 @@
       componentId: Email,
       field: Email,
       layoutId: subFormLayout,
-      pageId: SubPage
+      pageId: SubPage,
+      pageName: SubPage
     }
   },
   {
@@ -121,7 +125,8 @@
       componentId: Address,
       field: Address,
       layoutId: subFormLayout,
-      pageId: SubPage
+      pageId: SubPage,
+      pageName: SubPage
     }
   },
   {
@@ -137,7 +142,8 @@
       componentId: Name,
       field: Name,
       layoutId: subFormLayout,
-      pageId: SubPage
+      pageId: SubPage,
+      pageName: SubPage
     }
   },
   {
@@ -162,7 +168,8 @@
       componentId: Phone,
       field: Phone,
       layoutId: subFormLayout,
-      pageId: SubPage
+      pageId: SubPage,
+      pageName: SubPage
     }
   }
 ]

@@ -178,6 +178,31 @@ public static class LayoutEvaluator
                     )
                     {
                         var field = await state.AddInidicies(binding, context);
+
+                        var customTextParameters = new Dictionary<string, string>()
+                        {
+                            ["field"] = field.Field,
+                            ["layoutId"] = context.Component.LayoutId,
+                            ["pageId"] = context.Component.PageId,
+                            ["componentId"] = context.Component.Id,
+                            ["bindingName"] = bindingName,
+                            ["pageName"] = await state.TranslateText(context.Component.PageId, context),
+                        };
+                        if (context.Component.TextResourceBindings.TryGetValue("title", out var titleBinding))
+                        {
+                            if (titleBinding.IsLiteralString)
+                            {
+                                customTextParameters["componentTitle"] = await state.TranslateText(
+                                    titleBinding.ValueUnion.String,
+                                    context
+                                );
+                            }
+                            else
+                            {
+                                // TODO: consider evaluating the expression and translate the result
+                            }
+                        }
+
                         validationIssues.Add(
                             new ValidationIssue()
                             {
@@ -186,19 +211,7 @@ public static class LayoutEvaluator
                                 Field = field.Field,
                                 Code = "required",
                                 CustomTextKey = "backend.validation_errors.required",
-                                CustomTextParameters = new()
-                                {
-                                    ["field"] = field.Field,
-                                    ["layoutId"] = context.Component.LayoutId,
-                                    ["pageId"] = context.Component.PageId,
-                                    ["componentId"] = context.Component.Id,
-                                    ["bindingName"] = bindingName,
-                                    ["elementTitle"] = await state.TranslateText(
-                                        context.Component.TextResourceBindings["title"].ValueUnion.String,
-                                        context
-                                    ),
-                                    ["pageName"] = await state.TranslateText(context.Component.PageId, context),
-                                },
+                                CustomTextParameters = customTextParameters,
                             }
                         );
                     }
