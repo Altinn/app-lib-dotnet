@@ -50,6 +50,13 @@ public class ProcessEngineController : ControllerBase
             ),
             ProcessEngineRetryStrategy.None()
         ),
+        new(
+            new ProcessEngineTaskCommand.HappyPath(
+                TimeSpan.FromSeconds(1),
+                ProcessEngineTaskExecutionStrategy.WaitForCompletion
+            ),
+            ProcessEngineRetryStrategy.None()
+        ),
     ];
 
     [HttpPost("test")]
