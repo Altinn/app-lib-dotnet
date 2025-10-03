@@ -345,6 +345,7 @@ public class InstanceClientMockSi : IInstanceClient
         storedInstance.LastChangedBy = string.Empty;
 
         await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await Task.Delay(2); // Seems like CI sometimes is to slow to properly close the file before reading it again.
 
         return await GetInstance(storedInstance);
     }
@@ -382,6 +383,7 @@ public class InstanceClientMockSi : IInstanceClient
         storedInstance.LastChangedBy = string.Empty;
 
         await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await Task.Delay(2); // Seems like CI sometimes is to slow to properly close the file before reading it again.
 
         return await GetInstance(storedInstance);
     }

@@ -531,7 +531,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         // Update DataValues and presentation texts
         // These cannot run in parallel with creating the data elements, because they need the data element id
 
-        await foreach (var (dataElementIdentifier, formData) in _formDataCache.GetCachedEntries())
+        foreach (var (dataElementIdentifier, formData) in _formDataCache.GetCachedEntries())
         {
             if (dataElementIdentifier.DataTypeId is not null)
             {

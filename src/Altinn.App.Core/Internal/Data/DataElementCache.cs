@@ -8,17 +8,19 @@ namespace Altinn.App.Core.Internal.Data;
 /// </summary>
 internal sealed class DataElementCache<T>
 {
-    private readonly Dictionary<DataElementIdentifier, Lazy<Task<T>>> _cache = [];
+    private readonly Dictionary<Guid, Lazy<Task<T>>> _cache = [];
+    private readonly List<DataElementIdentifier> _keys = [];
 
     public async Task<T> GetOrCreate(DataElementIdentifier key, Func<Task<T>> valueFactory)
     {
         Lazy<Task<T>>? lazyTask;
         lock (_cache)
         {
-            if (!_cache.TryGetValue(key, out lazyTask))
+            if (!_cache.TryGetValue(key.Guid, out lazyTask))
             {
                 lazyTask = new Lazy<Task<T>>(valueFactory);
-                _cache.Add(key, lazyTask);
+                _cache.Add(key.Guid, lazyTask);
+                _keys.Add(key);
             }
         }
         return await lazyTask.Value.ConfigureAwait(false);
@@ -28,7 +30,11 @@ internal sealed class DataElementCache<T>
     {
         lock (_cache)
         {
-            _cache[key] = new Lazy<Task<T>>(Task.FromResult(data));
+            _cache[key.Guid] = new Lazy<Task<T>>(Task.FromResult(data));
+            if (!_keys.Contains(key))
+            {
+                _keys.Add(key);
+            }
         }
     }
 
@@ -37,7 +43,7 @@ internal sealed class DataElementCache<T>
         lock (_cache)
         {
             if (
-                _cache.TryGetValue(identifier, out var lazyTask)
+                _cache.TryGetValue(identifier.Guid, out var lazyTask)
                 && lazyTask is { IsValueCreated: true, Value.IsCompletedSuccessfully: true }
             )
             {
@@ -49,20 +55,20 @@ internal sealed class DataElementCache<T>
         return false;
     }
 
-    public async IAsyncEnumerable<(DataElementIdentifier, T)> GetCachedEntries()
+    public IEnumerable<(DataElementIdentifier, T)> GetCachedEntries()
     {
-        List<Task<(DataElementIdentifier, T)>> entries;
+        List<DataElementIdentifier> entries;
         lock (_cache)
         {
-            entries = _cache.Select(async kv => (kv.Key, await kv.Value.Value.ConfigureAwait(false))).ToList();
+            entries = _keys.ToList();
         }
 
-        // TODO: Use WhenEach when targeting .NET 9 or greater
-        while (entries.Count > 0)
+        foreach (var entry in entries)
         {
-            var entry = await Task.WhenAny(entries);
-            entries.Remove(entry);
-            yield return (entry.Result.Item1, entry.Result.Item2);
+            if (TryGetCachedValue(entry, out var value))
+            {
+                yield return (entry, value);
+            }
         }
     }
 }
