@@ -3030,7 +3030,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference> AddInidicies(Altinn.App.Core.Models.Layout.ModelBinding binding, Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier, int[]? indexes) { }
         public int CountDataElements(string dataTypeId) { }
         public Altinn.App.Core.Models.Layout.Components.BaseComponent GetComponent(string pageName, string componentId) { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext?> GetComponentContext(string pageName, string componentId, int[]? rowIndexes = null) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext?> GetComponentContext(string? pageName, string componentId, int[]? rowIndexes = null) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Expressions.ComponentContext>> GetComponentContexts() { }
         public string? GetFrontendSetting(string key) { }
         public string? GetGatewayAction() { }
