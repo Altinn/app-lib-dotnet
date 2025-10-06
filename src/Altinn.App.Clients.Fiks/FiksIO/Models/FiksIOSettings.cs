@@ -50,11 +50,19 @@ public sealed record FiksIOSettings : IFiksIOAccountSettings
     public required string AmqpHost { get; set; }
 
     /// <summary>
-    /// The API configuration.
+    /// The API host, defaults to 'api.fiks.ks.no'.
     /// </summary>
-    [Required]
-    [JsonPropertyName("apiConfiguration")]
-    public required FiksIOApiConfiguration ApiConfiguration { get; set; }
+    public string? ApiHost { get; set; }
+
+    /// <summary>
+    /// The API port number, defaults to 443.
+    /// </summary>
+    public int? ApiPort { get; set; }
+
+    /// <summary>
+    /// The API schema, defaults to https.
+    /// </summary>
+    public string? ApiScheme { get; set; }
 
     internal string AccountPrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AccountPrivateKeyBase64));
     internal string AsicePrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AsicePrivateKeyBase64));

@@ -173,9 +173,9 @@ internal sealed class FiksIOClient : IFiksIOClient
                 prefetchCount: 0
             ),
             apiConfiguration: new ApiConfiguration(
-                fiksIOSettings.ApiConfiguration.Scheme,
-                fiksIOSettings.ApiConfiguration.Host,
-                fiksIOSettings.ApiConfiguration.Port
+                fiksIOSettings.ApiScheme,
+                fiksIOSettings.ApiHost,
+                fiksIOSettings.ApiPort
             ),
             asiceSigningConfiguration: new AsiceSigningConfiguration(fiksIOSettings.GenerateAsiceCertificate()),
             integrasjonConfiguration: new IntegrasjonConfiguration(
