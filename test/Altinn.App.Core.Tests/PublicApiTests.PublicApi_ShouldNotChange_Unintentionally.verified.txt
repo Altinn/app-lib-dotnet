@@ -3080,7 +3080,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public int CountDataElements(string dataTypeId) { }
         [System.Obsolete("You need to get a context, not a component", true)]
         public void GetComponent(string pageName, string componentId) { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext?> GetComponentContext(string pageName, string componentId, int[]? rowIndexes = null) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext?> GetComponentContext(string? pageName, string componentId, int[]? rowIndexes = null) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Expressions.ComponentContext>> GetComponentContexts() { }
         public string? GetFrontendSetting(string key) { }
         public string? GetGatewayAction() { }
@@ -3854,7 +3854,7 @@ namespace Altinn.App.Core.Internal.Texts
     {
         System.Threading.Tasks.Task<string?> TranslateFirstMatchingTextKey(string? language, params string[] keys);
         System.Threading.Tasks.Task<string?> TranslateTextKey(string key, string? language, System.Collections.Generic.Dictionary<string, string>? customTextParameters = null);
-        System.Threading.Tasks.Task<string?> TranslateTextKey(string key, Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.Expressions.ComponentContext context, System.Collections.Generic.Dictionary<string, string>? customTextParameters = null);
+        System.Threading.Tasks.Task<string?> TranslateTextKey(string key, Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.Expressions.ComponentContext? context, System.Collections.Generic.Dictionary<string, string>? customTextParameters = null);
         System.Threading.Tasks.Task<string?> TranslateTextKeyLenient(string? key, string? language);
     }
 }
@@ -4380,6 +4380,7 @@ namespace Altinn.App.Core.Models.Expressions
                 "Function",
                 "Args"})]
         public bool IsFunctionExpression { get; }
+        public bool IsLiteralString { get; }
         [System.Obsolete("Use ValueUnion instead")]
         public object? Value { get; }
         public Altinn.App.Core.Internal.Expressions.ExpressionValue ValueUnion { get; }
