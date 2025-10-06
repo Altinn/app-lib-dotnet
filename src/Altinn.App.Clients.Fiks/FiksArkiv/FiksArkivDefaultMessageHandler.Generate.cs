@@ -10,7 +10,6 @@ using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
-using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -31,7 +30,8 @@ internal sealed partial class FiksArkivDefaultMessageHandler
     )
     {
         var appMetadata = await GetApplicationMetadata();
-        var documentTitle = appMetadata.Title.GetValueOrDefault(LanguageConst.Nb, appMetadata.AppIdentifier.App);
+        var defaultDocumentTitle = await GetApplicationTitle();
+        var configuredDocumentTitle = await GetDocumentTitle(instance);
         var documentCreator = appMetadata.AppIdentifier.Org;
         var recipientDetails = GetRecipientParty(instance, recipient);
         var serviceOwnerDetails = await GetServiceOwnerParty();
@@ -41,11 +41,11 @@ internal sealed partial class FiksArkivDefaultMessageHandler
 
         var caseFile = new Saksmappe
         {
-            Tittel = documentTitle,
-            OffentligTittel = documentTitle,
+            Tittel = configuredDocumentTitle.CaseFileTitle ?? defaultDocumentTitle,
+            OffentligTittel = configuredDocumentTitle.CaseFileTitle ?? defaultDocumentTitle,
             AdministrativEnhet = new AdministrativEnhet { Navn = documentCreator },
-            Saksaar = DateTime.Now.Year,
-            Saksdato = DateTime.Now,
+            Saksaar = _timeProvider.GetLocalNow().Year,
+            Saksdato = _timeProvider.GetLocalNow().DateTime,
             ReferanseEksternNoekkel = new EksternNoekkel
             {
                 Fagsystem = appMetadata.AppIdentifier.ToString(),
@@ -57,11 +57,11 @@ internal sealed partial class FiksArkivDefaultMessageHandler
 
         var journalEntry = new Journalpost
         {
-            Journalaar = DateTime.Now.Year,
-            DokumentetsDato = DateTime.Now,
-            SendtDato = DateTime.Now,
-            Tittel = documentTitle,
-            OffentligTittel = documentTitle,
+            Journalaar = _timeProvider.GetLocalNow().Year,
+            DokumentetsDato = _timeProvider.GetLocalNow().DateTime,
+            SendtDato = _timeProvider.GetLocalNow().DateTime,
+            Tittel = configuredDocumentTitle.JournalEntryTitle ?? defaultDocumentTitle,
+            OffentligTittel = configuredDocumentTitle.JournalEntryTitle ?? defaultDocumentTitle,
             OpprettetAv = documentCreator,
             ArkivertAv = documentCreator,
             Journalstatus = new Journalstatus
@@ -197,20 +197,42 @@ internal sealed partial class FiksArkivDefaultMessageHandler
         );
     }
 
-    private async Task<RecipientWrapper> GetRecipient(Instance instance)
+    private async Task<LayoutEvaluatorState> GetLayoutState(Instance instance)
+    {
+        var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(instance, null, null);
+        return await _layoutStateInitializer.Init(unitOfWork, null);
+    }
+
+    private async Task<string> GetApplicationTitle()
+    {
+        var appMetadata = await GetApplicationMetadata();
+
+        return await _translationService.TranslateTextKey("appName", LanguageConst.Nb)
+            ?? appMetadata.Title.GetValueOrDefault(LanguageConst.Nb)
+            ?? appMetadata.AppIdentifier.App;
+    }
+
+    private async Task<DocumentTitleWrapper> GetDocumentTitle(Instance instance)
     {
         try
         {
-            var recipientSettings = VerifiedNotNull(_fiksArkivSettings.Recipient);
-            var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(instance, null, null);
-            var layoutState = await _layoutStateInitializer.Init(unitOfWork, null);
+            var metadataSettings = VerifiedNotNull(_fiksArkivSettings.Metadata);
+            var layoutState = await GetLayoutState(instance);
 
-            return new RecipientWrapper(
-                await GetRequiredAccount(layoutState, recipientSettings.FiksAccount),
-                await GetOptionalValue(layoutState, recipientSettings.Identifier),
-                await GetOptionalValue(layoutState, recipientSettings.OrganizationNumber),
-                await GetOptionalValue(layoutState, recipientSettings.Name)
+            var caseFileTitle = await GetOptionalBindableValue(
+                layoutState,
+                instance,
+                metadataSettings.CaseFileTitle,
+                ParseString
             );
+            var journalEntryTitle = await GetOptionalBindableValue(
+                layoutState,
+                instance,
+                metadataSettings.JournalEntryTitle,
+                ParseString
+            );
+
+            return new DocumentTitleWrapper(caseFileTitle, journalEntryTitle);
         }
         catch (Exception e)
         {
@@ -218,50 +240,80 @@ internal sealed partial class FiksArkivDefaultMessageHandler
             throw;
         }
 
-        async Task<Guid> GetRequiredAccount(
-            LayoutEvaluatorState layoutState,
-            FiksArkivRecipientValue<Guid?> configValue
-        )
+        static string? ParseString(object? data) => data as string;
+    }
+
+    private async Task<RecipientWrapper> GetRecipient(Instance instance)
+    {
+        try
         {
-            if (configValue.Value is not null)
-                return configValue.Value.Value;
+            var recipientSettings = VerifiedNotNull(_fiksArkivSettings.Recipient);
+            var layoutState = await GetLayoutState(instance);
 
-            var accountBinding = VerifiedNotNull(configValue.DataModelBinding);
-            var dataElement = instance.GetRequiredDataElement(accountBinding.DataType);
-            var data = await layoutState.GetModelData(accountBinding, dataElement, null);
-
-            if (data is Guid guid)
-                return guid;
-
-            return Guid.TryParse($"{data}", out var recipient)
-                ? recipient
-                : throw new FiksArkivException(
-                    $"Could not parse recipient account from data binding: {accountBinding}. Bound value resolved to `{data}` (of type `{data?.GetType()}`)"
-                );
-        }
-
-        async Task<string?> GetOptionalValue(
-            LayoutEvaluatorState layoutState,
-            FiksArkivRecipientValue<string>? configValue
-        )
-        {
-            if (configValue is null)
-                return null;
-
-            if (configValue.Value is not null)
-                return configValue.Value;
-
-            var recipientBinding = VerifiedNotNull(configValue.DataModelBinding);
-            var dataElement = instance.GetRequiredDataElement(recipientBinding.DataType);
-            var data = await layoutState.GetModelData(
-                new ModelBinding { Field = recipientBinding.Field, DataType = recipientBinding.DataType },
-                new DataElementIdentifier(dataElement.Id),
-                null
+            var accountId =
+                await GetRequiredBindableValue(layoutState, instance, recipientSettings.FiksAccount, ParseGuid)
+                ?? throw new FiksArkivException("Recipient account must be supplied");
+            var identifier = await GetOptionalBindableValue(
+                layoutState,
+                instance,
+                recipientSettings.Identifier,
+                ParseString
             );
+            var orgNumber = await GetOptionalBindableValue(
+                layoutState,
+                instance,
+                recipientSettings.OrganizationNumber,
+                ParseString
+            );
+            var name = await GetOptionalBindableValue(layoutState, instance, recipientSettings.Name, ParseString);
 
-            return data as string
-                ?? throw new FiksArkivException($"Could not parse recipient data binding: {recipientBinding}");
+            return new RecipientWrapper(accountId, identifier, orgNumber, name);
         }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Fiks Arkiv error: {Error}", e.Message);
+            throw;
+        }
+
+        static Guid? ParseGuid(object? data) =>
+            Guid.TryParse($"{data}", out var parsedGuid)
+                ? parsedGuid
+                : throw new FiksArkivException($"Could not parse recipient account from data binding: {data}");
+
+        static string? ParseString(object? data) => data as string;
+    }
+
+    private static async Task<T> GetRequiredBindableValue<T>(
+        LayoutEvaluatorState layoutState,
+        Instance instance,
+        FiksArkivBindableValue<T> configValue,
+        Func<object?, T> parser
+    )
+    {
+        return await GetOptionalBindableValue(layoutState, instance, configValue, parser)
+            ?? throw new FiksArkivException(
+                $"Could not parse required configuration value from expression: {configValue}"
+            );
+    }
+
+    private static async Task<T?> GetOptionalBindableValue<T>(
+        LayoutEvaluatorState layoutState,
+        Instance instance,
+        FiksArkivBindableValue<T>? configValue,
+        Func<object?, T?> parser
+    )
+    {
+        if (configValue is null)
+            return default;
+
+        if (configValue.Value is not null)
+            return configValue.Value;
+
+        var binding = VerifiedNotNull(configValue.DataModelBinding);
+        var dataElement = instance.GetRequiredDataElement(binding.DataType);
+        var data = await layoutState.GetModelData(binding, dataElement, null);
+
+        return parser.Invoke(data);
     }
 
     private Korrespondansepart GetRecipientParty(Instance instance, RecipientWrapper recipient)
@@ -420,7 +472,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
                 KodeProperty = documentClassification.Verdi,
                 Beskrivelse = documentClassification.Beskrivelse,
             },
-            OpprettetDato = DateTime.Now,
+            OpprettetDato = _timeProvider.GetLocalNow().DateTime,
         };
 
         metadata.Dokumentobjekt.Add(
@@ -446,4 +498,6 @@ internal sealed partial class FiksArkivDefaultMessageHandler
     }
 
     private sealed record RecipientWrapper(Guid AccountId, string? Identifier, string? OrgNumber, string? Name);
+
+    private sealed record DocumentTitleWrapper(string? CaseFileTitle, string? JournalEntryTitle);
 }

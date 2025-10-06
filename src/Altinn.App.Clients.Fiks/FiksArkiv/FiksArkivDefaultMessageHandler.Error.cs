@@ -48,7 +48,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler
                         $"Det har oppstått en feil ved sending av melding til Fiks Arkiv for Altinn app instans {instanceIdentifier}.\n\nVidere undersøkelser må gjøres manuelt. Se logg for ytterligere detaljer.",
                     Recipients = recipientEmailAddresses,
                     SendersReference = instanceIdentifier.ToString(),
-                    RequestedSendTime = DateTime.UtcNow,
+                    RequestedSendTime = _timeProvider.GetUtcNow().DateTime,
                 },
                 CancellationToken.None
             );

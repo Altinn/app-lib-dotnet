@@ -101,13 +101,13 @@ internal static class TestHelpers
             Receipt = new FiksArkivDataTypeSettings { DataType = "fiks-receipt" },
             Recipient = new FiksArkivRecipientSettings
             {
-                FiksAccount = new FiksArkivRecipientValue<Guid?>
+                FiksAccount = new FiksArkivBindableValue<Guid?>
                 {
                     DataModelBinding = new FiksArkivDataModelBinding { DataType = "model", Field = "recipient" },
                 },
-                Identifier = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
-                OrganizationNumber = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
-                Name = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+                Identifier = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
+                OrganizationNumber = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
+                Name = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
             },
             AutoSend = new FiksArkivAutoSendSettings
             {
@@ -168,7 +168,7 @@ internal static class TestHelpers
         {
             Recipient = new FiksArkivRecipientSettings
             {
-                FiksAccount = new FiksArkivRecipientValue<Guid?>
+                FiksAccount = new FiksArkivBindableValue<Guid?>
                 {
                     DataModelBinding = new FiksArkivDataModelBinding
                     {
@@ -176,9 +176,9 @@ internal static class TestHelpers
                         Field = Guid.NewGuid().ToString(),
                     },
                 },
-                Identifier = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
-                OrganizationNumber = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
-                Name = new FiksArkivRecipientValue<string> { Value = Guid.NewGuid().ToString() },
+                Identifier = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
+                OrganizationNumber = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
+                Name = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
             },
             Receipt = new FiksArkivDataTypeSettings { DataType = Guid.NewGuid().ToString() },
             AutoSend = new FiksArkivAutoSendSettings

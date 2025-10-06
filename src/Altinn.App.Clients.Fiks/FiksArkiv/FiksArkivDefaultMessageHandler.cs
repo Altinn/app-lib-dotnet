@@ -11,6 +11,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmeldingkvittering;
@@ -40,6 +41,8 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
     private readonly Telemetry? _telemetry;
     private readonly GeneralSettings _generalSettings;
+    private readonly ITranslationService _translationService;
+    private readonly TimeProvider _timeProvider;
 
     private ApplicationMetadata? _applicationMetadataCache;
 
@@ -47,6 +50,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         IOptions<FiksArkivSettings> fiksArkivSettings,
         IOptions<FiksIOSettings> fiksIOSettings,
         IOptions<GeneralSettings> generalSettings,
+        ITranslationService translationService,
         IAppMetadata appMetadata,
         IDataClient dataClient,
         IAuthenticationContext authenticationContext,
@@ -58,6 +62,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         IEmailNotificationClient emailNotificationClient,
         IHostEnvironment hostEnvironment,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
+        TimeProvider? timeProvider = null,
         Telemetry? telemetry = null
     )
     {
@@ -69,13 +74,15 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         _fiksArkivSettings = fiksArkivSettings.Value;
         _fiksIOSettings = fiksIOSettings.Value;
         _generalSettings = generalSettings.Value;
-        _logger = logger;
+        _translationService = translationService;
         _instanceDataUnitOfWorkInitializer = instanceDataUnitOfWorkInitializer;
         _layoutStateInitializer = layoutStateInitializer;
         _emailNotificationClient = emailNotificationClient;
         _hostEnvironment = hostEnvironment;
         _fiksArkivInstanceClient = fiksArkivInstanceClient;
         _telemetry = telemetry;
+        _timeProvider = timeProvider ?? TimeProvider.System;
+        _logger = logger;
     }
 
     public async Task<FiksIOMessageRequest> CreateMessageRequest(string taskId, Instance instance)
@@ -135,6 +142,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         _fiksArkivSettings.Receipt.Validate(nameof(_fiksArkivSettings.Receipt), configuredDataTypes);
 
         _fiksArkivSettings.AutoSend?.ErrorHandling?.Validate();
+        _fiksArkivSettings.Metadata?.Validate(configuredDataTypes);
 
         return Task.CompletedTask;
     }

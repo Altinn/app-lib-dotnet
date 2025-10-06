@@ -18,10 +18,15 @@ public sealed record FiksArkivSettings
     public FiksArkivDataTypeSettings? Receipt { get; set; }
 
     /// <summary>
-    /// Settings related to the recipient of the message. Used for generation of the payload metadata.
+    /// Settings related to the recipient of the Fiks Arkiv message.
     /// </summary>
     [JsonPropertyName("recipient")]
     public FiksArkivRecipientSettings? Recipient { get; set; }
+
+    /// <summary>
+    /// Settings related to the Fiks Arkiv shipment metadata.
+    /// </summary>
+    public FiksArkivMetadataSettings? Metadata { get; set; }
 
     /// <summary>
     /// Settings related to the documents that will be sent to Fiks Arkiv.
@@ -34,6 +39,35 @@ public sealed record FiksArkivSettings
     /// </summary>
     [JsonPropertyName("autoSend")]
     public FiksArkivAutoSendSettings? AutoSend { get; set; }
+}
+
+/// <summary>
+/// Represents various metadata settings for a Fiks Arkiv shipment, such as arkivmelding.xml properties.
+/// </summary>
+public class FiksArkivMetadataSettings
+{
+    /// <summary>
+    /// The title to use for the generated saksmappe (case file) element in the arkivmelding.xml.
+    /// If no title is provided, the value will default to the application title as defined in applicationmetadata.json.
+    /// </summary>
+    public FiksArkivBindableValue<string>? CaseFileTitle { get; init; }
+
+    /// <summary>
+    /// The title to use for the generated journalpost (journal entry) element in the arkivmelding.xml.
+    /// If no title is provided, the value will default to the application title as defined in applicationmetadata.json.
+    /// </summary>
+    public FiksArkivBindableValue<string>? JournalEntryTitle { get; set; }
+
+    /// <summary>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// </summary>
+    internal void Validate(IReadOnlyList<DataType> dataTypes)
+    {
+        const string propertyName = $"{nameof(FiksArkivSettings.Metadata)}";
+
+        CaseFileTitle?.Validate($"{propertyName}.{nameof(CaseFileTitle)}", dataTypes);
+        JournalEntryTitle?.Validate($"{propertyName}.{nameof(JournalEntryTitle)}", dataTypes);
+    }
 }
 
 /// <summary>
@@ -195,22 +229,22 @@ public sealed record FiksArkivRecipientSettings
     /// <summary>
     /// The Fiks Arkiv recipient account. This is a <see cref="Guid"/> address to ship messages to.
     /// </summary>
-    public required FiksArkivRecipientValue<Guid?> FiksAccount { get; init; }
+    public required FiksArkivBindableValue<Guid?> FiksAccount { get; init; }
 
     /// <summary>
     /// An optional identifier for the recipient. This can be a municipality number or other relevant identifier.
     /// </summary>
-    public FiksArkivRecipientValue<string>? Identifier { get; init; }
+    public FiksArkivBindableValue<string>? Identifier { get; init; }
 
     /// <summary>
     /// An optional organization number for the recipient.
     /// </summary>
-    public FiksArkivRecipientValue<string>? OrganizationNumber { get; init; }
+    public FiksArkivBindableValue<string>? OrganizationNumber { get; init; }
 
     /// <summary>
     /// An optional name for the recipient.
     /// </summary>
-    public FiksArkivRecipientValue<string>? Name { get; init; }
+    public FiksArkivBindableValue<string>? Name { get; init; }
 
     /// <summary>
     /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
@@ -230,7 +264,7 @@ public sealed record FiksArkivRecipientSettings
 /// Represents the settings for a <see cref="FiksArkivRecipientSettings"/> property.
 /// Allows setting the <see cref="Value"/> directly, or via a <see cref="DataModelBinding"/> which is evaluated right before shipment.
 /// </summary>
-public sealed record FiksArkivRecipientValue<T>
+public sealed record FiksArkivBindableValue<T>
 {
     /// <summary>
     /// The value supplied directly.
