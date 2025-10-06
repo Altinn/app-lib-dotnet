@@ -42,6 +42,20 @@ public sealed record FiksIOSettings : IFiksIOAccountSettings
     [JsonPropertyName("asicePrivateKeyBase64")]
     public required string AsicePrivateKeyBase64 { get; set; }
 
+    /// <summary>
+    /// The AMQP host.
+    /// </summary>
+    [Required]
+    [JsonPropertyName("amqpHost")]
+    public required string AmqpHost { get; set; }
+
+    /// <summary>
+    /// The API configuration.
+    /// </summary>
+    [Required]
+    [JsonPropertyName("apiConfiguration")]
+    public required FiksIOApiConfiguration ApiConfiguration { get; set; }
+
     internal string AccountPrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AccountPrivateKeyBase64));
     internal string AsicePrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AsicePrivateKeyBase64));
 

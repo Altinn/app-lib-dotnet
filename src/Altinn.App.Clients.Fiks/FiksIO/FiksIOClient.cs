@@ -164,15 +164,19 @@ internal sealed class FiksIOClient : IFiksIOClient
     {
         var fiksIOSettings = _fiksIOSettings.CurrentValue;
         var appMeta = await _appMetadata.GetApplicationMetadata();
-        var environmentConfig = GetConfiguration(appMeta.AppIdentifier);
+        var fiksAmqpAppName = GetFiksAmqpAppName(appMeta.AppIdentifier);
 
         var fiksConfiguration = new FiksIOConfiguration(
             amqpConfiguration: new AmqpConfiguration(
-                environmentConfig.FiksAmqpHost,
-                applicationName: environmentConfig.FiksAmqpAppName,
+                fiksIOSettings.AmqpHost,
+                applicationName: fiksAmqpAppName,
                 prefetchCount: 0
             ),
-            apiConfiguration: environmentConfig.FiksApiConfiguration,
+            apiConfiguration: new ApiConfiguration(
+                fiksIOSettings.ApiConfiguration.Scheme,
+                fiksIOSettings.ApiConfiguration.Host,
+                fiksIOSettings.ApiConfiguration.Port
+            ),
             asiceSigningConfiguration: new AsiceSigningConfiguration(fiksIOSettings.GenerateAsiceCertificate()),
             integrasjonConfiguration: new IntegrasjonConfiguration(
                 fiksIOSettings.IntegrationId,
@@ -230,28 +234,10 @@ internal sealed class FiksIOClient : IFiksIOClient
         return Task.CompletedTask;
     }
 
-    private EnvironmentConfiguration GetConfiguration(AppIdentifier appIdentifier)
+    private static string GetFiksAmqpAppName(AppIdentifier appIdentifier)
     {
-        var ampqAppName = $"altinn-app-{appIdentifier.Org}-{appIdentifier.App}";
-
-        return _env.IsProduction()
-            ? new EnvironmentConfiguration(
-                ApiConfiguration.CreateProdConfiguration(),
-                AmqpConfiguration.ProdHost,
-                ampqAppName
-            )
-            : new EnvironmentConfiguration(
-                ApiConfiguration.CreateTestConfiguration(),
-                AmqpConfiguration.TestHost,
-                ampqAppName
-            );
+        return $"altinn-app-{appIdentifier.Org}-{appIdentifier.App}";
     }
-
-    private readonly record struct EnvironmentConfiguration(
-        ApiConfiguration FiksApiConfiguration,
-        string FiksAmqpHost,
-        string FiksAmqpAppName
-    );
 
     public async ValueTask DisposeAsync()
     {
