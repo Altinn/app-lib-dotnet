@@ -345,9 +345,13 @@ public class InstanceClientMockSi : IInstanceClient
         storedInstance.LastChangedBy = string.Empty;
 
         await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
-        await Task.Delay(2); // Seems like CI sometimes is to slow to properly close the file before reading it again.
+        var org = storedInstance.Org;
+        var app = storedInstance.AppId.Split("/")[1];
 
-        return await GetInstance(storedInstance);
+        storedInstance.Data = await GetDataElements(org, app, instanceOwnerPartyId, instanceGuid);
+        (storedInstance.LastChangedBy, storedInstance.LastChanged) = FindLastChanged(storedInstance);
+
+        return storedInstance;
     }
 
     public async Task<Instance> UpdateDataValues(int instanceOwnerPartyId, Guid instanceGuid, DataValues dataValues)
@@ -383,9 +387,13 @@ public class InstanceClientMockSi : IInstanceClient
         storedInstance.LastChangedBy = string.Empty;
 
         await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
-        await Task.Delay(2); // Seems like CI sometimes is to slow to properly close the file before reading it again.
+        var org = storedInstance.Org;
+        var app = storedInstance.AppId.Split("/")[1];
 
-        return await GetInstance(storedInstance);
+        storedInstance.Data = await GetDataElements(org, app, instanceOwnerPartyId, instanceGuid);
+        (storedInstance.LastChangedBy, storedInstance.LastChanged) = FindLastChanged(storedInstance);
+
+        return storedInstance;
     }
 
     public async Task<Instance> DeleteInstance(int instanceOwnerPartyId, Guid instanceGuid, bool hard)
@@ -596,6 +604,10 @@ public class InstanceClientMockSi : IInstanceClient
         return (lastChangedBy, lastChanged);
     }
 
+    /// <summary>
+    /// Reads all text from a file with retries to avoid issues with file locks
+    /// in the test environment.
+    /// </summary>
     private static async Task<string> ReadAllTextWithRetry(string path)
     {
         var retries = 10;
