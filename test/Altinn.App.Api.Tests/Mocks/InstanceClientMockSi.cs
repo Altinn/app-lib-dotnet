@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Helpers;
@@ -6,7 +7,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
-using Newtonsoft.Json;
 
 namespace Altinn.App.Api.Tests.Mocks;
 
@@ -14,6 +14,18 @@ public class InstanceClientMockSi : IInstanceClient
 {
     private readonly ILogger _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
+
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        AllowTrailingCommas = true,
+        PropertyNameCaseInsensitive = true,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
+        NewLine = "\n",
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
+    };
 
     public InstanceClientMockSi(ILogger<IInstanceClient> logger, IHttpContextAccessor httpContextAccessor)
     {
@@ -35,7 +47,7 @@ public class InstanceClientMockSi : IInstanceClient
             Path.GetDirectoryName(instancePath)
             ?? throw new IOException($"Could not get directory name of specified path {instancePath}");
         _ = Directory.CreateDirectory(directory);
-        await File.WriteAllTextAsync(instancePath, instance.ToString());
+        await WriteJsonFile(instancePath, instance);
 
         _logger.LogInformation(
             "Created instance for app {org}/{app}. writing to path: {instancePath}",
@@ -87,18 +99,7 @@ public class InstanceClientMockSi : IInstanceClient
             instanceGuid
         );
 
-        if (!File.Exists(instancePath))
-        {
-            throw new IOException($"Could not find instance {instance.Id} on path {instancePath}");
-        }
-
-        string content = await ReadAllTextWithRetry(instancePath);
-
-        Instance storedInstance =
-            JsonConvert.DeserializeObject<Instance>(content)
-            ?? throw new InvalidDataException(
-                $"Something went wrong deserializing json for instance {instance.Id} from path {instancePath}"
-            );
+        Instance storedInstance = await ReadJsonFile<Instance>(instancePath);
 
         // Archiving instance if process was ended
         if (storedInstance.Process?.Ended == null && process.Ended != null)
@@ -111,7 +112,7 @@ public class InstanceClientMockSi : IInstanceClient
         storedInstance.Process = process;
         storedInstance.LastChanged = DateTime.UtcNow;
 
-        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await WriteJsonFile(instancePath, storedInstance);
 
         return storedInstance;
     }
@@ -124,19 +125,8 @@ public class InstanceClientMockSi : IInstanceClient
     private static async Task<Instance> GetTestInstance(string app, string org, int instanceOwnerId, Guid instanceId)
     {
         string instancePath = GetInstancePath(app, org, instanceOwnerId, instanceId);
-        if (!File.Exists(instancePath))
-        {
-            throw new IOException($"Could not find file for instance {instanceId} on specified path {instancePath}.");
-        }
 
-        string content = await ReadAllTextWithRetry(instancePath);
-        Instance instance =
-            JsonConvert.DeserializeObject<Instance>(content)
-            ?? throw new InvalidDataException(
-                $"Something went wrong deserializing json for instance from path {instancePath}"
-            );
-
-        return instance;
+        return await ReadJsonFile<Instance>(instancePath);
     }
 
     // Finds the path for the instance based on instanceId. Only works if guid is unique.
@@ -190,10 +180,7 @@ public class InstanceClientMockSi : IInstanceClient
                 continue;
             }
 
-            string content = await ReadAllTextWithRetry(file);
-            DataElement dataElement =
-                JsonConvert.DeserializeObject<DataElement>(content)
-                ?? throw new InvalidDataException($"Something went wrong deserializing json for data from path {file}");
+            DataElement dataElement = await ReadJsonFile<DataElement>(file);
 
             if (
                 dataElement.DeleteStatus?.IsHardDeleted == true
@@ -258,17 +245,12 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = await ReadAllTextWithRetry(instancePath);
-        Instance storedInstance =
-            JsonConvert.DeserializeObject<Instance>(content)
-            ?? throw new InvalidDataException(
-                $"Something went wrong deserializing json for instance from path {instancePath}"
-            );
+        Instance storedInstance = await ReadJsonFile<Instance>(instancePath);
 
         storedInstance.Status ??= new InstanceStatus();
         storedInstance.Status.ReadStatus = newStatus;
 
-        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await WriteJsonFile(instancePath, storedInstance);
         return storedInstance;
     }
 
@@ -290,12 +272,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = await ReadAllTextWithRetry(instancePath);
-        Instance storedInstance =
-            JsonConvert.DeserializeObject<Instance>(content)
-            ?? throw new InvalidDataException(
-                $"Something went wrong deserializing json for instance from path {instancePath}"
-            );
+        Instance storedInstance = await ReadJsonFile<Instance>(instancePath);
 
         storedInstance.Status ??= new InstanceStatus();
         storedInstance.Status.Substatus = substatus;
@@ -304,7 +281,7 @@ public class InstanceClientMockSi : IInstanceClient
         // mock does not set last changed by, but this is set by the platform.
         storedInstance.LastChangedBy = string.Empty;
 
-        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await WriteJsonFile(instancePath, storedInstance);
         return await GetInstance(storedInstance);
     }
 
@@ -320,12 +297,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = await ReadAllTextWithRetry(instancePath);
-        Instance storedInstance =
-            JsonConvert.DeserializeObject<Instance>(content)
-            ?? throw new InvalidDataException(
-                $"Something went wrong deserializing json for instance from path {instancePath}"
-            );
+        Instance storedInstance = await ReadJsonFile<Instance>(instancePath);
 
         storedInstance.PresentationTexts ??= new Dictionary<string, string>();
 
@@ -344,7 +316,7 @@ public class InstanceClientMockSi : IInstanceClient
         // mock does not set last changed by, but this is set by the platform.
         storedInstance.LastChangedBy = string.Empty;
 
-        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await WriteJsonFile(instancePath, storedInstance);
         var org = storedInstance.Org;
         var app = storedInstance.AppId.Split("/")[1];
 
@@ -362,12 +334,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = await ReadAllTextWithRetry(instancePath);
-        Instance storedInstance =
-            JsonConvert.DeserializeObject<Instance>(content)
-            ?? throw new InvalidDataException(
-                $"Something went wrong deserializing json for instance from path {instancePath}"
-            );
+        Instance storedInstance = await ReadJsonFile<Instance>(instancePath);
 
         storedInstance.DataValues ??= new Dictionary<string, string>();
 
@@ -386,7 +353,7 @@ public class InstanceClientMockSi : IInstanceClient
         // mock does not set last changed by, but this is set by the platform.
         storedInstance.LastChangedBy = string.Empty;
 
-        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await WriteJsonFile(instancePath, storedInstance);
         var org = storedInstance.Org;
         var app = storedInstance.AppId.Split("/")[1];
 
@@ -404,12 +371,7 @@ public class InstanceClientMockSi : IInstanceClient
             throw new IOException($"Could not find file for instance on specified path {instancePath}.");
         }
 
-        string content = await ReadAllTextWithRetry(instancePath);
-        Instance storedInstance =
-            JsonConvert.DeserializeObject<Instance>(content)
-            ?? throw new InvalidDataException(
-                $"Something went wrong deserializing json for instance from path {instancePath}"
-            );
+        Instance storedInstance = await ReadJsonFile<Instance>(instancePath);
 
         storedInstance.Status ??= new InstanceStatus();
 
@@ -425,7 +387,7 @@ public class InstanceClientMockSi : IInstanceClient
         // mock does not set last changed by, but this is set by the platform.
         storedInstance.LastChangedBy = string.Empty;
 
-        await File.WriteAllTextAsync(instancePath, JsonConvert.SerializeObject(storedInstance));
+        await WriteJsonFile(instancePath, storedInstance);
 
         return storedInstance;
     }
@@ -507,9 +469,8 @@ public class InstanceClientMockSi : IInstanceClient
 
             foreach (var file in instanceFiles)
             {
-                string content = await ReadAllTextWithRetry(file);
-                Instance? instance = JsonConvert.DeserializeObject<Instance>(content);
-                if (instance != null && instance.Id != null)
+                Instance instance = await ReadJsonFile<Instance>(file);
+                if (instance.Id != null)
                 {
                     instances.Add(instance);
                 }
@@ -604,28 +565,21 @@ public class InstanceClientMockSi : IInstanceClient
         return (lastChangedBy, lastChanged);
     }
 
-    /// <summary>
-    /// Reads all text from a file with retries to avoid issues with file locks
-    /// in the test environment.
-    /// </summary>
-    private static async Task<string> ReadAllTextWithRetry(string path)
+    private static async Task<T> ReadJsonFile<T>(string path)
     {
-        var retries = 10;
-        while (true)
+        if (!File.Exists(path))
         {
-            try
-            {
-                return await File.ReadAllTextAsync(path);
-            }
-            catch (IOException e)
-            {
-                if (retries < 0)
-                {
-                    throw new IOException($"Could not read file {path}", e);
-                }
-                await Task.Delay(10);
-            }
-            retries--;
+            throw new FileNotFoundException($"Could not find file on specified path {path}");
         }
+
+        var bytes = await File.ReadAllBytesAsync(path);
+        return JsonSerializer.Deserialize<T>(bytes, _jsonSerializerOptions)
+            ?? throw new InvalidDataException($"Something went wrong deserializing json from path {path}");
+    }
+
+    private static async Task WriteJsonFile<T>(string path, T obj)
+    {
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(obj, _jsonSerializerOptions);
+        await File.WriteAllBytesAsync(path, bytes);
     }
 }
