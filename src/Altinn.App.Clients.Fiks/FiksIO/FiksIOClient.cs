@@ -160,12 +160,12 @@ internal sealed class FiksIOClient : IFiksIOClient
     {
         var fiksIOSettings = _fiksIOSettings.CurrentValue;
         var appMeta = await _appMetadata.GetApplicationMetadata();
-        var fiksAMQPAppName = GetFiksAMQPApplicationName(appMeta.AppIdentifier);
+        var fiksAmqpAppName = GetFiksAmqpApplicationName(appMeta.AppIdentifier);
 
         var fiksConfiguration = new FiksIOConfiguration(
             amqpConfiguration: new AmqpConfiguration(
                 fiksIOSettings.AmqpHost,
-                applicationName: fiksAMQPAppName,
+                applicationName: fiksAmqpAppName,
                 prefetchCount: 0
             ),
             apiConfiguration: new ApiConfiguration(host: fiksIOSettings.ApiHost),
@@ -226,7 +226,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         return Task.CompletedTask;
     }
 
-    private static string GetFiksAMQPApplicationName(AppIdentifier appIdentifier)
+    private static string GetFiksAmqpApplicationName(AppIdentifier appIdentifier)
     {
         return $"altinn-app-{appIdentifier.Org}-{appIdentifier.App}";
     }
