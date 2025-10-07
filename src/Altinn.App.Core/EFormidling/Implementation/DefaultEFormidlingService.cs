@@ -98,16 +98,16 @@ public class DefaultEFormidlingService : IEFormidlingService
 
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-        string authToken = _userTokenProvider.GetUserToken();
-        string eFormidlingAccessToken = _tokenGenerator.GenerateAccessToken(
+        string userToken = _userTokenProvider.GetUserToken();
+        string platformAccessToken = _tokenGenerator.GenerateAccessToken(
             applicationMetadata.Org,
             applicationMetadata.AppIdentifier.App
         );
 
         var requestHeaders = new Dictionary<string, string>
         {
-            { "Authorization", $"{AuthorizationSchemes.Bearer} {authToken}" },
-            { General.EFormidlingAccessTokenHeaderName, eFormidlingAccessToken },
+            { "Authorization", $"{AuthorizationSchemes.Bearer} {userToken}" },
+            { General.EFormidlingAccessTokenHeaderName, platformAccessToken },
             { General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey },
         };
 
