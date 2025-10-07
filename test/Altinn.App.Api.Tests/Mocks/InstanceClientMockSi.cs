@@ -565,21 +565,42 @@ public class InstanceClientMockSi : IInstanceClient
         return (lastChangedBy, lastChanged);
     }
 
-    private static async Task<T> ReadJsonFile<T>(string path)
+    private static SemaphoreSlim _fileLock = new(1, 1);
+
+    public static async Task<T> ReadJsonFile<T>(string path, CancellationToken cancellationToken = default)
     {
         if (!File.Exists(path))
         {
             throw new FileNotFoundException($"Could not find file on specified path {path}");
         }
-
-        var bytes = await File.ReadAllBytesAsync(path);
-        return JsonSerializer.Deserialize<T>(bytes, _jsonSerializerOptions)
-            ?? throw new InvalidDataException($"Something went wrong deserializing json from path {path}");
+        await _fileLock.WaitAsync(cancellationToken);
+        try
+        {
+            var bytes = await File.ReadAllBytesAsync(path, cancellationToken);
+            return JsonSerializer.Deserialize<T>(bytes, _jsonSerializerOptions)
+                ?? throw new InvalidDataException($"Something went wrong deserializing json from path {path}");
+        }
+        catch (JsonException e)
+        {
+            throw new InvalidDataException($"Could not deserialize json from path {path}", e);
+        }
+        finally
+        {
+            _fileLock.Release();
+        }
     }
 
-    private static async Task WriteJsonFile<T>(string path, T obj)
+    public static async Task WriteJsonFile<T>(string path, T obj, CancellationToken cancellationToken = default)
     {
         var bytes = JsonSerializer.SerializeToUtf8Bytes(obj, _jsonSerializerOptions);
-        await File.WriteAllBytesAsync(path, bytes);
+        await _fileLock.WaitAsync(cancellationToken);
+        try
+        {
+            await File.WriteAllBytesAsync(path, bytes, cancellationToken);
+        }
+        finally
+        {
+            _fileLock.Release();
+        }
     }
 }
