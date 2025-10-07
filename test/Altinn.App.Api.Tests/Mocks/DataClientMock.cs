@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text.Json;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Mocks;
 using Altinn.App.Core.Extensions;
@@ -10,7 +9,6 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using DataElement = Altinn.Platform.Storage.Interface.Models.DataElement;
 
 namespace App.IntegrationTests.Mocks.Services;
@@ -65,7 +63,7 @@ public class DataClientMock : IDataClient
 
             dataElement.DeleteStatus = new() { IsHardDeleted = true, HardDeleted = DateTime.UtcNow };
 
-            await WriteDataElementToFile(dataElement, org, app, instanceOwnerPartyId);
+            await WriteDataElementToFile(dataElement, org, app, instanceOwnerPartyId, cancellationToken);
 
             return true;
         }
@@ -141,15 +139,15 @@ public class DataClientMock : IDataClient
             AttachmentList al = new()
             {
                 Type = dataElement.DataType,
-                Attachments = new List<Attachment>()
-                {
+                Attachments =
+                [
                     new Attachment()
                     {
                         Id = dataElement.Id,
                         Name = dataElement.Filename,
                         Size = dataElement.Size,
                     },
-                },
+                ],
             };
             list.Add(al);
         }
@@ -275,11 +273,11 @@ public class DataClientMock : IDataClient
         string dataPath = TestData.GetDataDirectory(org, app, instanceOwnerPartyId, instanceGuid);
 
         DataElement dataElement =
-            await GetDataElement(org, app, instanceOwnerPartyId, instanceGuid, dataGuid.ToString())
+            await GetDataElement(org, app, instanceOwnerPartyId, instanceGuid, dataGuid.ToString(), cancellationToken)
             ?? throw new Exception(
                 $"Unable to find data element for org: {org}/{app} party: {instanceOwnerPartyId} instance: {instanceGuid} data: {dataGuid}"
             );
-        ;
+
         var application = await _appMetadata.GetApplicationMetadata();
         var dataType =
             application.DataTypes.Find(d => d.Id == dataElement.DataType)
@@ -528,7 +526,6 @@ public class DataClientMock : IDataClient
             dataGuid.ToString(),
             cancellationToken
         );
-        ;
 
         element.Locked = false;
         await WriteDataElementToFile(element, org, app, instanceIdentifier.InstanceOwnerPartyId, cancellationToken);
@@ -573,23 +570,20 @@ public class DataClientMock : IDataClient
 
         foreach (string file in files)
         {
-            DataElement? dataElement = await InstanceClientMockSi.ReadJsonFile<DataElement>(
+            DataElement dataElement = await InstanceClientMockSi.ReadJsonFile<DataElement>(
                 Path.Join(path, file),
                 cancellationToken
             );
 
-            if (dataElement != null)
+            if (
+                dataElement.DeleteStatus?.IsHardDeleted == true
+                && string.IsNullOrEmpty(_httpContextAccessor.HttpContext?.User.GetOrg())
+            )
             {
-                if (
-                    dataElement.DeleteStatus?.IsHardDeleted == true
-                    && string.IsNullOrEmpty(_httpContextAccessor.HttpContext?.User.GetOrg())
-                )
-                {
-                    continue;
-                }
-
-                dataElements.Add(dataElement);
+                continue;
             }
+
+            dataElements.Add(dataElement);
         }
 
         return dataElements;

@@ -565,7 +565,7 @@ public class InstanceClientMockSi : IInstanceClient
         return (lastChangedBy, lastChanged);
     }
 
-    private static SemaphoreSlim _fileLock = new(1, 1);
+    private static readonly SemaphoreSlim _fileLock = new(1, 1);
 
     public static async Task<T> ReadJsonFile<T>(string path, CancellationToken cancellationToken = default)
     {
