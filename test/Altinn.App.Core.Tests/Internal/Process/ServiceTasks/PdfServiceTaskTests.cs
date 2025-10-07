@@ -58,8 +58,47 @@ public class PdfServiceTaskTests
                     instance.Process.CurrentTask.ElementId,
                     null,
                     FileName,
+                    It.IsAny<List<string>?>(),
                     It.IsAny<CancellationToken>()
                 ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task Execute_Should_Pass_AutoPdfTaskIds_To_PdfService()
+    {
+        // Arrange
+        var taskIds = new List<string> { "Task_1", "Task_2", "Task_3" };
+
+        _processReaderMock
+            .Setup(x => x.GetAltinnTaskExtension("pdfTask"))
+            .Returns(
+                new AltinnTaskExtension
+                {
+                    TaskType = "pdf",
+                    PdfConfiguration = new AltinnPdfConfiguration { Filename = "test.pdf", AutoPdfTaskIds = taskIds },
+                }
+            );
+
+        var instance = new Instance
+        {
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "pdfTask" } },
+        };
+
+        var instanceMutatorMock = new Mock<IInstanceDataMutator>();
+        instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
+
+        var parameters = new ServiceTaskContext { InstanceDataMutator = instanceMutatorMock.Object };
+
+        var serviceTask = new PdfServiceTask(_pdfServiceMock.Object, _processReaderMock.Object, _loggerMock.Object);
+
+        // Act
+        await serviceTask.Execute(parameters);
+
+        // Assert
+        _pdfServiceMock.Verify(
+            x => x.GenerateAndStorePdf(instance, "pdfTask", null, "test.pdf", taskIds, It.IsAny<CancellationToken>()),
             Times.Once
         );
     }

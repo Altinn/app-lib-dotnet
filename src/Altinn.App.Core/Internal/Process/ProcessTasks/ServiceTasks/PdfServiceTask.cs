@@ -43,6 +43,7 @@ internal sealed class PdfServiceTask : IPdfServiceTask
             taskId,
             config.DataTypeId,
             config.Filename,
+            config.AutoPdfTaskIds,
             context.CancellationToken
         );
 
