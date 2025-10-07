@@ -23,6 +23,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.AspNetCore.Builder;
@@ -59,7 +60,8 @@ internal sealed record TestFixture(
     Mock<IEmailNotificationClient> EmailNotificationClientMock,
     Mock<IProcessReader> ProcessReaderMock,
     Mock<IHttpClientFactory> HttpClientFactoryMock,
-    Mock<IAccessTokenGenerator> AccessTokenGeneratorMock
+    Mock<IAccessTokenGenerator> AccessTokenGeneratorMock,
+    Mock<ITranslationService> TranslationServiceMock
 ) : IAsyncDisposable
 {
     public IFiksIOClient FiksIOClient => App.Services.GetRequiredService<IFiksIOClient>();
@@ -154,6 +156,7 @@ internal sealed record TestFixture(
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var accessTokenGeneratorMock = new Mock<IAccessTokenGenerator>();
         var loggerFactoryMock = new Mock<ILoggerFactory>();
+        var translationServiceMock = new Mock<ITranslationService>();
 
         hostEnvironmentMock.Setup(x => x.EnvironmentName).Returns("Development");
         loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
@@ -176,6 +179,7 @@ internal sealed record TestFixture(
         builder.Services.AddSingleton(processReaderMock.Object);
         builder.Services.AddSingleton(httpClientFactoryMock.Object);
         builder.Services.AddSingleton(accessTokenGeneratorMock.Object);
+        builder.Services.AddSingleton(translationServiceMock.Object);
 
         // Non-mockable services
         builder.Services.AddSingleton<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
@@ -200,7 +204,8 @@ internal sealed record TestFixture(
             emailNotificationClientMock,
             processReaderMock,
             httpClientFactoryMock,
-            accessTokenGeneratorMock
+            accessTokenGeneratorMock,
+            translationServiceMock
         );
     }
 
