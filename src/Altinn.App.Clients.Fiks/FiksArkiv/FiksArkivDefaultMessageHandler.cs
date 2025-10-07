@@ -7,6 +7,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Process.Elements;
@@ -43,6 +44,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
     private readonly GeneralSettings _generalSettings;
     private readonly ITranslationService _translationService;
     private readonly TimeProvider _timeProvider;
+    private readonly IAppModel _appModelResolver;
 
     private ApplicationMetadata? _applicationMetadataCache;
 
@@ -52,6 +54,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         IOptions<GeneralSettings> generalSettings,
         ITranslationService translationService,
         IAppMetadata appMetadata,
+        IAppModel appModelResolver,
         IDataClient dataClient,
         IAuthenticationContext authenticationContext,
         IAltinnPartyClient altinnPartyClient,
@@ -67,6 +70,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
     )
     {
         _appMetadata = appMetadata;
+        _appModelResolver = appModelResolver;
         _dataClient = dataClient;
         _altinnCdnClient = altinnCdnClient;
         _altinnPartyClient = altinnPartyClient;
@@ -126,7 +130,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
             throw new FiksArkivConfigurationException(
                 $"{nameof(FiksArkivSettings.Recipient)} configuration is required for default handler {GetType().Name}."
             );
-        _fiksArkivSettings.Recipient.Validate(configuredDataTypes);
+        _fiksArkivSettings.Recipient.Validate(configuredDataTypes, _appModelResolver);
 
         if (_fiksArkivSettings.Documents is null)
             throw new FiksArkivConfigurationException(
@@ -142,7 +146,7 @@ internal sealed partial class FiksArkivDefaultMessageHandler : IFiksArkivMessage
         _fiksArkivSettings.Receipt.Validate(nameof(_fiksArkivSettings.Receipt), configuredDataTypes);
 
         _fiksArkivSettings.AutoSend?.ErrorHandling?.Validate();
-        _fiksArkivSettings.Metadata?.Validate(configuredDataTypes);
+        _fiksArkivSettings.Metadata?.Validate(configuredDataTypes, _appModelResolver);
 
         return Task.CompletedTask;
     }

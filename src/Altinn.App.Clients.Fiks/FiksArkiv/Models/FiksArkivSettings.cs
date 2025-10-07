@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 using Altinn.App.Clients.Fiks.Exceptions;
+using Altinn.App.Clients.Fiks.Extensions;
+using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
@@ -61,12 +63,12 @@ public class FiksArkivMetadataSettings
     /// <summary>
     /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
     /// </summary>
-    internal void Validate(IReadOnlyList<DataType> dataTypes)
+    internal void Validate(IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
         const string propertyName = $"{nameof(FiksArkivSettings.Metadata)}";
 
-        CaseFileTitle?.Validate($"{propertyName}.{nameof(CaseFileTitle)}", dataTypes);
-        JournalEntryTitle?.Validate($"{propertyName}.{nameof(JournalEntryTitle)}", dataTypes);
+        CaseFileTitle?.Validate($"{propertyName}.{nameof(CaseFileTitle)}", dataTypes, appModelResolver);
+        JournalEntryTitle?.Validate($"{propertyName}.{nameof(JournalEntryTitle)}", dataTypes, appModelResolver);
     }
 }
 
@@ -249,14 +251,14 @@ public sealed record FiksArkivRecipientSettings
     /// <summary>
     /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
     /// </summary>
-    internal void Validate(IReadOnlyList<DataType> dataTypes)
+    internal void Validate(IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
         const string propertyName = $"{nameof(FiksArkivSettings.Recipient)}";
 
-        FiksAccount.Validate($"{propertyName}.{nameof(FiksAccount)}", dataTypes);
-        Identifier?.Validate($"{propertyName}.{nameof(Identifier)}", dataTypes);
-        OrganizationNumber?.Validate($"{propertyName}.{nameof(OrganizationNumber)}", dataTypes);
-        Name?.Validate($"{propertyName}.{nameof(Name)}", dataTypes);
+        FiksAccount.Validate($"{propertyName}.{nameof(FiksAccount)}", dataTypes, appModelResolver);
+        Identifier?.Validate($"{propertyName}.{nameof(Identifier)}", dataTypes, appModelResolver);
+        OrganizationNumber?.Validate($"{propertyName}.{nameof(OrganizationNumber)}", dataTypes, appModelResolver);
+        Name?.Validate($"{propertyName}.{nameof(Name)}", dataTypes, appModelResolver);
     }
 }
 
@@ -281,7 +283,7 @@ public sealed record FiksArkivBindableValue<T>
     /// <summary>
     /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
     /// </summary>
-    internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes)
+    internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
         if (Value is null && DataModelBinding is null)
             throw new FiksArkivConfigurationException(
@@ -293,7 +295,7 @@ public sealed record FiksArkivBindableValue<T>
                 $"{propertyName}: Both `{nameof(Value)}` and `{nameof(DataModelBinding)}` cannot be set at the same time."
             );
 
-        DataModelBinding?.Validate($"{propertyName}.{nameof(DataModelBinding)}", dataTypes);
+        DataModelBinding?.Validate($"{propertyName}.{nameof(DataModelBinding)}", dataTypes, appModelResolver);
     }
 }
 
@@ -323,22 +325,36 @@ public sealed record FiksArkivDataModelBinding
     /// <summary>
     /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
     /// </summary>
-    internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes)
+    internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
         if (string.IsNullOrWhiteSpace(DataType))
             throw new FiksArkivConfigurationException(
                 $"{propertyName}.{nameof(DataType)} configuration is required for handler {nameof(FiksArkivDefaultMessageHandler)}"
             );
 
-        if (dataTypes.Any(x => x.Id == DataType) is false)
+        DataType? dataType = dataTypes.FirstOrDefault(x => x.Id == DataType);
+        if (dataType is null || string.IsNullOrWhiteSpace(dataType.AppLogic?.ClassRef))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)} mismatch with application data types: {DataType}"
+                $"{propertyName}.{nameof(DataType)}->{DataType} mismatch with application data types. Available candidates are: {string.Join(",", dataTypes)}"
             );
 
         if (string.IsNullOrWhiteSpace(Field))
             throw new FiksArkivConfigurationException(
                 $"{propertyName}.{nameof(Field)} configuration is required for handler {nameof(FiksArkivDefaultMessageHandler)}."
             );
+
+        Type type =
+            appModelResolver.GetModelType(dataType.AppLogic.ClassRef)
+            ?? throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(DataType)}->{DataType} does not resolve to a valid model: {dataType.AppLogic.ClassRef}"
+            );
+
+        if (!type.HasPublicPropertyPath(Field))
+        {
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(Field)}->{Field} does not resolve to a property of {dataType.AppLogic.ClassRef}."
+            );
+        }
     }
 }
 
