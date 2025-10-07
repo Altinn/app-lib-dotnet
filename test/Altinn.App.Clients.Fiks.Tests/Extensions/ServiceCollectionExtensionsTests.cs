@@ -87,8 +87,6 @@ public class ServiceCollectionExtensionsTests
                         x.AsicePrivateKeyBase64 = fiksIOSettingsOverride.AsicePrivateKeyBase64;
                         x.AmqpHost = fiksIOSettingsOverride.AmqpHost;
                         x.ApiHost = fiksIOSettingsOverride.ApiHost;
-                        x.ApiPort = fiksIOSettingsOverride.ApiPort;
-                        x.ApiScheme = fiksIOSettingsOverride.ApiScheme;
                     })
                     .WithMaskinportenConfig(x =>
                     {
@@ -236,8 +234,6 @@ public class ServiceCollectionExtensionsTests
                         x.AsicePrivateKeyBase64 = fiksIOSettingsOverride.AsicePrivateKeyBase64;
                         x.AmqpHost = fiksIOSettingsOverride.AmqpHost;
                         x.ApiHost = fiksIOSettingsOverride.ApiHost;
-                        x.ApiPort = fiksIOSettingsOverride.ApiPort;
-                        x.ApiScheme = fiksIOSettingsOverride.ApiScheme;
                     })
                     .WithFiksArkivConfig(x =>
                     {

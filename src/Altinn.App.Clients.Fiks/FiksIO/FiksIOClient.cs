@@ -11,7 +11,6 @@ using KS.Fiks.IO.Client.Configuration;
 using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Crypto.Configuration;
 using KS.Fiks.IO.Send.Client.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
@@ -25,7 +24,6 @@ internal sealed class FiksIOClient : IFiksIOClient
 {
     private readonly IOptionsMonitor<FiksIOSettings> _fiksIOSettings;
     private readonly IAppMetadata _appMetadata;
-    private readonly IHostEnvironment _env;
     private readonly ILogger<FiksIOClient> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IMaskinportenClient _maskinportenClient;
@@ -41,7 +39,6 @@ internal sealed class FiksIOClient : IFiksIOClient
     public FiksIOClient(
         IServiceProvider serviceProvider,
         IOptionsMonitor<FiksIOSettings> fiksIOSettings,
-        IHostEnvironment env,
         IAppMetadata appMetadata,
         IMaskinportenClient maskinportenClient,
         ILoggerFactory loggerFactory,
@@ -51,7 +48,6 @@ internal sealed class FiksIOClient : IFiksIOClient
     {
         _fiksIOSettings = fiksIOSettings;
         _appMetadata = appMetadata;
-        _env = env;
         _loggerFactory = loggerFactory;
         _maskinportenClient = maskinportenClient;
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
@@ -164,19 +160,15 @@ internal sealed class FiksIOClient : IFiksIOClient
     {
         var fiksIOSettings = _fiksIOSettings.CurrentValue;
         var appMeta = await _appMetadata.GetApplicationMetadata();
-        var fiksAmqpAppName = GetFiksAmqpAppName(appMeta.AppIdentifier);
+        var appName = GetApplicationName(appMeta.AppIdentifier);
 
         var fiksConfiguration = new FiksIOConfiguration(
             amqpConfiguration: new AmqpConfiguration(
                 fiksIOSettings.AmqpHost,
-                applicationName: fiksAmqpAppName,
+                applicationName: appName,
                 prefetchCount: 0
             ),
-            apiConfiguration: new ApiConfiguration(
-                fiksIOSettings.ApiScheme,
-                fiksIOSettings.ApiHost,
-                fiksIOSettings.ApiPort
-            ),
+            apiConfiguration: new ApiConfiguration(host: fiksIOSettings.ApiHost),
             asiceSigningConfiguration: new AsiceSigningConfiguration(fiksIOSettings.GenerateAsiceCertificate()),
             integrasjonConfiguration: new IntegrasjonConfiguration(
                 fiksIOSettings.IntegrationId,
@@ -234,7 +226,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         return Task.CompletedTask;
     }
 
-    private static string GetFiksAmqpAppName(AppIdentifier appIdentifier)
+    private static string GetApplicationName(AppIdentifier appIdentifier)
     {
         return $"altinn-app-{appIdentifier.Org}-{appIdentifier.App}";
     }
