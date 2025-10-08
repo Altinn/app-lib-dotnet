@@ -237,16 +237,16 @@ public static class TelemetryActivityExtensions
     }
 
     /// <summary>
-    /// Sets the Organisation name as a tag/attribute on the activity/span
+    /// Sets the organization name as a tag/attribute on the activity/span
     /// </summary>
     /// <param name="activity">Activity</param>
-    /// <param name="organisationName">Organisation name</param>
+    /// <param name="organizationName">Organization name</param>
     /// <returns>Activity</returns>
-    public static Activity SetOrganisationName(this Activity activity, string? organisationName)
+    public static Activity SetOrganisationName(this Activity activity, string? organizationName)
     {
-        if (!string.IsNullOrWhiteSpace(organisationName))
+        if (!string.IsNullOrWhiteSpace(organizationName))
         {
-            activity.SetTag(Labels.OrganisationName, organisationName);
+            activity.SetTag(Labels.OrganizationName, organizationName);
         }
 
         return activity;
@@ -258,7 +258,7 @@ public static class TelemetryActivityExtensions
     /// <param name="activity">Activity</param>
     /// <param name="organisationNumber">Organisation number</param>
     /// <returns>Activity</returns>
-    public static Activity SetOrganisationNumber(this Activity activity, string? organisationNumber)
+    public static Activity SetOrganizationNumber(this Activity activity, string? organisationNumber)
     {
         if (!string.IsNullOrWhiteSpace(organisationNumber))
         {
@@ -377,14 +377,14 @@ public static class TelemetryActivityExtensions
             }
             case Authenticated.Org auth:
             {
-                activity.SetOrganisationNumber(auth.OrgNo);
+                activity.SetOrganizationNumber(auth.OrgNo);
                 activity.SetAuthenticationMethod(auth.AuthenticationMethod);
                 activity.SetAuthenticationLevel(auth.AuthenticationLevel);
                 break;
             }
             case Authenticated.ServiceOwner auth:
             {
-                activity.SetOrganisationNumber(auth.OrgNo);
+                activity.SetOrganizationNumber(auth.OrgNo);
                 activity.SetOrganisationName(auth.Name);
                 activity.SetAuthenticationMethod(auth.AuthenticationMethod);
                 activity.SetAuthenticationLevel(auth.AuthenticationLevel);
@@ -395,7 +395,7 @@ public static class TelemetryActivityExtensions
                 if (auth.SystemUserId is [var systemUserId, ..])
                     activity.SetTag(Labels.OrganisationSystemUserId, systemUserId);
 
-                activity.SetOrganisationNumber(auth.SystemUserOrgNr.Get(OrganizationNumberFormat.Local));
+                activity.SetOrganizationNumber(auth.SystemUserOrgNr.Get(OrganizationNumberFormat.Local));
                 activity.SetAuthenticationLevel(auth.AuthenticationLevel);
                 activity.SetAuthenticationMethod(auth.AuthenticationMethod);
                 break;

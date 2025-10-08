@@ -228,7 +228,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     public required string ResourceId { get; init; }
 
     /// <summary>
-    /// The sending organisation of the correspondence.
+    /// The sending organization of the correspondence.
     /// </summary>
     public required OrganizationNumber Sender { get; init; }
 

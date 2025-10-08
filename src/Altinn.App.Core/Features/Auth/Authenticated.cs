@@ -176,7 +176,7 @@ public abstract class Authenticated
         /// <param name="UserParty">Party object for the user. This means that the user is currently representing themselves as a person</param>
         /// <param name="SelectedParty">
         ///     Party object for the selected party.
-        ///     Selected party and user party will differ when the user has chosed to represent a different entity during party selection (e.g. an organisation)
+        ///     Selected party and user party will differ when the user has chosed to represent a different entity during party selection (e.g. an organization)
         /// </param>
         /// <param name="Profile">Users profile</param>
         /// <param name="RepresentsSelf">True if the user represents itself (user party will equal selected party)</param>
@@ -330,13 +330,13 @@ public abstract class Authenticated
     }
 
     /// <summary>
-    /// The logged in client is an organisation (but they have not authenticated as an Altinn service owner).
+    /// The logged in client is an organization (but they have not authenticated as an Altinn service owner).
     /// Authentication has been done through Maskinporten.
     /// </summary>
     public sealed class Org : Authenticated
     {
         /// <summary>
-        /// Organisation number
+        /// organization number
         /// </summary>
         public string OrgNo { get; }
 
@@ -364,14 +364,14 @@ public abstract class Authenticated
         }
 
         /// <summary>
-        /// Detailed information about an organisation
+        /// Detailed information about an organization
         /// </summary>
         /// <param name="Party">Party of the org</param>
         /// <param name="CanInstantiate">True if the org can instantiate applications</param>
         public sealed record Details(Party Party, bool CanInstantiate);
 
         /// <summary>
-        /// Load the details for the current organisation.
+        /// Load the details for the current organization.
         /// </summary>
         /// <returns>Details</returns>
         public async Task<Details> LoadDetails()
@@ -391,12 +391,12 @@ public abstract class Authenticated
     public sealed class ServiceOwner : Authenticated
     {
         /// <summary>
-        /// Organisation/service owner name
+        /// organization/service owner name
         /// </summary>
         public string Name { get; }
 
         /// <summary>
-        /// Organisation number
+        /// organization number
         /// </summary>
         public string OrgNo { get; }
 
@@ -448,7 +448,7 @@ public abstract class Authenticated
     /// <summary>
     /// The logged in client is a system user.
     /// System users authenticate through Maskinporten.
-    /// The caller is the system, which impersonates the system user (which represents the organisation/owner of the user).
+    /// The caller is the system, which impersonates the system user (which represents the organization/owner of the user).
     /// </summary>
     public sealed class SystemUser : Authenticated
     {
@@ -458,12 +458,12 @@ public abstract class Authenticated
         public IReadOnlyList<Guid> SystemUserId { get; }
 
         /// <summary>
-        /// Organisation number of the system user
+        /// organization number of the system user
         /// </summary>
         public OrganizationNumber SystemUserOrgNr { get; }
 
         /// <summary>
-        /// Organisation number of the supplier system
+        /// organization number of the supplier system
         /// </summary>
         public OrganizationNumber SupplierOrgNr { get; }
 
@@ -974,15 +974,15 @@ public abstract class Authenticated
             throw new AuthenticationContextException("Missing system ID claim for systemuser token");
         if (systemUser.SystemUserOrg.Authority != "iso6523-actorid-upis")
             throw new AuthenticationContextException(
-                $"Unsupported organisation authority in systemuser token: {systemUser.SystemUserOrg.Authority}"
+                $"Unsupported organization authority in systemuser token: {systemUser.SystemUserOrg.Authority}"
             );
         if (!OrganizationNumber.TryParse(systemUser.SystemUserOrg.Id, out var orgNr))
             throw new AuthenticationContextException(
-                $"Invalid system user organisation number in system user token: {systemUser.SystemUserOrg.Id}"
+                $"Invalid system user organization number in system user token: {systemUser.SystemUserOrg.Id}"
             );
         if (!OrganizationNumber.TryParse(context.ConsumerClaimValue?.Id, out var supplierOrgNr))
             throw new AuthenticationContextException(
-                $"Invalid organisation number in supplier organisation number claim for system user token: {context.ConsumerClaimValue?.Id}"
+                $"Invalid organization number in supplier organization number claim for system user token: {context.ConsumerClaimValue?.Id}"
             );
 
         return new SystemUser(

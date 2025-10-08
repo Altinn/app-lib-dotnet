@@ -29,7 +29,7 @@ public interface ICorrespondenceRequestBuilderSender
     /// <summary>
     /// Sets the sender of the correspondence.
     /// </summary>
-    /// <param name="sender">A string representing a Norwegian organisation number (e.g. 991825827 or 0192:991825827)</param>
+    /// <param name="sender">A string representing a Norwegian organization number (e.g. 991825827 or 0192:991825827)</param>
     ICorrespondenceRequestBuilderSendersReference WithSender(string sender);
 }
 

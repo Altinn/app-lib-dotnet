@@ -199,12 +199,12 @@ public sealed partial class Telemetry : IDisposable
         public const string UserAuthenticationInAltinnPortal = "user.authentication.inAltinnPortal";
 
         /// <summary>
-        /// Label for the organisation name.
+        /// Label for the organization name.
         /// </summary>
-        public const string OrganisationName = "organisation.name";
+        public const string OrganizationName = "organisation.name";
 
         /// <summary>
-        /// Label for the organisation number.
+        /// Label for the organization number.
         /// </summary>
         public const string OrganizationNumber = "organisation.number";
 
