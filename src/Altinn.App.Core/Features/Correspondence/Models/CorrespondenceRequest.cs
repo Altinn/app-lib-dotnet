@@ -259,7 +259,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     public DateTimeOffset? DueDateTime { get; init; }
 
     /// <summary>
-    /// The recipients of the correspondence. Either Norwegian organisation numbers or national identity numbers.
+    /// The recipients of the correspondence. Either Norwegian organization numbers or national identity numbers.
     /// </summary>
     public required IReadOnlyList<OrganisationOrPersonIdentifier> Recipients { get; init; }
 

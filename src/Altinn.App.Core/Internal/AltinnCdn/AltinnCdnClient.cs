@@ -29,7 +29,7 @@ internal sealed class AltinnCdnClient : IAltinnCdnClient
                 cancellationToken: cancellationToken
             ) ?? throw new JsonException("Received literal \"null\" response from Altinn CDN");
 
-        // Inject Digdir's organisation number for TTD, because TTD does not have an organisation number
+        // Inject Digdir's organization number for TTD, because TTD does not have an organization number
         if (
             !orgs.Orgs.IsNullOrEmpty()
             && orgs.Orgs.TryGetValue("ttd", out var ttdOrgDetails)
