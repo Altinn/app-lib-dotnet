@@ -27,7 +27,7 @@ public sealed class InstanceResponse
     public required string AppId { get; init; }
 
     /// <summary>
-    /// Application owner identifier, usually a abbreviation of organisation name. All in lower case.
+    /// Application owner identifier, usually a abbreviation of organization name. All in lower case.
     /// </summary>
     public required string Org { get; init; }
 
@@ -150,7 +150,7 @@ public sealed class InstanceOwnerResponse
     public required string PersonNumber { get; init; }
 
     /// <summary>
-    /// The organisation number of the party. Null if the party is not an organisation.
+    /// The organization number of the party. Null if the party is not an organization.
     /// </summary>
     public required string OrganizationNumber { get; init; }
 
@@ -191,7 +191,7 @@ public sealed class PartyResponse
     public required string SSN { get; init; }
 
     /// <summary>
-    /// The organisation number of the party. Null if the party is not an organisation.
+    /// The organization number of the party. Null if the party is not an organization.
     /// </summary>
     public required string OrgNumber { get; init; }
 
