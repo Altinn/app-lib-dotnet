@@ -57,7 +57,7 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
         OrganisationOrPersonIdentifier? organisationOrPersonIdentifier
     )
     {
-        if (organisationOrPersonIdentifier is OrganisationOrPersonIdentifier.Organisation org)
+        if (organisationOrPersonIdentifier is OrganisationOrPersonIdentifier.Organization org)
         {
             _organizationNumber = org.Value;
         }
@@ -91,7 +91,7 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
 
         return identifier switch
         {
-            OrganisationOrPersonIdentifier.Organisation organizationNumber => WithOrganizationNumber(
+            OrganisationOrPersonIdentifier.Organization organizationNumber => WithOrganizationNumber(
                 organizationNumber
             ),
             OrganisationOrPersonIdentifier.Person nathionalIdentityNumber => WithNationalIdentityNumber(
@@ -129,7 +129,7 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     {
         return identifier switch
         {
-            OrganisationOrPersonIdentifier.Organisation org => WithOrganizationNumber(org),
+            OrganisationOrPersonIdentifier.Organization org => WithOrganizationNumber(org),
             OrganisationOrPersonIdentifier.Person person => WithNationalIdentityNumber(person),
             _ => throw new CorrespondenceArgumentException(
                 "Recipient identifier must be either an organization or a person."

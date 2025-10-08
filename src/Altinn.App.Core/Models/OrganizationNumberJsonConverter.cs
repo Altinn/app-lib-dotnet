@@ -13,7 +13,7 @@ internal class OrganizationNumberJsonConverterAttribute : JsonConverterAttribute
     private OrganizationNumberFormat _format { get; init; }
 
     /// <inheritdoc cref="OrganizationNumberJsonConverterAttribute"/>
-    /// <param name="format">The desired organisation number format to use for <b>serialization</b></param>
+    /// <param name="format">The desired organization number format to use for <b>serialization</b></param>
     public OrganizationNumberJsonConverterAttribute(OrganizationNumberFormat format)
     {
         _format = format;
@@ -44,10 +44,10 @@ internal class OrganizationNumberJsonConverter : JsonConverter<OrganizationNumbe
     {
         if (reader.TokenType != JsonTokenType.String)
         {
-            throw new JsonException("Expected string token for OrganisationNumber property.");
+            throw new JsonException("Expected string token for organizationNumber property.");
         }
 
-        var tokenValue = reader.GetString() ?? throw new JsonException("OrganisationNumber string value is null.");
+        var tokenValue = reader.GetString() ?? throw new JsonException("organizationNumber string value is null.");
 
         // Trim the urn:altinn:organization:identifier-no prefix if present
         if (tokenValue.StartsWith(OrgUrnPrefix, StringComparison.OrdinalIgnoreCase))

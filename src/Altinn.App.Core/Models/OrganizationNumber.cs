@@ -3,12 +3,12 @@ using System.Globalization;
 namespace Altinn.App.Core.Models;
 
 /// <summary>
-/// Represents the format of an organisation number.
+/// Represents the format of an organization number.
 /// </summary>
 public enum OrganizationNumberFormat
 {
     /// <summary>
-    /// Represents only the locally recognised organisation number, e.g. "991825827".
+    /// Represents only the locally recognised organization number, e.g. "991825827".
     /// </summary>
     Local,
 
