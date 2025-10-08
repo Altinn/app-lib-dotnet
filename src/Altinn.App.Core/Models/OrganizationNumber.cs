@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Models;
 /// <summary>
 /// Represents the format of an organisation number.
 /// </summary>
-public enum OrganisationNumberFormat
+public enum OrganizationNumberFormat
 {
     /// <summary>
     /// Represents only the locally recognised organisation number, e.g. "991825827".
@@ -13,60 +13,60 @@ public enum OrganisationNumberFormat
     Local,
 
     /// <summary>
-    /// Represents only the locally recognised organisation number, e.g. "0192:991825827".
+    /// Represents only the locally recognised Organization number, e.g. "0192:991825827".
     /// </summary>
     International,
 }
 
 /// <summary>
-/// <p>Represents a Norwegian organisation number.</p>
-/// <p>Note: The validation in this type is hard coded to the Norwegian organisation number format.</p>
+/// <p>Represents a Norwegian Organization number.</p>
+/// <p>Note: The validation in this type is hard coded to the Norwegian Organization number format.</p>
 /// </summary>
-public readonly struct OrganisationNumber : IEquatable<OrganisationNumber>
+public readonly struct OrganizationNumber : IEquatable<OrganizationNumber>
 {
     private readonly string _local;
     private readonly string _international;
 
     /// <summary>
-    /// Gets the organisation number as a string in the specified format.
+    /// Gets the Organization number as a string in the specified format.
     /// </summary>
     /// <param name="format">The format to get</param>
     /// <exception cref="ArgumentOutOfRangeException">Invalid format provided</exception>
-    public string Get(OrganisationNumberFormat format) =>
+    public string Get(OrganizationNumberFormat format) =>
         format switch
         {
-            OrganisationNumberFormat.Local => _local,
-            OrganisationNumberFormat.International => _international,
+            OrganizationNumberFormat.Local => _local,
+            OrganizationNumberFormat.International => _international,
             _ => throw new ArgumentOutOfRangeException(nameof(format)),
         };
 
-    private OrganisationNumber(string local, string international)
+    private OrganizationNumber(string local, string international)
     {
         _local = local;
         _international = international;
     }
 
     /// <summary>
-    /// Parses an organisation number.
+    /// Parses an Organization number.
     /// </summary>
     /// <param name="value">The value to parse</param>
-    /// <exception cref="FormatException">The organisation number is not valid</exception>
-    public static OrganisationNumber Parse(string value)
+    /// <exception cref="FormatException">The Organization number is not valid</exception>
+    public static OrganizationNumber Parse(string value)
     {
-        return TryParse(value, out var organisationNumber)
-            ? organisationNumber
-            : throw new FormatException($"Invalid organisation number format: {value}");
+        return TryParse(value, out var OrganizationNumber)
+            ? OrganizationNumber
+            : throw new FormatException($"Invalid Organization number format: {value}");
     }
 
     /// <summary>
-    /// Attempt to parse an organisation number.
+    /// Attempt to parse an Organization number.
     /// </summary>
     /// <param name="value">The value to parse</param>
-    /// <param name="organisationNumber">The resulting <see cref="OrganisationNumber"/> instance</param>
+    /// <param name="organizationNumber">The resulting <see cref="OrganizationNumber"/> instance</param>
     /// <returns><c>true</c> on successful parse, <c>false</c> otherwise</returns>
-    public static bool TryParse(string? value, out OrganisationNumber organisationNumber)
+    public static bool TryParse(string? value, out OrganizationNumber organizationNumber)
     {
-        organisationNumber = default;
+        organizationNumber = default;
 
         if (string.IsNullOrWhiteSpace(value))
             return false;
@@ -112,12 +112,12 @@ public readonly struct OrganisationNumber : IEquatable<OrganisationNumber>
         if (lastDigit != ctrlDigit)
             return false;
 
-        organisationNumber = new OrganisationNumber(local, international);
+        organizationNumber = new OrganizationNumber(local, international);
         return true;
     }
 
     /// <inheritdoc/>
-    public bool Equals(OrganisationNumber other) => _local == other._local;
+    public bool Equals(OrganizationNumber other) => _local == other._local;
 
     /// <summary>
     /// Indicates whether the current object is equal to the provided string value.
@@ -128,52 +128,52 @@ public readonly struct OrganisationNumber : IEquatable<OrganisationNumber>
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) =>
-        obj is OrganisationNumber other && Equals(other) || obj is string str && Equals(str);
+        obj is OrganizationNumber other && Equals(other) || obj is string str && Equals(str);
 
     /// <inheritdoc/>
     public override int GetHashCode() => _local.GetHashCode();
 
     /// <summary>
-    /// Returns a string representation of the <see cref="OrganisationNumberFormat.Local"/> organisation number.
+    /// Returns a string representation of the <see cref="OrganizationNumberFormat.Local"/> Organization number.
     /// </summary>
     public override string ToString() => _local;
 
     /// <summary>
-    /// Determines whether two specified instances of <see cref="OrganisationNumber"/> are equal.
+    /// Determines whether two specified instances of <see cref="OrganizationNumber"/> are equal.
     /// </summary>
-    public static bool operator ==(OrganisationNumber left, OrganisationNumber right) => left.Equals(right);
+    public static bool operator ==(OrganizationNumber left, OrganizationNumber right) => left.Equals(right);
 
     /// <summary>
-    /// Determines whether two specified instances of <see cref="OrganisationNumber"/> are not equal.
+    /// Determines whether two specified instances of <see cref="OrganizationNumber"/> are not equal.
     /// </summary>
-    public static bool operator !=(OrganisationNumber left, OrganisationNumber right) => !left.Equals(right);
+    public static bool operator !=(OrganizationNumber left, OrganizationNumber right) => !left.Equals(right);
 
     /// <summary>
-    /// Determines whether the specified <see cref="OrganisationNumber"/> is equal to the specified <see cref="string"/>.
+    /// Determines whether the specified <see cref="OrganizationNumber"/> is equal to the specified <see cref="string"/>.
     /// </summary>
-    public static bool operator ==(OrganisationNumber left, string right) => left.Equals(right);
+    public static bool operator ==(OrganizationNumber left, string right) => left.Equals(right);
 
     /// <summary>
-    /// Determines whether the specified <see cref="OrganisationNumber"/> is not equal to the specified <see cref="string"/>.
+    /// Determines whether the specified <see cref="OrganizationNumber"/> is not equal to the specified <see cref="string"/>.
     /// </summary>
-    public static bool operator !=(OrganisationNumber left, string right) => !left.Equals(right);
+    public static bool operator !=(OrganizationNumber left, string right) => !left.Equals(right);
 
     /// <summary>
-    /// Determines whether the specified <see cref="string"/> is equal to the specified <see cref="OrganisationNumber"/>.
+    /// Determines whether the specified <see cref="string"/> is equal to the specified <see cref="OrganizationNumber"/>.
     /// </summary>
-    public static bool operator ==(string left, OrganisationNumber right) => right.Equals(left);
+    public static bool operator ==(string left, OrganizationNumber right) => right.Equals(left);
 
     /// <summary>
-    /// Determines whether the specified <see cref="string"/> is not equal to the specified <see cref="OrganisationNumber"/>.
+    /// Determines whether the specified <see cref="string"/> is not equal to the specified <see cref="OrganizationNumber"/>.
     /// </summary>
-    public static bool operator !=(string left, OrganisationNumber right) => !right.Equals(left);
+    public static bool operator !=(string left, OrganizationNumber right) => !right.Equals(left);
 
     /// <summary>
-    /// Implicit conversion from <see cref="OrganisationNumber"/> to string.
+    /// Implicit conversion from <see cref="OrganizationNumber"/> to string.
     /// </summary>
-    /// <param name="organisationNumber">The organisation number instance</param>
-    public static implicit operator string(OrganisationNumber organisationNumber)
+    /// <param name="organizationNumber">The Organization number instance</param>
+    public static implicit operator string(OrganizationNumber organizationNumber)
     {
-        return organisationNumber._local;
+        return organizationNumber._local;
     }
 }

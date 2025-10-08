@@ -180,7 +180,7 @@ public sealed class ProcessEngineTest
             Authenticated.SystemUser auth => new()
             {
                 SystemUserId = auth.SystemUserId[0],
-                SystemUserOwnerOrgNo = auth.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
+                SystemUserOwnerOrgNo = auth.SystemUserOrgNr.Get(OrganizationNumberFormat.Local),
                 AuthenticationLevel = auth.AuthenticationLevel,
             },
             _ => throw new NotImplementedException(),

@@ -13,7 +13,7 @@ public class CorrespondenceBuilderTests
     public void Build_WithOnlyRequiredProperties_ShouldReturnValidCorrespondence()
     {
         // Arrange
-        OrganisationNumber sender = TestHelpers.GetOrganisationNumber(1);
+        OrganizationNumber sender = TestHelpers.GetOrganisationNumber(1);
         IReadOnlyList<OrganisationOrPersonIdentifier> recipients =
         [
             OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
@@ -353,16 +353,16 @@ public class CorrespondenceBuilderTests
             .WithIsConfirmationNeeded(true);
 
         builder.WithResourceId("resourceId-2");
-        builder.WithSender(TestHelpers.GetOrganisationNumber(2).Get(OrganisationNumberFormat.Local));
+        builder.WithSender(TestHelpers.GetOrganisationNumber(2).Get(OrganizationNumberFormat.Local));
         builder.WithSendersReference("sender-reference-2");
-        builder.WithRecipient(TestHelpers.GetOrganisationNumber(2).Get(OrganisationNumberFormat.International));
+        builder.WithRecipient(TestHelpers.GetOrganisationNumber(2).Get(OrganizationNumberFormat.International));
         builder.WithRecipient(TestHelpers.GetOrganisationNumber(3));
         builder.WithRecipients(
             [OrganisationOrPersonIdentifier.Parse(orgParty), OrganisationOrPersonIdentifier.Parse(personParty)]
         );
         builder.WithRecipients(
             [
-                TestHelpers.GetOrganisationNumber(6).Get(OrganisationNumberFormat.Local),
+                TestHelpers.GetOrganisationNumber(6).Get(OrganizationNumberFormat.Local),
                 TestHelpers.GetNationalIdentityNumber(7).Value,
             ]
         );

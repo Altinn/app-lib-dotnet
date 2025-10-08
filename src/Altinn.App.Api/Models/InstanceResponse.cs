@@ -111,7 +111,7 @@ public sealed class InstanceResponse
             {
                 PartyId = instance.InstanceOwner.PartyId,
                 PersonNumber = instance.InstanceOwner.PersonNumber,
-                OrganisationNumber = instance.InstanceOwner.OrganisationNumber,
+                OrganizationNumber = instance.InstanceOwner.OrganisationNumber,
                 Username = instance.InstanceOwner.Username,
                 Party = PartyResponse.From(instanceOwnerParty),
             },
@@ -152,7 +152,7 @@ public sealed class InstanceOwnerResponse
     /// <summary>
     /// The organisation number of the party. Null if the party is not an organisation.
     /// </summary>
-    public required string OrganisationNumber { get; init; }
+    public required string OrganizationNumber { get; init; }
 
     /// <summary>
     /// The username of the party. Null if the party is not self identified.

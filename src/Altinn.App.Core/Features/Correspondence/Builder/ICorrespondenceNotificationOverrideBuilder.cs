@@ -24,7 +24,7 @@ public interface ICorrespondenceNotificationOverrideBuilder
     [Obsolete(
         "This method is deprecated and will be removed in a future version. Use WithOrganizationNumber/WithNationalIdentityNumber/WithEmailAddress/WithMobileNumber instead."
     )]
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(OrganisationNumber organizationNumber);
+    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(OrganizationNumber organizationNumber);
 
     /// <summary>
     /// Sets the recipient to override for the correspondence notification.
@@ -62,7 +62,7 @@ public interface ICorrespondenceNotificationOverrideBuilder
     /// Sets the organization number override for the recipient.
     /// </summary>
     /// <param name="organizationNumber">The organization number to override</param>
-    public ICorrespondenceNotificationOverrideBuilder WithOrganizationNumber(OrganisationNumber? organizationNumber);
+    public ICorrespondenceNotificationOverrideBuilder WithOrganizationNumber(OrganizationNumber? organizationNumber);
 
     /// <summary>
     /// Sets the national identity number override for the recipient.

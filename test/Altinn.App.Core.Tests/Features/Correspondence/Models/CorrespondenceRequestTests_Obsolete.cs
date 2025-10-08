@@ -224,7 +224,7 @@ public class CorrespondenceRequestTests_Obsolete
     {
         return value switch
         {
-            OrganisationNumber org => org.ToUrnFormattedString(),
+            OrganizationNumber org => org.ToUrnFormattedString(),
             NationalIdentityNumber person => person.ToUrnFormattedString(),
             OrganisationOrPersonIdentifier orgOrPerson => orgOrPerson.ToUrnFormattedString(),
             DateTime dateTime => MultipartCorrespondenceItem.NormaliseDateTime(dateTime).ToString("O"),

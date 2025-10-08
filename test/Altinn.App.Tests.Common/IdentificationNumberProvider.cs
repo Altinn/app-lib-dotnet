@@ -4,18 +4,18 @@ namespace Altinn.App.Tests.Common;
 
 public static class IdentificationNumberProvider
 {
-    public static class OrganisationNumbers
+    public static class OrganizationNumbers
     {
-        public static OrganisationNumber GetValidNumber(int index)
+        public static OrganizationNumber GetValidNumber(int index)
         {
             var i = index % ValidOrganisationNumbers.Length;
-            return OrganisationNumber.Parse(ValidOrganisationNumbers[i]);
+            return OrganizationNumber.Parse(ValidOrganisationNumbers[i]);
         }
 
-        public static OrganisationNumber GetInvalidNumber(int index)
+        public static OrganizationNumber GetInvalidNumber(int index)
         {
             var i = index % InvalidOrganisationNumbers.Length;
-            return OrganisationNumber.Parse(InvalidOrganisationNumbers[i]);
+            return OrganizationNumber.Parse(InvalidOrganisationNumbers[i]);
         }
 
         internal static readonly string[] ValidOrganisationNumbers =

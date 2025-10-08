@@ -4,14 +4,14 @@ using FluentAssertions;
 
 namespace Altinn.App.Core.Tests.Models;
 
-public class OrganisationNumberTests
+public class OrganizationNumberTests
 {
     private static readonly string[] _validOrganisationNumbers = IdentificationNumberProvider
-        .OrganisationNumbers
+        .OrganizationNumbers
         .ValidOrganisationNumbers;
 
     private static readonly string[] _invalidOrganisationNumbers = IdentificationNumberProvider
-        .OrganisationNumbers
+        .OrganizationNumbers
         .InvalidOrganisationNumbers;
 
     [Fact]
@@ -19,9 +19,9 @@ public class OrganisationNumberTests
     {
         foreach (var validOrgNumber in _validOrganisationNumbers)
         {
-            var orgNumber = OrganisationNumber.Parse(validOrgNumber);
-            var orgNumberLocal = orgNumber.Get(OrganisationNumberFormat.Local);
-            var orgNumberInternational = orgNumber.Get(OrganisationNumberFormat.International);
+            var orgNumber = OrganizationNumber.Parse(validOrgNumber);
+            var orgNumberLocal = orgNumber.Get(OrganizationNumberFormat.Local);
+            var orgNumberInternational = orgNumber.Get(OrganizationNumberFormat.International);
 
             orgNumberLocal.Should().Be(validOrgNumber);
             orgNumberInternational.Should().Be($"0192:{validOrgNumber}");
@@ -33,7 +33,7 @@ public class OrganisationNumberTests
     {
         foreach (var invalidOrgNumber in _invalidOrganisationNumbers)
         {
-            Action act = () => OrganisationNumber.Parse(invalidOrgNumber);
+            Action act = () => OrganizationNumber.Parse(invalidOrgNumber);
             act.Should().Throw<FormatException>();
         }
     }
@@ -44,8 +44,8 @@ public class OrganisationNumberTests
         // Arrange
         var stringValueLocal = _validOrganisationNumbers[0];
         var stringValueInternational = $"0192:{stringValueLocal}";
-        var number1 = OrganisationNumber.Parse(stringValueLocal);
-        var number2 = OrganisationNumber.Parse(stringValueLocal);
+        var number1 = OrganizationNumber.Parse(stringValueLocal);
+        var number2 = OrganizationNumber.Parse(stringValueLocal);
 
         // Act
         bool result1 = number1.Equals(number2);
@@ -84,8 +84,8 @@ public class OrganisationNumberTests
         // Arrange
         var stringValue1 = _validOrganisationNumbers[0];
         var stringValue2 = _validOrganisationNumbers[1];
-        var number1 = OrganisationNumber.Parse(stringValue1);
-        var number2 = OrganisationNumber.Parse(stringValue2);
+        var number1 = OrganizationNumber.Parse(stringValue1);
+        var number2 = OrganizationNumber.Parse(stringValue2);
 
         // Act
         bool result1 = number1.Equals(number2);
@@ -109,7 +109,7 @@ public class OrganisationNumberTests
     {
         // Arrange
         var rawLocal = _validOrganisationNumbers[0];
-        var number = OrganisationNumber.Parse(rawLocal);
+        var number = OrganizationNumber.Parse(rawLocal);
 
         // Act
         var stringified1 = number.ToString();

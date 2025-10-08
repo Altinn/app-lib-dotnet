@@ -154,7 +154,7 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
             UserId = 123.ToString(),
             SystemUserId = null,
             PersonNumber = "11854995997",
-            OrganisationNumber = null,
+            OrganizationNumber = null,
         };
 
         List<DataElementSignature> dataElementSignatures =

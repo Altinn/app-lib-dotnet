@@ -460,12 +460,12 @@ public abstract class Authenticated
         /// <summary>
         /// Organisation number of the system user
         /// </summary>
-        public OrganisationNumber SystemUserOrgNr { get; }
+        public OrganizationNumber SystemUserOrgNr { get; }
 
         /// <summary>
         /// Organisation number of the supplier system
         /// </summary>
-        public OrganisationNumber SupplierOrgNr { get; }
+        public OrganizationNumber SupplierOrgNr { get; }
 
         /// <summary>
         /// System ID
@@ -487,8 +487,8 @@ public abstract class Authenticated
 
         internal SystemUser(
             IReadOnlyList<Guid> systemUserId,
-            OrganisationNumber systemUserOrgNr,
-            OrganisationNumber supplierOrgNr,
+            OrganizationNumber systemUserOrgNr,
+            OrganizationNumber supplierOrgNr,
             string systemId,
             int? authenticationLevel,
             string? authenticationMethod,
@@ -521,7 +521,7 @@ public abstract class Authenticated
         /// <returns>Details</returns>
         public async Task<Details> LoadDetails()
         {
-            var party = await _lookupParty(SystemUserOrgNr.Get(OrganisationNumberFormat.Local));
+            var party = await _lookupParty(SystemUserOrgNr.Get(OrganizationNumberFormat.Local));
 
             var canInstantiate = InstantiationHelper.IsPartyAllowedToInstantiate(party, _appMetadata.PartyTypesAllowed);
 
@@ -976,11 +976,11 @@ public abstract class Authenticated
             throw new AuthenticationContextException(
                 $"Unsupported organisation authority in systemuser token: {systemUser.SystemUserOrg.Authority}"
             );
-        if (!OrganisationNumber.TryParse(systemUser.SystemUserOrg.Id, out var orgNr))
+        if (!OrganizationNumber.TryParse(systemUser.SystemUserOrg.Id, out var orgNr))
             throw new AuthenticationContextException(
                 $"Invalid system user organisation number in system user token: {systemUser.SystemUserOrg.Id}"
             );
-        if (!OrganisationNumber.TryParse(context.ConsumerClaimValue?.Id, out var supplierOrgNr))
+        if (!OrganizationNumber.TryParse(context.ConsumerClaimValue?.Id, out var supplierOrgNr))
             throw new AuthenticationContextException(
                 $"Invalid organisation number in supplier organisation number claim for system user token: {context.ConsumerClaimValue?.Id}"
             );

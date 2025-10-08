@@ -27,8 +27,8 @@ public class SigningCallToActionServiceTests(ITestOutputHelper output)
         new GeneralSettings()
     );
 
-    private static OrganisationNumber GetOrgNumber(int index) =>
-        IdentificationNumberProvider.OrganisationNumbers.GetValidNumber(index);
+    private static OrganizationNumber GetOrgNumber(int index) =>
+        IdentificationNumberProvider.OrganizationNumbers.GetValidNumber(index);
 
     private static NationalIdentityNumber GetSsn(int index) =>
         IdentificationNumberProvider.NationalIdentityNumbers.GetValidNumber(index);

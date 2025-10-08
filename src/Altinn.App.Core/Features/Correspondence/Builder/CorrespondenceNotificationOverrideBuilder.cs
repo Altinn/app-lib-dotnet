@@ -12,7 +12,7 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     private string? _emailAddress;
     private string? _mobileNumber;
     private NationalIdentityNumber? _nationalIdentityNumber;
-    private OrganisationNumber? _organizationNumber;
+    private OrganizationNumber? _organizationNumber;
 
     private CorrespondenceNotificationOverrideBuilder() { }
 
@@ -46,7 +46,7 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationOverrideBuilder WithOrganizationNumber(OrganisationNumber? organizationNumber)
+    public ICorrespondenceNotificationOverrideBuilder WithOrganizationNumber(OrganizationNumber? organizationNumber)
     {
         _organizationNumber = organizationNumber;
         return this;
@@ -107,7 +107,7 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     [Obsolete(
         "This method is deprecated and will be removed in a future version. Use WithOrganizationNumber/WithNationalIdentityNumber/WithEmailAddress/WithMobileNumber instead."
     )]
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(OrganisationNumber organizationNumber)
+    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(OrganizationNumber organizationNumber)
     {
         return WithOrganizationNumber(organizationNumber);
     }

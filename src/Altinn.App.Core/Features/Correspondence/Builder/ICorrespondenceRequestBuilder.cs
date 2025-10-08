@@ -24,7 +24,7 @@ public interface ICorrespondenceRequestBuilderSender
     /// Sets the sender of the correspondence.
     /// </summary>
     /// <param name="sender">The correspondence sender</param>
-    ICorrespondenceRequestBuilderSendersReference WithSender(OrganisationNumber sender);
+    ICorrespondenceRequestBuilderSendersReference WithSender(OrganizationNumber sender);
 
     /// <summary>
     /// Sets the sender of the correspondence.
@@ -61,8 +61,8 @@ public interface ICorrespondenceRequestBuilderRecipients
     /// <p>Adds a recipient to the correspondence.</p>
     /// <p>This method respects any existing options already stored in <see cref="CorrespondenceRequest.Recipients"/>.</p>
     /// </summary>
-    /// <param name="organisation">A recipient</param>
-    ICorrespondenceRequestBuilderContent WithRecipient(OrganisationNumber organisation);
+    /// <param name="organization">A recipient</param>
+    ICorrespondenceRequestBuilderContent WithRecipient(OrganizationNumber organization);
 
     /// <summary>
     /// <p>Adds a recipient to the correspondence.</p>

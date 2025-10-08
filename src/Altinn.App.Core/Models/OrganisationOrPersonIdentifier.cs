@@ -11,7 +11,7 @@ namespace Altinn.App.Core.Models;
 [JsonConverter(typeof(OrganisationOrPersonIdentifierJsonConverter))]
 public abstract record OrganisationOrPersonIdentifier
 {
-    private const string OrgUrnPrefix = $"{AltinnUrns.OrganisationNumber}:";
+    private const string OrgUrnPrefix = $"{AltinnUrns.OrganizationNumber}:";
     private const string PersonUrnPrefix = $"{AltinnUrns.PersonId}:";
 
     /// <summary>
@@ -22,26 +22,26 @@ public abstract record OrganisationOrPersonIdentifier
     /// <summary>
     /// Represents an organisation.
     /// </summary>
-    /// <param name="Value">The <see cref="OrganisationNumber"/></param>
-    public sealed record Organisation(OrganisationNumber Value) : OrganisationOrPersonIdentifier
+    /// <param name="Value">The <see cref="OrganizationNumber"/></param>
+    public sealed record Organisation(OrganizationNumber Value) : OrganisationOrPersonIdentifier
     {
-        /// <inheritdoc cref="OrganisationNumber.ToString"/>
+        /// <inheritdoc cref="OrganizationNumber.ToString"/>
         public override string ToString() => Value.ToString();
 
         /// <summary>
-        /// Returns a string representation of the <see cref="OrganisationNumber"/>, prefixed with the <see cref="AltinnUrns.OrganisationNumber"/> URN value
+        /// Returns a string representation of the <see cref="OrganizationNumber"/>, prefixed with the <see cref="AltinnUrns.OrganizationNumber"/> URN value
         /// </summary>
         public override string ToUrnFormattedString() => Value.ToUrnFormattedString();
 
         /// <summary>
-        /// Returns the underlying <see cref="OrganisationNumber"/> object.
+        /// Returns the underlying <see cref="OrganizationNumber"/> object.
         /// </summary>
-        public OrganisationNumber ToOrganisationNumber() => Value;
+        public OrganizationNumber ToOrganisationNumber() => Value;
 
         /// <summary>
-        /// Returns the underlying <see cref="OrganisationNumber"/> object.
+        /// Returns the underlying <see cref="OrganizationNumber"/> object.
         /// </summary>
-        public static implicit operator OrganisationNumber(Organisation org) => org.ToOrganisationNumber();
+        public static implicit operator OrganizationNumber(Organisation org) => org.ToOrganisationNumber();
     }
 
     /// <summary>
@@ -73,7 +73,7 @@ public abstract record OrganisationOrPersonIdentifier
     /// Creates a new instance of <see cref="Organisation"/>.
     /// </summary>
     /// <param name="value">The organisation number</param>
-    public static Organisation Create(OrganisationNumber value)
+    public static Organisation Create(OrganizationNumber value)
     {
         return new Organisation(value);
     }
@@ -99,7 +99,7 @@ public abstract record OrganisationOrPersonIdentifier
     }
 
     /// <summary>
-    /// Attempts to parse a string containing either an <see cref="OrganisationNumber"/> or a <see cref="NationalIdentityNumber"/>.
+    /// Attempts to parse a string containing either an <see cref="OrganizationNumber"/> or a <see cref="NationalIdentityNumber"/>.
     /// </summary>
     /// <param name="value">The string to parse</param>
     /// <exception cref="FormatException">The supplied string is not a valid format for either type</exception>
@@ -110,7 +110,7 @@ public abstract record OrganisationOrPersonIdentifier
         // Value has come in padded with urn:altinn:organization:identifier-no
         if (value.StartsWith(OrgUrnPrefix, StringComparison.OrdinalIgnoreCase))
         {
-            return Create(OrganisationNumber.Parse(value[OrgUrnPrefix.Length..]));
+            return Create(OrganizationNumber.Parse(value[OrgUrnPrefix.Length..]));
         }
 
         // Value has come in padded with urn:altinn:person:identifier-no
@@ -120,7 +120,7 @@ public abstract record OrganisationOrPersonIdentifier
         }
 
         // Value could be anything, trying OrganisationNumber
-        if (OrganisationNumber.TryParse(value, out var organisationNumber))
+        if (OrganizationNumber.TryParse(value, out var organisationNumber))
         {
             return Create(organisationNumber);
         }
@@ -137,26 +137,26 @@ public abstract record OrganisationOrPersonIdentifier
     }
 
     /// <summary>
-    /// Determines if a given <see cref="OrganisationOrPersonIdentifier"/> is equal to an <see cref="OrganisationNumber"/>.
+    /// Determines if a given <see cref="OrganisationOrPersonIdentifier"/> is equal to an <see cref="OrganizationNumber"/>.
     /// </summary>
-    public static bool operator ==(OrganisationNumber left, OrganisationOrPersonIdentifier right) =>
+    public static bool operator ==(OrganizationNumber left, OrganisationOrPersonIdentifier right) =>
         right is Organisation organisation && left == organisation.Value;
 
     /// <summary>
-    /// Determines if a given <see cref="OrganisationOrPersonIdentifier"/> is not equal to an <see cref="OrganisationNumber"/>.
+    /// Determines if a given <see cref="OrganisationOrPersonIdentifier"/> is not equal to an <see cref="OrganizationNumber"/>.
     /// </summary>
-    public static bool operator !=(OrganisationNumber left, OrganisationOrPersonIdentifier right) => !(left == right);
+    public static bool operator !=(OrganizationNumber left, OrganisationOrPersonIdentifier right) => !(left == right);
 
     /// <summary>
-    /// Determines if a given <see cref="OrganisationOrPersonIdentifier"/> is equal to an <see cref="OrganisationNumber"/>.
+    /// Determines if a given <see cref="OrganisationOrPersonIdentifier"/> is equal to an <see cref="OrganizationNumber"/>.
     /// </summary>
-    public static bool operator ==(OrganisationOrPersonIdentifier left, OrganisationNumber right) =>
+    public static bool operator ==(OrganisationOrPersonIdentifier left, OrganizationNumber right) =>
         left is Organisation organisation && right == organisation.Value;
 
     /// <summary>
-    /// Determines if a given <see cref="OrganisationOrPersonIdentifier"/> is not equal to an <see cref="OrganisationNumber"/>.
+    /// Determines if a given <see cref="OrganisationOrPersonIdentifier"/> is not equal to an <see cref="OrganizationNumber"/>.
     /// </summary>
-    public static bool operator !=(OrganisationOrPersonIdentifier left, OrganisationNumber right) => !(left == right);
+    public static bool operator !=(OrganisationOrPersonIdentifier left, OrganizationNumber right) => !(left == right);
 
     /// <summary>
     /// Determines if a given <see cref="OrganisationOrPersonIdentifier"/> is equal to an <see cref="NationalIdentityNumber"/>.
@@ -183,9 +183,9 @@ public abstract record OrganisationOrPersonIdentifier
         !(left == right);
 
     /// <summary>
-    /// Creates a new instance of <see cref="Organisation"/> from the given <see cref="OrganisationNumber"/>.
+    /// Creates a new instance of <see cref="Organisation"/> from the given <see cref="OrganizationNumber"/>.
     /// </summary>
-    public static implicit operator OrganisationOrPersonIdentifier(OrganisationNumber org) => Create(org);
+    public static implicit operator OrganisationOrPersonIdentifier(OrganizationNumber org) => Create(org);
 
     /// <summary>
     /// Creates a new instance of <see cref="Person"/> from the given <see cref="NationalIdentityNumber"/>.

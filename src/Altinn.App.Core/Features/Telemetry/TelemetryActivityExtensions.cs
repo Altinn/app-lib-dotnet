@@ -262,7 +262,7 @@ public static class TelemetryActivityExtensions
     {
         if (!string.IsNullOrWhiteSpace(organisationNumber))
         {
-            activity.SetTag(Labels.OrganisationNumber, organisationNumber);
+            activity.SetTag(Labels.OrganizationNumber, organisationNumber);
         }
 
         return activity;
@@ -395,7 +395,7 @@ public static class TelemetryActivityExtensions
                 if (auth.SystemUserId is [var systemUserId, ..])
                     activity.SetTag(Labels.OrganisationSystemUserId, systemUserId);
 
-                activity.SetOrganisationNumber(auth.SystemUserOrgNr.Get(OrganisationNumberFormat.Local));
+                activity.SetOrganisationNumber(auth.SystemUserOrgNr.Get(OrganizationNumberFormat.Local));
                 activity.SetAuthenticationLevel(auth.AuthenticationLevel);
                 activity.SetAuthenticationMethod(auth.AuthenticationMethod);
                 break;

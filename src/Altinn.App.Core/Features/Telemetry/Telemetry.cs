@@ -206,7 +206,7 @@ public sealed partial class Telemetry : IDisposable
         /// <summary>
         /// Label for the organisation number.
         /// </summary>
-        public const string OrganisationNumber = "organisation.number";
+        public const string OrganizationNumber = "organisation.number";
 
         /// <summary>
         /// Label for the ID of the system user.

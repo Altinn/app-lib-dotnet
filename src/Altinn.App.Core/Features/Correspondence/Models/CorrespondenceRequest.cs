@@ -230,7 +230,7 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     /// <summary>
     /// The sending organisation of the correspondence.
     /// </summary>
-    public required OrganisationNumber Sender { get; init; }
+    public required OrganizationNumber Sender { get; init; }
 
     /// <summary>
     /// A reference value given to the message by the creator.

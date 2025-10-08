@@ -9,7 +9,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
 {
     private string? _resourceId;
-    private OrganisationNumber? _sender;
+    private OrganizationNumber? _sender;
     private string? _sendersReference;
     private CorrespondenceContent? _content;
     private List<CorrespondenceAttachment>? _contentAttachments;
@@ -42,7 +42,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderSendersReference WithSender(OrganisationNumber sender)
+    public ICorrespondenceRequestBuilderSendersReference WithSender(OrganizationNumber sender)
     {
         BuilderUtils.NotNullOrEmpty(sender, "Sender cannot be empty");
         _sender = sender;
@@ -53,7 +53,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     public ICorrespondenceRequestBuilderSendersReference WithSender(string sender)
     {
         BuilderUtils.NotNullOrEmpty(sender, "Sender cannot be empty");
-        _sender = OrganisationNumber.Parse(sender);
+        _sender = OrganizationNumber.Parse(sender);
         return this;
     }
 
@@ -73,10 +73,10 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderContent WithRecipient(OrganisationNumber organisation)
+    public ICorrespondenceRequestBuilderContent WithRecipient(OrganizationNumber organization)
     {
-        BuilderUtils.NotNullOrEmpty(organisation, "Recipients cannot be empty");
-        return WithRecipients([OrganisationOrPersonIdentifier.Create(organisation)]);
+        BuilderUtils.NotNullOrEmpty(organization, "Recipients cannot be empty");
+        return WithRecipients([OrganisationOrPersonIdentifier.Create(organization)]);
     }
 
     /// <inheritdoc/>

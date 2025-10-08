@@ -293,14 +293,14 @@ internal class SigningUserAction : IUserAction
                 {
                     UserId = userProfile.UserId.ToString(CultureInfo.InvariantCulture),
                     PersonNumber = userProfile.Party.SSN,
-                    OrganisationNumber = context.OnBehalfOf,
+                    OrganizationNumber = context.OnBehalfOf,
                 };
             }
             case Authenticated.SystemUser systemUser:
                 return new Signee
                 {
                     SystemUserId = systemUser.SystemUserId[0],
-                    OrganisationNumber = context.OnBehalfOf,
+                    OrganizationNumber = context.OnBehalfOf,
                 };
             default:
                 throw new SigningException("Could not get signee");

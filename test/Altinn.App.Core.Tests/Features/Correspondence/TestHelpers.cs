@@ -8,8 +8,8 @@ namespace Altinn.App.Core.Tests.Features.Correspondence;
 
 public static class TestHelpers
 {
-    public static OrganisationNumber GetOrganisationNumber(int index) =>
-        IdentificationNumberProvider.OrganisationNumbers.GetValidNumber(index);
+    public static OrganizationNumber GetOrganisationNumber(int index) =>
+        IdentificationNumberProvider.OrganizationNumbers.GetValidNumber(index);
 
     public static NationalIdentityNumber GetNationalIdentityNumber(int index) =>
         IdentificationNumberProvider.NationalIdentityNumbers.GetValidNumber(index);

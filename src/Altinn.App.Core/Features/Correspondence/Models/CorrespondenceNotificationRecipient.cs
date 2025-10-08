@@ -21,7 +21,7 @@ public sealed record CorrespondenceNotificationRecipient : MultipartCorresponden
     /// <summary>
     /// The organization number of the recipient.
     /// </summary>
-    public OrganisationNumber? OrganizationNumber { get; init; }
+    public OrganizationNumber? OrganizationNumber { get; init; }
 
     /// <summary>
     /// The national identity number of the recipient.
