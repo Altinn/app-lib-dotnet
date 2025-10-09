@@ -55,6 +55,14 @@ public class DataClientTests
         ];
 
     [Theory]
+    [InlineData(true, "tina")]
+    [InlineData(false, "daniel")]
+    public void Test(bool a, string b)
+    {
+        Assert.True(a);
+    }
+
+    [Theory]
     [MemberData(nameof(AuthenticationTestCases))]
     public async Task InsertBinaryData_MethodProduceValidPlatformRequest(AuthenticationTestCase? testCase)
     {
