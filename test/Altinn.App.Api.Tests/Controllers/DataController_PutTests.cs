@@ -7,6 +7,8 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -229,10 +231,19 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
     }
 
     [Theory]
-    [InlineData("number-not-string", """{"melding":{"name": 123}}""")]
-    [InlineData("invalid-json", """ d{"melding":{}}""")]
-    [InlineData("missing-end-bracket", """{"melding":{"name": "Ola Olsen", "not-found": [}}""")]
-    public async Task PutDataElement_InvalidData_ReturnsBadRequest(string name, string json)
+    [InlineData(
+        """{"melding":{"name": 123}}""",
+        "The JSON value could not be converted to System.String. Path: $.melding.name | LineNumber: 0 | BytePositionInLine: 23."
+    )]
+    [InlineData(
+        """ d{"melding":{}}""",
+        "'d' is an invalid start of a value. Path: $ | LineNumber: 0 | BytePositionInLine: 1."
+    )]
+    [InlineData(
+        """{"melding":{"name": "Ola Olsen", "not-found": [}}""",
+        "'}' is an invalid start of a value. Path: $.melding.not-found | LineNumber: 0 | BytePositionInLine: 47."
+    )]
+    public async Task PutDataElement_InvalidData_ReturnsBadRequest(string json, string expectedDescription)
     {
         // Setup test data
         string org = "tdd";
@@ -263,10 +274,21 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         var responseText = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(responseText);
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        responseText.Should().Contain("Failed to deserialize JSON");
+        var telemetrySnapshot = await GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 0);
+        var responseObject = System.Text.Json.JsonSerializer.Deserialize<ProblemDetails>(responseText);
+        Assert.Equal("Failed to deserialize JSON", responseObject?.Title);
+        Assert.Equal(expectedDescription, responseObject?.Detail);
+        Assert.Equal(StatusCodes.Status400BadRequest, responseObject?.Status);
 
-        var snapshot = await GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 0);
-        await Verify(new { Respons = responseText, Snapshot = snapshot }).UseParameters(name);
+        telemetrySnapshot
+            .Activities.Should()
+            .ContainSingle(a => a.Name == "SerializationService.DeserializeJson")
+            .Which.Events.Should()
+            .ContainSingle(e => e.Name == "exception")
+            .Which.Tags.Should()
+            .ContainSingle(t => t.Key == "exception.type")
+            .Which.Value.Should()
+            .Be("System.Text.Json.JsonException");
 
         TestData.DeleteInstanceAndData(org, app, instanceOwnerPartyId, instanceId);
     }
