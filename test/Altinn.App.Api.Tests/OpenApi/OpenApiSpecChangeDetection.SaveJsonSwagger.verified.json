@@ -8268,7 +8268,7 @@
           },
           "organisationNumber": {
             "type": "string",
-            "description": "The organisation number of the party. Null if the party is not an organisation.",
+            "description": "The Organisatio number of the party. Null if the party is not an organization.",
             "nullable": true
           },
           "username": {
@@ -8320,7 +8320,7 @@
           },
           "org": {
             "type": "string",
-            "description": "Application owner identifier, usually a abbreviation of organisation name. All in lower case.",
+            "description": "Application owner identifier, usually a abbreviation of organization name. All in lower case.",
             "nullable": true
           },
           "selfLinks": {
@@ -8951,7 +8951,7 @@
           },
           "orgNumber": {
             "type": "string",
-            "description": "The organisation number of the party. Null if the party is not an organisation.",
+            "description": "The organization number of the party. Null if the party is not an organization.",
             "nullable": true
           },
           "unitType": {
@@ -9065,7 +9065,7 @@
       "PayerCompany": {
         "type": "object",
         "properties": {
-          "organisationNumber": {
+          "organizationNumber": {
             "type": "string",
             "nullable": true
           },
@@ -9216,7 +9216,7 @@
       "PaymentReceiver": {
         "type": "object",
         "properties": {
-          "organisationNumber": {
+          "organizationNumber": {
             "type": "string",
             "nullable": true
           },
