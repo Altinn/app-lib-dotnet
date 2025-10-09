@@ -53,15 +53,15 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationOverrideBuilder WithOrganisationOrPersonIdentifier(
-        OrganisationOrPersonIdentifier? organisationOrPersonIdentifier
+    public ICorrespondenceNotificationOverrideBuilder WithOrganizationOrPersonIdentifier(
+        OrganizationOrPersonIdentifier? organisationOrPersonIdentifier
     )
     {
-        if (organisationOrPersonIdentifier is OrganisationOrPersonIdentifier.Organization org)
+        if (organisationOrPersonIdentifier is OrganizationOrPersonIdentifier.Organization org)
         {
             _organizationNumber = org.Value;
         }
-        else if (organisationOrPersonIdentifier is OrganisationOrPersonIdentifier.Person person)
+        else if (organisationOrPersonIdentifier is OrganizationOrPersonIdentifier.Person person)
         {
             _nationalIdentityNumber = person.Value;
         }
@@ -74,11 +74,11 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     )]
     public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(string identifierAsString)
     {
-        OrganisationOrPersonIdentifier identifier;
+        OrganizationOrPersonIdentifier identifier;
 
         try
         {
-            identifier = OrganisationOrPersonIdentifier.Parse(identifierAsString);
+            identifier = OrganizationOrPersonIdentifier.Parse(identifierAsString);
         }
         catch (FormatException ex)
         {
@@ -91,10 +91,10 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
 
         return identifier switch
         {
-            OrganisationOrPersonIdentifier.Organization organizationNumber => WithOrganizationNumber(
+            OrganizationOrPersonIdentifier.Organization organizationNumber => WithOrganizationNumber(
                 organizationNumber
             ),
-            OrganisationOrPersonIdentifier.Person nathionalIdentityNumber => WithNationalIdentityNumber(
+            OrganizationOrPersonIdentifier.Person nathionalIdentityNumber => WithNationalIdentityNumber(
                 nathionalIdentityNumber
             ),
             _ => throw new CorrespondenceArgumentException(
@@ -125,12 +125,12 @@ public class CorrespondenceNotificationOverrideBuilder : ICorrespondenceNotifica
     [Obsolete(
         "This method is deprecated and will be removed in a future version. Use WithOrganizationNumber/WithNationalIdentityNumber/WithEmailAddress/WithMobileNumber instead."
     )]
-    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(OrganisationOrPersonIdentifier identifier)
+    public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(OrganizationOrPersonIdentifier identifier)
     {
         return identifier switch
         {
-            OrganisationOrPersonIdentifier.Organization org => WithOrganizationNumber(org),
-            OrganisationOrPersonIdentifier.Person person => WithNationalIdentityNumber(person),
+            OrganizationOrPersonIdentifier.Organization org => WithOrganizationNumber(org),
+            OrganizationOrPersonIdentifier.Person person => WithNationalIdentityNumber(person),
             _ => throw new CorrespondenceArgumentException(
                 "Recipient identifier must be either an organization or a person."
             ),

@@ -8,17 +8,17 @@ public static class IdentificationNumberProvider
     {
         public static OrganizationNumber GetValidNumber(int index)
         {
-            var i = index % ValidOrganisationNumbers.Length;
-            return OrganizationNumber.Parse(ValidOrganisationNumbers[i]);
+            var i = index % ValidOrganizationNumbers.Length;
+            return OrganizationNumber.Parse(ValidOrganizationNumbers[i]);
         }
 
         public static OrganizationNumber GetInvalidNumber(int index)
         {
-            var i = index % InvalidOrganisationNumbers.Length;
-            return OrganizationNumber.Parse(InvalidOrganisationNumbers[i]);
+            var i = index % InvalidOrganizationNumbers.Length;
+            return OrganizationNumber.Parse(InvalidOrganizationNumbers[i]);
         }
 
-        internal static readonly string[] ValidOrganisationNumbers =
+        internal static readonly string[] ValidOrganizationNumbers =
         [
             "474103390",
             "593422461",
@@ -46,7 +46,7 @@ public static class IdentificationNumberProvider
             "004430301",
         ];
 
-        internal static readonly string[] InvalidOrganisationNumbers =
+        internal static readonly string[] InvalidOrganizationNumbers =
         [
             "474103392",
             "593422460",

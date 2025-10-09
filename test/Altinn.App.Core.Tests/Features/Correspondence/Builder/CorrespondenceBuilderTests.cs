@@ -13,11 +13,11 @@ public class CorrespondenceBuilderTests
     public void Build_WithOnlyRequiredProperties_ShouldReturnValidCorrespondence()
     {
         // Arrange
-        OrganizationNumber sender = TestHelpers.GetOrganisationNumber(1);
-        IReadOnlyList<OrganisationOrPersonIdentifier> recipients =
+        OrganizationNumber sender = TestHelpers.GetOrganizationNumber(1);
+        IReadOnlyList<OrganizationOrPersonIdentifier> recipients =
         [
-            OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
-            OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(2)),
+            OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1)),
+            OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(2)),
         ];
         string resourceId = "resource-id";
         string sendersReference = "sender-reference";
@@ -53,8 +53,8 @@ public class CorrespondenceBuilderTests
     public void Build_WithAllProperties_ShouldReturnValidCorrespondence()
     {
         // Arrange
-        var sender = TestHelpers.GetOrganisationNumber(1);
-        var recipient = OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(2));
+        var sender = TestHelpers.GetOrganizationNumber(1);
+        var recipient = OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(2));
         var data = new
         {
             sender,
@@ -319,15 +319,15 @@ public class CorrespondenceBuilderTests
     public void Builder_UpdatesAndOverwritesValuesCorrectly()
     {
         // Arrange
-        var orgParty = new Party { OrgNumber = TestHelpers.GetOrganisationNumber(4).ToString() };
+        var orgParty = new Party { OrgNumber = TestHelpers.GetOrganizationNumber(4).ToString() };
         var personParty = new Party { SSN = TestHelpers.GetNationalIdentityNumber(5).ToString() };
 
         var builder = CorrespondenceRequestBuilder
             .Create()
             .WithResourceId("resourceId-1")
-            .WithSender(TestHelpers.GetOrganisationNumber(1))
+            .WithSender(TestHelpers.GetOrganizationNumber(1))
             .WithSendersReference("sender-reference-1")
-            .WithRecipient(OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)))
+            .WithRecipient(OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1)))
             .WithContent(
                 CorrespondenceContentBuilder
                     .Create()
@@ -353,16 +353,16 @@ public class CorrespondenceBuilderTests
             .WithIsConfirmationNeeded(true);
 
         builder.WithResourceId("resourceId-2");
-        builder.WithSender(TestHelpers.GetOrganisationNumber(2).Get(OrganizationNumberFormat.Local));
+        builder.WithSender(TestHelpers.GetOrganizationNumber(2).Get(OrganizationNumberFormat.Local));
         builder.WithSendersReference("sender-reference-2");
-        builder.WithRecipient(TestHelpers.GetOrganisationNumber(2).Get(OrganizationNumberFormat.International));
-        builder.WithRecipient(TestHelpers.GetOrganisationNumber(3));
+        builder.WithRecipient(TestHelpers.GetOrganizationNumber(2).Get(OrganizationNumberFormat.International));
+        builder.WithRecipient(TestHelpers.GetOrganizationNumber(3));
         builder.WithRecipients(
-            [OrganisationOrPersonIdentifier.Parse(orgParty), OrganisationOrPersonIdentifier.Parse(personParty)]
+            [OrganizationOrPersonIdentifier.Parse(orgParty), OrganizationOrPersonIdentifier.Parse(personParty)]
         );
         builder.WithRecipients(
             [
-                TestHelpers.GetOrganisationNumber(6).Get(OrganizationNumberFormat.Local),
+                TestHelpers.GetOrganizationNumber(6).Get(OrganizationNumberFormat.Local),
                 TestHelpers.GetNationalIdentityNumber(7).Value,
             ]
         );
@@ -410,7 +410,7 @@ public class CorrespondenceBuilderTests
         Assert.NotNull(correspondence.Notification);
 
         correspondence.ResourceId.Should().Be("resourceId-2");
-        correspondence.Sender.Should().Be(TestHelpers.GetOrganisationNumber(2));
+        correspondence.Sender.Should().Be(TestHelpers.GetOrganizationNumber(2));
         correspondence.SendersReference.Should().Be("sender-reference-2");
         correspondence.AllowSystemDeleteAfter.Should().BeSameDateAs(DateTimeOffset.UtcNow.AddDays(2));
         correspondence.DueDateTime.Should().BeSameDateAs(DateTimeOffset.UtcNow.AddDays(2));
@@ -420,12 +420,12 @@ public class CorrespondenceBuilderTests
             .Should()
             .BeEquivalentTo(
                 [
-                    TestHelpers.GetOrganisationNumber(1).ToString(),
-                    TestHelpers.GetOrganisationNumber(2).ToString(),
-                    TestHelpers.GetOrganisationNumber(3).ToString(),
-                    TestHelpers.GetOrganisationNumber(4).ToString(),
+                    TestHelpers.GetOrganizationNumber(1).ToString(),
+                    TestHelpers.GetOrganizationNumber(2).ToString(),
+                    TestHelpers.GetOrganizationNumber(3).ToString(),
+                    TestHelpers.GetOrganizationNumber(4).ToString(),
                     TestHelpers.GetNationalIdentityNumber(5).ToString(),
-                    TestHelpers.GetOrganisationNumber(6).ToString(),
+                    TestHelpers.GetOrganizationNumber(6).ToString(),
                     TestHelpers.GetNationalIdentityNumber(7).ToString(),
                 ]
             );
@@ -503,9 +503,9 @@ public class CorrespondenceBuilderTests
         var baseBuilder = CorrespondenceRequestBuilder
             .Create()
             .WithResourceId("resourceId-1")
-            .WithSender(TestHelpers.GetOrganisationNumber(1))
+            .WithSender(TestHelpers.GetOrganizationNumber(1))
             .WithSendersReference("sender-reference-1")
-            .WithRecipient(TestHelpers.GetOrganisationNumber(1))
+            .WithRecipient(TestHelpers.GetOrganizationNumber(1))
             .WithContent(
                 CorrespondenceContentBuilder
                     .Create()

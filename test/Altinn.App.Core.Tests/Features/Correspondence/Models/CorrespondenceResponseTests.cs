@@ -69,8 +69,8 @@ public class CorrespondenceResponseTests
             }
             """;
 
-        var testOrg = OrganisationOrPersonIdentifier.Create(OrganizationNumber.Parse("213872702"));
-        var testPerson = OrganisationOrPersonIdentifier.Create(NationalIdentityNumber.Parse("13896396174"));
+        var testOrg = OrganizationOrPersonIdentifier.Create(OrganizationNumber.Parse("213872702"));
+        var testPerson = OrganizationOrPersonIdentifier.Create(NationalIdentityNumber.Parse("13896396174"));
 
         // Act
         var parsedResponse = JsonSerializer.Deserialize<SendCorrespondenceResponse>(encodedResponse);

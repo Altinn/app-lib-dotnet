@@ -18,7 +18,7 @@ public class CorrespondenceRequestTests_Obsolete
         var correspondence = new CorrespondenceRequest
         {
             ResourceId = "resource-id",
-            Sender = TestHelpers.GetOrganisationNumber(0),
+            Sender = TestHelpers.GetOrganizationNumber(0),
             SendersReference = "senders-reference",
             RequestedPublishTime = DateTimeOffset.UtcNow.AddDays(1),
             AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(2),
@@ -28,8 +28,8 @@ public class CorrespondenceRequestTests_Obsolete
             MessageSender = "message-sender",
             Recipients =
             [
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(1)),
+                OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1)),
+                OrganizationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(1)),
             ],
             Content = new CorrespondenceContent
             {
@@ -107,7 +107,7 @@ public class CorrespondenceRequestTests_Obsolete
                 [
                     new CorrespondenceNotificationRecipientWrapper()
                     {
-                        RecipientToOverride = OrganisationOrPersonIdentifier.Create(
+                        RecipientToOverride = OrganizationOrPersonIdentifier.Create(
                             TestHelpers.GetNationalIdentityNumber(2)
                         ),
                         CorrespondenceNotificationRecipients =
@@ -115,21 +115,21 @@ public class CorrespondenceRequestTests_Obsolete
                             new CorrespondenceNotificationRecipient
                             {
                                 EmailAddress = "email-address-1",
-                                OrganizationNumber = TestHelpers.GetOrganisationNumber(0),
+                                OrganizationNumber = TestHelpers.GetOrganizationNumber(0),
                             },
                             new CorrespondenceNotificationRecipient { MobileNumber = "mobile-number-1" },
                         ],
                     },
                     new CorrespondenceNotificationRecipientWrapper()
                     {
-                        RecipientToOverride = OrganisationOrPersonIdentifier.Create(
-                            TestHelpers.GetOrganisationNumber(1)
+                        RecipientToOverride = OrganizationOrPersonIdentifier.Create(
+                            TestHelpers.GetOrganizationNumber(1)
                         ),
                         CorrespondenceNotificationRecipients =
                         [
                             new CorrespondenceNotificationRecipient
                             {
-                                OrganizationNumber = TestHelpers.GetOrganisationNumber(1),
+                                OrganizationNumber = TestHelpers.GetOrganizationNumber(1),
                             },
                             new CorrespondenceNotificationRecipient
                             {
@@ -226,7 +226,7 @@ public class CorrespondenceRequestTests_Obsolete
         {
             OrganizationNumber org => org.ToUrnFormattedString(),
             NationalIdentityNumber person => person.ToUrnFormattedString(),
-            OrganisationOrPersonIdentifier orgOrPerson => orgOrPerson.ToUrnFormattedString(),
+            OrganizationOrPersonIdentifier orgOrPerson => orgOrPerson.ToUrnFormattedString(),
             DateTime dateTime => MultipartCorrespondenceItem.NormaliseDateTime(dateTime).ToString("O"),
             DateTimeOffset dateTimeOffset => MultipartCorrespondenceItem
                 .NormaliseDateTime(dateTimeOffset)

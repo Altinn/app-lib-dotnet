@@ -12,7 +12,7 @@ public class CorrespondenceNotificationOverrideBuilderTests_Obsolete
     public void WithRecipientToOverride_WithOrganizationNumberString_ShouldSetOrganizationNumber()
     {
         // Arrange
-        var organizationNumber = TestHelpers.GetOrganisationNumber(1);
+        var organizationNumber = TestHelpers.GetOrganizationNumber(1);
         var organizationNumberString = organizationNumber.ToString();
 
         var builder = CorrespondenceNotificationOverrideBuilder
@@ -90,7 +90,7 @@ public class CorrespondenceNotificationOverrideBuilderTests_Obsolete
     public void WithRecipientToOverride_WithOrganizationNumberObject_ShouldSetOrganizationNumber()
     {
         // Arrange
-        var organizationNumber = TestHelpers.GetOrganisationNumber(1);
+        var organizationNumber = TestHelpers.GetOrganizationNumber(1);
 
         var builder = CorrespondenceNotificationOverrideBuilder.Create().WithRecipientToOverride(organizationNumber);
 
@@ -127,15 +127,15 @@ public class CorrespondenceNotificationOverrideBuilderTests_Obsolete
     }
 
     [Fact]
-    public void WithRecipientToOverride_WithOrganisationOrPersonIdentifier_Organisation_ShouldSetOrganizationNumber()
+    public void WithRecipientToOverride_WithOrganizationOrPersonIdentifier_Organization_ShouldSetOrganizationNumber()
     {
         // Arrange
-        var organizationNumber = TestHelpers.GetOrganisationNumber(1);
-        var organisationIdentifier = OrganisationOrPersonIdentifier.Create(organizationNumber);
+        var organizationNumber = TestHelpers.GetOrganizationNumber(1);
+        var organizationIdentifier = OrganizationOrPersonIdentifier.Create(organizationNumber);
 
         var builder = CorrespondenceNotificationOverrideBuilder
             .Create()
-            .WithRecipientToOverride(organisationIdentifier);
+            .WithRecipientToOverride(organizationIdentifier);
 
         // Act
         var recipient = builder.Build();
@@ -149,11 +149,11 @@ public class CorrespondenceNotificationOverrideBuilderTests_Obsolete
     }
 
     [Fact]
-    public void WithRecipientToOverride_WithOrganisationOrPersonIdentifier_Person_ShouldSetNationalIdentityNumber()
+    public void WithRecipientToOverride_WithOrganizationOrPersonIdentifier_Person_ShouldSetNationalIdentityNumber()
     {
         // Arrange
         var nationalIdentityNumber = TestHelpers.GetNationalIdentityNumber(1);
-        var personIdentifier = OrganisationOrPersonIdentifier.Create(nationalIdentityNumber);
+        var personIdentifier = OrganizationOrPersonIdentifier.Create(nationalIdentityNumber);
 
         var builder = CorrespondenceNotificationOverrideBuilder.Create().WithRecipientToOverride(personIdentifier);
 
@@ -175,7 +175,7 @@ public class CorrespondenceNotificationOverrideBuilderTests_Obsolete
         var emailAddress = "test@example.com";
         var mobileNumber = "12345678";
         var nationalIdentityNumber = TestHelpers.GetNationalIdentityNumber(1);
-        var organizationNumber = TestHelpers.GetOrganisationNumber(1);
+        var organizationNumber = TestHelpers.GetOrganizationNumber(1);
 
         var recipients = new List<CorrespondenceNotificationRecipient>
         {
@@ -208,7 +208,7 @@ public class CorrespondenceNotificationOverrideBuilderTests_Obsolete
     public void WithCorrespondenceNotificationRecipients_WithFirstRecipientHavingOnlyOrganizationNumber_ShouldSetOrganizationNumber()
     {
         // Arrange
-        var organizationNumber = TestHelpers.GetOrganisationNumber(1);
+        var organizationNumber = TestHelpers.GetOrganizationNumber(1);
 
         var recipients = new List<CorrespondenceNotificationRecipient>
         {
@@ -320,7 +320,7 @@ public class CorrespondenceNotificationOverrideBuilderTests_Obsolete
     public void ObsoleteMethods_ShouldWorkWithMethodChaining()
     {
         // Arrange
-        var organizationNumber = TestHelpers.GetOrganisationNumber(1);
+        var organizationNumber = TestHelpers.GetOrganizationNumber(1);
         var emailAddress = "chain@example.com";
 
         // Act

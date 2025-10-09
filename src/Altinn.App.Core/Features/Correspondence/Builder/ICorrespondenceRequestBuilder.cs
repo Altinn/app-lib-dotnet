@@ -55,7 +55,7 @@ public interface ICorrespondenceRequestBuilderRecipients
     /// <p>This method respects any existing options already stored in <see cref="CorrespondenceRequest.Recipients"/>.</p>
     /// </summary>
     /// <param name="recipient">A recipient</param>
-    ICorrespondenceRequestBuilderContent WithRecipient(OrganisationOrPersonIdentifier recipient);
+    ICorrespondenceRequestBuilderContent WithRecipient(OrganizationOrPersonIdentifier recipient);
 
     /// <summary>
     /// <p>Adds a recipient to the correspondence.</p>
@@ -83,7 +83,7 @@ public interface ICorrespondenceRequestBuilderRecipients
     /// <p>This method respects any existing options already stored in <see cref="CorrespondenceRequest.Recipients"/>.</p>
     /// </summary>
     /// <param name="recipients">A list of recipients</param>
-    ICorrespondenceRequestBuilderContent WithRecipients(IEnumerable<OrganisationOrPersonIdentifier> recipients);
+    ICorrespondenceRequestBuilderContent WithRecipients(IEnumerable<OrganizationOrPersonIdentifier> recipients);
 
     /// <summary>
     /// <p>Adds recipients to the correspondence.</p>

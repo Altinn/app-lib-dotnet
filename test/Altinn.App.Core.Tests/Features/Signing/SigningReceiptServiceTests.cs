@@ -185,11 +185,11 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
             capturedPayload.CorrespondenceRequest.SendersReference
         );
         Assert.Equal("974760673", capturedPayload.CorrespondenceRequest.Sender.ToString());
-        Assert.IsType<OrganisationOrPersonIdentifier.Person>(capturedPayload.CorrespondenceRequest.Recipients[0]);
+        Assert.IsType<OrganizationOrPersonIdentifier.Person>(capturedPayload.CorrespondenceRequest.Recipients[0]);
         Assert.Equal(
             "11854995997",
             (
-                capturedPayload.CorrespondenceRequest.Recipients[0] as OrganisationOrPersonIdentifier.Person
+                capturedPayload.CorrespondenceRequest.Recipients[0] as OrganizationOrPersonIdentifier.Person
             )!.Value.ToString()
         );
         Assert.Equal("TestAppName: Signeringen er bekreftet", capturedPayload.CorrespondenceRequest.Content.Title);

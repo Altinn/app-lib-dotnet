@@ -4,7 +4,7 @@ using Altinn.App.Core.Models;
 namespace Altinn.App.Core.Features.Correspondence.Models;
 
 /// <summary>
-/// Authorisation properties which are common for all correspondence interaction.
+/// Authorization properties which are common for all correspondence interaction.
 /// </summary>
 public abstract record CorrespondencePayloadBase
 {
@@ -14,7 +14,7 @@ public abstract record CorrespondencePayloadBase
     internal Func<Task<JwtToken>>? AccessTokenFactory { get; init; }
 
     [Obsolete("Replaced by AuthenticationMethod")]
-    internal CorrespondenceAuthorisation? AuthorisationMethod { get; init; }
+    internal CorrespondenceAuthorization? AuthorizationMethod { get; init; }
 
     [Obsolete("Replaced by AuthenticationMethod")]
     internal string RequiredScope => CorrespondenceApiScopes.Write;
@@ -57,12 +57,12 @@ public sealed record SendCorrespondencePayload : CorrespondencePayloadBase
     /// Instantiates a new payload for <see cref="CorrespondenceClient.Send"/>.
     /// </summary>
     /// <param name="request">The correspondence request to send</param>
-    /// <param name="authorisation">The built-in authorisation method to use</param>
+    /// <param name="authorization">The built-in authorisation method to use</param>
     [Obsolete("Use SendCorrespondencePayload(CorrespondenceRequest, CorrespondenceAuthenticationMethod) instead")]
-    public SendCorrespondencePayload(CorrespondenceRequest request, CorrespondenceAuthorisation authorisation)
+    public SendCorrespondencePayload(CorrespondenceRequest request, CorrespondenceAuthorization authorization)
     {
         CorrespondenceRequest = request;
-        AuthorisationMethod = authorisation;
+        AuthorizationMethod = authorization;
     }
 }
 
@@ -103,11 +103,11 @@ public sealed record GetCorrespondenceStatusPayload : CorrespondencePayloadBase
     /// Instantiates a new payload for <see cref="CorrespondenceClient.GetStatus"/>.
     /// </summary>
     /// <param name="correspondenceId">The correspondence identifier to retrieve information about</param>
-    /// <param name="authorisation">The built-in authorisation method to use</param>
+    /// <param name="authorization">The built-in authorisation method to use</param>
     [Obsolete("Use GetCorrespondenceStatusPayload(Guid, CorrespondenceAuthenticationMethod) instead")]
-    public GetCorrespondenceStatusPayload(Guid correspondenceId, CorrespondenceAuthorisation authorisation)
+    public GetCorrespondenceStatusPayload(Guid correspondenceId, CorrespondenceAuthorization authorization)
     {
         CorrespondenceId = correspondenceId;
-        AuthorisationMethod = authorisation;
+        AuthorizationMethod = authorization;
     }
 }

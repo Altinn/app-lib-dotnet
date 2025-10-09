@@ -23,7 +23,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly PlatformSettings _platformSettings;
     private readonly Telemetry? _telemetry;
-    private readonly CorrespondenceAuthorisationFactory _authorisationFactory;
+    private readonly CorrespondenceAuthorizationFactory _authorizationFactory;
     private readonly IAuthenticationTokenResolver _authenticationTokenResolver;
 
     public CorrespondenceClient(
@@ -40,7 +40,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         _platformSettings = platformSettings.Value;
         _telemetry = telemetry;
         _authenticationTokenResolver = authenticationTokenResolver;
-        _authorisationFactory = new CorrespondenceAuthorisationFactory(serviceProvider);
+        _authorizationFactory = new CorrespondenceAuthorizationFactory(serviceProvider);
     }
 
     /// <inheritdoc />
@@ -144,7 +144,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         _logger.LogDebug("Fetching access token via factory");
         JwtToken accessToken = payload.AuthenticationMethod is not null
             ? await _authenticationTokenResolver.GetAccessToken(payload.AuthenticationMethod)
-            : await _authorisationFactory.Resolve(payload);
+            : await _authorizationFactory.Resolve(payload);
 
         _logger.LogDebug("Constructing authorized http request for target uri {TargetEndpoint}", uri);
         HttpRequestMessage request = new(method, uri) { Content = content };

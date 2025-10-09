@@ -15,7 +15,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     private List<CorrespondenceAttachment>? _contentAttachments;
     private DateTimeOffset? _allowSystemDeleteAfter;
     private DateTimeOffset? _dueDateTime;
-    private List<OrganisationOrPersonIdentifier>? _recipients;
+    private List<OrganizationOrPersonIdentifier>? _recipients;
     private DateTimeOffset? _requestedPublishTime;
     private string? _messageSender;
     private List<CorrespondenceExternalReference>? _externalReferences;
@@ -66,7 +66,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderContent WithRecipient(OrganisationOrPersonIdentifier recipient)
+    public ICorrespondenceRequestBuilderContent WithRecipient(OrganizationOrPersonIdentifier recipient)
     {
         BuilderUtils.NotNullOrEmpty(recipient, "Recipients cannot be empty");
         return WithRecipients([recipient]);
@@ -76,14 +76,14 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     public ICorrespondenceRequestBuilderContent WithRecipient(OrganizationNumber organization)
     {
         BuilderUtils.NotNullOrEmpty(organization, "Recipients cannot be empty");
-        return WithRecipients([OrganisationOrPersonIdentifier.Create(organization)]);
+        return WithRecipients([OrganizationOrPersonIdentifier.Create(organization)]);
     }
 
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilderContent WithRecipient(NationalIdentityNumber person)
     {
         BuilderUtils.NotNullOrEmpty(person, "Recipients cannot be empty");
-        return WithRecipients([OrganisationOrPersonIdentifier.Create(person)]);
+        return WithRecipients([OrganizationOrPersonIdentifier.Create(person)]);
     }
 
     /// <inheritdoc/>
@@ -97,11 +97,11 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     public ICorrespondenceRequestBuilderContent WithRecipients(IEnumerable<string> recipients)
     {
         BuilderUtils.NotNullOrEmpty(recipients);
-        return WithRecipients(recipients.Select(OrganisationOrPersonIdentifier.Parse));
+        return WithRecipients(recipients.Select(OrganizationOrPersonIdentifier.Parse));
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceRequestBuilderContent WithRecipients(IEnumerable<OrganisationOrPersonIdentifier> recipients)
+    public ICorrespondenceRequestBuilderContent WithRecipients(IEnumerable<OrganizationOrPersonIdentifier> recipients)
     {
         BuilderUtils.NotNullOrEmpty(recipients, "Recipients cannot be empty");
         _recipients ??= [];

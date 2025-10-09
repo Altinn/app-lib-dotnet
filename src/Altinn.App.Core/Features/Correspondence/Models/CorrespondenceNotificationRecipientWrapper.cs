@@ -13,7 +13,7 @@ public sealed record CorrespondenceNotificationRecipientWrapper : MultipartCorre
     /// <summary>
     /// The correspondence recipient which the notification should be overridden for. Organization number or national identification number.
     /// </summary>
-    public required OrganisationOrPersonIdentifier RecipientToOverride { get; init; }
+    public required OrganizationOrPersonIdentifier RecipientToOverride { get; init; }
 
     /// <summary>
     /// List of custom recipients to override the default recipient.

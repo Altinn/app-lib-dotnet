@@ -268,8 +268,8 @@ public class CorrespondenceClientTests
         switch (testCase.scenario)
         {
             case AuthenticationScenario.LegacyMaskinporten:
-                sendPayload = PayloadFactory.Send(authorisation: CorrespondenceAuthorisation.Maskinporten);
-                statusPayload = PayloadFactory.GetStatus(authorisation: CorrespondenceAuthorisation.Maskinporten);
+                sendPayload = PayloadFactory.Send(authorisation: CorrespondenceAuthorization.Maskinporten);
+                statusPayload = PayloadFactory.GetStatus(authorisation: CorrespondenceAuthorization.Maskinporten);
                 break;
             case AuthenticationScenario.LegacyCustom:
                 sendPayload = PayloadFactory.Send(tokenFactory: () => TestHelpers.OrgTokenFactory(["old:custom"]));
@@ -379,7 +379,7 @@ public class CorrespondenceClientTests
 
         public static SendCorrespondencePayload Send(
             Func<Task<JwtToken>>? tokenFactory = null,
-            CorrespondenceAuthorisation? authorisation = null,
+            CorrespondenceAuthorization? authorisation = null,
             CorrespondenceAuthenticationMethod? authenticationMethod = null
         )
         {
@@ -388,7 +388,7 @@ public class CorrespondenceClientTests
                 .WithResourceId("resource-id")
                 .WithSender(OrganizationNumber.Parse("991825827"))
                 .WithSendersReference("senders-ref")
-                .WithRecipient(OrganisationOrPersonIdentifier.Parse("213872702"))
+                .WithRecipient(OrganizationOrPersonIdentifier.Parse("213872702"))
                 .WithContent(
                     CorrespondenceContentBuilder
                         .Create()
@@ -410,7 +410,7 @@ public class CorrespondenceClientTests
 
         public static GetCorrespondenceStatusPayload GetStatus(
             Func<Task<JwtToken>>? tokenFactory = null,
-            CorrespondenceAuthorisation? authorisation = null,
+            CorrespondenceAuthorization? authorisation = null,
             CorrespondenceAuthenticationMethod? authenticationMethod = null
         )
         {

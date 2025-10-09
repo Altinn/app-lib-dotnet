@@ -17,7 +17,7 @@ public class CorrespondenceRequestTests
         var correspondence = new CorrespondenceRequest
         {
             ResourceId = "resource-id",
-            Sender = TestHelpers.GetOrganisationNumber(0),
+            Sender = TestHelpers.GetOrganizationNumber(0),
             SendersReference = "senders-reference",
             RequestedPublishTime = DateTimeOffset.UtcNow.AddDays(1),
             AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(2),
@@ -27,8 +27,8 @@ public class CorrespondenceRequestTests
             MessageSender = "message-sender",
             Recipients =
             [
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(1)),
+                OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1)),
+                OrganizationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(1)),
             ],
             Content = new CorrespondenceContent
             {
@@ -105,7 +105,7 @@ public class CorrespondenceRequestTests
                 CustomRecipient = new CorrespondenceNotificationRecipient
                 {
                     EmailAddress = "email-address-1",
-                    OrganizationNumber = TestHelpers.GetOrganisationNumber(1),
+                    OrganizationNumber = TestHelpers.GetOrganizationNumber(1),
                 },
             },
             ExistingAttachments = [Guid.NewGuid(), Guid.NewGuid()],
@@ -186,7 +186,7 @@ public class CorrespondenceRequestTests
         var correspondence = new CorrespondenceRequest
         {
             ResourceId = "resource-id",
-            Sender = TestHelpers.GetOrganisationNumber(0),
+            Sender = TestHelpers.GetOrganizationNumber(0),
             SendersReference = "senders-reference",
             RequestedPublishTime = DateTimeOffset.UtcNow.AddDays(1),
             AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(2),
@@ -197,8 +197,8 @@ public class CorrespondenceRequestTests
             MessageSender = "message-sender",
             Recipients =
             [
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(1)),
+                OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1)),
+                OrganizationOrPersonIdentifier.Create(TestHelpers.GetNationalIdentityNumber(1)),
             ],
             Content = new CorrespondenceContent
             {
@@ -275,7 +275,7 @@ public class CorrespondenceRequestTests
                 CustomRecipient = new CorrespondenceNotificationRecipient
                 {
                     EmailAddress = "email-address-1",
-                    OrganizationNumber = TestHelpers.GetOrganisationNumber(1),
+                    OrganizationNumber = TestHelpers.GetOrganizationNumber(1),
                     // Setting IsReserved to true, which should override IgnoreReservation
                     IsReserved = true,
                 },
@@ -359,11 +359,11 @@ public class CorrespondenceRequestTests
         var correspondence = new CorrespondenceRequest
         {
             ResourceId = "resource-id",
-            Sender = TestHelpers.GetOrganisationNumber(0),
+            Sender = TestHelpers.GetOrganizationNumber(0),
             SendersReference = "senders-reference",
             AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(2),
             DueDateTime = DateTimeOffset.UtcNow.AddDays(2),
-            Recipients = [OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1))],
+            Recipients = [OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1))],
             Content = new CorrespondenceContent
             {
                 Title = "title",
@@ -442,13 +442,13 @@ public class CorrespondenceRequestTests
         var correspondence = new CorrespondenceRequest
         {
             ResourceId = "resource-id",
-            Sender = TestHelpers.GetOrganisationNumber(0),
+            Sender = TestHelpers.GetOrganizationNumber(0),
             SendersReference = "senders-reference",
             AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddYears(1),
             Recipients =
             [
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
-                OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)),
+                OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1)),
+                OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1)),
             ],
             Content = new CorrespondenceContent
             {
@@ -473,11 +473,11 @@ public class CorrespondenceRequestTests
         var correspondence = new CorrespondenceRequest
         {
             ResourceId = "resource-id",
-            Sender = TestHelpers.GetOrganisationNumber(0),
+            Sender = TestHelpers.GetOrganizationNumber(0),
             SendersReference = "senders-reference",
             AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddYears(1),
             IsConfirmationNeeded = true,
-            Recipients = [OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1))],
+            Recipients = [OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1))],
             Content = new CorrespondenceContent
             {
                 Title = "title",
@@ -501,10 +501,10 @@ public class CorrespondenceRequestTests
         var baseCorrespondence = new CorrespondenceRequest
         {
             ResourceId = "resource-id",
-            Sender = TestHelpers.GetOrganisationNumber(0),
+            Sender = TestHelpers.GetOrganizationNumber(0),
             SendersReference = "senders-reference",
             AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddYears(1),
-            Recipients = [OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1))],
+            Recipients = [OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1))],
             Content = new CorrespondenceContent
             {
                 Title = "title",
@@ -538,11 +538,11 @@ public class CorrespondenceRequestTests
         var baseCorrespondence = new CorrespondenceRequest
         {
             ResourceId = "resource-id",
-            Sender = TestHelpers.GetOrganisationNumber(0),
+            Sender = TestHelpers.GetOrganizationNumber(0),
             SendersReference = "senders-reference",
             RequestedPublishTime = DateTimeOffset.Now.AddDays(2),
             AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddYears(1),
-            Recipients = [OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1))],
+            Recipients = [OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1))],
             Content = new CorrespondenceContent
             {
                 Title = "title",
@@ -576,11 +576,11 @@ public class CorrespondenceRequestTests
         var correspondence = new CorrespondenceRequest
         {
             ResourceId = "resource-id",
-            Sender = TestHelpers.GetOrganisationNumber(0),
+            Sender = TestHelpers.GetOrganizationNumber(0),
             SendersReference = "senders-reference",
             AllowSystemDeleteAfter = DateTimeOffset.UtcNow.AddDays(2),
             DueDateTime = DateTimeOffset.UtcNow.AddDays(3),
-            Recipients = [OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1))],
+            Recipients = [OrganizationOrPersonIdentifier.Create(TestHelpers.GetOrganizationNumber(1))],
             Content = new CorrespondenceContent
             {
                 Title = "title",
@@ -614,7 +614,7 @@ public class CorrespondenceRequestTests
         {
             OrganizationNumber org => org.ToUrnFormattedString(),
             NationalIdentityNumber person => person.ToUrnFormattedString(),
-            OrganisationOrPersonIdentifier orgOrPerson => orgOrPerson.ToUrnFormattedString(),
+            OrganizationOrPersonIdentifier orgOrPerson => orgOrPerson.ToUrnFormattedString(),
             DateTime dateTime => MultipartCorrespondenceItem.NormaliseDateTime(dateTime).ToString("O"),
             DateTimeOffset dateTimeOffset => MultipartCorrespondenceItem
                 .NormaliseDateTime(dateTimeOffset)

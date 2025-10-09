@@ -43,7 +43,7 @@ public interface ICorrespondenceNotificationOverrideBuilder
         "This method is deprecated and will be removed in a future version. Use WithOrganizationNumber/WithNationalIdentityNumber/WithEmailAddress/WithMobileNumber instead."
     )]
     public ICorrespondenceNotificationOverrideBuilder WithRecipientToOverride(
-        OrganisationOrPersonIdentifier identifier
+        OrganizationOrPersonIdentifier identifier
     );
 
     /// <summary>
@@ -88,8 +88,8 @@ public interface ICorrespondenceNotificationOverrideBuilder
     /// Sets the organisation or person identifier override for the recipient.
     /// </summary>
     /// <param name="organisationOrPersonIdentifier">The organization or person identifier</param>
-    public ICorrespondenceNotificationOverrideBuilder WithOrganisationOrPersonIdentifier(
-        OrganisationOrPersonIdentifier? organisationOrPersonIdentifier
+    public ICorrespondenceNotificationOverrideBuilder WithOrganizationOrPersonIdentifier(
+        OrganizationOrPersonIdentifier? organisationOrPersonIdentifier
     );
 
     /// <summary>
