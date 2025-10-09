@@ -15,7 +15,7 @@ namespace Altinn.App.Core.Helpers.Serialization;
 /// <summary>
 /// DI registered service for centralizing (de)serialization logic for data models
 /// </summary>
-public class ModelSerializationService
+public sealed class ModelSerializationService
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web);
     private static readonly XmlSerializerCache _xmlSerializer = new();
@@ -136,10 +136,11 @@ public class ModelSerializationService
                 // XML deserialization can throw a variety of exceptions,
                 // all of which should result in a 400 response
                 // The actual exception is logged by the DeserializeXml method
+                var message = e.InnerException is null ? e.Message : $"{e.Message} {e.InnerException.Message}";
                 return new ProblemDetails()
                 {
                     Title = "Failed to deserialize XML",
-                    Detail = e.Message,
+                    Detail = message,
                     Status = StatusCodes.Status400BadRequest,
                 };
             }

@@ -1,0 +1,234 @@
+﻿{
+  Response: {"title":"Failed to deserialize XML","status":400,"detail":"There is an error in XML document (1, 1). Data at the root level is invalid. Line 1, position 1."},
+  Telemetry: {
+    Activities: [
+      {
+        Name: POST {org}/{app}/instances,
+        Kind: Server,
+        IdFormat: W3C,
+        Tags: [
+          {
+            http.request.method: POST
+          },
+          {
+            http.response.status_code: 400
+          },
+          {
+            http.route: {org}/{app}/instances
+          },
+          {
+            network.protocol.version: 1.1
+          },
+          {
+            problem.status: 400
+          },
+          {
+            problem.title: Failed to deserialize XML
+          },
+          {
+            server.address: localhost
+          },
+          {
+            TestId: Guid_1
+          },
+          {
+            url.path: /tdd/contributer-restriction/instances/
+          },
+          {
+            url.query: ?instanceOwnerPartyId=Redacted
+          },
+          {
+            url.scheme: http
+          },
+          {
+            user.authentication.inAltinnPortal: true
+          },
+          {
+            user.authentication.level: 2
+          },
+          {
+            user.authentication.method: BankID
+          },
+          {
+            user.authentication.token.isExchanged: false
+          },
+          {
+            user.authentication.token.issuer: Altinn
+          },
+          {
+            user.authentication.type: User
+          },
+          {
+            user.id: 1337
+          },
+          {
+            user.party.id: 501337
+          }
+        ],
+        HasParent: false
+      },
+      {
+        Name: Process.Start,
+        IdFormat: W3C,
+        Status: Ok,
+        Events: [
+          {
+            Name: change,
+            Timestamp: DateTimeOffset_1,
+            Tags: [
+              {
+                events: [
+                  Type=process_StartEvent DataId=,
+                  Type=process_StartTask DataId=
+                ]
+              },
+              {
+                to.started: DateTime_1
+              },
+              {
+                to.task.name: Utfylling
+              }
+            ]
+          }
+        ],
+        HasParent: true
+      },
+      {
+        Name: ProcessClient.GetProcessDefinition,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetAllFlowElements,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetEndEventIds,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetEndEvents,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetEndEvents,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetExclusiveGateways,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetNextElements,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetProcessTaskIds,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetProcessTaskIds,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetProcessTasks,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetProcessTasks,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetProcessTasks,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetSequenceFlows,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetStartEventIds,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetStartEvents,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.GetStartEvents,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.IsEndEvent,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.IsProcessTask,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: ProcessReader.IsProcessTask,
+        IdFormat: W3C,
+        HasParent: true
+      },
+      {
+        Name: SerializationService.DeserializeXml,
+        IdFormat: W3C,
+        Tags: [
+          {
+            Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+          }
+        ],
+        Events: [
+          {
+            Name: exception,
+            Timestamp: DateTimeOffset_2,
+            Tags: [
+              {
+                exception.message: There is an error in XML document (1, 1).
+              },
+              {
+                exception.stacktrace:
+System.InvalidOperationException: There is an error in XML document (1, 1).
+ ---> System.Xml.XmlException: Data at the root level is invalid. Line 1, position 1.
+   at System.Xml.XmlTextReaderImpl.Throw(Exception e)
+   at System.Xml.XmlTextReaderImpl.Throw(String res, String arg)
+   at System.Xml.XmlTextReaderImpl.ParseRootLevelWhitespace()
+   at System.Xml.XmlTextReaderImpl.ParseDocumentContent()
+   at System.Xml.XmlReader.MoveToContent()
+   at Microsoft.Xml.Serialization.GeneratedAssembly.XmlSerializationReaderSkjema.Read9_Skjema()
+   at InvokeStub_XmlSerializationReaderSkjema.Read9_Skjema(Object, Object, IntPtr*)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+   --- End of inner exception stack trace ---
+   at System.Xml.Serialization.XmlSerializer.Deserialize(XmlReader xmlReader, String encodingStyle, XmlDeserializationEvents events)
+   at System.Xml.Serialization.XmlSerializer.Deserialize(XmlReader xmlReader)
+   at Altinn.App.Core.Helpers.Serialization.ModelSerializationService.DeserializeXml(ReadOnlySpan`1 data, Type modelType) in {SolutionDirectory}src/Altinn.App.Core/Helpers/Serialization/ModelSerializationService.cs:line 228
+              },
+              {
+                exception.type: System.InvalidOperationException
+              }
+            ]
+          }
+        ],
+        HasParent: true
+      }
+    ]
+  }
+}

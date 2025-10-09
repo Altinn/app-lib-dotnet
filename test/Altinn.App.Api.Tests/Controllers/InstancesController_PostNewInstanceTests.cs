@@ -135,7 +135,6 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         };
 
         using HttpClient client = GetRootedClient(org, app, includeTraceContext: true);
-        var telemetry = this.Services.GetRequiredService<TelemetrySink>();
 
         var (createResponseParsed, _) = await InstancesControllerFixture.CreateInstanceSimplified(
             org,
@@ -156,8 +155,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         readDataElementResponseParsed.Melding.Should().BeNull(); // No content yet
         TestData.DeleteInstanceAndData(org, app, instanceId);
 
-        await telemetry.WaitForServerTelemetry(n: 2); // Two requests: create instance and read data element
-        await Verify(telemetry.GetSnapshot())
+        await Verify(GetTelemetrySnapshot(numberOfActivities: 2, numberOfMetrics: 2))
             .ScrubInstance<KeyValuePair<string, object?>>(kvp => kvp.Key == "url.path")
             .UseTextForParameters(token.Type.ToString());
     }
@@ -195,20 +193,38 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         TestData.DeleteInstanceAndData(org, app, instanceId);
     }
 
-    [Fact]
-    public async Task PostNewInstanceWithInvalidData_EnsureInvalidResponse()
+    [Theory]
+    [InlineData("Invalid", "INVALID XML")]
+    [InlineData(
+        "missingEndTag",
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?><Skjema><melding><name>Test</name></melding>"
+    )] // Missing closing tag </Skjema>
+    [InlineData(
+        "wrongRoot",
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?><WrongRoot><melding><name>Test</name></melding></WrongRoot>"
+    )] // Wrong root element
+    [InlineData(
+        "boolValue",
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?><Skjema xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><melding><name>Per Olsen</name><random>afdetsd</random><tags>ddd</tags><toggle>invalid boolean</toggle></melding></Skjema>"
+    )] // Invalid value for boolean
+    public async Task PostNewInstanceWithInvalidData_EnsureInvalidResponse(string param, string invalidXml)
     {
         // Setup test data
         string org = "tdd";
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
+
+        OverrideServicesForThisTest = services =>
+        {
+            services.AddTelemetrySink(additionalActivitySources: source => source.Name == "Microsoft.AspNetCore");
+        };
         HttpClient client = GetRootedClient(org, app);
         string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
         // Create instance data
         using var content = new MultipartFormDataContent();
-        content.Add(new StringContent("INVALID XML", System.Text.Encoding.UTF8, "application/xml"), "default");
+        content.Add(new StringContent(invalidXml, System.Text.Encoding.UTF8, "application/xml"), "default");
 
         // Create instance
         var createResponse = await client.PostAsync(
@@ -216,8 +232,20 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
             content
         );
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
-        createResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest, createResponseContent);
+        OutputHelper.WriteLine(createResponseContent);
+
+        createResponse.Should().HaveStatusCode(HttpStatusCode.BadRequest);
         createResponseContent.Should().Contain("Failed to deserialize XML");
+
+        var telemetrySnapshot = await GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 0);
+
+        await Verify(new { Response = createResponseContent, Telemetry = telemetrySnapshot }).UseParameters(param);
+
+        telemetrySnapshot
+            .Activities.Should()
+            .ContainSingle(a => a.Name == "SerializationService.DeserializeXml")
+            .Which.Events.Should()
+            .ContainSingle(e => e.Name == "exception");
     }
 
     [Fact]

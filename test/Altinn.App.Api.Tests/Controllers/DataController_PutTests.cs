@@ -218,7 +218,7 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
         var readDataElementResponseParsed = await VerifyStatusAndDeserialize<Skjema>(
             readDataElementResponse,
             HttpStatusCode.OK
-        )!;
+        );
         readDataElementResponseParsed.Melding!.Name.Should().Be("Ola Olsen");
         readDataElementResponseParsed.Melding.Toggle.Should().BeTrue();
 
@@ -226,5 +226,48 @@ public class DataController_PutTests : ApiTestBase, IClassFixture<WebApplication
 
         _dataProcessor.Verify();
         _dataWriteProcessor.Verify();
+    }
+
+    [Theory]
+    [InlineData("number-not-string", """{"melding":{"name": 123}}""")]
+    [InlineData("invalid-json", """ d{"melding":{}}""")]
+    [InlineData("missing-end-bracket", """{"melding":{"name": "Ola Olsen", "not-found": [}}""")]
+    public async Task PutDataElement_InvalidData_ReturnsBadRequest(string name, string json)
+    {
+        // Setup test data
+        string org = "tdd";
+        string app = "contributer-restriction";
+        var instanceOwnerPartyId = 500600;
+        var instanceId = Guid.Parse("00000000-DEAD-0000-BABE-000000000999");
+        var dataGuid = Guid.Parse("cd691c32-0000-4555-8aee-0b7054a413e4");
+        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceId);
+
+        OverrideServicesForThisTest = services =>
+        {
+            services.AddTelemetrySink(additionalActivitySources: source => source.Name == "Microsoft.AspNetCore");
+        };
+
+        var client = GetRootedUserClient(org, app, 1337, instanceOwnerPartyId);
+
+        // Update data element
+        using var updateDataElementContent = new StringContent(
+            json, // Name should be a string, not a number
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+        var response = await client.PutAsync(
+            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceId}/data/{dataGuid}",
+            updateDataElementContent
+        );
+
+        var responseText = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(responseText);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        responseText.Should().Contain("Failed to deserialize JSON");
+
+        var snapshot = await GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 0);
+        await Verify(new { Respons = responseText, Snapshot = snapshot }).UseParameters(name);
+
+        TestData.DeleteInstanceAndData(org, app, instanceOwnerPartyId, instanceId);
     }
 }
