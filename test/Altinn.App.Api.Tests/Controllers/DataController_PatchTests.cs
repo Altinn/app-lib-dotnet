@@ -364,7 +364,7 @@ public class DataControllerPatchTests : ApiTestBase, IClassFixture<WebApplicatio
 
         _dataProcessorMock.VerifyNoOtherCalls();
 
-        await Verify(GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 1));
+        await Verify(await GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 1));
     }
 
     [Fact]

@@ -268,7 +268,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         var unLockedInstance = JsonSerializer.Deserialize<DataElement>(unLockedInstanceString, JsonSerializerOptions)!;
         unLockedInstance.Locked.Should().BeFalse();
 
-        await Verify(GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 1));
+        await Verify(await GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 1));
     }
 
     [Fact]
@@ -327,7 +327,7 @@ public class ProcessControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         instance.Process.CurrentTask.Should().NotBeNull();
         instance.Process.CurrentTask!.ElementId.Should().Be("Task_1");
 
-        await Verify(GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 1));
+        await Verify(await GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 1));
     }
 
     [Fact]

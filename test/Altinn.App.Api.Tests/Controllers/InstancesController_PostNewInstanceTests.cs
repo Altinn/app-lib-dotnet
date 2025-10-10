@@ -157,7 +157,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         readDataElementResponseParsed.Melding.Should().BeNull(); // No content yet
         TestData.DeleteInstanceAndData(org, app, instanceId);
 
-        await Verify(GetTelemetrySnapshot(numberOfActivities: 2, numberOfMetrics: 2))
+        await Verify(await GetTelemetrySnapshot(numberOfActivities: 2, numberOfMetrics: 2))
             .ScrubInstance<KeyValuePair<string, object?>>(kvp => kvp.Key == "url.path")
             .UseTextForParameters(token.Type.ToString());
     }
