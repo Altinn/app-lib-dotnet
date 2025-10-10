@@ -665,6 +665,7 @@ public class ProcessController : ControllerBase
             case "feedback":
             case "pdf":
             case "eFormidling":
+            case "subform-pdf":
                 return "write";
             case "confirmation":
                 return "confirm";

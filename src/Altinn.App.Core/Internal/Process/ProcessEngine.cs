@@ -689,6 +689,7 @@ public class ProcessEngine : IProcessEngine
             case "feedback":
             case "pdf":
             case "eFormidling":
+            case "subformPdf":
                 return "write";
             case "confirmation":
                 return "confirm";

@@ -323,14 +323,7 @@ public class PdfServiceTests
         };
 
         // Act
-        await target.GenerateAndStorePdf(
-            instance,
-            "Task_PDF",
-            null,
-            null,
-            autoGeneratePdfForTaskIds,
-            CancellationToken.None
-        );
+        await target.GenerateAndStorePdf(instance, "Task_PDF", null, autoGeneratePdfForTaskIds, CancellationToken.None);
 
         // Assert
         _pdfGeneratorClient.Verify(
