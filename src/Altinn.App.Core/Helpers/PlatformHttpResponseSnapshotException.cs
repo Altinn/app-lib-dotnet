@@ -96,13 +96,10 @@ internal sealed class PlatformHttpResponseSnapshotException : PlatformHttpExcept
                 safeResponse.Headers.TryAddWithoutValidation(h.Key, h.Value);
             }
 
-            // Attach a diagnostic snapshot body for legacy consumers (text only, truncated)
-            string mediaType = response.Content?.Headers?.ContentType?.MediaType ?? "text/plain";
-            var safeContent = new StringContent(content, Encoding.UTF8, mediaType);
+            // Attach a diagnostic snapshot body for legacy consumers
+            StringContent safeContent = new StringContent(content, Encoding.UTF8);
+            safeContent.Headers.ContentType = response.Content?.Headers?.ContentType;
             safeResponse.Content = safeContent;
-
-            // Important: do not copy content headers blindly (avoid Content-Length/Encoding mismatch).
-            // StringContent already sets Content-Type (with charset) appropriately.
 
             // Copy trailing headers if present (HTTP/2+)
             foreach (KeyValuePair<string, IEnumerable<string>> h in response.TrailingHeaders)
