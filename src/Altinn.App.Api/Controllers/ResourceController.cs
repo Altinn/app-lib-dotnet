@@ -37,12 +37,12 @@ public class ResourceController : ControllerBase
 
     /// <summary>
     /// Get the form layout
+    /// </summary>
     /// <param name="org">Unique identifier of the organisation responsible for the app.</param>
     /// <param name="app">Application identifier which is unique within an organisation.</param>
     /// <remarks> This endpoint assumes a single layout set and does not work for apps on version 8.0 and above.</remarks>
     /// <returns>A collection of FormLayout objects in JSON format.</returns>
-    /// </summary>
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound, "text/plain")]
     [HttpGet]
     [Route("{org}/{app}/api/layouts")]
     [Obsolete(
