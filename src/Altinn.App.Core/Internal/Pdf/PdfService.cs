@@ -202,7 +202,7 @@ public class PdfService : IPdfService
         );
 
         Uri uri = BuildUri(
-            instance.Process.CurrentTask.ElementId,
+            instance.Process?.CurrentTask?.ElementId ?? string.Empty,
             baseUrl,
             pagePath,
             language,
