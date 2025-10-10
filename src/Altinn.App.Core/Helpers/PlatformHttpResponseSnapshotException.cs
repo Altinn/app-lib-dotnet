@@ -194,8 +194,17 @@ internal sealed class PlatformHttpResponseSnapshotException : PlatformHttpExcept
                 return;
             foreach ((string key, IEnumerable<string> values) in headers)
             {
-                sb.Append(prefix).Append(": ").Append(key).Append(": ").AppendLine(string.Join(", ", values));
+                string display = _redactedHeaders.Contains(key) ? "[REDACTED]" : string.Join(", ", values);
+                sb.Append(prefix).Append(": ").Append(key).Append(": ").AppendLine(display);
             }
         }
     }
+
+    private static readonly HashSet<string> _redactedHeaders = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Authorization",
+        "Proxy-Authorization",
+        "Cookie",
+        "Set-Cookie",
+    };
 }
