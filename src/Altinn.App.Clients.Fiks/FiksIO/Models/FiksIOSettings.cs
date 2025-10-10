@@ -43,14 +43,14 @@ public sealed record FiksIOSettings : IFiksIOAccountSettings
     public required string AsicePrivateKeyBase64 { get; set; }
 
     /// <summary>
-    /// The AMQP host.
+    /// The AMQP host. Usually 'io.fiks.test.ks.no' in test and 'io.fiks.ks.no' in production.
     /// </summary>
     [Required]
     [JsonPropertyName("amqpHost")]
     public required string AmqpHost { get; set; }
 
     /// <summary>
-    /// The API host.
+    /// The API host. Usually 'api.fiks.test.ks.no' in test and 'api.fiks.ks.no' in production.
     /// </summary>
     [Required]
     [JsonPropertyName("apiHost")]
