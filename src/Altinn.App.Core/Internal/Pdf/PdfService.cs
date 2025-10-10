@@ -202,6 +202,7 @@ public class PdfService : IPdfService
         );
 
         Uri uri = BuildUri(
+            instance.Process.CurrentTask.ElementId,
             baseUrl,
             pagePath,
             language,
@@ -229,6 +230,7 @@ public class PdfService : IPdfService
     }
 
     private static Uri BuildUri(
+        string currentTaskId,
         string baseUrl,
         string pagePath,
         string language,
@@ -245,13 +247,13 @@ public class PdfService : IPdfService
             int pdfIndex = url.IndexOf("?pdf=1", StringComparison.OrdinalIgnoreCase);
             if (pdfIndex > 0)
             {
-                string beforePdf = url[..pdfIndex];
+                string beforePdf = $"{url[..pdfIndex]}/{currentTaskId}/subform";
                 string afterPdf = url[pdfIndex..];
                 url = $"{beforePdf}/{subformComponentId}/{subformDataElementId}/{afterPdf}";
             }
             else
             {
-                url += $"/{subformComponentId}/{subformDataElementId}";
+                url += $"/{currentTaskId}/subform/{subformComponentId}/{subformDataElementId}";
             }
         }
 
