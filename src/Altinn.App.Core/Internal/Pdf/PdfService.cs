@@ -239,7 +239,6 @@ public class PdfService : IPdfService
     {
         string url = baseUrl + pagePath;
 
-        // Add subform path segments if provided
         if (!string.IsNullOrEmpty(subformComponentId) && !string.IsNullOrEmpty(subformDataElementId))
         {
             // Remove the ?pdf=1 part temporarily to insert subform segments
