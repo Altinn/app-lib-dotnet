@@ -2148,16 +2148,6 @@ namespace Altinn.App.Core.Helpers
         public System.Net.Http.HttpResponseMessage Response { get; }
         public static System.Threading.Tasks.Task<Altinn.App.Core.Helpers.PlatformHttpException> CreateAsync(System.Net.Http.HttpResponseMessage response) { }
     }
-    public sealed class PlatformHttpResponseSnapshotException : Altinn.App.Core.Helpers.PlatformHttpException
-    {
-        public string Content { get; }
-        public bool ContentTruncated { get; }
-        public string Headers { get; }
-        public string HttpVersion { get; }
-        public string? ReasonPhrase { get; }
-        public int StatusCode { get; }
-        public static System.Threading.Tasks.Task<Altinn.App.Core.Helpers.PlatformHttpResponseSnapshotException> CreateAndDisposeHttpResponse(System.Net.Http.HttpResponseMessage response, System.Threading.CancellationToken cancellationToken = default) { }
-    }
     public class ProcessError
     {
         public ProcessError() { }

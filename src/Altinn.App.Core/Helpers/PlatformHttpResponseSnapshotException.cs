@@ -15,7 +15,7 @@ namespace Altinn.App.Core.Helpers;
 /// for safe logging and persistence.
 /// </para>
 /// </summary>
-public sealed class PlatformHttpResponseSnapshotException : PlatformHttpException
+internal sealed class PlatformHttpResponseSnapshotException : PlatformHttpException
 {
     /// <summary>
     /// The maximum number of characters captured from the response content.
