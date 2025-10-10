@@ -333,6 +333,43 @@ public class PlatformHttpResponseSnapshotExceptionTests
     }
 
     [Fact]
+    public async Task CreateAndDisposeHttpResponse_HandlesBinaryContent()
+    {
+        // Arrange
+        byte[] binaryData = new byte[1024];
+        Array.Fill(binaryData, (byte)0xFF);
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(binaryData) };
+        response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+
+        // Act
+        var exception = await PlatformHttpResponseSnapshotException.CreateAndDisposeHttpResponse(response);
+
+        // Assert
+        Assert.Contains("<image/png; 1024 bytes>", exception.Content);
+        Assert.False(exception.ContentTruncated);
+    }
+
+    [Fact]
+    public async Task CreateAndDisposeHttpResponse_HandlesBinaryContentWithStreamContent()
+    {
+        // Arrange
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(new MemoryStream(new byte[512])),
+        };
+        response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
+
+        // Act
+        var exception = await PlatformHttpResponseSnapshotException.CreateAndDisposeHttpResponse(response);
+
+        // Assert
+        Assert.Contains("<application/pdf;", exception.Content);
+        // StreamContent may or may not have ContentLength set depending on the stream
+        Assert.Matches(@"<application/pdf; (unknown size|\d+ bytes)>", exception.Content);
+        Assert.False(exception.ContentTruncated);
+    }
+
+    [Fact]
     public async Task CreateAndDisposeHttpResponse_HandlesNullReasonPhrase()
     {
         // Arrange

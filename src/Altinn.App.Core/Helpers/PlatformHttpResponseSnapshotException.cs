@@ -69,16 +69,12 @@ internal sealed class PlatformHttpResponseSnapshotException : PlatformHttpExcept
 
         try
         {
-            // Snapshot content first (handle null)
-            string content = response.Content is null
-                ? string.Empty
-                : await response.Content.ReadAsStringAsync(cancellationToken);
-
-            bool truncated = content.Length > MaxCapturedContentLength;
-            if (truncated)
-            {
-                content = content[..MaxCapturedContentLength];
-            }
+            // Snapshot content with bounded streaming to avoid loading large responses into memory
+            (string content, bool truncated) = await ReadContentSnapshotAsync(
+                response.Content,
+                MaxCapturedContentLength,
+                cancellationToken
+            );
 
             string headers = FlattenHeaders(response.Headers, response.Content?.Headers, response.TrailingHeaders);
             string message = BuildMessage((int)response.StatusCode, response.ReasonPhrase, content, truncated);
@@ -160,6 +156,84 @@ internal sealed class PlatformHttpResponseSnapshotException : PlatformHttpExcept
         Headers = headers;
         Content = content;
         ContentTruncated = contentTruncated;
+    }
+
+    /// <summary>
+    /// Reads and snapshots the HTTP content in a streaming fashion, up to a maximum number of characters.
+    /// For binary content, returns a summary. For textual content, reads only the required amount to avoid unbounded buffering.
+    /// </summary>
+    /// <param name="httpContent">The HTTP content to read, or null.</param>
+    /// <param name="maxChars">The maximum number of characters to capture.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the read operation.</param>
+    /// <returns>A tuple containing the content snapshot and a flag indicating whether it was truncated.</returns>
+    private static async Task<(string content, bool truncated)> ReadContentSnapshotAsync(
+        HttpContent? httpContent,
+        int maxChars,
+        CancellationToken cancellationToken
+    )
+    {
+        if (httpContent is null)
+        {
+            return (string.Empty, false);
+        }
+
+        // Check if content is textual based on Content-Type
+        // Default to textual if no media type is specified (common for error responses)
+        string? mediaType = httpContent.Headers?.ContentType?.MediaType;
+        bool isTextual =
+            mediaType is null
+            || mediaType.StartsWith("text/", StringComparison.OrdinalIgnoreCase)
+            || mediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase)
+            || mediaType.Equals("application/xml", StringComparison.OrdinalIgnoreCase)
+            || mediaType.EndsWith("+json", StringComparison.OrdinalIgnoreCase)
+            || mediaType.EndsWith("+xml", StringComparison.OrdinalIgnoreCase);
+
+        if (!isTextual)
+        {
+            // For binary content, return a summary instead of trying to read it as text
+            long? contentLength = httpContent.Headers?.ContentLength;
+            string lengthStr = contentLength.HasValue ? $"{contentLength.Value} bytes" : "unknown size";
+            return ($"<{mediaType ?? "application/octet-stream"}; {lengthStr}>", false);
+        }
+
+        // For textual content, stream with bounded buffer to avoid loading entire response into memory
+        using Stream stream = await httpContent.ReadAsStreamAsync(cancellationToken);
+        Encoding encoding = Encoding.UTF8;
+        string? charset = httpContent.Headers?.ContentType?.CharSet;
+        if (!string.IsNullOrWhiteSpace(charset))
+        {
+            try
+            {
+                encoding = Encoding.GetEncoding(charset);
+            }
+            catch
+            {
+                // Fallback to UTF8 if charset is invalid
+            }
+        }
+
+        using StreamReader reader = new StreamReader(
+            stream,
+            encoding,
+            detectEncodingFromByteOrderMarks: true,
+            bufferSize: 1024,
+            leaveOpen: false
+        );
+
+        // Allocate buffer for exactly maxChars characters and read in loop to ensure buffer is filled
+        char[] buffer = new char[maxChars];
+        int read = 0;
+        while (read < maxChars)
+        {
+            int n = await reader.ReadAsync(buffer.AsMemory(read, maxChars - read), cancellationToken);
+            if (n == 0)
+                break;
+            read += n;
+        }
+
+        // Check if there's more content to determine truncation
+        bool hasMore = reader.Peek() != -1;
+        return (new string(buffer, 0, read), hasMore);
     }
 
     private static string BuildMessage(int statusCode, string? reason, string content, bool truncated)
