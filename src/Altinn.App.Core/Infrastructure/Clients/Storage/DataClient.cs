@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Mime;
@@ -33,6 +34,7 @@ public class DataClient : IDataClient
     private readonly ModelSerializationService _modelSerializationService;
     private readonly Telemetry? _telemetry;
     private readonly HttpClient _client;
+    private readonly HttpClient _streamingClient;
 
     private readonly AuthenticationMethod _defaultAuthenticationMethod = StorageAuthenticationMethod.CurrentUser();
 
@@ -55,6 +57,18 @@ public class DataClient : IDataClient
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         _client = httpClient;
+
+        // Configure streaming client
+        var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+        _streamingClient = httpClientFactory.CreateClient("DataClient.Streaming");
+
+        _streamingClient.BaseAddress = new Uri(_platformSettings.ApiStorageEndpoint);
+        _streamingClient.DefaultRequestHeaders.Add(
+            General.SubscriptionKeyHeaderName,
+            _platformSettings.SubscriptionKey
+        );
+        _streamingClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        _streamingClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
     }
 
     /// <inheritdoc />
@@ -202,6 +216,52 @@ public class DataClient : IDataClient
         }
 
         throw await PlatformHttpException.CreateAsync(response);
+    }
+
+    /// <inheritdoc />
+    public async Task<Stream> GetBinaryDataStream(
+        string org,
+        string app,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        Guid dataId,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using Activity? activity = _telemetry?.StartGetBinaryDataActivity(instanceGuid, dataId);
+        var instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
+        var apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
+
+        JwtToken token = await _authenticationTokenResolver.GetAccessToken(
+            authenticationMethod ?? _defaultAuthenticationMethod,
+            cancellationToken: cancellationToken
+        );
+
+        HttpResponseMessage response = await _streamingClient.GetStreamingAsync(
+            token,
+            apiUrl,
+            cancellationToken: cancellationToken
+        );
+
+        if (response.IsSuccessStatusCode)
+        {
+            try
+            {
+                Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                return new ResponseWrapperStream(response, stream);
+            }
+            catch (Exception)
+            {
+                response.Dispose();
+                throw;
+            }
+        }
+
+        throw await PlatformHttpResponseSnapshotException.CreateAndDisposeHttpResponse(
+            response,
+            cancellationToken: cancellationToken
+        );
     }
 
     /// <inheritdoc />

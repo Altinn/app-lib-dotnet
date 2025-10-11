@@ -108,6 +108,38 @@ public class DataClientMock : IDataClient
         );
     }
 
+    public Task<Stream> GetBinaryDataStream(
+        string org,
+        string app,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        Guid dataId,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (cancellationToken.IsCancellationRequested)
+            return Task.FromCanceled<Stream>(cancellationToken);
+
+        string path = TestData.GetDataBlobPath(org, app, instanceOwnerPartyId, instanceGuid, dataId);
+
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException($"Data element not found at path: {path}");
+        }
+
+        var fs = new FileStream(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            bufferSize: 64 * 1024,
+            options: FileOptions.Asynchronous | FileOptions.SequentialScan
+        );
+
+        return Task.FromResult<Stream>(fs);
+    }
+
     public async Task<byte[]> GetDataBytes(
         string org,
         string app,

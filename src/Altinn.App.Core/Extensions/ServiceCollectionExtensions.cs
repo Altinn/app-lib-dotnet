@@ -101,6 +101,13 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IAuthenticationClient, AuthenticationClient>();
         services.AddHttpClient<IAuthorizationClient, AuthorizationClient>();
         services.AddHttpClient<IDataClient, DataClient>();
+        services.AddHttpClient(
+            "DataClient.Streaming",
+            client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(30); // Longer timeout for streaming
+            }
+        );
         services.AddHttpClient<IOrganizationClient, RegisterERClient>();
         services.AddHttpClient<IInstanceClient, InstanceClient>();
         services.AddHttpClient<IInstanceEventClient, InstanceEventClient>();
@@ -230,6 +237,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IDataElementValidator, DefaultDataElementValidator>();
         services.AddTransient<ITaskValidator, DefaultTaskValidator>();
         services.AddTransient<IValidator, SigningTaskValidator>();
+        services.AddTransient<IValidator, SignatureHashValidator>();
 
         var appSettings = configuration.GetSection("AppSettings").Get<AppSettings>();
         if (appSettings?.RequiredValidation is true)
