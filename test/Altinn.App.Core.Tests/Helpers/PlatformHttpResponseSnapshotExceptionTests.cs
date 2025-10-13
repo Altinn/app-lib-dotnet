@@ -1,4 +1,3 @@
-#nullable disable
 using System.Net;
 using System.Text;
 using Altinn.App.Core.Helpers;
@@ -328,7 +327,7 @@ public class PlatformHttpResponseSnapshotExceptionTests
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            await PlatformHttpResponseSnapshotException.CreateAndDisposeHttpResponse(null)
+            await PlatformHttpResponseSnapshotException.CreateAndDisposeHttpResponse(null!)
         );
     }
 

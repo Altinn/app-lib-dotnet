@@ -1152,6 +1152,7 @@ public class DataClientTests
         public required DataClient DataClient { get; init; }
         public required ServiceProvider ServiceProvider { get; init; }
         public required FixtureMocks Mocks { get; init; }
+        public required HttpClient StreamingHttpClient { get; init; }
 
         public static Fixture Create(
             Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> dataClientDelegatingHandler,
@@ -1200,6 +1201,7 @@ public class DataClientTests
                 Mocks = mocks,
                 ServiceProvider = serviceProvider,
                 DataClient = new DataClient(httpClient, serviceProvider),
+                StreamingHttpClient = streamingHttpClient,
             };
         }
 
@@ -1215,6 +1217,7 @@ public class DataClientTests
         public async ValueTask DisposeAsync()
         {
             await ServiceProvider.DisposeAsync();
+            StreamingHttpClient.Dispose();
         }
     }
 

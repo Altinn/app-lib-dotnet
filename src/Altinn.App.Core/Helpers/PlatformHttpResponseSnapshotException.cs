@@ -52,6 +52,8 @@ internal sealed class PlatformHttpResponseSnapshotException : PlatformHttpExcept
     /// </summary>
     public bool ContentTruncated { get; }
 
+    private const string Redacted = "[REDACTED]";
+
     /// <summary>
     /// Creates a new <see cref="PlatformHttpResponseSnapshotException"/> by snapshotting
     /// the provided <see cref="HttpResponseMessage"/> into immutable string values,
@@ -89,7 +91,14 @@ internal sealed class PlatformHttpResponseSnapshotException : PlatformHttpExcept
             // Copy normal headers
             foreach (KeyValuePair<string, IEnumerable<string>> h in response.Headers)
             {
-                safeResponse.Headers.TryAddWithoutValidation(h.Key, h.Value);
+                if (_redactedHeaders.Contains(h.Key))
+                {
+                    safeResponse.Headers.TryAddWithoutValidation(h.Key, [Redacted]);
+                }
+                else
+                {
+                    safeResponse.Headers.TryAddWithoutValidation(h.Key, h.Value);
+                }
             }
 
             // Attach a diagnostic snapshot body for legacy consumers
@@ -100,7 +109,14 @@ internal sealed class PlatformHttpResponseSnapshotException : PlatformHttpExcept
             // Copy trailing headers if present (HTTP/2+)
             foreach (KeyValuePair<string, IEnumerable<string>> h in response.TrailingHeaders)
             {
-                safeResponse.TrailingHeaders.TryAddWithoutValidation(h.Key, h.Value);
+                if (_redactedHeaders.Contains(h.Key))
+                {
+                    safeResponse.TrailingHeaders.TryAddWithoutValidation(h.Key, [Redacted]);
+                }
+                else
+                {
+                    safeResponse.TrailingHeaders.TryAddWithoutValidation(h.Key, h.Value);
+                }
             }
 
             return new PlatformHttpResponseSnapshotException(
@@ -268,7 +284,7 @@ internal sealed class PlatformHttpResponseSnapshotException : PlatformHttpExcept
                 return;
             foreach ((string key, IEnumerable<string> values) in headers)
             {
-                string display = _redactedHeaders.Contains(key) ? "[REDACTED]" : string.Join(", ", values);
+                string display = _redactedHeaders.Contains(key) ? Redacted : string.Join(", ", values);
                 sb.Append(prefix).Append(": ").Append(key).Append(": ").AppendLine(display);
             }
         }
