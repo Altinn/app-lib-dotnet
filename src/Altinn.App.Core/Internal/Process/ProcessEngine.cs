@@ -170,7 +170,7 @@ public class ProcessEngine : IProcessEngine
                 Success = false,
                 ErrorType = ProcessErrorType.Unauthorized,
                 ErrorMessage =
-                    $"User is not authorized to perform process next. Task ID: {currentTaskId}. Task type: {altinnTaskType}. Action: {request.Action ?? "none"}.",
+                    $"User is not authorized to perform process next. Task ID: {LogSanitizer.Sanitize(currentTaskId)}. Task type: {LogSanitizer.Sanitize(altinnTaskType)}. Action: {LogSanitizer.Sanitize(request.Action ?? "none")}.",
             };
             activity?.SetProcessChangeResult(result);
             return result;
@@ -178,8 +178,8 @@ public class ProcessEngine : IProcessEngine
 
         _logger.LogDebug(
             "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",
-            currentTaskId,
-            altinnTaskType,
+            LogSanitizer.Sanitize(currentTaskId),
+            LogSanitizer.Sanitize(altinnTaskType),
             LogSanitizer.Sanitize(request.Action ?? "none")
         );
 

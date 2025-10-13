@@ -1,5 +1,6 @@
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.EFormidling.Interface;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
@@ -57,14 +58,20 @@ internal sealed class EFormidlingServiceTask : IEFormidlingServiceTask
         {
             _logger.LogInformation(
                 "EFormidling is disabled for task {TaskId}. No eFormidling shipment will be sent, but the service task will be completed.",
-                taskId
+                LogSanitizer.Sanitize(taskId)
             );
             return ServiceTaskResult.Success();
         }
 
-        _logger.LogDebug("Calling eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
+        _logger.LogDebug(
+            "Calling eFormidlingService for eFormidling Service Task {TaskId}.",
+            LogSanitizer.Sanitize(taskId)
+        );
         await _eFormidlingService.SendEFormidlingShipment(instance, configuration);
-        _logger.LogDebug("Successfully called eFormidlingService for eFormidling Service Task {TaskId}.", taskId);
+        _logger.LogDebug(
+            "Successfully called eFormidlingService for eFormidling Service Task {TaskId}.",
+            LogSanitizer.Sanitize(taskId)
+        );
 
         return ServiceTaskResult.Success();
     }
@@ -77,7 +84,9 @@ internal sealed class EFormidlingServiceTask : IEFormidlingServiceTask
         AltinnEFormidlingConfiguration? eFormidlingConfig = taskExtension?.EFormidlingConfiguration;
 
         if (eFormidlingConfig is null)
-            throw new ApplicationConfigException($"No eFormidling configuration found in BPMN for task {taskId}");
+            throw new ApplicationConfigException(
+                $"No eFormidling configuration found in BPMN for task {LogSanitizer.Sanitize(taskId)}"
+            );
 
         HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
         ValidAltinnEFormidlingConfiguration validConfig = eFormidlingConfig.Validate(env);

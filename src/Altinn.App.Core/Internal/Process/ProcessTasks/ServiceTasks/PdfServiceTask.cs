@@ -1,3 +1,4 @@
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
@@ -35,7 +36,7 @@ internal sealed class PdfServiceTask : IPdfServiceTask
         string taskId = context.InstanceDataMutator.Instance.Process.CurrentTask.ElementId;
         Instance instance = context.InstanceDataMutator.Instance;
 
-        _logger.LogDebug("Calling PdfService for PDF Service Task {TaskId}.", taskId);
+        _logger.LogDebug("Calling PdfService for PDF Service Task {TaskId}.", LogSanitizer.Sanitize(taskId));
 
         ValidAltinnPdfConfiguration config = GetValidAltinnPdfConfiguration(taskId);
         await _pdfService.GenerateAndStorePdf(
@@ -46,7 +47,10 @@ internal sealed class PdfServiceTask : IPdfServiceTask
             context.CancellationToken
         );
 
-        _logger.LogDebug("Successfully called PdfService for PDF Service Task {TaskId}.", taskId);
+        _logger.LogDebug(
+            "Successfully called PdfService for PDF Service Task {TaskId}.",
+            LogSanitizer.Sanitize(taskId)
+        );
 
         return ServiceTaskResult.Success();
     }
