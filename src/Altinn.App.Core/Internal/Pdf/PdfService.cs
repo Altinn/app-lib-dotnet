@@ -72,14 +72,13 @@ public class PdfService : IPdfService
     {
         using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
 
-        await GenerateAndStorePdfInternal(instance, taskId, null, null, null, ct);
+        await GenerateAndStorePdfInternal(instance, taskId, null, null, ct);
     }
 
     /// <inheritdoc/>
     public async Task GenerateAndStorePdf(
         Instance instance,
         string taskId,
-        string? dataTypeId,
         string? fileNameTextResourceElementId,
         List<string>? autoGeneratePdfForTaskIds = null,
         CancellationToken ct = default
@@ -90,7 +89,6 @@ public class PdfService : IPdfService
         await GenerateAndStorePdfInternal(
             instance,
             taskId,
-            dataTypeId,
             fileNameTextResourceElementId,
             autoGeneratePdfForTaskIds,
             ct
@@ -122,7 +120,6 @@ public class PdfService : IPdfService
     private async Task GenerateAndStorePdfInternal(
         Instance instance,
         string taskId,
-        string? dataTypeId,
         string? fileNameTextResourceElementId,
         List<string>? autoGeneratePdfForTaskIds = null,
         CancellationToken ct = default
@@ -148,7 +145,7 @@ public class PdfService : IPdfService
         string fileName = GetFileName(instance, textResource, fileNameTextResourceElementId);
         await _dataClient.InsertBinaryData(
             instance.Id,
-            dataTypeId ?? PdfElementType,
+            PdfElementType,
             PdfContentType,
             fileName,
             pdfContent,

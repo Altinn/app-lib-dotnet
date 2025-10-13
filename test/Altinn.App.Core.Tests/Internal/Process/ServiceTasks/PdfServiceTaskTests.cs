@@ -56,7 +56,6 @@ public class PdfServiceTaskTests
                 x.GenerateAndStorePdf(
                     instance,
                     instance.Process.CurrentTask.ElementId,
-                    null,
                     FileName,
                     It.IsAny<List<string>?>(),
                     It.IsAny<CancellationToken>()
@@ -98,7 +97,7 @@ public class PdfServiceTaskTests
 
         // Assert
         _pdfServiceMock.Verify(
-            x => x.GenerateAndStorePdf(instance, "pdfTask", null, "test.pdf", taskIds, It.IsAny<CancellationToken>()),
+            x => x.GenerateAndStorePdf(instance, "pdfTask", "test.pdf", taskIds, It.IsAny<CancellationToken>()),
             Times.Once
         );
     }

@@ -22,14 +22,12 @@ public interface IPdfService
     /// </summary>
     /// <param name="instance">The instance details.</param>
     /// <param name="taskId">The task id for which the PDF is generated.</param>
-    /// <param name="dataTypeId">The data type to use when storing the PDF.</param>
     /// <param name="fileNameTextResourceElementId">A text resource element id for the file name of the PDF. If no text resource is found, the literal value will be used. If null, a default file name will be used.</param>
     /// <param name="autoGeneratePdfForTaskIds">Enable auto-pdf for a list of tasks. Will not respect pdfLayoutName on those tasks, but use the main layout-set of the given tasks and render the components in summary mode. This setting will be ignored if the PDF task has a pdf layout set defined.</param>
     /// <param name="ct">Cancellation token for when a request should be stopped before it's completed.</param>
     Task GenerateAndStorePdf(
         Instance instance,
         string taskId,
-        string? dataTypeId,
         string? fileNameTextResourceElementId,
         List<string>? autoGeneratePdfForTaskIds = null,
         CancellationToken ct = default

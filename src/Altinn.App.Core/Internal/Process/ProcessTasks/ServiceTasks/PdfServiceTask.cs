@@ -41,7 +41,6 @@ internal sealed class PdfServiceTask : IPdfServiceTask
         await _pdfService.GenerateAndStorePdf(
             instance,
             taskId,
-            config.DataTypeId,
             config.Filename,
             config.AutoPdfTaskIds,
             context.CancellationToken
