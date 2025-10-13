@@ -209,7 +209,7 @@ internal sealed class PlatformHttpResponseSnapshotException : PlatformHttpExcept
             // For binary content, return a summary instead of trying to read it as text
             long? contentLength = httpContent.Headers?.ContentLength;
             string lengthStr = contentLength.HasValue ? $"{contentLength.Value} bytes" : "unknown size";
-            return ($"<{mediaType ?? "application/octet-stream"}; {lengthStr}>", false);
+            return ($"<{mediaType}; {lengthStr}>", false);
         }
 
         // For textual content, stream with bounded buffer to avoid loading entire response into memory
