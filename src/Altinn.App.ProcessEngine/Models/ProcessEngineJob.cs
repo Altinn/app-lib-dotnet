@@ -1,12 +1,10 @@
-using Altinn.Platform.Storage.Interface.Models;
-
 namespace Altinn.App.ProcessEngine.Models;
 
 internal sealed record ProcessEngineJob
 {
     public ProcessEngineItemStatus Status { get; set; }
     public required string Identifier { get; init; }
-    public required Instance Instance { get; init; }
+    public required ProcessEngineActor ProcessEngineActor { get; init; }
     public required IReadOnlyList<ProcessEngineTask> Tasks { get; init; }
     public DateTimeOffset EnqueuedAt { get; init; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? LastUpdate { get; set; }
@@ -15,8 +13,10 @@ internal sealed record ProcessEngineJob
         new()
         {
             Identifier = request.JobIdentifier,
-            Instance = request.Instance,
-            Tasks = request.Tasks.Select(ProcessEngineTask.FromRequest).ToList(),
+            ProcessEngineActor = request.ProcessEngineActor,
+            Tasks = request
+                .Tasks.Select((x, i) => ProcessEngineTask.FromRequest(x, request.ProcessEngineActor, i))
+                .ToList(),
         };
 
     public override string ToString() => $"{nameof(ProcessEngineJob)}: {Identifier} ({Status})";

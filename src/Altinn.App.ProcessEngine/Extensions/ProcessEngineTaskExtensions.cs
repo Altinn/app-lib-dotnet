@@ -1,4 +1,6 @@
-namespace Altinn.App.ProcessEngine.Models;
+using Altinn.App.ProcessEngine.Models;
+
+namespace Altinn.App.ProcessEngine.Extensions;
 
 internal static class ProcessEngineTaskExtensions
 {

@@ -14,6 +14,9 @@ internal partial class ProcessEngine
         if (!request.IsValid())
             return ProcessEngineResponse.Rejected("Invalid request");
 
+        if (HasQueuedJob(request.JobIdentifier))
+            return ProcessEngineResponse.Rejected("Duplicate request");
+
         if (_mainLoopTask is null)
             return ProcessEngineResponse.Rejected("Process engine is not running. Did you call Start()?");
 
@@ -22,8 +25,6 @@ internal partial class ProcessEngine
             return ProcessEngineResponse.Rejected(
                 "Process engine is currently inactive. Did you call the right instance?"
             );
-
-        // TODO: Duplication check? If we already have an active job with some form of calculated ID, disallow enqueue
 
         await AcquireQueueSlot(cancellationToken); // Only acquire slots for public requests
         await EnqueueJob(ProcessEngineJob.FromRequest(request), true, cancellationToken);
@@ -42,7 +43,12 @@ internal partial class ProcessEngine
         // TODO: persist to database if `updateDatabase` is true
         await Task.CompletedTask;
 
-        _inbox.Enqueue(job);
+        _inbox[job.Identifier] = job;
+    }
+
+    public bool HasQueuedJob(string jobIdentifier)
+    {
+        return _inbox.ContainsKey(jobIdentifier);
     }
 
     private Task PopulateJobsFromStorage(CancellationToken cancellationToken)
@@ -65,13 +71,5 @@ internal partial class ProcessEngine
         // TODO: This must be a resilient call to db
         _logger.LogDebug("Updating task in storage: {Task}", task);
         return Task.CompletedTask;
-    }
-
-    private IEnumerable<ProcessEngineJob> DequeueAllJobs()
-    {
-        while (_inbox.TryDequeue(out var job))
-        {
-            yield return job;
-        }
     }
 }

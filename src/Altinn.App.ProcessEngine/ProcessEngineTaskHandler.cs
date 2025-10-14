@@ -1,3 +1,4 @@
+using Altinn.App.ProcessEngine.Constants;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.Extensions.Options;
 
@@ -34,14 +35,7 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         {
             return task.Command switch
             {
-                ProcessEngineTaskCommand.HappyPath cmd => await HappyPath(cmd, task, cts.Token),
-                ProcessEngineTaskCommand.MoveProcessForward => await MoveProcessForward(task, cts.Token),
-                ProcessEngineTaskCommand.ExecuteServiceTask => await ExecuteServiceTask(task, cts.Token),
-                ProcessEngineTaskCommand.ExecuteInterfaceHooks => await ExecuteInterfaceHooks(task, cts.Token),
-                ProcessEngineTaskCommand.SendCorrespondence => await SendCorrespondence(task, cts.Token),
-                ProcessEngineTaskCommand.SendEformidling => await SendEformidling(task, cts.Token),
-                ProcessEngineTaskCommand.SendFiksArkiv => await SendFiksArkiv(task, cts.Token),
-                ProcessEngineTaskCommand.PublishAltinnEvent => await PublishAltinnEvent(task, cts.Token),
+                ProcessEngineCommand.AppCommand cmd => await AppCommand(cmd, task, cts.Token),
                 _ => throw new InvalidOperationException($"Unknown instruction: {task.Command}"),
             };
         }
@@ -52,69 +46,37 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         }
     }
 
-    private async Task<ProcessEngineExecutionResult> HappyPath(
-        ProcessEngineTaskCommand.HappyPath command,
+    private async Task<ProcessEngineExecutionResult> AppCommand(
+        ProcessEngineCommand.AppCommand command,
         ProcessEngineTask task,
         CancellationToken cancellationToken
     )
     {
-        await Task.Delay(command.Duration, cancellationToken);
-        return ProcessEngineExecutionResult.Success();
+        using var httpClient = GetAuthorizedAppClient(task.InstanceInformation);
+        httpClient.Timeout = command.MaxExecutionTime ?? _settings.DefaultTaskExecutionTimeout;
+
+        var payload = new ProcessEngineCallbackPayload(task.ProcessEngineActor, command.Metadata);
+        using var response = await httpClient.PostAsync(
+            command.CommandKey,
+            JsonContent.Create(payload),
+            cancellationToken
+        );
+
+        return response.IsSuccessStatusCode
+            ? ProcessEngineExecutionResult.Success()
+            : ProcessEngineExecutionResult.Error("uh oh");
     }
 
-    private ValueTask<ProcessEngineExecutionResult> PublishAltinnEvent(
-        ProcessEngineTask task,
-        CancellationToken cancellationToken
-    )
+    private HttpClient GetAuthorizedAppClient(InstanceInformation instanceInformation)
     {
-        throw new NotImplementedException();
-    }
+        var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Add(AuthConstants.ApiKeyHeaderName, _settings.ApiKey);
 
-    private ValueTask<ProcessEngineExecutionResult> SendFiksArkiv(
-        ProcessEngineTask task,
-        CancellationToken cancellationToken
-    )
-    {
-        throw new NotImplementedException();
-    }
+        // TODO: Fix this! Needs a way to resolve the correct address for the app
+        client.BaseAddress = new Uri(
+            $"http://local.altinn.cloud/{instanceInformation.Org}/{instanceInformation.App}/instances/{instanceInformation.InstanceOwnerPartyId}/{instanceInformation.InstanceGuid}/process-engine-callbacks/"
+        );
 
-    private ValueTask<ProcessEngineExecutionResult> SendEformidling(
-        ProcessEngineTask task,
-        CancellationToken cancellationToken
-    )
-    {
-        throw new NotImplementedException();
-    }
-
-    private ValueTask<ProcessEngineExecutionResult> SendCorrespondence(
-        ProcessEngineTask task,
-        CancellationToken cancellationToken
-    )
-    {
-        throw new NotImplementedException();
-    }
-
-    private ValueTask<ProcessEngineExecutionResult> ExecuteInterfaceHooks(
-        ProcessEngineTask task,
-        CancellationToken cancellationToken
-    )
-    {
-        throw new NotImplementedException();
-    }
-
-    private ValueTask<ProcessEngineExecutionResult> ExecuteServiceTask(
-        ProcessEngineTask task,
-        CancellationToken cancellationToken
-    )
-    {
-        throw new NotImplementedException();
-    }
-
-    private ValueTask<ProcessEngineExecutionResult> MoveProcessForward(
-        ProcessEngineTask task,
-        CancellationToken cancellationToken
-    )
-    {
-        throw new NotImplementedException();
+        return client;
     }
 }

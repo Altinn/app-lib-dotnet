@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Altinn.App.ProcessEngine.Models;
 
@@ -90,16 +89,20 @@ internal partial class ProcessEngine
         _logger.LogDebug("Status after acquiring slot: {Status}", Status);
     }
 
-    private void ReleaseQueueSlot()
+    private void RemoveJobAndReleaseQueueSlot(ProcessEngineJob job)
     {
         _logger.LogDebug("Releasing queue slot");
+        bool removed = _inbox.TryRemove(job.Identifier, out _);
+        if (!removed)
+            throw new InvalidOperationException($"Unable to release queue slot {job.Identifier}");
+
         _inboxCapacityLimit.Release();
     }
 
     [MemberNotNull(nameof(_inbox), nameof(_inboxCapacityLimit))]
     private void InitializeInbox()
     {
-        _inbox = new ConcurrentQueue<ProcessEngineJob>();
+        _inbox = [];
         _inboxCapacityLimit = new SemaphoreSlim(Settings.QueueCapacity, Settings.QueueCapacity);
     }
 

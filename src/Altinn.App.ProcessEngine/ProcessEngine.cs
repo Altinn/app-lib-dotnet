@@ -13,6 +13,7 @@ internal interface IProcessEngine
     Task Start(CancellationToken cancellationToken = default);
     Task Stop();
     Task<ProcessEngineResponse> EnqueueJob(ProcessEngineRequest request, CancellationToken cancellationToken = default);
+    bool HasQueuedJob(string jobIdentifier);
 }
 
 internal partial class ProcessEngine : IProcessEngine, IDisposable
@@ -29,7 +30,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
         MaxDelay: TimeSpan.FromMinutes(1)
     );
 
-    private ConcurrentQueue<ProcessEngineJob> _inbox;
+    private ConcurrentDictionary<string, ProcessEngineJob> _inbox;
     private CancellationTokenSource? _cancellationTokenSource;
     private Task? _mainLoopTask;
     private SemaphoreSlim _inboxCapacityLimit;
@@ -137,32 +138,21 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
 
         // Process jobs in parallel
         _logger.LogDebug("Processing jobs. Queue size: {InboxCount}", InboxCount);
-        ConcurrentBag<ProcessEngineJob> requeue = [];
         await Parallel.ForEachAsync(
-            DequeueAllJobs(),
+            _inbox.Values.ToList(), // Copy so we can modify the original collection during iteration
             cancellationToken,
-            async (item, ct) =>
+            async (job, ct) =>
             {
-                await ProcessJob(item, requeue, ct);
+                await ProcessJob(job, ct);
             }
         );
-
-        // Requeue jobs
-        foreach (var job in requeue)
-        {
-            await EnqueueJob(job, updateDatabase: false, cancellationToken);
-        }
 
         // Small delay before next iteration
         _logger.LogDebug("Tiny nap");
         await Task.Delay(100, cancellationToken);
     }
 
-    private async Task ProcessJob(
-        ProcessEngineJob job,
-        ConcurrentBag<ProcessEngineJob> requeue,
-        CancellationToken cancellationToken
-    )
+    private async Task ProcessJob(ProcessEngineJob job, CancellationToken cancellationToken)
     {
         _logger.LogDebug("Processing job: {Job}", job);
 
@@ -188,18 +178,14 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
             task.ExecutionTask ??= _taskHandler.Execute(task, cancellationToken);
 
             // Background wait
-            if (
-                !task.ExecutionTask.IsCompleted
-                && task.Command.ExecutionStrategy == ProcessEngineTaskExecutionStrategy.PeriodicPolling
-            )
+            if (!task.ExecutionTask.IsCompleted)
             {
                 _logger.LogDebug("Performing background wait for task {Task}", task);
                 task.Status = ProcessEngineItemStatus.Processing; // Don't persist this, we're dependent on the in-memory task anyway
                 break;
             }
 
-            // Foreground wait
-            var result = await task.ExecutionTask;
+            var result = await task.ExecutionTask.WaitAsync(cancellationToken);
 
             // Success
             if (result.IsSuccess())
@@ -220,12 +206,11 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
         if (job.Status.IsDone())
         {
             _logger.LogDebug("Job {Job} is done", job);
-            ReleaseQueueSlot();
+            RemoveJobAndReleaseQueueSlot(job);
         }
         else
         {
-            _logger.LogDebug("Job {Job} is still processing, slating for requeue", job);
-            requeue.Add(job);
+            _logger.LogDebug("Job {Job} is still processing", job);
         }
 
         return;
