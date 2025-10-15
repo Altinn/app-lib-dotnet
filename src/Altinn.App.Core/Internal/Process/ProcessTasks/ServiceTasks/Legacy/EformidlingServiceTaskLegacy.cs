@@ -13,7 +13,7 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 /// <summary>
 /// Service task that sends eFormidling shipment, if EFormidling is enabled in config and EFormidling.SendAfterTaskId matches the current task.
 /// </summary>
-/// <remarks>Planned to be replaced by <see cref="EFormidlingServiceTask"/>, but kept for now for backwards compatability. Called inline in <see cref="EndTaskEventHandler"/> instead of through the service task system.</remarks>
+/// <remarks>Planned to be replaced by <see cref="EFormidlingServiceTask"/>, but kept for now for backwards compatibility. Called inline in <see cref="EndTaskEventHandler"/> instead of through the service task system.</remarks>
 internal interface IEFormidlingServiceTaskLegacy
 {
     /// <summary>
