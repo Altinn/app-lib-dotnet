@@ -16,7 +16,7 @@ internal interface IPdfServiceTaskLegacy
     /// Executes the service task.
     /// </summary>
     Task Execute(string taskId, Instance instance);
-};
+}
 
 /// <inheritdoc />
 internal class PdfServiceTaskLegacy : IPdfServiceTaskLegacy
