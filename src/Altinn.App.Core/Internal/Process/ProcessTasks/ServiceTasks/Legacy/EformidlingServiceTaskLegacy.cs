@@ -20,7 +20,7 @@ internal interface IEFormidlingServiceTaskLegacy
     /// Executes the service task.
     /// </summary>
     Task Execute(string taskId, Instance instance);
-};
+}
 
 /// <inheritdoc />
 internal class EformidlingServiceTaskLegacy : IEFormidlingServiceTaskLegacy
