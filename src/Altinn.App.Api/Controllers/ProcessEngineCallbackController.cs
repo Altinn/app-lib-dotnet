@@ -11,7 +11,7 @@ namespace Altinn.App.Api.Controllers;
 /// </summary>
 [ApiController]
 [Authorize(AuthenticationSchemes = AuthConstants.ApiKeySchemeName)]
-[Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engine-callbacks")]
+[Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engine-callback")]
 public class ProcessEngineCallbackController : ControllerBase
 {
     private readonly ILogger<ProcessEngineCallbackController> _logger;
@@ -30,15 +30,8 @@ public class ProcessEngineCallbackController : ControllerBase
     }
 
     /// <summary>
-    /// Get the data elements being signed in the current signature task.
+    /// Executes a command based on the provided command key.
     /// </summary>
-    /// <param name="org">unique identifier of the organization responsible for the app</param>
-    /// <param name="app">application identifier which is unique within an organization</param>
-    /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
-    /// <param name="instanceGuid">unique id to identify the instance</param>
-    /// <param name="commandKey"></param>
-    /// <param name="payload"></param>
-    /// <returns>An object containing the documents to be signed</returns>
     [HttpPost("{commandKey}")]
     public async Task<IActionResult> ExecuteCommand(
         [FromRoute] string org,
