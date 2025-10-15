@@ -34,7 +34,7 @@ public class InstanceClientMockSi : IInstanceClient
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public Task<Instance> CreateInstance(
+    public async Task<Instance> CreateInstance(
         string org,
         string app,
         Instance instance,
@@ -81,7 +81,7 @@ public class InstanceClientMockSi : IInstanceClient
         return await GetInstance(app, org, instanceOwnerId, instanceGuid);
     }
 
-    public Task<Instance> GetInstance(
+    public async Task<Instance> GetInstance(
         string app,
         string org,
         int instanceOwnerPartyId,
@@ -103,7 +103,7 @@ public class InstanceClientMockSi : IInstanceClient
         return instance;
     }
 
-    public Task<Instance> UpdateProcess(
+    public async Task<Instance> UpdateProcess(
         Instance instance,
         StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
@@ -415,7 +415,7 @@ public class InstanceClientMockSi : IInstanceClient
         return storedInstance;
     }
 
-    public Task<Instance> DeleteInstance(
+    public async Task<Instance> DeleteInstance(
         int instanceOwnerPartyId,
         Guid instanceGuid,
         bool hard,
