@@ -115,6 +115,7 @@ public class DataClientMock : IDataClient
         Guid instanceGuid,
         Guid dataId,
         StorageAuthenticationMethod? authenticationMethod = null,
+        TimeSpan? timeout = null,
         CancellationToken cancellationToken = default
     )
     {
