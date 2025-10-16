@@ -6,6 +6,7 @@ using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
@@ -26,6 +27,8 @@ namespace Altinn.App.Core.Internal.Process;
 /// </summary>
 public class ProcessEngine : IProcessEngine
 {
+    private const int MaxNextIterationsAllowed = 100;
+
     private readonly IProcessReader _processReader;
     private readonly IProcessNavigator _processNavigator;
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
@@ -38,6 +41,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IValidationService _validationService;
+    private readonly IInstanceClient _instanceClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -52,6 +56,7 @@ public class ProcessEngine : IProcessEngine
         IServiceProvider serviceProvider,
         IProcessEngineAuthorizer processEngineAuthorizer,
         IValidationService validationService,
+        IInstanceClient instanceClient,
         ILogger<ProcessEngine> logger,
         Telemetry? telemetry = null
     )
@@ -65,6 +70,7 @@ public class ProcessEngine : IProcessEngine
         _authenticationContext = authenticationContext;
         _processEngineAuthorizer = processEngineAuthorizer;
         _validationService = validationService;
+        _instanceClient = instanceClient;
         _logger = logger;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
@@ -147,6 +153,72 @@ public class ProcessEngine : IProcessEngine
 
         using Activity? activity = _telemetry?.StartProcessNextActivity(instance, request.Action);
 
+        ProcessChangeResult result;
+        bool moveToNextTaskAutomatically;
+        bool firstIteration = true;
+        int iterationCount = 0;
+
+        do
+        {
+            if (iterationCount >= MaxNextIterationsAllowed)
+            {
+                _logger.LogError(
+                    "More than {MaxIterations} iterations detected in process for instance {InstanceId}. Possible loop in process definition.",
+                    MaxNextIterationsAllowed,
+                    instance.Id
+                );
+                var loopError = new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorType = ProcessErrorType.Internal,
+                    ErrorTitle = "Process loop detected",
+                    ErrorMessage =
+                        $"More than {MaxNextIterationsAllowed} iterations detected in process. Possible loop in process definition.",
+                };
+                activity?.SetProcessChangeResult(loopError);
+                return loopError;
+            }
+
+            // Fetch fresh instance on subsequent iterations
+            if (!firstIteration)
+            {
+                instance = await _instanceClient.GetInstance(instance);
+            }
+
+            // Only use action and actionOnBehalfOf on first iteration
+            var processNextRequest = new ProcessNextRequest
+            {
+                User = request.User,
+                Instance = instance,
+                Action = firstIteration ? request.Action : null,
+                ActionOnBehalfOf = firstIteration ? request.ActionOnBehalfOf : null,
+                Language = request.Language,
+            };
+
+            result = await ProcessNext(processNextRequest, ct);
+
+            if (!result.Success)
+            {
+                activity?.SetProcessChangeResult(result);
+                return result;
+            }
+
+            moveToNextTaskAutomatically = IsServiceTask(instance);
+            firstIteration = false;
+            iterationCount++;
+        } while (moveToNextTaskAutomatically);
+
+        activity?.SetProcessChangeResult(result);
+        return result;
+    }
+
+    /// <summary>
+    /// Internal method that performs a single process next operation without automatic service task handling.
+    /// </summary>
+    private async Task<ProcessChangeResult> ProcessNext(ProcessNextRequest request, CancellationToken ct = default)
+    {
+        Instance instance = request.Instance;
+
         if (
             !TryGetCurrentTaskIdAndAltinnTaskType(
                 instance,
@@ -155,7 +227,6 @@ public class ProcessEngine : IProcessEngine
             )
         )
         {
-            activity?.SetProcessChangeResult(invalidProcessStateError);
             return invalidProcessStateError;
         }
 
@@ -165,15 +236,13 @@ public class ProcessEngine : IProcessEngine
 
         if (!authorized)
         {
-            var result = new ProcessChangeResult
+            return new ProcessChangeResult
             {
                 Success = false,
                 ErrorType = ProcessErrorType.Unauthorized,
                 ErrorMessage =
                     $"User is not authorized to perform process next. Task ID: {LogSanitizer.Sanitize(currentTaskId)}. Task type: {LogSanitizer.Sanitize(altinnTaskType)}. Action: {LogSanitizer.Sanitize(request.Action ?? "none")}.",
             };
-            activity?.SetProcessChangeResult(result);
-            return result;
         }
 
         _logger.LogDebug(
@@ -204,7 +273,6 @@ public class ProcessEngine : IProcessEngine
 
                 if (!serviceTaskProcessChangeResult.Success)
                 {
-                    activity?.SetProcessChangeResult(serviceTaskProcessChangeResult);
                     return serviceTaskProcessChangeResult;
                 }
             }
@@ -216,14 +284,12 @@ public class ProcessEngine : IProcessEngine
 
                     if (userActionResult.ResultType is ResultType.Failure)
                     {
-                        var result = new ProcessChangeResult()
+                        return new ProcessChangeResult()
                         {
                             Success = false,
                             ErrorMessage = $"Action handler for action {LogSanitizer.Sanitize(request.Action)} failed!",
                             ErrorType = userActionResult.ErrorType,
                         };
-                        activity?.SetProcessChangeResult(result);
-                        return result;
                     }
                 }
             }
@@ -260,7 +326,7 @@ public class ProcessEngine : IProcessEngine
 
             if (errorCount > 0)
             {
-                var result = new ProcessChangeResult
+                return new ProcessChangeResult
                 {
                     Success = false,
                     ErrorType = ProcessErrorType.Conflict,
@@ -268,8 +334,6 @@ public class ProcessEngine : IProcessEngine
                     ErrorMessage = $"{errorCount} validation errors found for task {currentTaskId}",
                     ValidationIssues = validationIssues,
                 };
-                activity?.SetProcessChangeResult(result);
-                return result;
             }
         }
 
@@ -281,14 +345,21 @@ public class ProcessEngine : IProcessEngine
             await RunAppDefinedProcessEndHandlers(instance, moveToNextResult.ProcessStateChange?.Events);
         }
 
-        var changeResult = new ProcessChangeResult()
-        {
-            Success = true,
-            ProcessStateChange = moveToNextResult.ProcessStateChange,
-        };
+        return new ProcessChangeResult() { Success = true, ProcessStateChange = moveToNextResult.ProcessStateChange };
+    }
 
-        activity?.SetProcessChangeResult(changeResult);
-        return changeResult;
+    /// <summary>
+    /// Check if the current task is a service task that should be automatically processed.
+    /// </summary>
+    private bool IsServiceTask(Instance instance)
+    {
+        if (instance.Process?.CurrentTask is null)
+        {
+            return false;
+        }
+
+        IServiceTask? serviceTask = CheckIfServiceTask(instance.Process.CurrentTask.AltinnTaskType);
+        return serviceTask is not null;
     }
 
     /// <inheritdoc/>

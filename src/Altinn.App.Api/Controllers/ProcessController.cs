@@ -9,7 +9,6 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.Validation;
@@ -267,35 +266,23 @@ public class ProcessController : ControllerBase
     {
         try
         {
-            Instance instance;
-            ProcessChangeResult result;
+            Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
-            bool moveToNextTaskAutomatically;
-            bool firstIteration = true;
-
-            do
+            var processNextRequest = new ProcessNextRequest
             {
-                instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+                User = User,
+                Instance = instance,
+                Action = processNext?.Action,
+                ActionOnBehalfOf = processNext?.ActionOnBehalfOf,
+                Language = language,
+            };
 
-                var processNextRequest = new ProcessNextRequest
-                {
-                    User = User,
-                    Instance = instance,
-                    Action = firstIteration ? processNext?.Action : null,
-                    ActionOnBehalfOf = firstIteration ? processNext?.ActionOnBehalfOf : null,
-                    Language = language,
-                };
+            ProcessChangeResult result = await _processEngine.Next(processNextRequest, ct);
 
-                result = await _processEngine.Next(processNextRequest, ct);
-
-                if (!result.Success)
-                {
-                    return GetResultForError(result);
-                }
-
-                moveToNextTaskAutomatically = IsServiceTask(instance);
-                firstIteration = false;
-            } while (moveToNextTaskAutomatically);
+            if (!result.Success)
+            {
+                return GetResultForError(result);
+            }
 
             AppProcessState appProcessState = await ConvertAndAuthorizeActions(
                 instance,
@@ -516,17 +503,6 @@ public class ProcessController : ControllerBase
         appProcessState.ProcessTasks = processTasks;
 
         return appProcessState;
-    }
-
-    private bool IsServiceTask(Instance instance)
-    {
-        if (instance.Process.CurrentTask is null)
-        {
-            return false;
-        }
-
-        IServiceTask? serviceTask = _processEngine.CheckIfServiceTask(instance.Process.CurrentTask.AltinnTaskType);
-        return serviceTask is not null;
     }
 
     private ActionResult<AppProcessState> GetResultForError(ProcessChangeResult result)
