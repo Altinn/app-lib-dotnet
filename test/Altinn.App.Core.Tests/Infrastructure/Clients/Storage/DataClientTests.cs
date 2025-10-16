@@ -1153,7 +1153,6 @@ public class DataClientTests
         public required ServiceProvider ServiceProvider { get; init; }
         public required FixtureMocks Mocks { get; init; }
         public required HttpClient BaseHttpClient { get; init; }
-        public required HttpClient StreamingHttpClient { get; init; }
 
         public static Fixture Create(
             Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> dataClientDelegatingHandler,
@@ -1172,7 +1171,6 @@ public class DataClientTests
             // Setup HttpClientFactory mock to return a streaming client
             DelegatingHandlerStub streamingDelegatingHandler = new(dataClientDelegatingHandler);
             HttpClient streamingHttpClient = new(streamingDelegatingHandler) { Timeout = TimeSpan.FromMinutes(30) };
-            mocks.HttpClientFactoryMock.Setup(x => x.CreateClient("DataClient.Streaming")).Returns(streamingHttpClient);
 
             var services = new ServiceCollection();
             services.Configure<PlatformSettings>(options => options.ApiStorageEndpoint = ApiStorageEndpoint);
@@ -1203,7 +1201,6 @@ public class DataClientTests
                 ServiceProvider = serviceProvider,
                 DataClient = new DataClient(httpClient, serviceProvider),
                 BaseHttpClient = httpClient,
-                StreamingHttpClient = streamingHttpClient,
             };
         }
 
@@ -1220,7 +1217,6 @@ public class DataClientTests
         {
             await ServiceProvider.DisposeAsync();
             BaseHttpClient.Dispose();
-            StreamingHttpClient.Dispose();
         }
     }
 

@@ -101,13 +101,6 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IAuthenticationClient, AuthenticationClient>();
         services.AddHttpClient<IAuthorizationClient, AuthorizationClient>();
         services.AddHttpClient<IDataClient, DataClient>();
-        services.AddHttpClient(
-            "DataClient.Streaming",
-            client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(30); // Longer timeout for streaming
-            }
-        );
         services.AddHttpClient<IOrganizationClient, RegisterERClient>();
         services.AddHttpClient<IInstanceClient, InstanceClient>();
         services.AddHttpClient<IInstanceEventClient, InstanceEventClient>();
