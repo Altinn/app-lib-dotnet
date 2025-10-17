@@ -1,15 +1,13 @@
 using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
-using Altinn.App.Core.Features;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 /// <summary>
-/// Interface for composing message requests and handling received messages from FIKS Arkiv.
+/// Orchestrator of the sending and receiving of messages via Fiks Arkiv.
 /// </summary>
-[ImplementableByApps]
-public interface IFiksArkivMessageHandler : IFiksArkivConfigValidation
+internal interface IFiksArkivMessageHandler : IFiksArkivConfigValidation
 {
     /// <summary>
     /// Creates a message request for the given instance.

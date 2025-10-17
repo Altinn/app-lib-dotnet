@@ -49,10 +49,17 @@ internal abstract class FiksSetupBuilder(IServiceCollection services)
         return this;
     }
 
-    protected FiksSetupBuilder ConfigureMessageHandler<TMessageHandler>()
-        where TMessageHandler : IFiksArkivMessageHandler
+    protected FiksSetupBuilder ConfigureMessageResponseHandler<TMessageHandler>()
+        where TMessageHandler : IFiksArkivMessageResponseHandler
     {
-        services.AddTransient(typeof(IFiksArkivMessageHandler), typeof(TMessageHandler));
+        services.AddTransient(typeof(IFiksArkivMessageResponseHandler), typeof(TMessageHandler));
+        return this;
+    }
+
+    protected FiksSetupBuilder ConfigureMessagePayloadGenerator<TMessageHandler>()
+        where TMessageHandler : IFiksArkivMessagePayloadGenerator
+    {
+        services.AddTransient(typeof(IFiksArkivMessagePayloadGenerator), typeof(TMessageHandler));
         return this;
     }
 
@@ -132,9 +139,14 @@ internal sealed class FiksArkivSetupBuilder(IServiceCollection services)
         (IFiksArkivSetupBuilder)ConfigureFiksArkiv(configSectionPath);
 
     /// <inheritdoc />
-    public IFiksArkivSetupBuilder WithMessageHandler<TMessageHandler>()
-        where TMessageHandler : IFiksArkivMessageHandler =>
-        (IFiksArkivSetupBuilder)ConfigureMessageHandler<TMessageHandler>();
+    public IFiksArkivSetupBuilder WithMessageResponseHandler<TMessageHandler>()
+        where TMessageHandler : IFiksArkivMessageResponseHandler =>
+        (IFiksArkivSetupBuilder)ConfigureMessageResponseHandler<TMessageHandler>();
+
+    /// <inheritdoc />
+    public IFiksArkivSetupBuilder WithMessagePayloadGenerator<TMessageHandler>()
+        where TMessageHandler : IFiksArkivMessagePayloadGenerator =>
+        (IFiksArkivSetupBuilder)ConfigureMessagePayloadGenerator<TMessageHandler>();
 
     /// <inheritdoc />
     public IFiksArkivSetupBuilder WithAutoSendDecision<TAutoSendDecision>()

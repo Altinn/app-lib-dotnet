@@ -10,7 +10,14 @@ public static class FiksArkivConstants
     /// Re: NOARK-5 specification <see href="https://docs.digdir.no/docs/eFormidling/Utvikling/Dokumenttyper/standard_arkivmelding"/>
     /// </summary>
     public const string ArchiveRecordFilename = "arkivmelding.xml";
-
-    internal const string AltinnSystemLabel = "Altinn";
+    internal const string AltinnSystemId = "Altinn Studio";
     internal const string AltinnOrgNo = "991825827";
+
+    internal static class ClassificationId
+    {
+        public const string NationalIdentityNumber = "Fødselsnummer";
+        public const string OrganizationNumber = "Organisasjonsnummer";
+        public const string AltinnUserId = "AltinnBrukerId";
+        public const string SystemUserId = "SystembrukerId";
+    }
 }

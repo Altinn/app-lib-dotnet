@@ -17,7 +17,7 @@ public sealed record FiksArkivSettings
     /// Settings related to the receipt for a successful shipment.
     /// </summary>
     [JsonPropertyName("receipt")]
-    public FiksArkivDataTypeSettings? Receipt { get; set; }
+    public FiksArkivReceiptSettings? Receipt { get; set; }
 
     /// <summary>
     /// Settings related to the recipient of the Fiks Arkiv message.
@@ -28,6 +28,7 @@ public sealed record FiksArkivSettings
     /// <summary>
     /// Settings related to the Fiks Arkiv shipment metadata.
     /// </summary>
+    [JsonPropertyName("metadata")]
     public FiksArkivMetadataSettings? Metadata { get; set; }
 
     /// <summary>
@@ -44,29 +45,77 @@ public sealed record FiksArkivSettings
 }
 
 /// <summary>
+/// Represents the settings for Fiks Arkiv receipts.
+/// </summary>
+public sealed record FiksArkivReceiptSettings
+{
+    /// <summary>
+    /// Settings for the storage of the confirmation record (arkivkvittering).
+    /// </summary>
+    [JsonPropertyName("confirmationRecord")]
+    public required FiksArkivDataTypeSettings ConfirmationRecord { get; set; }
+
+    /// <summary>
+    /// Settings for the storage of the archive record (arkivmelding).
+    /// </summary>
+    [JsonPropertyName("archiveRecord")]
+    public required FiksArkivDataTypeSettings ArchiveRecord { get; set; }
+
+    internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes)
+    {
+        ConfirmationRecord.Validate($"{propertyName}.{nameof(ConfirmationRecord)}", dataTypes, requireFilename: true);
+        ArchiveRecord.Validate($"{propertyName}.{nameof(ArchiveRecord)}", dataTypes, requireFilename: true);
+    }
+}
+
+/// <summary>
 /// Represents various metadata settings for a Fiks Arkiv shipment, such as arkivmelding.xml properties.
 /// </summary>
-public class FiksArkivMetadataSettings
+public sealed record FiksArkivMetadataSettings
 {
+    /// <summary>
+    /// The system ID to use for the generated arkivmelding.xml. Defaults to "Altinn Studio" if not provided.
+    /// </summary>
+    [JsonPropertyName("systemId")]
+    public FiksArkivBindableValue<string>? SystemId { get; set; }
+
+    /// <summary>
+    /// The rule ID to use for the generated arkivmelding.xml. Is omitted from the XML if not provided.
+    /// </summary>
+    [JsonPropertyName("ruleId")]
+    public FiksArkivBindableValue<string>? RuleId { get; set; }
+
+    /// <summary>
+    /// The ID to use for the generated saksmappe (case file) element in the arkivmelding.xml.
+    /// If no value is provided, the instance identifier will be used.
+    /// </summary>
+    [JsonPropertyName("caseFileId")]
+    public FiksArkivBindableValue<string>? CaseFileId { get; set; }
+
     /// <summary>
     /// The title to use for the generated saksmappe (case file) element in the arkivmelding.xml.
     /// If no title is provided, the value will default to the application title as defined in applicationmetadata.json.
     /// </summary>
-    public FiksArkivBindableValue<string>? CaseFileTitle { get; init; }
+    [JsonPropertyName("caseFileTitle")]
+    public FiksArkivBindableValue<string>? CaseFileTitle { get; set; }
 
     /// <summary>
     /// The title to use for the generated journalpost (journal entry) element in the arkivmelding.xml.
     /// If no title is provided, the value will default to the application title as defined in applicationmetadata.json.
     /// </summary>
+    [JsonPropertyName("journalEntryTitle")]
     public FiksArkivBindableValue<string>? JournalEntryTitle { get; set; }
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
     /// </summary>
     internal void Validate(IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
         const string propertyName = $"{nameof(FiksArkivSettings.Metadata)}";
 
+        SystemId?.Validate($"{propertyName}.{nameof(SystemId)}", dataTypes, appModelResolver);
+        RuleId?.Validate($"{propertyName}.{nameof(RuleId)}", dataTypes, appModelResolver);
+        CaseFileId?.Validate($"{propertyName}.{nameof(CaseFileId)}", dataTypes, appModelResolver);
         CaseFileTitle?.Validate($"{propertyName}.{nameof(CaseFileTitle)}", dataTypes, appModelResolver);
         JournalEntryTitle?.Validate($"{propertyName}.{nameof(JournalEntryTitle)}", dataTypes, appModelResolver);
     }
@@ -83,16 +132,16 @@ public sealed record FiksArkivDocumentSettings
     /// which will eventually be sent as a `Hoveddokument` to Fiks Arkiv.
     /// </summary>
     [JsonPropertyName("primaryDocument")]
-    public required FiksArkivDataTypeSettings PrimaryDocument { get; init; }
+    public required FiksArkivDataTypeSettings PrimaryDocument { get; set; }
 
     /// <summary>
     /// Optional settings for attachments. These are additional documents that will be sent as `Vedlegg` to Fiks Arkiv.
     /// </summary>
     [JsonPropertyName("attachments")]
-    public IReadOnlyList<FiksArkivDataTypeSettings>? Attachments { get; init; }
+    public IReadOnlyList<FiksArkivDataTypeSettings>? Attachments { get; set; }
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
     /// </summary>
     internal void Validate(IReadOnlyList<DataType> dataTypes)
     {
@@ -117,7 +166,7 @@ public sealed record FiksArkivAutoSendSettings
     /// and may or may not be used with other handlers.
     /// </summary>
     [JsonPropertyName("afterTaskId")]
-    public string? AfterTaskId { get; init; }
+    public string? AfterTaskId { get; set; }
 
     /// <summary>
     /// Settings related to error handling.
@@ -136,8 +185,6 @@ public sealed record FiksArkivAutoSendSettings
     /// </summary>
     internal void Validate(IReadOnlyList<ProcessTask> configuredProcessTasks)
     {
-        ErrorHandling?.Validate();
-
         const string propertyName =
             $"{nameof(FiksArkivSettings.AutoSend)}.{nameof(FiksArkivSettings.AutoSend.AfterTaskId)}";
 
@@ -162,19 +209,19 @@ public sealed record FiksArkivSuccessHandlingSettings
     /// Should we automatically progress to the next task after successfully sending the message?
     /// </summary>
     [JsonPropertyName("moveToNextTask")]
-    public bool MoveToNextTask { get; init; }
+    public bool MoveToNextTask { get; set; }
 
     /// <summary>
     /// When progressing to the next task, which action should we send?
     /// </summary>
     [JsonPropertyName("action")]
-    public string? Action { get; init; }
+    public string? Action { get; set; }
 
     /// <summary>
     /// Should we mark the instance as `completed` after successfully sending the message?
     /// </summary>
     [JsonPropertyName("markInstanceComplete")]
-    public bool MarkInstanceComplete { get; init; }
+    public bool MarkInstanceComplete { get; set; }
 }
 
 /// <summary>
@@ -186,41 +233,13 @@ public sealed record FiksArkivErrorHandlingSettings
     /// Should we automatically progress to the next task after failing to send the message?
     /// </summary>
     [JsonPropertyName("moveToNextTask")]
-    public bool MoveToNextTask { get; init; }
+    public bool MoveToNextTask { get; set; }
 
     /// <summary>
     /// When progressing to the next task, which action should we send?
     /// </summary>
     [JsonPropertyName("action")]
-    public string? Action { get; init; }
-
-    /// <summary>
-    /// Should we send email notifications?
-    /// </summary>
-    [JsonPropertyName("sendEmailNotifications")]
-    public bool? SendEmailNotifications { get; init; }
-
-    /// <summary>
-    /// The email addresses to send error notifications to.
-    /// </summary>
-    [JsonPropertyName("emailNotificationRecipients")]
-    public IEnumerable<string>? EmailNotificationRecipients { get; init; }
-
-    internal void Validate()
-    {
-        const string propertyName =
-            $"{nameof(FiksArkivSettings.AutoSend)}.{nameof(FiksArkivSettings.AutoSend.ErrorHandling)}";
-
-        if (SendEmailNotifications is true && EmailNotificationRecipients?.Any() is not true)
-            throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(SendEmailNotifications)} is enabled, but no recipients have been configured."
-            );
-
-        if (EmailNotificationRecipients?.Any(string.IsNullOrWhiteSpace) is true)
-            throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(EmailNotificationRecipients)} contains empty entries."
-            );
-    }
+    public string? Action { get; set; }
 }
 
 /// <summary>
@@ -231,34 +250,34 @@ public sealed record FiksArkivRecipientSettings
     /// <summary>
     /// The Fiks Arkiv recipient account. This is a <see cref="Guid"/> address to ship messages to.
     /// </summary>
-    public required FiksArkivBindableValue<Guid?> FiksAccount { get; init; }
+    public required FiksArkivBindableValue<Guid?> FiksAccount { get; set; }
 
     /// <summary>
     /// An optional identifier for the recipient. This can be a municipality number or other relevant identifier.
     /// </summary>
-    public FiksArkivBindableValue<string>? Identifier { get; init; }
-
-    /// <summary>
-    /// An optional organization number for the recipient.
-    /// </summary>
-    public FiksArkivBindableValue<string>? OrganizationNumber { get; init; }
+    public required FiksArkivBindableValue<string> Identifier { get; set; }
 
     /// <summary>
     /// An optional name for the recipient.
     /// </summary>
-    public FiksArkivBindableValue<string>? Name { get; init; }
+    public required FiksArkivBindableValue<string> Name { get; set; }
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// An optional organization number for the recipient.
+    /// </summary>
+    public FiksArkivBindableValue<string>? OrganizationNumber { get; set; }
+
+    /// <summary>
+    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
     /// </summary>
     internal void Validate(IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
         const string propertyName = $"{nameof(FiksArkivSettings.Recipient)}";
 
         FiksAccount.Validate($"{propertyName}.{nameof(FiksAccount)}", dataTypes, appModelResolver);
-        Identifier?.Validate($"{propertyName}.{nameof(Identifier)}", dataTypes, appModelResolver);
+        Identifier.Validate($"{propertyName}.{nameof(Identifier)}", dataTypes, appModelResolver);
+        Name.Validate($"{propertyName}.{nameof(Name)}", dataTypes, appModelResolver);
         OrganizationNumber?.Validate($"{propertyName}.{nameof(OrganizationNumber)}", dataTypes, appModelResolver);
-        Name?.Validate($"{propertyName}.{nameof(Name)}", dataTypes, appModelResolver);
     }
 }
 
@@ -272,22 +291,22 @@ public sealed record FiksArkivBindableValue<T>
     /// The value supplied directly.
     /// </summary>
     [JsonPropertyName("value")]
-    public T? Value { get; init; }
+    public T? Value { get; set; }
 
     /// <summary>
     /// A data model binding to the property containing the desired value.
     /// </summary>
     [JsonPropertyName("dataModelBinding")]
-    public FiksArkivDataModelBinding? DataModelBinding { get; init; }
+    public FiksArkivDataModelBinding? DataModelBinding { get; set; }
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
     /// </summary>
     internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
         if (Value is null && DataModelBinding is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}: Either `{nameof(Value)}` or `{nameof(DataModelBinding)}` must be configured for handler {nameof(FiksArkivDefaultMessageHandler)}."
+                $"{propertyName}: Either `{nameof(Value)}` or `{nameof(DataModelBinding)}` must be configured for handler {nameof(FiksArkivMessageHandler)}."
             );
 
         if (Value is not null && DataModelBinding is not null)
@@ -308,13 +327,13 @@ public sealed record FiksArkivDataModelBinding
     /// The data type of the binding (e.g. `Model`)
     /// </summary>
     [JsonPropertyName("dataType")]
-    public required string DataType { get; init; }
+    public required string DataType { get; set; }
 
     /// <summary>
     /// The field that contains the account ID. Dot notation is supported.
     /// </summary>
     [JsonPropertyName("field")]
-    public required string Field { get; init; }
+    public required string Field { get; set; }
 
     /// <summary>
     /// Implicit conversion from <see cref="FiksArkivDataModelBinding"/> to <see cref="ModelBinding"/>.
@@ -323,13 +342,13 @@ public sealed record FiksArkivDataModelBinding
         new() { Field = modelBinding.Field, DataType = modelBinding.DataType };
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
     /// </summary>
     internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
         if (string.IsNullOrWhiteSpace(DataType))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)} configuration is required for handler {nameof(FiksArkivDefaultMessageHandler)}"
+                $"{propertyName}.{nameof(DataType)} configuration is required for handler {nameof(FiksArkivMessageHandler)}"
             );
 
         DataType? dataType = dataTypes.FirstOrDefault(x => x.Id == DataType);
@@ -340,7 +359,7 @@ public sealed record FiksArkivDataModelBinding
 
         if (string.IsNullOrWhiteSpace(Field))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(Field)} configuration is required for handler {nameof(FiksArkivDefaultMessageHandler)}."
+                $"{propertyName}.{nameof(Field)} configuration is required for handler {nameof(FiksArkivMessageHandler)}."
             );
 
         Type type =
@@ -367,27 +386,38 @@ public sealed record FiksArkivDataTypeSettings
     /// The data type as defined in applicationmetadata.json.
     /// </summary>
     [JsonPropertyName("dataType")]
-    public required string DataType { get; init; }
+    public required string DataType { get; set; }
 
     /// <summary>
     /// Optional filename for the binding. If not specified, the filename from <see cref="DataElement"/> will be used.
     /// If that also is missing, the filename will be derived from the data type.
     /// </summary>
     [JsonPropertyName("filename")]
-    public string? Filename { get; init; }
+    public string? Filename { get; set; }
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultMessageHandler"/>
+    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
     /// </summary>
-    internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes)
+    internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes, bool requireFilename = false)
     {
         if (string.IsNullOrWhiteSpace(DataType))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)} configuration is required for handler {nameof(FiksArkivDefaultMessageHandler)}."
+                $"{propertyName}.{nameof(DataType)} configuration is required for handler {nameof(FiksArkivMessageHandler)}."
             );
         if (dataTypes.Any(x => x.Id == DataType) is false)
             throw new FiksArkivConfigurationException(
                 $"{propertyName}.{nameof(DataType)} mismatch with application data types: {DataType}"
             );
+
+        if (requireFilename && string.IsNullOrWhiteSpace(Filename))
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(Filename)} configuration is required for handler {nameof(FiksArkivMessageHandler)}."
+            );
     }
+
+    /// <summary>
+    /// Gets the filename if set, otherwise derives a filename from the data type and the provided default extension.
+    /// </summary>
+    internal string GetFilenameOrDefault(string defaultExtension) =>
+        !string.IsNullOrWhiteSpace(Filename) ? Filename : $"{DataType}.{defaultExtension.TrimStart('.')}";
 }

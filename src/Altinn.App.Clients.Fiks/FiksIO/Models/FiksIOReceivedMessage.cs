@@ -91,7 +91,7 @@ public sealed record FiksIOReceivedMessageContent
     /// <summary>
     /// Indicates whether this message has been re-sent or not.
     /// </summary>
-    public bool ReSent => _mottattMelding.Resendt;
+    public bool IsReSent => _mottattMelding.Resendt;
 
     /// <summary>
     /// Write the encrypted stream to a ZIP file.
@@ -118,26 +118,14 @@ public sealed record FiksIOReceivedMessageContent
     public Task<Stream> GetDecryptedStream() => _mottattMelding.DecryptedStream;
 
     /// <summary>
-    /// Gets the decrypted payloads.
-    /// </summary>
-    public async Task<IReadOnlyList<FiksIOMessagePayload>?> GetDecryptedPayloads()
-    {
-        if (_mottattMelding.HasPayload is false)
-            return null;
-
-        var decryptedPayloads = await _mottattMelding.DecryptedPayloads;
-        return decryptedPayloads.Select(x => new FiksIOMessagePayload(x.Filename, x.Payload)).ToList();
-    }
-
-    /// <summary>
     /// Gets the decrypted payload content as strings. Cached after first call.
     /// </summary>
-    public async Task<IReadOnlyList<(string Filename, string Content)>?> GetDecryptedPayloadStrings()
+    public async Task<IReadOnlyList<(string Filename, string Content)>?> GetDecryptedPayloads()
     {
         if (_decrypedPayloadStrings is null && _mottattMelding.HasPayload)
         {
-            var payloads = await GetDecryptedPayloads();
-            _decrypedPayloadStrings = payloads?.Select(x => (x.Filename, x.Data.ReadToString())).ToList();
+            var decryptedPayloads = await _mottattMelding.DecryptedPayloads;
+            _decrypedPayloadStrings = decryptedPayloads.Select(x => (x.Filename, x.Payload.ReadToString())).ToList();
         }
 
         return _decrypedPayloadStrings;
@@ -150,21 +138,6 @@ public sealed record FiksIOReceivedMessageContent
     {
         _mottattMelding = mottattMelding;
     }
-
-    // private async Task<IReadOnlyList<FiksIOMessagePayload>?> GetDecryptedPayloads()
-    // {
-    //     if (_mottattMelding.HasPayload is false)
-    //         return null;
-    //
-    //     var decryptedPayloads = await _mottattMelding.DecryptedPayloads;
-    //     return decryptedPayloads.Select(x => new FiksIOMessagePayload(x.Filename, x.Payload)).ToList();
-    // }
-
-    // private async Task<IReadOnlyList<(string Filename, string Content)>?> GetDecryptedPayloadStrings()
-    // {
-    //     var payloads = await GetDecryptedPayloads();
-    //     return payloads?.Select(x => (x.Filename, x.Data.ReadToString())).ToList();
-    // }
 }
 
 /// <summary>

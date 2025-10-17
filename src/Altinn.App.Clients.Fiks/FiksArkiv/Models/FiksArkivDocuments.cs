@@ -3,13 +3,13 @@ using Altinn.App.Clients.Fiks.FiksIO.Models;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv.Models;
 
-internal sealed record ArchiveDocumentsWrapper
+internal sealed record FiksArkivDocuments
 {
     public MessagePayloadWrapper PrimaryDocument { get; }
     public IEnumerable<MessagePayloadWrapper> AttachmentDocuments { get; }
     private List<MessagePayloadWrapper> _allDocuments { get; }
 
-    public ArchiveDocumentsWrapper(
+    public FiksArkivDocuments(
         MessagePayloadWrapper primaryDocument,
         IEnumerable<MessagePayloadWrapper> attachmentDocuments
     )

@@ -16,8 +16,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
-// using JsonSerializer = System.Text.Json.JsonSerializer;
-
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
@@ -54,11 +52,28 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         _logger = logger;
     }
 
+    public async Task<JwtToken> GetServiceOwnerToken()
+    {
+        try
+        {
+            return await _authenticationTokenResolver.GetAccessToken(_serviceOwnerAuth);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(
+                e,
+                "Failed to retrieve service owner token for FiksArkivInstanceClient: {Error}",
+                e.Message
+            );
+            throw new FiksArkivConfigurationException($"Error retrieving service owner token: {e.Message}", e);
+        }
+    }
+
     public async Task<Instance> GetInstance(InstanceIdentifier instanceIdentifier)
     {
         using var activity = _telemetry?.StartGetInstanceByGuidActivity(instanceIdentifier.InstanceGuid);
 
-        using HttpClient client = await GetAuthenticatedClient();
+        using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.Storage);
         using HttpResponseMessage response = await client.GetAsync($"instances/{instanceIdentifier}");
 
         return await DeserializeResponse<Instance>(response);
@@ -70,11 +85,11 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
 
         try
         {
-            using HttpClient client = await GetAuthenticatedClient();
-            using StringContent actionPayload = GetProcessNextAction(action);
+            using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.App);
+            using StringContent payload = GetProcessNextAction(action);
             using HttpResponseMessage response = await client.PutAsync(
                 $"instances/{instanceIdentifier}/process/next",
-                actionPayload
+                payload
             );
 
             await EnsureSuccessStatusCode(response);
@@ -94,11 +109,11 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
 
         try
         {
-            using HttpClient client = await GetAuthenticatedClient();
-            using StringContent emptyPayload = new(string.Empty);
+            using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.Storage);
+            using StringContent payload = new(string.Empty);
             using HttpResponseMessage response = await client.PostAsync(
                 $"instances/{instanceIdentifier}/complete",
-                emptyPayload
+                payload
             );
 
             await EnsureSuccessStatusCode(response);
@@ -112,12 +127,12 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         }
     }
 
-    public async Task<DataElement> InsertBinaryData(
+    public async Task<DataElement> InsertBinaryData<TContent>(
         InstanceIdentifier instanceIdentifier,
         string dataType,
         string contentType,
         string filename,
-        Stream stream,
+        TContent content,
         string? generatedFromTask = null
     )
     {
@@ -136,16 +151,24 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             if (!string.IsNullOrEmpty(generatedFromTask))
                 url += $"&generatedFromTask={generatedFromTask}";
 
-            using StreamContent content = new(stream);
-            content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-            content.Headers.ContentDisposition = new ContentDispositionHeaderValue(DispositionTypeNames.Attachment)
+            using HttpContent payload = content switch
+            {
+                byte[] bytes => new ByteArrayContent(bytes),
+                Stream stream => new StreamContent(stream),
+                _ => throw new FiksArkivException(
+                    $"Unsupported content type: {typeof(TContent).Name}. Expected byte[] or Stream."
+                ),
+            };
+
+            payload.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+            payload.Headers.ContentDisposition = new ContentDispositionHeaderValue(DispositionTypeNames.Attachment)
             {
                 FileName = filename,
                 FileNameStar = filename,
             };
 
-            using HttpClient client = await GetAuthenticatedClient();
-            using HttpResponseMessage response = await client.PostAsync(url, content);
+            using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.Storage);
+            using HttpResponseMessage response = await client.PostAsync(url, payload);
 
             return await DeserializeResponse<DataElement>(response);
         }
@@ -193,15 +216,20 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         Exception? innerException = null
     )
     {
+        // TODO: Replace with new dispose-safe PlatformHttpException variant
         string errorMessage = $"{(int)response.StatusCode} {response.ReasonPhrase}: {content}";
         return new PlatformHttpException(response, errorMessage, innerException);
     }
 
-    private async Task<HttpClient> GetAuthenticatedClient(string? bearerToken = null)
+    private async Task<HttpClient> GetAuthenticatedClient(HttpClientTarget target)
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        bearerToken ??= await _authenticationTokenResolver.GetAccessToken(_serviceOwnerAuth);
-        string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(appMetadata.AppIdentifier);
+        string baseUrl = target switch
+        {
+            HttpClientTarget.App => _generalSettings.FormattedExternalAppBaseUrl(appMetadata.AppIdentifier),
+            HttpClientTarget.Storage => _platformSettings.ApiStorageEndpoint,
+            _ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
+        };
 
         HttpClient client = _httpClientFactory.CreateClient();
         client.BaseAddress = new Uri(baseUrl);
@@ -210,7 +238,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             AuthorizationSchemes.Bearer,
-            bearerToken
+            await GetServiceOwnerToken()
         );
         client.DefaultRequestHeaders.Add(
             General.PlatformAccessTokenHeaderName,
@@ -220,7 +248,13 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         return client;
     }
 
-    internal static StringContent GetProcessNextAction(string? action)
+    private enum HttpClientTarget
+    {
+        App,
+        Storage,
+    }
+
+    private static StringContent GetProcessNextAction(string? action)
     {
         if (string.IsNullOrWhiteSpace(action))
             return new StringContent(string.Empty);

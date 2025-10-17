@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
@@ -173,7 +175,7 @@ internal sealed class FiksIOClient : IFiksIOClient
                 prefetchCount: 0
             ),
             apiConfiguration: environmentConfig.FiksApiConfiguration,
-            asiceSigningConfiguration: new AsiceSigningConfiguration(fiksIOSettings.GenerateAsiceCertificate()),
+            asiceSigningConfiguration: new AsiceSigningConfiguration(GenerateAsiceCertificate()),
             integrasjonConfiguration: new IntegrasjonConfiguration(
                 fiksIOSettings.IntegrationId,
                 fiksIOSettings.IntegrationPassword
@@ -245,6 +247,20 @@ internal sealed class FiksIOClient : IFiksIOClient
                 AmqpConfiguration.TestHost,
                 ampqAppName
             );
+    }
+
+    private static X509Certificate2 GenerateAsiceCertificate()
+    {
+        using RSA rsa = RSA.Create(4096);
+
+        var subject = new X500DistinguishedName($"CN={Guid.NewGuid()}");
+        var request = new CertificateRequest(subject, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var certificate = request.CreateSelfSigned(
+            DateTimeOffset.UtcNow.AddDays(-5), // Don't want to get stuck on a clock issue here...
+            DateTimeOffset.UtcNow.AddYears(5)
+        );
+
+        return certificate;
     }
 
     private readonly record struct EnvironmentConfiguration(

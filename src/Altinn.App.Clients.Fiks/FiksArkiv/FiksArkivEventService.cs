@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Altinn.App.Clients.Fiks.Exceptions;
+using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
@@ -7,6 +8,7 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
@@ -16,16 +18,15 @@ internal sealed class FiksArkivEventService : BackgroundService
     private readonly IFiksIOClient _fiksIOClient;
     private readonly Telemetry? _telemetry;
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
+    private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
     private readonly IHostEnvironment _env;
-    private readonly AppImplementationFactory _appImplementationFactory;
     private readonly TimeProvider _timeProvider;
-
-    private IFiksArkivMessageHandler _fiksArkivMessageHandler =>
-        _appImplementationFactory.GetRequired<IFiksArkivMessageHandler>();
+    private readonly FiksArkivSettings _fiksArkivSettings;
 
     public FiksArkivEventService(
-        AppImplementationFactory appImplementationFactory,
+        IFiksArkivMessageHandler fiksArkivMessageHandler,
         IFiksIOClient fiksIOClient,
+        IOptions<FiksArkivSettings> fiksArkivSettings,
         ILogger<FiksArkivEventService> logger,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
         IHostEnvironment env,
@@ -36,8 +37,9 @@ internal sealed class FiksArkivEventService : BackgroundService
         _logger = logger;
         _fiksIOClient = fiksIOClient;
         _telemetry = telemetry;
+        _fiksArkivSettings = fiksArkivSettings.Value;
         _fiksArkivInstanceClient = fiksArkivInstanceClient;
-        _appImplementationFactory = appImplementationFactory;
+        _fiksArkivMessageHandler = fiksArkivMessageHandler;
         _timeProvider = timeProvider ?? TimeProvider.System;
         _env = env;
     }
@@ -92,7 +94,7 @@ internal sealed class FiksArkivEventService : BackgroundService
             receivedMessage.Message.MessageType
         );
 
-        IReadOnlyList<(string, string)>? decryptedMessagePayloads = null;
+        Instance? instance = null;
 
         try
         {
@@ -106,8 +108,7 @@ internal sealed class FiksArkivEventService : BackgroundService
                 receivedMessage.Message.CorrelationId
             );
 
-            decryptedMessagePayloads = await receivedMessage.Message.GetDecryptedPayloadStrings();
-            Instance instance = await RetrieveInstance(receivedMessage);
+            instance = await RetrieveInstance(receivedMessage);
 
             using Activity? innerActivity = _telemetry?.StartFiksMessageHandlerActivity(
                 instance,
@@ -126,13 +127,30 @@ internal sealed class FiksArkivEventService : BackgroundService
         catch (Exception e)
         {
             _logger.LogError(e, "Fiks Arkiv MessageReceivedHandler failed with error: {Error}", e.Message);
-            _logger.LogError("The message payload was: {MessagePayload}", decryptedMessagePayloads);
             mainActivity?.Errored(e);
+
+            var decryptedMessagePayloads = await TryGetDecryptedPayloads(receivedMessage);
+            _logger.LogError("The message payload was: {MessagePayload}", decryptedMessagePayloads);
 
             // Avoid clogging up the queue with errors in non-production environments
             if (_env.IsProduction() is false)
             {
                 await receivedMessage.Responder.Ack();
+            }
+
+            // Move the instance process forward if we are able
+            if (instance is null)
+            {
+                _logger.LogError(
+                    "Unable to move the process forward, because the `instance` object has not been resolved"
+                );
+            }
+            else if (_fiksArkivSettings.AutoSend?.ErrorHandling?.MoveToNextTask is true)
+            {
+                await _fiksArkivInstanceClient.ProcessMoveNext(
+                    new InstanceIdentifier(instance),
+                    _fiksArkivSettings.AutoSend?.ErrorHandling?.Action
+                );
             }
         }
     }
@@ -161,6 +179,20 @@ internal sealed class FiksArkivEventService : BackgroundService
         catch (Exception e)
         {
             throw new FiksArkivException($"Error parsing Correlation ID for received message: {correlationId}", e);
+        }
+    }
+
+    private static async Task<IReadOnlyList<(string Filename, string Content)>?> TryGetDecryptedPayloads(
+        FiksIOReceivedMessage receivedMessage
+    )
+    {
+        try
+        {
+            return await receivedMessage.Message.GetDecryptedPayloads();
+        }
+        catch
+        {
+            return null;
         }
     }
 }

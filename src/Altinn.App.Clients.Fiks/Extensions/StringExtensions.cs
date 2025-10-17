@@ -1,6 +1,7 @@
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
+using Altinn.App.Clients.Fiks.Exceptions;
 
 namespace Altinn.App.Clients.Fiks.Extensions;
 
@@ -49,4 +50,14 @@ internal static class StringExtensions
         var base64EncodedBytes = Convert.FromBase64String(base64Encoded);
         return Encoding.UTF8.GetString(base64EncodedBytes);
     }
+
+    public static string EnsureNotNullOrEmpty(this string? input, string paramName) =>
+        !string.IsNullOrEmpty(input)
+            ? input
+            : throw new FiksArkivConfigurationException($"Property cannot be null or empty: {paramName}");
+
+    public static string? EnsureNotEmpty(this string? input, string paramName) =>
+        input is null || input.Length > 0
+            ? input
+            : throw new FiksArkivConfigurationException($"Property cannot be null or empty: {paramName}");
 }

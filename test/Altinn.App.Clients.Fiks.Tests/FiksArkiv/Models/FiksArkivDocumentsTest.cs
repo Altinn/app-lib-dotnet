@@ -4,7 +4,7 @@ using KS.Fiks.Arkiv.Models.V1.Kodelister;
 
 namespace Altinn.App.Clients.Fiks.Tests.FiksArkiv.Models;
 
-public class ArchiveDocumentsWrapperTest
+public class FiksArkivDocumentsTest
 {
     private readonly Kode _dummyCode = new("...", string.Empty);
 
@@ -17,7 +17,7 @@ public class ArchiveDocumentsWrapperTest
     public void ToPaylods_ContainsAllDocuments_InTheCorrectOrder()
     {
         // Arrange
-        var archiveDocuments = new ArchiveDocumentsWrapper(
+        var archiveDocuments = new FiksArkivDocuments(
             primaryDocument: CreateMessagePayloadWrapper("primary.txt"),
             attachmentDocuments:
             [
@@ -43,7 +43,7 @@ public class ArchiveDocumentsWrapperTest
     public void Constructor_EnsuresUniqueFilenames()
     {
         // Arrange
-        var archiveDocuments = new ArchiveDocumentsWrapper(
+        var archiveDocuments = new FiksArkivDocuments(
             primaryDocument: CreateMessagePayloadWrapper("duplicate.txt"),
             attachmentDocuments:
             [

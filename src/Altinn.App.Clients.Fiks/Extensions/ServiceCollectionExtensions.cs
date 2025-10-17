@@ -53,9 +53,12 @@ public static class ServiceCollectionExtensions
         services.AddFiksIOClient();
         services.AddAltinnCdnClient();
         services.AddTransient<IServiceTask, FiksArkivServiceTask>();
-        services.AddTransient<IFiksArkivMessageHandler, FiksArkivDefaultMessageHandler>();
+        services.AddTransient<IFiksArkivMessageHandler, FiksArkivMessageHandler>();
+        services.AddTransient<IFiksArkivMessagePayloadGenerator, FiksArkivDefaultMessagePayloadGenerator>();
+        services.AddTransient<IFiksArkivMessageResponseHandler, FiksArkivDefaultMessageResponseHandler>();
         services.AddTransient<IFiksArkivAutoSendDecision, FiksArkivDefaultAutoSendDecision>();
         services.AddTransient<IFiksArkivInstanceClient, FiksArkivInstanceClient>();
+        services.AddTransient<IFiksArkivConfigResolver, FiksArkivConfigResolver>();
         services.AddHostedService<FiksArkivConfigValidationService>();
         services.AddHostedService<FiksArkivEventService>();
 
@@ -116,6 +119,7 @@ public static class ServiceCollectionExtensions
                 options.Documents = null;
                 options.Receipt = null;
                 options.Recipient = null;
+                options.Metadata = null;
             })
             .BindConfiguration(configSectionPath);
         return services;

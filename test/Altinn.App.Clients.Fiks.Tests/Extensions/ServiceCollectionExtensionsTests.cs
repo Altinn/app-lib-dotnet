@@ -84,7 +84,6 @@ public class ServiceCollectionExtensionsTests
                         x.IntegrationId = fiksIOSettingsOverride.IntegrationId;
                         x.IntegrationPassword = fiksIOSettingsOverride.IntegrationPassword;
                         x.AccountPrivateKeyBase64 = fiksIOSettingsOverride.AccountPrivateKeyBase64;
-                        x.AsicePrivateKeyBase64 = fiksIOSettingsOverride.AsicePrivateKeyBase64;
                     })
                     .WithMaskinportenConfig(x =>
                     {
@@ -173,7 +172,7 @@ public class ServiceCollectionExtensionsTests
         Assert.NotNull(fiksArkivEventService);
         Assert.Equal(TestHelpers.GetDefaultFiksIOSettings(), fiksIOSettings);
         Assert.IsType<FiksIOClient>(fiksIOClient);
-        Assert.IsType<FiksArkivDefaultMessageHandler>(fiksArkivMessageHandler);
+        Assert.IsType<FiksArkivMessageHandler>(fiksArkivMessageHandler);
         Assert.IsType<FiksArkivServiceTask>(fiksArkivServiceTask);
         Assert.IsType<AltinnCdnClient>(altinnCdnClient);
 
@@ -229,7 +228,6 @@ public class ServiceCollectionExtensionsTests
                         x.IntegrationId = fiksIOSettingsOverride.IntegrationId;
                         x.IntegrationPassword = fiksIOSettingsOverride.IntegrationPassword;
                         x.AccountPrivateKeyBase64 = fiksIOSettingsOverride.AccountPrivateKeyBase64;
-                        x.AsicePrivateKeyBase64 = fiksIOSettingsOverride.AsicePrivateKeyBase64;
                     })
                     .WithFiksArkivConfig(x =>
                     {
@@ -304,11 +302,11 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public async Task AddFiksArkiv_OverridesMessageHandler()
+    public async Task AddFiksArkiv_OverridesMessagePayloadGenerator()
     {
         // Arrange
         await using var fixture = TestFixture.Create(services =>
-            services.AddFiksArkiv().WithMessageHandler<TestHelpers.CustomFiksArkivMessageHandler>()
+            services.AddFiksArkiv().WithMessagePayloadGenerator<TestHelpers.CustomFiksArkivMessagePayloadGenerator>()
         );
 
         // Act
@@ -316,7 +314,23 @@ public class ServiceCollectionExtensionsTests
 
         // Assert
         Assert.NotNull(fiksArkivMessageHandler);
-        Assert.IsType<TestHelpers.CustomFiksArkivMessageHandler>(fiksArkivMessageHandler);
+        Assert.IsType<TestHelpers.CustomFiksArkivMessagePayloadGenerator>(fiksArkivMessageHandler);
+    }
+
+    [Fact]
+    public async Task AddFiksArkiv_OverridesMessageResponseHandler()
+    {
+        // Arrange
+        await using var fixture = TestFixture.Create(services =>
+            services.AddFiksArkiv().WithMessageResponseHandler<TestHelpers.CustomFiksArkivMessageResponseHandler>()
+        );
+
+        // Act
+        var fiksArkivMessageHandler = fixture.FiksArkivMessageHandler;
+
+        // Assert
+        Assert.NotNull(fiksArkivMessageHandler);
+        Assert.IsType<TestHelpers.CustomFiksArkivMessageResponseHandler>(fiksArkivMessageHandler);
     }
 
     [Fact]

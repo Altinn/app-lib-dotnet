@@ -5,15 +5,16 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal interface IFiksArkivInstanceClient
 {
+    internal Task<JwtToken> GetServiceOwnerToken();
     Task<Instance> GetInstance(InstanceIdentifier instanceIdentifier);
     Task ProcessMoveNext(InstanceIdentifier instanceIdentifier, string? action = null);
     Task MarkInstanceComplete(InstanceIdentifier instanceIdentifier);
-    Task<DataElement> InsertBinaryData(
+    Task<DataElement> InsertBinaryData<TContent>(
         InstanceIdentifier instanceIdentifier,
         string dataType,
         string contentType,
         string filename,
-        Stream stream,
+        TContent content,
         string? generatedFromTask = null
     );
 }

@@ -32,6 +32,8 @@ public sealed record FiksArkivReceipt
             JournalEntryReceipt = FiksArkivJournalEntryReceipt.Create(journalpostKvittering),
         };
     }
+
+    internal static FiksArkivReceipt Empty() => new();
 };
 
 /// <summary>
