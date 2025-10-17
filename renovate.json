@@ -29,16 +29,19 @@
       "enabled": false
     },
     {
-      // Verify.AspNetCore bumped target framework to net9.0 in 4.1, so we can't update for now
       "matchPackageNames": [
         "Verify.AspNetCore"
       ],
       "allowedVersions": "<=4.0"
     },
     {
-      "matchDatasources": ["docker"],
-      "matchPackagePatterns": ["^mcr\\.microsoft\\.com/dotnet"],
-      "pinDigests": false
+      "matchDatasources": [
+        "docker"
+      ],
+      "pinDigests": false,
+      "matchPackageNames": [
+        "/^mcr\\.microsoft\\.com/dotnet/"
+      ]
     }
   ]
 }
