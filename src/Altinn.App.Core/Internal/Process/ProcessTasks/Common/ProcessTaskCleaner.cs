@@ -39,8 +39,6 @@ internal sealed class ProcessTaskCleaner : IProcessTaskCleaner
                 dataElement.BlobStoragePath
             );
             await _dataClient.DeleteData(
-                appIdentifier.Org,
-                appIdentifier.App,
                 instanceIdentifier.InstanceOwnerPartyId,
                 instanceIdentifier.InstanceGuid,
                 Guid.Parse(dataElement.Id),

@@ -234,8 +234,6 @@ public class DefaultEFormidlingService : IEFormidlingService
             usedFileNames.Add(uniqueFileName);
 
             await using Stream stream = await _dataClient.GetBinaryData(
-                applicationMetadata.Org,
-                applicationMetadata.AppIdentifier.App,
                 instanceOwnerPartyId,
                 instanceGuid,
                 new Guid(dataElement.Id)

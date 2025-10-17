@@ -905,7 +905,7 @@ public class DataController : ControllerBase
         DataElement dataElement
     )
     {
-        Stream dataStream = await _dataClient.GetBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid);
+        Stream dataStream = await _dataClient.GetBinaryData(instanceOwnerPartyId, instanceGuid, dataGuid);
 
         if (dataStream is not null)
         {
@@ -947,14 +947,7 @@ public class DataController : ControllerBase
     )
     {
         // Get Form Data from data service. Assumes that the data element is form data.
-        object appModel = await _dataClient.GetFormData(
-            instanceGuid,
-            _appModel.GetModelType(dataType.AppLogic.ClassRef),
-            org,
-            app,
-            instanceOwnerId,
-            dataGuid
-        );
+        object appModel = await _dataClient.GetFormData(instance, dataElement);
 
         if (appModel is null)
         {
@@ -985,15 +978,7 @@ public class DataController : ControllerBase
         {
             try
             {
-                await _dataClient.UpdateData(
-                    appModel,
-                    instanceGuid,
-                    appModel.GetType(),
-                    org,
-                    app,
-                    instanceOwnerId,
-                    dataGuid
-                );
+                await _dataClient.UpdateFormData(instance, appModel, dataElement);
             }
             catch (PlatformHttpException e) when (e.Response.StatusCode is HttpStatusCode.Forbidden)
             {

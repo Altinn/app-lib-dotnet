@@ -169,7 +169,12 @@ public class ExpressionsExclusiveGatewayTests
             Process = new() { CurrentTask = new() { ElementId = TaskId } },
             Data = new()
             {
-                new() { Id = "cd9204e7-9b83-41b4-b2f2-9b196b4fafcf", DataType = DefaultDataTypeName },
+                new()
+                {
+                    Id = "cd9204e7-9b83-41b4-b2f2-9b196b4fafcf",
+                    DataType = DefaultDataTypeName,
+                    ContentType = "application/json",
+                },
             },
         };
         var processGatewayInformation = new ProcessGatewayInformation { Action = "confirm" };
@@ -227,7 +232,12 @@ public class ExpressionsExclusiveGatewayTests
             Process = new() { CurrentTask = new() { ElementId = "Task_1" } },
             Data = new()
             {
-                new() { Id = "cd9204e7-9b83-41b4-b2f2-9b196b4fafcf", DataType = "aa" },
+                new()
+                {
+                    Id = "cd9204e7-9b83-41b4-b2f2-9b196b4fafcf",
+                    DataType = "aa",
+                    ContentType = "application/json",
+                },
             },
         };
         var processGatewayInformation = new ProcessGatewayInformation { Action = "confirm", DataTypeId = "aa" };
@@ -258,8 +268,6 @@ public class ExpressionsExclusiveGatewayTests
             _dataClient
                 .Setup(d =>
                     d.GetDataBytes(
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
                         It.IsAny<int>(),
                         It.IsAny<Guid>(),
                         It.IsAny<Guid>(),
@@ -267,7 +275,7 @@ public class ExpressionsExclusiveGatewayTests
                         It.IsAny<CancellationToken>()
                     )
                 )
-                .ReturnsAsync(modelSerializationService.SerializeToXml(formData).ToArray());
+                .ReturnsAsync(modelSerializationService.SerializeToJson(formData).ToArray());
 
             _appModel.Setup(am => am.GetModelType(_classRef)).Returns(formData.GetType());
         }

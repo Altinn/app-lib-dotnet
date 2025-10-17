@@ -24,7 +24,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 /// <summary>
 /// A client for handling actions on data in Altinn Platform.
 /// </summary>
-public class DataClient : IDataClient
+public sealed class DataClient : IDataClient
 {
     private readonly PlatformSettings _platformSettings;
     private readonly ILogger _logger;
@@ -58,6 +58,7 @@ public class DataClient : IDataClient
     }
 
     /// <inheritdoc />
+    [Obsolete("Use InsertFormData with Instance parameter instead")]
     public async Task<DataElement> InsertFormData<T>(
         T dataToSerialize,
         Guid instanceGuid,
@@ -71,60 +72,41 @@ public class DataClient : IDataClient
     )
         where T : notnull
     {
-        using var activity = _telemetry?.StartInsertFormDataActivity(instanceGuid, instanceOwnerPartyId);
         Instance instance = new() { Id = $"{instanceOwnerPartyId}/{instanceGuid}" };
-        return await InsertFormData(instance, dataType, dataToSerialize, type, authenticationMethod, cancellationToken);
+        return await InsertFormData(instance, dataType, dataToSerialize, authenticationMethod, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<DataElement> InsertFormData<T>(
+    public async Task<DataElement> InsertFormData(
         Instance instance,
         string dataTypeString,
-        T dataToSerialize,
-        Type type,
+        object dataToSerialize,
         StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
-        where T : notnull
     {
         using var activity = _telemetry?.StartInsertFormDataActivity(instance);
-        string apiUrl = $"instances/{instance.Id}/data?dataType={dataTypeString}";
-
-        JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
-        );
-
-        var application = await _appMetadata.GetApplicationMetadata();
+        var appMetadata = await _appMetadata.GetApplicationMetadata();
         var dataType =
-            application.DataTypes.Find(d => d.Id == dataTypeString)
+            appMetadata.DataTypes.Find(d => d.Id == dataTypeString)
             ?? throw new InvalidOperationException($"Data type {dataTypeString} not found in applicationmetadata.json");
 
-        var (data, contentType) = _modelSerializationService.SerializeToStorage(dataToSerialize, dataType);
+        var (data, contentType) = _modelSerializationService.SerializeToStorage(dataToSerialize, dataType, null);
 
-        StreamContent streamContent = new(new MemoryAsStream(data));
-        streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, streamContent);
-
-        if (response.IsSuccessStatusCode)
-        {
-            string instanceData = await response.Content.ReadAsStringAsync(cancellationToken);
-            // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
-            var dataElement = JsonConvert.DeserializeObject<DataElement>(instanceData)!;
-
-            return dataElement;
-        }
-
-        _logger.Log(
-            LogLevel.Error,
-            "unable to save form data for instance {InstanceId} due to response {StatusCode}",
+        return await InsertBinaryData(
             instance.Id,
-            response.StatusCode
+            dataTypeString,
+            contentType,
+            null,
+            new MemoryAsStream(data),
+            null,
+            authenticationMethod,
+            cancellationToken
         );
-        throw await PlatformHttpException.CreateAsync(response);
     }
 
     /// <inheritdoc />
+    [Obsolete("Use the UpdateFormData method with Instance parameter instead")]
     public async Task<DataElement> UpdateData<T>(
         T dataToSerialize,
         Guid instanceGuid,
@@ -139,6 +121,20 @@ public class DataClient : IDataClient
         where T : notnull
     {
         using var activity = _telemetry?.StartUpdateDataActivity(instanceGuid, dataId);
+        // Verify that all dataTypes uses XML serialization so that the deprecated method might work as expected without access to dataElement.ContentType
+        var typeName = typeof(T).FullName;
+        var appMetadata = await _appMetadata.GetApplicationMetadata();
+        if (
+            !appMetadata.DataTypes.TrueForAll(dt =>
+                dt.AppLogic?.ClassRef == typeName && !dt.AllowedContentTypes.Contains("application/json")
+            )
+        )
+        {
+            throw new InvalidOperationException(
+                $"The data type {typeName} is configured to use JSON serialization and must use UpdateFormData method instead"
+            );
+        }
+
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
@@ -147,8 +143,6 @@ public class DataClient : IDataClient
             cancellationToken: cancellationToken
         );
 
-        //TODO: this method does not get enough information to know the content type from the DataType
-        //      if we start to support more than XML
         var serializedBytes = _modelSerializationService.SerializeToXml(dataToSerialize);
         var contentType = "application/xml";
 
@@ -169,9 +163,39 @@ public class DataClient : IDataClient
     }
 
     /// <inheritdoc />
+    public async Task<DataElement> UpdateFormData(
+        Instance instance,
+        object dataToSerialize,
+        DataElement dataElement,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using var activity = _telemetry?.StartUpdateDataActivity(instance, dataElement);
+
+        var appMetadata = await _appMetadata.GetApplicationMetadata();
+
+        var dataType =
+            appMetadata.DataTypes.Find(d => d.Id == dataElement.DataType)
+            ?? throw new InvalidOperationException(
+                $"Data type {dataElement.DataType} not found in applicationmetadata.json"
+            );
+
+        var (data, contentType) = _modelSerializationService.SerializeToStorage(dataToSerialize, dataType, dataElement);
+
+        return await UpdateBinaryData(
+            new InstanceIdentifier(instance),
+            contentType,
+            dataElement.Filename,
+            Guid.Parse(dataElement.Id),
+            new MemoryAsStream(data),
+            authenticationMethod,
+            cancellationToken
+        );
+    }
+
+    /// <inheritdoc />
     public async Task<Stream> GetBinaryData(
-        string org,
-        string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataId,
@@ -205,6 +229,7 @@ public class DataClient : IDataClient
     }
 
     /// <inheritdoc />
+    [Obsolete("Use the overload with Instance parameter instead")]
     public async Task<object> GetFormData(
         Guid instanceGuid,
         Type type,
@@ -225,6 +250,19 @@ public class DataClient : IDataClient
             cancellationToken: cancellationToken
         );
 
+        var typeName = type.FullName;
+        var appMetadata = await _appMetadata.GetApplicationMetadata();
+        if (
+            !appMetadata.DataTypes.TrueForAll(dt =>
+                dt.AppLogic?.ClassRef == typeName && !dt.AllowedContentTypes.Contains("application/json")
+            )
+        )
+        {
+            throw new InvalidOperationException(
+                $"The data type {typeName} is configured to use JSON serialization and must use UpdateFormData method instead"
+            );
+        }
+
         HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
         if (response.IsSuccessStatusCode)
         {
@@ -232,8 +270,6 @@ public class DataClient : IDataClient
 
             try
             {
-                //TODO: this method does not get enough information to know the content type from the DataType
-                //      if we start to support more than XML
                 return _modelSerializationService.DeserializeXml(bytes, type);
             }
             catch (Exception e)
@@ -247,9 +283,38 @@ public class DataClient : IDataClient
     }
 
     /// <inheritdoc />
+    public async Task<object> GetFormData(
+        Instance instance,
+        DataElement dataElement,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(instance);
+        ArgumentNullException.ThrowIfNull(dataElement);
+        using var activity = _telemetry?.StartGetFormDataActivity(instance);
+
+        var appMetadata = await _appMetadata.GetApplicationMetadata();
+        var dataType =
+            appMetadata.DataTypes.Find(d => d.Id == dataElement.DataType)
+            ?? throw new InvalidOperationException(
+                $"Data type {dataElement.DataType} not found in applicationmetadata.json"
+            );
+
+        InstanceIdentifier instanceIdentifier = new(instance);
+        var data = await GetDataBytes(
+            instanceIdentifier.InstanceOwnerPartyId,
+            instanceIdentifier.InstanceGuid,
+            Guid.Parse(dataElement.Id),
+            authenticationMethod,
+            cancellationToken
+        );
+
+        return _modelSerializationService.DeserializeFromStorage(data, dataType, dataElement);
+    }
+
+    /// <inheritdoc />
     public async Task<byte[]> GetDataBytes(
-        string org,
-        string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataId,
@@ -352,22 +417,7 @@ public class DataClient : IDataClient
     }
 
     /// <inheritdoc />
-    public async Task<bool> DeleteBinaryData(
-        string org,
-        string app,
-        int instanceOwnerPartyId,
-        Guid instanceGuid,
-        Guid dataGuid
-    )
-    {
-        using var activity = _telemetry?.StartDeleteBinaryDataActivity(instanceGuid, instanceOwnerPartyId);
-        return await DeleteData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, false);
-    }
-
-    /// <inheritdoc />
     public async Task<bool> DeleteData(
-        string org,
-        string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataGuid,
@@ -399,6 +449,7 @@ public class DataClient : IDataClient
     }
 
     /// <inheritdoc />
+    [Obsolete("The overload that takes a HttpRequest is deprecated, use the overload that takes a Stream instead")]
     public async Task<DataElement> InsertBinaryData(
         string org,
         string app,
