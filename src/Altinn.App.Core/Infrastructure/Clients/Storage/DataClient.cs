@@ -114,7 +114,12 @@ public class DataClient : IDataClient
 
         StreamContent streamContent = new(new MemoryAsStream(data));
         streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, streamContent);
+        HttpResponseMessage response = await _client.PostAsync(
+            token,
+            apiUrl,
+            streamContent,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -168,7 +173,12 @@ public class DataClient : IDataClient
         StreamContent streamContent = new(new MemoryAsStream(serializedBytes));
         streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
 
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, streamContent);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            streamContent,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -204,7 +214,7 @@ public class DataClient : IDataClient
             cancellationToken: timeoutCts.Token
         );
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
 
         if (response.IsSuccessStatusCode)
         {
@@ -293,7 +303,7 @@ public class DataClient : IDataClient
             cancellationToken: timeoutCts.Token
         );
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
         if (response.IsSuccessStatusCode)
         {
             var bytes = await response.Content.ReadAsByteArrayAsync(timeoutCts.Token);
@@ -337,7 +347,7 @@ public class DataClient : IDataClient
             cancellationToken: timeoutCts.Token
         );
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
 
         if (response.IsSuccessStatusCode)
         {
@@ -372,7 +382,7 @@ public class DataClient : IDataClient
         DataElementList dataList;
         List<AttachmentList> attachmentList = [];
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
         if (response.StatusCode == HttpStatusCode.OK)
         {
             string instanceData = await response.Content.ReadAsStringAsync(timeoutCts.Token);
@@ -462,7 +472,7 @@ public class DataClient : IDataClient
             cancellationToken: timeoutCts.Token
         );
 
-        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
 
         if (response.IsSuccessStatusCode)
         {
@@ -501,7 +511,12 @@ public class DataClient : IDataClient
         );
 
         StreamContent content = request.CreateContentStream();
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
+        HttpResponseMessage response = await _client.PostAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -556,7 +571,12 @@ public class DataClient : IDataClient
             };
         }
 
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
+        HttpResponseMessage response = await _client.PostAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -599,7 +619,12 @@ public class DataClient : IDataClient
 
         StreamContent content = request.CreateContentStream();
 
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -650,7 +675,12 @@ public class DataClient : IDataClient
             };
         }
 
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: timeoutCts.Token
+        );
         _logger.LogInformation("Update binary data result: {ResultCode}", response.StatusCode);
         if (response.IsSuccessStatusCode)
         {
@@ -683,7 +713,12 @@ public class DataClient : IDataClient
         );
 
         StringContent jsonString = new(JsonConvert.SerializeObject(dataElement), Encoding.UTF8, "application/json");
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, jsonString);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            jsonString,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -723,7 +758,12 @@ public class DataClient : IDataClient
             instanceIdentifier,
             apiUrl
         );
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content: null);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            content: null,
+            cancellationToken: timeoutCts.Token
+        );
         if (response.IsSuccessStatusCode)
         {
             // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
@@ -766,7 +806,7 @@ public class DataClient : IDataClient
             instanceIdentifier,
             apiUrl
         );
-        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
         if (response.IsSuccessStatusCode)
         {
             // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
