@@ -12,6 +12,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 using CoreSignee = Altinn.App.Core.Features.Signing.Models.Signee;
@@ -34,6 +35,7 @@ public class SignatureHashValidatorTests
             _processReaderMock.Object,
             _dataClientMock.Object,
             _appMetadataMock.Object,
+            new Mock<IHttpContextAccessor>().Object,
             new Mock<ILogger<SignatureHashValidator>>().Object
         );
 

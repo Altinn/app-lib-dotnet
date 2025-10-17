@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Validation.Default;
@@ -21,6 +22,7 @@ internal sealed class SignatureHashValidator(
     IProcessReader processReader,
     IDataClient dataClient,
     IAppMetadata appMetadata,
+    IHttpContextAccessor httpContextAccessor,
     ILogger<SignatureHashValidator> logger
 ) : IValidator
 {
@@ -56,6 +58,8 @@ internal sealed class SignatureHashValidator(
         string? language
     )
     {
+        CancellationToken cancellationToken = httpContextAccessor.HttpContext?.RequestAborted ?? CancellationToken.None;
+
         Instance instance = dataAccessor.Instance;
 
         AltinnSignatureConfiguration signingConfiguration =
@@ -67,7 +71,7 @@ internal sealed class SignatureHashValidator(
         List<SigneeContext> signeeContextsResults = await signingService.GetSigneeContexts(
             dataAccessor,
             signingConfiguration,
-            CancellationToken.None
+            cancellationToken
         );
 
         foreach (SigneeContext signeeContext in signeeContextsResults)
@@ -80,7 +84,8 @@ internal sealed class SignatureHashValidator(
                 ValidationIssue? validationIssue = await ValidateDataElementSignature(
                     dataElementSignature,
                     instance,
-                    applicationMetadata
+                    applicationMetadata,
+                    cancellationToken
                 );
 
                 if (validationIssue != null)
@@ -98,7 +103,8 @@ internal sealed class SignatureHashValidator(
     private async Task<ValidationIssue?> ValidateDataElementSignature(
         SignDocument.DataElementSignature dataElementSignature,
         Instance instance,
-        ApplicationMetadata applicationMetadata
+        ApplicationMetadata applicationMetadata,
+        CancellationToken cancellationToken
     )
     {
         var instanceIdentifier = new InstanceIdentifier(instance);
@@ -111,7 +117,8 @@ internal sealed class SignatureHashValidator(
             Guid.Parse(dataElementSignature.DataElementId),
             HasRestrictedRead(applicationMetadata, instance, dataElementSignature.DataElementId)
                 ? StorageAuthenticationMethod.ServiceOwner()
-                : null
+                : null,
+            cancellationToken
         );
 
         string sha256Hash = await GenerateSha256Hash(dataStream);
