@@ -15,7 +15,6 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Instances;
@@ -62,7 +61,6 @@ public class InstancesController : ControllerBase
     private readonly IProfileClient _profileClient;
 
     private readonly IAppMetadata _appMetadata;
-    private readonly IAppModel _appModel;
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IPDP _pdp;
     private readonly IPrefill _prefillService;
@@ -87,7 +85,6 @@ public class InstancesController : ControllerBase
         IInstanceClient instanceClient,
         IDataClient dataClient,
         IAppMetadata appMetadata,
-        IAppModel appModel,
         IAuthenticationContext authenticationContext,
         IPDP pdp,
         IEventsClient eventsClient,
@@ -109,7 +106,6 @@ public class InstancesController : ControllerBase
         _appMetadata = appMetadata;
         _altinnPartyClient = altinnPartyClient;
         _registerClient = serviceProvider.GetRequiredService<IRegisterClient>();
-        _appModel = appModel;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _pdp = pdp;
         _eventsClient = eventsClient;
@@ -987,28 +983,7 @@ public class InstancesController : ControllerBase
             {
                 DataType dt = dts.First(dt => dt.Id.Equals(de.DataType, StringComparison.Ordinal));
 
-                Type type;
-                try
-                {
-                    type = _appModel.GetModelType(dt.AppLogic.ClassRef);
-                }
-                catch (Exception altinnAppException)
-                {
-                    throw new ServiceException(
-                        HttpStatusCode.InternalServerError,
-                        $"App.GetAppModelType failed: {altinnAppException.Message}",
-                        altinnAppException
-                    );
-                }
-
-                object data = await _dataClient.GetFormData(
-                    sourceInstanceGuid,
-                    type,
-                    org,
-                    app,
-                    instanceOwnerPartyId,
-                    Guid.Parse(de.Id)
-                );
+                object data = await _dataClient.GetFormData(sourceInstance, de);
 
                 if (application.CopyInstanceSettings.ExcludedDataFields != null)
                 {
@@ -1026,15 +1001,7 @@ public class InstancesController : ControllerBase
 
                 ObjectUtils.InitializeAltinnRowId(data);
 
-                await _dataClient.InsertFormData(
-                    data,
-                    Guid.Parse(targetInstance.Id.Split("/")[1]),
-                    type,
-                    org,
-                    app,
-                    instanceOwnerPartyId,
-                    dt.Id
-                );
+                await _dataClient.InsertFormData(targetInstance, dt.Id, data);
 
                 await UpdatePresentationTextsOnInstance(application.PresentationFields, targetInstance, dt.Id, data);
                 await UpdateDataValuesOnInstance(application.DataFields, targetInstance, dt.Id, data);
@@ -1067,8 +1034,6 @@ public class InstancesController : ControllerBase
             if (binaryDataTypes.Any(dt => dt.Id.Equals(de.DataType, StringComparison.Ordinal)))
             {
                 using var binaryDataStream = await _dataClient.GetBinaryData(
-                    org,
-                    app,
                     instanceOwnerPartyId,
                     sourceInstanceGuid,
                     Guid.Parse(de.Id)

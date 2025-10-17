@@ -38,12 +38,41 @@ public sealed class ModelSerializationService
     /// <param name="data">The binary data</param>
     /// <param name="dataType">The data type used to get content type and the classRef for the object to be returned</param>
     /// <returns>The model specified in </returns>
+    [Obsolete("DeserializeFromStorage needs a DataElement parameter to support json in storage")]
     public object DeserializeFromStorage(ReadOnlySpan<byte> data, DataType dataType)
+    {
+        if (dataType.AllowedContentTypes?.Contains("application/json") == true)
+        {
+            throw new NotImplementedException(
+                $"Data type {dataType.Id} allows application json and must use DeserializeFromStorage with DataElement specified"
+            );
+        }
+        var type = GetModelTypeForDataType(dataType);
+        return DeserializeXml(data, type);
+    }
+
+    /// <summary>
+    /// Deserialize binary data from storage to a model of the classRef specified in the dataType
+    /// </summary>
+    /// <param name="data">The binary data</param>
+    /// <param name="dataType">The data type used to get content type and the classRef for the object to be returned</param>
+    /// <param name="dataElement"></param>
+    /// <returns>The model specified in </returns>
+    public object DeserializeFromStorage(ReadOnlySpan<byte> data, DataType dataType, DataElement dataElement)
     {
         var type = GetModelTypeForDataType(dataType);
 
-        // TODO: support sending json to storage based on dataType.ContentTypes
-        return DeserializeXml(data, type);
+        return dataElement.ContentType switch
+        {
+            "application/xml" => DeserializeXml(data, type),
+            "application/json" => DeserializeJson(data, type),
+            null or "" => throw new InvalidOperationException(
+                $"Data element {dataElement.Id} does not have a content type"
+            ), // Consider defaulting to xml after initial testing?
+            _ => throw new InvalidOperationException(
+                $"Unsupported content type {dataElement.ContentType} on data element {dataElement.Id}"
+            ),
+        };
     }
 
     /// <summary>
@@ -53,7 +82,31 @@ public sealed class ModelSerializationService
     /// <param name="dataType">The data type</param>
     /// <returns>the binary data and the content type (currently only application/xml, but likely also json in the future)</returns>
     /// <exception cref="InvalidOperationException">If the classRef in dataType does not match type of the model</exception>
+    [Obsolete("SerializeToStorage needs a DataElement parameter to support json in storage")]
     public (ReadOnlyMemory<byte> data, string contentType) SerializeToStorage(object model, DataType dataType)
+    {
+        if (dataType.AllowedContentTypes?.Contains("application/json") == true)
+        {
+            throw new NotImplementedException(
+                $"Data type {dataType.Id} allows application json and must use DeserializeFromStorage with DataElement specified"
+            );
+        }
+        return SerializeToStorage(model, dataType, null);
+    }
+
+    /// <summary>
+    /// Serialize an object to binary data for storage, respecting classRef and content type in dataType
+    /// </summary>
+    /// <param name="model">The object to serialize (must match the classRef in DataType)</param>
+    /// <param name="dataType">The data type</param>
+    /// <param name="dataElement">The existing data element to preserve content type</param>
+    /// <returns>the binary data and the content type (application/xml or application/json)</returns>
+    /// <exception cref="InvalidOperationException">If the classRef in dataType does not match type of the model</exception>
+    public (ReadOnlyMemory<byte> data, string contentType) SerializeToStorage(
+        object model,
+        DataType dataType,
+        DataElement? dataElement
+    )
     {
         var type = GetModelTypeForDataType(dataType);
         if (type != model.GetType())
@@ -63,8 +116,17 @@ public sealed class ModelSerializationService
             );
         }
 
-        //TODO: support sending json to storage based on dataType.ContentTypes
-        return (SerializeToXml(model), "application/xml");
+        var contentType = dataElement is not null ? dataElement.ContentType : FindFirstContentType(dataType);
+
+        return contentType switch
+        {
+            "application/xml" => (SerializeToXml(model), contentType),
+            "application/json" => (SerializeToJson(model), contentType),
+            null or "" => throw new InvalidOperationException(
+                $"Data element {dataElement?.Id} does not have a content type"
+            ), //TODO: Consider defaulting to xml after initial testing?
+            _ => throw new InvalidOperationException($"Unsupported content type {contentType}"),
+        };
     }
 
     /// <summary>
@@ -314,5 +376,26 @@ public sealed class ModelSerializationService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dataType?.AppLogic?.ClassRef);
         return _appModel.Create(dataType.AppLogic.ClassRef);
+    }
+
+    private static string FindFirstContentType(DataType dataType)
+    {
+        if (dataType.AllowedContentTypes is not null)
+        {
+            foreach (var contentType in dataType.AllowedContentTypes)
+            {
+                switch (contentType)
+                {
+                    case "application/xml":
+                        return "application/xml";
+                    case "application/json":
+                        return "application/json";
+                }
+            }
+        }
+
+        // If no supported content type is found, default to xml for backward compatibility
+        // Valid apps will never trigger this
+        return "application/xml";
     }
 }
