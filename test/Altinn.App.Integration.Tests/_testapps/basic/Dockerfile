@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine@sha256:b2ad158bbc77970a5095e02db40079970227f2d5aee0af0f82e38668d5e43a09 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine@sha256:3f0fb43bb36dbce018486be9ba00a88121b838ac8ea47f8e3ddc9579a7391dda AS build
 
 COPY NuGet.config .
 COPY _packages _packages/
