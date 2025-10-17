@@ -120,7 +120,6 @@ public class SignatureHashValidatorTests
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
                     It.Is<StorageAuthenticationMethod?>(auth => auth == StorageAuthenticationMethod.ServiceOwner()),
-                    It.IsAny<TimeSpan?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -152,7 +151,6 @@ public class SignatureHashValidatorTests
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
                     null,
-                    It.IsAny<TimeSpan?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -210,7 +208,6 @@ public class SignatureHashValidatorTests
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
                     It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<TimeSpan?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2)
@@ -252,7 +249,6 @@ public class SignatureHashValidatorTests
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
                     It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<TimeSpan?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Never
@@ -399,7 +395,6 @@ public class SignatureHashValidatorTests
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
                     It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<TimeSpan?>(),
                     It.IsAny<CancellationToken>()
                 )
             )

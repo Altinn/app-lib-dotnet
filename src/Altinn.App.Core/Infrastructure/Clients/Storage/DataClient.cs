@@ -36,7 +36,8 @@ public class DataClient : IDataClient
     private readonly HttpClient _client;
 
     private readonly AuthenticationMethod _defaultAuthenticationMethod = StorageAuthenticationMethod.CurrentUser();
-    private static readonly TimeSpan _defaultHttpOperationTimeout = TimeSpan.FromSeconds(100);
+    private static readonly TimeSpan _httpOperationTimeout = TimeSpan.FromSeconds(100);
+    private static readonly TimeSpan _streamingHttpOperationTimeout = TimeSpan.FromMinutes(30);
 
     /// <summary>
     /// Initializes a new data of the <see cref="DataClient"/> class.
@@ -75,7 +76,7 @@ public class DataClient : IDataClient
         where T : notnull
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartInsertFormDataActivity(instanceGuid, instanceOwnerPartyId);
         Instance instance = new() { Id = $"{instanceOwnerPartyId}/{instanceGuid}" };
@@ -94,7 +95,7 @@ public class DataClient : IDataClient
         where T : notnull
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartInsertFormDataActivity(instance);
         string apiUrl = $"instances/{instance.Id}/data?dataType={dataTypeString}";
@@ -148,7 +149,7 @@ public class DataClient : IDataClient
         where T : notnull
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartUpdateDataActivity(instanceGuid, dataId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
@@ -192,7 +193,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartGetBinaryDataActivity(instanceGuid, dataId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
@@ -227,12 +228,11 @@ public class DataClient : IDataClient
         Guid instanceGuid,
         Guid dataId,
         StorageAuthenticationMethod? authenticationMethod = null,
-        TimeSpan? timeout = null,
         CancellationToken cancellationToken = default
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(timeout ?? _defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_streamingHttpOperationTimeout);
 
         using Activity? activity = _telemetry?.StartGetBinaryDataActivity(instanceGuid, dataId);
         var instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
@@ -282,7 +282,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartGetFormDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
@@ -326,7 +326,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartGetBinaryDataActivity(instanceGuid, dataId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
@@ -358,7 +358,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartGetBinaryDataListActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
@@ -451,7 +451,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartDeleteDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
@@ -488,7 +488,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartInsertBinaryDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
@@ -531,7 +531,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartInsertBinaryDataActivity(instanceId);
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceId}/data?dataType={dataType}";
@@ -586,7 +586,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartUpdateBinaryDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
@@ -628,7 +628,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartUpdateBinaryDataActivity(instanceIdentifier.GetInstanceId());
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}";
@@ -672,7 +672,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartUpdateDataActivity(instance);
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instance.Id}/dataelements/{dataElement.Id}";
@@ -707,7 +707,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartLockDataElementActivity(instanceIdentifier.GetInstanceId(), dataGuid);
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
@@ -750,7 +750,7 @@ public class DataClient : IDataClient
     )
     {
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(_defaultHttpOperationTimeout);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
 
         using var activity = _telemetry?.StartUnlockDataElementActivity(instanceIdentifier.GetInstanceId(), dataGuid);
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
