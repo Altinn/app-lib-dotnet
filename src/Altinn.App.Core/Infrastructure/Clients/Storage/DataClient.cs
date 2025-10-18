@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Mime;
@@ -35,6 +36,8 @@ public class DataClient : IDataClient
     private readonly HttpClient _client;
 
     private readonly AuthenticationMethod _defaultAuthenticationMethod = StorageAuthenticationMethod.CurrentUser();
+    private static readonly TimeSpan _httpOperationTimeout = TimeSpan.FromSeconds(100);
+    private static readonly TimeSpan _streamingHttpOperationTimeout = TimeSpan.FromMinutes(30);
 
     /// <summary>
     /// Initializes a new data of the <see cref="DataClient"/> class.
@@ -54,6 +57,7 @@ public class DataClient : IDataClient
         httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
+        httpClient.Timeout = Timeout.InfiniteTimeSpan;
         _client = httpClient;
     }
 
@@ -71,9 +75,12 @@ public class DataClient : IDataClient
     )
         where T : notnull
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartInsertFormDataActivity(instanceGuid, instanceOwnerPartyId);
         Instance instance = new() { Id = $"{instanceOwnerPartyId}/{instanceGuid}" };
-        return await InsertFormData(instance, dataType, dataToSerialize, type, authenticationMethod, cancellationToken);
+        return await InsertFormData(instance, dataType, dataToSerialize, type, authenticationMethod, timeoutCts.Token);
     }
 
     /// <inheritdoc />
@@ -87,12 +94,15 @@ public class DataClient : IDataClient
     )
         where T : notnull
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartInsertFormDataActivity(instance);
         string apiUrl = $"instances/{instance.Id}/data?dataType={dataTypeString}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
         var application = await _appMetadata.GetApplicationMetadata();
@@ -104,11 +114,16 @@ public class DataClient : IDataClient
 
         StreamContent streamContent = new(new MemoryAsStream(data));
         streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, streamContent);
+        HttpResponseMessage response = await _client.PostAsync(
+            token,
+            apiUrl,
+            streamContent,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
-            string instanceData = await response.Content.ReadAsStringAsync(cancellationToken);
+            string instanceData = await response.Content.ReadAsStringAsync(timeoutCts.Token);
             // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
             var dataElement = JsonConvert.DeserializeObject<DataElement>(instanceData)!;
 
@@ -138,13 +153,16 @@ public class DataClient : IDataClient
     )
         where T : notnull
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartUpdateDataActivity(instanceGuid, dataId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
         //TODO: this method does not get enough information to know the content type from the DataType
@@ -155,11 +173,16 @@ public class DataClient : IDataClient
         StreamContent streamContent = new(new MemoryAsStream(serializedBytes));
         streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
 
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, streamContent);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            streamContent,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
-            string instanceData = await response.Content.ReadAsStringAsync(cancellationToken);
+            string instanceData = await response.Content.ReadAsStringAsync(timeoutCts.Token);
             // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
             DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(instanceData)!;
             return dataElement;
@@ -179,20 +202,23 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartGetBinaryDataActivity(instanceGuid, dataId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadAsStreamAsync(cancellationToken);
+            return await response.Content.ReadAsStreamAsync(timeoutCts.Token);
         }
         else if (response.StatusCode == HttpStatusCode.NotFound)
         {
@@ -202,6 +228,55 @@ public class DataClient : IDataClient
         }
 
         throw await PlatformHttpException.CreateAsync(response);
+    }
+
+    /// <inheritdoc />
+    public async Task<Stream> GetBinaryDataStream(
+        string org,
+        string app,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        Guid dataId,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_streamingHttpOperationTimeout);
+
+        using Activity? activity = _telemetry?.StartGetBinaryDataActivity(instanceGuid, dataId);
+        var instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
+        var apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
+
+        JwtToken token = await _authenticationTokenResolver.GetAccessToken(
+            authenticationMethod ?? _defaultAuthenticationMethod,
+            cancellationToken: timeoutCts.Token
+        );
+
+        HttpResponseMessage response = await _client.GetStreamingAsync(
+            token,
+            apiUrl,
+            cancellationToken: timeoutCts.Token
+        );
+
+        if (response.IsSuccessStatusCode)
+        {
+            try
+            {
+                Stream stream = await response.Content.ReadAsStreamAsync(timeoutCts.Token);
+                return new ResponseWrapperStream(response, stream);
+            }
+            catch (Exception)
+            {
+                response.Dispose();
+                throw;
+            }
+        }
+
+        throw await PlatformHttpResponseSnapshotException.CreateAndDisposeHttpResponse(
+            response,
+            cancellationToken: timeoutCts.Token
+        );
     }
 
     /// <inheritdoc />
@@ -216,19 +291,22 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartGetFormDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
         if (response.IsSuccessStatusCode)
         {
-            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            var bytes = await response.Content.ReadAsByteArrayAsync(timeoutCts.Token);
 
             try
             {
@@ -257,20 +335,23 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartGetBinaryDataActivity(instanceGuid, dataId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataId}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return await response.Content.ReadAsByteArrayAsync(timeoutCts.Token);
         }
 
         throw await PlatformHttpException.CreateAsync(response);
@@ -286,22 +367,25 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartGetBinaryDataListActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/dataelements";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
         DataElementList dataList;
         List<AttachmentList> attachmentList = [];
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            string instanceData = await response.Content.ReadAsStringAsync(cancellationToken);
+            string instanceData = await response.Content.ReadAsStringAsync(timeoutCts.Token);
             dataList =
                 JsonConvert.DeserializeObject<DataElementList>(instanceData)
                 ?? throw new JsonException("Could not deserialize DataElementList");
@@ -376,16 +460,19 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartDeleteDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"instances/{instanceIdentifier}/data/{dataGuid}?delay={delay}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
-        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
 
         if (response.IsSuccessStatusCode)
         {
@@ -410,6 +497,9 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartInsertBinaryDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl =
@@ -417,15 +507,20 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
         StreamContent content = request.CreateContentStream();
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
+        HttpResponseMessage response = await _client.PostAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
-            string instancedata = await response.Content.ReadAsStringAsync(cancellationToken);
+            string instancedata = await response.Content.ReadAsStringAsync(timeoutCts.Token);
             // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
             DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
 
@@ -450,6 +545,9 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartInsertBinaryDataActivity(instanceId);
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceId}/data?dataType={dataType}";
         if (!string.IsNullOrEmpty(generatedFromTask))
@@ -459,7 +557,7 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
         StreamContent content = new(stream);
@@ -473,11 +571,16 @@ public class DataClient : IDataClient
             };
         }
 
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
+        HttpResponseMessage response = await _client.PostAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
-            string dataElementString = await response.Content.ReadAsStringAsync(cancellationToken);
+            string dataElementString = await response.Content.ReadAsStringAsync(timeoutCts.Token);
 
             var dataElement = JsonConvert.DeserializeObject<DataElement>(dataElementString);
             if (dataElement is not null)
@@ -485,7 +588,7 @@ public class DataClient : IDataClient
         }
 
         _logger.LogError(
-            $"Storing attachment for instance {instanceId} failed with status code {response.StatusCode} - content {await response.Content.ReadAsStringAsync(cancellationToken)}"
+            $"Storing attachment for instance {instanceId} failed with status code {response.StatusCode} - content {await response.Content.ReadAsStringAsync(timeoutCts.Token)}"
         );
         throw await PlatformHttpException.CreateAsync(response);
     }
@@ -502,22 +605,30 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartUpdateBinaryDataActivity(instanceGuid, instanceOwnerPartyId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceGuid}";
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
         StreamContent content = request.CreateContentStream();
 
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
-            string instancedata = await response.Content.ReadAsStringAsync(cancellationToken);
+            string instancedata = await response.Content.ReadAsStringAsync(timeoutCts.Token);
             // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
             DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
 
@@ -541,12 +652,15 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartUpdateBinaryDataActivity(instanceIdentifier.GetInstanceId());
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
         StreamContent content = new(stream);
@@ -561,11 +675,16 @@ public class DataClient : IDataClient
             };
         }
 
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: timeoutCts.Token
+        );
         _logger.LogInformation("Update binary data result: {ResultCode}", response.StatusCode);
         if (response.IsSuccessStatusCode)
         {
-            string instancedata = await response.Content.ReadAsStringAsync(cancellationToken);
+            string instancedata = await response.Content.ReadAsStringAsync(timeoutCts.Token);
             // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
             DataElement dataElement = JsonConvert.DeserializeObject<DataElement>(instancedata)!;
 
@@ -582,22 +701,30 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartUpdateDataActivity(instance);
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instance.Id}/dataelements/{dataElement.Id}";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
         StringContent jsonString = new(JsonConvert.SerializeObject(dataElement), Encoding.UTF8, "application/json");
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, jsonString);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            jsonString,
+            cancellationToken: timeoutCts.Token
+        );
 
         if (response.IsSuccessStatusCode)
         {
             // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
             DataElement result = JsonConvert.DeserializeObject<DataElement>(
-                await response.Content.ReadAsStringAsync(cancellationToken)
+                await response.Content.ReadAsStringAsync(timeoutCts.Token)
             )!;
 
             return result;
@@ -614,12 +741,15 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartLockDataElementActivity(instanceIdentifier.GetInstanceId(), dataGuid);
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
         _logger.LogDebug(
@@ -628,12 +758,17 @@ public class DataClient : IDataClient
             instanceIdentifier,
             apiUrl
         );
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content: null);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            content: null,
+            cancellationToken: timeoutCts.Token
+        );
         if (response.IsSuccessStatusCode)
         {
             // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
             DataElement result = JsonConvert.DeserializeObject<DataElement>(
-                await response.Content.ReadAsStringAsync(cancellationToken)
+                await response.Content.ReadAsStringAsync(timeoutCts.Token)
             )!;
             return result;
         }
@@ -654,12 +789,15 @@ public class DataClient : IDataClient
         CancellationToken cancellationToken = default
     )
     {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_httpOperationTimeout);
+
         using var activity = _telemetry?.StartUnlockDataElementActivity(instanceIdentifier.GetInstanceId(), dataGuid);
         string apiUrl = $"{_platformSettings.ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}/lock";
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken: cancellationToken
+            cancellationToken: timeoutCts.Token
         );
 
         _logger.LogDebug(
@@ -668,12 +806,12 @@ public class DataClient : IDataClient
             instanceIdentifier,
             apiUrl
         );
-        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl, cancellationToken: timeoutCts.Token);
         if (response.IsSuccessStatusCode)
         {
             // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
             DataElement result = JsonConvert.DeserializeObject<DataElement>(
-                await response.Content.ReadAsStringAsync(cancellationToken)
+                await response.Content.ReadAsStringAsync(timeoutCts.Token)
             )!;
             return result;
         }
