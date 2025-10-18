@@ -61,7 +61,16 @@ public class ValidateControllerTests
     {
         // Arrange
         _instanceMock
-            .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
+            .Setup(i =>
+                i.GetInstance(
+                    App,
+                    Org,
+                    InstanceOwnerPartyId,
+                    _instanceId,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns(Task.FromResult<Instance>(null!));
 
         // Act
@@ -81,7 +90,16 @@ public class ValidateControllerTests
         Instance instance = new Instance { Id = "instanceId", Process = null };
 
         _instanceMock
-            .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
+            .Setup(i =>
+                i.GetInstance(
+                    App,
+                    Org,
+                    InstanceOwnerPartyId,
+                    _instanceId,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns(Task.FromResult<Instance>(instance));
 
         // Act
@@ -106,7 +124,16 @@ public class ValidateControllerTests
         };
 
         _instanceMock
-            .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
+            .Setup(i =>
+                i.GetInstance(
+                    App,
+                    Org,
+                    InstanceOwnerPartyId,
+                    _instanceId,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns(Task.FromResult<Instance>(instance));
 
         // Act
@@ -149,7 +176,16 @@ public class ValidateControllerTests
         };
 
         _instanceMock
-            .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
+            .Setup(i =>
+                i.GetInstance(
+                    App,
+                    Org,
+                    InstanceOwnerPartyId,
+                    _instanceId,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns(Task.FromResult<Instance>(instance));
 
         _validationMock
@@ -182,7 +218,16 @@ public class ValidateControllerTests
         PlatformHttpException exception = await PlatformHttpException.CreateAsync(updateProcessResult);
 
         _instanceMock
-            .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
+            .Setup(i =>
+                i.GetInstance(
+                    App,
+                    Org,
+                    InstanceOwnerPartyId,
+                    _instanceId,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns(Task.FromResult<Instance>(instance));
 
         _validationMock
@@ -215,7 +260,16 @@ public class ValidateControllerTests
         PlatformHttpException exception = await PlatformHttpException.CreateAsync(updateProcessResult);
 
         _instanceMock
-            .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
+            .Setup(i =>
+                i.GetInstance(
+                    App,
+                    Org,
+                    InstanceOwnerPartyId,
+                    _instanceId,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns(Task.FromResult<Instance>(instance));
 
         _validationMock
