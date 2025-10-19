@@ -47,7 +47,7 @@ internal class TranslationService : ITranslationService
     )
     {
         var resourceElement = await GetTextResourceElement(key, language);
-        var value = await ReplaceVariables(resourceElement, null, null, customTextParameters);
+        var value = await ReplaceVariables(resourceElement, state: null, context: null, customTextParameters, language);
         return value;
     }
 
@@ -58,8 +58,9 @@ internal class TranslationService : ITranslationService
         Dictionary<string, string>? customTextParameters = null
     )
     {
-        var resourceElement = await GetTextResourceElement(key, state.GetLanguage());
-        var value = await ReplaceVariables(resourceElement, state, context, customTextParameters);
+        string language = state.GetLanguage();
+        var resourceElement = await GetTextResourceElement(key, language);
+        var value = await ReplaceVariables(resourceElement, state, context, customTextParameters, language);
         return value;
     }
 
@@ -69,7 +70,8 @@ internal class TranslationService : ITranslationService
         TextResourceElement? resourceElement,
         LayoutEvaluatorState? state,
         ComponentContext? context,
-        Dictionary<string, string>? customTextParameters
+        Dictionary<string, string>? customTextParameters,
+        string? language // language is also available in state, but we pass it explicitly for cases where state is null
     )
     {
         var value = resourceElement?.Value;
@@ -79,8 +81,14 @@ internal class TranslationService : ITranslationService
             foreach (var variable in resourceElement.Variables)
             {
                 var replacement =
-                    await EvaluateTextVariable(resourceElement, variable, state, context, customTextParameters)
-                    ?? variable.DefaultValue;
+                    await EvaluateTextVariable(
+                        resourceElement,
+                        variable,
+                        state,
+                        language,
+                        context,
+                        customTextParameters
+                    ) ?? variable.DefaultValue;
                 value = value.Replace("{" + index + "}", replacement ?? variable.Key);
                 index++;
             }
@@ -93,6 +101,7 @@ internal class TranslationService : ITranslationService
         TextResourceElement resourceElement,
         TextResourceVariable variable,
         LayoutEvaluatorState? state,
+        string? language,
         ComponentContext? context,
         Dictionary<string, string>? customTextParameters
     )
@@ -160,6 +169,19 @@ internal class TranslationService : ITranslationService
             return customTextParameters?.GetValueOrDefault(variable.Key);
         }
 
+        if (variable.DataSource == "static")
+        {
+            return variable.Key switch
+            {
+                "app" => _app,
+                "org" => _org,
+                "appName" => state is null
+                    ? await TranslateTextKey("appName", language, customTextParameters)
+                    : await TranslateTextKey("appName", state, context, customTextParameters),
+                _ => null,
+            };
+        }
+
         _logger.LogWarning(
             "Text resource variable with dataSource '{DataSource}' is not supported. Only 'dataModel.*', instanceContext, applicationSettings, and customTextParameters is supported. In text resource with id = {TextResourceId}",
             variable.DataSource,
@@ -178,9 +200,26 @@ internal class TranslationService : ITranslationService
         {
             textResource = await _appResources.GetTexts(_org, _app, LanguageConst.Nb);
         }
+        var resource = textResource?.Resources.Find(resource => resource.Id == key);
+        if (resource is not null)
+        {
+            return resource;
+        }
 
-        return textResource?.Resources.Find(resource => resource.Id == key)
-            ?? GetBackendFallbackResource(key, language);
+        if (key == "appName")
+        {
+            // Previous apps might have used "ServiceName" as key for the app name, so we check that as a fallback
+            resource = textResource?.Resources.Find(r => r.Id == "ServiceName");
+            if (resource is not null)
+            {
+                return resource;
+            }
+
+            // Fallback to just using the app id as app name
+            return new TextResourceElement() { Id = "appName", Value = _app };
+        }
+
+        return GetBackendFallbackResource(key, language);
     }
 
     private static TextResourceElement? GetBackendFallbackResource(string key, string language)
