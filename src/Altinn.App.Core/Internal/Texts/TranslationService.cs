@@ -257,6 +257,30 @@ internal class TranslationService : ITranslationService
                         _ => "Field is required",
                     },
                 };
+            case "backend.pdf_default_file_name":
+                return new TextResourceElement()
+                {
+                    Id = "backend.pdf_default_file_name",
+                    Value = language switch
+                    {
+                        _ => "{0}.pdf",
+                    },
+                    Variables = new List<TextResourceVariable>()
+                    {
+                        new TextResourceVariable() { Key = "appName", DataSource = "static" },
+                    },
+                };
+            case "pdfPreviewText":
+                return new TextResourceElement()
+                {
+                    Id = "pdfPreviewText",
+                    Value = language switch
+                    {
+                        LanguageConst.En => "The document is a preview",
+                        LanguageConst.Nn => "Dokumentet er ein førehandsvisning",
+                        _ => "Dokumentet er en forhåndsvisning",
+                    },
+                };
         }
 
         return null;

@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -44,6 +45,7 @@ public class PdfControllerTests
     private readonly Mock<IAuthenticationContext> _authenticationContext = new();
 
     private readonly Mock<ILogger<PdfService>> _logger = new();
+    private readonly Mock<ITranslationService> _translationService = new();
 
     public PdfControllerTests()
     {
@@ -71,14 +73,14 @@ public class PdfControllerTests
     )
     {
         var pdfService = new PdfService(
-            _appResources.Object,
             _dataClient.Object,
             httpContextAccessor.Object,
             pdfGeneratorClient,
             _pdfGeneratorSettingsOptions,
             generalSettingsOptions,
             _logger.Object,
-            _authenticationContext.Object
+            _authenticationContext.Object,
+            _translationService.Object
         );
         return pdfService;
     }
