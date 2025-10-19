@@ -39,8 +39,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     private readonly IAppResources _appResources;
     private readonly IOptions<FrontEndSettings> _frontEndSettings;
-    private readonly string? _taskId;
-    private readonly string? _language;
     private readonly ITranslationService _translationService;
     private readonly Telemetry? _telemetry;
 
@@ -89,8 +87,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         _appMetadata = appMetadata;
         _translationService = translationService;
         _modelSerializationService = modelSerializationService;
-        _taskId = taskId;
-        _language = language;
+        TaskId = taskId;
+        Language = language;
         _frontEndSettings = frontEndSettings;
         _appResources = appResources;
         _instanceClient = instanceClient;
@@ -100,6 +98,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     public Instance Instance { get; }
 
     public IReadOnlyCollection<DataType> DataTypes { get; }
+
+    public string? TaskId { get; }
+
+    public string? Language { get; }
 
     /// <inheritdoc />
     public void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method)
@@ -141,12 +143,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     {
         return new CleanInstanceDataAccessor(
             this,
-            _taskId,
             _appResources,
             _translationService,
             _frontEndSettings.Value,
             rowRemovalOption,
-            _language,
             _telemetry
         );
     }
@@ -163,12 +163,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
         _previousDataAccessorCache = new PreviousDataAccessor(
             this,
-            _taskId,
             _appResources,
             _translationService,
             _modelSerializationService,
             _frontEndSettings.Value,
-            _language,
             _telemetry
         );
         return _previousDataAccessorCache;

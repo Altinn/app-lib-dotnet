@@ -16,6 +16,16 @@ public interface IInstanceDataAccessor
     Instance Instance { get; }
 
     /// <summary>
+    /// If available, the language currently preferred for the user.
+    /// </summary>
+    string? Language { get; }
+
+    /// <summary>
+    /// If available, the taskId context for which data is being accessed.
+    /// </summary>
+    string? TaskId { get; }
+
+    /// <summary>
     /// Get the data types from application metadata.
     /// </summary>
     IReadOnlyCollection<DataType> DataTypes { get; }

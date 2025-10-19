@@ -1195,6 +1195,8 @@ namespace Altinn.App.Core.Features
         System.Collections.Generic.IReadOnlyDictionary<Altinn.Platform.Storage.Interface.Models.DataType, Altinn.App.Core.Features.StorageAuthenticationMethod> AuthenticationMethodOverrides { get; }
         System.Collections.Generic.IReadOnlyCollection<Altinn.Platform.Storage.Interface.Models.DataType> DataTypes { get; }
         Altinn.Platform.Storage.Interface.Models.Instance Instance { get; }
+        string? Language { get; }
+        string? TaskId { get; }
         System.Threading.Tasks.Task<System.ReadOnlyMemory<byte>> GetBinaryData(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
         Altinn.App.Core.Features.IInstanceDataAccessor GetCleanAccessor(Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption = 1);
         Altinn.Platform.Storage.Interface.Models.DataElement GetDataElement(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);

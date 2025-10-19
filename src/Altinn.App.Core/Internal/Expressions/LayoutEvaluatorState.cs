@@ -61,7 +61,7 @@ public class LayoutEvaluatorState
         _frontEndSettings = frontEndSettings;
         Instance = dataAccessor.Instance;
         _gatewayAction = gatewayAction;
-        _language = language;
+        _language = language ?? dataAccessor.Language;
         _timeZone = timeZone;
     }
 

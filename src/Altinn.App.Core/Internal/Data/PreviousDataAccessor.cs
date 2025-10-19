@@ -13,11 +13,9 @@ namespace Altinn.App.Core.Internal.Data;
 internal class PreviousDataAccessor : IInstanceDataAccessor
 {
     private readonly IInstanceDataAccessor _dataAccessor;
-    private readonly string? _taskId;
     private readonly IAppResources _appResources;
     private readonly ModelSerializationService _modelSerializationService;
     private readonly FrontEndSettings _frontEndSettings;
-    private readonly string? _language;
     private readonly ITranslationService _translationService;
     private readonly Telemetry? _telemetry;
 
@@ -25,28 +23,27 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
 
     public PreviousDataAccessor(
         IInstanceDataAccessor dataAccessor,
-        string? taskId,
         IAppResources appResources,
         ITranslationService translationService,
         ModelSerializationService modelSerializationService,
         FrontEndSettings frontEndSettings,
-        string? language,
         Telemetry? telemetry
     )
     {
         _dataAccessor = dataAccessor;
-        _taskId = taskId;
         _appResources = appResources;
         _translationService = translationService;
         _modelSerializationService = modelSerializationService;
         _frontEndSettings = frontEndSettings;
-        _language = language;
         _telemetry = telemetry;
     }
 
     public Instance Instance => _dataAccessor.Instance;
 
     public IReadOnlyCollection<DataType> DataTypes => _dataAccessor.DataTypes;
+
+    public string? TaskId => _dataAccessor.TaskId;
+    public string? Language => _dataAccessor.Language;
 
     public IReadOnlyDictionary<DataType, StorageAuthenticationMethod> AuthenticationMethodOverrides =>
         throw new NotImplementedException();
@@ -86,12 +83,10 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
     {
         return new CleanInstanceDataAccessor(
             this,
-            _taskId,
             _appResources,
             _translationService,
             _frontEndSettings,
             rowRemovalOption,
-            _language,
             _telemetry
         );
     }
