@@ -4,6 +4,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -94,6 +95,13 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
     public IInstanceDataAccessor GetPreviousDataAccessor()
     {
         return this;
+    }
+
+    public LayoutEvaluatorState? GetLayoutEvaluatorState()
+    {
+        throw new NotImplementedException(
+            "GetLayoutEvaluatorState is not implemented in PreviousDataAccessor, because LayoutEvaluatorState will be deprecated."
+        );
     }
 
     public async Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)

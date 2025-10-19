@@ -98,6 +98,13 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
             throw new NotSupportedException("Legacy single data accessor does not implement GetPreviousDataAccessor");
         }
 
+        public LayoutEvaluatorState? GetLayoutEvaluatorState()
+        {
+            throw new NotImplementedException(
+                "GetLayoutEvaluatorState is not implemented in CleanInstanceDataAccessor, because LayoutEvaluatorState will be deprecated."
+            );
+        }
+
         public Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)
         {
             return Task.FromException<ReadOnlyMemory<byte>>(

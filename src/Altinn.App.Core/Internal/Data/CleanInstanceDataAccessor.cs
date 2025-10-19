@@ -144,6 +144,13 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
         return _dataAccessor.GetDataElement(dataElementIdentifier);
     }
 
+    public LayoutEvaluatorState? GetLayoutEvaluatorState()
+    {
+        throw new NotImplementedException(
+            "GetLayoutEvaluatorState is not implemented in CleanInstanceDataAccessor, because LayoutEvaluatorState will be deprecated."
+        );
+    }
+
     public void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method)
     {
         _dataAccessor.OverrideAuthenticationMethod(dataType, method);

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Language;
@@ -61,6 +62,24 @@ internal class TranslationService : ITranslationService
         string language = state.GetLanguage();
         var resourceElement = await GetTextResourceElement(key, language);
         var value = await ReplaceVariables(resourceElement, state, context, customTextParameters, language);
+        return value;
+    }
+
+    public async Task<string?> TranslateTextKey(
+        string key,
+        IInstanceDataAccessor instanceDataAccessor,
+        ComponentContext? context = null,
+        Dictionary<string, string>? customTextParameters = null
+    )
+    {
+        var resourceElement = await GetTextResourceElement(key, instanceDataAccessor.Language);
+        var value = await ReplaceVariables(
+            resourceElement,
+            instanceDataAccessor.GetLayoutEvaluatorState(),
+            context,
+            customTextParameters,
+            instanceDataAccessor.Language
+        );
         return value;
     }
 

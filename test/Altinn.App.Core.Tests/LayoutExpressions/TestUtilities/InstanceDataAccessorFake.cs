@@ -2,6 +2,7 @@ using System.Collections;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -93,6 +94,11 @@ public class InstanceDataAccessorFake : IInstanceDataAccessor, IEnumerable<KeyVa
         throw new NotImplementedException(
             "GetPreviousDataAccessor is not yet implemented for InstanceDataAccessorFake"
         );
+    }
+
+    public LayoutEvaluatorState? GetLayoutEvaluatorState()
+    {
+        throw new NotImplementedException();
     }
 
     public Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)

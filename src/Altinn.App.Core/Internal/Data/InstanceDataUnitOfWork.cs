@@ -7,6 +7,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
@@ -170,6 +171,29 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             _telemetry
         );
         return _previousDataAccessorCache;
+    }
+
+    public LayoutEvaluatorState? GetLayoutEvaluatorState()
+    {
+        if (TaskId is null)
+        {
+            return null;
+        }
+        var layouts = _appResources.GetLayoutModelForTask(TaskId);
+        if (layouts is null)
+        {
+            return null;
+        }
+
+        var state = new LayoutEvaluatorState(
+            this,
+            layouts,
+            _translationService,
+            _frontEndSettings.Value,
+            gatewayAction: null,
+            Language
+        );
+        return state;
     }
 
     /// <inheritdoc />
