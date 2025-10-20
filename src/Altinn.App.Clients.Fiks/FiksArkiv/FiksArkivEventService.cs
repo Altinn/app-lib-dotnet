@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Altinn.App.Clients.Fiks.Exceptions;
-using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
@@ -8,13 +7,11 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
 internal sealed class FiksArkivEventService : BackgroundService
 {
-    private readonly FiksArkivSettings _fiksArkivSettings;
     private readonly ILogger<FiksArkivEventService> _logger;
     private readonly IFiksIOClient _fiksIOClient;
     private readonly Telemetry? _telemetry;
@@ -32,12 +29,10 @@ internal sealed class FiksArkivEventService : BackgroundService
         ILogger<FiksArkivEventService> logger,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
         IHostEnvironment env,
-        IOptions<FiksArkivSettings> fiksArkivSettings,
         TimeProvider? timeProvider = null,
         Telemetry? telemetry = null
     )
     {
-        _fiksArkivSettings = fiksArkivSettings.Value;
         _logger = logger;
         _fiksIOClient = fiksIOClient;
         _telemetry = telemetry;
@@ -138,16 +133,6 @@ internal sealed class FiksArkivEventService : BackgroundService
             if (_env.IsProduction() is false)
             {
                 await receivedMessage.Responder.Ack();
-            }
-
-            // Move the instance process forward if configured
-            if (_fiksArkivSettings.AutoSend?.ErrorHandling?.MoveToNextTask is true)
-            {
-                InstanceIdentifier instanceIdentifier = ParseCorrelationId(receivedMessage.Message.CorrelationId);
-                await _fiksArkivInstanceClient.ProcessMoveNext(
-                    instanceIdentifier,
-                    _fiksArkivSettings.AutoSend?.ErrorHandling?.Action
-                );
             }
         }
     }
