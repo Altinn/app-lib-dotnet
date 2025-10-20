@@ -110,8 +110,6 @@ internal sealed class SignatureHashValidator(
         var instanceIdentifier = new InstanceIdentifier(instance);
 
         await using Stream dataStream = await dataClient.GetBinaryDataStream(
-            instance.Org,
-            instance.AppId,
             instanceIdentifier.InstanceOwnerPartyId,
             instanceIdentifier.InstanceGuid,
             Guid.Parse(dataElementSignature.DataElementId),

@@ -232,8 +232,6 @@ public class DataClient : IDataClient
 
     /// <inheritdoc />
     public async Task<Stream> GetBinaryDataStream(
-        string org,
-        string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataId,

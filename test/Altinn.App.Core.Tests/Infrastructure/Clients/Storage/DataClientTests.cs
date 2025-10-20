@@ -508,8 +508,6 @@ public class DataClientTests
         );
 
         await using var response = await fixture.DataClient.GetBinaryDataStream(
-            "ttd",
-            "app",
             instanceIdentifier.InstanceOwnerPartyId,
             instanceIdentifier.InstanceGuid,
             dataGuid,
@@ -554,8 +552,6 @@ public class DataClientTests
 
         var actual = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
             await fixture.DataClient.GetBinaryDataStream(
-                "ttd",
-                "app",
                 instanceIdentifier.InstanceOwnerPartyId,
                 instanceIdentifier.InstanceGuid,
                 dataGuid,
@@ -589,8 +585,6 @@ public class DataClientTests
 
         var actual = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
             await fixture.DataClient.GetBinaryDataStream(
-                "ttd",
-                "app",
                 instanceIdentifier.InstanceOwnerPartyId,
                 instanceIdentifier.InstanceGuid,
                 dataGuid

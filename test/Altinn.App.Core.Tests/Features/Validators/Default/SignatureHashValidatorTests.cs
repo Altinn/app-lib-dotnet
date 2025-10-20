@@ -116,8 +116,6 @@ public class SignatureHashValidatorTests
         _dataClientMock.Verify(
             x =>
                 x.GetBinaryDataStream(
-                    "testorg",
-                    "testapp",
                     12345,
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
@@ -145,16 +143,7 @@ public class SignatureHashValidatorTests
         await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
 
         _dataClientMock.Verify(
-            x =>
-                x.GetBinaryDataStream(
-                    "testorg",
-                    "testapp",
-                    12345,
-                    It.IsAny<Guid>(),
-                    It.IsAny<Guid>(),
-                    null,
-                    It.IsAny<CancellationToken>()
-                ),
+            x => x.GetBinaryDataStream(12345, It.IsAny<Guid>(), It.IsAny<Guid>(), null, It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -204,8 +193,6 @@ public class SignatureHashValidatorTests
         _dataClientMock.Verify(
             x =>
                 x.GetBinaryDataStream(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
@@ -245,8 +232,6 @@ public class SignatureHashValidatorTests
         _dataClientMock.Verify(
             x =>
                 x.GetBinaryDataStream(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
@@ -391,8 +376,6 @@ public class SignatureHashValidatorTests
         _dataClientMock
             .Setup(x =>
                 x.GetBinaryDataStream(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),

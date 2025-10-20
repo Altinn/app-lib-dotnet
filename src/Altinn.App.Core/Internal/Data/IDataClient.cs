@@ -131,8 +131,6 @@ public interface IDataClient
     /// Gets the data as an unbuffered stream for memory-efficient processing of large files.
     /// Throws <see cref="Altinn.App.Core.Helpers.PlatformHttpException"/> if the data element is not found or other HTTP errors occur.
     /// </summary>
-    /// <param name="org">Unique identifier of the organisation responsible for the app.</param>
-    /// <param name="app">Application identifier which is unique within an organisation.</param>
     /// <param name="instanceOwnerPartyId">The instance owner id</param>
     /// <param name="instanceGuid">The instance id</param>
     /// <param name="dataId">the data id</param>
@@ -140,8 +138,6 @@ public interface IDataClient
     /// <param name="cancellationToken">An optional cancellation token</param>
     /// <exception cref="Altinn.App.Core.Helpers.PlatformHttpException">Thrown when the data element is not found or other HTTP errors occur</exception>
     Task<Stream> GetBinaryDataStream(
-        string org,
-        string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataId,

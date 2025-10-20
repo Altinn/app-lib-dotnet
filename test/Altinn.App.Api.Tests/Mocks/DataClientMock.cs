@@ -109,8 +109,6 @@ public class DataClientMock : IDataClient
     }
 
     public Task<Stream> GetBinaryDataStream(
-        string org,
-        string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataId,
@@ -120,6 +118,10 @@ public class DataClientMock : IDataClient
     {
         if (cancellationToken.IsCancellationRequested)
             return Task.FromCanceled<Stream>(cancellationToken);
+
+        (string org, string app) = TestData.GetInstanceOrgApp(
+            new InstanceIdentifier(instanceOwnerPartyId, instanceGuid)
+        );
 
         string path = TestData.GetDataBlobPath(org, app, instanceOwnerPartyId, instanceGuid, dataId);
 
