@@ -6,7 +6,7 @@ namespace Altinn.App.Clients.Fiks.FiksIO.Models;
 /// <summary>
 /// Represents the response of a Fiks IO message request.
 /// </summary>
-public sealed record FiksIOMessageResponse
+public sealed record FiksIOMessageResponse : FiksIOMessageBase
 {
     /// <summary>
     /// The message ID.
@@ -64,4 +64,8 @@ public sealed record FiksIOMessageResponse
     {
         _sendtMelding = sendtMelding;
     }
+}
+
+public record FiksIOMessageBase
+{
 }

@@ -61,7 +61,7 @@ public class GeneralSettings
     public string FormattedExternalAppBaseUrl(AppIdentifier app)
     {
         var sb = new StringBuilder(ExternalAppBaseUrl.ToLowerInvariant());
-        sb.Replace("{hostname}", HostName);
+        sb.Replace("{hostname}", HostName + ":5101");
         sb.Replace("{org}", app.Org);
         sb.Replace("{app}", app.App);
         return sb.ToString();
