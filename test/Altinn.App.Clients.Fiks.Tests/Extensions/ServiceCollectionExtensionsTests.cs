@@ -302,35 +302,35 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public async Task AddFiksArkiv_OverridesMessagePayloadGenerator()
+    public async Task AddFiksArkiv_OverridesPayloadGenerator()
     {
         // Arrange
         await using var fixture = TestFixture.Create(services =>
-            services.AddFiksArkiv().WithMessagePayloadGenerator<TestHelpers.CustomFiksArkivMessagePayloadGenerator>()
+            services.AddFiksArkiv().WithPayloadGenerator<TestHelpers.CustomFiksArkivPayloadGenerator>()
         );
 
         // Act
-        var fiksArkivMessageHandler = fixture.FiksArkivMessageHandler;
+        var fiksArkivMessageHandler = fixture.FiksArkivPayloadGenerator;
 
         // Assert
         Assert.NotNull(fiksArkivMessageHandler);
-        Assert.IsType<TestHelpers.CustomFiksArkivMessagePayloadGenerator>(fiksArkivMessageHandler);
+        Assert.IsType<TestHelpers.CustomFiksArkivPayloadGenerator>(fiksArkivMessageHandler);
     }
 
     [Fact]
-    public async Task AddFiksArkiv_OverridesMessageResponseHandler()
+    public async Task AddFiksArkiv_OverridesResponseHandler()
     {
         // Arrange
         await using var fixture = TestFixture.Create(services =>
-            services.AddFiksArkiv().WithMessageResponseHandler<TestHelpers.CustomFiksArkivMessageResponseHandler>()
+            services.AddFiksArkiv().WithResponseHandler<TestHelpers.CustomFiksArkivResponseHandler>()
         );
 
         // Act
-        var fiksArkivMessageHandler = fixture.FiksArkivMessageHandler;
+        var fiksArkivMessageHandler = fixture.FiksArkivResponseHandler;
 
         // Assert
         Assert.NotNull(fiksArkivMessageHandler);
-        Assert.IsType<TestHelpers.CustomFiksArkivMessageResponseHandler>(fiksArkivMessageHandler);
+        Assert.IsType<TestHelpers.CustomFiksArkivResponseHandler>(fiksArkivMessageHandler);
     }
 
     [Fact]

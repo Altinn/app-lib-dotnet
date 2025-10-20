@@ -1,3 +1,5 @@
+using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
+
 namespace Altinn.App.Clients.Fiks.Constants;
 
 /// <summary>
@@ -10,6 +12,7 @@ public static class FiksArkivConstants
     /// Re: NOARK-5 specification <see href="https://docs.digdir.no/docs/eFormidling/Utvikling/Dokumenttyper/standard_arkivmelding"/>
     /// </summary>
     public const string ArchiveRecordFilename = "arkivmelding.xml";
+    internal const string ReceiptMessageType = FiksArkivMeldingtype.ArkivmeldingOpprettKvittering;
     internal const string AltinnSystemId = "Altinn Studio";
     internal const string AltinnOrgNo = "991825827";
 

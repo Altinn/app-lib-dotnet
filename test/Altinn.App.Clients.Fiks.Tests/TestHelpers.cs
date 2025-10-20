@@ -248,7 +248,7 @@ internal static class TestHelpers
         );
     }
 
-    public class CustomFiksArkivMessagePayloadGenerator : IFiksArkivMessagePayloadGenerator
+    public class CustomFiksArkivPayloadGenerator : IFiksArkivPayloadGenerator
     {
         public Task<IEnumerable<FiksIOMessagePayload>> GeneratePayload(
             string taskId,
@@ -257,7 +257,7 @@ internal static class TestHelpers
         ) => throw new NotImplementedException();
     }
 
-    public class CustomFiksArkivMessageResponseHandler : IFiksArkivMessageResponseHandler
+    public class CustomFiksArkivResponseHandler : IFiksArkivResponseHandler
     {
         public Task HandleSuccess(
             Instance instance,

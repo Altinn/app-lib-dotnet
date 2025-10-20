@@ -19,22 +19,22 @@ using Kode = KS.Fiks.Arkiv.Models.V1.Kodelister.Kode;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
-internal sealed class FiksArkivDefaultMessagePayloadGenerator : IFiksArkivMessagePayloadGenerator
+internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenerator
 {
     private readonly IAppMetadata _appMetadata;
     private readonly IDataClient _dataClient;
     private readonly IAuthenticationContext _authenticationContext;
-    private readonly ILogger<FiksArkivDefaultMessagePayloadGenerator> _logger;
+    private readonly ILogger<FiksArkivDefaultPayloadGenerator> _logger;
     private readonly IHostEnvironment _hostEnvironment;
     private readonly IFiksArkivConfigResolver _fiksArkivConfigResolver;
     private readonly FiksIOSettings _fiksIOSettings;
     private readonly TimeProvider _timeProvider;
 
-    public FiksArkivDefaultMessagePayloadGenerator(
+    public FiksArkivDefaultPayloadGenerator(
         IAppMetadata appMetadata,
         IDataClient dataClient,
         IAuthenticationContext authenticationContext,
-        ILogger<FiksArkivDefaultMessagePayloadGenerator> logger,
+        ILogger<FiksArkivDefaultPayloadGenerator> logger,
         IHostEnvironment hostEnvironment,
         IFiksArkivConfigResolver fiksArkivConfigResolver,
         IOptions<FiksIOSettings> fiksIOSettings,

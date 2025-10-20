@@ -1,4 +1,5 @@
 using Altinn.App.Clients.Fiks.Constants;
+using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -22,6 +23,16 @@ internal interface IFiksArkivMessageHandler : IFiksArkivConfigValidation
     /// Use <see cref="FiksIOReceivedMessage.IsErrorResponse"/> to narrow it down before parsing and taking action.
     /// </summary>
     /// <param name="instance">The instance for which this message relates to.</param>
-    /// <param name="receivedMessage">The received message.</param>
-    Task HandleReceivedMessage(Instance instance, FiksIOReceivedMessage receivedMessage);
+    /// <param name="message">The received message.</param>
+    Task HandleReceivedMessage(Instance instance, FiksIOReceivedMessage message);
+
+    /// <summary>
+    /// Saves an archive record (arkivmelding.xml) to the instance.
+    /// </summary>
+    Task<DataElement> SaveArchiveRecord(Instance instance, FiksIOMessageRequest request);
+
+    /// <summary>
+    /// Saves an archive receipt to the instance.
+    /// </summary>
+    Task<DataElement> SaveArchiveReceipt(Instance instance, FiksArkivReceivedMessagePayload.Receipt receipt);
 }

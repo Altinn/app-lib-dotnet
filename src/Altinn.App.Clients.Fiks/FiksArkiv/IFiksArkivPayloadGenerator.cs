@@ -9,7 +9,7 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 /// Generator for the content of a Fiks Arkiv message request.
 /// </summary>
 [ImplementableByApps]
-public interface IFiksArkivMessagePayloadGenerator
+public interface IFiksArkivPayloadGenerator
 {
     /// <summary>
     /// Generates the content of a Fiks Arkiv message request.

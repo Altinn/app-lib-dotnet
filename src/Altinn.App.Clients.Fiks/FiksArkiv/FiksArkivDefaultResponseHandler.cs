@@ -1,24 +1,23 @@
+using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
-internal sealed class FiksArkivDefaultMessageResponseHandler : IFiksArkivMessageResponseHandler
+internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandler
 {
     private readonly FiksArkivSettings _fiksArkivSettings;
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
-    private readonly ILogger<FiksArkivDefaultMessageResponseHandler> _logger;
-    private const string ReceiptMessageType = FiksArkivMeldingtype.ArkivmeldingOpprettKvittering;
+    private readonly ILogger<FiksArkivDefaultResponseHandler> _logger;
 
-    public FiksArkivDefaultMessageResponseHandler(
+    public FiksArkivDefaultResponseHandler(
         IOptions<FiksArkivSettings> fiksArkivSettings,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
-        ILogger<FiksArkivDefaultMessageResponseHandler> logger
+        ILogger<FiksArkivDefaultResponseHandler> logger
     )
     {
         _fiksArkivSettings = fiksArkivSettings.Value;
@@ -40,11 +39,11 @@ internal sealed class FiksArkivDefaultMessageResponseHandler : IFiksArkivMessage
             payloads?.Select(x => x.Content) ?? ["Message contains no content."]
         );
 
-        if (message.Message.MessageType != ReceiptMessageType)
+        if (message.Message.MessageType != FiksArkivConstants.ReceiptMessageType)
         {
             _logger.LogInformation(
                 "We are only interested in {TargetMessageType} messages. Skipping further processing for message of type {MessageType}.",
-                ReceiptMessageType,
+                FiksArkivConstants.ReceiptMessageType,
                 message.Message.MessageType
             );
             return;

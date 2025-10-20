@@ -86,8 +86,8 @@ public interface IFiksArkivSetupBuilder : IFiksSetupBuilder<IFiksArkivSetupBuild
     /// </summary>
     /// <typeparam name="TMessageHandler">The handler type you wish to register for use.</typeparam>
     /// <returns>The builder instance.</returns>
-    IFiksArkivSetupBuilder WithMessageResponseHandler<TMessageHandler>()
-        where TMessageHandler : IFiksArkivMessageResponseHandler;
+    IFiksArkivSetupBuilder WithResponseHandler<TMessageHandler>()
+        where TMessageHandler : IFiksArkivResponseHandler;
 
     /// <summary>
     /// Configures the payload generator for Fiks Arkiv message requests.
@@ -95,8 +95,8 @@ public interface IFiksArkivSetupBuilder : IFiksSetupBuilder<IFiksArkivSetupBuild
     /// </summary>
     /// <typeparam name="TMessageHandler">The generator type you wish to register for use.</typeparam>
     /// <returns>The builder instance.</returns>
-    IFiksArkivSetupBuilder WithMessagePayloadGenerator<TMessageHandler>()
-        where TMessageHandler : IFiksArkivMessagePayloadGenerator;
+    IFiksArkivSetupBuilder WithPayloadGenerator<TMessageHandler>()
+        where TMessageHandler : IFiksArkivPayloadGenerator;
 
     /// <summary>
     /// Configures the auto-send decision handler for the Fiks Arkiv client.

@@ -76,6 +76,10 @@ internal sealed record TestFixture(
     public IAltinnCdnClient AltinnCdnClient => App.Services.GetRequiredService<IAltinnCdnClient>();
     public IFiksArkivMessageHandler FiksArkivMessageHandler =>
         App.Services.GetRequiredService<IFiksArkivMessageHandler>();
+    public IFiksArkivResponseHandler FiksArkivResponseHandler =>
+        App.Services.GetRequiredService<IFiksArkivResponseHandler>();
+    public IFiksArkivPayloadGenerator FiksArkivPayloadGenerator =>
+        App.Services.GetRequiredService<IFiksArkivPayloadGenerator>();
     public IFiksArkivAutoSendDecision FiksArkivAutoSendDecisionHandler =>
         App.Services.GetRequiredService<IFiksArkivAutoSendDecision>();
     public IFiksArkivInstanceClient FiksArkivInstanceClient =>
@@ -153,7 +157,7 @@ internal sealed record TestFixture(
         var layoutStateInitializerMock = new Mock<ILayoutEvaluatorStateInitializer>();
         var emailNotificationClientMock = new Mock<IEmailNotificationClient>();
         var processReaderMock = new Mock<IProcessReader>();
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>(); // TODO: FiksInstanceClient needs this to return something useful
         var accessTokenGeneratorMock = new Mock<IAccessTokenGenerator>();
         var loggerFactoryMock = new Mock<ILoggerFactory>();
         var translationServiceMock = new Mock<ITranslationService>();

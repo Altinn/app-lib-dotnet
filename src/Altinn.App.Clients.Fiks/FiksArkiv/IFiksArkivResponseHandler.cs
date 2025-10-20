@@ -9,7 +9,7 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 /// Handler of the message responses from Fiks Arkiv.
 /// </summary>
 [ImplementableByApps]
-public interface IFiksArkivMessageResponseHandler
+public interface IFiksArkivResponseHandler
 {
     /// <summary>
     /// Handles a successful response from FIKS Arkiv.
