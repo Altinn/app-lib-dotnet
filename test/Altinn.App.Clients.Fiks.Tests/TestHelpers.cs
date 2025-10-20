@@ -38,19 +38,17 @@ internal static class TestHelpers
                 {
                     requestCallback?.Invoke(request);
 
-                    var content = IsTokenRequest(request)
-                        ? authFactory?.Invoke(request) ?? DummyToken
-                        : contentFactory?.Invoke(request);
-
-                    return new HttpResponseMessage(statusCode)
-                    {
-                        Content = content is not null ? new StringContent(content) : null,
-                    };
+                    return IsTokenRequest(request)
+                        ? ResponseMessageFactory(HttpStatusCode.OK, authFactory?.Invoke(request) ?? DummyToken)
+                        : ResponseMessageFactory(statusCode, contentFactory?.Invoke(request));
                 }
             );
 
         return new HttpClient(mockHttpMessageHandler.Object);
     }
+
+    private static HttpResponseMessage ResponseMessageFactory(HttpStatusCode statusCode, string? content) =>
+        new(statusCode) { Content = content is not null ? new StringContent(content) : null };
 
     public static Func<HttpClient> GetHttpClientWithMockedHandlerFactory(
         HttpStatusCode statusCode,
@@ -62,7 +60,7 @@ internal static class TestHelpers
         return () => GetHttpClientWithMockedHandler(statusCode, authFactory, contentFactory, requestCallback);
     }
 
-    private static bool IsTokenRequest(HttpRequestMessage request)
+    public static bool IsTokenRequest(HttpRequestMessage request)
     {
         string[] authEndpoints = ["/Home/GetTestOrgToken", "/token", "/exchange/maskinporten"];
         string requestPath = request.RequestUri!.AbsolutePath;

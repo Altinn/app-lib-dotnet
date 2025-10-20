@@ -70,6 +70,8 @@ public class FiksArkivEventServiceTest
             services.AddSingleton<TimeProvider>(fakeTime);
         });
 
+        // fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(TestHelpers.GetHttpClientWithMockedHandlerFactory());
+
         // Act
         await fixture.FiksArkivEventService.StartAsync(CancellationToken.None);
         fakeTime.Advance(TimeSpan.FromMinutes(10));

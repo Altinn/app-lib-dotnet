@@ -42,7 +42,7 @@ public class FiksArkivInstanceClientTest
         Assert.Equal(instanceRequest.Method, HttpMethod.Get);
         Assert.Equal($"Bearer {TestHelpers.DummyToken}", instanceRequest.Headers.Authorization!.ToString());
         Assert.Equal(
-            $"http://local.altinn.cloud/{appMetadata.AppIdentifier}/instances/{_defaultInstanceIdentifier}",
+            $"http://localhost:5101/storage/api/v1/instances/{_defaultInstanceIdentifier}",
             instanceRequest.RequestUri!.ToString()
         );
     }
@@ -151,7 +151,7 @@ public class FiksArkivInstanceClientTest
         Assert.Equal(HttpMethod.Post, markCompletedRequest.Method);
         Assert.Equal($"Bearer {TestHelpers.DummyToken}", markCompletedRequest.Headers.Authorization!.ToString());
         Assert.Equal(
-            $"http://local.altinn.cloud/{appMetadata.AppIdentifier}/instances/{_defaultInstanceIdentifier}/complete",
+            $"http://localhost:5101/storage/api/v1/instances/{_defaultInstanceIdentifier}/complete",
             markCompletedRequest.RequestUri!.ToString()
         );
     }
@@ -233,7 +233,7 @@ public class FiksArkivInstanceClientTest
             insertBinaryDataRequest.Request.Headers.Authorization!.ToString()
         );
         Assert.Equal(
-            $"http://local.altinn.cloud/{appMetadata.AppIdentifier}/instances/{_defaultInstanceIdentifier}/data?dataType={dataElement.DataType}",
+            $"http://localhost:5101/storage/api/v1/instances/{_defaultInstanceIdentifier}/data?dataType={dataElement.DataType}",
             insertBinaryDataRequest.Request.RequestUri!.ToString()
         );
     }

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -33,6 +34,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Moq.Protected;
 using Polly;
 
 namespace Altinn.App.Clients.Fiks.Tests;
@@ -60,6 +62,7 @@ internal sealed record TestFixture(
     Mock<IEmailNotificationClient> EmailNotificationClientMock,
     Mock<IProcessReader> ProcessReaderMock,
     Mock<IHttpClientFactory> HttpClientFactoryMock,
+    Mock<HttpMessageHandler> HttpMessageHandlerMock,
     Mock<IAccessTokenGenerator> AccessTokenGeneratorMock,
     Mock<ITranslationService> TranslationServiceMock
 ) : IAsyncDisposable
@@ -157,11 +160,35 @@ internal sealed record TestFixture(
         var layoutStateInitializerMock = new Mock<ILayoutEvaluatorStateInitializer>();
         var emailNotificationClientMock = new Mock<IEmailNotificationClient>();
         var processReaderMock = new Mock<IProcessReader>();
-        var httpClientFactoryMock = new Mock<IHttpClientFactory>(); // TODO: FiksInstanceClient needs this to return something useful
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
         var accessTokenGeneratorMock = new Mock<IAccessTokenGenerator>();
         var loggerFactoryMock = new Mock<ILoggerFactory>();
         var translationServiceMock = new Mock<ITranslationService>();
 
+        httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(
+                (HttpRequestMessage request, CancellationToken _) =>
+                {
+                    if (!TestHelpers.IsTokenRequest(request))
+                        throw new Exception("Default HttpMessageHandler mock only handles token requests");
+
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(TestHelpers.DummyToken),
+                    };
+                }
+            );
+
+        httpClientFactoryMock
+            .Setup(x => x.CreateClient(It.IsAny<string>()))
+            .Returns(() => new HttpClient(httpMessageHandlerMock.Object));
         hostEnvironmentMock.Setup(x => x.EnvironmentName).Returns("Development");
         loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
         appMetadataMock
@@ -186,7 +213,7 @@ internal sealed record TestFixture(
         builder.Services.AddSingleton(translationServiceMock.Object);
 
         // Non-mockable services
-        builder.Services.AddSingleton<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
+        builder.Services.AddTransient<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
         builder.Services.AddTransient<InstanceDataUnitOfWorkInitializer>();
         builder.Services.AddSingleton<ModelSerializationService>();
         builder.Services.AddAppImplementationFactory();
@@ -208,6 +235,7 @@ internal sealed record TestFixture(
             emailNotificationClientMock,
             processReaderMock,
             httpClientFactoryMock,
+            httpMessageHandlerMock,
             accessTokenGeneratorMock,
             translationServiceMock
         );

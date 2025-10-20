@@ -65,7 +65,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
                 "Failed to retrieve service owner token for FiksArkivInstanceClient: {Error}",
                 e.Message
             );
-            throw new FiksArkivConfigurationException($"Error retrieving service owner token: {e.Message}", e);
+            throw new FiksArkivException($"Error retrieving service owner token: {e.Message}", e);
         }
     }
 

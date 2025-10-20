@@ -41,6 +41,10 @@ public class FiksArkivServiceTaskTest
             .Setup(x => x.CreateMessageRequest(It.IsAny<string>(), It.IsAny<Instance>()))
             .ReturnsAsync(TestHelpers.GetFiksIOMessageRequest())
             .Verifiable(expectedInvocationTimes);
+        messageHandlerMock
+            .Setup(x => x.SaveArchiveRecord(It.IsAny<Instance>(), It.IsAny<FiksIOMessageRequest>()))
+            .ReturnsAsync(Mock.Of<DataElement>())
+            .Verifiable(expectedInvocationTimes);
         fiksIOClientMock
             .Setup(x => x.SendMessage(It.IsAny<FiksIOMessageRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestHelpers.GetFiksIOMessageResponse())
