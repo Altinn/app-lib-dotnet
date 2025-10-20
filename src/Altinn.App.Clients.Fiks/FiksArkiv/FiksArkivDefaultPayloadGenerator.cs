@@ -62,11 +62,11 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         var documentCreator = appMetadata.AppIdentifier.Org;
         var archiveDocuments = await GetArchiveDocuments(instance);
         var defaultDocumentTitle = await _fiksArkivConfigResolver.GetApplicationTitle();
-        var documentMetadata = await _fiksArkivConfigResolver.GetConfigMetadata(instance);
-        var recipientDetails = _fiksArkivConfigResolver.GetRecipientParty(instance, recipient);
-        var serviceOwnerDetails = await _fiksArkivConfigResolver.GetServiceOwnerParty();
-        var instanceOwnerDetails = await _fiksArkivConfigResolver.GetInstanceOwnerParty(instance);
-        var submitterDetails = await _fiksArkivConfigResolver.GetFormSubmitterClassification(
+        var documentMetadata = await _fiksArkivConfigResolver.GetArchiveDocumentMetadata(instance);
+        var recipientParty = _fiksArkivConfigResolver.GetRecipientParty(instance, recipient);
+        var serviceOwnerParty = await _fiksArkivConfigResolver.GetServiceOwnerParty();
+        var instanceOwnerParty = await _fiksArkivConfigResolver.GetInstanceOwnerParty(instance);
+        var instanceOwnerClassification = await _fiksArkivConfigResolver.GetInstanceOwnerClassification(
             _authenticationContext.Current
         );
 
@@ -84,7 +84,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
             },
         };
 
-        caseFile.Klassifikasjon.Add(submitterDetails);
+        caseFile.Klassifikasjon.Add(instanceOwnerClassification);
 
         var journalEntry = new Journalpost
         {
@@ -113,13 +113,13 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         };
 
         // Recipient
-        journalEntry.Korrespondansepart.Add(recipientDetails);
+        journalEntry.Korrespondansepart.Add(recipientParty);
 
         // Sender(s)
-        journalEntry.Korrespondansepart.Add(serviceOwnerDetails);
-        if (instanceOwnerDetails is not null)
+        journalEntry.Korrespondansepart.Add(serviceOwnerParty);
+        if (instanceOwnerParty is not null)
         {
-            journalEntry.Korrespondansepart.Add(instanceOwnerDetails);
+            journalEntry.Korrespondansepart.Add(instanceOwnerParty);
         }
 
         // Internal sender
@@ -131,12 +131,12 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         );
 
         // Main form data file
-        journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(archiveDocuments.PrimaryDocument));
+        journalEntry.Dokumentbeskrivelse.Add(GetDocumentDescription(archiveDocuments.PrimaryDocument));
 
         // Attachments
         foreach (var attachment in archiveDocuments.AttachmentDocuments)
         {
-            journalEntry.Dokumentbeskrivelse.Add(GetDocumentMetadata(attachment));
+            journalEntry.Dokumentbeskrivelse.Add(GetDocumentDescription(attachment));
         }
 
         // Archive record
@@ -204,7 +204,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         if (string.IsNullOrWhiteSpace(filename) is false)
             dataElement.Filename = filename;
         else if (string.IsNullOrWhiteSpace(dataElement.Filename))
-            dataElement.Filename = $"{dataElement.DataType}{dataElement.GetExtensionForMimeType()}";
+            dataElement.Filename = $"{dataElement.DataType}{dataElement.GetExtensionForContentType()}";
 
         return new MessagePayloadWrapper(
             new FiksIOMessagePayload(
@@ -221,7 +221,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         );
     }
 
-    private Dokumentbeskrivelse GetDocumentMetadata(MessagePayloadWrapper payloadWrapper)
+    private Dokumentbeskrivelse GetDocumentDescription(MessagePayloadWrapper payloadWrapper)
     {
         var documentClassification =
             payloadWrapper.FileTypeCode == DokumenttypeKoder.Dokument

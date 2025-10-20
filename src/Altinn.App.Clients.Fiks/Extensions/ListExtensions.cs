@@ -4,6 +4,9 @@ namespace Altinn.App.Clients.Fiks.Extensions;
 
 internal static class ListExtensions
 {
+    /// <summary>
+    /// Ensures that all filenames in the list of attachments are unique by appending a unique identifier to duplicates.
+    /// </summary>
     public static void EnsureUniqueFilenames(this IReadOnlyList<MessagePayloadWrapper> attachments)
     {
         var hasDuplicateFilenames = attachments

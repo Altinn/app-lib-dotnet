@@ -4,6 +4,9 @@ namespace Altinn.App.Clients.Fiks.Extensions;
 
 internal static class KorrespondansepartExtensions
 {
+    /// <summary>
+    /// Adds contact information to a correspondence party. Perform null, empty, and duplication checks.
+    /// </summary>
     public static void AddContactInfo(
         this Korrespondansepart correspondenceParty,
         string? phoneNumber,

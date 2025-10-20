@@ -13,63 +13,93 @@ namespace Altinn.App.Clients.Fiks.Configuration;
 
 internal abstract class FiksSetupBuilder(IServiceCollection services)
 {
+    /// <inheritdoc cref="IFiksSetupBuilder{T}.WithFiksIOConfig(System.Action{Altinn.App.Clients.Fiks.FiksIO.Models.FiksIOSettings})"/>
     protected FiksSetupBuilder ConfigureFiksIO(Action<FiksIOSettings> configureOptions)
     {
         services.ConfigureFiksIOClient(configureOptions);
         return this;
     }
 
+    /// <inheritdoc cref="IFiksSetupBuilder{T}.WithFiksIOConfig(string)"/>
     protected FiksSetupBuilder ConfigureFiksIO(string configSectionPath)
     {
         services.ConfigureFiksIOClient(configSectionPath);
         return this;
     }
 
+    /// <summary>
+    /// Configures the Fiks Arkiv client with the provided options.
+    /// </summary>
+    /// <param name="configureOptions">Configuration delegate.</param>
+    /// <returns>The builder instance.</returns>
     protected FiksSetupBuilder ConfigureFiksArkiv(Action<FiksArkivSettings> configureOptions)
     {
         services.ConfigureFiksArkiv(configureOptions);
         return this;
     }
 
+    /// <summary>
+    /// Configures the Fiks Arkiv client with the options from the specified configuration section.
+    /// </summary>
+    /// <param name="configSectionPath">Configuration section path.</param>
+    /// <returns>The builder instance.</returns>
     protected FiksSetupBuilder ConfigureFiksArkiv(string configSectionPath)
     {
         services.ConfigureFiksArkiv(configSectionPath);
         return this;
     }
 
+    /// <inheritdoc cref="IFiksSetupBuilder{T}.WithMaskinportenConfig(System.Action{Altinn.App.Core.Features.Maskinporten.Models.MaskinportenSettings})"/>
     protected FiksSetupBuilder ConfigureMaskinporten(Action<MaskinportenSettings> configureOptions)
     {
         services.ConfigureMaskinportenClient(configureOptions);
         return this;
     }
 
+    /// <inheritdoc cref="IFiksSetupBuilder{T}.WithMaskinportenConfig(string)"/>
     protected FiksSetupBuilder ConfigureMaskinporten(string configSectionPath)
     {
         services.ConfigureMaskinportenClient(configSectionPath);
         return this;
     }
 
-    protected FiksSetupBuilder ConfigureMessageResponseHandler<TMessageHandler>()
-        where TMessageHandler : IFiksArkivResponseHandler
+    /// <summary>
+    /// Registers a custom message response handler for Fiks Arkiv messages.
+    /// </summary>
+    /// <typeparam name="THandler">The implementation of the message response handler.</typeparam>
+    /// <returns>The builder instance.</returns>
+    protected FiksSetupBuilder UseMessageResponseHandler<THandler>()
+        where THandler : IFiksArkivResponseHandler
     {
-        services.AddTransient(typeof(IFiksArkivResponseHandler), typeof(TMessageHandler));
+        services.AddTransient(typeof(IFiksArkivResponseHandler), typeof(THandler));
         return this;
     }
 
-    protected FiksSetupBuilder ConfigureMessagePayloadGenerator<TMessageHandler>()
-        where TMessageHandler : IFiksArkivPayloadGenerator
+    /// <summary>
+    /// Registers a custom payload generator for Fiks Arkiv messages.
+    /// </summary>
+    /// <typeparam name="TGenerator">The implementation of the message payload generator.</typeparam>
+    /// <returns>The builder instance.</returns>
+    protected FiksSetupBuilder UseMessagePayloadGenerator<TGenerator>()
+        where TGenerator : IFiksArkivPayloadGenerator
     {
-        services.AddTransient(typeof(IFiksArkivPayloadGenerator), typeof(TMessageHandler));
+        services.AddTransient(typeof(IFiksArkivPayloadGenerator), typeof(TGenerator));
         return this;
     }
 
-    protected FiksSetupBuilder ConfigureAutoDecision<TAutoSendDecision>()
-        where TAutoSendDecision : IFiksArkivAutoSendDecision
+    /// <summary>
+    /// Registers a custom auto-send decision handler for Fiks Arkiv messages.
+    /// </summary>
+    /// <typeparam name="TDecision">The implementation of the auto-send decision handler.</typeparam>
+    /// <returns>The builder instance.</returns>
+    protected FiksSetupBuilder UseAutoDecision<TDecision>()
+        where TDecision : IFiksArkivAutoSendDecision
     {
-        services.AddTransient(typeof(IFiksArkivAutoSendDecision), typeof(TAutoSendDecision));
+        services.AddTransient(typeof(IFiksArkivAutoSendDecision), typeof(TDecision));
         return this;
     }
 
+    /// <inheritdoc cref="IFiksSetupBuilder{T}.WithResiliencePipeline"/>
     protected FiksSetupBuilder ConfigureResiliencePipeline(
         Action<ResiliencePipelineBuilder<FiksIOMessageResponse>, AddResiliencePipelineContext<string>> configure
     )
@@ -78,9 +108,13 @@ internal abstract class FiksSetupBuilder(IServiceCollection services)
         return this;
     }
 
+    /// <inheritdoc cref="IFiksSetupBuilder{T}.CompleteSetup"/>
     public IServiceCollection CompleteSetup() => services;
 }
 
+/// <summary>
+/// Fiks IO setup builder.
+/// </summary>
 internal sealed class FiksIOSetupBuilder(IServiceCollection services) : FiksSetupBuilder(services), IFiksIOSetupBuilder
 {
     /// <inheritdoc />
@@ -105,6 +139,9 @@ internal sealed class FiksIOSetupBuilder(IServiceCollection services) : FiksSetu
     ) => (IFiksIOSetupBuilder)ConfigureResiliencePipeline(configure);
 }
 
+/// <summary>
+/// Fiks Arkiv setup builder.
+/// </summary>
 internal sealed class FiksArkivSetupBuilder(IServiceCollection services)
     : FiksSetupBuilder(services),
         IFiksArkivSetupBuilder
@@ -141,15 +178,15 @@ internal sealed class FiksArkivSetupBuilder(IServiceCollection services)
     /// <inheritdoc />
     public IFiksArkivSetupBuilder WithResponseHandler<TMessageHandler>()
         where TMessageHandler : IFiksArkivResponseHandler =>
-        (IFiksArkivSetupBuilder)ConfigureMessageResponseHandler<TMessageHandler>();
+        (IFiksArkivSetupBuilder)UseMessageResponseHandler<TMessageHandler>();
 
     /// <inheritdoc />
     public IFiksArkivSetupBuilder WithPayloadGenerator<TMessageHandler>()
         where TMessageHandler : IFiksArkivPayloadGenerator =>
-        (IFiksArkivSetupBuilder)ConfigureMessagePayloadGenerator<TMessageHandler>();
+        (IFiksArkivSetupBuilder)UseMessagePayloadGenerator<TMessageHandler>();
 
     /// <inheritdoc />
     public IFiksArkivSetupBuilder WithAutoSendDecision<TAutoSendDecision>()
         where TAutoSendDecision : IFiksArkivAutoSendDecision =>
-        (IFiksArkivSetupBuilder)ConfigureAutoDecision<TAutoSendDecision>();
+        (IFiksArkivSetupBuilder)UseAutoDecision<TAutoSendDecision>();
 }

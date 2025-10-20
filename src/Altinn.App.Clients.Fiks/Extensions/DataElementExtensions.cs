@@ -14,7 +14,10 @@ internal static class DataElementExtensions
         ["application/json"] = ".json",
     };
 
-    public static string? GetExtensionForMimeType(this DataElement dataElement)
+    /// <summary>
+    /// Get the file extension for the data element's content type, or null if unknown.
+    /// </summary>
+    public static string? GetExtensionForContentType(this DataElement dataElement)
     {
         var mimeType = dataElement.ContentType;
         return mimeType is null ? null : _mimeTypeToExtensionMapping.GetValueOrDefault(mimeType);

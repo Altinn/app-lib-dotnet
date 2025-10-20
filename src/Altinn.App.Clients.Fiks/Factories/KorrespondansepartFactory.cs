@@ -11,7 +11,7 @@ internal static class KorrespondansepartFactory
     /// Creates a Korrespondansepart of type Avsender (Sender).
     /// </summary>
     /// <remarks>
-    /// <see cref="partyName"/> and <see cref="partyId"/> are nullable only for caller convenience.
+    /// <c>partyName</c> and <c>partyId</c> are nullable only for caller convenience.
     /// Null or empty values for these parameters will result in a FiksArkivConfigurationException.
     /// </remarks>
     public static Korrespondansepart CreateSender(
@@ -51,7 +51,7 @@ internal static class KorrespondansepartFactory
     /// Creates a Korrespondansepart of type Mottaker (Recipient).
     /// </summary>
     /// <remarks>
-    /// <see cref="partyName"/> and <see cref="partyId"/> are nullable only for caller convenience.
+    /// <c>partyName</c> and <c>partyId</c> are nullable only for caller convenience.
     /// Null or empty values for these parameters will result in a FiksArkivConfigurationException.
     /// </remarks>
     public static Korrespondansepart CreateRecipient(

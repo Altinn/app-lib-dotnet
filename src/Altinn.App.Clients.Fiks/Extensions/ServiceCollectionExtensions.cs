@@ -46,9 +46,7 @@ public static class ServiceCollectionExtensions
     public static IFiksArkivSetupBuilder AddFiksArkiv(this IServiceCollection services)
     {
         if (services.IsConfigured<FiksArkivSettings>() is false)
-        {
             services.ConfigureFiksArkiv("FiksArkivSettings");
-        }
 
         services.AddFiksIOClient();
         services.AddAltinnCdnClient();
@@ -125,6 +123,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// The default resilience pipeline for Fiks IO.
+    /// </summary>
     private static IServiceCollection AddDefaultFiksIOResiliencePipeline(this IServiceCollection services)
     {
         services.AddResiliencePipeline<string, FiksIOMessageResponse>(
@@ -137,8 +138,9 @@ public static class ServiceCollectionExtensions
                     .AddRetry(
                         new RetryStrategyOptions<FiksIOMessageResponse>
                         {
-                            MaxRetryAttempts = 3,
+                            MaxRetryAttempts = 5,
                             Delay = TimeSpan.FromSeconds(1),
+                            MaxDelay = TimeSpan.FromSeconds(10),
                             BackoffType = DelayBackoffType.Exponential,
                             ShouldHandle = new PredicateBuilder<FiksIOMessageResponse>().Handle<Exception>(ex =>
                             {

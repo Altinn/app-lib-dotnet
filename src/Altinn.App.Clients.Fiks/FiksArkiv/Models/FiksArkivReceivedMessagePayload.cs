@@ -5,11 +5,20 @@ using KS.Fiks.Arkiv.Models.V1.Feilmelding;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv.Models;
 
+/// <summary>
+/// Represents the payload of message received from Fiks Arkiv.
+/// </summary>
 public abstract record FiksArkivReceivedMessagePayload
 {
+    /// <summary>
+    /// The name of the file.
+    /// </summary>
     [JsonPropertyName("filename")]
     public string Filename { get; }
 
+    /// <summary>
+    /// The content of the file.
+    /// </summary>
     [JsonPropertyName("content")]
     public string Content { get; }
 
@@ -19,8 +28,14 @@ public abstract record FiksArkivReceivedMessagePayload
         Content = content;
     }
 
+    /// <summary>
+    /// Represents a receipt response.
+    /// </summary>
     public sealed record Receipt : FiksArkivReceivedMessagePayload
     {
+        /// <summary>
+        /// The decrypted and deserialized details of the receipt.
+        /// </summary>
         [JsonPropertyName("details")]
         public FiksArkivReceipt Details { get; }
 
@@ -34,8 +49,14 @@ public abstract record FiksArkivReceivedMessagePayload
         }
     }
 
+    /// <summary>
+    /// Represents an error response.
+    /// </summary>
     public sealed record Error : FiksArkivReceivedMessagePayload
     {
+        /// <summary>
+        /// The decrypted and deserialized error details.
+        /// </summary>
         [JsonPropertyName("details")]
         public IReadOnlyList<FeilmeldingBase> Details { get; }
 
@@ -46,12 +67,18 @@ public abstract record FiksArkivReceivedMessagePayload
         }
     }
 
+    /// <summary>
+    /// Represents an unknown response.
+    /// </summary>
     public sealed record Unknown : FiksArkivReceivedMessagePayload
     {
         internal Unknown(string filename, string content)
             : base(filename, content) { }
     };
 
+    /// <summary>
+    /// Factory method to create appropriate payload type based on deserialized payload.
+    /// </summary>
     public static FiksArkivReceivedMessagePayload Create(string filename, string payload, object? deserializedPayload)
     {
         if (deserializedPayload is ArkivmeldingKvittering archiveReceipt)

@@ -56,12 +56,16 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public FiksArkivDataTypeSettings PrimaryDocumentSettings =>
         _fiksArkivSettings.Documents?.PrimaryDocument
         ?? throw new FiksArkivConfigurationException("FiksArkivSettings.Documents.PrimaryDocument must be configured");
+
+    /// <inheritdoc />
     public IReadOnlyList<FiksArkivDataTypeSettings> AttachmentSettings =>
         _fiksArkivSettings.Documents?.Attachments ?? [];
 
+    /// <inheritdoc />
     public async Task<string> GetApplicationTitle()
     {
         var appMetadata = await _appMetadata.GetApplicationMetadata();
@@ -71,7 +75,8 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
             ?? appMetadata.AppIdentifier.App;
     }
 
-    public async Task<FiksArkivDocumentMetadata?> GetConfigMetadata(Instance instance)
+    /// <inheritdoc />
+    public async Task<FiksArkivDocumentMetadata?> GetArchiveDocumentMetadata(Instance instance)
     {
         if (_fiksArkivSettings.Metadata is null)
             return null;
@@ -122,6 +127,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         static string? ParseString(object? data) => data as string;
     }
 
+    /// <inheritdoc />
     public async Task<FiksArkivRecipient> GetRecipient(Instance instance)
     {
         try
@@ -147,7 +153,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
                 ParseString
             );
 
-            return new FiksArkivRecipient(accountId, identifier, orgNumber, name);
+            return new FiksArkivRecipient(accountId, identifier, name, orgNumber);
         }
         catch (Exception e)
         {
@@ -163,8 +169,10 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         static string? ParseString(object? data) => data as string;
     }
 
+    /// <inheritdoc />
     public string GetCorrelationId(Instance instance) => instance.GetInstanceUrl(_generalSettings);
 
+    /// <inheritdoc />
     public Korrespondansepart? GetRecipientParty(Instance instance, FiksArkivRecipient recipient) =>
         KorrespondansepartFactory.CreateRecipient(
             partyId: recipient.Identifier,
@@ -173,6 +181,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
             reference: GetCorrelationId(instance)
         );
 
+    /// <inheritdoc />
     public async Task<Korrespondansepart> GetServiceOwnerParty()
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
@@ -194,7 +203,8 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         );
     }
 
-    public async Task<Klassifikasjon> GetFormSubmitterClassification(Authenticated auth) =>
+    /// <inheritdoc />
+    public async Task<Klassifikasjon> GetInstanceOwnerClassification(Authenticated auth) =>
         auth switch
         {
             Authenticated.User user => await KlassifikasjonFactory.CreateUser(user),
@@ -206,6 +216,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
             ),
         };
 
+    /// <inheritdoc />
     public async Task<Korrespondansepart?> GetInstanceOwnerParty(Instance instance)
     {
         try

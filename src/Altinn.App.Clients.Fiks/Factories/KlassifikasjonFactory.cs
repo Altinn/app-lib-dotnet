@@ -10,6 +10,9 @@ namespace Altinn.App.Clients.Fiks.Factories;
 
 internal static class KlassifikasjonFactory
 {
+    /// <summary>
+    /// Creates a classification for an end user.
+    /// </summary>
     public static async Task<Klassifikasjon> CreateUser(Authenticated.User user)
     {
         UserProfile userProfile = await user.LookupProfile();
@@ -31,6 +34,9 @@ internal static class KlassifikasjonFactory
             };
     }
 
+    /// <summary>
+    /// Creates a classification for a system user.
+    /// </summary>
     public static Klassifikasjon CreateSystemUser(Authenticated.SystemUser systemUser) =>
         new()
         {
@@ -41,6 +47,9 @@ internal static class KlassifikasjonFactory
                 .EnsureNotEmpty("Classification.Title"),
         };
 
+    /// <summary>
+    /// Creates a classification for a service owner.
+    /// </summary>
     public static Klassifikasjon CreateServiceOwner(Authenticated.ServiceOwner serviceOwner) =>
         new()
         {
@@ -49,6 +58,9 @@ internal static class KlassifikasjonFactory
             Tittel = serviceOwner.Name.EnsureNotEmpty("Classification.Title"),
         };
 
+    /// <summary>
+    /// Creates a classification for an organization.
+    /// </summary>
     public static Klassifikasjon CreateOrganization(Authenticated.Org org) =>
         new()
         {
