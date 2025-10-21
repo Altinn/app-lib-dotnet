@@ -119,8 +119,12 @@ public class DataClient : IDataClient
 
         StreamContent streamContent = new(new MemoryAsStream(data));
         streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-        HttpResponseMessage response =
-            await _client.PostAsync(token, apiUrl, streamContent, cancellationToken: cancellationToken);
+        HttpResponseMessage response = await _client.PostAsync(
+            token,
+            apiUrl,
+            streamContent,
+            cancellationToken: cancellationToken
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -171,8 +175,12 @@ public class DataClient : IDataClient
         StreamContent streamContent = new(new MemoryAsStream(serializedBytes));
         streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
 
-        HttpResponseMessage response =
-            await _client.PutAsync(token, apiUrl, streamContent, cancellationToken: cancellationToken);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            streamContent,
+            cancellationToken: cancellationToken
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -239,8 +247,11 @@ public class DataClient : IDataClient
             cancellationToken: cancellationToken
         );
 
-        HttpResponseMessage response =
-            await _streamingClient.GetStreamingAsync(token, apiUrl, cancellationToken: cancellationToken);
+        HttpResponseMessage response = await _streamingClient.GetStreamingAsync(
+            token,
+            apiUrl,
+            cancellationToken: cancellationToken
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -476,8 +487,12 @@ public class DataClient : IDataClient
         );
 
         StreamContent content = request.CreateContentStream();
-        HttpResponseMessage response =
-            await _client.PostAsync(token, apiUrl, content, cancellationToken: cancellationToken);
+        HttpResponseMessage response = await _client.PostAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: cancellationToken
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -529,8 +544,12 @@ public class DataClient : IDataClient
             };
         }
 
-        HttpResponseMessage response =
-            await _client.PostAsync(token, apiUrl, content, cancellationToken: cancellationToken);
+        HttpResponseMessage response = await _client.PostAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: cancellationToken
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -570,8 +589,12 @@ public class DataClient : IDataClient
 
         StreamContent content = request.CreateContentStream();
 
-        HttpResponseMessage response =
-            await _client.PutAsync(token, apiUrl, content, cancellationToken: cancellationToken);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: cancellationToken
+        );
 
         if (response.IsSuccessStatusCode)
         {
@@ -619,8 +642,12 @@ public class DataClient : IDataClient
             };
         }
 
-        HttpResponseMessage response =
-            await _client.PutAsync(token, apiUrl, content, cancellationToken: cancellationToken);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            content,
+            cancellationToken: cancellationToken
+        );
         _logger.LogInformation("Update binary data result: {ResultCode}", response.StatusCode);
         if (response.IsSuccessStatusCode)
         {
@@ -650,8 +677,12 @@ public class DataClient : IDataClient
         );
 
         StringContent jsonString = new(JsonConvert.SerializeObject(dataElement), Encoding.UTF8, "application/json");
-        HttpResponseMessage response =
-            await _client.PutAsync(token, apiUrl, jsonString, cancellationToken: cancellationToken);
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            jsonString,
+            cancellationToken: cancellationToken
+        );
 
         if (response.IsSuccessStatusCode)
         {
