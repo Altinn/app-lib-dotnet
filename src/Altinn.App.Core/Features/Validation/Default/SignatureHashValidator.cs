@@ -135,7 +135,7 @@ internal sealed class SignatureHashValidator(
             {
                 Code = ValidationIssueCodes.DataElementCodes.InvalidSignatureHash,
                 Severity = ValidationIssueSeverity.Error,
-                Description = ValidationIssueCodes.DataElementCodes.InvalidSignatureHash,
+                CustomTextKey = "backend.validation_errors.invalid_signature_hash",
             };
         }
 
