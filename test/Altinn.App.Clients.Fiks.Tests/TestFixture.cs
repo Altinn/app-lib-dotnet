@@ -83,6 +83,8 @@ internal sealed record TestFixture(
         App.Services.GetRequiredService<IFiksArkivResponseHandler>();
     public IFiksArkivPayloadGenerator FiksArkivPayloadGenerator =>
         App.Services.GetRequiredService<IFiksArkivPayloadGenerator>();
+    public IFiksArkivConfigResolver FiksArkivConfigResolver =>
+        App.Services.GetRequiredService<IFiksArkivConfigResolver>();
     public IFiksArkivAutoSendDecision FiksArkivAutoSendDecisionHandler =>
         App.Services.GetRequiredService<IFiksArkivAutoSendDecision>();
     public IFiksArkivInstanceClient FiksArkivInstanceClient =>
@@ -135,14 +137,7 @@ internal sealed record TestFixture(
 
         // User supplied configuration values
         if (configurationCollection is not null)
-        {
-            foreach (var (configName, configValue) in configurationCollection)
-            {
-                builder.Configuration.AddJsonStream(
-                    GetJsonStream(new Dictionary<string, object> { [configName] = configValue })
-                );
-            }
-        }
+            builder.Configuration.AddJsonStream(GetJsonStream(configurationCollection));
 
         // User-supplied services configuration
         configureServices(builder.Services);
@@ -244,6 +239,12 @@ internal sealed record TestFixture(
     private static Stream GetJsonStream(IDictionary<string, object> data)
     {
         var json = JsonSerializer.Serialize(data, _jsonSerializerOptions);
+        return new MemoryStream(Encoding.UTF8.GetBytes(json));
+    }
+
+    private static Stream GetJsonStream(IEnumerable<(string, object)> data)
+    {
+        var json = JsonSerializer.Serialize(data.ToDictionary(x => x.Item1, x => x.Item2), _jsonSerializerOptions);
         return new MemoryStream(Encoding.UTF8.GetBytes(json));
     }
 

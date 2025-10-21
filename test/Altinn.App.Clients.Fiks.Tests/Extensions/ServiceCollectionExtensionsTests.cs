@@ -358,7 +358,8 @@ public class ServiceCollectionExtensionsTests
             pipelineDescriptor.Strategies[0].Options
         );
         var timeoutOptions = Assert.IsType<TimeoutStrategyOptions>(pipelineDescriptor.Strategies[1].Options);
-        Assert.Equal(3, retryOptions.MaxRetryAttempts);
+        Assert.Equal(5, retryOptions.MaxRetryAttempts);
+        Assert.Equal(TimeSpan.FromSeconds(10), retryOptions.MaxDelay);
         Assert.Equal(TimeSpan.FromSeconds(1), retryOptions.Delay);
         Assert.Equal(DelayBackoffType.Exponential, retryOptions.BackoffType);
         Assert.Equal(TimeSpan.FromSeconds(2), timeoutOptions.Timeout);

@@ -189,9 +189,7 @@ public sealed record FiksArkivAutoSendSettings
             $"{nameof(FiksArkivSettings.AutoSend)}.{nameof(FiksArkivSettings.AutoSend.AfterTaskId)}";
 
         if (string.IsNullOrWhiteSpace(AfterTaskId))
-            throw new FiksArkivConfigurationException(
-                $"{propertyName} configuration is required for default handler {nameof(FiksArkivDefaultAutoSendDecision)}."
-            );
+            throw new FiksArkivConfigurationException($"{propertyName} configuration is missing, but is required.");
 
         if (configuredProcessTasks.FirstOrDefault(x => x.Id == AfterTaskId) is null)
             throw new FiksArkivConfigurationException(
@@ -306,7 +304,7 @@ public sealed record FiksArkivBindableValue<T>
     {
         if (Value is null && DataModelBinding is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}: Either `{nameof(Value)}` or `{nameof(DataModelBinding)}` must be configured for handler {nameof(FiksArkivMessageHandler)}."
+                $"{propertyName}: Either `{nameof(Value)}` or `{nameof(DataModelBinding)}` must be configured."
             );
 
         if (Value is not null && DataModelBinding is not null)
@@ -348,7 +346,7 @@ public sealed record FiksArkivDataModelBinding
     {
         if (string.IsNullOrWhiteSpace(DataType))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)} configuration is required for handler {nameof(FiksArkivMessageHandler)}"
+                $"{propertyName}.{nameof(DataType)} configuration is missing, but is required."
             );
 
         DataType? dataType = dataTypes.FirstOrDefault(x => x.Id == DataType);
@@ -359,7 +357,7 @@ public sealed record FiksArkivDataModelBinding
 
         if (string.IsNullOrWhiteSpace(Field))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(Field)} configuration is required for handler {nameof(FiksArkivMessageHandler)}."
+                $"{propertyName}.{nameof(Field)} configuration is missing, but is required."
             );
 
         Type type =
@@ -402,7 +400,7 @@ public sealed record FiksArkivDataTypeSettings
     {
         if (string.IsNullOrWhiteSpace(DataType))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)} configuration is required for handler {nameof(FiksArkivMessageHandler)}."
+                $"{propertyName}.{nameof(DataType)} configuration is missing, but is required."
             );
         if (dataTypes.Any(x => x.Id == DataType) is false)
             throw new FiksArkivConfigurationException(
@@ -411,7 +409,7 @@ public sealed record FiksArkivDataTypeSettings
 
         if (requireFilename && string.IsNullOrWhiteSpace(Filename))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(Filename)} configuration is required for handler {nameof(FiksArkivMessageHandler)}."
+                $"{propertyName}.{nameof(Filename)} configuration is missing, but is required."
             );
     }
 
