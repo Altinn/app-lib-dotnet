@@ -12,9 +12,9 @@ internal static class ArkivmeldingExtensions
     /// <summary>
     /// Serializes an archive record to XML and returns a byte array.
     /// </summary>
-    public static ReadOnlyMemory<byte> SerializeXmlBytes(this Arkivmelding archiveRecord, bool indent = false)
+    public static ReadOnlyMemory<byte> SerializeXmlBytes(this object archiveRecord, bool indent = false)
     {
-        var serializer = new XmlSerializer(typeof(Arkivmelding));
+        var serializer = new XmlSerializer(archiveRecord.GetType());
 
         using var memoryStream = new MemoryStream();
         var settings = new XmlWriterSettings

@@ -139,13 +139,19 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
 
             var accountId =
                 await GetBindableConfigValue(layoutState, instance, recipientSettings.FiksAccount, ParseGuid)
-                ?? throw new FiksArkivException("FiksArkivSettings.Recipient.FiksAccount must be configured.");
+                ?? throw new FiksArkivException(
+                    "FiksArkivSettings.Recipient.FiksAccount is required, but did not resolve to a value."
+                );
             var identifier =
                 await GetBindableConfigValue(layoutState, instance, recipientSettings.Identifier, ParseString)
-                ?? throw new FiksArkivException("FiksArkivSettings.Recipient.Identifier must be configured.");
+                ?? throw new FiksArkivException(
+                    "FiksArkivSettings.Recipient.Identifier is required, but did not resolve to a value."
+                );
             var name =
                 await GetBindableConfigValue(layoutState, instance, recipientSettings.Name, ParseString)
-                ?? throw new FiksArkivException("FiksArkivSettings.Recipient.Name must be configured.");
+                ?? throw new FiksArkivException(
+                    "FiksArkivSettings.Recipient.Name is required, but did not resolve to a value."
+                );
             var orgNumber = await GetBindableConfigValue(
                 layoutState,
                 instance,

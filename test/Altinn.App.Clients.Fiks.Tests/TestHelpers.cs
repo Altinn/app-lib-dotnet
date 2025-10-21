@@ -274,4 +274,12 @@ internal static class TestHelpers
     {
         public Task<bool> ShouldSend(string taskId, Instance instance) => throw new NotImplementedException();
     }
+
+    public static FiksArkivBindableValue<T> BindableValueFactory<T>(string dataTypeId, string field) =>
+        new()
+        {
+            DataModelBinding = new FiksArkivDataModelBinding { DataType = dataTypeId, Field = field },
+        };
+
+    public static FiksArkivBindableValue<T> BindableValueFactory<T>(T value) => new() { Value = value };
 }
