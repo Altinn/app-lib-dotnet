@@ -14,7 +14,6 @@ using KS.Fiks.IO.Send.Client.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Polly;
 using RabbitMQ.Client.Events;
 using FiksResult = Altinn.App.Core.Features.Telemetry.Fiks.FiksResult;
@@ -24,9 +23,9 @@ namespace Altinn.App.Clients.Fiks.FiksIO;
 
 internal sealed class FiksIOClient : IFiksIOClient
 {
-    private readonly IHostEnvironment _hostEnvironment;
     private readonly IOptionsMonitor<FiksIOSettings> _fiksIOSettings;
     private readonly IAppMetadata _appMetadata;
+    private readonly IHostEnvironment _env;
     private readonly ILogger<FiksIOClient> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IMaskinportenClient _maskinportenClient;
@@ -40,9 +39,9 @@ internal sealed class FiksIOClient : IFiksIOClient
     public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
 
     public FiksIOClient(
-        IHostEnvironment hostEnvironment,
         IServiceProvider serviceProvider,
         IOptionsMonitor<FiksIOSettings> fiksIOSettings,
+        IHostEnvironment env,
         IAppMetadata appMetadata,
         IMaskinportenClient maskinportenClient,
         ILoggerFactory loggerFactory,
@@ -50,9 +49,9 @@ internal sealed class FiksIOClient : IFiksIOClient
         Telemetry? telemetry = null
     )
     {
-        _hostEnvironment = hostEnvironment;
         _fiksIOSettings = fiksIOSettings;
         _appMetadata = appMetadata;
+        _env = env;
         _loggerFactory = loggerFactory;
         _maskinportenClient = maskinportenClient;
         _logger = loggerFactory.CreateLogger<FiksIOClient>();
@@ -251,12 +250,12 @@ internal sealed class FiksIOClient : IFiksIOClient
 
     private string GetDefaultAmqpHost()
     {
-        return _hostEnvironment.IsDevelopment() ? AmqpConfiguration.TestHost : AmqpConfiguration.ProdHost;
+        return _env.IsDevelopment() ? AmqpConfiguration.TestHost : AmqpConfiguration.ProdHost;
     }
 
     private string GetDefaultApiHost()
     {
-        return _hostEnvironment.IsDevelopment() ? ApiConfiguration.TestHost : ApiConfiguration.ProdHost;
+        return _env.IsDevelopment() ? ApiConfiguration.TestHost : ApiConfiguration.ProdHost;
     }
 
     public async ValueTask DisposeAsync()
