@@ -591,8 +591,6 @@ public class DataClientTests
             UriKind.RelativeOrAbsolute
         );
         var result = await fixture.DataClient.DeleteData(
-            "ttd",
-            "app",
             instanceIdentifier.InstanceOwnerPartyId,
             instanceIdentifier.InstanceGuid,
             dataGuid,
@@ -628,8 +626,6 @@ public class DataClientTests
         );
         var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () =>
             await fixture.DataClient.DeleteData(
-                "ttd",
-                "app",
                 instanceIdentifier.InstanceOwnerPartyId,
                 instanceIdentifier.InstanceGuid,
                 dataGuid,

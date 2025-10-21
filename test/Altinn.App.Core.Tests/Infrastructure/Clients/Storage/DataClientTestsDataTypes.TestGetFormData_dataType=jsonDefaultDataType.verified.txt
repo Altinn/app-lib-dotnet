@@ -1,0 +1,31 @@
+﻿{
+  data: {
+    Name: ivar,
+    Age: 36
+  },
+  _mockHttpClient: {
+    Calls: [
+      {
+        Request: {
+          Uri: https://storage.localhost/instances/123456/a467c267-2122-41a4-b78a-ae6f94aa7ff7/data/b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+          Headers: {
+            Accept: application/json,application/xml,
+            Authorization: {Scrubbed},
+            Ocp-Apim-Subscription-Key: 
+          }
+        },
+        Response: {
+          Status: 200 OK,
+          ContentHeaders: {
+            Content-Length: 24,
+            Content-Type: application/json; charset=utf-8
+          },
+          ContentStringParsed: {
+            Name: ivar,
+            Age: 36
+          }
+        }
+      }
+    ]
+  }
+}

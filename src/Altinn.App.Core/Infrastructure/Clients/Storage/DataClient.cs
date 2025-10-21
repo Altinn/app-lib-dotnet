@@ -549,6 +549,7 @@ public sealed class DataClient : IDataClient
     }
 
     /// <inheritdoc />
+    [Obsolete("The overload that takes a HttpRequest is deprecated, use the overload that takes a Stream instead")]
     public async Task<DataElement> UpdateBinaryData(
         string org,
         string app,

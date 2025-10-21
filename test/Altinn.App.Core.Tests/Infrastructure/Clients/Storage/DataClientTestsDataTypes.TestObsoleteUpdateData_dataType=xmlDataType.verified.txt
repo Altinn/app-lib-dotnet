@@ -1,0 +1,71 @@
+﻿{
+  data: {
+    Id: b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+    InstanceGuid: a467c267-2122-41a4-b78a-ae6f94aa7ff7,
+    DataType: xmlDataType,
+    ContentType: application/xml,
+    Locked: false,
+    IsRead: true
+  },
+  _mockHttpClient: {
+    Calls: [
+      {
+        Request: {
+          Method: PUT,
+          Uri: https://storage.localhost/instances/123456/a467c267-2122-41a4-b78a-ae6f94aa7ff7/data/b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+          Headers: {
+            Accept: application/json,application/xml,
+            Authorization: {Scrubbed},
+            Ocp-Apim-Subscription-Key: 
+          },
+          ContentHeaders: {
+            Content-Length: 188,
+            Content-Type: application/xml
+          },
+          ContentStringParsed: {
+            ?xml: {
+              @version: 1.0,
+              @encoding: utf-8
+            },
+            TestData: {
+              @xmlns:xsi: http://www.w3.org/2001/XMLSchema-instance,
+              @xmlns:xsd: http://www.w3.org/2001/XMLSchema,
+              Name: ivar,
+              Age: 36
+            }
+          }
+        },
+        Response: {
+          Status: 200 OK,
+          ContentHeaders: {
+            Content-Length: 477,
+            Content-Type: application/json; charset=utf-8
+          },
+          ContentStringParsed: {
+            Id: b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+            InstanceGuid: a467c267-2122-41a4-b78a-ae6f94aa7ff7,
+            DataType: xmlDataType,
+            Filename: null,
+            ContentType: application/xml,
+            BlobStoragePath: null,
+            SelfLinks: null,
+            Size: 0,
+            ContentHash: null,
+            Locked: false,
+            Refs: null,
+            IsRead: true,
+            UserDefinedMetadata: null,
+            Metadata: null,
+            DeleteStatus: null,
+            FileScanResult: NotApplicable,
+            References: null,
+            Created: null,
+            CreatedBy: null,
+            LastChanged: null,
+            LastChangedBy: null
+          }
+        }
+      }
+    ]
+  }
+}

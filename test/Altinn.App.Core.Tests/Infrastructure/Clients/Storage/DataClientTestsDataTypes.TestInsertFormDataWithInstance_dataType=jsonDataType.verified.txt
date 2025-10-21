@@ -1,0 +1,68 @@
+﻿{
+  data: {
+    Id: b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+    InstanceGuid: a467c267-2122-41a4-b78a-ae6f94aa7ff7,
+    DataType: jsonDataType,
+    ContentType: application/json,
+    Locked: false,
+    IsRead: true
+  },
+  _mockHttpClient: {
+    Calls: [
+      {
+        Request: {
+          Method: POST,
+          Uri: {
+            Path: https://storage.localhost/instances/123456/a467c267-2122-41a4-b78a-ae6f94aa7ff7/data,
+            Query: {
+              dataType: jsonDataType
+            }
+          },
+          Headers: {
+            Accept: application/json,application/xml,
+            Authorization: {Scrubbed},
+            Ocp-Apim-Subscription-Key: 
+          },
+          ContentHeaders: {
+            Content-Length: 24,
+            Content-Type: application/json
+          },
+          ContentStringParsed: {
+            name: ivar,
+            age: 36
+          }
+        },
+        Response: {
+          Status: 200 OK,
+          ContentHeaders: {
+            Content-Length: 479,
+            Content-Type: application/json; charset=utf-8
+          },
+          ContentStringParsed: {
+            Id: b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+            InstanceGuid: a467c267-2122-41a4-b78a-ae6f94aa7ff7,
+            DataType: jsonDataType,
+            Filename: null,
+            ContentType: application/json,
+            BlobStoragePath: null,
+            SelfLinks: null,
+            Size: 0,
+            ContentHash: null,
+            Locked: false,
+            Refs: null,
+            IsRead: true,
+            UserDefinedMetadata: null,
+            Metadata: null,
+            DeleteStatus: null,
+            FileScanResult: NotApplicable,
+            References: null,
+            Created: null,
+            CreatedBy: null,
+            LastChanged: null,
+            LastChangedBy: null
+          }
+        }
+      }
+    ]
+  }
+}
