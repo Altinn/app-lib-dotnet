@@ -34,6 +34,15 @@
         "Verify.AspNetCore"
       ],
       "allowedVersions": "<=4.0"
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "pinDigests": false,
+      "matchPackageNames": [
+        "/^mcr\\.microsoft\\.com/dotnet/"
+      ]
     }
   ]
 }
