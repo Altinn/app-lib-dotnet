@@ -107,7 +107,7 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
         var application = await _appMetadata.GetApplicationMetadata();
@@ -119,7 +119,8 @@ public class DataClient : IDataClient
 
         StreamContent streamContent = new(new MemoryAsStream(data));
         streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, streamContent, null, cancellationToken);
+        HttpResponseMessage response =
+            await _client.PostAsync(token, apiUrl, streamContent, cancellationToken: cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -159,7 +160,7 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
         //TODO: this method does not get enough information to know the content type from the DataType
@@ -170,7 +171,8 @@ public class DataClient : IDataClient
         StreamContent streamContent = new(new MemoryAsStream(serializedBytes));
         streamContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
 
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, streamContent, null, cancellationToken);
+        HttpResponseMessage response =
+            await _client.PutAsync(token, apiUrl, streamContent, cancellationToken: cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -200,10 +202,10 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, null, cancellationToken);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -234,10 +236,11 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
-        HttpResponseMessage response = await _streamingClient.GetStreamingAsync(token, apiUrl, null, cancellationToken);
+        HttpResponseMessage response =
+            await _streamingClient.GetStreamingAsync(token, apiUrl, cancellationToken: cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -274,10 +277,10 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, null, cancellationToken);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: cancellationToken);
         if (response.IsSuccessStatusCode)
         {
             var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
@@ -315,10 +318,10 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, null, cancellationToken);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -344,13 +347,13 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
         DataElementList dataList;
         List<AttachmentList> attachmentList = [];
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, null, cancellationToken);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: cancellationToken);
         if (response.StatusCode == HttpStatusCode.OK)
         {
             string instanceData = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -434,10 +437,10 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
-        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl, null, cancellationToken);
+        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl, cancellationToken: cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -469,11 +472,12 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
         StreamContent content = request.CreateContentStream();
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content, null, cancellationToken);
+        HttpResponseMessage response =
+            await _client.PostAsync(token, apiUrl, content, cancellationToken: cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -511,7 +515,7 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
         StreamContent content = new(stream);
@@ -525,7 +529,8 @@ public class DataClient : IDataClient
             };
         }
 
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content, null, cancellationToken);
+        HttpResponseMessage response =
+            await _client.PostAsync(token, apiUrl, content, cancellationToken: cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -560,12 +565,13 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
         StreamContent content = request.CreateContentStream();
 
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content, null, cancellationToken);
+        HttpResponseMessage response =
+            await _client.PutAsync(token, apiUrl, content, cancellationToken: cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -598,7 +604,7 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
         StreamContent content = new(stream);
@@ -613,7 +619,8 @@ public class DataClient : IDataClient
             };
         }
 
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, content, null, cancellationToken);
+        HttpResponseMessage response =
+            await _client.PutAsync(token, apiUrl, content, cancellationToken: cancellationToken);
         _logger.LogInformation("Update binary data result: {ResultCode}", response.StatusCode);
         if (response.IsSuccessStatusCode)
         {
@@ -639,11 +646,12 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
         StringContent jsonString = new(JsonConvert.SerializeObject(dataElement), Encoding.UTF8, "application/json");
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, jsonString, null, cancellationToken);
+        HttpResponseMessage response =
+            await _client.PutAsync(token, apiUrl, jsonString, cancellationToken: cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -671,7 +679,7 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
         _logger.LogDebug(
@@ -717,7 +725,7 @@ public class DataClient : IDataClient
 
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
 
         _logger.LogDebug(
@@ -726,7 +734,7 @@ public class DataClient : IDataClient
             instanceIdentifier,
             apiUrl
         );
-        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl, null, cancellationToken);
+        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl, cancellationToken: cancellationToken);
         if (response.IsSuccessStatusCode)
         {
             // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
