@@ -122,16 +122,12 @@ public sealed class DataClient : IDataClient
     {
         using var activity = _telemetry?.StartUpdateDataActivity(instanceGuid, dataId);
         // Verify that all dataTypes uses XML serialization so that the deprecated method might work as expected without access to dataElement.ContentType
-        var typeName = typeof(T).FullName;
+        var classRef = typeof(T).FullName;
         var appMetadata = await _appMetadata.GetApplicationMetadata();
-        if (
-            !appMetadata.DataTypes.TrueForAll(dt =>
-                dt.AppLogic?.ClassRef == typeName && !dt.AllowedContentTypes.Contains("application/json")
-            )
-        )
+        if (TypeAllowsJson(classRef, appMetadata))
         {
             throw new InvalidOperationException(
-                $"The data type {typeName} is configured to use JSON serialization and must use UpdateFormData method instead"
+                $"The data type {classRef} is configured to use JSON serialization and must use UpdateFormData method instead"
             );
         }
 
@@ -220,9 +216,8 @@ public sealed class DataClient : IDataClient
         }
         else if (response.StatusCode == HttpStatusCode.NotFound)
         {
-#nullable disable
-            return null;
-#nullable restore
+            // ! TODO: Remove null return in v9 and throw exception instead
+            return null!;
         }
 
         throw await PlatformHttpException.CreateAsync(response);
@@ -250,16 +245,12 @@ public sealed class DataClient : IDataClient
             cancellationToken: cancellationToken
         );
 
-        var typeName = type.FullName;
+        var classRef = type.FullName;
         var appMetadata = await _appMetadata.GetApplicationMetadata();
-        if (
-            !appMetadata.DataTypes.TrueForAll(dt =>
-                dt.AppLogic?.ClassRef == typeName && !dt.AllowedContentTypes.Contains("application/json")
-            )
-        )
+        if (TypeAllowsJson(classRef, appMetadata))
         {
             throw new InvalidOperationException(
-                $"The data type {typeName} is configured to use JSON serialization and must use UpdateFormData method instead"
+                $"The data type {classRef} is configured to use JSON serialization and must use GetFormData with dataElement argument instead"
             );
         }
 
@@ -280,6 +271,22 @@ public sealed class DataClient : IDataClient
         }
 
         throw await PlatformHttpException.CreateAsync(response);
+    }
+
+    private static bool TypeAllowsJson(string? classRef, ApplicationMetadata appMetadata)
+    {
+        return appMetadata.DataTypes.Where(dt => dt?.AppLogic?.ClassRef == classRef).Any(TypeAllowsJson);
+    }
+
+    internal static bool TypeAllowsJson(DataType? dataType)
+    {
+        if (dataType is null)
+            return false;
+        if (dataType.AllowedContentTypes is null)
+            return false;
+        return !dataType.AllowedContentTypes.TrueForAll(ct =>
+            !ct.Equals("application/json", StringComparison.OrdinalIgnoreCase)
+        );
     }
 
     /// <inheritdoc />

@@ -598,7 +598,7 @@ public class InstancesController_CopyInstanceTests
                 Times.Once
             );
 
-        // Verify binary data was copied (this should FAIL until we implement it)
+        // Verify binary data was copied
         fixture
             .Mock<IDataClient>()
             .Verify(
@@ -1004,6 +1004,31 @@ public class InstancesController_CopyInstanceTests
                         It.IsAny<string>(),
                         It.IsAny<int>(),
                         It.IsAny<string>(),
+                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Never
+            );
+        fixture
+            .Mock<IDataClient>()
+            .Verify(
+                p =>
+                    p.GetFormData(
+                        It.IsAny<Instance>(),
+                        It.IsAny<DataElement>(),
+                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Never
+            );
+        fixture
+            .Mock<IDataClient>()
+            .Verify(
+                p =>
+                    p.InsertFormData(
+                        It.IsAny<Instance>(),
+                        It.IsAny<string>(),
+                        It.IsAny<object>(),
                         It.IsAny<StorageAuthenticationMethod>(),
                         It.IsAny<CancellationToken>()
                     ),

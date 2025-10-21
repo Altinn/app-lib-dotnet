@@ -956,8 +956,6 @@ public class InstancesController : ControllerBase
         Instance sourceInstance
     )
     {
-        string org = application.Org;
-        string app = application.AppIdentifier.App;
         int instanceOwnerPartyId = int.Parse(targetInstance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
 
         string[] sourceSplit = sourceInstance.Id.Split("/");

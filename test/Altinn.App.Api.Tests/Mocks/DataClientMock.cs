@@ -221,7 +221,7 @@ public class DataClientMock : IDataClient
             instanceIdentifier.InstanceOwnerPartyId,
             instanceIdentifier.InstanceGuid
         );
-        var (serializedBytes, contentType) = _modelSerialization.SerializeToStorage(dataToSerialize, dataType);
+        var (serializedBytes, contentType) = _modelSerialization.SerializeToStorage(dataToSerialize, dataType, null);
 
         DataElement dataElement = new()
         {

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Xml;
 using System.Xml.Serialization;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Models.Result;
 using Altinn.Platform.Storage.Interface.Models;
@@ -41,9 +42,9 @@ public sealed class ModelSerializationService
     [Obsolete("DeserializeFromStorage needs a DataElement parameter to support json in storage")]
     public object DeserializeFromStorage(ReadOnlySpan<byte> data, DataType dataType)
     {
-        if (dataType.AllowedContentTypes?.Contains("application/json") == true)
+        if (DataClient.TypeAllowsJson(dataType))
         {
-            throw new NotImplementedException(
+            throw new InvalidOperationException(
                 $"Data type {dataType.Id} allows application json and must use DeserializeFromStorage with DataElement specified"
             );
         }
@@ -85,10 +86,10 @@ public sealed class ModelSerializationService
     [Obsolete("SerializeToStorage needs a DataElement parameter to support json in storage")]
     public (ReadOnlyMemory<byte> data, string contentType) SerializeToStorage(object model, DataType dataType)
     {
-        if (dataType.AllowedContentTypes?.Contains("application/json") == true)
+        if (DataClient.TypeAllowsJson(dataType))
         {
-            throw new NotImplementedException(
-                $"Data type {dataType.Id} allows application json and must use DeserializeFromStorage with DataElement specified"
+            throw new InvalidOperationException(
+                $"Data type {dataType.Id} allows application json and must use SerializeToStorage with DataElement specified"
             );
         }
         return SerializeToStorage(model, dataType, null);
@@ -120,11 +121,9 @@ public sealed class ModelSerializationService
 
         return contentType switch
         {
-            "application/xml" => (SerializeToXml(model), contentType),
             "application/json" => (SerializeToJson(model), contentType),
-            null or "" => throw new InvalidOperationException(
-                $"Data element {dataElement?.Id} does not have a content type"
-            ), //TODO: Consider defaulting to xml after initial testing?
+            // When the content type is missing, default to xml for backward compatibility
+            "application/xml" or null or "" => (SerializeToXml(model), "application/xml"),
             _ => throw new InvalidOperationException($"Unsupported content type {contentType}"),
         };
     }
@@ -187,7 +186,7 @@ public sealed class ModelSerializationService
 
         var modelType = GetModelTypeForDataType(dataType);
         object model;
-        if (contentType?.Contains("application/xml") ?? true) // default to xml if no content type is provided
+        if (contentType?.Contains("application/xml", StringComparison.Ordinal) ?? true) // default to xml if no content type is provided
         {
             try
             {
@@ -207,7 +206,7 @@ public sealed class ModelSerializationService
                 };
             }
         }
-        else if (contentType.Contains("application/json"))
+        else if (contentType.Contains("application/json", StringComparison.Ordinal))
         {
             try
             {

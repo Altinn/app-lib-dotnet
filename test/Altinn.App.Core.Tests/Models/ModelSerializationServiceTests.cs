@@ -42,7 +42,7 @@ public class ModelSerializationServiceTests
         var (_, outputContentType) = _sut.SerializeToStorage(testObject, dataType, null);
 
         // Assert
-        outputContentType.Should().Be(expectedOutputType);
+        Assert.Equal(expectedOutputType, outputContentType);
     }
 
     [Fact]
@@ -59,11 +59,11 @@ public class ModelSerializationServiceTests
         // Assert
         var json = System.Text.Encoding.UTF8.GetString(data.Span);
 
-        json.Should().Be("{\"name\":\"Test\",\"value\":42}");
+        Assert.Equal("{\"name\":\"Test\",\"value\":42}", json);
     }
 
     [Fact]
-    public void SerializeToStorage_SerializesXml()
+    public void SerializeToStorage_SerializesXmlWithObsoleteMethod()
     {
         // Arrange
         var testObject = new TestDataModel { Name = "Test", Value = 42 };
@@ -76,14 +76,54 @@ public class ModelSerializationServiceTests
         // Assert
         var xml = System.Text.Encoding.UTF8.GetString(data.Span);
 
-        xml.Should()
-            .Be(
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?><TestDataModel xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><Name>Test</Name><Value>42</Value></TestDataModel>"
-            );
+        Assert.Equal(
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?><TestDataModel xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><Name>Test</Name><Value>42</Value></TestDataModel>",
+            xml
+        );
     }
 
     [Fact]
-    public void SerializeToStorage_ThrowsOnUnsupportedContentType()
+    public void SerializeToStorage_SerializesXmlWithNullDataElement()
+    {
+        // Arrange
+        var testObject = new TestDataModel { Name = "Test", Value = 42 };
+
+        var dataType = CreateDataType(["application/xml"]);
+
+        // Act
+        var (data, _) = _sut.SerializeToStorage(testObject, dataType, dataElement: null);
+
+        // Assert
+        var xml = System.Text.Encoding.UTF8.GetString(data.Span);
+
+        Assert.Equal(
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?><TestDataModel xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><Name>Test</Name><Value>42</Value></TestDataModel>",
+            xml
+        );
+    }
+
+    [Fact]
+    public void SerializeToStorage_SerializesJsonOnOldElement()
+    {
+        // Arrange
+        var testObject = new TestDataModel { Name = "Test", Value = 42 };
+
+        var dataType = CreateDataType(["application/xml"]);
+
+        // Act
+        var (data, _) = _sut.SerializeToStorage(
+            testObject,
+            dataType,
+            new DataElement { ContentType = "application/json" }
+        );
+
+        // Assert
+        var json = System.Text.Encoding.UTF8.GetString(data.Span);
+        Assert.Equal("{\"name\":\"Test\",\"value\":42}", json);
+    }
+
+    [Fact]
+    public void SerializeToStorage_DefaultsToXmlOnUnsupportedContentType()
     {
         // Arrange
         var testObject = new TestDataModel { Name = "Test", Value = 42 };
@@ -111,10 +151,13 @@ public class ModelSerializationServiceTests
         };
 
         // Act
-        var act = () => _sut.SerializeToStorage(testObject, mismatchingDataType, null);
+        var act = () =>
+        {
+            _sut.SerializeToStorage(testObject, mismatchingDataType, null);
+        };
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        Assert.Throws<InvalidOperationException>(act);
     }
 
     [Fact]
@@ -129,7 +172,7 @@ public class ModelSerializationServiceTests
         var (_, outputContentType) = _sut.SerializeToStorage(testObject, dataType, null);
 
         // Assert
-        outputContentType.Should().Be("application/json");
+        Assert.Equal("application/json", outputContentType);
     }
 
     [Fact]
@@ -146,10 +189,13 @@ public class ModelSerializationServiceTests
         };
 
         // Act
-        var act = () => _sut.DeserializeFromStorage(data.Span, mismatchingDataType);
+        var act = () =>
+        {
+            _sut.DeserializeFromStorage(data.Span, mismatchingDataType);
+        };
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        Assert.Throws<InvalidOperationException>(act);
     }
 
     [Fact]
@@ -166,10 +212,10 @@ public class ModelSerializationServiceTests
         var result = _sut.DeserializeFromStorage(data.Span, dataType, dataElement);
 
         // Assert
-        result.Should().BeOfType<TestDataModel>();
+        Assert.IsType<TestDataModel>(result);
         var model = (TestDataModel)result;
-        model.Name.Should().Be("Test");
-        model.Value.Should().Be(42);
+        Assert.Equal("Test", model.Name);
+        Assert.Equal(42, model.Value);
     }
 
     [Fact]
@@ -186,10 +232,10 @@ public class ModelSerializationServiceTests
         var result = _sut.DeserializeFromStorage(data.Span, dataType, dataElement);
 
         // Assert
-        result.Should().BeOfType<TestDataModel>();
+        Assert.IsType<TestDataModel>(result);
         var model = (TestDataModel)result;
-        model.Name.Should().Be("Test");
-        model.Value.Should().Be(42);
+        Assert.Equal("Test", model.Name);
+        Assert.Equal(42, model.Value);
     }
 
     [Fact]
@@ -205,10 +251,10 @@ public class ModelSerializationServiceTests
         var result = _sut.DeserializeFromStorage(data.Span, dataType);
 
         // Assert
-        result.Should().BeOfType<TestDataModel>();
+        Assert.IsType<TestDataModel>(result);
         var model = (TestDataModel)result;
-        model.Name.Should().Be("Test");
-        model.Value.Should().Be(42);
+        Assert.Equal("Test", model.Name);
+        Assert.Equal(42, model.Value);
     }
 
     private static DataType CreateDataType(List<string> allowedContentTypes)
