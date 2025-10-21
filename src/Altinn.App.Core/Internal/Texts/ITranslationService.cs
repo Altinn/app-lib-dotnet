@@ -70,5 +70,6 @@ public interface ITranslationService
     /// <param name="language">Language for the text. If omitted, 'nb' will be used</param>
     /// <param name="keys">Array of keys to search for</param>
     /// <returns>The value of the first matching text resource in the specified language or null</returns>
+    [Obsolete("Multiple keys should be implemented by a default fallback that references the other key")]
     Task<string?> TranslateFirstMatchingTextKey(string? language, params string[] keys);
 }

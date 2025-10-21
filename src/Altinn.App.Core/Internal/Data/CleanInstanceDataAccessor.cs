@@ -10,7 +10,7 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Data;
 
-internal class CleanInstanceDataAccessor : IInstanceDataAccessor
+internal sealed class CleanInstanceDataAccessor : IInstanceDataAccessor
 {
     private readonly IInstanceDataAccessor _dataAccessor;
     private readonly IAppResources _appResources;
@@ -53,7 +53,7 @@ internal class CleanInstanceDataAccessor : IInstanceDataAccessor
             );
             _hiddenFieldsTask = new(() =>
             {
-                using var activity = telemetry?.StartRemoveHiddenDataForValidation();
+                using var activity = _telemetry?.StartRemoveHiddenDataForValidation();
                 return LayoutEvaluator.GetHiddenFieldsForRemoval(state, evaluateRemoveWhenHidden: false);
             });
         }

@@ -171,7 +171,7 @@ public class PdfService : IPdfService
 
     private async Task<string> GetFileName(string? language)
     {
-        string? titleText = await _translationService.TranslateTextKey("appName", language);
+        string? titleText = await _translationService.TranslateTextKey("backend.pdf_default_file_name", language);
 
         if (string.IsNullOrEmpty(titleText))
         {
@@ -179,7 +179,7 @@ public class PdfService : IPdfService
             titleText = "Altinn PDF";
         }
 
-        return GetValidFileName(titleText + ".pdf");
+        return GetValidFileName(titleText);
     }
 
     private static string GetValidFileName(string fileName)

@@ -173,11 +173,17 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         return _previousDataAccessorCache;
     }
 
+    private LayoutEvaluatorState? _layoutEvaluatorStateCache;
+
     public LayoutEvaluatorState? GetLayoutEvaluatorState()
     {
         if (TaskId is null)
         {
             return null;
+        }
+        if (_layoutEvaluatorStateCache is not null)
+        {
+            return _layoutEvaluatorStateCache;
         }
         var layouts = _appResources.GetLayoutModelForTask(TaskId);
         if (layouts is null)
@@ -185,7 +191,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             return null;
         }
 
-        var state = new LayoutEvaluatorState(
+        _layoutEvaluatorStateCache = new LayoutEvaluatorState(
             this,
             layouts,
             _translationService,
@@ -193,7 +199,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             gatewayAction: null,
             Language
         );
-        return state;
+        return _layoutEvaluatorStateCache;
     }
 
     /// <inheritdoc />

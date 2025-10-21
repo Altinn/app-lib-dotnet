@@ -15,23 +15,26 @@ namespace Altinn.App.Core.Internal.Texts;
 /// <summary>
 /// Translation service
 /// </summary>
-internal class TranslationService : ITranslationService
+internal sealed class TranslationService : ITranslationService
 {
     private readonly string _org;
     private readonly string _app;
     private readonly IAppResources _appResources;
+    private readonly IAppMetadata? _appMetadata;
     private readonly ILogger<TranslationService> _logger;
 
     public TranslationService(
         AppIdentifier appIdentifier,
         IAppResources appResources,
-        ILogger<TranslationService> logger
+        ILogger<TranslationService> logger,
+        IAppMetadata? appMetadata = null
     )
     {
         _org = appIdentifier.Org;
         _app = appIdentifier.App;
         _appResources = appResources;
         _logger = logger;
+        _appMetadata = appMetadata;
     }
 
     /// <summary>
@@ -188,17 +191,20 @@ internal class TranslationService : ITranslationService
             return customTextParameters?.GetValueOrDefault(variable.Key);
         }
 
-        if (variable.DataSource == "static")
+        if (variable.DataSource == "text")
         {
-            return variable.Key switch
+            if (variable.Key == resourceElement.Id)
             {
-                "app" => _app,
-                "org" => _org,
-                "appName" => state is null
-                    ? await TranslateTextKey("appName", language, customTextParameters)
-                    : await TranslateTextKey("appName", state, context, customTextParameters),
-                _ => null,
-            };
+                // TODO: Detect bigger cycles?
+                _logger.LogWarning(
+                    "Text resource variable with dataSource 'text' cannot reference itself. In text resource with id = {TextResourceId}",
+                    resourceElement.Id
+                );
+                return null;
+            }
+            return state == null
+                ? await TranslateTextKey(variable.Key, language, customTextParameters)
+                : await TranslateTextKey(variable.Key, state, context, customTextParameters);
         }
 
         _logger.LogWarning(
@@ -234,6 +240,14 @@ internal class TranslationService : ITranslationService
                 return resource;
             }
 
+            if (_appMetadata is not null)
+            {
+                var appMetadata = await _appMetadata.GetApplicationMetadata();
+                if (appMetadata.Title.TryGetValue(language, out var title) == true)
+                {
+                    return new TextResourceElement() { Id = "appName", Value = title };
+                }
+            }
             // Fallback to just using the app id as app name
             return new TextResourceElement() { Id = "appName", Value = _app };
         }
@@ -261,13 +275,15 @@ internal class TranslationService : ITranslationService
                 return new TextResourceElement()
                 {
                     Id = "backend.pdf_default_file_name",
-                    Value = language switch
-                    {
-                        _ => "{0}.pdf",
-                    },
+                    Value = "{0}.pdf",
                     Variables = new List<TextResourceVariable>()
                     {
-                        new TextResourceVariable() { Key = "appName", DataSource = "static" },
+                        new TextResourceVariable()
+                        {
+                            Key = "appName",
+                            DataSource = "text",
+                            DefaultValue = "Altinn PDF",
+                        },
                     },
                 };
             case "pdfPreviewText":

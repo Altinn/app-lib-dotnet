@@ -100,9 +100,7 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
 
         public LayoutEvaluatorState? GetLayoutEvaluatorState()
         {
-            throw new NotImplementedException(
-                "GetLayoutEvaluatorState is not implemented in CleanInstanceDataAccessor, because LayoutEvaluatorState will be deprecated."
-            );
+            throw new NotImplementedException("Legacy single data accessor does not implement GetLayoutEvaluatorState");
         }
 
         public Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)

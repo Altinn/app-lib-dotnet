@@ -139,7 +139,7 @@ public class PdfControllerTests
                     ItExpr.IsAny<CancellationToken>()
                 )
                 .Callback<HttpRequestMessage, CancellationToken>(
-                    (m, c) => requestBody = m.Content!.ReadAsStringAsync().Result
+                    async (m, c) => requestBody = await m.Content!.ReadAsStringAsync()
                 )
                 .ReturnsAsync(mockResponse);
 
@@ -209,7 +209,7 @@ public class PdfControllerTests
                     ItExpr.IsAny<CancellationToken>()
                 )
                 .Callback<HttpRequestMessage, CancellationToken>(
-                    (m, c) => requestBody = m.Content!.ReadAsStringAsync().Result
+                    async (m, c) => requestBody = await m.Content!.ReadAsStringAsync()
                 )
                 .ReturnsAsync(mockResponse);
 
@@ -281,7 +281,7 @@ public class PdfControllerTests
                     ItExpr.IsAny<CancellationToken>()
                 )
                 .Callback<HttpRequestMessage, CancellationToken>(
-                    (m, c) => requestBody = m.Content!.ReadAsStringAsync().Result
+                    async (m, c) => requestBody = await m.Content!.ReadAsStringAsync()
                 )
                 .ReturnsAsync(mockResponse);
 
