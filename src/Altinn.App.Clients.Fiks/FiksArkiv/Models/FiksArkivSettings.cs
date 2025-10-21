@@ -63,6 +63,15 @@ public sealed record FiksArkivReceiptSettings
 
     internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes)
     {
+        if (ConfirmationRecord is null)
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(ConfirmationRecord)} configuration is missing, but is required."
+            );
+        if (ArchiveRecord is null)
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(ArchiveRecord)} configuration is missing, but is required."
+            );
+
         ConfirmationRecord.Validate($"{propertyName}.{nameof(ConfirmationRecord)}", dataTypes, requireFilename: true);
         ArchiveRecord.Validate($"{propertyName}.{nameof(ArchiveRecord)}", dataTypes, requireFilename: true);
     }
@@ -146,6 +155,10 @@ public sealed record FiksArkivDocumentSettings
     internal void Validate(IReadOnlyList<DataType> dataTypes)
     {
         const string propertyName = nameof(FiksArkivSettings.Documents);
+        if (PrimaryDocument is null)
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(PrimaryDocument)} configuration is missing, but is required."
+            );
 
         PrimaryDocument.Validate($"{propertyName}.{nameof(PrimaryDocument)}", dataTypes);
 
@@ -271,6 +284,18 @@ public sealed record FiksArkivRecipientSettings
     internal void Validate(IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
         const string propertyName = $"{nameof(FiksArkivSettings.Recipient)}";
+        if (FiksAccount is null)
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(FiksAccount)} configuration is missing, but is required."
+            );
+        if (Identifier is null)
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(Identifier)} configuration is missing, but is required."
+            );
+        if (Name is null)
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(Name)} configuration is missing, but is required."
+            );
 
         FiksAccount.Validate($"{propertyName}.{nameof(FiksAccount)}", dataTypes, appModelResolver);
         Identifier.Validate($"{propertyName}.{nameof(Identifier)}", dataTypes, appModelResolver);

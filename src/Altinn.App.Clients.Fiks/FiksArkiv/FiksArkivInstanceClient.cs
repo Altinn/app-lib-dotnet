@@ -74,9 +74,12 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         using var activity = _telemetry?.StartGetInstanceByGuidActivity(instanceIdentifier.InstanceGuid);
 
         using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.Storage);
-        using HttpResponseMessage response = await client.GetAsync($"instances/{instanceIdentifier}");
+        HttpResponseMessage response = await client.GetAsync($"instances/{instanceIdentifier}");
 
-        return await DeserializeResponse<Instance>(response);
+        var deserializeResponse = await DeserializeResponse<Instance>(response);
+        response.Dispose();
+
+        return deserializeResponse;
     }
 
     public async Task ProcessMoveNext(InstanceIdentifier instanceIdentifier, string? action = null)
@@ -87,12 +90,13 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         {
             using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.App);
             using StringContent payload = GetProcessNextAction(action);
-            using HttpResponseMessage response = await client.PutAsync(
+            HttpResponseMessage response = await client.PutAsync(
                 $"instances/{instanceIdentifier}/process/next",
                 payload
             );
 
             await EnsureSuccessStatusCode(response);
+            response.Dispose();
 
             _logger.LogInformation("Moved instance {InstanceId} to next step.", instanceIdentifier);
         }
@@ -111,12 +115,10 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         {
             using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.Storage);
             using StringContent payload = new(string.Empty);
-            using HttpResponseMessage response = await client.PostAsync(
-                $"instances/{instanceIdentifier}/complete",
-                payload
-            );
+            HttpResponseMessage response = await client.PostAsync($"instances/{instanceIdentifier}/complete", payload);
 
             await EnsureSuccessStatusCode(response);
+            response.Dispose();
 
             _logger.LogInformation("Marked {InstanceId} as completed.", instanceIdentifier);
         }
@@ -151,7 +153,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             if (!string.IsNullOrEmpty(generatedFromTask))
                 url += $"&generatedFromTask={generatedFromTask}";
 
-            using HttpContent payload = content switch
+            HttpContent payload = content switch
             {
                 byte[] bytes => new ByteArrayContent(bytes),
                 Stream stream => new StreamContent(stream),
@@ -168,9 +170,15 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             };
 
             using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.Storage);
-            using HttpResponseMessage response = await client.PostAsync(url, payload);
+            HttpResponseMessage response = await client.PostAsync(url, payload);
 
-            return await DeserializeResponse<DataElement>(response);
+            var deserializeResponse = await DeserializeResponse<DataElement>(response);
+
+            response.Dispose();
+            if (payload is ByteArrayContent)
+                payload.Dispose();
+
+            return deserializeResponse;
         }
         catch (Exception e)
         {

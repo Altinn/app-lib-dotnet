@@ -124,7 +124,7 @@ internal sealed class FiksArkivMessageHandler : IFiksArkivMessageHandler
             _fiksArkivSettings.Receipt.ArchiveRecord.DataType,
             "application/json",
             _fiksArkivSettings.Receipt.ArchiveRecord.GetFilenameOrDefault(".xml"),
-            request.Payload.Single(x => x.Filename == FiksArkivConstants.ArchiveRecordFilename)
+            request.Payload.Single(x => x.Filename == FiksArkivConstants.ArchiveRecordFilename).Data
         );
     }
 
@@ -137,14 +137,13 @@ internal sealed class FiksArkivMessageHandler : IFiksArkivMessageHandler
         ArgumentNullException.ThrowIfNull(_fiksArkivSettings.Receipt);
 
         _logger.LogInformation("Saving receipt data from Fiks Arkiv payload: {Receipt}", receipt);
-        byte[] receiptBytes = JsonSerializer.SerializeToUtf8Bytes(receipt.Details);
 
         return await _fiksArkivInstanceClient.InsertBinaryData(
             new InstanceIdentifier(instance),
             _fiksArkivSettings.Receipt.ConfirmationRecord.DataType,
             "application/json",
             _fiksArkivSettings.Receipt.ConfirmationRecord.GetFilenameOrDefault(".json"),
-            receiptBytes
+            JsonSerializer.SerializeToUtf8Bytes(receipt.Details)
         );
     }
 
