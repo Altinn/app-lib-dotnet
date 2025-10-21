@@ -448,7 +448,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             new MemoryAsStream(bytes),
             authenticationMethod: GetAuthenticationMethod(change.DataType)
         );
-        // Update caches
 
         if (change.Metadata is not null)
         {
@@ -457,6 +456,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             await _dataClient.Update(Instance, dataElement);
         }
 
+        // Update caches
         _binaryCache.Set(dataElement, bytes);
         change.DataElement = dataElement; // Set the data element so that it can be referenced later in the save process
         if (change is FormDataChange formDataChange)

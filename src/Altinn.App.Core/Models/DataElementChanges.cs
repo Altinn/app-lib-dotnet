@@ -34,11 +34,6 @@ public sealed class DataElementChanges
 /// </summary>
 public abstract class DataElementChange
 {
-    /// <summary>
-    /// The metadata of the data element
-    /// </summary>
-    private List<KeyValueEntry>? _metadata = [];
-
     internal DataElementChange(ChangeType type, DataType dataType, string contentType, DataElement? dataElement = null)
     {
         Type = type;
@@ -46,6 +41,11 @@ public abstract class DataElementChange
         DataType = dataType;
         ContentType = contentType;
     }
+
+    /// <summary>
+    /// The metadata of the data element
+    /// </summary>
+    private List<KeyValueEntry>? _metadata = [];
 
     /// <summary>
     /// The type of update: Create, Update or Delete
