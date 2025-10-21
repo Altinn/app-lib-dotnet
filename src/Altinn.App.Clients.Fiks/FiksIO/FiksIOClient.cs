@@ -11,8 +11,10 @@ using KS.Fiks.IO.Client.Configuration;
 using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Crypto.Configuration;
 using KS.Fiks.IO.Send.Client.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Polly;
 using RabbitMQ.Client.Events;
 using FiksResult = Altinn.App.Core.Features.Telemetry.Fiks.FiksResult;
@@ -22,6 +24,7 @@ namespace Altinn.App.Clients.Fiks.FiksIO;
 
 internal sealed class FiksIOClient : IFiksIOClient
 {
+    private readonly IHostEnvironment _hostEnvironment;
     private readonly IOptionsMonitor<FiksIOSettings> _fiksIOSettings;
     private readonly IAppMetadata _appMetadata;
     private readonly ILogger<FiksIOClient> _logger;
@@ -37,6 +40,7 @@ internal sealed class FiksIOClient : IFiksIOClient
     public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
 
     public FiksIOClient(
+        IHostEnvironment hostEnvironment,
         IServiceProvider serviceProvider,
         IOptionsMonitor<FiksIOSettings> fiksIOSettings,
         IAppMetadata appMetadata,
@@ -46,6 +50,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         Telemetry? telemetry = null
     )
     {
+        _hostEnvironment = hostEnvironment;
         _fiksIOSettings = fiksIOSettings;
         _appMetadata = appMetadata;
         _loggerFactory = loggerFactory;
@@ -162,13 +167,21 @@ internal sealed class FiksIOClient : IFiksIOClient
         var appMeta = await _appMetadata.GetApplicationMetadata();
         var fiksAmqpAppName = GetFiksAmqpApplicationName(appMeta.AppIdentifier);
 
+        var apiHostUri = GetUri(fiksIOSettings.ApiHost);
+        var amqpHostUri = GetUri(fiksIOSettings.AmqpHost);
+
         var fiksConfiguration = new FiksIOConfiguration(
             amqpConfiguration: new AmqpConfiguration(
-                fiksIOSettings.AmqpHost,
+                amqpHostUri?.Host ?? GetDefaultAmqpHost(),
+                amqpHostUri?.Port > -1 ? amqpHostUri.Port : 5671,
                 applicationName: fiksAmqpAppName,
                 prefetchCount: 0
             ),
-            apiConfiguration: new ApiConfiguration(host: fiksIOSettings.ApiHost),
+            apiConfiguration: new ApiConfiguration(
+                apiHostUri?.Scheme ?? "https",
+                apiHostUri?.Host ?? GetDefaultApiHost(),
+                apiHostUri?.Port > -1 ? apiHostUri.Port : 443
+            ),
             asiceSigningConfiguration: new AsiceSigningConfiguration(fiksIOSettings.GenerateAsiceCertificate()),
             integrasjonConfiguration: new IntegrasjonConfiguration(
                 fiksIOSettings.IntegrationId,
@@ -229,6 +242,21 @@ internal sealed class FiksIOClient : IFiksIOClient
     private static string GetFiksAmqpApplicationName(AppIdentifier appIdentifier)
     {
         return $"altinn-app-{appIdentifier.Org}-{appIdentifier.App}";
+    }
+
+    private static Uri? GetUri(string? uriString)
+    {
+        return !string.IsNullOrWhiteSpace(uriString) ? new Uri(uriString) : null;
+    }
+
+    private string GetDefaultAmqpHost()
+    {
+        return _hostEnvironment.IsDevelopment() ? AmqpConfiguration.TestHost : AmqpConfiguration.ProdHost;
+    }
+
+    private string GetDefaultApiHost()
+    {
+        return _hostEnvironment.IsDevelopment() ? ApiConfiguration.TestHost : ApiConfiguration.ProdHost;
     }
 
     public async ValueTask DisposeAsync()

@@ -43,18 +43,18 @@ public sealed record FiksIOSettings : IFiksIOAccountSettings
     public required string AsicePrivateKeyBase64 { get; set; }
 
     /// <summary>
-    /// The AMQP host. Usually 'io.fiks.test.ks.no' in test and 'io.fiks.ks.no' in production.
+    /// The API host. Usually 'https://api.fiks.test.ks.no:443' in test and 'https://api.fiks.ks.no:443' in production.
+    /// Scheme is required. Port number is optional, defaults to 443 if not specified, 80 for http.
     /// </summary>
-    [Required]
-    [JsonPropertyName("amqpHost")]
-    public required string AmqpHost { get; set; }
+    [JsonPropertyName("apiHost")]
+    public string? ApiHost { get; set; }
 
     /// <summary>
-    /// The API host. Usually 'api.fiks.test.ks.no' in test and 'api.fiks.ks.no' in production.
+    /// The AMQP host. Usually 'amqp://io.fiks.test.ks.no:5671' in test and 'amqp://io.fiks.ks.no:5671' in production.
+    /// Scheme is required. Port number is optional, defaults to 5671.
     /// </summary>
-    [Required]
-    [JsonPropertyName("apiHost")]
-    public required string ApiHost { get; set; }
+    [JsonPropertyName("amqpHost")]
+    public string? AmqpHost { get; set; }
 
     internal string AccountPrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AccountPrivateKeyBase64));
     internal string AsicePrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AsicePrivateKeyBase64));
