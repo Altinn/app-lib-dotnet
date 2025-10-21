@@ -46,16 +46,17 @@ public static class ServiceCollectionExtensions
     public static IFiksArkivSetupBuilder AddFiksArkiv(this IServiceCollection services)
     {
         if (services.IsConfigured<FiksArkivSettings>() is false)
-        {
             services.ConfigureFiksArkiv("FiksArkivSettings");
-        }
 
         services.AddFiksIOClient();
         services.AddAltinnCdnClient();
         services.AddTransient<IServiceTask, FiksArkivServiceTask>();
-        services.AddTransient<IFiksArkivMessageHandler, FiksArkivDefaultMessageHandler>();
+        services.AddTransient<IFiksArkivMessageHandler, FiksArkivMessageHandler>();
+        services.AddTransient<IFiksArkivPayloadGenerator, FiksArkivDefaultPayloadGenerator>();
+        services.AddTransient<IFiksArkivResponseHandler, FiksArkivDefaultResponseHandler>();
         services.AddTransient<IFiksArkivAutoSendDecision, FiksArkivDefaultAutoSendDecision>();
         services.AddTransient<IFiksArkivInstanceClient, FiksArkivInstanceClient>();
+        services.AddTransient<IFiksArkivConfigResolver, FiksArkivConfigResolver>();
         services.AddHostedService<FiksArkivConfigValidationService>();
         services.AddHostedService<FiksArkivEventService>();
 
@@ -116,11 +117,15 @@ public static class ServiceCollectionExtensions
                 options.Documents = null;
                 options.Receipt = null;
                 options.Recipient = null;
+                options.Metadata = null;
             })
             .BindConfiguration(configSectionPath);
         return services;
     }
 
+    /// <summary>
+    /// The default resilience pipeline for Fiks IO.
+    /// </summary>
     private static IServiceCollection AddDefaultFiksIOResiliencePipeline(this IServiceCollection services)
     {
         services.AddResiliencePipeline<string, FiksIOMessageResponse>(
@@ -133,8 +138,9 @@ public static class ServiceCollectionExtensions
                     .AddRetry(
                         new RetryStrategyOptions<FiksIOMessageResponse>
                         {
-                            MaxRetryAttempts = 3,
+                            MaxRetryAttempts = 5,
                             Delay = TimeSpan.FromSeconds(1),
+                            MaxDelay = TimeSpan.FromSeconds(10),
                             BackoffType = DelayBackoffType.Exponential,
                             ShouldHandle = new PredicateBuilder<FiksIOMessageResponse>().Handle<Exception>(ex =>
                             {

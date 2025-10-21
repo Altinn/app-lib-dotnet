@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -29,20 +27,6 @@ public sealed record FiksIOSettings : IFiksIOAccountSettings
     public required string IntegrationPassword { get; set; }
 
     /// <summary>
-    /// The account private key, base64 encoded.
-    /// </summary>
-    [Required]
-    [JsonPropertyName("accountPrivateKeyBase64")]
-    public required string AccountPrivateKeyBase64 { get; set; }
-
-    /// <summary>
-    /// The ASiC-E private key, base64 encoded.
-    /// </summary>
-    [Required]
-    [JsonPropertyName("asicePrivateKeyBase64")]
-    public required string AsicePrivateKeyBase64 { get; set; }
-
-    /// <summary>
     /// The API host. Usually 'https://api.fiks.test.ks.no:443' in test and 'https://api.fiks.ks.no:443' in production.
     /// Scheme is required. Port number is optional, defaults to 443 if not specified, 80 for http.
     /// </summary>
@@ -56,21 +40,17 @@ public sealed record FiksIOSettings : IFiksIOAccountSettings
     [JsonPropertyName("amqpHost")]
     public string? AmqpHost { get; set; }
 
+    /// <summary>
+    /// The account private key, base64 encoded.
+    /// </summary>
+    /// <remarks>
+    /// This is the private key used to authenticate the Fiks IO account, and to decrypt incoming messages.
+    /// The corresponding public key must be registered with the Fiks platform.
+    /// The value should be in base64 encoded PEM format, including header and footer.
+    /// </remarks>
+    [Required]
+    [JsonPropertyName("accountPrivateKeyBase64")]
+    public required string AccountPrivateKeyBase64 { get; set; }
+
     internal string AccountPrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AccountPrivateKeyBase64));
-    internal string AsicePrivateKey => Encoding.UTF8.GetString(Convert.FromBase64String(AsicePrivateKeyBase64));
-
-    internal X509Certificate2 GenerateAsiceCertificate()
-    {
-        using RSA rsa = RSA.Create();
-        rsa.ImportFromPem(AsicePrivateKey);
-
-        var subject = new X500DistinguishedName($"CN={Guid.NewGuid()}");
-        var request = new CertificateRequest(subject, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        var certificate = request.CreateSelfSigned(
-            DateTimeOffset.UtcNow.AddDays(-5), // Don't want to get stuck on a clock issue here...
-            DateTimeOffset.UtcNow.AddYears(5)
-        );
-
-        return certificate;
-    }
 }

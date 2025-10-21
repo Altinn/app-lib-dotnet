@@ -17,7 +17,7 @@ public class DataElementsExtensionsTests
         var dataElement = new DataElement { ContentType = mimeType };
 
         // Act
-        var result = dataElement.GetExtensionForMimeType();
+        var result = dataElement.GetExtensionForContentType();
 
         // Assert
         Assert.Equal(expectedExtension, result);

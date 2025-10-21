@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Altinn.App.Clients.Fiks.Exceptions;
+using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
@@ -7,6 +8,7 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
@@ -16,16 +18,15 @@ internal sealed class FiksArkivEventService : BackgroundService
     private readonly IFiksIOClient _fiksIOClient;
     private readonly Telemetry? _telemetry;
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
+    private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
     private readonly IHostEnvironment _env;
-    private readonly AppImplementationFactory _appImplementationFactory;
     private readonly TimeProvider _timeProvider;
-
-    private IFiksArkivMessageHandler _fiksArkivMessageHandler =>
-        _appImplementationFactory.GetRequired<IFiksArkivMessageHandler>();
+    private readonly FiksArkivSettings _fiksArkivSettings;
 
     public FiksArkivEventService(
-        AppImplementationFactory appImplementationFactory,
+        IFiksArkivMessageHandler fiksArkivMessageHandler,
         IFiksIOClient fiksIOClient,
+        IOptions<FiksArkivSettings> fiksArkivSettings,
         ILogger<FiksArkivEventService> logger,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
         IHostEnvironment env,
@@ -36,8 +37,9 @@ internal sealed class FiksArkivEventService : BackgroundService
         _logger = logger;
         _fiksIOClient = fiksIOClient;
         _telemetry = telemetry;
+        _fiksArkivSettings = fiksArkivSettings.Value;
         _fiksArkivInstanceClient = fiksArkivInstanceClient;
-        _appImplementationFactory = appImplementationFactory;
+        _fiksArkivMessageHandler = fiksArkivMessageHandler;
         _timeProvider = timeProvider ?? TimeProvider.System;
         _env = env;
     }
@@ -85,56 +87,83 @@ internal sealed class FiksArkivEventService : BackgroundService
         DateTimeOffset GetHealthCheckDelay() => _timeProvider.GetUtcNow() + TimeSpan.FromMinutes(10);
     }
 
-    internal async Task MessageReceivedHandler(FiksIOReceivedMessage receivedMessage)
+    internal async Task MessageReceivedHandler(FiksIOReceivedMessage message)
     {
         using Activity? mainActivity = _telemetry?.StartReceiveFiksActivity(
-            receivedMessage.Message.MessageId,
-            receivedMessage.Message.MessageType
+            message.Message.MessageId,
+            message.Message.MessageType
         );
 
-        IReadOnlyList<(string, string)>? decryptedMessagePayloads = null;
+        Instance? instance = null;
 
         try
         {
             _logger.LogInformation(
                 "Received message {MessageType}:{MessageId} from {MessageSender}, in reply to {MessageReplyFor} with senders-reference {SendersReference} and correlation-id {CorrelationId}",
-                receivedMessage.Message.MessageType,
-                receivedMessage.Message.MessageId,
-                receivedMessage.Message.Sender,
-                receivedMessage.Message.InReplyToMessage,
-                receivedMessage.Message.SendersReference,
-                receivedMessage.Message.CorrelationId
+                message.Message.MessageType,
+                message.Message.MessageId,
+                message.Message.Sender,
+                message.Message.InReplyToMessage,
+                message.Message.SendersReference,
+                message.Message.CorrelationId
             );
 
-            decryptedMessagePayloads = await receivedMessage.Message.GetDecryptedPayloadStrings();
-            Instance instance = await RetrieveInstance(receivedMessage);
+            instance = await RetrieveInstance(message);
 
             using Activity? innerActivity = _telemetry?.StartFiksMessageHandlerActivity(
                 instance,
                 _fiksArkivMessageHandler.GetType()
             );
 
-            await _fiksArkivMessageHandler.HandleReceivedMessage(instance, receivedMessage);
+            await _fiksArkivMessageHandler.HandleReceivedMessage(instance, message);
+            await message.Responder.Ack();
 
             _logger.LogInformation(
-                "Sending acknowledge receipt for message {MessageId}",
-                receivedMessage.Message.MessageId
+                "Processing completed successfully for message {MessageId}",
+                message.Message.MessageId
             );
-
-            await receivedMessage.Responder.Ack();
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Fiks Arkiv MessageReceivedHandler failed with error: {Error}", e.Message);
-            _logger.LogError("The message payload was: {MessagePayload}", decryptedMessagePayloads);
             mainActivity?.Errored(e);
 
-            // Avoid clogging up the queue with errors in non-production environments
-            if (_env.IsProduction() is false)
-            {
-                await receivedMessage.Responder.Ack();
-            }
+            // Don't ack messages we failed to process in PROD. Let Fiks IO redelivery and/or alarms.
+            if (!_env.IsProduction())
+                await message.Responder.Ack();
+
+            await TryMoveProcessOnError(instance);
         }
+    }
+
+    private async Task TryMoveProcessOnError(Instance? instance)
+    {
+        if (instance is null)
+        {
+            _logger.LogError("Unable to move the process forward, because the `instance` object has not been resolved");
+            return;
+        }
+
+        if (_fiksArkivSettings.AutoSend?.ErrorHandling is null)
+        {
+            _logger.LogWarning(
+                "Unable to move the process forward, because the `FiksArkivSettings.AutoSend.ErrorHandling` configuration property has not been set"
+            );
+            return;
+        }
+
+        if (_fiksArkivSettings.AutoSend.ErrorHandling?.MoveToNextTask is true)
+        {
+            _logger.LogInformation(
+                "`FiksArkivSettings.AutoSendErrorHandling.MoveToNextTask` has been disabled, taking no action."
+            );
+            return;
+        }
+
+        await _fiksArkivInstanceClient.ProcessMoveNext(
+            new InstanceIdentifier(instance),
+            _fiksArkivSettings.AutoSend?.ErrorHandling?.Action
+        );
     }
 
     private async Task<Instance> RetrieveInstance(FiksIOReceivedMessage receivedMessage)

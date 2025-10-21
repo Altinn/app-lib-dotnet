@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -23,6 +24,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.AspNetCore.Builder;
@@ -32,6 +34,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Moq.Protected;
 using Polly;
 
 namespace Altinn.App.Clients.Fiks.Tests;
@@ -59,7 +62,9 @@ internal sealed record TestFixture(
     Mock<IEmailNotificationClient> EmailNotificationClientMock,
     Mock<IProcessReader> ProcessReaderMock,
     Mock<IHttpClientFactory> HttpClientFactoryMock,
-    Mock<IAccessTokenGenerator> AccessTokenGeneratorMock
+    Mock<HttpMessageHandler> HttpMessageHandlerMock,
+    Mock<IAccessTokenGenerator> AccessTokenGeneratorMock,
+    Mock<ITranslationService> TranslationServiceMock
 ) : IAsyncDisposable
 {
     public IFiksIOClient FiksIOClient => App.Services.GetRequiredService<IFiksIOClient>();
@@ -74,6 +79,12 @@ internal sealed record TestFixture(
     public IAltinnCdnClient AltinnCdnClient => App.Services.GetRequiredService<IAltinnCdnClient>();
     public IFiksArkivMessageHandler FiksArkivMessageHandler =>
         App.Services.GetRequiredService<IFiksArkivMessageHandler>();
+    public IFiksArkivResponseHandler FiksArkivResponseHandler =>
+        App.Services.GetRequiredService<IFiksArkivResponseHandler>();
+    public IFiksArkivPayloadGenerator FiksArkivPayloadGenerator =>
+        App.Services.GetRequiredService<IFiksArkivPayloadGenerator>();
+    public IFiksArkivConfigResolver FiksArkivConfigResolver =>
+        App.Services.GetRequiredService<IFiksArkivConfigResolver>();
     public IFiksArkivAutoSendDecision FiksArkivAutoSendDecisionHandler =>
         App.Services.GetRequiredService<IFiksArkivAutoSendDecision>();
     public IFiksArkivInstanceClient FiksArkivInstanceClient =>
@@ -126,14 +137,7 @@ internal sealed record TestFixture(
 
         // User supplied configuration values
         if (configurationCollection is not null)
-        {
-            foreach (var (configName, configValue) in configurationCollection)
-            {
-                builder.Configuration.AddJsonStream(
-                    GetJsonStream(new Dictionary<string, object> { [configName] = configValue })
-                );
-            }
-        }
+            builder.Configuration.AddJsonStream(GetJsonStream(configurationCollection));
 
         // User-supplied services configuration
         configureServices(builder.Services);
@@ -152,9 +156,34 @@ internal sealed record TestFixture(
         var emailNotificationClientMock = new Mock<IEmailNotificationClient>();
         var processReaderMock = new Mock<IProcessReader>();
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
         var accessTokenGeneratorMock = new Mock<IAccessTokenGenerator>();
         var loggerFactoryMock = new Mock<ILoggerFactory>();
+        var translationServiceMock = new Mock<ITranslationService>();
 
+        httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(
+                (HttpRequestMessage request, CancellationToken _) =>
+                {
+                    if (!TestHelpers.IsTokenRequest(request))
+                        throw new Exception("Default HttpMessageHandler mock only handles token requests");
+
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(TestHelpers.DummyToken),
+                    };
+                }
+            );
+
+        httpClientFactoryMock
+            .Setup(x => x.CreateClient(It.IsAny<string>()))
+            .Returns(() => new HttpClient(httpMessageHandlerMock.Object));
         hostEnvironmentMock.Setup(x => x.EnvironmentName).Returns("Development");
         loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
         appMetadataMock
@@ -176,9 +205,10 @@ internal sealed record TestFixture(
         builder.Services.AddSingleton(processReaderMock.Object);
         builder.Services.AddSingleton(httpClientFactoryMock.Object);
         builder.Services.AddSingleton(accessTokenGeneratorMock.Object);
+        builder.Services.AddSingleton(translationServiceMock.Object);
 
         // Non-mockable services
-        builder.Services.AddSingleton<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
+        builder.Services.AddTransient<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
         builder.Services.AddTransient<InstanceDataUnitOfWorkInitializer>();
         builder.Services.AddSingleton<ModelSerializationService>();
         builder.Services.AddAppImplementationFactory();
@@ -200,13 +230,21 @@ internal sealed record TestFixture(
             emailNotificationClientMock,
             processReaderMock,
             httpClientFactoryMock,
-            accessTokenGeneratorMock
+            httpMessageHandlerMock,
+            accessTokenGeneratorMock,
+            translationServiceMock
         );
     }
 
     private static Stream GetJsonStream(IDictionary<string, object> data)
     {
         var json = JsonSerializer.Serialize(data, _jsonSerializerOptions);
+        return new MemoryStream(Encoding.UTF8.GetBytes(json));
+    }
+
+    private static Stream GetJsonStream(IEnumerable<(string, object)> data)
+    {
+        var json = JsonSerializer.Serialize(data.ToDictionary(x => x.Item1, x => x.Item2), _jsonSerializerOptions);
         return new MemoryStream(Encoding.UTF8.GetBytes(json));
     }
 

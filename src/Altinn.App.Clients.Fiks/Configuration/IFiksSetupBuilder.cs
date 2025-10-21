@@ -81,13 +81,22 @@ public interface IFiksArkivSetupBuilder : IFiksSetupBuilder<IFiksArkivSetupBuild
     IFiksArkivSetupBuilder WithFiksArkivConfig(string configSectionPath);
 
     /// <summary>
-    /// Configures the message handler for the Fiks Arkiv client.
-    /// The message handler is responsible for composing message requests and handling received messages.
+    /// Configures the message response handler for the Fiks Arkiv client.
+    /// This handler is responsible for handling incoming messages from Fiks Arkiv.
     /// </summary>
-    /// <typeparam name="TMessageHandler">The message handler type you wish to register for use.</typeparam>
+    /// <typeparam name="TMessageHandler">The handler type you wish to register for use.</typeparam>
     /// <returns>The builder instance.</returns>
-    IFiksArkivSetupBuilder WithMessageHandler<TMessageHandler>()
-        where TMessageHandler : IFiksArkivMessageHandler;
+    IFiksArkivSetupBuilder WithResponseHandler<TMessageHandler>()
+        where TMessageHandler : IFiksArkivResponseHandler;
+
+    /// <summary>
+    /// Configures the payload generator for Fiks Arkiv message requests.
+    /// This handler is responsible for producing the content to be send via Fiks Arkiv (arkivmelding.xml and attachments).
+    /// </summary>
+    /// <typeparam name="TMessageHandler">The generator type you wish to register for use.</typeparam>
+    /// <returns>The builder instance.</returns>
+    IFiksArkivSetupBuilder WithPayloadGenerator<TMessageHandler>()
+        where TMessageHandler : IFiksArkivPayloadGenerator;
 
     /// <summary>
     /// Configures the auto-send decision handler for the Fiks Arkiv client.

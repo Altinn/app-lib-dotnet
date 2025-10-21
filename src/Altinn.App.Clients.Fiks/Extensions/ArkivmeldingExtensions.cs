@@ -9,9 +9,12 @@ namespace Altinn.App.Clients.Fiks.Extensions;
 
 internal static class ArkivmeldingExtensions
 {
-    public static ReadOnlyMemory<byte> SerializeXmlBytes(this Arkivmelding archiveRecord, bool indent = false)
+    /// <summary>
+    /// Serializes an archive record to XML and returns a byte array.
+    /// </summary>
+    public static ReadOnlyMemory<byte> SerializeXmlBytes(this object archiveRecord, bool indent = false)
     {
-        var serializer = new XmlSerializer(typeof(Arkivmelding));
+        var serializer = new XmlSerializer(archiveRecord.GetType());
 
         using var memoryStream = new MemoryStream();
         var settings = new XmlWriterSettings
@@ -29,6 +32,9 @@ internal static class ArkivmeldingExtensions
         return memoryStream.ToArray();
     }
 
+    /// <summary>
+    /// Converts an archive record to a Fiks IO message payload.
+    /// </summary>
     public static FiksIOMessagePayload ToPayload(this Arkivmelding archiveRecord) =>
         new(FiksArkivConstants.ArchiveRecordFilename, archiveRecord.SerializeXmlBytes());
 }
