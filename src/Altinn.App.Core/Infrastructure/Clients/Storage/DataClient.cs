@@ -57,7 +57,7 @@ public class DataClient : IDataClient
         httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, _platformSettings.SubscriptionKey);
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
-        httpClient.Timeout = httpClient.Timeout = Timeout.InfiniteTimeSpan;
+        httpClient.Timeout = Timeout.InfiniteTimeSpan;
         _client = httpClient;
     }
 
