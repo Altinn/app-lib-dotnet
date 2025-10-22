@@ -14,7 +14,7 @@ internal sealed class FiksArkivConfigValidationService : IHostedService
     private readonly IAppMetadata _appMetadata;
     private readonly AppImplementationFactory _appImplementationFactory;
 
-    private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
+    private readonly IFiksArkivHost _fiksArkivHost;
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
 
     private IFiksArkivConfigValidation _fiksArkivAutoSendDecisionValidator =>
@@ -28,14 +28,14 @@ internal sealed class FiksArkivConfigValidationService : IHostedService
 
     public FiksArkivConfigValidationService(
         AppImplementationFactory appImplementationFactory,
-        IFiksArkivMessageHandler fiksArkivMessageHandler,
+        IFiksArkivHost fiksArkivHost,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
         IProcessReader processReader,
         IAppMetadata appMetadata
     )
     {
         _appImplementationFactory = appImplementationFactory;
-        _fiksArkivMessageHandler = fiksArkivMessageHandler;
+        _fiksArkivHost = fiksArkivHost;
         _fiksArkivInstanceClient = fiksArkivInstanceClient;
         _processReader = processReader;
         _appMetadata = appMetadata;
@@ -46,7 +46,7 @@ internal sealed class FiksArkivConfigValidationService : IHostedService
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         IReadOnlyList<ProcessTask> processTasks = _processReader.GetProcessTasks();
 
-        await _fiksArkivMessageHandler.ValidateConfiguration(appMetadata.DataTypes, processTasks);
+        await _fiksArkivHost.ValidateConfiguration(appMetadata.DataTypes, processTasks);
         await _fiksArkivServiceTaskValidator.ValidateConfiguration(appMetadata.DataTypes, processTasks);
         await _fiksArkivAutoSendDecisionValidator.ValidateConfiguration(appMetadata.DataTypes, processTasks);
         await _fiksArkivInstanceClient.GetServiceOwnerToken();

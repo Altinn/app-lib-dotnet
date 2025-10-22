@@ -12,9 +12,9 @@ internal static class ArkivmeldingExtensions
     /// <summary>
     /// Serializes an archive record to XML and returns a byte array.
     /// </summary>
-    public static ReadOnlyMemory<byte> SerializeXmlBytes(this object archiveRecord, bool indent = false)
+    public static ReadOnlyMemory<byte> SerializeXmlBytes<T>(this T archiveRecord, bool indent = false)
     {
-        var serializer = new XmlSerializer(archiveRecord.GetType());
+        var serializer = new XmlSerializer(typeof(T));
 
         using var memoryStream = new MemoryStream();
         var settings = new XmlWriterSettings
@@ -36,5 +36,5 @@ internal static class ArkivmeldingExtensions
     /// Converts an archive record to a Fiks IO message payload.
     /// </summary>
     public static FiksIOMessagePayload ToPayload(this Arkivmelding archiveRecord) =>
-        new(FiksArkivConstants.ArchiveRecordFilename, archiveRecord.SerializeXmlBytes());
+        new(FiksArkivConstants.Filenames.ArchiveRecord, archiveRecord.SerializeXmlBytes());
 }

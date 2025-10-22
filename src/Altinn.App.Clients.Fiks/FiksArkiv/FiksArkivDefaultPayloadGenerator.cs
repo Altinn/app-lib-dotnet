@@ -1,5 +1,6 @@
 using System.Text;
 using Altinn.App.Clients.Fiks.Constants;
+using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.Factories;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
@@ -55,9 +56,15 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
     public async Task<IEnumerable<FiksIOMessagePayload>> GeneratePayload(
         string taskId,
         Instance instance,
-        FiksArkivRecipient recipient
+        FiksArkivRecipient recipient,
+        string messageType
     )
     {
+        if (messageType != FiksArkivConstants.MessageTypes.Create)
+            throw new FiksArkivException(
+                $"Unsupported message type: {messageType}. {nameof(FiksArkivDefaultPayloadGenerator)} can only handle {FiksArkivConstants.MessageTypes.Create} requests."
+            );
+
         var appMetadata = await _appMetadata.GetApplicationMetadata();
         var documentCreator = appMetadata.AppIdentifier.Org;
         var archiveDocuments = await GetArchiveDocuments(instance);

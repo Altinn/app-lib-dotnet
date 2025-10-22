@@ -1,11 +1,13 @@
 using System.Linq.Expressions;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksArkiv;
+using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using KS.Fiks.IO.Client.Configuration;
 using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Client.Send;
@@ -22,25 +24,25 @@ using MessageReceivedCallback = System.Func<
 
 namespace Altinn.App.Clients.Fiks.Tests.FiksArkiv;
 
-public class FiksArkivEventServiceTest
+public class FiksArkivHostTest
 {
     [Fact]
     public async Task ExecuteAsync_StopsWhenCancellationRequested()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<FiksArkivEventService>>();
+        var loggerMock = new Mock<ILogger<FiksArkivHost>>();
         var (clientFactoryMock, createdClients) = GetFixIOClientFactoryMock();
         using var cts = new CancellationTokenSource();
 
         await using var fixture = TestFixture.Create(services =>
         {
             services.AddFiksArkiv();
-            services.AddTransient<ILogger<FiksArkivEventService>>(sp => loggerMock.Object);
-            services.AddTransient<IFiksIOClientFactory>(sp => clientFactoryMock.Object);
+            services.AddSingleton<ILogger<FiksArkivHost>>(sp => loggerMock.Object);
+            services.AddSingleton<IFiksIOClientFactory>(sp => clientFactoryMock.Object);
         });
 
         // Act
-        await fixture.FiksArkivEventService.StartAsync(cts.Token);
+        await fixture.FiksArkivHost.StartAsync(cts.Token);
         await cts.CancelAsync();
 
         // Assert
@@ -56,7 +58,7 @@ public class FiksArkivEventServiceTest
     public async Task ExecuteAsync_PerformsHealthCheck_ReconnectsWhenRequired()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<FiksArkivEventService>>();
+        var loggerMock = new Mock<ILogger<FiksArkivHost>>();
         var fakeTime = new FakeTimeProvider();
         var (clientFactoryMock, createdClients) = GetFixIOClientFactoryMock(x =>
             x.Setup(m => m.IsOpenAsync()).ReturnsAsync(false)
@@ -65,15 +67,13 @@ public class FiksArkivEventServiceTest
         await using var fixture = TestFixture.Create(services =>
         {
             services.AddFiksArkiv();
-            services.AddTransient<ILogger<FiksArkivEventService>>(sp => loggerMock.Object);
-            services.AddTransient<IFiksIOClientFactory>(sp => clientFactoryMock.Object);
+            services.AddSingleton<ILogger<FiksArkivHost>>(sp => loggerMock.Object);
+            services.AddSingleton<IFiksIOClientFactory>(sp => clientFactoryMock.Object);
             services.AddSingleton<TimeProvider>(fakeTime);
         });
 
-        // fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(TestHelpers.GetHttpClientWithMockedHandlerFactory());
-
         // Act
-        await fixture.FiksArkivEventService.StartAsync(CancellationToken.None);
+        await fixture.FiksArkivHost.StartAsync(CancellationToken.None);
         fakeTime.Advance(TimeSpan.FromMinutes(10));
 
         // Assert
@@ -95,12 +95,20 @@ public class FiksArkivEventServiceTest
         );
     }
 
-    [Fact]
-    public async Task ExecuteAsync_RegistersMessageReceivedHandler_ExecutesMessageHandler()
+    [Theory]
+    [InlineData(FiksArkivMeldingtype.Ugyldigforespørsel, MessageResponseType.Error)]
+    [InlineData(FiksArkivMeldingtype.Serverfeil, MessageResponseType.Error)]
+    [InlineData(FiksArkivMeldingtype.Ikkefunnet, MessageResponseType.Error)]
+    [InlineData(FiksArkivMeldingtype.ArkivmeldingOpprettMottatt, MessageResponseType.Success)]
+    [InlineData(FiksArkivMeldingtype.ArkivmeldingOpprettKvittering, MessageResponseType.Success)]
+    public async Task ExecuteAsync_RegistersMessageReceivedHandler_ExecutesMessageHandler(
+        string messageType,
+        MessageResponseType messageResponseType
+    )
     {
         // Arrange
         var fiksIOClientMock = new Mock<IFiksIOClient>();
-        var fiksArkivMessageHandlerMock = new Mock<IFiksArkivMessageHandler>();
+        var fiksArkivResponseHandlerMock = new Mock<IFiksArkivResponseHandler>();
         var fiksArkivInstanceClientMock = new Mock<IFiksArkivInstanceClient>();
         var mottattMeldingMock = new Mock<IMottattMelding>();
         var svarSenderMock = new Mock<ISvarSender>();
@@ -108,8 +116,10 @@ public class FiksArkivEventServiceTest
         var payload = new FiksIOReceivedMessage(
             new MottattMeldingArgs(mottattMeldingMock.Object, svarSenderMock.Object)
         );
+        string? invokedMessageHandler = null;
         MessageReceivedCallback? messageReceivedCallback = null;
         FiksIOReceivedMessage? forwardedMessage = null;
+        IReadOnlyList<FiksArkivReceivedMessagePayload>? forwardedPayloads = null;
         Instance? forwardedInstance = null;
         Instance sourceInstance = new() { Id = $"12345/{Guid.NewGuid()}", AppId = "ttd/unit-testing" };
         InstanceIdentifier? receivedInstanceIdentifier = null;
@@ -117,9 +127,9 @@ public class FiksArkivEventServiceTest
         await using var fixture = TestFixture.Create(services =>
         {
             services.AddFiksArkiv();
-            services.AddTransient<IFiksIOClient>(sp => fiksIOClientMock.Object);
-            services.AddTransient<IFiksArkivMessageHandler>(sp => fiksArkivMessageHandlerMock.Object);
-            services.AddTransient<IFiksArkivInstanceClient>(sp => fiksArkivInstanceClientMock.Object);
+            services.AddSingleton(fiksIOClientMock.Object);
+            services.AddSingleton(fiksArkivResponseHandlerMock.Object);
+            services.AddSingleton(fiksArkivInstanceClientMock.Object);
         });
 
         fiksIOClientMock
@@ -132,18 +142,48 @@ public class FiksArkivEventServiceTest
                 }
             )
             .Verifiable(Times.Once);
-
-        fiksArkivMessageHandlerMock
-            .Setup(x => x.HandleReceivedMessage(It.IsAny<Instance>(), It.IsAny<FiksIOReceivedMessage>()))
-            .Returns(
-                (Instance instance, FiksIOReceivedMessage message) =>
-                {
-                    forwardedMessage = message;
-                    forwardedInstance = instance;
-                    return Task.CompletedTask;
-                }
+        fiksArkivResponseHandlerMock
+            .Setup(x =>
+                x.HandleError(
+                    It.IsAny<Instance>(),
+                    It.IsAny<FiksIOReceivedMessage>(),
+                    It.IsAny<IReadOnlyList<FiksArkivReceivedMessagePayload>>()
+                )
             )
-            .Verifiable(Times.Once);
+            .Callback(
+                (
+                    Instance instance,
+                    FiksIOReceivedMessage message,
+                    IReadOnlyList<FiksArkivReceivedMessagePayload> payloads
+                ) =>
+                {
+                    forwardedInstance = instance;
+                    forwardedMessage = message;
+                    forwardedPayloads = payloads;
+                    invokedMessageHandler = nameof(IFiksArkivResponseHandler.HandleError);
+                }
+            );
+        fiksArkivResponseHandlerMock
+            .Setup(x =>
+                x.HandleSuccess(
+                    It.IsAny<Instance>(),
+                    It.IsAny<FiksIOReceivedMessage>(),
+                    It.IsAny<IReadOnlyList<FiksArkivReceivedMessagePayload>>()
+                )
+            )
+            .Callback(
+                (
+                    Instance instance,
+                    FiksIOReceivedMessage message,
+                    IReadOnlyList<FiksArkivReceivedMessagePayload> payloads
+                ) =>
+                {
+                    forwardedInstance = instance;
+                    forwardedMessage = message;
+                    forwardedPayloads = payloads;
+                    invokedMessageHandler = nameof(IFiksArkivResponseHandler.HandleSuccess);
+                }
+            );
         fiksArkivInstanceClientMock
             .Setup(x => x.GetInstance(It.IsAny<InstanceIdentifier>()))
             .ReturnsAsync(
@@ -155,17 +195,18 @@ public class FiksArkivEventServiceTest
             )
             .Verifiable(Times.Once);
 
+        mottattMeldingMock.Setup(x => x.MeldingType).Returns(messageType);
         mottattMeldingMock.Setup(x => x.HasPayload).Returns(true);
         mottattMeldingMock.Setup(x => x.DecryptedPayloads).ReturnsAsync([new StreamPayload(Stream.Null, "dummy.txt")]);
         mottattMeldingMock.Setup(x => x.MeldingId).Returns(messageId);
         mottattMeldingMock
             .Setup(x => x.KlientKorrelasjonsId)
-            .Returns(sourceInstance.GetInstanceUrl(new GeneralSettings()).ToUrlSafeBase64());
+            .Returns(fixture.FiksArkivConfigResolver.GetCorrelationId(sourceInstance).ToUrlSafeBase64());
 
         svarSenderMock.Setup(x => x.AckAsync()).Verifiable(Times.Once);
 
         // Act
-        await fixture.FiksArkivEventService.StartAsync(CancellationToken.None);
+        await fixture.FiksArkivHost.StartAsync(CancellationToken.None);
         await messageReceivedCallback!.Invoke(payload);
 
         // Assert
@@ -175,9 +216,16 @@ public class FiksArkivEventServiceTest
         Assert.Equal(sourceInstance, forwardedInstance);
         Assert.Equal(messageId, forwardedMessage.Message.MessageId);
         Assert.Equivalent(new InstanceIdentifier(sourceInstance).InstanceGuid, receivedInstanceIdentifier.InstanceGuid);
+        Assert.Equal(messageType, forwardedMessage.Message.MessageType);
+        Assert.NotNull(forwardedPayloads);
+        Assert.Equal(
+            messageResponseType == MessageResponseType.Error
+                ? nameof(IFiksArkivResponseHandler.HandleError)
+                : nameof(IFiksArkivResponseHandler.HandleSuccess),
+            invokedMessageHandler
+        );
 
         fiksIOClientMock.Verify();
-        fiksArkivMessageHandlerMock.Verify();
         fiksArkivInstanceClientMock.Verify();
         svarSenderMock.Verify();
         svarSenderMock.VerifyNoOtherCalls();
@@ -191,33 +239,28 @@ public class FiksArkivEventServiceTest
     public async Task MessageReceivedHandler_HandlesErrorIfThrown(string environment, bool shouldAck)
     {
         // Arrange
-        var fiksArkivMessageHandlerMock = new Mock<IFiksArkivMessageHandler>();
-        var fiksArkivInstanceClientMock = new Mock<IFiksArkivInstanceClient>();
-        var loggerMock = new Mock<ILogger<FiksArkivEventService>>();
+        var fiksArkivResponseHandlerMock = new Mock<IFiksArkivResponseHandler>();
+        var loggerMock = new Mock<ILogger<FiksArkivHost>>();
         var svarSenderMock = new Mock<ISvarSender>();
         var payload = new FiksIOReceivedMessage(
-            new MottattMeldingArgs(new Mock<IMottattMelding>().Object, svarSenderMock.Object)
+            new MottattMeldingArgs(
+                Mock.Of<IMottattMelding>(x => x.KlientKorrelasjonsId == "invalid-base64"), // Triggers parse error
+                svarSenderMock.Object
+            )
         );
 
-        await using var fixture = TestFixture.Create(services =>
-        {
-            services.AddFiksArkiv();
-            services.AddTransient<ILogger<FiksArkivEventService>>(sp => loggerMock.Object);
-            services.AddTransient<IFiksArkivMessageHandler>(sp => fiksArkivMessageHandlerMock.Object);
-        });
-
-        fiksArkivMessageHandlerMock
-            .Setup(x => x.HandleReceivedMessage(It.IsAny<Instance>(), It.IsAny<FiksIOReceivedMessage>()))
-            .ThrowsAsync(new InvalidOperationException());
-
-        fiksArkivInstanceClientMock
-            .Setup(x => x.GetInstance(It.IsAny<InstanceIdentifier>()))
-            .ReturnsAsync(new Instance());
-
-        fixture.HostEnvironmentMock.Setup(x => x.EnvironmentName).Returns(environment);
+        await using var fixture = TestFixture.Create(
+            services =>
+            {
+                services.AddFiksArkiv();
+                services.AddSingleton(loggerMock.Object);
+                services.AddSingleton(fiksArkivResponseHandlerMock.Object);
+            },
+            hostEnvironment: environment
+        );
 
         // Act
-        await fixture.FiksArkivEventService.MessageReceivedHandler(payload);
+        await fixture.FiksArkivHost.IncomingMessageListener(payload);
 
         // Assert
         svarSenderMock.Verify(x => x.AckAsync(), shouldAck ? Times.Once : Times.Never);
@@ -269,5 +312,11 @@ public class FiksArkivEventServiceTest
             });
 
         return (clientFactoryMock, clients);
+    }
+
+    public enum MessageResponseType
+    {
+        Error,
+        Success,
     }
 }

@@ -65,11 +65,11 @@ public sealed record FiksArkivReceiptSettings
     {
         if (ConfirmationRecord is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(ConfirmationRecord)} configuration is missing, but is required."
+                $"{propertyName}.{nameof(ConfirmationRecord)} configuration is required, but missing."
             );
         if (ArchiveRecord is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(ArchiveRecord)} configuration is missing, but is required."
+                $"{propertyName}.{nameof(ArchiveRecord)} configuration is required, but missing."
             );
 
         ConfirmationRecord.Validate($"{propertyName}.{nameof(ConfirmationRecord)}", dataTypes, requireFilename: true);
@@ -116,7 +116,7 @@ public sealed record FiksArkivMetadataSettings
     public FiksArkivBindableValue<string>? JournalEntryTitle { get; set; }
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultPayloadGenerator"/>
     /// </summary>
     internal void Validate(IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
@@ -150,14 +150,14 @@ public sealed record FiksArkivDocumentSettings
     public IReadOnlyList<FiksArkivDataTypeSettings>? Attachments { get; set; }
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultPayloadGenerator"/>
     /// </summary>
     internal void Validate(IReadOnlyList<DataType> dataTypes)
     {
         const string propertyName = nameof(FiksArkivSettings.Documents);
         if (PrimaryDocument is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(PrimaryDocument)} configuration is missing, but is required."
+                $"{propertyName}.{nameof(PrimaryDocument)} configuration is required, but missing."
             );
 
         PrimaryDocument.Validate($"{propertyName}.{nameof(PrimaryDocument)}", dataTypes);
@@ -202,7 +202,7 @@ public sealed record FiksArkivAutoSendSettings
             $"{nameof(FiksArkivSettings.AutoSend)}.{nameof(FiksArkivSettings.AutoSend.AfterTaskId)}";
 
         if (string.IsNullOrWhiteSpace(AfterTaskId))
-            throw new FiksArkivConfigurationException($"{propertyName} configuration is missing, but is required.");
+            throw new FiksArkivConfigurationException($"{propertyName} configuration is required, but missing.");
 
         if (configuredProcessTasks.FirstOrDefault(x => x.Id == AfterTaskId) is null)
             throw new FiksArkivConfigurationException(
@@ -279,22 +279,22 @@ public sealed record FiksArkivRecipientSettings
     public FiksArkivBindableValue<string>? OrganizationNumber { get; set; }
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultPayloadGenerator"/>
     /// </summary>
     internal void Validate(IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
         const string propertyName = $"{nameof(FiksArkivSettings.Recipient)}";
         if (FiksAccount is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(FiksAccount)} configuration is missing, but is required."
+                $"{propertyName}.{nameof(FiksAccount)} configuration is required, but missing."
             );
         if (Identifier is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(Identifier)} configuration is missing, but is required."
+                $"{propertyName}.{nameof(Identifier)} configuration is required, but missing."
             );
         if (Name is null)
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(Name)} configuration is missing, but is required."
+                $"{propertyName}.{nameof(Name)} configuration is required, but missing."
             );
 
         FiksAccount.Validate($"{propertyName}.{nameof(FiksAccount)}", dataTypes, appModelResolver);
@@ -323,7 +323,7 @@ public sealed record FiksArkivBindableValue<T>
     public FiksArkivDataModelBinding? DataModelBinding { get; set; }
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultPayloadGenerator"/>
     /// </summary>
     internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
@@ -365,13 +365,13 @@ public sealed record FiksArkivDataModelBinding
         new() { Field = modelBinding.Field, DataType = modelBinding.DataType };
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultPayloadGenerator"/>
     /// </summary>
     internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
     {
         if (string.IsNullOrWhiteSpace(DataType))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)} configuration is missing, but is required."
+                $"{propertyName}.{nameof(DataType)} configuration is required, but missing."
             );
 
         DataType? dataType = dataTypes.FirstOrDefault(x => x.Id == DataType);
@@ -382,7 +382,7 @@ public sealed record FiksArkivDataModelBinding
 
         if (string.IsNullOrWhiteSpace(Field))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(Field)} configuration is missing, but is required."
+                $"{propertyName}.{nameof(Field)} configuration is required, but missing."
             );
 
         Type type =
@@ -419,13 +419,13 @@ public sealed record FiksArkivDataTypeSettings
     public string? Filename { get; set; }
 
     /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivMessageHandler"/>
+    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultPayloadGenerator"/>
     /// </summary>
     internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes, bool requireFilename = false)
     {
         if (string.IsNullOrWhiteSpace(DataType))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)} configuration is missing, but is required."
+                $"{propertyName}.{nameof(DataType)} configuration is required, but missing."
             );
         if (dataTypes.Any(x => x.Id == DataType) is false)
             throw new FiksArkivConfigurationException(
@@ -434,7 +434,7 @@ public sealed record FiksArkivDataTypeSettings
 
         if (requireFilename && string.IsNullOrWhiteSpace(Filename))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(Filename)} configuration is missing, but is required."
+                $"{propertyName}.{nameof(Filename)} configuration is required, but missing."
             );
     }
 

@@ -20,8 +20,7 @@ public class FiksArkivServiceTaskTest
     {
         // Arrange
         var autoSendDecisionMock = new Mock<IFiksArkivAutoSendDecision>(MockBehavior.Strict);
-        var messageHandlerMock = new Mock<IFiksArkivMessageHandler>(MockBehavior.Strict);
-        var fiksIOClientMock = new Mock<IFiksIOClient>(MockBehavior.Strict);
+        var fiksArkivHostMock = new Mock<IFiksArkivHost>(MockBehavior.Strict);
         var expectedInvocationTimes = autoSendDecision ? Times.Once() : Times.Never();
 
         await using var fixture = TestFixture.Create(services =>
@@ -29,24 +28,15 @@ public class FiksArkivServiceTaskTest
                 .AddFiksArkiv()
                 .CompleteSetup()
                 .AddSingleton(autoSendDecisionMock.Object)
-                .AddSingleton(fiksIOClientMock.Object)
-                .AddSingleton(messageHandlerMock.Object)
+                .AddSingleton(fiksArkivHostMock.Object)
         );
 
         autoSendDecisionMock
             .Setup(x => x.ShouldSend(It.IsAny<string>(), It.IsAny<Instance>()))
             .ReturnsAsync(autoSendDecision)
             .Verifiable(Times.Once);
-        messageHandlerMock
-            .Setup(x => x.CreateMessageRequest(It.IsAny<string>(), It.IsAny<Instance>()))
-            .ReturnsAsync(TestHelpers.GetFiksIOMessageRequest())
-            .Verifiable(expectedInvocationTimes);
-        messageHandlerMock
-            .Setup(x => x.SaveArchiveRecord(It.IsAny<Instance>(), It.IsAny<FiksIOMessageRequest>()))
-            .ReturnsAsync(Mock.Of<DataElement>())
-            .Verifiable(expectedInvocationTimes);
-        fiksIOClientMock
-            .Setup(x => x.SendMessage(It.IsAny<FiksIOMessageRequest>(), It.IsAny<CancellationToken>()))
+        fiksArkivHostMock
+            .Setup(x => x.GenerateAndSendMessage(It.IsAny<string>(), It.IsAny<Instance>(), It.IsAny<string>()))
             .ReturnsAsync(TestHelpers.GetFiksIOMessageResponse())
             .Verifiable(expectedInvocationTimes);
 
@@ -55,7 +45,6 @@ public class FiksArkivServiceTaskTest
 
         // Assert
         autoSendDecisionMock.Verify();
-        messageHandlerMock.Verify();
-        fiksIOClientMock.Verify();
+        fiksArkivHostMock.Verify();
     }
 }

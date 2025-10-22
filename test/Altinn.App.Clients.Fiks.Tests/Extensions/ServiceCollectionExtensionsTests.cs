@@ -154,27 +154,44 @@ public class ServiceCollectionExtensionsTests
         // Act
         var fiksIOClient = fixture.FiksIOClient;
         var fiksIOSettings = fixture.FiksIOSettings;
+        var fiksIOClientFactory = fixture.FiksIOClientFactory;
         var resiliencePipeline = fixture.FiksIOResiliencePipeline;
         var altinnCdnClient = fixture.AltinnCdnClient;
-        var fiksArkivMessageHandler = fixture.FiksArkivMessageHandler;
+        var fiksArkivHost = fixture.FiksArkivHost;
         var fiksArkivServiceTask = fixture.FiksArkivServiceTask;
         var fiksArkivConfigValidationService = fixture.FiksArkivConfigValidationService;
-        var fiksArkivEventService = fixture.FiksArkivEventService;
+        var fiksArkivConfigResolver = fixture.FiksArkivConfigResolver;
+        var fiksArkivInstanceClient = fixture.FiksArkivInstanceClient;
+        var fiksArkivPayloadGenerator = fixture.FiksArkivPayloadGenerator;
+        var fiksArkivResponseHandler = fixture.FiksArkivResponseHandler;
+        var fiksArkivAutoSendDecisionHandler = fixture.FiksArkivAutoSendDecisionHandler;
 
         // Assert
         Assert.NotNull(fiksIOClient);
         Assert.NotNull(fiksIOSettings);
+        Assert.NotNull(fiksIOClientFactory);
         Assert.NotNull(resiliencePipeline);
         Assert.NotNull(altinnCdnClient);
-        Assert.NotNull(fiksArkivMessageHandler);
+        Assert.NotNull(fiksArkivHost);
         Assert.NotNull(fiksArkivServiceTask);
         Assert.NotNull(fiksArkivConfigValidationService);
-        Assert.NotNull(fiksArkivEventService);
+        Assert.NotNull(fiksArkivConfigResolver);
+        Assert.NotNull(fiksArkivInstanceClient);
+        Assert.NotNull(fiksArkivPayloadGenerator);
+        Assert.NotNull(fiksArkivResponseHandler);
+        Assert.NotNull(fiksArkivAutoSendDecisionHandler);
         Assert.Equal(TestHelpers.GetDefaultFiksIOSettings(), fiksIOSettings);
         Assert.IsType<FiksIOClient>(fiksIOClient);
-        Assert.IsType<FiksArkivMessageHandler>(fiksArkivMessageHandler);
-        Assert.IsType<FiksArkivServiceTask>(fiksArkivServiceTask);
+        Assert.IsType<FiksIOClientFactory>(fiksIOClientFactory);
         Assert.IsType<AltinnCdnClient>(altinnCdnClient);
+        Assert.IsType<FiksArkivHost>(fiksArkivHost);
+        Assert.IsType<FiksArkivServiceTask>(fiksArkivServiceTask);
+        Assert.IsType<FiksArkivConfigValidationService>(fiksArkivConfigValidationService);
+        Assert.IsType<FiksArkivConfigResolver>(fiksArkivConfigResolver);
+        Assert.IsType<FiksArkivInstanceClient>(fiksArkivInstanceClient);
+        Assert.IsType<FiksArkivDefaultPayloadGenerator>(fiksArkivPayloadGenerator);
+        Assert.IsType<FiksArkivDefaultResponseHandler>(fiksArkivResponseHandler);
+        Assert.IsType<FiksArkivDefaultAutoSendDecision>(fiksArkivAutoSendDecisionHandler);
 
         AssertDefaultResiliencePipeline(resiliencePipeline);
     }

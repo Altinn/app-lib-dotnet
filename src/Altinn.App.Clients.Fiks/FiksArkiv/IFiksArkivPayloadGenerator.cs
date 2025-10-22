@@ -17,9 +17,11 @@ public interface IFiksArkivPayloadGenerator
     /// <param name="taskId">The task which triggered the sending.</param>
     /// <param name="instance">The instance for which this message relates to.</param>
     /// <param name="recipient">The recipient of this message.</param>
+    /// <param name="messageType">The Fiks Arkiv message type (create, update, etc)</param>
     Task<IEnumerable<FiksIOMessagePayload>> GeneratePayload(
         string taskId,
         Instance instance,
-        FiksArkivRecipient recipient
+        FiksArkivRecipient recipient,
+        string messageType
     );
 }

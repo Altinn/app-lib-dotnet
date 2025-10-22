@@ -31,8 +31,8 @@ public static class ServiceCollectionExtensions
         if (services.IsConfigured<FiksIOSettings>() is false)
             services.ConfigureFiksIOClient("FiksIOSettings");
 
-        services.AddTransient<IFiksIOClientFactory, FiksIOClientFactory>();
-        services.AddTransient<IFiksIOClient, FiksIOClient>();
+        services.AddSingleton<IFiksIOClientFactory, FiksIOClientFactory>();
+        services.AddSingleton<IFiksIOClient, FiksIOClient>();
         services.AddDefaultFiksIOResiliencePipeline();
 
         return new FiksIOSetupBuilder(services);
@@ -50,15 +50,15 @@ public static class ServiceCollectionExtensions
 
         services.AddFiksIOClient();
         services.AddAltinnCdnClient();
-        services.AddTransient<IServiceTask, FiksArkivServiceTask>();
-        services.AddTransient<IFiksArkivMessageHandler, FiksArkivMessageHandler>();
-        services.AddTransient<IFiksArkivPayloadGenerator, FiksArkivDefaultPayloadGenerator>();
-        services.AddTransient<IFiksArkivResponseHandler, FiksArkivDefaultResponseHandler>();
-        services.AddTransient<IFiksArkivAutoSendDecision, FiksArkivDefaultAutoSendDecision>();
-        services.AddTransient<IFiksArkivInstanceClient, FiksArkivInstanceClient>();
-        services.AddTransient<IFiksArkivConfigResolver, FiksArkivConfigResolver>();
+        services.AddSingleton<IServiceTask, FiksArkivServiceTask>();
+        services.AddSingleton<IFiksArkivHost, FiksArkivHost>();
+        services.AddSingleton<IFiksArkivPayloadGenerator, FiksArkivDefaultPayloadGenerator>();
+        services.AddSingleton<IFiksArkivResponseHandler, FiksArkivDefaultResponseHandler>();
+        services.AddSingleton<IFiksArkivAutoSendDecision, FiksArkivDefaultAutoSendDecision>();
+        services.AddSingleton<IFiksArkivInstanceClient, FiksArkivInstanceClient>();
+        services.AddSingleton<IFiksArkivConfigResolver, FiksArkivConfigResolver>();
         services.AddHostedService<FiksArkivConfigValidationService>();
-        services.AddHostedService<FiksArkivEventService>();
+        services.AddHostedService(sp => (FiksArkivHost)sp.GetRequiredService<IFiksArkivHost>());
 
         return new FiksArkivSetupBuilder(services);
     }

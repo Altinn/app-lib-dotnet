@@ -29,7 +29,7 @@ public class FiksArkivSettingsTest
     [Theory]
     [InlineData("valid-datatype", "file.xml", new[] { "valid-datatype" }, true, null)]
     [InlineData("valid-datatype", null, new[] { "valid-datatype" }, false, null)]
-    [InlineData("valid-datatype", null, new[] { "valid-datatype" }, true, "Filename configuration is missing")]
+    [InlineData("valid-datatype", null, new[] { "valid-datatype" }, true, "Filename configuration is required")]
     [InlineData("invalid-datatype", null, new[] { "valid-datatype" }, false, "DataType mismatch")]
     public void FiksArkivDataTypeSettings_ValidatesCorrectly(
         string datatype,

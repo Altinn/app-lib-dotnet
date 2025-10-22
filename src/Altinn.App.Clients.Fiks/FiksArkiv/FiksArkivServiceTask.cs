@@ -1,39 +1,28 @@
-using Altinn.App.Clients.Fiks.Exceptions;
-using Altinn.App.Clients.Fiks.FiksArkiv.Models;
-using Altinn.App.Clients.Fiks.FiksIO;
-using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
-internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask, IFiksArkivConfigValidation
+internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask
 {
-    private readonly IFiksIOClient _fiksIOClient;
     private readonly ILogger<FiksArkivServiceTask> _logger;
     private readonly AppImplementationFactory _appImplementationFactory;
-    private readonly FiksArkivSettings _fiksArkivSettings;
-    private readonly IFiksArkivMessageHandler _fiksArkivMessageHandler;
+    private readonly IFiksArkivHost _fiksArkivHost;
 
     private IFiksArkivAutoSendDecision _fiksArkivAutoSendDecision =>
         _appImplementationFactory.GetRequired<IFiksArkivAutoSendDecision>();
 
     public FiksArkivServiceTask(
         AppImplementationFactory appImplementationFactory,
-        IOptions<FiksArkivSettings> fiksArkivSettings,
-        IFiksIOClient fiksIOClient,
-        IFiksArkivMessageHandler fiksArkivMessageHandler,
+        IFiksArkivHost fiksArkivHost,
         ILogger<FiksArkivServiceTask> logger
     )
     {
         _appImplementationFactory = appImplementationFactory;
-        _fiksArkivMessageHandler = fiksArkivMessageHandler;
-        _fiksArkivSettings = fiksArkivSettings.Value;
-        _fiksIOClient = fiksIOClient;
+        _fiksArkivHost = fiksArkivHost;
         _logger = logger;
     }
 
@@ -44,28 +33,10 @@ internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask, IFiksArkivCo
         if (shouldSendDecision is false)
             return;
 
-        _logger.LogInformation("Sending Fiks Arkiv message for instance {InstanceId}", instance.Id);
+        _logger.LogInformation(
+            $"{nameof(FiksArkivServiceTask)} is executing for instance {instance.Id} and task {taskId}"
+        );
 
-        FiksIOMessageRequest request = await _fiksArkivMessageHandler.CreateMessageRequest(taskId, instance);
-        await _fiksArkivMessageHandler.SaveArchiveRecord(instance, request);
-        FiksIOMessageResponse response = await _fiksIOClient.SendMessage(request);
-
-        _logger.LogInformation("Fiks Arkiv responded with message ID {MessageId}", response.MessageId);
-    }
-
-    /// <inheritdoc />
-    public Task ValidateConfiguration(
-        IReadOnlyList<DataType> configuredDataTypes,
-        IReadOnlyList<ProcessTask> configuredProcessTasks
-    )
-    {
-        if (_fiksArkivSettings.Receipt is null)
-            throw new FiksArkivConfigurationException(
-                $"{nameof(FiksArkivSettings.Receipt)} configuration is required for default handler {GetType().Name}."
-            );
-
-        _fiksArkivSettings.Receipt.Validate(nameof(_fiksArkivSettings.Receipt), configuredDataTypes);
-
-        return Task.CompletedTask;
+        await _fiksArkivHost.GenerateAndSendMessage(taskId, instance, FiksArkivConstants.MessageTypes.Create);
     }
 }

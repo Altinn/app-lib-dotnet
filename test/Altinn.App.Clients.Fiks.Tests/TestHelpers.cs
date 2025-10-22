@@ -251,7 +251,8 @@ internal static class TestHelpers
         public Task<IEnumerable<FiksIOMessagePayload>> GeneratePayload(
             string taskId,
             Instance instance,
-            FiksArkivRecipient recipient
+            FiksArkivRecipient recipient,
+            string messageType
         ) => throw new NotImplementedException();
     }
 

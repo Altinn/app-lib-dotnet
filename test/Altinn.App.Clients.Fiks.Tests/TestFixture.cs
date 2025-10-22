@@ -74,11 +74,8 @@ internal sealed record TestFixture(
         App.Services.GetRequiredService<IOptions<MaskinportenSettings>>().Value;
     public FiksArkivConfigValidationService FiksArkivConfigValidationService =>
         App.Services.GetServices<IHostedService>().OfType<FiksArkivConfigValidationService>().Single();
-    public FiksArkivEventService FiksArkivEventService =>
-        App.Services.GetServices<IHostedService>().OfType<FiksArkivEventService>().Single();
+    public FiksArkivHost FiksArkivHost => App.Services.GetServices<IHostedService>().OfType<FiksArkivHost>().Single();
     public IAltinnCdnClient AltinnCdnClient => App.Services.GetRequiredService<IAltinnCdnClient>();
-    public IFiksArkivMessageHandler FiksArkivMessageHandler =>
-        App.Services.GetRequiredService<IFiksArkivMessageHandler>();
     public IFiksArkivResponseHandler FiksArkivResponseHandler =>
         App.Services.GetRequiredService<IFiksArkivResponseHandler>();
     public IFiksArkivPayloadGenerator FiksArkivPayloadGenerator =>
@@ -112,7 +109,8 @@ internal sealed record TestFixture(
         IEnumerable<(string, object)>? configurationCollection = null,
         bool useDefaultFiksIOSettings = true,
         bool useDefaultFiksArkivSettings = true,
-        bool useDefaultMaskinportenSettings = true
+        bool useDefaultMaskinportenSettings = true,
+        string hostEnvironment = "Development"
     )
     {
         var builder = WebApplication.CreateBuilder();
@@ -184,7 +182,7 @@ internal sealed record TestFixture(
         httpClientFactoryMock
             .Setup(x => x.CreateClient(It.IsAny<string>()))
             .Returns(() => new HttpClient(httpMessageHandlerMock.Object));
-        hostEnvironmentMock.Setup(x => x.EnvironmentName).Returns("Development");
+        hostEnvironmentMock.Setup(x => x.EnvironmentName).Returns(hostEnvironment);
         loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
         appMetadataMock
             .Setup(x => x.GetApplicationMetadata())

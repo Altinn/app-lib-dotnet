@@ -7,14 +7,36 @@ namespace Altinn.App.Clients.Fiks.Constants;
 /// </summary>
 public static class FiksArkivConstants
 {
-    /// <summary>
-    /// The name of the Fiks Arkiv record document (as per <see href="https://developers.fiks.ks.no/tjenester/fiksprotokoll/protokoll-arkiv/#meldinger">Fiks Protokoll specifications</see>).
-    /// </summary>
-    public const string ArchiveRecordFilename = "arkivmelding.xml";
-
-    internal const string ReceiptMessageType = FiksArkivMeldingtype.ArkivmeldingOpprettKvittering;
     internal const string AltinnSystemId = "Altinn Studio";
     internal const string AltinnOrgNo = "991825827";
+
+    /// <summary>
+    /// Known filenames used in Fiks Arkiv messages.
+    /// </summary>
+    public static class Filenames
+    {
+        /// <summary>
+        /// The name of the Fiks Arkiv record document
+        /// (as per <see href="https://developers.fiks.ks.no/tjenester/fiksprotokoll/protokoll-arkiv/#meldinger">Fiks Protokoll specifications</see>).
+        /// </summary>
+        public const string ArchiveRecord = "arkivmelding.xml";
+    }
+
+    /// <summary>
+    /// Known Fiks Arkiv message types.
+    /// </summary>
+    public static class MessageTypes
+    {
+        /// <summary>
+        /// Indicates a request to create a new archive record.
+        /// </summary>
+        public const string Create = FiksArkivMeldingtype.ArkivmeldingOpprett;
+
+        /// <summary>
+        /// Indicates a receipt for the creation of an archive record.
+        /// </summary>
+        public const string CreateReceipt = FiksArkivMeldingtype.ArkivmeldingOpprettKvittering;
+    }
 
     internal static class ClassificationId
     {
