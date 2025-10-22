@@ -45,7 +45,7 @@ public sealed class ModelSerializationService
         if (DataClient.TypeAllowsJson(dataType))
         {
             throw new InvalidOperationException(
-                $"Data type {dataType.Id} allows application json and must use DeserializeFromStorage with DataElement specified"
+                $"Data type {dataType.Id} allows application/json and must use DeserializeFromStorage with DataElement specified"
             );
         }
         var type = GetModelTypeForDataType(dataType);
@@ -63,7 +63,7 @@ public sealed class ModelSerializationService
     {
         var type = GetModelTypeForDataType(dataType);
 
-        return dataElement.ContentType switch
+        return dataElement.ContentType?.ToLowerInvariant() switch
         {
             "application/xml" => DeserializeXml(data, type),
             "application/json" => DeserializeJson(data, type),
@@ -89,7 +89,7 @@ public sealed class ModelSerializationService
         if (DataClient.TypeAllowsJson(dataType))
         {
             throw new InvalidOperationException(
-                $"Data type {dataType.Id} allows application json and must use SerializeToStorage with DataElement specified"
+                $"Data type {dataType.Id} allows application/json and must use SerializeToStorage with DataElement specified"
             );
         }
         return SerializeToStorage(model, dataType, null);
@@ -119,11 +119,11 @@ public sealed class ModelSerializationService
 
         var contentType = dataElement is not null ? dataElement.ContentType : FindFirstContentType(dataType);
 
-        return contentType switch
+        return contentType?.ToLowerInvariant() switch
         {
-            "application/json" => (SerializeToJson(model), contentType),
+            "application/json" => (SerializeToJson(model), "application/json"),
             // When the content type is missing, default to xml for backward compatibility
-            "application/xml" or null or "" => (SerializeToXml(model), "application/xml"),
+            "application/xml" or "" or null => (SerializeToXml(model), "application/xml"),
             _ => throw new InvalidOperationException($"Unsupported content type {contentType}"),
         };
     }
@@ -383,12 +383,13 @@ public sealed class ModelSerializationService
         {
             foreach (var contentType in dataType.AllowedContentTypes)
             {
-                switch (contentType)
+                if ("application/xml".Equals(contentType, StringComparison.OrdinalIgnoreCase))
                 {
-                    case "application/xml":
-                        return "application/xml";
-                    case "application/json":
-                        return "application/json";
+                    return "application/xml";
+                }
+                if ("application/json".Equals(contentType, StringComparison.OrdinalIgnoreCase))
+                {
+                    return "application/json";
                 }
             }
         }

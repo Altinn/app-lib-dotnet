@@ -86,7 +86,7 @@ public class DataClientTestsDataTypes
         if (fakeResponse is null)
         {
             throw new Exception(
-                $"No response found for request uri: \n{request.Method} {request.RequestUri} {request.Content?.Headers.ContentType}\nAvailible:\n{string.Join("\n", _fakeResponses.Select(r => $"{r.Method} {r.Url} {r.RequestContentType}"))}"
+                $"No response found for request uri: \n{request.Method} {request.RequestUri} {request.Content?.Headers.ContentType}\nAvailable:\n{string.Join("\n", _fakeResponses.Select(r => $"{r.Method} {r.Url} {r.RequestContentType}"))}"
             );
         }
         return new HttpResponseMessage(fakeResponse.Status)
@@ -123,13 +123,14 @@ public class DataClientTestsDataTypes
         await Verify(new { data, _mockHttpClient }).UseParameters(dataType).DontScrubGuids();
     }
 
-    public static IEnumerable<object[]> DataTypes = new List<object[]>
-    {
-        new object[] { "jsonDataType", "application/json" },
-        new object[] { "xmlDataType", "application/xml" },
-        new object[] { "xmlDefaultDataType", "application/xml" },
-        new object[] { "jsonDefaultDataType", "application/json" },
-    };
+    public static TheoryData<string, string> DataTypes =>
+        new()
+        {
+            { "jsonDataType", "application/json" },
+            { "xmlDataType", "application/xml" },
+            { "xmlDefaultDataType", "application/xml" },
+            { "jsonDefaultDataType", "application/json" },
+        };
 
     [Theory]
     [MemberData(nameof(DataTypes))]

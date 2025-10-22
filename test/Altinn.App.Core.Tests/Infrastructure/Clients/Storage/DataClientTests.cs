@@ -975,7 +975,7 @@ public class DataClientTests
         var authHeader = actual.Headers.Authorization;
         Assert.NotNull(authHeader);
         Assert.Equal("Bearer", authHeader.Scheme);
-        Assert.Equal(authHeader.Parameter, expectedAuth ?? _defaultAuth.Token);
+        Assert.Equal(expectedAuth.ToString() ?? _defaultAuth.Token, authHeader.Parameter);
 
         const int uriComparisonIdentical = 0;
         Assert.Equivalent(expectedUri, actual.RequestUri);

@@ -72,7 +72,12 @@ public class ExpressionsExclusiveGatewayTests
             Process = new() { CurrentTask = new() { ElementId = TaskId } },
             Data = new()
             {
-                new() { Id = "cd9204e7-9b83-41b4-b2f2-9b196b4fafcf", DataType = DefaultDataTypeName },
+                new()
+                {
+                    Id = "cd9204e7-9b83-41b4-b2f2-9b196b4fafcf",
+                    DataType = DefaultDataTypeName,
+                    ContentType = "application/json",
+                },
             },
         };
         var processGatewayInformation = new ProcessGatewayInformation { Action = "confirm" };
@@ -115,7 +120,12 @@ public class ExpressionsExclusiveGatewayTests
             Process = new() { CurrentTask = new() { ElementId = TaskId } },
             Data = new()
             {
-                new() { Id = "cd9204e7-9b83-41b4-b2f2-9b196b4fafcf", DataType = DefaultDataTypeName },
+                new()
+                {
+                    Id = "cd9204e7-9b83-41b4-b2f2-9b196b4fafcf",
+                    DataType = DefaultDataTypeName,
+                    ContentType = "application/json",
+                },
             },
         };
         var processGatewayInformation = new ProcessGatewayInformation { Action = "confirm" };

@@ -286,9 +286,13 @@ public class DataClientMock : IDataClient
                 $"Data type {dataElement.DataType} not found in applicationmetadata.json"
             );
 
-        Directory.CreateDirectory(dataPath + @"blob");
+        Directory.CreateDirectory(Path.Join(dataPath, "blob"));
 
-        var (serializedBytes, contentType) = _modelSerialization.SerializeToStorage(dataToSerialize, dataType);
+        var (serializedBytes, contentType) = _modelSerialization.SerializeToStorage(
+            dataToSerialize,
+            dataType,
+            dataElement
+        );
 
         Debug.Assert(contentType == dataElement.ContentType, "Content type should not change when updating data");
         await File.WriteAllBytesAsync(
@@ -410,7 +414,7 @@ public class DataClientMock : IDataClient
                 Directory.CreateDirectory(directory);
         }
 
-        Directory.CreateDirectory(dataPath + @"blob");
+        Directory.CreateDirectory(Path.Join(dataPath, "blob"));
 
         using var memoryStream = new MemoryStream();
         stream.Seek(0, SeekOrigin.Begin);

@@ -543,7 +543,10 @@ public sealed class DataClient : IDataClient
         }
 
         _logger.LogError(
-            $"Storing attachment for instance {instanceId} failed with status code {response.StatusCode} - content {await response.Content.ReadAsStringAsync(cancellationToken)}"
+            "Storing attachment for instance {InstanceId} failed with status code {StatusCode} - content {Content}",
+            instanceId,
+            response.StatusCode,
+            await response.Content.ReadAsStringAsync(cancellationToken)
         );
         throw await PlatformHttpException.CreateAsync(response);
     }
