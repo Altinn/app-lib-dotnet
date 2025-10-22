@@ -3,6 +3,7 @@ using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
@@ -82,8 +83,11 @@ public class SigningTaskValidatorTest
         Assert.Empty(result);
     }
 
-    [Fact]
-    public async Task Validate_ShouldReturnValidationIssue_WhenNotAllHaveSigned()
+    [Theory]
+    [InlineData(LanguageConst.Nb, "Det mangler påkrevde signaturer.")]
+    [InlineData(LanguageConst.Nn, "Det manglar påkravde signaturar.")]
+    [InlineData(LanguageConst.En, "Required signatures are missing.")]
+    public async Task Validate_ShouldReturnValidationIssue_WhenNotAllHaveSigned(string? language, string description)
     {
         // Arrange
         var dataAccessorMock = new Mock<IInstanceDataAccessor>();
@@ -125,11 +129,12 @@ public class SigningTaskValidatorTest
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null!);
+        var result = await _validator.Validate(dataAccessorMock.Object, taskId, language);
 
         // Assert
         Assert.Single(result);
         Assert.Equal(ValidationIssueCodes.DataElementCodes.MissingSignatures, result[0].Code);
+        Assert.Equal(description, result[0].Description);
     }
 
     [Fact]
