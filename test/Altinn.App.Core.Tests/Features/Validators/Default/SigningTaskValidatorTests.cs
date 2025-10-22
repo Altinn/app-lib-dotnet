@@ -87,6 +87,8 @@ public class SigningTaskValidatorTest
     [InlineData(LanguageConst.Nb, "Det mangler påkrevde signaturer.")]
     [InlineData(LanguageConst.Nn, "Det manglar påkravde signaturar.")]
     [InlineData(LanguageConst.En, "Required signatures are missing.")]
+    [InlineData(null, "Det mangler påkrevde signaturer.")]
+    [InlineData("fr", "Required signatures are missing.")]
     public async Task Validate_ShouldReturnValidationIssue_WhenNotAllHaveSigned(string? language, string description)
     {
         // Arrange

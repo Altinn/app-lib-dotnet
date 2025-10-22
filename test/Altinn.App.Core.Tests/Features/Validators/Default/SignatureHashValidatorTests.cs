@@ -70,6 +70,8 @@ public class SignatureHashValidatorTests
     [InlineData(LanguageConst.Nb, "Signerte data er endret etter at signaturen ble utført.")]
     [InlineData(LanguageConst.Nn, "Signerte data er endra etter at signaturen vart utført.")]
     [InlineData(LanguageConst.En, "The signed data has been modified after the signature was made.")]
+    [InlineData(null, "Signerte data er endret etter at signaturen ble utført.")]
+    [InlineData("fr", "The signed data has been modified after the signature was made.")]
     public async Task Validate_WithInvalidSignatureHash_ReturnsValidationIssue(string? language, string description)
     {
         const string testData = "test data";
