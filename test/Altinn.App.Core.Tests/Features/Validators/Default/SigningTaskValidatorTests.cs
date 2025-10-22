@@ -77,7 +77,7 @@ public class SigningTaskValidatorTest
             .ReturnsAsync(signeeContexts);
 
         // Act
-        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null!);
+        var result = await _validator.Validate(dataAccessorMock.Object, taskId, null);
 
         // Assert
         Assert.Empty(result);
@@ -156,7 +156,7 @@ public class SigningTaskValidatorTest
 
         // Act
         await Assert.ThrowsAsync<Exception>(async () =>
-            await _validator.Validate(dataAccessorMock.Object, taskId, null!)
+            await _validator.Validate(dataAccessorMock.Object, taskId, null)
         );
     }
 
@@ -183,7 +183,7 @@ public class SigningTaskValidatorTest
 
         // Act
         await Assert.ThrowsAsync<Exception>(async () =>
-            await _validator.Validate(dataAccessorMock.Object, taskId, null!)
+            await _validator.Validate(dataAccessorMock.Object, taskId, null)
         );
     }
 }
