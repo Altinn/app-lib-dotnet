@@ -26,6 +26,12 @@ public sealed record FiksIOReceivedMessage
     public bool IsErrorResponse =>
         string.IsNullOrWhiteSpace(Message.MessageType) || FiksIOConstants.IsErrorType(Message.MessageType);
 
+    /// <summary>
+    /// Indicates whether this message is a receipt response or not.
+    /// </summary>
+    public bool IsReceiptResponse =>
+        string.IsNullOrWhiteSpace(Message.MessageType) || FiksIOConstants.IsReceiptType(Message.MessageType);
+
     internal FiksIOReceivedMessage(MottattMeldingArgs mottattMeldingArgs)
     {
         Message = new FiksIOReceivedMessageContent(mottattMeldingArgs.Melding);

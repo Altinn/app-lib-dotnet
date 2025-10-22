@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text.Json;
 using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
@@ -170,7 +169,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
         );
 
         // Persist receipt on the instance
-        if (!isError && message.Message.MessageType == FiksArkivConstants.MessageTypes.CreateReceipt)
+        if (message.IsReceiptResponse)
         {
             if (payloads?.FirstOrDefault() is not FiksArkivReceivedMessagePayload.Receipt receipt)
             {
@@ -234,16 +233,27 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
 
     private async Task<DataElement> SaveArchiveRecord(Instance instance, FiksIOMessageRequest request)
     {
+        _logger.LogInformation("Saving archive record for Fiks Arkiv request: {Request}", request);
         ArgumentNullException.ThrowIfNull(_fiksArkivSettings.Receipt);
 
-        _logger.LogInformation("Saving archive record for Fiks Arkiv request: {Request}", request);
-        return await _fiksArkivInstanceClient.InsertBinaryData(
+        await DeleteExistingDataElements(instance, _fiksArkivSettings.Receipt.ArchiveRecord.DataType);
+
+        DataElement result = await _fiksArkivInstanceClient.InsertBinaryData(
             new InstanceIdentifier(instance),
             _fiksArkivSettings.Receipt.ArchiveRecord.DataType,
             "application/json",
             _fiksArkivSettings.Receipt.ArchiveRecord.GetFilenameOrDefault(".xml"),
             request.Payload.Single(x => x.Filename == FiksArkivConstants.Filenames.ArchiveRecord).Data
         );
+
+        _logger.LogInformation(
+            "Saved {Filename} with ID {DataElementId} to instance {InstanceId}",
+            result.Filename,
+            result.Id,
+            instance.Id
+        );
+
+        return result;
     }
 
     private async Task<DataElement> SaveArchiveReceipt(
@@ -251,17 +261,41 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
         FiksArkivReceivedMessagePayload.Receipt receipt
     )
     {
+        _logger.LogInformation("Saving archive receipt: {Receipt}", receipt);
         ArgumentNullException.ThrowIfNull(_fiksArkivSettings.Receipt);
 
-        _logger.LogInformation("Saving receipt data from Fiks Arkiv payload: {Receipt}", receipt);
+        await DeleteExistingDataElements(instance, _fiksArkivSettings.Receipt.ConfirmationRecord.DataType);
 
-        return await _fiksArkivInstanceClient.InsertBinaryData(
+        DataElement result = await _fiksArkivInstanceClient.InsertBinaryData(
             new InstanceIdentifier(instance),
             _fiksArkivSettings.Receipt.ConfirmationRecord.DataType,
             "application/json",
-            _fiksArkivSettings.Receipt.ConfirmationRecord.GetFilenameOrDefault(".json"),
-            JsonSerializer.SerializeToUtf8Bytes(receipt.Details)
+            _fiksArkivSettings.Receipt.ConfirmationRecord.GetFilenameOrDefault(".xml"),
+            receipt.Details.SerializeXmlBytes()
         );
+
+        _logger.LogInformation(
+            "Saved {Filename} with ID {DataElementId} to instance {InstanceId}",
+            result.Filename,
+            result.Id,
+            instance.Id
+        );
+
+        return result;
+    }
+
+    private async Task DeleteExistingDataElements(Instance instance, string dataType)
+    {
+        var dataElements = instance.GetOptionalDataElements(dataType).ToList();
+        if (dataElements.Count == 0)
+            return;
+
+        var instanceIdentifier = new InstanceIdentifier(instance);
+        foreach (var dataElement in dataElements)
+        {
+            _logger.LogInformation("Deleting existing {DataType} data: {DataElementId}", dataType, dataElement.Id);
+            await _fiksArkivInstanceClient.DeleteBinaryData(instanceIdentifier, Guid.Parse(dataElement.Id));
+        }
     }
 
     private async Task TryMoveProcessOnError(Instance? instance)

@@ -20,10 +20,7 @@ public class FiksArkivInstanceClientTest
     {
         // Arrange
         await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
-
-        var appMetadata = await fixture.AppMetadata.GetApplicationMetadata();
         var instance = new Instance { Id = _defaultInstanceIdentifier.ToString() };
-
         List<HttpRequestMessage> requests = [];
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(
             HttpStatusCode.OK,
@@ -54,7 +51,6 @@ public class FiksArkivInstanceClientTest
     {
         // Arrange
         await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
-
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(statusCode, contentFactory: _ => content);
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
@@ -76,7 +72,6 @@ public class FiksArkivInstanceClientTest
         // Arrange
         await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
         var appMetadata = await fixture.AppMetadata.GetApplicationMetadata();
-
         var expectedPayload = action is null
             ? ""
             : $$"""
@@ -113,7 +108,6 @@ public class FiksArkivInstanceClientTest
     {
         // Arrange
         await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
-
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(HttpStatusCode.Forbidden);
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
@@ -132,9 +126,6 @@ public class FiksArkivInstanceClientTest
     {
         // Arrange
         await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
-
-        var appMetadata = await fixture.AppMetadata.GetApplicationMetadata();
-
         List<HttpRequestMessage> requests = [];
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(
             HttpStatusCode.OK,
@@ -161,7 +152,6 @@ public class FiksArkivInstanceClientTest
     {
         // Arrange
         await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
-
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(HttpStatusCode.Forbidden);
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
@@ -176,12 +166,55 @@ public class FiksArkivInstanceClientTest
     }
 
     [Fact]
+    public async Task DeleteBinaryData_CallsCorrectEndpoint()
+    {
+        // Arrange
+        await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
+        Guid dataElementGuid = Guid.NewGuid();
+        List<HttpRequestMessage> requests = [];
+        var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(
+            HttpStatusCode.OK,
+            requestCallback: request => requests.Add(request)
+        );
+        fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        // Act
+        await fixture.FiksArkivInstanceClient.DeleteBinaryData(_defaultInstanceIdentifier, dataElementGuid);
+
+        // Assert
+        HttpRequestMessage deleteRequest = requests.Last();
+
+        Assert.Equal(HttpMethod.Delete, deleteRequest.Method);
+        Assert.Equal($"Bearer {TestHelpers.DummyToken}", deleteRequest.Headers.Authorization!.ToString());
+        Assert.Equal(
+            $"http://localhost:5101/storage/api/v1/instances/{_defaultInstanceIdentifier}/data/{dataElementGuid}",
+            deleteRequest.RequestUri!.ToString()
+        );
+    }
+
+    [Fact]
+    public async Task DeleteBinaryData_ThrowsException_ForInvalidResponse()
+    {
+        // Arrange
+        await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
+        var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(HttpStatusCode.Forbidden);
+        fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        // Act
+        var record = await Record.ExceptionAsync(() =>
+            fixture.FiksArkivInstanceClient.DeleteBinaryData(_defaultInstanceIdentifier, Guid.NewGuid())
+        );
+
+        // Assert
+        Assert.IsType<PlatformHttpException>(record);
+        Assert.Equal(HttpStatusCode.Forbidden, ((PlatformHttpException)record).Response.StatusCode);
+    }
+
+    [Fact]
     public async Task InsertBinaryData_CallsCorrectEndpoint_WithCorrectPayload()
     {
         // Arrange
         await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
-
-        var appMetadata = await fixture.AppMetadata.GetApplicationMetadata();
         var data = "test content"u8.ToArray();
         var dataElement = new DataElement
         {
@@ -191,7 +224,6 @@ public class FiksArkivInstanceClientTest
             Filename = "filename.txt",
         };
 
-        // List<HttpRequestMessage> requests = [];
         List<CapturedHttpRequest<byte[]>> requests = [];
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(
             HttpStatusCode.OK,
@@ -253,7 +285,6 @@ public class FiksArkivInstanceClientTest
     {
         // Arrange
         await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
-
         var httpClient = TestHelpers.GetHttpClientWithMockedHandlerFactory(statusCode);
         fixture.HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 

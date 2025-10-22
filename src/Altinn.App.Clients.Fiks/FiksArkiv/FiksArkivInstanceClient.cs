@@ -52,6 +52,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<JwtToken> GetServiceOwnerToken()
     {
         try
@@ -69,6 +70,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         }
     }
 
+    /// <inheritdoc />
     public async Task<Instance> GetInstance(InstanceIdentifier instanceIdentifier)
     {
         using var activity = _telemetry?.StartGetInstanceByGuidActivity(instanceIdentifier.InstanceGuid);
@@ -82,6 +84,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         return deserializeResponse;
     }
 
+    /// <inheritdoc />
     public async Task ProcessMoveNext(InstanceIdentifier instanceIdentifier, string? action = null)
     {
         using var activity = _telemetry?.StartApiProcessNextActivity(instanceIdentifier);
@@ -107,6 +110,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         }
     }
 
+    /// <inheritdoc />
     public async Task MarkInstanceComplete(InstanceIdentifier instanceIdentifier)
     {
         using var activity = _telemetry?.StartApiProcessCompleteActivity(instanceIdentifier);
@@ -129,6 +133,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         }
     }
 
+    /// <inheritdoc />
     public async Task<DataElement> InsertBinaryData<TContent>(
         InstanceIdentifier instanceIdentifier,
         string dataType,
@@ -156,6 +161,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             HttpContent payload = content switch
             {
                 byte[] bytes => new ByteArrayContent(bytes),
+                ReadOnlyMemory<byte> memory => new ByteArrayContent(memory.ToArray()),
                 Stream stream => new StreamContent(stream),
                 _ => throw new FiksArkivException(
                     $"Unsupported content type: {typeof(TContent).Name}. Expected byte[] or Stream."
@@ -183,6 +189,42 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         catch (Exception e)
         {
             _logger.LogError("Error storing binary data for instance {InstanceId}: {Error}", instanceIdentifier, e);
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteBinaryData(InstanceIdentifier instanceIdentifier, Guid dataElementGuid)
+    {
+        using var activity = _telemetry?.StartDeleteDataActivity(
+            instanceIdentifier.InstanceGuid,
+            instanceIdentifier.InstanceOwnerPartyId
+        );
+
+        try
+        {
+            string url = $"instances/{instanceIdentifier}/data/{dataElementGuid}";
+
+            using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.Storage);
+            HttpResponseMessage response = await client.DeleteAsync(url);
+
+            await EnsureSuccessStatusCode(response);
+            response.Dispose();
+
+            _logger.LogInformation(
+                "Successfully deleted data element {DataElementId} for {InstanceId}.",
+                dataElementGuid,
+                instanceIdentifier
+            );
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(
+                "Error deleting data element {DataElementId} for {InstanceId}: {Error}",
+                dataElementGuid,
+                instanceIdentifier,
+                e
+            );
             throw;
         }
     }

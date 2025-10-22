@@ -37,15 +37,12 @@ public abstract record FiksArkivReceivedMessagePayload
         /// The decrypted and deserialized details of the receipt.
         /// </summary>
         [JsonPropertyName("details")]
-        public FiksArkivReceipt Details { get; }
+        public ArkivmeldingKvittering Details { get; }
 
         internal Receipt(string filename, string content, ArkivmeldingKvittering archiveReceipt)
             : base(filename, content)
         {
-            Details = FiksArkivReceipt.Create(
-                archiveReceipt.MappeKvittering as SaksmappeKvittering,
-                archiveReceipt.RegistreringKvittering as JournalpostKvittering
-            );
+            Details = archiveReceipt;
         }
     }
 
