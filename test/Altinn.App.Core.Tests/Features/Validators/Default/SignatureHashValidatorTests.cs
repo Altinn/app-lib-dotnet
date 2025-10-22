@@ -6,6 +6,7 @@ using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
@@ -56,13 +57,22 @@ public class SignatureHashValidatorTests
 
         SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], testData);
 
-        List<ValidationIssue> result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        List<ValidationIssue> result = await _validator.Validate(
+            _dataAccessorMock.Object,
+            "signing-task",
+            LanguageConst.Nb
+        );
 
         Assert.Empty(result);
     }
 
-    [Fact]
-    public async Task Validate_WithInvalidSignatureHash_ReturnsValidationIssue()
+    [Theory]
+    [InlineData(LanguageConst.Nb, "Signerte data er endret etter at signaturen ble utført.")]
+    [InlineData(LanguageConst.Nn, "Signerte data er endra etter at signaturen vart utført.")]
+    [InlineData(LanguageConst.En, "The signed data has been modified after the signature was made.")]
+    [InlineData(null, "Signerte data er endret etter at signaturen ble utført.")]
+    [InlineData("fr", "The signed data has been modified after the signature was made.")]
+    public async Task Validate_WithInvalidSignatureHash_ReturnsValidationIssue(string? language, string description)
     {
         const string testData = "test data";
         const string storedHash = "different-hash";
@@ -75,12 +85,12 @@ public class SignatureHashValidatorTests
 
         SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], testData);
 
-        List<ValidationIssue> result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        List<ValidationIssue> result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", language);
 
         Assert.Single(result);
         Assert.Equal(ValidationIssueCodes.DataElementCodes.InvalidSignatureHash, result[0].Code);
         Assert.Equal(ValidationIssueSeverity.Error, result[0].Severity);
-        Assert.Equal("backend.validation_errors.invalid_signature_hash", result[0].CustomTextKey);
+        Assert.Equal(description, result[0].Description);
     }
 
     [Fact]
@@ -91,7 +101,7 @@ public class SignatureHashValidatorTests
             .Returns(new AltinnTaskExtension { SignatureConfiguration = null });
 
         var exception = await Assert.ThrowsAsync<ApplicationConfigException>(() =>
-            _validator.Validate(_dataAccessorMock.Object, "signing-task", "en")
+            _validator.Validate(_dataAccessorMock.Object, "signing-task", LanguageConst.Nb)
         );
 
         Assert.Equal("Signing configuration not found in AltinnTaskExtension", exception.Message);
@@ -111,7 +121,7 @@ public class SignatureHashValidatorTests
 
         SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], testData);
 
-        await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        await _validator.Validate(_dataAccessorMock.Object, "signing-task", LanguageConst.Nb);
 
         _dataClientMock.Verify(
             x =>
@@ -120,6 +130,7 @@ public class SignatureHashValidatorTests
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
                     It.Is<StorageAuthenticationMethod?>(auth => auth == StorageAuthenticationMethod.ServiceOwner()),
+                    null,
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -140,10 +151,18 @@ public class SignatureHashValidatorTests
 
         SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], testData);
 
-        await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        await _validator.Validate(_dataAccessorMock.Object, "signing-task", LanguageConst.Nb);
 
         _dataClientMock.Verify(
-            x => x.GetBinaryDataStream(12345, It.IsAny<Guid>(), It.IsAny<Guid>(), null, It.IsAny<CancellationToken>()),
+            x =>
+                x.GetBinaryDataStream(
+                    12345,
+                    It.IsAny<Guid>(),
+                    It.IsAny<Guid>(),
+                    null,
+                    null,
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }
@@ -160,7 +179,7 @@ public class SignatureHashValidatorTests
         SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], testData);
 
         var exception = await Assert.ThrowsAsync<ApplicationConfigException>(() =>
-            _validator.Validate(_dataAccessorMock.Object, "signing-task", "en")
+            _validator.Validate(_dataAccessorMock.Object, "signing-task", LanguageConst.Nb)
         );
 
         Assert.Equal(
@@ -187,7 +206,11 @@ public class SignatureHashValidatorTests
 
         SetupMocks(signingConfiguration, applicationMetadata, signeeContexts, testData);
 
-        List<ValidationIssue> result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        List<ValidationIssue> result = await _validator.Validate(
+            _dataAccessorMock.Object,
+            "signing-task",
+            LanguageConst.Nb
+        );
 
         Assert.Empty(result);
         _dataClientMock.Verify(
@@ -197,6 +220,7 @@ public class SignatureHashValidatorTests
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
                     It.IsAny<StorageAuthenticationMethod?>(),
+                    null,
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2)
@@ -226,7 +250,11 @@ public class SignatureHashValidatorTests
 
         SetupMocks(signingConfiguration, applicationMetadata, [signeeContext], "test");
 
-        List<ValidationIssue> result = await _validator.Validate(_dataAccessorMock.Object, "signing-task", "en");
+        List<ValidationIssue> result = await _validator.Validate(
+            _dataAccessorMock.Object,
+            "signing-task",
+            LanguageConst.Nb
+        );
 
         Assert.Empty(result);
         _dataClientMock.Verify(
@@ -236,6 +264,7 @@ public class SignatureHashValidatorTests
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
                     It.IsAny<StorageAuthenticationMethod?>(),
+                    null,
                     It.IsAny<CancellationToken>()
                 ),
             Times.Never
@@ -380,6 +409,7 @@ public class SignatureHashValidatorTests
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
                     It.IsAny<StorageAuthenticationMethod?>(),
+                    null,
                     It.IsAny<CancellationToken>()
                 )
             )
