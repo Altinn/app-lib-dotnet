@@ -84,6 +84,8 @@ public class ServiceCollectionExtensionsTests
                         x.IntegrationId = fiksIOSettingsOverride.IntegrationId;
                         x.IntegrationPassword = fiksIOSettingsOverride.IntegrationPassword;
                         x.AccountPrivateKeyBase64 = fiksIOSettingsOverride.AccountPrivateKeyBase64;
+                        x.AmqpHost = fiksIOSettingsOverride.AmqpHost;
+                        x.ApiHost = fiksIOSettingsOverride.ApiHost;
                     })
                     .WithMaskinportenConfig(x =>
                     {
@@ -228,6 +230,8 @@ public class ServiceCollectionExtensionsTests
                         x.IntegrationId = fiksIOSettingsOverride.IntegrationId;
                         x.IntegrationPassword = fiksIOSettingsOverride.IntegrationPassword;
                         x.AccountPrivateKeyBase64 = fiksIOSettingsOverride.AccountPrivateKeyBase64;
+                        x.AmqpHost = fiksIOSettingsOverride.AmqpHost;
+                        x.ApiHost = fiksIOSettingsOverride.ApiHost;
                     })
                     .WithFiksArkivConfig(x =>
                     {
