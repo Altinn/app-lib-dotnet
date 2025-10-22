@@ -138,10 +138,13 @@ public class PdfControllerTests
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>()
                 )
-                .Callback<HttpRequestMessage, CancellationToken>(
-                    async (m, c) => requestBody = await m.Content!.ReadAsStringAsync()
-                )
-                .ReturnsAsync(mockResponse);
+                .Returns<HttpRequestMessage, CancellationToken>(
+                    async (m, c) =>
+                    {
+                        requestBody = await m.Content!.ReadAsStringAsync();
+                        return mockResponse;
+                    }
+                );
 
             var result = await pdfController.GetPdfPreview(_org, _app, _partyId, _instanceId);
             result.Should().BeOfType(typeof(FileStreamResult));
@@ -208,10 +211,13 @@ public class PdfControllerTests
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>()
                 )
-                .Callback<HttpRequestMessage, CancellationToken>(
-                    async (m, c) => requestBody = await m.Content!.ReadAsStringAsync()
-                )
-                .ReturnsAsync(mockResponse);
+                .Returns<HttpRequestMessage, CancellationToken>(
+                    async (m, c) =>
+                    {
+                        requestBody = await m.Content!.ReadAsStringAsync();
+                        return mockResponse;
+                    }
+                );
 
             var result = await pdfController.GetPdfPreview(_org, _app, _partyId, _instanceId);
             result.Should().BeOfType(typeof(FileStreamResult));
@@ -280,10 +286,13 @@ public class PdfControllerTests
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>()
                 )
-                .Callback<HttpRequestMessage, CancellationToken>(
-                    async (m, c) => requestBody = await m.Content!.ReadAsStringAsync()
-                )
-                .ReturnsAsync(mockResponse);
+                .Returns<HttpRequestMessage, CancellationToken>(
+                    async (m, c) =>
+                    {
+                        requestBody = await m.Content!.ReadAsStringAsync();
+                        return mockResponse;
+                    }
+                );
 
             var result = await pdfController.GetPdfPreview(_org, _app, _partyId, _instanceId);
             result.Should().BeOfType(typeof(FileStreamResult));

@@ -139,13 +139,14 @@ public class PdfService : IPdfService
         // Uses string manipulation instead of UriBuilder, since UriBuilder messes up
         // query parameters in combination with hash fragments in the url.
         string url = baseUrl + pagePath;
+        string lang = Uri.EscapeDataString(language);
         if (url.Contains('?'))
         {
-            url += $"&lang={language}";
+            url += $"&lang={lang}";
         }
         else
         {
-            url += $"?lang={language}";
+            url += $"?lang={lang}";
         }
 
         return new Uri(url);
@@ -176,10 +177,11 @@ public class PdfService : IPdfService
         if (string.IsNullOrEmpty(titleText))
         {
             // translation for appName should always be present, but in case it is not, we fall back to a generic title
-            titleText = "Altinn PDF";
+            titleText = "Altinn PDF.pdf";
         }
 
-        return GetValidFileName(titleText);
+        var file = GetValidFileName(titleText);
+        return file.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? file : $"{file}.pdf";
     }
 
     private static string GetValidFileName(string fileName)
