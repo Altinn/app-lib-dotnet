@@ -27,6 +27,20 @@ public sealed record FiksIOSettings : IFiksIOAccountSettings
     public required string IntegrationPassword { get; set; }
 
     /// <summary>
+    /// The API host. Usually 'https://api.fiks.test.ks.no:443' in test and 'https://api.fiks.ks.no:443' in production.
+    /// Scheme is required. Port number is optional, defaults to 443 if not specified, 80 for http.
+    /// </summary>
+    [JsonPropertyName("apiHost")]
+    public string? ApiHost { get; set; }
+
+    /// <summary>
+    /// The AMQP host. Usually 'amqp://io.fiks.test.ks.no:5671' in test and 'amqp://io.fiks.ks.no:5671' in production.
+    /// Scheme is required. Port number is optional, defaults to 5671.
+    /// </summary>
+    [JsonPropertyName("amqpHost")]
+    public string? AmqpHost { get; set; }
+
+    /// <summary>
     /// The account private key, base64 encoded.
     /// </summary>
     /// <remarks>

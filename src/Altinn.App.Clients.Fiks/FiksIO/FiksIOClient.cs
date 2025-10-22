@@ -166,15 +166,23 @@ internal sealed class FiksIOClient : IFiksIOClient
     {
         var fiksIOSettings = _fiksIOSettings.CurrentValue;
         var appMeta = await _appMetadata.GetApplicationMetadata();
-        var environmentConfig = GetConfiguration(appMeta.AppIdentifier);
+        var fiksAmqpAppName = GetFiksAmqpApplicationName(appMeta.AppIdentifier);
+
+        var apiHostUri = GetUri(fiksIOSettings.ApiHost);
+        var amqpHostUri = GetUri(fiksIOSettings.AmqpHost);
 
         var fiksConfiguration = new FiksIOConfiguration(
             amqpConfiguration: new AmqpConfiguration(
-                environmentConfig.FiksAmqpHost,
-                applicationName: environmentConfig.FiksAmqpAppName,
+                amqpHostUri?.Host ?? GetDefaultAmqpHost(),
+                amqpHostUri?.Port > -1 ? amqpHostUri.Port : 5671,
+                applicationName: fiksAmqpAppName,
                 prefetchCount: 0
             ),
-            apiConfiguration: environmentConfig.FiksApiConfiguration,
+            apiConfiguration: new ApiConfiguration(
+                apiHostUri?.Scheme ?? "https",
+                apiHostUri?.Host ?? GetDefaultApiHost(),
+                apiHostUri?.Port > -1 ? apiHostUri.Port : 443
+            ),
             asiceSigningConfiguration: new AsiceSigningConfiguration(GenerateAsiceCertificate()),
             integrasjonConfiguration: new IntegrasjonConfiguration(
                 fiksIOSettings.IntegrationId,
@@ -232,21 +240,24 @@ internal sealed class FiksIOClient : IFiksIOClient
         return Task.CompletedTask;
     }
 
-    private EnvironmentConfiguration GetConfiguration(AppIdentifier appIdentifier)
+    private static string GetFiksAmqpApplicationName(AppIdentifier appIdentifier)
     {
-        var ampqAppName = $"altinn-app-{appIdentifier.Org}-{appIdentifier.App}";
+        return $"altinn-app-{appIdentifier.Org}-{appIdentifier.App}";
+    }
 
-        return _env.IsProduction()
-            ? new EnvironmentConfiguration(
-                ApiConfiguration.CreateProdConfiguration(),
-                AmqpConfiguration.ProdHost,
-                ampqAppName
-            )
-            : new EnvironmentConfiguration(
-                ApiConfiguration.CreateTestConfiguration(),
-                AmqpConfiguration.TestHost,
-                ampqAppName
-            );
+    private static Uri? GetUri(string? uriString)
+    {
+        return !string.IsNullOrWhiteSpace(uriString) ? new Uri(uriString) : null;
+    }
+
+    private string GetDefaultAmqpHost()
+    {
+        return _env.IsDevelopment() ? AmqpConfiguration.TestHost : AmqpConfiguration.ProdHost;
+    }
+
+    private string GetDefaultApiHost()
+    {
+        return _env.IsDevelopment() ? ApiConfiguration.TestHost : ApiConfiguration.ProdHost;
     }
 
     private static X509Certificate2 GenerateAsiceCertificate()
@@ -262,12 +273,6 @@ internal sealed class FiksIOClient : IFiksIOClient
 
         return certificate;
     }
-
-    private readonly record struct EnvironmentConfiguration(
-        ApiConfiguration FiksApiConfiguration,
-        string FiksAmqpHost,
-        string FiksAmqpAppName
-    );
 
     public async ValueTask DisposeAsync()
     {
