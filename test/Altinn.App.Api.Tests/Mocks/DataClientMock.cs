@@ -119,7 +119,7 @@ public class DataClientMock : IDataClient
     {
         using var cts = cancellationToken.WithTimeout(timeout ?? TimeSpan.FromSeconds(100));
 
-        if (cancellationToken.IsCancellationRequested)
+        if (cts.Token.IsCancellationRequested)
             return Task.FromCanceled<Stream>(cts.Token);
 
         (string org, string app) = TestData.GetInstanceOrgApp(
