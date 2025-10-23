@@ -64,7 +64,7 @@ public class ArkivmeldingExtensionsTests
         var xml = Encoding.UTF8.GetString(result.Span);
 
         // Assert
-        await Verify(xml);
+        await Verify(xml).UseDefaultSettings();
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class ArkivmeldingExtensionsTests
         var xml = await reader.ReadToEndAsync();
 
         // Assert
-        await Verify(xml);
         Assert.Equal("arkivmelding.xml", result.Filename);
+        await Verify(xml).UseDefaultSettings();
     }
 }

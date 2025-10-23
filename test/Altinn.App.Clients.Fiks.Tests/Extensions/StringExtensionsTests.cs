@@ -1,6 +1,6 @@
+using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;
-using Xunit.Sdk;
 
 namespace Altinn.App.Clients.Fiks.Tests.Extensions;
 
@@ -97,5 +97,38 @@ public class StringExtensionsTests
     {
         var base64Encoded = "InvalidBase64";
         Assert.Throws<FormatException>(() => base64Encoded.FromUrlSafeBase64());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void EnsureNotNullOrEmpty_ThrowsException_WhenInputIsNullOrEmpty(string? input)
+    {
+        Assert.Throws<FiksArkivException>(() => input.EnsureNotNullOrEmpty("paramName"));
+    }
+
+    [Theory]
+    [InlineData(" ")]
+    [InlineData("abcdef")]
+    public void EnsureNotNullOrEmpty_ReturnsInput_WhenInputIsValid(string input)
+    {
+        string result = input.EnsureNotNullOrEmpty("paramName");
+        Assert.Equal(input, result);
+    }
+
+    [Fact]
+    public void EnsureNotEmpty_ThrowsException_WhenInputIsEmpty()
+    {
+        string input = string.Empty;
+        Assert.Throws<FiksArkivException>(() => input.EnsureNotEmpty("paramName"));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("abcdef")]
+    public void EnsureNotEmpty_ReturnsInput_WhenInputIsNullOrValid(string? input)
+    {
+        string? result = input.EnsureNotEmpty("paramName");
+        Assert.Equal(input, result);
     }
 }

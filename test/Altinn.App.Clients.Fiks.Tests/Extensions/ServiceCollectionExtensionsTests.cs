@@ -44,13 +44,12 @@ public class ServiceCollectionExtensionsTests
             AddResiliencePipelineContext<string> context
         ) =>
         {
-            builder.AddRetry(new RetryStrategyOptions<FiksIOMessageResponse> { MaxRetryAttempts = 1 });
+            builder.AddRetry(new RetryStrategyOptions<FiksIOMessageResponse> { MaxRetryAttempts = int.MaxValue });
         };
 
         await using var fixture = TestFixture.Create(services =>
-        {
-            services.AddFiksIOClient().WithResiliencePipeline(pipelineOverride);
-        });
+            services.AddFiksIOClient().WithResiliencePipeline(pipelineOverride)
+        );
 
         // Act
         var resiliencePipeline = fixture.FiksIOResiliencePipeline;
@@ -62,7 +61,7 @@ public class ServiceCollectionExtensionsTests
         var retryOptions = Assert.IsType<RetryStrategyOptions<FiksIOMessageResponse>>(
             resiliencePipelineDescriptor.Strategies[0].Options
         );
-        Assert.Equal(1, retryOptions.MaxRetryAttempts);
+        Assert.Equal(int.MaxValue, retryOptions.MaxRetryAttempts);
     }
 
     [Theory]
@@ -207,13 +206,12 @@ public class ServiceCollectionExtensionsTests
             AddResiliencePipelineContext<string> context
         ) =>
         {
-            builder.AddRetry(new RetryStrategyOptions<FiksIOMessageResponse> { MaxRetryAttempts = 1 });
+            builder.AddRetry(new RetryStrategyOptions<FiksIOMessageResponse> { MaxRetryAttempts = int.MaxValue });
         };
 
         await using var fixture = TestFixture.Create(services =>
-        {
-            services.AddFiksArkiv().WithResiliencePipeline(pipelineOverride);
-        });
+            services.AddFiksArkiv().WithResiliencePipeline(pipelineOverride)
+        );
 
         // Act
         var resiliencePipeline = fixture.FiksIOResiliencePipeline;
@@ -225,7 +223,7 @@ public class ServiceCollectionExtensionsTests
         var retryOptions = Assert.IsType<RetryStrategyOptions<FiksIOMessageResponse>>(
             resiliencePipelineDescriptor.Strategies[0].Options
         );
-        Assert.Equal(1, retryOptions.MaxRetryAttempts);
+        Assert.Equal(int.MaxValue, retryOptions.MaxRetryAttempts);
     }
 
     [Theory]

@@ -1,4 +1,6 @@
+using System.Linq.Expressions;
 using System.Net;
+using System.Runtime.CompilerServices;
 using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
@@ -7,6 +9,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
 using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Send.Client.Models;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
 
@@ -286,4 +289,36 @@ internal static class TestHelpers
         };
 
     public static FiksArkivBindableValue<T> BindableValueFactory<T>(T value) => new() { Value = value };
+
+    public static Expression<Action<ILogger<T>>> MatchLogEntry<T>(
+        LogLevel logLevel,
+        string partialMessage,
+        ILogger<T> _
+    )
+        where T : class
+    {
+        return x =>
+            x.Log(
+                logLevel,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>(
+                    (v, _) => v.ToString()!.Contains(partialMessage, StringComparison.OrdinalIgnoreCase)
+                ),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+            );
+    }
+}
+
+internal static class TestExtensions
+{
+    public static SettingsTask UseDefaultSettings(
+        this SettingsTask settingsTask,
+        object? testIterationId = null,
+        [CallerMemberName] string callerName = ""
+    )
+    {
+        var testId = testIterationId is null ? "" : $".{testIterationId}";
+        return settingsTask.UseMethodName($"{callerName}{testId}").UseDirectory(".Verify");
+    }
 }

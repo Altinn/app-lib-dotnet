@@ -36,8 +36,8 @@ public class FiksArkivHostTest
         await using var fixture = TestFixture.Create(services =>
         {
             services.AddFiksArkiv();
-            services.AddSingleton<ILogger<FiksArkivHost>>(sp => loggerMock.Object);
-            services.AddSingleton<IFiksIOClientFactory>(sp => clientFactoryMock.Object);
+            services.AddSingleton(loggerMock.Object);
+            services.AddSingleton(clientFactoryMock.Object);
         });
 
         // Act
@@ -48,7 +48,7 @@ public class FiksArkivHostTest
         Assert.Single(createdClients);
         createdClients[0].Verify(x => x.DisposeAsync(), Times.Once);
         loggerMock.Verify(
-            MatchLogEntry(LogLevel.Information, "Fiks Arkiv Service stopping.", loggerMock.Object),
+            TestHelpers.MatchLogEntry(LogLevel.Information, "Fiks Arkiv Service stopping.", loggerMock.Object),
             Times.Once
         );
     }
@@ -89,7 +89,7 @@ public class FiksArkivHostTest
         createdClients[0].Verify(x => x.IsOpenAsync(), Times.Once);
         createdClients[0].Verify(x => x.DisposeAsync(), Times.Once);
         loggerMock.Verify(
-            MatchLogEntry(LogLevel.Error, "FiksIO Client is unhealthy, reconnecting.", loggerMock.Object),
+            TestHelpers.MatchLogEntry(LogLevel.Error, "FiksIO Client is unhealthy, reconnecting.", loggerMock.Object),
             Times.Once
         );
     }
@@ -263,27 +263,14 @@ public class FiksArkivHostTest
 
         // Assert
         svarSenderMock.Verify(x => x.AckAsync(), shouldAck ? Times.Once : Times.Never);
-        loggerMock.Verify(MatchLogEntry(LogLevel.Information, "received message", loggerMock.Object), Times.Once);
-        loggerMock.Verify(MatchLogEntry(LogLevel.Error, "failed with error", loggerMock.Object), Times.Once);
-    }
-
-    private static Expression<Action<ILogger<T>>> MatchLogEntry<T>(
-        LogLevel logLevel,
-        string partialMessage,
-        ILogger<T> _
-    )
-        where T : class
-    {
-        return x =>
-            x.Log(
-                logLevel,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>(
-                    (v, _) => v.ToString()!.Contains(partialMessage, StringComparison.OrdinalIgnoreCase)
-                ),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-            );
+        loggerMock.Verify(
+            TestHelpers.MatchLogEntry(LogLevel.Information, "received message", loggerMock.Object),
+            Times.Once
+        );
+        loggerMock.Verify(
+            TestHelpers.MatchLogEntry(LogLevel.Error, "failed with error", loggerMock.Object),
+            Times.Once
+        );
     }
 
     private static (

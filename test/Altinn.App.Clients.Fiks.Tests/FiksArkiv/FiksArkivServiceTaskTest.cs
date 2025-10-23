@@ -1,11 +1,6 @@
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksArkiv;
-using Altinn.App.Clients.Fiks.FiksIO;
-using Altinn.App.Clients.Fiks.FiksIO.Models;
-using Altinn.App.Core.Helpers;
 using Altinn.Platform.Storage.Interface.Models;
-using KS.Fiks.IO.Client.Models;
-using KS.Fiks.IO.Send.Client.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 

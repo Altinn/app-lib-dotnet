@@ -204,8 +204,12 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         }
 
         return KorrespondansepartFactory.CreateSender(
-            partyId: orgDetails?.Orgnr ?? appMetadata.Org,
-            partyName: orgDetails?.Name?.Nb ?? orgDetails?.Name?.Nn ?? orgDetails?.Name?.En ?? appMetadata.Org
+            partyId: orgDetails?.Orgnr ?? appMetadata.Org ?? appMetadata.Id,
+            partyName: orgDetails?.Name?.Nb
+                ?? orgDetails?.Name?.Nn
+                ?? orgDetails?.Name?.En
+                ?? appMetadata.Org
+                ?? appMetadata.Id
         );
     }
 
@@ -233,9 +237,10 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
             if (party is null)
                 return null;
 
+            var resolvedPartyId = party.PartyUuid?.ToString() ?? party.PartyId.ToString(CultureInfo.InvariantCulture);
             var correspondenceParty = KorrespondansepartFactory.CreateSender(
-                partyId: party.PartyUuid?.ToString() ?? party.PartyId.ToString(CultureInfo.InvariantCulture),
-                partyName: party.Name
+                partyId: resolvedPartyId,
+                partyName: party.Name ?? resolvedPartyId
             );
 
             if (party.Organization is not null)
