@@ -54,14 +54,14 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
                 "Message contains multiple responses. This is unexpected and possibly warrants further investigation."
             );
 
-        ArgumentNullException.ThrowIfNull(instance);
-        InstanceIdentifier instanceIdentifier = new(instance);
-
         if (_fiksArkivSettings.AutoSend?.SuccessHandling is null)
         {
             _logger.LogInformation("Success handling is disabled, skipping further processing.");
             return;
         }
+
+        ArgumentNullException.ThrowIfNull(instance);
+        InstanceIdentifier instanceIdentifier = new(instance);
 
         // Move the instance process forward if configured
         if (_fiksArkivSettings.AutoSend.SuccessHandling.MoveToNextTask)
@@ -89,13 +89,13 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
             payloads?.Select(x => x.Content) ?? ["Message contains no content."]
         );
 
-        ArgumentNullException.ThrowIfNull(instance);
-
         if (_fiksArkivSettings.AutoSend?.ErrorHandling is null)
         {
             _logger.LogInformation("Error handling is disabled, skipping further processing.");
             return;
         }
+
+        ArgumentNullException.ThrowIfNull(instance);
 
         // Move the instance process forward if configured
         if (_fiksArkivSettings.AutoSend?.ErrorHandling?.MoveToNextTask is true)

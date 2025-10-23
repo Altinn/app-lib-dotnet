@@ -3,9 +3,12 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace Altinn.App.Clients.Fiks.Tests.FiksArkiv;
@@ -13,6 +16,22 @@ namespace Altinn.App.Clients.Fiks.Tests.FiksArkiv;
 public class FiksArkivInstanceClientTest
 {
     private readonly InstanceIdentifier _defaultInstanceIdentifier = new($"12345/{Guid.NewGuid()}");
+
+    [Fact]
+    public async Task GetServiceOwnerToken_CallsTokenResolver()
+    {
+        // Arrange
+        await using var fixture = TestFixture.Create(services =>
+        {
+            services.AddFiksArkiv();
+        });
+
+        // Act
+        var result = await fixture.FiksArkivInstanceClient.GetServiceOwnerToken();
+
+        // Assert
+        Assert.Equal(TestHelpers.DummyToken, result.Value);
+    }
 
     [Fact]
     public async Task GetInstance_ReturnsInstance_ForValidResponse()
