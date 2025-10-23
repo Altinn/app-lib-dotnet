@@ -176,7 +176,8 @@ public class PdfService : IPdfService
 
         if (string.IsNullOrEmpty(titleText))
         {
-            // translation for appName should always be present, but in case it is not, we fall back to a generic title
+            // translation for backend.pdf_default_file_name should always be present (it has a falback in the translation service),
+            // but just in case, we default to a hardcoded string.
             titleText = "Altinn PDF.pdf";
         }
 

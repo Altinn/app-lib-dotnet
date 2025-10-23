@@ -88,7 +88,7 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
             return Task.FromResult(_data);
         }
 
-        public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption)
+        public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)
         {
             throw new NotSupportedException("Legacy single data accessor does not implement GetCleanAccessor");
         }

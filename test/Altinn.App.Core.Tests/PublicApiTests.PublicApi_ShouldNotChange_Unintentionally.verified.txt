@@ -3046,6 +3046,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public object? ToObject() { }
         public override string ToString() { }
         public string? ToStringForEquals() { }
+        public string? ToStringForText() { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue FromObject(object? value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(bool? value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(double? value) { }
@@ -3081,11 +3082,12 @@ namespace Altinn.App.Core.Internal.Expressions
         public void GetComponent(string pageName, string componentId) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext?> GetComponentContext(string? pageName, string componentId, int[]? rowIndexes = null) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Expressions.ComponentContext>> GetComponentContexts() { }
+        public Altinn.Platform.Storage.Interface.Models.DataType? GetDefaultDataType() { }
         public string? GetFrontendSetting(string key) { }
         public string? GetGatewayAction() { }
         public string GetInstanceContext(string key) { }
         public string GetLanguage() { }
-        public System.Threading.Tasks.Task<object?> GetModelData(Altinn.App.Core.Models.Layout.ModelBinding key, Altinn.App.Core.Models.DataElementIdentifier defaultDataElementIdentifier, int[]? indexes) { }
+        public System.Threading.Tasks.Task<object?> GetModelData(Altinn.App.Core.Models.Layout.ModelBinding key, Altinn.App.Core.Models.DataElementIdentifier? defaultDataElementIdentifier, int[]? indexes) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference[]> GetResolvedKeys(Altinn.App.Core.Models.Layout.DataReference reference) { }
         public System.TimeZoneInfo? GetTimeZone() { }
         public System.Threading.Tasks.Task RemoveDataField(Altinn.App.Core.Models.Layout.DataReference key, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }

@@ -131,7 +131,7 @@ internal sealed class TranslationService : ITranslationService
         // Do replacements for
         if (variable.DataSource.StartsWith("dataModel.", StringComparison.Ordinal))
         {
-            if (state == null || context == null)
+            if (state == null)
             {
                 _logger.LogWarning(
                     "Text resource variable with dataSource '{DataSource}' is not supported in this context. In text resource with id = {TextResourceId}",
@@ -149,11 +149,30 @@ internal sealed class TranslationService : ITranslationService
 
             var binding = new ModelBinding()
             {
-                DataType = dataModelName == "default" ? null : dataModelName,
+                DataType = dataModelName == "default" ? state.GetDefaultDataType()?.Id : dataModelName,
                 Field = cleanPath,
             };
 
-            return await state.GetModelData(binding, context.DataElementIdentifier, context.RowIndices) as string;
+            try
+            {
+                var fieldValue = ExpressionValue.FromObject(
+                    await state.GetModelData(binding, context?.DataElementIdentifier, context?.RowIndices)
+                );
+
+                return fieldValue.ToStringForText();
+            }
+            catch (Exception e)
+            {
+                // Errors getting data from the data model should not break text resource rendering
+                _logger.LogError(
+                    e,
+                    "Error getting value for text resource variable with dataSource '{DataSource}' and key '{Key}'. In text resource with id = {TextResourceId}",
+                    variable.DataSource,
+                    variable.Key,
+                    resourceElement.Id
+                );
+                return null;
+            }
         }
 
         if (variable.DataSource == "instanceContext")
@@ -208,7 +227,7 @@ internal sealed class TranslationService : ITranslationService
         }
 
         _logger.LogWarning(
-            "Text resource variable with dataSource '{DataSource}' is not supported. Only 'dataModel.*', instanceContext, applicationSettings, and customTextParameters is supported. In text resource with id = {TextResourceId}",
+            "Text resource variable with dataSource '{DataSource}' is not supported. Only 'dataModel.*', instanceContext, applicationSettings, text and customTextParameters is supported. In text resource with id = {TextResourceId}",
             variable.DataSource,
             resourceElement.Id
         );
@@ -243,9 +262,11 @@ internal sealed class TranslationService : ITranslationService
             if (_appMetadata is not null)
             {
                 var appMetadata = await _appMetadata.GetApplicationMetadata();
-                if (appMetadata.Title.TryGetValue(language, out var title))
+                if (appMetadata?.Title.Count > 0)
                 {
-                    return new TextResourceElement() { Id = "appName", Value = title };
+                    return appMetadata.Title.TryGetValue(language, out var title)
+                        ? new TextResourceElement() { Id = "appName", Value = title }
+                        : new TextResourceElement() { Id = "appName", Value = appMetadata.Title.First().Value };
                 }
             }
             // Fallback to just using the app id as app name
