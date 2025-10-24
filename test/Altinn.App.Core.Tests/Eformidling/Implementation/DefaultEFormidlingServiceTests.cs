@@ -161,8 +161,6 @@ public class DefaultEFormidlingServiceTests
         dataClient
             .Setup(x =>
                 x.GetBinaryData(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),

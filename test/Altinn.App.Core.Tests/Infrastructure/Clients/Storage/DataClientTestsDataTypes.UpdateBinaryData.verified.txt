@@ -1,0 +1,59 @@
+﻿{
+  data: {
+    Id: b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+    InstanceGuid: a467c267-2122-41a4-b78a-ae6f94aa7ff7,
+    DataType: binaryDataType,
+    ContentType: application/pdf,
+    Locked: false,
+    IsRead: true
+  },
+  _mockHttpClient: {
+    Calls: [
+      {
+        Request: {
+          Method: PUT,
+          Uri: https://storage.localhost/instances/123456/a467c267-2122-41a4-b78a-ae6f94aa7ff7/data/b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+          Headers: {
+            Accept: application/json,application/xml,
+            Authorization: {Scrubbed},
+            Ocp-Apim-Subscription-Key: 
+          },
+          ContentHeaders: {
+            Content-Disposition: attachment; filename=filename; filename*=utf-8''filename,
+            Content-Type: application/pdf
+          }
+        },
+        Response: {
+          Status: 200 OK,
+          ContentHeaders: {
+            Content-Length: 480,
+            Content-Type: application/json; charset=utf-8
+          },
+          ContentStringParsed: {
+            Id: b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+            InstanceGuid: a467c267-2122-41a4-b78a-ae6f94aa7ff7,
+            DataType: binaryDataType,
+            Filename: null,
+            ContentType: application/pdf,
+            BlobStoragePath: null,
+            SelfLinks: null,
+            Size: 0,
+            ContentHash: null,
+            Locked: false,
+            Refs: null,
+            IsRead: true,
+            UserDefinedMetadata: null,
+            Metadata: null,
+            DeleteStatus: null,
+            FileScanResult: NotApplicable,
+            References: null,
+            Created: null,
+            CreatedBy: null,
+            LastChanged: null,
+            LastChangedBy: null
+          }
+        }
+      }
+    ]
+  }
+}

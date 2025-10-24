@@ -1,0 +1,79 @@
+﻿{
+  data: binary-content,
+  _mockHttpClient: {
+    Calls: [
+      {
+        Request: {
+          Uri: https://storage.localhost/instances/123456/a467c267-2122-41a4-b78a-ae6f94aa7ff7/data/b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+          Headers: {
+            Accept: application/json,application/xml,
+            Authorization: {Scrubbed},
+            Ocp-Apim-Subscription-Key: 
+          }
+        },
+        Response: {
+          Status: 306 Unused,
+          ContentHeaders: {
+            Content-Length: 14,
+            Content-Type: application/octet-stream; charset=utf-8
+          },
+          ContentString: binary-content
+        }
+      },
+      {
+        Request: {
+          Uri: https://storage.localhost/instances/123456/a467c267-2122-41a4-b78a-ae6f94aa7ff7/data/b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+          Headers: {
+            Accept: application/json,application/xml,
+            Authorization: {Scrubbed},
+            Ocp-Apim-Subscription-Key: 
+          }
+        },
+        Response: {
+          Status: 306 Unused,
+          ContentHeaders: {
+            Content-Length: 14,
+            Content-Type: application/octet-stream; charset=utf-8
+          },
+          ContentString: binary-content
+        }
+      },
+      {
+        Request: {
+          Uri: https://storage.localhost/instances/123456/a467c267-2122-41a4-b78a-ae6f94aa7ff7/data/b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+          Headers: {
+            Accept: application/json,application/xml,
+            Authorization: {Scrubbed},
+            Ocp-Apim-Subscription-Key: 
+          }
+        },
+        Response: {
+          Status: 306 Unused,
+          ContentHeaders: {
+            Content-Length: 14,
+            Content-Type: application/octet-stream; charset=utf-8
+          },
+          ContentString: binary-content
+        }
+      },
+      {
+        Request: {
+          Uri: https://storage.localhost/instances/123456/a467c267-2122-41a4-b78a-ae6f94aa7ff7/data/b567c367-3122-41a4-b78a-ae6f94aa7ff8,
+          Headers: {
+            Accept: application/json,application/xml,
+            Authorization: {Scrubbed},
+            Ocp-Apim-Subscription-Key: 
+          }
+        },
+        Response: {
+          Status: 306 Unused,
+          ContentHeaders: {
+            Content-Length: 14,
+            Content-Type: application/octet-stream; charset=utf-8
+          },
+          ContentString: binary-content
+        }
+      }
+    ]
+  }
+}
