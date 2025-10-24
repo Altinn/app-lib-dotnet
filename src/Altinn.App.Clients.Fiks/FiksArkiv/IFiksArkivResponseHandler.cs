@@ -17,10 +17,12 @@ public interface IFiksArkivResponseHandler
     /// <param name="instance">The instance for which this message relates to.</param>
     /// <param name="message">The received message.</param>
     /// <param name="payloads">The decrypted and deserialized payloads attached to this message.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
     Task HandleSuccess(
         Instance instance,
         FiksIOReceivedMessage message,
-        IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads
+        IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads,
+        CancellationToken cancellationToken = default
     );
 
     /// <summary>
@@ -29,9 +31,11 @@ public interface IFiksArkivResponseHandler
     /// <param name="instance">The instance for which this message relates to.</param>
     /// <param name="message">The received message.</param>
     /// <param name="payloads">The decrypted and deserialized payloads attached to this message.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
     Task HandleError(
         Instance instance,
         FiksIOReceivedMessage message,
-        IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads
+        IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads,
+        CancellationToken cancellationToken = default
     );
 }

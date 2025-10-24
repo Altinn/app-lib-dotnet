@@ -1,9 +1,11 @@
 using System.Linq.Expressions;
+using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
@@ -11,9 +13,11 @@ using KS.Fiks.IO.Client.Configuration;
 using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Client.Send;
 using KS.Fiks.IO.Crypto.Models;
+using KS.Fiks.IO.Send.Client.Models;
 using Ks.Fiks.Maskinporten.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 using MessageReceivedCallback = System.Func<
@@ -94,6 +98,116 @@ public class FiksArkivHostTest
         );
     }
 
+    [Fact]
+    public async Task GenerateAndSendMessage_PerformsRequiredActions()
+    {
+        // Arrange
+        var fiksIOClientMock = new Mock<IFiksIOClient>();
+        var fiksArkivInstanceClientMock = new Mock<IFiksArkivInstanceClient>(MockBehavior.Strict);
+        var fiksArkivConfigResolverMock = new Mock<IFiksArkivConfigResolver>(MockBehavior.Strict);
+        var fiksArkivPayloadGeneratorMock = new Mock<IFiksArkivPayloadGenerator>(MockBehavior.Strict);
+        FiksIOMessageRequest? capturedRequest = null;
+        var instance = new Instance
+        {
+            Id = "12345/8a19d133-f897-4c41-aac1-ec3859b0d67c",
+            Data = [new DataElement { Id = Guid.NewGuid().ToString(), DataType = "archive-record-type" }],
+        };
+        var customFiksArkivSettings = new FiksArkivSettings
+        {
+            Receipt = new FiksArkivReceiptSettings
+            {
+                ArchiveRecord = new FiksArkivDataTypeSettings { DataType = "archive-record-type" },
+                ConfirmationRecord = new FiksArkivDataTypeSettings { DataType = "confirmation-record-type" },
+            },
+        };
+
+        await using var fixture = TestFixture.Create(
+            services =>
+            {
+                services.AddFiksArkiv().WithFiksArkivConfig("FiksArkivCustomSettings");
+                services.AddSingleton(fiksIOClientMock.Object);
+                services.AddSingleton(fiksArkivInstanceClientMock.Object);
+                services.AddSingleton(fiksArkivConfigResolverMock.Object);
+                services.AddSingleton(fiksArkivPayloadGeneratorMock.Object);
+            },
+            [("FiksArkivCustomSettings", customFiksArkivSettings)],
+            useDefaultFiksArkivSettings: false
+        );
+
+        fiksArkivConfigResolverMock
+            .Setup(x => x.GetRecipient(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                new FiksArkivRecipient(Guid.Parse("120ec76a-c73b-43f7-957b-1450422c32b3"), null!, null!, null!)
+            )
+            .Verifiable(Times.Once);
+        fiksArkivConfigResolverMock
+            .Setup(x => x.GetCorrelationId(It.IsAny<Instance>()))
+            .Returns("correlation-id")
+            .Verifiable(Times.Once);
+
+        fiksArkivPayloadGeneratorMock
+            .Setup(x =>
+                x.GeneratePayload(
+                    It.IsAny<string>(),
+                    It.IsAny<Instance>(),
+                    It.IsAny<FiksArkivRecipient>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync([new FiksIOMessagePayload(FiksArkivConstants.Filenames.ArchiveRecord, "dummy"u8.ToArray())])
+            .Verifiable(Times.Once);
+
+        fiksIOClientMock
+            .Setup(x => x.SendMessage(It.IsAny<FiksIOMessageRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                (FiksIOMessageRequest request, CancellationToken _) =>
+                {
+                    capturedRequest = request;
+                    return new FiksIOMessageResponse(SendtMelding.FromSentMessageApiModel(new SendtMeldingApiModel()));
+                }
+            )
+            .Verifiable(Times.Once);
+
+        fiksArkivInstanceClientMock
+            .Setup(x =>
+                x.DeleteBinaryData(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>())
+            )
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+        fiksArkivInstanceClientMock
+            .Setup(x =>
+                x.InsertBinaryData(
+                    It.IsAny<InstanceIdentifier>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Stream>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(new DataElement())
+            .Verifiable(Times.Once);
+
+        // Act
+        await fixture.FiksArkivHost.GenerateAndSendMessage("task", instance, "message-type");
+
+        // Assert
+        Assert.NotNull(capturedRequest);
+        Assert.Equal("message-type", capturedRequest.MessageType);
+        Assert.Equal("correlation-id", capturedRequest.CorrelationId);
+        Assert.Equal("120ec76a-c73b-43f7-957b-1450422c32b3", capturedRequest.Recipient.ToString());
+        Assert.Equal("8a19d133-f897-4c41-aac1-ec3859b0d67c", capturedRequest.SendersReference.ToString());
+        Assert.Equal(TimeSpan.FromDays(2), capturedRequest.MessageLifetime);
+        Assert.Equal(FiksArkivConstants.Filenames.ArchiveRecord, capturedRequest.Payload.Single().Filename);
+
+        fiksArkivInstanceClientMock.Verify();
+        fiksArkivConfigResolverMock.Verify();
+        fiksArkivPayloadGeneratorMock.Verify();
+        fiksIOClientMock.Verify();
+    }
+
     [Theory]
     [InlineData(FiksArkivMeldingtype.Ugyldigforespørsel, MessageResponseType.Error)]
     [InlineData(FiksArkivMeldingtype.Serverfeil, MessageResponseType.Error)]
@@ -146,14 +260,16 @@ public class FiksArkivHostTest
                 x.HandleError(
                     It.IsAny<Instance>(),
                     It.IsAny<FiksIOReceivedMessage>(),
-                    It.IsAny<IReadOnlyList<FiksArkivReceivedMessagePayload>>()
+                    It.IsAny<IReadOnlyList<FiksArkivReceivedMessagePayload>>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .Callback(
                 (
                     Instance instance,
                     FiksIOReceivedMessage message,
-                    IReadOnlyList<FiksArkivReceivedMessagePayload> payloads
+                    IReadOnlyList<FiksArkivReceivedMessagePayload> payloads,
+                    CancellationToken _
                 ) =>
                 {
                     forwardedInstance = instance;
@@ -167,14 +283,16 @@ public class FiksArkivHostTest
                 x.HandleSuccess(
                     It.IsAny<Instance>(),
                     It.IsAny<FiksIOReceivedMessage>(),
-                    It.IsAny<IReadOnlyList<FiksArkivReceivedMessagePayload>>()
+                    It.IsAny<IReadOnlyList<FiksArkivReceivedMessagePayload>>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .Callback(
                 (
                     Instance instance,
                     FiksIOReceivedMessage message,
-                    IReadOnlyList<FiksArkivReceivedMessagePayload> payloads
+                    IReadOnlyList<FiksArkivReceivedMessagePayload> payloads,
+                    CancellationToken _
                 ) =>
                 {
                     forwardedInstance = instance;
@@ -184,9 +302,9 @@ public class FiksArkivHostTest
                 }
             );
         fiksArkivInstanceClientMock
-            .Setup(x => x.GetInstance(It.IsAny<InstanceIdentifier>()))
+            .Setup(x => x.GetInstance(It.IsAny<InstanceIdentifier>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
-                (InstanceIdentifier instanceIdentifier) =>
+                (InstanceIdentifier instanceIdentifier, CancellationToken _) =>
                 {
                     receivedInstanceIdentifier = instanceIdentifier;
                     return sourceInstance;

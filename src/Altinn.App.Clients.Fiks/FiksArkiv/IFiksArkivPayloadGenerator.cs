@@ -18,10 +18,12 @@ public interface IFiksArkivPayloadGenerator
     /// <param name="instance">The instance for which this message relates to.</param>
     /// <param name="recipient">The recipient of this message.</param>
     /// <param name="messageType">The Fiks Arkiv message type (create, update, etc)</param>
+    /// <param name="cancellationToken">An optional cancellation token</param>
     Task<IEnumerable<FiksIOMessagePayload>> GeneratePayload(
         string taskId,
         Instance instance,
         FiksArkivRecipient recipient,
-        string messageType
+        string messageType,
+        CancellationToken cancellationToken = default
     );
 }

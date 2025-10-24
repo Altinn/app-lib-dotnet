@@ -41,7 +41,7 @@ internal sealed class FiksArkivConfigValidationService : IHostedService
 
         await _fiksArkivHost.ValidateConfiguration(appMetadata.DataTypes, processTasks);
         await _fiksArkivAutoSendDecisionValidator.ValidateConfiguration(appMetadata.DataTypes, processTasks);
-        await _fiksArkivInstanceClient.GetServiceOwnerToken();
+        await _fiksArkivInstanceClient.GetServiceOwnerToken(cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

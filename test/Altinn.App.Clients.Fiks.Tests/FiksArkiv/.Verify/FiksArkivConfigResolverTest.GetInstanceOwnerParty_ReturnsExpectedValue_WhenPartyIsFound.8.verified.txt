@@ -6,6 +6,7 @@
     <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Avsender</beskrivelse>
   </korrespondanseparttype>
   <korrespondansepartNavn>party-name-org</korrespondansepartNavn>
+  <organisasjonid>org-number</organisasjonid>
   <postadresse>address</postadresse>
   <postnummer>zip</postnummer>
   <poststed>city</poststed>

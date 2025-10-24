@@ -66,7 +66,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         _fiksArkivSettings.Documents?.Attachments ?? [];
 
     /// <inheritdoc />
-    public async Task<string> GetApplicationTitle()
+    public async Task<string> GetApplicationTitle(CancellationToken cancellationToken = default)
     {
         var appMetadata = await _appMetadata.GetApplicationMetadata();
 
@@ -76,7 +76,10 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
     }
 
     /// <inheritdoc />
-    public async Task<FiksArkivDocumentMetadata?> GetArchiveDocumentMetadata(Instance instance)
+    public async Task<FiksArkivDocumentMetadata?> GetArchiveDocumentMetadata(
+        Instance instance,
+        CancellationToken cancellationToken = default
+    )
     {
         if (_fiksArkivSettings.Metadata is null)
             return null;
@@ -89,31 +92,36 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
                 layoutState,
                 instance,
                 _fiksArkivSettings.Metadata.CaseFileTitle,
-                ParseString
+                ParseString,
+                cancellationToken
             );
             var journalEntryTitle = await GetBindableConfigValue(
                 layoutState,
                 instance,
                 _fiksArkivSettings.Metadata.JournalEntryTitle,
-                ParseString
+                ParseString,
+                cancellationToken
             );
             var systemId = await GetBindableConfigValue(
                 layoutState,
                 instance,
                 _fiksArkivSettings.Metadata.SystemId,
-                ParseString
+                ParseString,
+                cancellationToken
             );
             var ruleId = await GetBindableConfigValue(
                 layoutState,
                 instance,
                 _fiksArkivSettings.Metadata.RuleId,
-                ParseString
+                ParseString,
+                cancellationToken
             );
             var caseFileId = await GetBindableConfigValue(
                 layoutState,
                 instance,
                 _fiksArkivSettings.Metadata.CaseFileId,
-                ParseString
+                ParseString,
+                cancellationToken
             );
 
             return new FiksArkivDocumentMetadata(systemId, ruleId, caseFileId, caseFileTitle, journalEntryTitle);
@@ -128,7 +136,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
     }
 
     /// <inheritdoc />
-    public async Task<FiksArkivRecipient> GetRecipient(Instance instance)
+    public async Task<FiksArkivRecipient> GetRecipient(Instance instance, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -138,17 +146,35 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
             var layoutState = await GetLayoutState(instance);
 
             var accountId =
-                await GetBindableConfigValue(layoutState, instance, recipientSettings.FiksAccount, ParseGuid)
+                await GetBindableConfigValue(
+                    layoutState,
+                    instance,
+                    recipientSettings.FiksAccount,
+                    ParseGuid,
+                    cancellationToken
+                )
                 ?? throw new FiksArkivException(
                     "FiksArkivSettings.Recipient.FiksAccount is required, but did not resolve to a value."
                 );
             var identifier =
-                await GetBindableConfigValue(layoutState, instance, recipientSettings.Identifier, ParseString)
+                await GetBindableConfigValue(
+                    layoutState,
+                    instance,
+                    recipientSettings.Identifier,
+                    ParseString,
+                    cancellationToken
+                )
                 ?? throw new FiksArkivException(
                     "FiksArkivSettings.Recipient.Identifier is required, but did not resolve to a value."
                 );
             var name =
-                await GetBindableConfigValue(layoutState, instance, recipientSettings.Name, ParseString)
+                await GetBindableConfigValue(
+                    layoutState,
+                    instance,
+                    recipientSettings.Name,
+                    ParseString,
+                    cancellationToken
+                )
                 ?? throw new FiksArkivException(
                     "FiksArkivSettings.Recipient.Name is required, but did not resolve to a value."
                 );
@@ -156,7 +182,8 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
                 layoutState,
                 instance,
                 recipientSettings.OrganizationNumber,
-                ParseString
+                ParseString,
+                cancellationToken
             );
 
             return new FiksArkivRecipient(accountId, identifier, name, orgNumber);
@@ -188,14 +215,14 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         );
 
     /// <inheritdoc />
-    public async Task<Korrespondansepart> GetServiceOwnerParty()
+    public async Task<Korrespondansepart> GetServiceOwnerParty(CancellationToken cancellationToken = default)
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
         AltinnCdnOrgDetails? orgDetails = null;
 
         try
         {
-            AltinnCdnOrgs altinnCdnOrgs = await _altinnCdnClient.GetOrgs();
+            AltinnCdnOrgs altinnCdnOrgs = await _altinnCdnClient.GetOrgs(cancellationToken);
             orgDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org);
         }
         catch (Exception e)
@@ -214,10 +241,16 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
     }
 
     /// <inheritdoc />
-    public async Task<Klassifikasjon> GetInstanceOwnerClassification(Authenticated auth) =>
-        auth switch
+    public async Task<Klassifikasjon> GetInstanceOwnerClassification(
+        Authenticated auth,
+        CancellationToken cancellationToken = default
+    )
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return auth switch
         {
-            Authenticated.User user => await KlassifikasjonFactory.CreateUser(user),
+            Authenticated.User user => await KlassifikasjonFactory.CreateUser(user), // Note: Doesn't accept cancellation token.. yet
             Authenticated.SystemUser systemUser => KlassifikasjonFactory.CreateSystemUser(systemUser),
             Authenticated.ServiceOwner serviceOwner => KlassifikasjonFactory.CreateServiceOwner(serviceOwner),
             Authenticated.Org org => KlassifikasjonFactory.CreateOrganization(org),
@@ -225,14 +258,19 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
                 $"Could not determine submitter details from authentication context: {auth}"
             ),
         };
+    }
 
     /// <inheritdoc />
-    public async Task<Korrespondansepart?> GetInstanceOwnerParty(Instance instance)
+    public async Task<Korrespondansepart?> GetInstanceOwnerParty(
+        Instance instance,
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             int partyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
-            Party? party = await _altinnPartyClient.GetParty(partyId);
+            Party? party = await _altinnPartyClient.GetParty(partyId); // Note: doesn't accept cancellation token.. yet
 
             if (party is null)
                 return null;
@@ -245,6 +283,10 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
 
             if (party.Organization is not null)
             {
+                correspondenceParty.Organisasjonid = !string.IsNullOrWhiteSpace(party.Organization.OrgNumber)
+                    ? party.Organization.OrgNumber
+                    : null;
+
                 correspondenceParty.AddContactInfo(
                     phoneNumber: party.Organization.TelephoneNumber,
                     mobileNumber: party.Organization.MobileNumber,
@@ -255,6 +297,8 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
             }
             else if (party.Person is not null)
             {
+                correspondenceParty.Personid = !string.IsNullOrWhiteSpace(party.Person.SSN) ? party.Person.SSN : null;
+
                 correspondenceParty.AddContactInfo(
                     phoneNumber: party.Person.TelephoneNumber,
                     mobileNumber: party.Person.MobileNumber,
@@ -289,9 +333,12 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         LayoutEvaluatorState layoutState,
         Instance instance,
         FiksArkivBindableValue<T>? configValue,
-        Func<object?, T?> parser
+        Func<object?, T?> parser,
+        CancellationToken cancellationToken = default
     )
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (configValue is null)
             return default;
 
@@ -303,7 +350,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
             ?? throw new FiksArkivException($"Neither value nor data binding was supplied for config: {configValue}");
         ;
         var dataElement = instance.GetRequiredDataElement(binding.DataType);
-        var data = await layoutState.GetModelData(binding, dataElement, null);
+        var data = await layoutState.GetModelData(binding, dataElement, null); // Note: Doesn't accept cancellation token.. yet
 
         return parser.Invoke(data);
     }

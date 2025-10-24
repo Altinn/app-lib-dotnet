@@ -16,6 +16,12 @@ internal interface IFiksArkivHost : IFiksArkivConfigValidation
     /// <param name="taskId">The task ID the message is generated from</param>
     /// <param name="instance">The instance the message relates to</param>
     /// <param name="messageType">The Fiks Arkiv message type (create, update, etc)</param>
+    /// <param name="cancellationToken">An optional cancellation token</param>
     /// <returns></returns>
-    Task<FiksIOMessageResponse> GenerateAndSendMessage(string taskId, Instance instance, string messageType);
+    Task<FiksIOMessageResponse> GenerateAndSendMessage(
+        string taskId,
+        Instance instance,
+        string messageType,
+        CancellationToken cancellationToken = default
+    );
 }

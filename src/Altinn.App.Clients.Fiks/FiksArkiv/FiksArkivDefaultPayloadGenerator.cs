@@ -31,6 +31,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
     private readonly FiksIOSettings _fiksIOSettings;
     private readonly TimeProvider _timeProvider;
 
+    private bool _indentXmlSerialization => !_hostEnvironment.IsProduction();
+
     public FiksArkivDefaultPayloadGenerator(
         IAppMetadata appMetadata,
         IDataClient dataClient,
@@ -57,7 +59,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         string taskId,
         Instance instance,
         FiksArkivRecipient recipient,
-        string messageType
+        string messageType,
+        CancellationToken cancellationToken = default
     )
     {
         if (messageType != FiksArkivConstants.MessageTypes.Create)
@@ -67,14 +70,15 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
 
         var appMetadata = await _appMetadata.GetApplicationMetadata();
         var documentCreator = appMetadata.AppIdentifier.Org;
-        var archiveDocuments = await GetArchiveDocuments(instance);
-        var defaultDocumentTitle = await _fiksArkivConfigResolver.GetApplicationTitle();
-        var documentMetadata = await _fiksArkivConfigResolver.GetArchiveDocumentMetadata(instance);
+        var archiveDocuments = await GetArchiveDocuments(instance, cancellationToken);
+        var defaultDocumentTitle = await _fiksArkivConfigResolver.GetApplicationTitle(cancellationToken);
+        var documentMetadata = await _fiksArkivConfigResolver.GetArchiveDocumentMetadata(instance, cancellationToken);
         var recipientParty = _fiksArkivConfigResolver.GetRecipientParty(instance, recipient);
-        var serviceOwnerParty = await _fiksArkivConfigResolver.GetServiceOwnerParty();
-        var instanceOwnerParty = await _fiksArkivConfigResolver.GetInstanceOwnerParty(instance);
+        var serviceOwnerParty = await _fiksArkivConfigResolver.GetServiceOwnerParty(cancellationToken);
+        var instanceOwnerParty = await _fiksArkivConfigResolver.GetInstanceOwnerParty(instance, cancellationToken);
         var instanceOwnerClassification = await _fiksArkivConfigResolver.GetInstanceOwnerClassification(
-            _authenticationContext.Current
+            _authenticationContext.Current,
+            cancellationToken
         );
 
         var caseFile = new Saksmappe
@@ -132,8 +136,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         // Internal sender
         journalEntry.Korrespondansepart.Add(
             KorrespondansepartFactory.CreateInternalSender(
-                partyName: FiksArkivConstants.AltinnSystemId,
-                partyId: FiksArkivConstants.AltinnOrgNo
+                partyId: FiksArkivConstants.AltinnOrgNo,
+                partyName: FiksArkivConstants.AltinnSystemId
             )
         );
 
@@ -158,14 +162,17 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
 
         if (!_hostEnvironment.IsProduction())
         {
-            string xmlResult = Encoding.UTF8.GetString(archiveRecord.SerializeXmlBytes(indent: true).Span);
+            string xmlResult = Encoding.UTF8.GetString(archiveRecord.SerializeXmlBytes(_indentXmlSerialization).Span);
             _logger.LogInformation(xmlResult);
         }
 
-        return [archiveRecord.ToPayload(), .. archiveDocuments.ToPayloads()];
+        return [archiveRecord.ToPayload(_indentXmlSerialization), .. archiveDocuments.ToPayloads()];
     }
 
-    private async Task<FiksArkivDocuments> GetArchiveDocuments(Instance instance)
+    private async Task<FiksArkivDocuments> GetArchiveDocuments(
+        Instance instance,
+        CancellationToken cancellationToken = default
+    )
     {
         InstanceIdentifier instanceId = new(instance.Id);
         var primaryDocumentSettings = _fiksArkivConfigResolver.PrimaryDocumentSettings;
@@ -174,7 +181,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
             primaryDataElement,
             primaryDocumentSettings.Filename,
             DokumenttypeKoder.Dokument,
-            instanceId
+            instanceId,
+            cancellationToken
         );
 
         List<MessagePayloadWrapper> attachmentDocuments = [];
@@ -190,7 +198,13 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
             attachmentDocuments.AddRange(
                 await Task.WhenAll(
                     dataElements.Select(async x =>
-                        await GetPayload(x, attachmentSetting.Filename, DokumenttypeKoder.Vedlegg, instanceId)
+                        await GetPayload(
+                            x,
+                            attachmentSetting.Filename,
+                            DokumenttypeKoder.Vedlegg,
+                            instanceId,
+                            cancellationToken
+                        )
                     )
                 )
             );
@@ -203,7 +217,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         DataElement dataElement,
         string? filename,
         Kode fileTypeCode,
-        InstanceIdentifier instanceId
+        InstanceIdentifier instanceId,
+        CancellationToken cancellationToken = default
     )
     {
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
@@ -221,7 +236,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
                     appMetadata.AppIdentifier.App,
                     instanceId.InstanceOwnerPartyId,
                     instanceId.InstanceGuid,
-                    Guid.Parse(dataElement.Id)
+                    Guid.Parse(dataElement.Id),
+                    cancellationToken: cancellationToken
                 )
             ),
             fileTypeCode

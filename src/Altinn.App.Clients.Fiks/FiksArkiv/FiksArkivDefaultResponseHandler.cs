@@ -29,7 +29,8 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
     public async Task HandleSuccess(
         Instance instance,
         FiksIOReceivedMessage message,
-        IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads
+        IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads,
+        CancellationToken cancellationToken = default
     )
     {
         _logger.LogInformation(
@@ -67,19 +68,21 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
         if (_fiksArkivSettings.AutoSend.SuccessHandling.MoveToNextTask)
             await _fiksArkivInstanceClient.ProcessMoveNext(
                 instanceIdentifier,
-                _fiksArkivSettings.AutoSend.SuccessHandling.Action
+                _fiksArkivSettings.AutoSend.SuccessHandling.Action,
+                cancellationToken
             );
 
         // Mark the instance as completed if configured
         if (_fiksArkivSettings.AutoSend.SuccessHandling.MarkInstanceComplete)
-            await _fiksArkivInstanceClient.MarkInstanceComplete(instanceIdentifier);
+            await _fiksArkivInstanceClient.MarkInstanceComplete(instanceIdentifier, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task HandleError(
         Instance instance,
         FiksIOReceivedMessage message,
-        IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads
+        IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads,
+        CancellationToken cancellationToken = default
     )
     {
         _logger.LogError(
@@ -101,7 +104,8 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
         if (_fiksArkivSettings.AutoSend?.ErrorHandling?.MoveToNextTask is true)
             await _fiksArkivInstanceClient.ProcessMoveNext(
                 new InstanceIdentifier(instance),
-                _fiksArkivSettings.AutoSend?.ErrorHandling?.Action
+                _fiksArkivSettings.AutoSend?.ErrorHandling?.Action,
+                cancellationToken
             );
     }
 }

@@ -27,11 +27,18 @@ public class FiksArkivServiceTaskTest
         );
 
         autoSendDecisionMock
-            .Setup(x => x.ShouldSend(It.IsAny<string>(), It.IsAny<Instance>()))
+            .Setup(x => x.ShouldSend(It.IsAny<string>(), It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(autoSendDecision)
             .Verifiable(Times.Once);
         fiksArkivHostMock
-            .Setup(x => x.GenerateAndSendMessage(It.IsAny<string>(), It.IsAny<Instance>(), It.IsAny<string>()))
+            .Setup(x =>
+                x.GenerateAndSendMessage(
+                    It.IsAny<string>(),
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(TestHelpers.GetFiksIOMessageResponse())
             .Verifiable(expectedInvocationTimes);
 

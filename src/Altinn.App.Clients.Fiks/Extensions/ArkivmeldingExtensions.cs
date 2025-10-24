@@ -35,6 +35,6 @@ internal static class ArkivmeldingExtensions
     /// <summary>
     /// Converts an archive record to a Fiks IO message payload.
     /// </summary>
-    public static FiksIOMessagePayload ToPayload(this Arkivmelding archiveRecord) =>
-        new(FiksArkivConstants.Filenames.ArchiveRecord, archiveRecord.SerializeXmlBytes());
+    public static FiksIOMessagePayload ToPayload(this Arkivmelding archiveRecord, bool indentedXml = false) =>
+        new(FiksArkivConstants.Filenames.ArchiveRecord, archiveRecord.SerializeXmlBytes(indent: indentedXml));
 }

@@ -131,10 +131,10 @@ public class FiksArkivDefaultResponseHandlerTest
         );
 
         fiksArkivInstanceClientMock
-            .Setup(x => x.ProcessMoveNext(It.IsAny<InstanceIdentifier>(), "the-action"))
+            .Setup(x => x.ProcessMoveNext(It.IsAny<InstanceIdentifier>(), "the-action", It.IsAny<CancellationToken>()))
             .Verifiable(moveToNextTask ? Times.Once : Times.Never);
         fiksArkivInstanceClientMock
-            .Setup(x => x.MarkInstanceComplete(It.IsAny<InstanceIdentifier>()))
+            .Setup(x => x.MarkInstanceComplete(It.IsAny<InstanceIdentifier>(), It.IsAny<CancellationToken>()))
             .Verifiable(markInstanceComplete ? Times.Once : Times.Never);
 
         // Act
@@ -231,7 +231,7 @@ public class FiksArkivDefaultResponseHandlerTest
         );
 
         fiksArkivInstanceClientMock
-            .Setup(x => x.ProcessMoveNext(It.IsAny<InstanceIdentifier>(), "the-action"))
+            .Setup(x => x.ProcessMoveNext(It.IsAny<InstanceIdentifier>(), "the-action", It.IsAny<CancellationToken>()))
             .Verifiable(moveToNextTask ? Times.Once : Times.Never);
 
         // Act

@@ -53,11 +53,11 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task<JwtToken> GetServiceOwnerToken()
+    public async Task<JwtToken> GetServiceOwnerToken(CancellationToken cancellationToken = default)
     {
         try
         {
-            return await _authenticationTokenResolver.GetAccessToken(_serviceOwnerAuth);
+            return await _authenticationTokenResolver.GetAccessToken(_serviceOwnerAuth, cancellationToken);
         }
         catch (Exception e)
         {
@@ -71,12 +71,15 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task<Instance> GetInstance(InstanceIdentifier instanceIdentifier)
+    public async Task<Instance> GetInstance(
+        InstanceIdentifier instanceIdentifier,
+        CancellationToken cancellationToken = default
+    )
     {
         using var activity = _telemetry?.StartGetInstanceByGuidActivity(instanceIdentifier.InstanceGuid);
 
         using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.Storage);
-        HttpResponseMessage response = await client.GetAsync($"instances/{instanceIdentifier}");
+        HttpResponseMessage response = await client.GetAsync($"instances/{instanceIdentifier}", cancellationToken);
 
         var deserializeResponse = await DeserializeResponse<Instance>(response);
         response.Dispose();
@@ -85,7 +88,11 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task ProcessMoveNext(InstanceIdentifier instanceIdentifier, string? action = null)
+    public async Task ProcessMoveNext(
+        InstanceIdentifier instanceIdentifier,
+        string? action = null,
+        CancellationToken cancellationToken = default
+    )
     {
         using var activity = _telemetry?.StartApiProcessNextActivity(instanceIdentifier);
 
@@ -95,7 +102,8 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             using StringContent payload = GetProcessNextAction(action);
             HttpResponseMessage response = await client.PutAsync(
                 $"instances/{instanceIdentifier}/process/next",
-                payload
+                payload,
+                cancellationToken
             );
 
             await EnsureSuccessStatusCode(response);
@@ -111,7 +119,10 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task MarkInstanceComplete(InstanceIdentifier instanceIdentifier)
+    public async Task MarkInstanceComplete(
+        InstanceIdentifier instanceIdentifier,
+        CancellationToken cancellationToken = default
+    )
     {
         using var activity = _telemetry?.StartApiProcessCompleteActivity(instanceIdentifier);
 
@@ -119,7 +130,11 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         {
             using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.Storage);
             using StringContent payload = new(string.Empty);
-            HttpResponseMessage response = await client.PostAsync($"instances/{instanceIdentifier}/complete", payload);
+            HttpResponseMessage response = await client.PostAsync(
+                $"instances/{instanceIdentifier}/complete",
+                payload,
+                cancellationToken
+            );
 
             await EnsureSuccessStatusCode(response);
             response.Dispose();
@@ -140,7 +155,8 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         string contentType,
         string filename,
         TContent content,
-        string? generatedFromTask = null
+        string? generatedFromTask = null,
+        CancellationToken cancellationToken = default
     )
     {
         using var activity = _telemetry?.StartInsertBinaryDataActivity(instanceIdentifier.ToString());
@@ -176,7 +192,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             };
 
             using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.Storage);
-            HttpResponseMessage response = await client.PostAsync(url, payload);
+            HttpResponseMessage response = await client.PostAsync(url, payload, cancellationToken);
 
             var deserializeResponse = await DeserializeResponse<DataElement>(response);
 
@@ -194,7 +210,11 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task DeleteBinaryData(InstanceIdentifier instanceIdentifier, Guid dataElementGuid)
+    public async Task DeleteBinaryData(
+        InstanceIdentifier instanceIdentifier,
+        Guid dataElementGuid,
+        CancellationToken cancellationToken = default
+    )
     {
         using var activity = _telemetry?.StartDeleteDataActivity(
             instanceIdentifier.InstanceGuid,
@@ -206,7 +226,7 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
             string url = $"instances/{instanceIdentifier}/data/{dataElementGuid}";
 
             using HttpClient client = await GetAuthenticatedClient(HttpClientTarget.Storage);
-            HttpResponseMessage response = await client.DeleteAsync(url);
+            HttpResponseMessage response = await client.DeleteAsync(url, cancellationToken);
 
             await EnsureSuccessStatusCode(response);
             response.Dispose();

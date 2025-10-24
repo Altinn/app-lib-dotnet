@@ -15,7 +15,7 @@ internal class FiksArkivDefaultAutoSendDecision : IFiksArkivAutoSendDecision, IF
         _fiksArkivSettings = fiksArkivSettings.Value;
     }
 
-    public Task<bool> ShouldSend(string taskId, Instance instance)
+    public Task<bool> ShouldSend(string taskId, Instance instance, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(_fiksArkivSettings.AutoSend?.AfterTaskId == taskId);
     }

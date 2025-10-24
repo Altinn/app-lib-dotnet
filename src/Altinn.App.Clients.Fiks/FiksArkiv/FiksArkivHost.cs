@@ -109,18 +109,20 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
     public async Task<FiksIOMessageResponse> GenerateAndSendMessage(
         string taskId,
         Instance instance,
-        string messageType
+        string messageType,
+        CancellationToken cancellationToken = default
     )
     {
         _logger.LogInformation("Sending Fiks Arkiv message for instance {InstanceId}", instance.Id);
 
         var instanceId = new InstanceIdentifier(instance.Id);
-        var recipient = await _fiksArkivConfigResolver.GetRecipient(instance);
+        var recipient = await _fiksArkivConfigResolver.GetRecipient(instance, cancellationToken);
         var messagePayloads = await _fiksArkivPayloadGenerator.GeneratePayload(
             taskId,
             instance,
             recipient,
-            messageType
+            messageType,
+            cancellationToken
         );
 
         FiksIOMessageRequest request = new(
@@ -134,7 +136,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
 
         await SaveArchiveRecord(instance, request);
 
-        FiksIOMessageResponse response = await _fiksIOClient.SendMessage(request);
+        FiksIOMessageResponse response = await _fiksIOClient.SendMessage(request, cancellationToken);
         _logger.LogInformation("Fiks Arkiv responded with message ID {MessageId}", response.MessageId);
 
         return response;
@@ -241,7 +243,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
         DataElement result = await _fiksArkivInstanceClient.InsertBinaryData(
             new InstanceIdentifier(instance),
             _fiksArkivSettings.Receipt.ArchiveRecord.DataType,
-            "application/json",
+            "application/xml",
             _fiksArkivSettings.Receipt.ArchiveRecord.GetFilenameOrDefault(".xml"),
             request.Payload.Single(x => x.Filename == FiksArkivConstants.Filenames.ArchiveRecord).Data
         );
@@ -269,7 +271,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
         DataElement result = await _fiksArkivInstanceClient.InsertBinaryData(
             new InstanceIdentifier(instance),
             _fiksArkivSettings.Receipt.ConfirmationRecord.DataType,
-            "application/json",
+            "application/xml",
             _fiksArkivSettings.Receipt.ConfirmationRecord.GetFilenameOrDefault(".xml"),
             receipt.Details.SerializeXmlBytes()
         );

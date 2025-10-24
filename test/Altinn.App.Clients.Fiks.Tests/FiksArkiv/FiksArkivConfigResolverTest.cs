@@ -555,23 +555,24 @@ public class FiksArkivConfigResolverTest
 
     // csharpier-ignore-start
     [Theory]
-    [InlineData(1, PartyType.None, null, null, null, null, null, null, null)]
-    [InlineData(2, PartyType.None, "a46c3a98-03cb-431a-91ce-70ed0ef9c1ca", null, null, null, null, null, null)]
-    [InlineData(3, PartyType.None, null, "party-name-none", null, null, null, null, null)]
-    [InlineData(4, PartyType.Person, "1a836705-bc0f-47bc-884c-6d09af668af7", "party-name-person", "phone", "mobile", "address", "zip", "city")]
-    [InlineData(5, PartyType.Person, null, "party-name-person", "phone", "mobile", "address", "zip", "city")]
-    [InlineData(6, PartyType.Person, null, "party-name-person", "phone", "phone", "address", "zip", null)]
-    [InlineData(7, PartyType.Person, null, null, null, null, null, null, null)]
-    [InlineData(8, PartyType.Org, "3d73839a-d104-4c97-94ea-5a6aabebd47f", "party-name-org", "phone", "mobile", "address", "zip", "city")]
-    [InlineData(9, PartyType.Org, null, "party-name-org", "phone", "mobile", "address", "zip", "city")]
-    [InlineData(10, PartyType.Org, null, "party-name-org", "phone", "phone", "address", "zip", null)]
-    [InlineData(11, PartyType.Org, null, null, null, null, null, null, null)]
+    [InlineData(1, PartyType.None, null, null, null, null, null, null, null, null)]
+    [InlineData(2, PartyType.None, "a46c3a98-03cb-431a-91ce-70ed0ef9c1ca", null, null, null, null, null, null, null)]
+    [InlineData(3, PartyType.None, null, "party-name-none", null, null, null, null, null, null)]
+    [InlineData(4, PartyType.Person, "1a836705-bc0f-47bc-884c-6d09af668af7", "party-name-person", "person-id", "phone", "mobile", "address", "zip", "city")]
+    [InlineData(5, PartyType.Person, null, "party-name-person", null, "phone", "mobile", "address", "zip", "city")]
+    [InlineData(6, PartyType.Person, null, "party-name-person", null, "phone", "phone", "address", "zip", null)]
+    [InlineData(7, PartyType.Person, null, null, null, null, null, null, null, null)]
+    [InlineData(8, PartyType.Org, "3d73839a-d104-4c97-94ea-5a6aabebd47f", "party-name-org", "org-number", "phone", "mobile", "address", "zip", "city")]
+    [InlineData(9, PartyType.Org, null, "party-name-org", null, "phone", "mobile", "address", "zip", "city")]
+    [InlineData(10, PartyType.Org, null, "party-name-org", null, "phone", "phone", "address", "zip", null)]
+    [InlineData(11, PartyType.Org, null, null, null, null, null, null, null, null)]
     // csharpier-ignore-end
     public async Task GetInstanceOwnerParty_ReturnsExpectedValue_WhenPartyIsFound(
         int testCaseNumber,
         PartyType partyType,
         string? partyGuid,
         string? partyName,
+        string? personIdOrOrgNumber,
         string? phone,
         string? mobile,
         string? addr,
@@ -590,6 +591,7 @@ public class FiksArkivConfigResolverTest
                 partyType == PartyType.Org
                     ? new Organization
                     {
+                        OrgNumber = personIdOrOrgNumber,
                         TelephoneNumber = phone,
                         MobileNumber = mobile,
                         MailingAddress = addr,
@@ -601,6 +603,7 @@ public class FiksArkivConfigResolverTest
                 partyType == PartyType.Person
                     ? new Person
                     {
+                        SSN = personIdOrOrgNumber,
                         TelephoneNumber = phone,
                         MobileNumber = mobile,
                         MailingAddress = addr,

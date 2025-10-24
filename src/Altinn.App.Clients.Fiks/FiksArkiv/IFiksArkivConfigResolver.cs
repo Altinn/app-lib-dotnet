@@ -23,17 +23,20 @@ public interface IFiksArkivConfigResolver
     /// <summary>
     /// Gets the title of the current application, resolved through applicable text resources if available.
     /// </summary>
-    Task<string> GetApplicationTitle();
+    Task<string> GetApplicationTitle(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the archive document metadata (title, etc).
     /// </summary>
-    Task<FiksArkivDocumentMetadata?> GetArchiveDocumentMetadata(Instance instance);
+    Task<FiksArkivDocumentMetadata?> GetArchiveDocumentMetadata(
+        Instance instance,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Gets the recipient information for the shipment.
     /// </summary>
-    Task<FiksArkivRecipient> GetRecipient(Instance instance);
+    Task<FiksArkivRecipient> GetRecipient(Instance instance, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the correlation ID for the shipment.
@@ -48,15 +51,18 @@ public interface IFiksArkivConfigResolver
     /// <summary>
     /// Gets the service owner party (korrespondansepart).
     /// </summary>
-    Task<Korrespondansepart> GetServiceOwnerParty();
+    Task<Korrespondansepart> GetServiceOwnerParty(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the instance owner party (korrespondansepart).
     /// </summary>
-    Task<Korrespondansepart?> GetInstanceOwnerParty(Instance instance);
+    Task<Korrespondansepart?> GetInstanceOwnerParty(Instance instance, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the classification of the instance owner (klassifikasjon).
     /// </summary>
-    Task<Klassifikasjon> GetInstanceOwnerClassification(Authenticated auth);
+    Task<Klassifikasjon> GetInstanceOwnerClassification(
+        Authenticated auth,
+        CancellationToken cancellationToken = default
+    );
 }

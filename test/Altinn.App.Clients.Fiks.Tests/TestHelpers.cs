@@ -258,7 +258,8 @@ internal static class TestHelpers
             string taskId,
             Instance instance,
             FiksArkivRecipient recipient,
-            string messageType
+            string messageType,
+            CancellationToken cancellationToken = default
         ) => throw new NotImplementedException();
     }
 
@@ -267,19 +268,22 @@ internal static class TestHelpers
         public Task HandleSuccess(
             Instance instance,
             FiksIOReceivedMessage message,
-            IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads
+            IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads,
+            CancellationToken cancellationToken = default
         ) => throw new NotImplementedException();
 
         public Task HandleError(
             Instance instance,
             FiksIOReceivedMessage message,
-            IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads
+            IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads,
+            CancellationToken cancellationToken = default
         ) => throw new NotImplementedException();
     }
 
     public class CustomAutoSendDecision : IFiksArkivAutoSendDecision
     {
-        public Task<bool> ShouldSend(string taskId, Instance instance) => throw new NotImplementedException();
+        public Task<bool> ShouldSend(string taskId, Instance instance, CancellationToken cancellationToken = default) =>
+            throw new NotImplementedException();
     }
 
     public static FiksArkivBindableValue<T> BindableValueFactory<T>(string dataTypeId, string field) =>

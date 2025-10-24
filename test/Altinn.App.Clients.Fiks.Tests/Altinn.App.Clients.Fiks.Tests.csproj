@@ -23,6 +23,8 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="KS.Fiks.Arkiv.Models.V1" />
+    <PackageReference Include="KS.Fiks.IO.Client" />
   </ItemGroup>
 
   <ItemGroup>

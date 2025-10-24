@@ -33,7 +33,9 @@ public class FiksArkivConfigValidationServiceTest
                 x.ValidateConfiguration(It.IsAny<IReadOnlyList<DataType>>(), It.IsAny<IReadOnlyList<ProcessTask>>())
             )
             .Verifiable(Times.Once);
-        fiksArkivInstanceClientMock.Setup(x => x.GetServiceOwnerToken()).Verifiable(Times.Once);
+        fiksArkivInstanceClientMock
+            .Setup(x => x.GetServiceOwnerToken(It.IsAny<CancellationToken>()))
+            .Verifiable(Times.Once);
 
         var serviceCollection = new ServiceCollection().AddSingleton(fiksArkivAutoSendDecisionValidatorMock.Object);
         var fiksArkivConfigValidationService = new FiksArkivConfigValidationService(

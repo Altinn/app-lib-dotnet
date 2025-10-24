@@ -14,5 +14,6 @@ public interface IFiksArkivAutoSendDecision
     /// </summary>
     /// <param name="taskId">The task that has just finished.</param>
     /// <param name="instance">The instance.</param>
-    Task<bool> ShouldSend(string taskId, Instance instance);
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    Task<bool> ShouldSend(string taskId, Instance instance, CancellationToken cancellationToken = default);
 }

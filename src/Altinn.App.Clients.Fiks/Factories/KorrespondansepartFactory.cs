@@ -15,13 +15,14 @@ internal static class KorrespondansepartFactory
     /// Null or empty values for these parameters will result in a FiksArkivConfigurationException.
     /// </remarks>
     public static Korrespondansepart CreateSender(
-        string? partyName,
         string? partyId,
-        string? organizationId = null,
+        string? partyName,
         string? personId = null,
+        string? organizationId = null,
         string? reference = null
-    ) =>
-        new()
+    )
+    {
+        var party = new Korrespondansepart()
         {
             Korrespondanseparttype = new Korrespondanseparttype
             {
@@ -30,12 +31,18 @@ internal static class KorrespondansepartFactory
             },
             KorrespondansepartID = partyId.EnsureNotNullOrEmpty("FiksArkiv->Sender.ID"),
             KorrespondansepartNavn = partyName.EnsureNotNullOrEmpty("FiksArkiv->Sender.Name"),
-            Organisasjonid = organizationId.EnsureNotEmpty("FiksArkiv->Sender.OrganizationId"),
-            Personid = personId.EnsureNotEmpty("FiksArkiv->Sender.PersonId"),
             DeresReferanse = reference.EnsureNotEmpty("FiksArkiv->Sender.Reference"),
         };
 
-    public static Korrespondansepart CreateInternalSender(string partyName, string partyId) =>
+        if (!string.IsNullOrEmpty(personId))
+            party.Personid = personId;
+        else if (!string.IsNullOrEmpty(organizationId))
+            party.Organisasjonid = organizationId;
+
+        return party;
+    }
+
+    public static Korrespondansepart CreateInternalSender(string partyId, string partyName) =>
         new()
         {
             Korrespondanseparttype = new Korrespondanseparttype
@@ -55,10 +62,9 @@ internal static class KorrespondansepartFactory
     /// Null or empty values for these parameters will result in a FiksArkivConfigurationException.
     /// </remarks>
     public static Korrespondansepart CreateRecipient(
-        string? partyName,
         string? partyId,
+        string? partyName,
         string? organizationId = null,
-        string? personId = null,
         string? reference = null
     ) =>
         new()
@@ -71,7 +77,6 @@ internal static class KorrespondansepartFactory
             KorrespondansepartID = partyId.EnsureNotNullOrEmpty("FiksArkiv->Recipient.ID"),
             KorrespondansepartNavn = partyName.EnsureNotNullOrEmpty("FiksArkiv->Recipient.Name"),
             Organisasjonid = organizationId.EnsureNotEmpty("FiksArkiv->Recipient.OrganizationId"),
-            Personid = personId.EnsureNotEmpty("FiksArkiv->Recipient.PersonId"),
             DeresReferanse = reference.EnsureNotEmpty("FiksArkiv->Recipient.Reference"),
         };
 }
