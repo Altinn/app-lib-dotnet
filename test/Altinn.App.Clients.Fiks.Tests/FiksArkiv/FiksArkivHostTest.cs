@@ -81,15 +81,7 @@ public class FiksArkivHostTest
 
         // Assert
         Assert.Equal(2, createdClients.Count);
-        clientFactoryMock.Verify(
-            x =>
-                x.CreateClient(
-                    It.IsAny<FiksIOConfiguration>(),
-                    It.IsAny<IMaskinportenClient>(),
-                    It.IsAny<ILoggerFactory>()
-                ),
-            Times.Exactly(2)
-        );
+        clientFactoryMock.Verify(x => x.CreateClient(It.IsAny<FiksIOConfiguration>()), Times.Exactly(2));
         createdClients[0].Verify(x => x.IsOpenAsync(), Times.Once);
         createdClients[0].Verify(x => x.DisposeAsync(), Times.Once);
         loggerMock.Verify(
@@ -399,13 +391,7 @@ public class FiksArkivHostTest
         var clients = new List<Mock<KS.Fiks.IO.Client.IFiksIOClient>>();
         var clientFactoryMock = new Mock<IFiksIOClientFactory>();
         clientFactoryMock
-            .Setup(x =>
-                x.CreateClient(
-                    It.IsAny<KS.Fiks.IO.Client.Configuration.FiksIOConfiguration>(),
-                    It.IsAny<Ks.Fiks.Maskinporten.Client.IMaskinportenClient>(),
-                    It.IsAny<ILoggerFactory>()
-                )
-            )
+            .Setup(x => x.CreateClient(It.IsAny<KS.Fiks.IO.Client.Configuration.FiksIOConfiguration>()))
             .ReturnsAsync(() =>
             {
                 var clientMock = new Mock<KS.Fiks.IO.Client.IFiksIOClient>();

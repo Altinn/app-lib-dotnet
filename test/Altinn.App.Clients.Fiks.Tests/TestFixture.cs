@@ -64,7 +64,8 @@ internal sealed record TestFixture(
     Mock<IHttpClientFactory> HttpClientFactoryMock,
     Mock<HttpMessageHandler> HttpMessageHandlerMock,
     Mock<IAccessTokenGenerator> AccessTokenGeneratorMock,
-    Mock<ITranslationService> TranslationServiceMock
+    Mock<ITranslationService> TranslationServiceMock,
+    Mock<IFiksIOClientFactory> FiksIOClientFactoryMock
 ) : IAsyncDisposable
 {
     public IFiksIOClient FiksIOClient => App.Services.GetRequiredService<IFiksIOClient>();
@@ -110,7 +111,8 @@ internal sealed record TestFixture(
         bool useDefaultFiksIOSettings = true,
         bool useDefaultFiksArkivSettings = true,
         bool useDefaultMaskinportenSettings = true,
-        string hostEnvironment = "Development"
+        string hostEnvironment = "Development",
+        bool mockFiksIOClientFactory = true
     )
     {
         var builder = WebApplication.CreateBuilder();
@@ -119,15 +121,15 @@ internal sealed record TestFixture(
         Dictionary<string, object> config = new();
         if (useDefaultFiksIOSettings)
         {
-            config["FiksIOSettings"] = TestHelpers.GetDefaultFiksIOSettings();
+            config["FiksIOSettings"] = TestHelpers.DefaultFiksIOSettings;
         }
         if (useDefaultFiksArkivSettings)
         {
-            config["FiksArkivSettings"] = TestHelpers.GetDefaultFiksArkivSettings();
+            config["FiksArkivSettings"] = TestHelpers.DefaultFiksArkivSettings;
         }
         if (useDefaultMaskinportenSettings)
         {
-            config["MaskinportenSettings"] = TestHelpers.GetDefaultMaskinportenSettings();
+            config["MaskinportenSettings"] = TestHelpers.DefaultMaskinportenSettings;
             builder.Services.ConfigureMaskinportenClient("MaskinportenSettings");
         }
 
@@ -158,6 +160,7 @@ internal sealed record TestFixture(
         var accessTokenGeneratorMock = new Mock<IAccessTokenGenerator>();
         var loggerFactoryMock = new Mock<ILoggerFactory>();
         var translationServiceMock = new Mock<ITranslationService>();
+        var fiksIOClientFactoryMock = new Mock<IFiksIOClientFactory>();
 
         httpMessageHandlerMock
             .Protected()
@@ -205,6 +208,9 @@ internal sealed record TestFixture(
         builder.Services.AddSingleton(accessTokenGeneratorMock.Object);
         builder.Services.AddSingleton(translationServiceMock.Object);
 
+        if (mockFiksIOClientFactory)
+            builder.Services.AddSingleton(fiksIOClientFactoryMock.Object);
+
         // Non-mockable services
         builder.Services.AddTransient<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
         builder.Services.AddTransient<InstanceDataUnitOfWorkInitializer>();
@@ -230,7 +236,8 @@ internal sealed record TestFixture(
             httpClientFactoryMock,
             httpMessageHandlerMock,
             accessTokenGeneratorMock,
-            translationServiceMock
+            translationServiceMock,
+            mockFiksIOClientFactory ? fiksIOClientFactoryMock : null!
         );
     }
 

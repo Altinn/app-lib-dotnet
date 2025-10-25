@@ -30,7 +30,7 @@ public class ServiceCollectionExtensionsTests
         Assert.NotNull(fiksIOSettings);
         Assert.NotNull(resiliencePipeline);
         Assert.IsType<FiksIOClient>(fiksIOClient);
-        Assert.Equal(TestHelpers.GetDefaultFiksIOSettings(), fiksIOSettings);
+        Assert.Equal(TestHelpers.DefaultFiksIOSettings, fiksIOSettings);
 
         AssertDefaultResiliencePipeline(resiliencePipeline);
     }
@@ -70,8 +70,8 @@ public class ServiceCollectionExtensionsTests
     public async Task AddFiksIOClient_OverridesConfig_Delegates(bool provideDefaultSettings)
     {
         // Arrange
-        var fiksIOSettingsOverride = TestHelpers.GetRandomFiksIOSettings();
-        var maskinportenSettingsOverride = TestHelpers.GetRandomMaskinportenSettings();
+        var fiksIOSettingsOverride = TestHelpers.RandomFiksIOSettings;
+        var maskinportenSettingsOverride = TestHelpers.RandomMaskinportenSettings;
         await using var fixture = TestFixture.Create(
             services =>
             {
@@ -114,8 +114,8 @@ public class ServiceCollectionExtensionsTests
     public async Task AddFiksIOClient_OverridesConfig_JsonPaths(bool provideDefaultSettings)
     {
         // Arrange
-        var fiksIOSettingsOverride = TestHelpers.GetRandomFiksIOSettings();
-        var maskinportenSettingsOverride = TestHelpers.GetRandomMaskinportenSettings();
+        var fiksIOSettingsOverride = TestHelpers.RandomFiksIOSettings;
+        var maskinportenSettingsOverride = TestHelpers.RandomMaskinportenSettings;
         await using var fixture = TestFixture.Create(
             services =>
             {
@@ -147,7 +147,11 @@ public class ServiceCollectionExtensionsTests
     public async Task AddFiksArkiv_AddsRequiredServicesWithDefaultValues()
     {
         // Arrange
-        await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
+        await using var fixture = TestFixture.Create(
+            services => services.AddFiksArkiv(),
+            mockFiksIOClientFactory: false
+        );
+
         fixture
             .HttpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
             .Returns(new HttpClient(new Mock<HttpMessageHandler>().Object));
@@ -181,7 +185,7 @@ public class ServiceCollectionExtensionsTests
         Assert.NotNull(fiksArkivPayloadGenerator);
         Assert.NotNull(fiksArkivResponseHandler);
         Assert.NotNull(fiksArkivAutoSendDecisionHandler);
-        Assert.Equal(TestHelpers.GetDefaultFiksIOSettings(), fiksIOSettings);
+        Assert.Equal(TestHelpers.DefaultFiksIOSettings, fiksIOSettings);
         Assert.IsType<FiksIOClient>(fiksIOClient);
         Assert.IsType<FiksIOClientFactory>(fiksIOClientFactory);
         Assert.IsType<AltinnCdnClient>(altinnCdnClient);
@@ -232,9 +236,9 @@ public class ServiceCollectionExtensionsTests
     public async Task AddFiksArkiv_OverridesConfig_Delegates(bool provideDefaultSettings)
     {
         // Arrange
-        var fiksIOSettingsOverride = TestHelpers.GetRandomFiksIOSettings();
-        var fiksArkivSettingsOverride = TestHelpers.GetRandomFiksArkivSettings();
-        var maskinportenSettingsOverride = TestHelpers.GetRandomMaskinportenSettings();
+        var fiksIOSettingsOverride = TestHelpers.RandomFiksIOSettings;
+        var fiksArkivSettingsOverride = TestHelpers.RandomFiksArkivSettings;
+        var maskinportenSettingsOverride = TestHelpers.RandomMaskinportenSettings;
         await using var fixture = TestFixture.Create(
             services =>
                 services
@@ -286,9 +290,9 @@ public class ServiceCollectionExtensionsTests
     public async Task AddFiksArkiv_OverridesConfig_JsonPaths(bool provideDefaultSettings)
     {
         // Arrange
-        var fiksIOSettingsOverride = TestHelpers.GetRandomFiksIOSettings();
-        var fiksArkivSettingsOverride = TestHelpers.GetRandomFiksArkivSettings();
-        var maskinportenSettingsOverride = TestHelpers.GetRandomMaskinportenSettings();
+        var fiksIOSettingsOverride = TestHelpers.RandomFiksIOSettings;
+        var fiksArkivSettingsOverride = TestHelpers.RandomFiksArkivSettings;
+        var maskinportenSettingsOverride = TestHelpers.RandomMaskinportenSettings;
         await using var fixture = TestFixture.Create(
             services =>
                 services

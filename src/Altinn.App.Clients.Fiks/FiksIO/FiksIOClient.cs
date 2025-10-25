@@ -35,6 +35,12 @@ internal sealed class FiksIOClient : IFiksIOClient
     private event Func<FiksIOReceivedMessage, Task>? _messageReceivedHandler;
     private bool _isDisposed;
 
+    private const int DefaultApiPort = 443;
+    private const int DefaultAmqpPort = 5671;
+    private const string DefaultApiScheme = "https";
+    private string _defaultApiHost => _env.IsProduction() ? ApiConfiguration.ProdHost : ApiConfiguration.TestHost;
+    private string _defaultAmqpHost => _env.IsProduction() ? AmqpConfiguration.ProdHost : AmqpConfiguration.TestHost;
+
     public IFiksIOAccountSettings AccountSettings => _fiksIOSettings.CurrentValue;
 
     public FiksIOClient(
@@ -134,13 +140,9 @@ internal sealed class FiksIOClient : IFiksIOClient
             return;
 
         if (_fiksIoClient is null)
-        {
             await InitialiseFiksIOClient();
-        }
         else
-        {
             await SubscribeToEvents();
-        }
     }
 
     public async Task<bool> IsHealthy()
@@ -151,31 +153,27 @@ internal sealed class FiksIOClient : IFiksIOClient
         return await _fiksIoClient.IsOpenAsync();
     }
 
-    public async Task Reconnect()
-    {
-        await InitialiseFiksIOClient();
-    }
+    public Task Reconnect() => InitialiseFiksIOClient();
 
-    private async Task<IExternalFiksIOClient> InitialiseFiksIOClient()
+    internal async Task<IExternalFiksIOClient> InitialiseFiksIOClient()
     {
         var fiksIOSettings = _fiksIOSettings.CurrentValue;
         var appMeta = await _appMetadata.GetApplicationMetadata();
-        var fiksAmqpAppName = GetFiksAmqpApplicationName(appMeta.AppIdentifier);
 
         var apiHostUri = GetUri(fiksIOSettings.ApiHost);
         var amqpHostUri = GetUri(fiksIOSettings.AmqpHost);
 
         var fiksConfiguration = new FiksIOConfiguration(
             amqpConfiguration: new AmqpConfiguration(
-                amqpHostUri?.Host ?? GetDefaultAmqpHost(),
-                amqpHostUri?.Port > -1 ? amqpHostUri.Port : 5671,
-                applicationName: fiksAmqpAppName,
+                amqpHostUri?.Host ?? _defaultAmqpHost,
+                amqpHostUri?.Port > -1 ? amqpHostUri.Port : DefaultAmqpPort,
+                applicationName: GetFiksAmqpApplicationName(appMeta.AppIdentifier),
                 prefetchCount: 0
             ),
             apiConfiguration: new ApiConfiguration(
-                apiHostUri?.Scheme ?? "https",
-                apiHostUri?.Host ?? GetDefaultApiHost(),
-                apiHostUri?.Port > -1 ? apiHostUri.Port : 443
+                apiHostUri?.Scheme ?? DefaultApiScheme,
+                apiHostUri?.Host ?? _defaultApiHost,
+                apiHostUri?.Port > -1 ? apiHostUri.Port : DefaultApiPort
             ),
             asiceSigningConfiguration: new AsiceSigningConfiguration(GenerateAsiceCertificate()),
             integrasjonConfiguration: new IntegrasjonConfiguration(
@@ -230,25 +228,10 @@ internal sealed class FiksIOClient : IFiksIOClient
         return Task.CompletedTask;
     }
 
-    private static string GetFiksAmqpApplicationName(AppIdentifier appIdentifier)
-    {
-        return $"altinn-app-{appIdentifier.Org}-{appIdentifier.App}";
-    }
+    private static string GetFiksAmqpApplicationName(AppIdentifier appIdentifier) =>
+        $"altinn-studio-app-{appIdentifier.Org}-{appIdentifier.App}";
 
-    private static Uri? GetUri(string? uriString)
-    {
-        return !string.IsNullOrWhiteSpace(uriString) ? new Uri(uriString) : null;
-    }
-
-    private string GetDefaultAmqpHost()
-    {
-        return _env.IsDevelopment() ? AmqpConfiguration.TestHost : AmqpConfiguration.ProdHost;
-    }
-
-    private string GetDefaultApiHost()
-    {
-        return _env.IsDevelopment() ? ApiConfiguration.TestHost : ApiConfiguration.ProdHost;
-    }
+    private static Uri? GetUri(string? uriString) => !string.IsNullOrWhiteSpace(uriString) ? new Uri(uriString) : null;
 
     internal static X509Certificate2 GenerateAsiceCertificate()
     {

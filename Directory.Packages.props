@@ -76,10 +76,9 @@
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <!-- End JWTCookieAuthentication deps -->
   </ItemGroup>
-
   <ItemGroup>
-    <PackageVersion Include="KS.Fiks.Arkiv.Models.V1" Version="1.0.4"/>
-    <PackageVersion Include="KS.Fiks.IO.Client" Version="6.0.0"/>
+    <PackageVersion Include="KS.Fiks.Arkiv.Models.V1" Version="1.0.4" />
+    <PackageVersion Include="KS.Fiks.IO.Client" Version="6.0.0" />
     <PackageVersion Include="Polly.Extensions" Version="8.5.2" />
   </ItemGroup>
 </Project>
