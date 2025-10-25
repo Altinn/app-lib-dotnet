@@ -7,9 +7,5 @@ namespace Altinn.App.Clients.Fiks.FiksIO;
 
 internal interface IFiksIOClientFactory
 {
-    Task<IExternalFiksIOClient> CreateClient(
-        ExternalConfiguration fiksConfiguration,
-        IFiksMaskinportenClient maskinportenClient,
-        ILoggerFactory loggerFactory
-    );
+    Task<IExternalFiksIOClient> CreateClient(ExternalConfiguration fiksConfiguration);
 }

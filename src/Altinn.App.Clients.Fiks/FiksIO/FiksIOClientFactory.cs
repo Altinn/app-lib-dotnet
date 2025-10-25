@@ -1,9 +1,8 @@
 using Altinn.App.Core.Features.Maskinporten;
 using Microsoft.Extensions.Logging;
-using ExternalConfiguration = KS.Fiks.IO.Client.Configuration.FiksIOConfiguration;
 using ExternalFiksIOClient = KS.Fiks.IO.Client.FiksIOClient;
+using ExternalFiksIOConfiguration = KS.Fiks.IO.Client.Configuration.FiksIOConfiguration;
 using IExternalFiksIOClient = KS.Fiks.IO.Client.IFiksIOClient;
-using IFiksMaskinportenClient = Ks.Fiks.Maskinporten.Client.IMaskinportenClient;
 
 namespace Altinn.App.Clients.Fiks.FiksIO;
 
@@ -18,11 +17,7 @@ internal class FiksIOClientFactory : IFiksIOClientFactory
         _maskinportenClient = maskinportenClient;
     }
 
-    public async Task<IExternalFiksIOClient> CreateClient(
-        ExternalConfiguration fiksConfiguration,
-        IFiksMaskinportenClient maskinportenClient,
-        ILoggerFactory loggerFactory
-    )
+    public async Task<IExternalFiksIOClient> CreateClient(ExternalFiksIOConfiguration fiksConfiguration)
     {
         return await ExternalFiksIOClient.CreateAsync(
             configuration: fiksConfiguration,

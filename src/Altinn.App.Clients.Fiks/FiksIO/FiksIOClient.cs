@@ -6,7 +6,6 @@ using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using KS.Fiks.IO.Client.Configuration;
@@ -29,8 +28,6 @@ internal sealed class FiksIOClient : IFiksIOClient
     private readonly IAppMetadata _appMetadata;
     private readonly IHostEnvironment _env;
     private readonly ILogger<FiksIOClient> _logger;
-    private readonly ILoggerFactory _loggerFactory;
-    private readonly IMaskinportenClient _maskinportenClient;
     private readonly ResiliencePipeline<FiksIOMessageResponse> _resiliencePipeline;
     private IExternalFiksIOClient? _fiksIoClient;
     private readonly Telemetry? _telemetry;
@@ -45,8 +42,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         IOptionsMonitor<FiksIOSettings> fiksIOSettings,
         IHostEnvironment env,
         IAppMetadata appMetadata,
-        IMaskinportenClient maskinportenClient,
-        ILoggerFactory loggerFactory,
+        ILogger<FiksIOClient> logger,
         IFiksIOClientFactory fiksIOClientFactory,
         Telemetry? telemetry = null
     )
@@ -54,9 +50,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         _fiksIOSettings = fiksIOSettings;
         _appMetadata = appMetadata;
         _env = env;
-        _loggerFactory = loggerFactory;
-        _maskinportenClient = maskinportenClient;
-        _logger = loggerFactory.CreateLogger<FiksIOClient>();
+        _logger = logger;
         _fiksIOClientFactory = fiksIOClientFactory;
         _resiliencePipeline = serviceProvider.ResolveResiliencePipeline();
         _telemetry = telemetry;
@@ -194,11 +188,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         if (_fiksIoClient is not null)
             await _fiksIoClient.DisposeAsync();
 
-        _fiksIoClient = await _fiksIOClientFactory.CreateClient(
-            fiksConfiguration,
-            new FiksIOMaskinportenClient(_maskinportenClient),
-            _loggerFactory
-        );
+        _fiksIoClient = await _fiksIOClientFactory.CreateClient(fiksConfiguration);
 
         if (_messageReceivedHandler is not null)
             await SubscribeToEvents();
@@ -260,7 +250,7 @@ internal sealed class FiksIOClient : IFiksIOClient
         return _env.IsDevelopment() ? ApiConfiguration.TestHost : ApiConfiguration.ProdHost;
     }
 
-    private static X509Certificate2 GenerateAsiceCertificate()
+    internal static X509Certificate2 GenerateAsiceCertificate()
     {
         using RSA rsa = RSA.Create(4096);
 
