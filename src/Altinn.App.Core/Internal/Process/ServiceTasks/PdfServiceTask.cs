@@ -5,11 +5,7 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Process.ServiceTasks;
 
-internal interface IPdfServiceTask : IServiceTask { }
-
-/// <summary>
-/// Service task that generates PDFs for all connected datatypes that have the EnablePdfCreation flag set to true.
-/// </summary>
+/// <inheritdoc />
 public class PdfServiceTask : IPdfServiceTask
 {
     private readonly IAppMetadata _appMetadata;
