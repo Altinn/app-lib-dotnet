@@ -9,7 +9,7 @@ public class FiksArkivDefaultAutoSendDecisionTest
     [Fact]
     public async Task ShouldSend_UsesConfig_MakesCorrectDecision()
     {
-        // Arrage
+        // Arrange
         var settings = new FiksArkivSettings { AutoSend = new FiksArkivAutoSendSettings { AfterTaskId = "Task_1" } };
         var decisionHandler = new FiksArkivDefaultAutoSendDecision(Options.Create(settings));
 
@@ -25,7 +25,7 @@ public class FiksArkivDefaultAutoSendDecisionTest
     [Fact]
     public async Task ShouldSend_HandlesMissingConfig()
     {
-        // Arrage
+        // Arrange
         var settings = new FiksArkivSettings();
         var decisionHandler = new FiksArkivDefaultAutoSendDecision(Options.Create(settings));
 

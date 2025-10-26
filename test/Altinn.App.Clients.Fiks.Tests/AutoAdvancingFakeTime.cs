@@ -26,16 +26,22 @@ public sealed class AutoAdvancingFakeTime : IAsyncDisposable
 
     private async Task AutoAdvanceLoop()
     {
-        while (!_cts.IsCancellationRequested)
+        try
         {
-            await Task.Delay(_interval, _cts.Token);
-            _fakeTime.Advance(_advance);
+            while (!_cts.IsCancellationRequested)
+            {
+                await Task.Delay(_interval, _cts.Token);
+                _fakeTime.Advance(_advance);
+            }
         }
+        catch (TaskCanceledException) { }
     }
 
     public async ValueTask DisposeAsync()
     {
         await _cts.CancelAsync();
+        await _runner;
+
         await CastAndDispose(_cts);
         await CastAndDispose(_runner);
 
