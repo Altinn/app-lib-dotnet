@@ -37,12 +37,15 @@ public class FiksArkivHostTest
         var (clientFactoryMock, createdClients) = GetFixIOClientFactoryMock();
         using var cts = new CancellationTokenSource();
 
-        await using var fixture = TestFixture.Create(services =>
-        {
-            services.AddFiksArkiv();
-            services.AddSingleton(loggerMock.Object);
-            services.AddSingleton(clientFactoryMock.Object);
-        });
+        await using var fixture = TestFixture.Create(
+            services =>
+            {
+                services.AddFiksArkiv();
+                services.AddSingleton(loggerMock.Object);
+                services.AddSingleton(clientFactoryMock.Object);
+            },
+            mockFiksIOClientFactory: false
+        );
 
         // Act
         await fixture.FiksArkivHost.StartAsync(cts.Token);
@@ -67,13 +70,16 @@ public class FiksArkivHostTest
             x.Setup(m => m.IsOpenAsync()).ReturnsAsync(false)
         );
 
-        await using var fixture = TestFixture.Create(services =>
-        {
-            services.AddFiksArkiv();
-            services.AddSingleton<ILogger<FiksArkivHost>>(sp => loggerMock.Object);
-            services.AddSingleton<IFiksIOClientFactory>(sp => clientFactoryMock.Object);
-            services.AddSingleton<TimeProvider>(fakeTime);
-        });
+        await using var fixture = TestFixture.Create(
+            services =>
+            {
+                services.AddFiksArkiv();
+                services.AddSingleton(loggerMock.Object);
+                services.AddSingleton(clientFactoryMock.Object);
+                services.AddSingleton<TimeProvider>(fakeTime);
+            },
+            mockFiksIOClientFactory: false
+        );
 
         // Act
         await fixture.FiksArkivHost.StartAsync(CancellationToken.None);

@@ -35,9 +35,6 @@ internal sealed class FiksIOClient : IFiksIOClient
     private event Func<FiksIOReceivedMessage, Task>? _messageReceivedHandler;
     private bool _isDisposed;
 
-    private const int DefaultApiPort = 443;
-    private const int DefaultAmqpPort = 5671;
-    private const string DefaultApiScheme = "https";
     private string _defaultApiHost => _env.IsProduction() ? ApiConfiguration.ProdHost : ApiConfiguration.TestHost;
     private string _defaultAmqpHost => _env.IsProduction() ? AmqpConfiguration.ProdHost : AmqpConfiguration.TestHost;
 
@@ -166,14 +163,14 @@ internal sealed class FiksIOClient : IFiksIOClient
         var fiksConfiguration = new FiksIOConfiguration(
             amqpConfiguration: new AmqpConfiguration(
                 amqpHostUri?.Host ?? _defaultAmqpHost,
-                amqpHostUri?.Port > -1 ? amqpHostUri.Port : DefaultAmqpPort,
+                amqpHostUri?.Port > -1 ? amqpHostUri.Port : 5671,
                 applicationName: GetFiksAmqpApplicationName(appMeta.AppIdentifier),
                 prefetchCount: 0
             ),
             apiConfiguration: new ApiConfiguration(
-                apiHostUri?.Scheme ?? DefaultApiScheme,
+                apiHostUri?.Scheme ?? "https",
                 apiHostUri?.Host ?? _defaultApiHost,
-                apiHostUri?.Port > -1 ? apiHostUri.Port : DefaultApiPort
+                apiHostUri?.Port > -1 ? apiHostUri.Port : 443
             ),
             asiceSigningConfiguration: new AsiceSigningConfiguration(GenerateAsiceCertificate()),
             integrasjonConfiguration: new IntegrasjonConfiguration(

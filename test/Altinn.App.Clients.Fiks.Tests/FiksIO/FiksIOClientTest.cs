@@ -3,6 +3,10 @@ using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using KS.Fiks.IO.Client.Models;
+using KS.Fiks.IO.Crypto.Models;
+using KS.Fiks.IO.Send.Client.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 using RabbitMQ.Client.Events;
 using ExternalFiksIOConfiguration = KS.Fiks.IO.Client.Configuration.FiksIOConfiguration;
@@ -144,6 +148,152 @@ public class FiksIOClientTest
         // Assert
         fixture.FiksIOClientFactoryMock.Verify();
         externalFiksIOClientMock.Verify();
+    }
+
+    [Fact]
+    public async Task SendMessage_WithValidRequest_ReturnsSuccessResponse()
+    {
+        // Arrange
+        var externalFiksIOClientMock = new Mock<KS.Fiks.IO.Client.IFiksIOClient>(MockBehavior.Strict);
+        var fixture = TestFixture.Create(services => services.AddFiksIOClient());
+        var (messageRequest, messageResponse) = MessageRequestAndResponseFactory();
+        MeldingRequest? capturedRequest = null;
+
+        fixture
+            .FiksIOClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<ExternalFiksIOConfiguration>()))
+            .ReturnsAsync(externalFiksIOClientMock.Object);
+        externalFiksIOClientMock
+            .Setup(x => x.Send(It.IsAny<MeldingRequest>(), It.IsAny<IList<IPayload>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                (MeldingRequest request, IList<IPayload> _, CancellationToken _) =>
+                {
+                    capturedRequest = request;
+                    return messageResponse;
+                }
+            )
+            .Verifiable(Times.Once);
+
+        // Act
+        var result = await fixture.FiksIOClient.SendMessage(messageRequest);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotNull(capturedRequest);
+        Assert.Equal(fixture.FiksIOClient.AccountSettings.AccountId, capturedRequest.AvsenderKontoId);
+        Assert.Equal(messageRequest.MessageType, capturedRequest.MeldingType);
+        Assert.Equal(messageRequest.Recipient, capturedRequest.MottakerKontoId);
+        Assert.Equal(messageRequest.CorrelationId, capturedRequest.KlientKorrelasjonsId.FromUrlSafeBase64());
+        externalFiksIOClientMock.Verify();
+    }
+
+    [Fact]
+    public async Task SendMessage_WhenClientNullOrNotOpen_InitializesNewClient()
+    {
+        // Arrange
+        var externalFiksIOClientMock1 = new Mock<KS.Fiks.IO.Client.IFiksIOClient>();
+        var externalFiksIOClientMock2 = new Mock<KS.Fiks.IO.Client.IFiksIOClient>();
+        var fixture = TestFixture.Create(services => services.AddFiksIOClient());
+        var (messageRequest, messageResponse) = MessageRequestAndResponseFactory();
+
+        externalFiksIOClientMock1.Setup(x => x.IsOpenAsync()).ReturnsAsync(false).Verifiable(Times.Once);
+        externalFiksIOClientMock1
+            .Setup(x => x.Send(It.IsAny<MeldingRequest>(), It.IsAny<IList<IPayload>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(messageResponse)
+            .Verifiable(Times.Once);
+        externalFiksIOClientMock2.Setup(x => x.IsOpenAsync()).ReturnsAsync(true).Verifiable(Times.Once);
+        externalFiksIOClientMock2
+            .Setup(x => x.Send(It.IsAny<MeldingRequest>(), It.IsAny<IList<IPayload>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(messageResponse)
+            .Verifiable(Times.Exactly(2));
+        fixture
+            .FiksIOClientFactoryMock.SetupSequence(x => x.CreateClient(It.IsAny<ExternalFiksIOConfiguration>()))
+            .ReturnsAsync(externalFiksIOClientMock1.Object)
+            .ReturnsAsync(externalFiksIOClientMock2.Object);
+
+        // Act
+        await fixture.FiksIOClient.SendMessage(messageRequest);
+        await fixture.FiksIOClient.SendMessage(messageRequest);
+        await fixture.FiksIOClient.SendMessage(messageRequest);
+
+        // Assert
+        externalFiksIOClientMock1.Verify();
+        externalFiksIOClientMock2.Verify();
+        fixture.FiksIOClientFactoryMock.Verify();
+    }
+
+    [Fact]
+    public async Task SendMessage_WhenSendFails_ThrowsExceptionWithLogging()
+    {
+        // Arrange
+        await using var autoAdvancingFakeTime = AutoAdvancingFakeTime.Create(
+            TimeSpan.FromMilliseconds(10),
+            TimeSpan.FromMinutes(1)
+        );
+        var externalFiksIOClientMock = new Mock<KS.Fiks.IO.Client.IFiksIOClient>();
+        var loggerMock = new Mock<ILogger<FiksIOClient>>();
+        var fixture = TestFixture.Create(services =>
+        {
+            services.AddFiksIOClient();
+            services.AddSingleton(loggerMock.Object);
+            services.AddSingleton(autoAdvancingFakeTime.Provider);
+        });
+
+        var (request, _) = MessageRequestAndResponseFactory();
+        var expectedException = new InvalidOperationException("Test send failure");
+
+        fixture
+            .FiksIOClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<ExternalFiksIOConfiguration>()))
+            .ReturnsAsync(externalFiksIOClientMock.Object);
+
+        externalFiksIOClientMock.Setup(x => x.IsOpenAsync()).ReturnsAsync(true);
+        externalFiksIOClientMock
+            .Setup(x => x.Send(It.IsAny<MeldingRequest>(), It.IsAny<IList<IPayload>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(expectedException)
+            .Verifiable(Times.Exactly(6));
+
+        // Act
+        var thrownException = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.FiksIOClient.SendMessage(request)
+        );
+
+        // Assert
+        Assert.Same(expectedException, thrownException);
+        externalFiksIOClientMock.Verify();
+        loggerMock.Verify(
+            TestHelpers.MatchLogEntry(
+                LogLevel.Error,
+                $"Failed to send message {request.MessageType}:{request.SendersReference} after 6 attempts",
+                loggerMock.Object
+            ),
+            Times.Once
+        );
+        loggerMock.Verify(
+            TestHelpers.MatchLogEntry(LogLevel.Warning, "Failed to send FiksIO message", loggerMock.Object),
+            Times.Exactly(5)
+        );
+    }
+
+    private static (FiksIOMessageRequest, SendtMelding) MessageRequestAndResponseFactory()
+    {
+        var request = new FiksIOMessageRequest(
+            Recipient: Guid.NewGuid(),
+            MessageType: "test.message.type",
+            SendersReference: Guid.NewGuid(),
+            CorrelationId: "correlation-id-123",
+            Payload: []
+        );
+
+        var expectedExternalResult = SendtMelding.FromSentMessageApiModel(
+            new SendtMeldingApiModel
+            {
+                MeldingId = Guid.NewGuid(),
+                MeldingType = request.MessageType,
+                AvsenderKontoId = Guid.NewGuid(),
+                MottakerKontoId = request.Recipient,
+            }
+        );
+
+        return (request, expectedExternalResult);
     }
 
     private sealed record FiksIOConfigurationExtract

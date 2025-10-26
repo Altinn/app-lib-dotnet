@@ -8,18 +8,23 @@ namespace Altinn.App.Clients.Fiks.FiksIO;
 internal sealed class FiksIOMaskinportenClient : IFiksMaskinportenClient
 {
     private readonly IAltinnMaskinportenClient _altinnMaskinportenClient;
+    private readonly TimeProvider _timeProvider;
 
-    public FiksIOMaskinportenClient(IAltinnMaskinportenClient altinnMaskinportenClient)
+    public FiksIOMaskinportenClient(
+        IAltinnMaskinportenClient altinnMaskinportenClient,
+        TimeProvider? timeProvider = null
+    )
     {
         _altinnMaskinportenClient = altinnMaskinportenClient;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task<FiksMaskinportenToken> GetAccessToken(IEnumerable<string> scopes)
     {
         var token = await _altinnMaskinportenClient.GetAccessToken(scopes);
-        var expiresIn = token.ExpiresAt - DateTimeOffset.UtcNow;
+        var expiresIn = token.ExpiresAt - _timeProvider.GetUtcNow();
 
-        return new FiksMaskinportenToken(token.Value, (int)expiresIn.TotalSeconds);
+        return new TokenWrapper(token.Value, (int)expiresIn.TotalSeconds);
     }
 
     public Task<FiksMaskinportenToken> GetAccessToken(TokenRequest tokenRequest)
@@ -68,5 +73,16 @@ internal sealed class FiksIOMaskinportenClient : IFiksMaskinportenClient
     public Task<FiksMaskinportenToken> GetOnBehalfOfAccessToken(string consumerOrg, string scopes)
     {
         throw new NotImplementedException();
+    }
+
+    internal sealed class TokenWrapper : FiksMaskinportenToken
+    {
+        internal int ExpiresIn { get; }
+
+        internal TokenWrapper(string token, int expiresIn)
+            : base(token, expiresIn)
+        {
+            ExpiresIn = expiresIn;
+        }
     }
 }
