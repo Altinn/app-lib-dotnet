@@ -132,7 +132,8 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
             throw;
         }
 
-        static string? ParseString(object? data, string paramName) => (data as string).EnsureNotEmpty($"{nameof(FiksArkivMetadataSettings)}.{paramName}");
+        static string? ParseString(object? data, string paramName) =>
+            (data as string).EnsureNotEmpty($"{nameof(FiksArkivMetadataSettings)}.{paramName}");
     }
 
     /// <inheritdoc />
@@ -199,7 +200,8 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
                 ? parsedGuid
                 : throw new FiksArkivException($"Could not parse recipient account from data binding: {data}");
 
-        static string? ParseString(object? data, string paramName) => (data as string).EnsureNotEmpty($"{nameof(FiksArkivReceiptSettings)}.{paramName}");
+        static string? ParseString(object? data, string paramName) =>
+            (data as string).EnsureNotEmpty($"{nameof(FiksArkivReceiptSettings)}.{paramName}");
     }
 
     /// <inheritdoc />
