@@ -1,7 +1,7 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
-using Altinn.App.Core.Internal.Process.ServiceTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,6 +16,8 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     private readonly IProcessTaskDataLocker _processTaskDataLocker;
     private readonly IProcessTaskFinalizer _processTaskFinisher;
     private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly IPdfServiceTaskLegacy _pdfServiceTaskLegacy;
+    private readonly IEFormidlingServiceTaskLegacy _eformidlingServiceTaskLegacy;
     private readonly ILogger<EndTaskEventHandler> _logger;
     private readonly IInstanceClient _instanceClient;
 
@@ -33,7 +35,8 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         _processTaskDataLocker = processTaskDataLocker;
         _processTaskFinisher = processTaskFinisher;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
-        _instanceClient = instanceClient;
+        _pdfServiceTaskLegacy = serviceProvider.GetRequiredService<IPdfServiceTaskLegacy>();
+        _eformidlingServiceTaskLegacy = serviceProvider.GetRequiredService<IEFormidlingServiceTaskLegacy>();
         _logger = logger;
     }
 
@@ -42,25 +45,15 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     /// </summary>
     public async Task Execute(IProcessTask processTask, string taskId, Instance instance)
     {
-        var serviceTasks = _appImplementationFactory.GetAll<IServiceTask>().ToList();
-
-        var pdfServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IPdfServiceTask)
-            ?? throw new InvalidOperationException("PdfServiceTask not found in service tasks");
-        var eformidlingServiceTask =
-            serviceTasks.FirstOrDefault(x => x is IEformidlingServiceTask)
-            ?? throw new InvalidOperationException("eFormidlingServiceTask not found in service tasks");
-        var fiksArkivServiceTask = serviceTasks.FirstOrDefault(x => x is IFiksArkivServiceTask);
-
         await processTask.End(taskId, instance);
         await _processTaskFinisher.Finalize(taskId, instance);
         await RunAppDefinedProcessTaskEndHandlers(taskId, instance);
         await _processTaskDataLocker.Lock(taskId, instance);
 
-        // The below services are scheduled to be removed and replaced by services tasks defined in the process.bpmn file
+        //These two services are scheduled to be removed in a major version. Pdf and eFormidling have been implemented as service tasks and can be added to the app using the process bpmn file.
         try
         {
-            await pdfServiceTask.Execute(taskId, instance);
+            await _pdfServiceTaskLegacy.Execute(taskId, instance);
         }
         catch (Exception e)
         {
@@ -71,7 +64,7 @@ public class EndTaskEventHandler : IEndTaskEventHandler
 
         try
         {
-            await eformidlingServiceTask.Execute(taskId, instance);
+            await _eformidlingServiceTaskLegacy.Execute(taskId, instance);
         }
         catch (Exception e)
         {

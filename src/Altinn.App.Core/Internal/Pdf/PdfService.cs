@@ -72,25 +72,26 @@ public class PdfService : IPdfService
     {
         using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
 
-        HttpContext? httpContext = _httpContextAccessor.HttpContext;
-        var queries = httpContext?.Request.Query;
-        var auth = _authenticationContext.Current;
+        await GenerateAndStorePdfInternal(instance, taskId, null, null, ct);
+    }
 
-        var language = GetOverriddenLanguage(queries) ?? await auth.GetLanguage();
+    /// <inheritdoc/>
+    public async Task GenerateAndStorePdf(
+        Instance instance,
+        string taskId,
+        string? fileNameTextResourceElementId,
+        List<string>? autoGeneratePdfForTaskIds = null,
+        CancellationToken ct = default
+    )
+    {
+        using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
 
-        TextResource? textResource = await GetTextResource(instance, language);
-
-        var pdfContent = await GeneratePdfContent(instance, language, false, textResource, ct);
-
-        string fileName = GetFileName(instance, textResource);
-        await _dataClient.InsertBinaryData(
-            instance.Id,
-            PdfElementType,
-            PdfContentType,
-            fileName,
-            pdfContent,
+        await GenerateAndStorePdfInternal(
+            instance,
             taskId,
-            cancellationToken: ct
+            fileNameTextResourceElementId,
+            autoGeneratePdfForTaskIds,
+            ct
         );
     }
 
@@ -107,7 +108,7 @@ public class PdfService : IPdfService
 
         TextResource? textResource = await GetTextResource(instance, language);
 
-        return await GeneratePdfContent(instance, language, isPreview, textResource, ct);
+        return await GeneratePdfContent(instance, language, isPreview, textResource, null, ct);
     }
 
     /// <inheritdoc/>
@@ -116,11 +117,49 @@ public class PdfService : IPdfService
         return await GeneratePdf(instance, taskId, false, ct);
     }
 
+    private async Task GenerateAndStorePdfInternal(
+        Instance instance,
+        string taskId,
+        string? fileNameTextResourceElementId,
+        List<string>? autoGeneratePdfForTaskIds = null,
+        CancellationToken ct = default
+    )
+    {
+        HttpContext? httpContext = _httpContextAccessor.HttpContext;
+        var queries = httpContext?.Request.Query;
+        var auth = _authenticationContext.Current;
+
+        var language = GetOverriddenLanguage(queries) ?? await auth.GetLanguage();
+
+        TextResource? textResource = await GetTextResource(instance, language);
+
+        await using Stream pdfContent = await GeneratePdfContent(
+            instance,
+            language,
+            false,
+            textResource,
+            autoGeneratePdfForTaskIds,
+            ct
+        );
+
+        string fileName = GetFileName(instance, textResource, fileNameTextResourceElementId);
+        await _dataClient.InsertBinaryData(
+            instance.Id,
+            PdfElementType,
+            PdfContentType,
+            fileName,
+            pdfContent,
+            taskId,
+            cancellationToken: ct
+        );
+    }
+
     private async Task<Stream> GeneratePdfContent(
         Instance instance,
         string language,
         bool isPreview,
         TextResource? textResource,
+        List<string>? autoGeneratePdfForTaskIds,
         CancellationToken ct
     )
     {
@@ -129,7 +168,11 @@ public class PdfService : IPdfService
             .AppPdfPagePathTemplate.ToLowerInvariant()
             .Replace("{instanceid}", instance.Id);
 
-        Uri uri = BuildUri(baseUrl, pagePath, language);
+        List<KeyValuePair<string, string>> autoPdfTaskIdsQueryParams = CreateAutoPdfTaskIdsQueryParams(
+            autoGeneratePdfForTaskIds
+        );
+
+        Uri uri = BuildUri(baseUrl, pagePath, language, autoPdfTaskIdsQueryParams);
 
         bool displayFooter = _pdfGeneratorSettings.DisplayFooter;
 
@@ -149,7 +192,12 @@ public class PdfService : IPdfService
         return pdfContent;
     }
 
-    private static Uri BuildUri(string baseUrl, string pagePath, string language)
+    private static Uri BuildUri(
+        string baseUrl,
+        string pagePath,
+        string language,
+        List<KeyValuePair<string, string>>? additionalQueryParams = null
+    )
     {
         // Uses string manipulation instead of UriBuilder, since UriBuilder messes up
         // query parameters in combination with hash fragments in the url.
@@ -161,6 +209,14 @@ public class PdfService : IPdfService
         else
         {
             url += $"?lang={language}";
+        }
+
+        if (additionalQueryParams != null)
+        {
+            foreach (KeyValuePair<string, string> param in additionalQueryParams)
+            {
+                url += $"&{param.Key}={param.Value}";
+            }
         }
 
         return new Uri(url);
@@ -200,10 +256,26 @@ public class PdfService : IPdfService
         return textResource;
     }
 
-    private static string GetFileName(Instance instance, TextResource? textResource)
+    private static string GetFileName(
+        Instance instance,
+        TextResource? textResource,
+        string? fileNameTextResourceElementId = null
+    )
     {
+        if (!string.IsNullOrEmpty(fileNameTextResourceElementId))
+        {
+            TextResourceElement? textResourceElement = textResource?.Resources.Find(textResourceElement =>
+                textResourceElement.Id.Equals(fileNameTextResourceElementId, StringComparison.Ordinal)
+            );
+
+            if (textResourceElement is not null)
+                return GetValidFileName(textResourceElement.Value);
+
+            return GetValidFileName(fileNameTextResourceElementId);
+        }
+
         string app = instance.AppId.Split("/")[1];
-        string fileName = $"{app}.pdf";
+        var fileName = $"{app}.pdf";
 
         if (textResource is null)
         {
@@ -261,6 +333,16 @@ public class PdfService : IPdfService
     private static string GetValidFileName(string fileName)
     {
         fileName = Uri.EscapeDataString(fileName.AsFileName(false));
+        return AddPdfFileTypeIfMissing(fileName);
+    }
+
+    private static string AddPdfFileTypeIfMissing(string fileName)
+    {
+        if (!fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            return fileName + ".pdf";
+        }
+
         return fileName;
     }
 
@@ -313,5 +395,22 @@ public class PdfService : IPdfService
                 </div>
             </div>";
         return footerTemplate;
+    }
+
+    private static List<KeyValuePair<string, string>> CreateAutoPdfTaskIdsQueryParams(
+        List<string>? autoGeneratePdfForTaskIds
+    )
+    {
+        List<KeyValuePair<string, string>> additionalQueryParams = [];
+        // Create query param array for autoGeneratePdfForTaskIds if provided, task=1&task=2 etc.
+        if (autoGeneratePdfForTaskIds != null && autoGeneratePdfForTaskIds.Count != 0)
+        {
+            foreach (string taskId in autoGeneratePdfForTaskIds)
+            {
+                additionalQueryParams.Add(new KeyValuePair<string, string>("task", taskId));
+            }
+        }
+
+        return additionalQueryParams;
     }
 }
