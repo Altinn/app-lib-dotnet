@@ -92,35 +92,35 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
                 layoutState,
                 instance,
                 _fiksArkivSettings.Metadata.CaseFileTitle,
-                ParseString,
+                x => ParseString(x, nameof(FiksArkivMetadataSettings.CaseFileTitle)),
                 cancellationToken
             );
             var journalEntryTitle = await GetBindableConfigValue(
                 layoutState,
                 instance,
                 _fiksArkivSettings.Metadata.JournalEntryTitle,
-                ParseString,
+                x => ParseString(x, nameof(FiksArkivMetadataSettings.JournalEntryTitle)),
                 cancellationToken
             );
             var systemId = await GetBindableConfigValue(
                 layoutState,
                 instance,
                 _fiksArkivSettings.Metadata.SystemId,
-                ParseString,
+                x => ParseString(x, nameof(FiksArkivMetadataSettings.SystemId)),
                 cancellationToken
             );
             var ruleId = await GetBindableConfigValue(
                 layoutState,
                 instance,
                 _fiksArkivSettings.Metadata.RuleId,
-                ParseString,
+                x => ParseString(x, nameof(FiksArkivMetadataSettings.RuleId)),
                 cancellationToken
             );
             var caseFileId = await GetBindableConfigValue(
                 layoutState,
                 instance,
                 _fiksArkivSettings.Metadata.CaseFileId,
-                ParseString,
+                x => ParseString(x, nameof(FiksArkivMetadataSettings.CaseFileId)),
                 cancellationToken
             );
 
@@ -132,7 +132,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
             throw;
         }
 
-        static string? ParseString(object? data) => data as string;
+        static string? ParseString(object? data, string paramName) => (data as string).EnsureNotEmpty($"{nameof(FiksArkivMetadataSettings)}.{paramName}");
     }
 
     /// <inheritdoc />
@@ -161,7 +161,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
                     layoutState,
                     instance,
                     recipientSettings.Identifier,
-                    ParseString,
+                    x => ParseString(x, nameof(FiksArkivRecipient.Identifier)),
                     cancellationToken
                 )
                 ?? throw new FiksArkivException(
@@ -172,7 +172,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
                     layoutState,
                     instance,
                     recipientSettings.Name,
-                    ParseString,
+                    x => ParseString(x, nameof(FiksArkivRecipient.Name)),
                     cancellationToken
                 )
                 ?? throw new FiksArkivException(
@@ -182,7 +182,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
                 layoutState,
                 instance,
                 recipientSettings.OrganizationNumber,
-                ParseString,
+                x => ParseString(x, nameof(FiksArkivRecipient.OrgNumber)),
                 cancellationToken
             );
 
@@ -199,7 +199,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
                 ? parsedGuid
                 : throw new FiksArkivException($"Could not parse recipient account from data binding: {data}");
 
-        static string? ParseString(object? data) => data as string;
+        static string? ParseString(object? data, string paramName) => (data as string).EnsureNotEmpty($"{nameof(FiksArkivReceiptSettings)}.{paramName}");
     }
 
     /// <inheritdoc />
