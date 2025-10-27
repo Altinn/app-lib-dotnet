@@ -68,8 +68,9 @@ public class InstanceClient : IInstanceClient
         if (response.StatusCode == HttpStatusCode.OK)
         {
             string instanceData = await response.Content.ReadAsStringAsync();
-            // ! TODO: this null-forgiving operator should be fixed/removed for the next major release
-            Instance instance = JsonConvert.DeserializeObject<Instance>(instanceData)!;
+            Instance instance =
+                JsonConvert.DeserializeObject<Instance>(instanceData)
+                ?? throw new JsonException("Instance response from storage was \"null\"");
             return instance;
         }
         else

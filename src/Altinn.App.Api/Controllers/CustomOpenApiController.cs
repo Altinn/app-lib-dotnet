@@ -61,7 +61,7 @@ public class CustomOpenApiController : Controller
     /// </summary>
     public static string InfoDescriptionWarningText =>
         """
-            App API description for both end user and service owner users, as well as open metadata information<br><br>All operations* described within this document require authentication and authorization. Read more at <a href="https://docs.altinn.studio/authentication/guides">https://docs.altinn.studio/authentication/guides</a><br><br><strong>All GET operations* and POST operations may return or contain, respectively, personal identifiable information (national identity numbers and names).</strong><br><br>For more information about this product, see <a href="https://docs.altinn.studio/api/apps">https://docs.altinn.studio/api/apps</a><br><br><em>* Except the metadata APIs
+            App API description for both end users and service owners, as well as open metadata information<br><br>All operations* described within this document require authentication and authorization. Read more at <a href="https://docs.altinn.studio/authentication/guides">https://docs.altinn.studio/authentication/guides</a><br><br><strong>All GET operations* and POST operations may return or contain, respectively, personally identifiable information (PII; national identity numbers and names).</strong><br><br>For more information about this product, see <a href="https://docs.altinn.studio/api/apps">https://docs.altinn.studio/api/apps</a><br><br><em>* Except the metadata APIs
 
             """;
 
@@ -743,12 +743,12 @@ public class CustomOpenApiController : Controller
         };
         document.Paths.Add(
             $"/{appMetadata.Id}/instances/{{instanceOwnerPartyId}}/{{instanceGuid}}/validate",
-            new OpenApiPathItem()
+            new()
             {
                 Summary = "Validate an app instance",
                 Operations =
                 {
-                    [OperationType.Get] = new OpenApiOperation()
+                    [OperationType.Get] = new()
                     {
                         Tags = validationTags,
                         Summary = "Validate an app instance",
@@ -767,7 +767,7 @@ public class CustomOpenApiController : Controller
                                 {
                                     Type = "string",
                                     Example = new OpenApiString(
-                                        "Altinn.App.Core.Features.Validation.Default.DefaultTaskValidator-*, Altinn.App.Core.Features.Validation.Default.DefaultDataElementValidator-*"
+                                        "DataAnnotations, Altinn.App.Models.model.ModelValidation_FormData"
                                     ),
                                 },
                             },
@@ -776,7 +776,7 @@ public class CustomOpenApiController : Controller
                                 Name = "onlyIncrementalValidators",
                                 Description = "Ignore validators that don't run on PATCH requests",
                                 In = ParameterLocation.Query,
-                                Schema = new OpenApiSchema() { Type = "boolean", Example = new OpenApiBoolean(true) },
+                                Schema = new OpenApiSchema() { Type = "boolean", Example = new OpenApiBoolean(false) },
                             },
                             new()
                             {
@@ -786,26 +786,25 @@ public class CustomOpenApiController : Controller
                                 Schema = new OpenApiSchema() { Type = "string", Example = new OpenApiString("nb") },
                             },
                         ],
-                        Responses = new()
-                        {
-                            ["200"] = new OpenApiResponse()
+                        Responses = Snippets.AddCommonErrorResponses(
+                            new()
                             {
-                                Description = "Validation result",
-                                Content =
+                                ["200"] = new()
                                 {
-                                    ["application/json"] = new OpenApiMediaType()
+                                    Description = "Validation result",
+                                    Content =
                                     {
-                                        Schema = _schemaGenerator.GenerateSchema(
-                                            typeof(List<ValidationIssueWithSource>),
-                                            _schemaRepository
-                                        ),
+                                        ["application/json"] = new OpenApiMediaType()
+                                        {
+                                            Schema = _schemaGenerator.GenerateSchema(
+                                                typeof(List<ValidationIssueWithSource>),
+                                                _schemaRepository
+                                            ),
+                                        },
                                     },
                                 },
-                            },
-                            ["403"] = new OpenApiResponse() { Description = "Forbidden" },
-                            ["404"] = new OpenApiResponse() { Description = "Not Found" },
-                            ["500"] = new OpenApiResponse() { Description = "Internal server error" },
-                        },
+                            }
+                        ),
                     },
                 },
             }
@@ -1252,7 +1251,7 @@ public static class Snippets
             {
                 Name = "instanceOwnerPartyId",
                 Description =
-                    "PartyId for the owner of the instance, this is Altinn's internal id for the organisation, person or self registered user. Might be the current user, or ",
+                    "PartyId for the owner of the instance, this is Altinn's internal id for the organisation, person or self registered user. Might be the current user, or a party the user has rights to represent.",
                 In = ParameterLocation.Path,
                 Required = true,
                 Schema = new OpenApiSchema() { Type = "integer" },
