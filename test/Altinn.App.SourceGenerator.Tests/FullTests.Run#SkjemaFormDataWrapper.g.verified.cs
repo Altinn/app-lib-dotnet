@@ -211,6 +211,14 @@ public sealed class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
         var segment = ParseSegment(path, pathOffset, out pathOffset, out int literalIndex);
         switch (segment)
         {
+            case "skjemanummer":
+                segment.CopyTo(buffer.Slice(bufferOffset));
+                bufferOffset += 12;
+                return;
+            case "skjemaversjon":
+                segment.CopyTo(buffer.Slice(bufferOffset));
+                bufferOffset += 13;
+                return;
             case "skjemainnhold":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 13;
@@ -275,14 +283,6 @@ public sealed class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
                     );
                 }
                 return;
-            case "skjemanummer":
-                segment.CopyTo(buffer.Slice(bufferOffset));
-                bufferOffset += 12;
-                return;
-            case "skjemaversjon":
-                segment.CopyTo(buffer.Slice(bufferOffset));
-                bufferOffset += 13;
-                return;
             default:
                 bufferOffset = 0;
                 return;
@@ -304,6 +304,22 @@ public sealed class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
         var segment = ParseSegment(path, pathOffset, out pathOffset, out int literalIndex);
         switch (segment)
         {
+            case "altinnRowId":
+                segment.CopyTo(buffer.Slice(bufferOffset));
+                bufferOffset += 11;
+                return;
+            case "navn":
+                segment.CopyTo(buffer.Slice(bufferOffset));
+                bufferOffset += 4;
+                return;
+            case "alder":
+                segment.CopyTo(buffer.Slice(bufferOffset));
+                bufferOffset += 5;
+                return;
+            case "deltar":
+                segment.CopyTo(buffer.Slice(bufferOffset));
+                bufferOffset += 6;
+                return;
             case "adresse":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 7;
@@ -368,22 +384,6 @@ public sealed class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
                     );
                 }
                 return;
-            case "altinnRowId":
-                segment.CopyTo(buffer.Slice(bufferOffset));
-                bufferOffset += 11;
-                return;
-            case "navn":
-                segment.CopyTo(buffer.Slice(bufferOffset));
-                bufferOffset += 4;
-                return;
-            case "alder":
-                segment.CopyTo(buffer.Slice(bufferOffset));
-                bufferOffset += 5;
-                return;
-            case "deltar":
-                segment.CopyTo(buffer.Slice(bufferOffset));
-                bufferOffset += 6;
-                return;
             default:
                 bufferOffset = 0;
                 return;
@@ -424,6 +424,42 @@ public sealed class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
             case "tags":
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 4;
+
+                if (literalIndex != -1)
+                {
+                    // Copy index from path to buffer
+                    buffer[bufferOffset++] = '[';
+                    if (!literalIndex.TryFormat(buffer[bufferOffset..], out int charsWritten))
+                    {
+                        throw new global::System.FormatException($"Invalid index in {path}.");
+                    }
+
+                    bufferOffset += charsWritten;
+                    buffer[bufferOffset++] = ']';
+                    rowIndexes = default;
+                }
+                else if (rowIndexes.Length >= 1)
+                {
+                    // Write index from rowIndexes to buffer
+                    buffer[bufferOffset++] = '[';
+                    rowIndexes[0].TryFormat(buffer.Slice(bufferOffset), out int charsWritten);
+                    bufferOffset += charsWritten;
+                    buffer[bufferOffset++] = ']';
+                    rowIndexes = rowIndexes.Slice(1);
+                }
+                else if (pathOffset == -1)
+                {
+                    // No more segments in the path, and the last part is valid in a list
+                    // without index (e.g. "model.listProperty" is valid, but "model.listProperty.val" needs an index)
+                    return;
+                }
+                else
+                {
+                    // No index to write, but there are more segments in the path
+                    // thus the path is not valid
+                    bufferOffset = 0;
+                    return;
+                }
                 return;
             default:
                 bufferOffset = 0;

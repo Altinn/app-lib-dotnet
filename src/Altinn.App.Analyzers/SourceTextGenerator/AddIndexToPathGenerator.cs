@@ -69,7 +69,7 @@ internal static class AddIndexToPathGenerator
             """
         );
 
-        foreach (var child in node.Properties.Where(IsRelevantForRecursion))
+        foreach (var child in node.Properties)
         {
             builder.Append(
                 $$"""
@@ -123,35 +123,26 @@ internal static class AddIndexToPathGenerator
                     """
                 );
             }
-            builder.Append(
-                $$"""
-                                if (pathOffset != -1)
-                                {
-                                    AddIndexToPathRecursive_{{child.Name}}(
-                                        path,
-                                        pathOffset,
-                                        rowIndexes,
-                                        buffer,
-                                        ref bufferOffset
-                                    );
-                                }
-                                return;
+            if (!child.IsJsonValueType)
+            {
+                builder.Append(
+                    $$"""
+                                    if (pathOffset != -1)
+                                    {
+                                        AddIndexToPathRecursive_{{child.Name}}(
+                                            path,
+                                            pathOffset,
+                                            rowIndexes,
+                                            buffer,
+                                            ref bufferOffset
+                                        );
+                                    }
 
-                """
-            );
-        }
+                    """
+                );
+            }
 
-        foreach (var child in node.Properties.Where(c => !IsRelevantForRecursion(c)))
-        {
-            builder.Append(
-                $$"""
-                            case "{{child.JsonName}}":
-                                segment.CopyTo(buffer.Slice(bufferOffset));
-                                bufferOffset += {{child.JsonName.Length}};
-                                return;
-
-                """
-            );
+            builder.Append("                return;\n");
         }
 
         builder.Append(
@@ -164,14 +155,9 @@ internal static class AddIndexToPathGenerator
 
             """
         );
-        foreach (var child in node.Properties.Where(c => IsRelevantForRecursion(c)))
+        foreach (var child in node.Properties.Where(c => !c.IsJsonValueType))
         {
             GenerateRecursiveMethod(builder, child, generatedTypeNames);
         }
-    }
-
-    private static bool IsRelevantForRecursion(ModelPathNode node)
-    {
-        return node.Properties.Count != 0;
     }
 }
