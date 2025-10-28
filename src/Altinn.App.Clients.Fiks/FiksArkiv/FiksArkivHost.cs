@@ -32,6 +32,8 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
     private readonly IFiksArkivConfigResolver _fiksArkivConfigResolver;
     private readonly AppImplementationFactory _appImplementationFactory;
 
+    private static readonly TimeSpan _raceConditionDeferralInterval = TimeSpan.FromSeconds(1);
+
     private IFiksArkivPayloadGenerator _fiksArkivPayloadGenerator =>
         _appImplementationFactory.GetRequired<IFiksArkivPayloadGenerator>();
     private IFiksArkivResponseHandler _fiksArkivResponseHandler =>
@@ -210,6 +212,20 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
 
             instance = await RetrieveInstance(message);
 
+            if (CurrentTaskIsFiksArkiv(instance))
+            {
+                _logger.LogWarning(
+                    "Current task is the Fiks Arkiv service task. This most likely means we are experiencing an order of operation issue with process/next. Deferring processing of message {MessageId} by {DeferralInterval} to give the situation time to resolve itself.",
+                    message.Message.MessageId,
+                    _raceConditionDeferralInterval
+                );
+
+                await Task.Delay(_raceConditionDeferralInterval);
+                await message.Responder.NackWithRequeue();
+
+                return;
+            }
+
             using Activity? innerActivity = _telemetry?.StartFiksMessageHandlerActivity(instance, GetType());
 
             await HandleReceivedMessage(instance, message);
@@ -222,23 +238,41 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Fiks Arkiv MessageReceivedHandler failed with error: {Error}", e.Message);
+            _logger.LogError(
+                e,
+                "Fiks Arkiv MessageReceivedHandler failed with unrecoverable error: {Error}",
+                e.Message
+            );
             mainActivity?.Errored(e);
 
             // Don't ack messages we failed to process in PROD. Let Fiks IO redeliver and/or trigger alarms.
             if (!_env.IsProduction())
                 await message.Responder.Ack();
 
-            await TryMoveProcessOnError(instance);
+            // Attempt to move the process forward on error, unless we're still stuck in the service task
+            if (!CurrentTaskIsFiksArkiv(instance))
+                await TryMoveProcessOnError(instance);
         }
     }
+
+    /// <summary>
+    /// Checks if the current task on the instance is the Fiks Arkiv service task.
+    /// If so, that means we're experiencing an order of operation issue and should attempt to wait for
+    /// the process/next sequence to finish before proceeding.
+    /// </summary>
+    private static bool CurrentTaskIsFiksArkiv(Instance? instance) =>
+        instance?.Process?.CurrentTask?.AltinnTaskType?.Equals(
+            FiksArkivServiceTask.TaskIdentifier,
+            StringComparison.OrdinalIgnoreCase
+        )
+            is true;
 
     private async Task<DataElement> SaveArchiveRecord(Instance instance, FiksIOMessageRequest request)
     {
         _logger.LogInformation("Saving archive record for Fiks Arkiv request: {Request}", request);
         ArgumentNullException.ThrowIfNull(_fiksArkivSettings.Receipt);
 
-        await DeleteExistingDataElements(instance, _fiksArkivSettings.Receipt.ArchiveRecord.DataType);
+        await DeleteExistingDataElements(instance, _fiksArkivSettings.Receipt.ArchiveRecord);
 
         DataElement result = await _fiksArkivInstanceClient.InsertBinaryData(
             new InstanceIdentifier(instance),
@@ -266,7 +300,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
         _logger.LogInformation("Saving archive receipt: {Receipt}", receipt);
         ArgumentNullException.ThrowIfNull(_fiksArkivSettings.Receipt);
 
-        await DeleteExistingDataElements(instance, _fiksArkivSettings.Receipt.ConfirmationRecord.DataType);
+        await DeleteExistingDataElements(instance, _fiksArkivSettings.Receipt.ConfirmationRecord);
 
         DataElement result = await _fiksArkivInstanceClient.InsertBinaryData(
             new InstanceIdentifier(instance),
@@ -286,16 +320,25 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
         return result;
     }
 
-    private async Task DeleteExistingDataElements(Instance instance, string dataType)
+    private async Task DeleteExistingDataElements(Instance instance, FiksArkivDataTypeSettings dataTypeSettings)
     {
-        var dataElements = instance.GetOptionalDataElements(dataType).ToList();
+        var dataElements = instance
+            .GetOptionalDataElements(dataTypeSettings.DataType)
+            .Where(x => x.Filename == dataTypeSettings.Filename)
+            .ToList();
+
         if (dataElements.Count == 0)
             return;
 
         var instanceIdentifier = new InstanceIdentifier(instance);
         foreach (var dataElement in dataElements)
         {
-            _logger.LogInformation("Deleting existing {DataType} data: {DataElementId}", dataType, dataElement.Id);
+            _logger.LogInformation(
+                "Deleting existing {DataType} data: {Filename} -> {DataElementId}",
+                dataTypeSettings.DataType,
+                dataTypeSettings.Filename,
+                dataElement.Id
+            );
             await _fiksArkivInstanceClient.DeleteBinaryData(instanceIdentifier, Guid.Parse(dataElement.Id));
         }
     }
@@ -308,25 +351,17 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
             return;
         }
 
-        if (_fiksArkivSettings.AutoSend?.ErrorHandling is null)
+        if (_fiksArkivSettings.ErrorHandling?.MoveToNextTask is not true)
         {
             _logger.LogWarning(
-                "Unable to move the process forward, because the `FiksArkivSettings.AutoSend.ErrorHandling` configuration property has not been set"
-            );
-            return;
-        }
-
-        if (_fiksArkivSettings.AutoSend.ErrorHandling?.MoveToNextTask is true)
-        {
-            _logger.LogInformation(
-                "`FiksArkivSettings.AutoSendErrorHandling.MoveToNextTask` has been disabled, taking no action."
+                "Unable to move the process forward, because the `FiksArkivSettings.AutoSend.ErrorHandling.MoveToNextTask` configuration property has been disabled or not been set"
             );
             return;
         }
 
         await _fiksArkivInstanceClient.ProcessMoveNext(
             new InstanceIdentifier(instance),
-            _fiksArkivSettings.AutoSend?.ErrorHandling?.Action
+            _fiksArkivSettings.ErrorHandling?.Action
         );
     }
 

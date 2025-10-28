@@ -110,9 +110,7 @@ public class FiksArkivConfigResolverTest
     )
     {
         // Arrange
-        await using var fixture = TestFixture.Create(services =>
-            services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings")
-        );
+        await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
 
         fixture
             .AppMetadataMock.Setup(x => x.GetApplicationMetadata())

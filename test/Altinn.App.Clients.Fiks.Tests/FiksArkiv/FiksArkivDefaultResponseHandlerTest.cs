@@ -49,7 +49,7 @@ public class FiksArkivDefaultResponseHandlerTest
         var instance = InstanceFactory();
         var message = ReceivedMessageFactory(FiksArkivMeldingtype.ArkivmeldingOpprettKvittering);
         var loggerMock = new Mock<ILogger<FiksArkivDefaultResponseHandler>>();
-        var fiksArkivSettingsOverride = new FiksArkivSettings { AutoSend = null };
+        var fiksArkivSettingsOverride = new FiksArkivSettings { SuccessHandling = null };
 
         await using var fixture = TestFixture.Create(
             services =>
@@ -57,7 +57,8 @@ public class FiksArkivDefaultResponseHandlerTest
                 services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings");
                 services.AddSingleton(loggerMock.Object);
             },
-            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)]
+            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)],
+            useDefaultFiksArkivSettings: false
         );
 
         // Act
@@ -77,10 +78,7 @@ public class FiksArkivDefaultResponseHandlerTest
         var message = ReceivedMessageFactory(FiksArkivMeldingtype.ArkivmeldingOpprettKvittering);
         var fiksArkivSettingsOverride = new FiksArkivSettings
         {
-            AutoSend = new FiksArkivAutoSendSettings
-            {
-                SuccessHandling = new FiksArkivSuccessHandlingSettings { MoveToNextTask = true },
-            },
+            SuccessHandling = new FiksArkivSuccessHandlingSettings { MoveToNextTask = true },
         };
 
         await using var fixture = TestFixture.Create(
@@ -88,7 +86,8 @@ public class FiksArkivDefaultResponseHandlerTest
             {
                 services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings");
             },
-            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)]
+            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)],
+            useDefaultFiksArkivSettings: false
         );
 
         // Act
@@ -110,14 +109,11 @@ public class FiksArkivDefaultResponseHandlerTest
         var fiksArkivInstanceClientMock = new Mock<IFiksArkivInstanceClient>();
         var fiksArkivSettingsOverride = new FiksArkivSettings
         {
-            AutoSend = new FiksArkivAutoSendSettings
+            SuccessHandling = new FiksArkivSuccessHandlingSettings
             {
-                SuccessHandling = new FiksArkivSuccessHandlingSettings
-                {
-                    MoveToNextTask = moveToNextTask,
-                    MarkInstanceComplete = markInstanceComplete,
-                    Action = "the-action",
-                },
+                MoveToNextTask = moveToNextTask,
+                MarkInstanceComplete = markInstanceComplete,
+                Action = "the-action",
             },
         };
 
@@ -127,7 +123,8 @@ public class FiksArkivDefaultResponseHandlerTest
                 services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings");
                 services.AddSingleton(fiksArkivInstanceClientMock.Object);
             },
-            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)]
+            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)],
+            useDefaultFiksArkivSettings: false
         );
 
         fiksArkivInstanceClientMock
@@ -152,7 +149,7 @@ public class FiksArkivDefaultResponseHandlerTest
         var instance = InstanceFactory();
         var message = ReceivedMessageFactory(FiksArkivMeldingtype.Ugyldigforespørsel);
         var loggerMock = new Mock<ILogger<FiksArkivDefaultResponseHandler>>();
-        var fiksArkivSettingsOverride = new FiksArkivSettings { AutoSend = null };
+        var fiksArkivSettingsOverride = new FiksArkivSettings { ErrorHandling = null };
 
         await using var fixture = TestFixture.Create(
             services =>
@@ -160,7 +157,8 @@ public class FiksArkivDefaultResponseHandlerTest
                 services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings");
                 services.AddSingleton(loggerMock.Object);
             },
-            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)]
+            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)],
+            useDefaultFiksArkivSettings: false
         );
 
         // Act
@@ -180,10 +178,7 @@ public class FiksArkivDefaultResponseHandlerTest
         var message = ReceivedMessageFactory(FiksArkivMeldingtype.Ugyldigforespørsel);
         var fiksArkivSettingsOverride = new FiksArkivSettings
         {
-            AutoSend = new FiksArkivAutoSendSettings
-            {
-                ErrorHandling = new FiksArkivErrorHandlingSettings { MoveToNextTask = true },
-            },
+            ErrorHandling = new FiksArkivErrorHandlingSettings { MoveToNextTask = true },
         };
 
         await using var fixture = TestFixture.Create(
@@ -191,7 +186,8 @@ public class FiksArkivDefaultResponseHandlerTest
             {
                 services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings");
             },
-            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)]
+            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)],
+            useDefaultFiksArkivSettings: false
         );
 
         // Act
@@ -211,13 +207,10 @@ public class FiksArkivDefaultResponseHandlerTest
         var fiksArkivInstanceClientMock = new Mock<IFiksArkivInstanceClient>();
         var fiksArkivSettingsOverride = new FiksArkivSettings
         {
-            AutoSend = new FiksArkivAutoSendSettings
+            ErrorHandling = new FiksArkivErrorHandlingSettings
             {
-                ErrorHandling = new FiksArkivErrorHandlingSettings
-                {
-                    MoveToNextTask = moveToNextTask,
-                    Action = "the-action",
-                },
+                MoveToNextTask = moveToNextTask,
+                Action = "the-action",
             },
         };
 
@@ -227,7 +220,8 @@ public class FiksArkivDefaultResponseHandlerTest
                 services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings");
                 services.AddSingleton(fiksArkivInstanceClientMock.Object);
             },
-            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)]
+            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)],
+            useDefaultFiksArkivSettings: false
         );
 
         fiksArkivInstanceClientMock

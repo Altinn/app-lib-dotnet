@@ -97,13 +97,4 @@ public interface IFiksArkivSetupBuilder : IFiksSetupBuilder<IFiksArkivSetupBuild
     /// <returns>The builder instance.</returns>
     IFiksArkivSetupBuilder WithPayloadGenerator<TMessageHandler>()
         where TMessageHandler : IFiksArkivPayloadGenerator;
-
-    /// <summary>
-    /// Configures the auto-send decision handler for the Fiks Arkiv client.
-    /// This handler is responsible for determining whether a Fiks Arkiv message should be sent or not.
-    /// </summary>
-    /// <typeparam name="TAutoSendDecision">The auto-send decision handler you wish to register for use.</typeparam>
-    /// <returns>The builder instance.</returns>
-    IFiksArkivSetupBuilder WithAutoSendDecision<TAutoSendDecision>()
-        where TAutoSendDecision : IFiksArkivAutoSendDecision;
 }

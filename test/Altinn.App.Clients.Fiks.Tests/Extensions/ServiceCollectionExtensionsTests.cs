@@ -169,7 +169,6 @@ public class ServiceCollectionExtensionsTests
         var fiksArkivInstanceClient = fixture.FiksArkivInstanceClient;
         var fiksArkivPayloadGenerator = fixture.FiksArkivPayloadGenerator;
         var fiksArkivResponseHandler = fixture.FiksArkivResponseHandler;
-        var fiksArkivAutoSendDecisionHandler = fixture.FiksArkivAutoSendDecisionHandler;
 
         // Assert
         Assert.NotNull(fiksIOClient);
@@ -184,7 +183,6 @@ public class ServiceCollectionExtensionsTests
         Assert.NotNull(fiksArkivInstanceClient);
         Assert.NotNull(fiksArkivPayloadGenerator);
         Assert.NotNull(fiksArkivResponseHandler);
-        Assert.NotNull(fiksArkivAutoSendDecisionHandler);
         Assert.Equal(TestHelpers.DefaultFiksIOSettings, fiksIOSettings);
         Assert.IsType<FiksIOClient>(fiksIOClient);
         Assert.IsType<FiksIOClientFactory>(fiksIOClientFactory);
@@ -196,7 +194,6 @@ public class ServiceCollectionExtensionsTests
         Assert.IsType<FiksArkivInstanceClient>(fiksArkivInstanceClient);
         Assert.IsType<FiksArkivDefaultPayloadGenerator>(fiksArkivPayloadGenerator);
         Assert.IsType<FiksArkivDefaultResponseHandler>(fiksArkivResponseHandler);
-        Assert.IsType<FiksArkivDefaultAutoSendDecision>(fiksArkivAutoSendDecisionHandler);
 
         AssertDefaultResiliencePipeline(resiliencePipeline);
     }
@@ -254,7 +251,9 @@ public class ServiceCollectionExtensionsTests
                     })
                     .WithFiksArkivConfig(x =>
                     {
-                        x.AutoSend = fiksArkivSettingsOverride.AutoSend;
+                        x.ErrorHandling = fiksArkivSettingsOverride.ErrorHandling;
+                        x.SuccessHandling = fiksArkivSettingsOverride.SuccessHandling;
+                        x.Metadata = fiksArkivSettingsOverride.Metadata;
                         x.Documents = fiksArkivSettingsOverride.Documents;
                         x.Recipient = fiksArkivSettingsOverride.Recipient;
                         x.Receipt = fiksArkivSettingsOverride.Receipt;
@@ -354,22 +353,6 @@ public class ServiceCollectionExtensionsTests
         // Assert
         Assert.NotNull(fiksArkivMessageHandler);
         Assert.IsType<TestHelpers.CustomFiksArkivResponseHandler>(fiksArkivMessageHandler);
-    }
-
-    [Fact]
-    public async Task AddFiksArkiv_OverridesAutoSendDecision()
-    {
-        // Arrange
-        await using var fixture = TestFixture.Create(services =>
-            services.AddFiksArkiv().WithAutoSendDecision<TestHelpers.CustomAutoSendDecision>()
-        );
-
-        // Act
-        var fiksArkivAutoSendDecisionHandler = fixture.FiksArkivAutoSendDecisionHandler;
-
-        // Assert
-        Assert.NotNull(fiksArkivAutoSendDecisionHandler);
-        Assert.IsType<TestHelpers.CustomAutoSendDecision>(fiksArkivAutoSendDecisionHandler);
     }
 
     private static void AssertDefaultResiliencePipeline(ResiliencePipeline<FiksIOMessageResponse> pipeline)

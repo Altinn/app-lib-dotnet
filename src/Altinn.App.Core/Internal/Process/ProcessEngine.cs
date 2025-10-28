@@ -203,6 +203,7 @@ public class ProcessEngine : IProcessEngine
                 return result;
             }
 
+            // NOTE: `instance` has now been mutated by ProcessNext
             moveToNextTaskAutomatically = IsServiceTask(instance);
             firstIteration = false;
             iterationCount++;
@@ -254,6 +255,9 @@ public class ProcessEngine : IProcessEngine
 
         string checkedAction = request.Action ?? ConvertTaskTypeToAction(altinnTaskType);
         var isServiceTask = false;
+        ProcessChangeResult? serviceTaskProcessChangeResult = null;
+        ServiceTaskResult? serviceTaskResult = null;
+
         // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
         if (request.Action is not "reject")
         {
@@ -261,7 +265,7 @@ public class ProcessEngine : IProcessEngine
             if (serviceTask is not null)
             {
                 isServiceTask = true;
-                ProcessChangeResult serviceTaskProcessChangeResult = await HandleServiceTask(
+                (serviceTaskProcessChangeResult, serviceTaskResult) = await HandleServiceTask(
                     instance,
                     serviceTask,
                     request with
@@ -271,7 +275,7 @@ public class ProcessEngine : IProcessEngine
                     ct
                 );
 
-                if (!serviceTaskProcessChangeResult.Success)
+                if (serviceTaskResult?.AutoMoveNext is not true)
                 {
                     return serviceTaskProcessChangeResult;
                 }
@@ -337,7 +341,9 @@ public class ProcessEngine : IProcessEngine
             }
         }
 
-        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, request.Action);
+        MoveToNextResult moveToNextResult = serviceTaskResult is not null
+            ? await HandleMoveToNext(instance, serviceTaskResult.AutoMoveNextAction)
+            : await HandleMoveToNext(instance, request.Action);
 
         if (moveToNextResult.IsEndEvent)
         {
@@ -345,7 +351,7 @@ public class ProcessEngine : IProcessEngine
             await RunAppDefinedProcessEndHandlers(instance, moveToNextResult.ProcessStateChange?.Events);
         }
 
-        return new ProcessChangeResult() { Success = true, ProcessStateChange = moveToNextResult.ProcessStateChange };
+        return new ProcessChangeResult { Success = true, ProcessStateChange = moveToNextResult.ProcessStateChange };
     }
 
     /// <summary>
@@ -448,7 +454,7 @@ public class ProcessEngine : IProcessEngine
         return actionResult;
     }
 
-    private async Task<ProcessChangeResult> HandleServiceTask(
+    private async Task<(ProcessChangeResult, ServiceTaskResult?)> HandleServiceTask(
         Instance instance,
         IServiceTask serviceTask,
         ProcessNextRequest request,
@@ -459,15 +465,16 @@ public class ProcessEngine : IProcessEngine
 
         if (request.Action is not "write" && request.Action != serviceTask.Type) // serviceTask.Type is accepted to support custom service task types
         {
-            var result = new ProcessChangeResult()
-            {
-                ErrorTitle = "User action not supported!",
-                ErrorMessage =
-                    $"Service tasks do not support running user actions! Received action param {LogSanitizer.Sanitize(request.Action)}.",
-                ErrorType = ProcessErrorType.Conflict,
-            };
-
-            return result;
+            return (
+                new ProcessChangeResult
+                {
+                    ErrorTitle = "User action not supported!",
+                    ErrorMessage =
+                        $"Service tasks do not support running user actions! Received action param {LogSanitizer.Sanitize(request.Action)}.",
+                    ErrorType = ProcessErrorType.Conflict,
+                },
+                null
+            );
         }
 
         try
@@ -486,13 +493,16 @@ public class ProcessEngine : IProcessEngine
             {
                 _logger.LogError("Service task {ServiceTaskType} returned a failed result.", serviceTask.Type);
 
-                return new ProcessChangeResult()
-                {
-                    Success = false,
-                    ErrorTitle = "Service task failed!",
-                    ErrorMessage = $"Service task {serviceTask.Type} returned a failed result!",
-                    ErrorType = ProcessErrorType.Internal,
-                };
+                return (
+                    new ProcessChangeResult
+                    {
+                        Success = false,
+                        ErrorTitle = "Service task failed!",
+                        ErrorMessage = $"Service task {serviceTask.Type} returned a failed result!",
+                        ErrorType = ProcessErrorType.Internal,
+                    },
+                    result
+                );
             }
 
             if (cachedDataMutator.HasAbandonIssues)
@@ -506,20 +516,23 @@ public class ProcessEngine : IProcessEngine
             await cachedDataMutator.UpdateInstanceData(changes);
             await cachedDataMutator.SaveChanges(changes);
 
-            return new ProcessChangeResult { Success = true };
+            return (new ProcessChangeResult { Success = true }, result);
         }
         catch (Exception ex)
         {
             activity?.Errored(ex);
             _logger.LogError(ex, "Service task {ServiceTaskType} returned a failed result.", serviceTask.Type);
 
-            return new ProcessChangeResult()
-            {
-                Success = false,
-                ErrorTitle = "Service task failed!",
-                ErrorMessage = $"Service task {serviceTask.Type} failed with an exception!",
-                ErrorType = ProcessErrorType.Internal,
-            };
+            return (
+                new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorTitle = "Service task failed!",
+                    ErrorMessage = $"Service task {serviceTask.Type} failed with an exception!",
+                    ErrorType = ProcessErrorType.Internal,
+                },
+                null
+            );
         }
     }
 
@@ -752,7 +765,7 @@ public class ProcessEngine : IProcessEngine
         public bool IsEndEvent => ProcessStateChange?.NewProcessState?.Ended is not null;
     };
 
-    private static string ConvertTaskTypeToAction(string actionOrTaskType)
+    internal static string ConvertTaskTypeToAction(string actionOrTaskType)
     {
         switch (actionOrTaskType)
         {
@@ -760,6 +773,7 @@ public class ProcessEngine : IProcessEngine
             case "feedback":
             case "pdf":
             case "eFormidling":
+            case "fiksArkiv":
                 return "write";
             case "confirmation":
                 return "confirm";

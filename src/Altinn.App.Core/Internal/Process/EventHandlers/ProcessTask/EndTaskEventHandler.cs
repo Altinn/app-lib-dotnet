@@ -1,5 +1,4 @@
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.Platform.Storage.Interface.Models;
@@ -19,7 +18,6 @@ public class EndTaskEventHandler : IEndTaskEventHandler
     private readonly IPdfServiceTaskLegacy _pdfServiceTaskLegacy;
     private readonly IEFormidlingServiceTaskLegacy _eformidlingServiceTaskLegacy;
     private readonly ILogger<EndTaskEventHandler> _logger;
-    private readonly IInstanceClient _instanceClient;
 
     /// <summary>
     /// This event handler is responsible for handling the end event for a process task.
@@ -28,7 +26,6 @@ public class EndTaskEventHandler : IEndTaskEventHandler
         IProcessTaskDataLocker processTaskDataLocker,
         IProcessTaskFinalizer processTaskFinisher,
         IServiceProvider serviceProvider,
-        IInstanceClient instanceClient,
         ILogger<EndTaskEventHandler> logger
     )
     {
@@ -71,22 +68,6 @@ public class EndTaskEventHandler : IEndTaskEventHandler
             _logger.LogError(e, "Error executing eFormidling service task. Unlocking data again.");
             await _processTaskDataLocker.Unlock(taskId, instance);
             throw;
-        }
-
-        if (fiksArkivServiceTask is not null)
-        {
-            try
-            {
-                // TODO: It's stupid that we have to re-fetch the instance here to have access to the PDF
-                instance = await _instanceClient.GetInstance(instance);
-                await fiksArkivServiceTask.Execute(taskId, instance);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error executing Fiks Arkiv service task. Unlocking data again.");
-                await _processTaskDataLocker.Unlock(taskId, instance);
-                throw;
-            }
         }
     }
 

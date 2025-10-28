@@ -7,7 +7,7 @@ using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Internal.AltinnCdn;
-using Altinn.App.Core.Internal.Process.ServiceTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using KS.Fiks.IO.Send.Client.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -54,7 +54,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFiksArkivHost, FiksArkivHost>();
         services.AddSingleton<IFiksArkivPayloadGenerator, FiksArkivDefaultPayloadGenerator>();
         services.AddSingleton<IFiksArkivResponseHandler, FiksArkivDefaultResponseHandler>();
-        services.AddSingleton<IFiksArkivAutoSendDecision, FiksArkivDefaultAutoSendDecision>();
         services.AddSingleton<IFiksArkivInstanceClient, FiksArkivInstanceClient>();
         services.AddSingleton<IFiksArkivConfigResolver, FiksArkivConfigResolver>();
         services.AddHostedService<FiksArkivConfigValidationService>();
@@ -113,7 +112,8 @@ public static class ServiceCollectionExtensions
             .AddOptions<FiksArkivSettings>()
             .Configure(options =>
             {
-                options.AutoSend = null;
+                options.ErrorHandling = null;
+                options.SuccessHandling = null;
                 options.Documents = null;
                 options.Receipt = null;
                 options.Recipient = null;

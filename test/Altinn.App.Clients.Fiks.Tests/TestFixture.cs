@@ -22,7 +22,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
-using Altinn.App.Core.Internal.Process.ServiceTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
@@ -83,8 +83,6 @@ internal sealed record TestFixture(
         App.Services.GetRequiredService<IFiksArkivPayloadGenerator>();
     public IFiksArkivConfigResolver FiksArkivConfigResolver =>
         App.Services.GetRequiredService<IFiksArkivConfigResolver>();
-    public IFiksArkivAutoSendDecision FiksArkivAutoSendDecisionHandler =>
-        App.Services.GetRequiredService<IFiksArkivAutoSendDecision>();
     public IFiksArkivInstanceClient FiksArkivInstanceClient =>
         App.Services.GetRequiredService<IFiksArkivInstanceClient>();
     public IServiceTask FiksArkivServiceTask =>

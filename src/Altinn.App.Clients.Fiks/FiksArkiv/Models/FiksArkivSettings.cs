@@ -2,7 +2,6 @@ using System.Text.Json.Serialization;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Core.Internal.AppModel;
-using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -38,10 +37,16 @@ public sealed record FiksArkivSettings
     public FiksArkivDocumentSettings? Documents { get; set; }
 
     /// <summary>
-    /// Settings related to auto-submission to Fiks Arkiv.
+    /// Settings related to error handling.
     /// </summary>
-    [JsonPropertyName("autoSend")]
-    public FiksArkivAutoSendSettings? AutoSend { get; set; }
+    [JsonPropertyName("errorHandling")]
+    public FiksArkivErrorHandlingSettings? ErrorHandling { get; set; }
+
+    /// <summary>
+    /// Settings related to success handling.
+    /// </summary>
+    [JsonPropertyName("successHandling")]
+    public FiksArkivSuccessHandlingSettings? SuccessHandling { get; set; }
 }
 
 /// <summary>
@@ -74,6 +79,15 @@ public sealed record FiksArkivReceiptSettings
 
         ConfirmationRecord.Validate($"{propertyName}.{nameof(ConfirmationRecord)}", dataTypes, requireFilename: true);
         ArchiveRecord.Validate($"{propertyName}.{nameof(ArchiveRecord)}", dataTypes, requireFilename: true);
+
+        // If both records use the same data type, ensure we are allowed to create at least two elements of this type.
+        if (
+            ConfirmationRecord.DataType == ArchiveRecord.DataType
+            && dataTypes.First(x => x.Id == ConfirmationRecord.DataType).MaxCount < 2
+        )
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(ConfirmationRecord)} and {propertyName}.{nameof(ArchiveRecord)} are configured with the same data type ({ConfirmationRecord.DataType}), but this type has a MaxCount less than 2."
+            );
     }
 }
 
@@ -170,66 +184,27 @@ public sealed record FiksArkivDocumentSettings
 }
 
 /// <summary>
-/// Represents the settings for auto-sending a message.
-/// </summary>
-public sealed record FiksArkivAutoSendSettings
-{
-    /// <summary>
-    /// The task ID to send the message after. This is applicable for use with the <see cref="FiksArkivDefaultAutoSendDecision"/> handler,
-    /// and may or may not be used with other handlers.
-    /// </summary>
-    [JsonPropertyName("afterTaskId")]
-    public string? AfterTaskId { get; set; }
-
-    /// <summary>
-    /// Settings related to error handling.
-    /// </summary>
-    [JsonPropertyName("errorHandling")]
-    public FiksArkivErrorHandlingSettings? ErrorHandling { get; set; }
-
-    /// <summary>
-    /// Settings related to success handling.
-    /// </summary>
-    [JsonPropertyName("successHandling")]
-    public FiksArkivSuccessHandlingSettings? SuccessHandling { get; set; }
-
-    /// <summary>
-    /// Internal validation based on the requirements of <see cref="FiksArkivDefaultAutoSendDecision"/>
-    /// </summary>
-    internal void Validate(IReadOnlyList<ProcessTask> configuredProcessTasks)
-    {
-        const string propertyName =
-            $"{nameof(FiksArkivSettings.AutoSend)}.{nameof(FiksArkivSettings.AutoSend.AfterTaskId)}";
-
-        if (string.IsNullOrWhiteSpace(AfterTaskId))
-            throw new FiksArkivConfigurationException($"{propertyName} configuration is required, but missing.");
-
-        if (configuredProcessTasks.FirstOrDefault(x => x.Id == AfterTaskId) is null)
-            throw new FiksArkivConfigurationException(
-                $"{propertyName} mismatch with application process tasks: {AfterTaskId}"
-            );
-    }
-}
-
-/// <summary>
 /// Represents the settings for success handling.
 /// </summary>
 public sealed record FiksArkivSuccessHandlingSettings
 {
     /// <summary>
     /// Should we automatically progress to the next task after successfully sending the message?
+    /// Default to <c>true</c>.
     /// </summary>
     [JsonPropertyName("moveToNextTask")]
-    public bool MoveToNextTask { get; set; }
+    public bool MoveToNextTask { get; set; } = true;
 
     /// <summary>
     /// When progressing to the next task, which action should we send?
+    /// Defaults to <c>null</c>.
     /// </summary>
     [JsonPropertyName("action")]
     public string? Action { get; set; }
 
     /// <summary>
     /// Should we mark the instance as `completed` after successfully sending the message?
+    /// Defaults to <c>false</c>.
     /// </summary>
     [JsonPropertyName("markInstanceComplete")]
     public bool MarkInstanceComplete { get; set; }
@@ -242,15 +217,17 @@ public sealed record FiksArkivErrorHandlingSettings
 {
     /// <summary>
     /// Should we automatically progress to the next task after failing to send the message?
+    /// Defaults to <c>true</c>.
     /// </summary>
     [JsonPropertyName("moveToNextTask")]
-    public bool MoveToNextTask { get; set; }
+    public bool MoveToNextTask { get; set; } = true;
 
     /// <summary>
     /// When progressing to the next task, which action should we send?
+    /// Defaults to <c>reject</c>.
     /// </summary>
     [JsonPropertyName("action")]
-    public string? Action { get; set; }
+    public string? Action { get; set; } = "reject";
 }
 
 /// <summary>

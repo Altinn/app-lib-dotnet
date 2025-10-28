@@ -1,4 +1,3 @@
-using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
@@ -11,23 +10,17 @@ internal sealed class FiksArkivConfigValidationService : IHostedService
 {
     private readonly IProcessReader _processReader;
     private readonly IAppMetadata _appMetadata;
-    private readonly AppImplementationFactory _appImplementationFactory;
 
     private readonly IFiksArkivHost _fiksArkivHost;
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
 
-    private IFiksArkivConfigValidation _fiksArkivAutoSendDecisionValidator =>
-        _appImplementationFactory.GetAll<IFiksArkivAutoSendDecision>().OfType<IFiksArkivConfigValidation>().First();
-
     public FiksArkivConfigValidationService(
-        AppImplementationFactory appImplementationFactory,
         IFiksArkivHost fiksArkivHost,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
         IProcessReader processReader,
         IAppMetadata appMetadata
     )
     {
-        _appImplementationFactory = appImplementationFactory;
         _fiksArkivHost = fiksArkivHost;
         _fiksArkivInstanceClient = fiksArkivInstanceClient;
         _processReader = processReader;
@@ -40,7 +33,6 @@ internal sealed class FiksArkivConfigValidationService : IHostedService
         IReadOnlyList<ProcessTask> processTasks = _processReader.GetProcessTasks();
 
         await _fiksArkivHost.ValidateConfiguration(appMetadata.DataTypes, processTasks);
-        await _fiksArkivAutoSendDecisionValidator.ValidateConfiguration(appMetadata.DataTypes, processTasks);
         await _fiksArkivInstanceClient.GetServiceOwnerToken(cancellationToken);
     }
 

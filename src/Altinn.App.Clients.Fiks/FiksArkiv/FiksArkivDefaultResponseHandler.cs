@@ -55,7 +55,7 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
                 "Message contains multiple responses. This is unexpected and possibly warrants further investigation."
             );
 
-        if (_fiksArkivSettings.AutoSend?.SuccessHandling is null)
+        if (_fiksArkivSettings.SuccessHandling is null)
         {
             _logger.LogInformation("Success handling is disabled, skipping further processing.");
             return;
@@ -65,15 +65,15 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
         InstanceIdentifier instanceIdentifier = new(instance);
 
         // Move the instance process forward if configured
-        if (_fiksArkivSettings.AutoSend.SuccessHandling.MoveToNextTask)
+        if (_fiksArkivSettings.SuccessHandling.MoveToNextTask)
             await _fiksArkivInstanceClient.ProcessMoveNext(
                 instanceIdentifier,
-                _fiksArkivSettings.AutoSend.SuccessHandling.Action,
-                cancellationToken
+                action: _fiksArkivSettings.SuccessHandling.Action,
+                cancellationToken: cancellationToken
             );
 
         // Mark the instance as completed if configured
-        if (_fiksArkivSettings.AutoSend.SuccessHandling.MarkInstanceComplete)
+        if (_fiksArkivSettings.SuccessHandling.MarkInstanceComplete)
             await _fiksArkivInstanceClient.MarkInstanceComplete(instanceIdentifier, cancellationToken);
     }
 
@@ -92,7 +92,7 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
             payloads?.Select(x => x.Content) ?? ["Message contains no content."]
         );
 
-        if (_fiksArkivSettings.AutoSend?.ErrorHandling is null)
+        if (_fiksArkivSettings.ErrorHandling is null)
         {
             _logger.LogInformation("Error handling is disabled, skipping further processing.");
             return;
@@ -101,11 +101,11 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
         ArgumentNullException.ThrowIfNull(instance);
 
         // Move the instance process forward if configured
-        if (_fiksArkivSettings.AutoSend?.ErrorHandling?.MoveToNextTask is true)
+        if (_fiksArkivSettings.ErrorHandling.MoveToNextTask)
             await _fiksArkivInstanceClient.ProcessMoveNext(
                 new InstanceIdentifier(instance),
-                _fiksArkivSettings.AutoSend?.ErrorHandling?.Action,
-                cancellationToken
+                action: _fiksArkivSettings.ErrorHandling?.Action,
+                cancellationToken: cancellationToken
             );
     }
 }

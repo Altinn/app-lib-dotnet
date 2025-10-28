@@ -19,16 +19,9 @@ public class FiksArkivConfigValidationServiceTest
         var fiksArkivHostMock = new Mock<IFiksArkivHost>();
         var fiksArkivInstanceClientMock = new Mock<IFiksArkivInstanceClient>();
         var appMetadataMock = new Mock<IAppMetadata>();
-        var fiksArkivAutoSendDecisionValidatorMock = new Mock<IFiksArkivAutoSendDecision>();
 
         appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(new ApplicationMetadata("ttd/test-app"));
         fiksArkivHostMock
-            .Setup(x =>
-                x.ValidateConfiguration(It.IsAny<IReadOnlyList<DataType>>(), It.IsAny<IReadOnlyList<ProcessTask>>())
-            )
-            .Verifiable(Times.Once);
-        fiksArkivAutoSendDecisionValidatorMock
-            .As<IFiksArkivConfigValidation>()
             .Setup(x =>
                 x.ValidateConfiguration(It.IsAny<IReadOnlyList<DataType>>(), It.IsAny<IReadOnlyList<ProcessTask>>())
             )
@@ -37,9 +30,7 @@ public class FiksArkivConfigValidationServiceTest
             .Setup(x => x.GetServiceOwnerToken(It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        var serviceCollection = new ServiceCollection().AddSingleton(fiksArkivAutoSendDecisionValidatorMock.Object);
         var fiksArkivConfigValidationService = new FiksArkivConfigValidationService(
-            new AppImplementationFactory(serviceCollection.BuildServiceProvider()),
             fiksArkivHostMock.Object,
             fiksArkivInstanceClientMock.Object,
             Mock.Of<IProcessReader>(),
@@ -51,7 +42,6 @@ public class FiksArkivConfigValidationServiceTest
 
         // Assert
         fiksArkivHostMock.Verify();
-        fiksArkivAutoSendDecisionValidatorMock.Verify();
         fiksArkivInstanceClientMock.Verify();
     }
 }

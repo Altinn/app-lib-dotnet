@@ -110,16 +110,6 @@ internal static class TestHelpers
                 OrganizationNumber = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
                 Name = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
             },
-            AutoSend = new FiksArkivAutoSendSettings
-            {
-                AfterTaskId = "Task_1",
-                SuccessHandling = new FiksArkivSuccessHandlingSettings
-                {
-                    MoveToNextTask = true,
-                    MarkInstanceComplete = true,
-                },
-                ErrorHandling = new FiksArkivErrorHandlingSettings { MoveToNextTask = true },
-            },
             Documents = new FiksArkivDocumentSettings
             {
                 PrimaryDocument = new FiksArkivDataTypeSettings
@@ -133,6 +123,13 @@ internal static class TestHelpers
                     new FiksArkivDataTypeSettings { DataType = "uploaded_attachment" },
                 ],
             },
+            SuccessHandling = new FiksArkivSuccessHandlingSettings
+            {
+                MoveToNextTask = true,
+                MarkInstanceComplete = true,
+                Action = "fiks-arkiv-success",
+            },
+            ErrorHandling = new FiksArkivErrorHandlingSettings { MoveToNextTask = true, Action = "fiks-arkiv-error" },
         };
 
     public static MaskinportenSettings RandomMaskinportenSettings =>
@@ -157,6 +154,14 @@ internal static class TestHelpers
     public static FiksArkivSettings RandomFiksArkivSettings =>
         new()
         {
+            Metadata = new FiksArkivMetadataSettings
+            {
+                CaseFileId = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
+                CaseFileTitle = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
+                JournalEntryTitle = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
+                RuleId = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
+                SystemId = new FiksArkivBindableValue<string> { Value = Guid.NewGuid().ToString() },
+            },
             Recipient = new FiksArkivRecipientSettings
             {
                 FiksAccount = new FiksArkivBindableValue<Guid?>
@@ -176,11 +181,7 @@ internal static class TestHelpers
                 ConfirmationRecord = new FiksArkivDataTypeSettings { DataType = Guid.NewGuid().ToString() },
                 ArchiveRecord = new FiksArkivDataTypeSettings { DataType = Guid.NewGuid().ToString() },
             },
-            AutoSend = new FiksArkivAutoSendSettings
-            {
-                AfterTaskId = Guid.NewGuid().ToString(),
-                ErrorHandling = new FiksArkivErrorHandlingSettings { Action = Guid.NewGuid().ToString() },
-            },
+
             Documents = new FiksArkivDocumentSettings
             {
                 PrimaryDocument = new FiksArkivDataTypeSettings
@@ -197,6 +198,8 @@ internal static class TestHelpers
                     },
                 ],
             },
+            ErrorHandling = new FiksArkivErrorHandlingSettings { Action = Guid.NewGuid().ToString() },
+            SuccessHandling = new FiksArkivSuccessHandlingSettings { Action = Guid.NewGuid().ToString() },
         };
 
     public static FiksIOMessageResponse GetFiksIOMessageResponse(
@@ -268,12 +271,6 @@ internal static class TestHelpers
             IReadOnlyList<FiksArkivReceivedMessagePayload>? payloads,
             CancellationToken cancellationToken = default
         ) => throw new NotImplementedException();
-    }
-
-    public class CustomAutoSendDecision : IFiksArkivAutoSendDecision
-    {
-        public Task<bool> ShouldSend(string taskId, Instance instance, CancellationToken cancellationToken = default) =>
-            throw new NotImplementedException();
     }
 
     public static FiksArkivBindableValue<T> BindableValueFactory<T>(string dataTypeId, string field) =>

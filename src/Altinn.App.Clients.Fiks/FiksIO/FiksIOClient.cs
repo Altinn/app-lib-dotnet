@@ -154,6 +154,8 @@ internal sealed class FiksIOClient : IFiksIOClient
 
     internal async Task<IExternalFiksIOClient> InitialiseFiksIOClient()
     {
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
+
         var fiksIOSettings = _fiksIOSettings.CurrentValue;
         var appMeta = await _appMetadata.GetApplicationMetadata();
 
@@ -205,6 +207,8 @@ internal sealed class FiksIOClient : IFiksIOClient
 
     private async Task SubscribeToEvents()
     {
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
+
         if (_fiksIoClient is null)
             return;
 

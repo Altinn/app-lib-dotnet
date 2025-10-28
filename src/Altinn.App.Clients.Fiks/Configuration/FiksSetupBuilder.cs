@@ -87,18 +87,6 @@ internal abstract class FiksSetupBuilder(IServiceCollection services)
         return this;
     }
 
-    /// <summary>
-    /// Registers a custom auto-send decision handler for Fiks Arkiv messages.
-    /// </summary>
-    /// <typeparam name="TDecision">The implementation of the auto-send decision handler.</typeparam>
-    /// <returns>The builder instance.</returns>
-    protected FiksSetupBuilder UseAutoDecision<TDecision>()
-        where TDecision : IFiksArkivAutoSendDecision
-    {
-        services.AddTransient(typeof(IFiksArkivAutoSendDecision), typeof(TDecision));
-        return this;
-    }
-
     /// <inheritdoc cref="IFiksSetupBuilder{T}.WithResiliencePipeline"/>
     protected FiksSetupBuilder ConfigureResiliencePipeline(
         Action<ResiliencePipelineBuilder<FiksIOMessageResponse>, AddResiliencePipelineContext<string>> configure
@@ -184,9 +172,4 @@ internal sealed class FiksArkivSetupBuilder(IServiceCollection services)
     public IFiksArkivSetupBuilder WithPayloadGenerator<TMessageHandler>()
         where TMessageHandler : IFiksArkivPayloadGenerator =>
         (IFiksArkivSetupBuilder)UseMessagePayloadGenerator<TMessageHandler>();
-
-    /// <inheritdoc />
-    public IFiksArkivSetupBuilder WithAutoSendDecision<TAutoSendDecision>()
-        where TAutoSendDecision : IFiksArkivAutoSendDecision =>
-        (IFiksArkivSetupBuilder)UseAutoDecision<TAutoSendDecision>();
 }
