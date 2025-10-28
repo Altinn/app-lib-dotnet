@@ -228,7 +228,7 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
                     buffer[bufferOffset++] = '[';
                     if (!literalIndex.TryFormat(buffer[bufferOffset..], out int charsWritten))
                     {
-                        throw new global::System.FormatException($"Invalid index in {path}.");
+                        throw new global::System.ArgumentException($"Buffer too small to write index for {path}.");
                     }
 
                     bufferOffset += charsWritten;
@@ -239,7 +239,10 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
                 {
                     // Write index from rowIndexes to buffer
                     buffer[bufferOffset++] = '[';
-                    rowIndexes[0].TryFormat(buffer.Slice(bufferOffset), out int charsWritten);
+                    if (!rowIndexes[0].TryFormat(buffer[bufferOffset..], out int charsWritten))
+                    {
+                        throw new global::System.ArgumentException($"Buffer too small to write index for {path}.");
+                    }
                     bufferOffset += charsWritten;
                     buffer[bufferOffset++] = ']';
                     rowIndexes = rowIndexes.Slice(1);
@@ -343,7 +346,7 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
                     buffer[bufferOffset++] = '[';
                     if (!literalIndex.TryFormat(buffer[bufferOffset..], out int charsWritten))
                     {
-                        throw new global::System.FormatException($"Invalid index in {path}.");
+                        throw new global::System.ArgumentException($"Buffer too small to write index for {path}.");
                     }
 
                     bufferOffset += charsWritten;
@@ -354,7 +357,10 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
                 {
                     // Write index from rowIndexes to buffer
                     buffer[bufferOffset++] = '[';
-                    rowIndexes[0].TryFormat(buffer.Slice(bufferOffset), out int charsWritten);
+                    if (!rowIndexes[0].TryFormat(buffer[bufferOffset..], out int charsWritten))
+                    {
+                        throw new global::System.ArgumentException($"Buffer too small to write index for {path}.");
+                    }
                     bufferOffset += charsWritten;
                     buffer[bufferOffset++] = ']';
                     rowIndexes = rowIndexes.Slice(1);
@@ -430,7 +436,7 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
                     buffer[bufferOffset++] = '[';
                     if (!literalIndex.TryFormat(buffer[bufferOffset..], out int charsWritten))
                     {
-                        throw new global::System.FormatException($"Invalid index in {path}.");
+                        throw new global::System.ArgumentException($"Buffer too small to write index for {path}.");
                     }
 
                     bufferOffset += charsWritten;
@@ -441,7 +447,10 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
                 {
                     // Write index from rowIndexes to buffer
                     buffer[bufferOffset++] = '[';
-                    rowIndexes[0].TryFormat(buffer.Slice(bufferOffset), out int charsWritten);
+                    if (!rowIndexes[0].TryFormat(buffer[bufferOffset..], out int charsWritten))
+                    {
+                        throw new global::System.ArgumentException($"Buffer too small to write index for {path}.");
+                    }
                     bufferOffset += charsWritten;
                     buffer[bufferOffset++] = ']';
                     rowIndexes = rowIndexes.Slice(1);
