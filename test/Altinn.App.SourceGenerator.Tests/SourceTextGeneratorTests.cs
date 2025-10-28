@@ -47,7 +47,7 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
     private ModelPathNode GetRoot<T>()
     {
         var children = typeof(T).GetProperties().Select(GetFromType).ToArray();
-        return new ModelPathNode("", "", "global::" + typeof(T).FullName!, isImmutableValue: false, children);
+        return new ModelPathNode("", "", "global::" + typeof(T).FullName!, children);
     }
 
     private ModelPathNode GetFromType(PropertyInfo propertyInfo)
@@ -65,27 +65,14 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
             var listType = $"{FullTypeName(propertyType.GetGenericTypeDefinition())}<{typeString}>";
             var children = GetChildren(typeParam);
 
-            return new ModelPathNode(
-                cSharpName,
-                jsonPath,
-                typeString,
-                isImmutableValue: typeString.StartsWith("global::System."),
-                children,
-                listType: listType
-            );
+            return new ModelPathNode(cSharpName, jsonPath, typeString, children, listType: listType);
         }
         else
         {
             var typeString = FullTypeName(propertyType);
             var children = GetChildren(propertyType);
 
-            return new ModelPathNode(
-                cSharpName,
-                jsonPath,
-                typeString,
-                isImmutableValue: typeString.StartsWith("global::System."),
-                children
-            );
+            return new ModelPathNode(cSharpName, jsonPath, typeString, children);
         }
     }
 
@@ -98,11 +85,16 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
         return "global::" + typeParam.FullName?.Replace("`1", "");
     }
 
-    private ModelPathNode[] GetChildren(Type propertyType)
+    private ModelPathNode[]? GetChildren(Type propertyType)
     {
-        if (propertyType.Namespace?.StartsWith("System") == true)
+        // Unwrap nullable
+        if (propertyType.Name == "Nullable`1")
         {
-            return [];
+            propertyType = propertyType.GenericTypeArguments[0];
+        }
+        if (FormDataWrapperUtils.IsJsonValueType(propertyType.Namespace, propertyType.Name))
+        {
+            return null;
         }
         var properties = propertyType.GetProperties();
         var children = properties.Select(GetFromType).ToArray();

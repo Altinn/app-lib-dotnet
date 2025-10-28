@@ -76,7 +76,7 @@ internal static class GetterGenerator
                 """
             );
         }
-        if (modelPathNode.Properties.Count == 0 || !generatedTypes.Add(modelPathNode.TypeName))
+        if (modelPathNode.IsJsonValueType || !generatedTypes.Add(modelPathNode.TypeName))
         {
             // Do not generate recursive getters for primitive types, or types already generated
             return;
@@ -117,7 +117,7 @@ internal static class GetterGenerator
         }
 
         // Return null for unknown paths
-        // Could be an exception when we have propper validation
+        // Could be an exception when we have proper validation
         builder.Append(
             """
                         // _ => throw new global::Altinn.App.Core.Helpers.DataModel.DataModelException($"{path} is not a valid path."),

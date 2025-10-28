@@ -92,7 +92,8 @@ public class TestGeneratedGetter(ITestOutputHelper testOutputHelper)
     [InlineData("skjemainnhold[1].adresse.postnummer", 1234)]
     [InlineData("skjemainnhold[1].tidligere-adresse[1].postnummer", 1236)]
     [InlineData("skjemainnhold[1].tidligere-adresse[1].tags[0]", "tag1")]
-    public void TestGetRaw(string path, object expected)
+    [InlineData("skjemainnhold[1].tidligere-adresse[1].tags[99000]", null)]
+    public void TestGetRaw(string path, object? expected)
     {
         IFormDataWrapper dataWrapper = new Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper(
             _skjema

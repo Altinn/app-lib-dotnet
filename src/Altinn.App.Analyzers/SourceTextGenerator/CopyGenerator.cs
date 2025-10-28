@@ -33,7 +33,7 @@ internal static class CopyGenerator
             return;
         }
 
-        if (node.IsImmutableValue)
+        if (node.IsJsonValueType)
         {
             // Copy of value types is an assignment and is handled in the list copy method
             return;
@@ -79,9 +79,7 @@ internal static class CopyGenerator
             builder.Append("        };\r\n    }\r\n");
         }
 
-        foreach (
-            var recursiveChild in node.Properties.Where(c => c.ListType is not null || c.IsImmutableValue == false)
-        )
+        foreach (var recursiveChild in node.Properties.Where(c => c.ListType is not null || !c.IsJsonValueType))
         {
             GenerateCopyRecursive(builder, recursiveChild, classNames);
         }
@@ -105,7 +103,7 @@ internal static class CopyGenerator
                     {{node.ListType}} result = new(list.Count);
                     foreach (var item in list)
                     {
-                        result.Add({{(node.IsImmutableValue ? "item" : "CopyRecursive(item)")}});
+                        result.Add({{(node.IsJsonValueType ? "item" : "CopyRecursive(item)")}});
                     }
 
                     return result;

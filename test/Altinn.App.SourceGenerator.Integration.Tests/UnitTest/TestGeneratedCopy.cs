@@ -84,6 +84,13 @@ public class TestGeneratedCopy
         Assert.Equal("TidligereGata", copy.Skjemainnhold?[1]?.TidligereAdresse?[0]?.Gate);
         Assert.Equal("TidligereGata", copyWrapper.Get("skjemainnhold[1].tidligere-adresse[0].gate"));
         Assert.Equal("TidligereGata2", copy.Skjemainnhold?[1]?.TidligereAdresse?[1]?.Gate);
+        // Ensure the Tags list itself is a different instance (not shared)
+        Assert.NotNull(data.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags);
+        Assert.NotNull(copy.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags);
+        Assert.NotSame(
+            data.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags,
+            copy.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags
+        );
 
         // Modifications to the copy should not affect the original
 
@@ -102,5 +109,8 @@ public class TestGeneratedCopy
         Assert.Equal("Tag1", data.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags![0]);
         copy.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags![0] = "CHANGED";
         Assert.Equal("Tag1", data.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags![0]);
+        // Adding to the copy's list must not affect the original list length
+        copy.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags!.Add("NEW");
+        Assert.Equal(2, data.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags!.Count);
     }
 }

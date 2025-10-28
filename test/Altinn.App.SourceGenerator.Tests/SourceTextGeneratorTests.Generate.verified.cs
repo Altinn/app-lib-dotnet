@@ -806,7 +806,11 @@ public sealed class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
             throw new global::Altinn.App.Core.Helpers.DataModel.DataModelException($"Missing closing bracket ']' in {path}.");
         }
 
-        if (!int.TryParse(segment[..bracketOffset], out var index))
+        if (!int.TryParse(
+            segment[..bracketOffset],
+            global::System.Globalization.NumberStyles.None,
+            global::System.Globalization.CultureInfo.InvariantCulture,
+            out var index))
         {
             throw new global::Altinn.App.Core.Helpers.DataModel.DataModelException($"Invalid index in {path}.");
         }
@@ -848,80 +852,80 @@ public sealed class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
 //   "JsonName": "",
 //   "CSharpName": "",
 //   "TypeName": "global::Altinn.App.SourceGenerator.Tests.Skjema",
-//   "IsImmutableValue": "false",
+//   "IsJsonValueType": false,
 //   "Properties": [
 //     {
 //       "JsonName": "skjemanummer",
 //       "CSharpName": "Skjemanummer",
 //       "TypeName": "global::System.String",
-//       "IsImmutableValue": "true",
+//       "IsJsonValueType": true,
 //     },
 //     {
 //       "JsonName": "skjemaversjon",
 //       "CSharpName": "Skjemaversjon",
 //       "TypeName": "global::System.String",
-//       "IsImmutableValue": "true",
+//       "IsJsonValueType": true,
 //     },
 //     {
 //       "JsonName": "skjemainnhold",
 //       "CSharpName": "Skjemainnhold",
 //       "TypeName": "global::Altinn.App.SourceGenerator.Tests.SkjemaInnhold",
-//       "IsImmutableValue": "false",
+//       "IsJsonValueType": false,
 //       "ListType": "global::System.Collections.Generic.List<global::Altinn.App.SourceGenerator.Tests.SkjemaInnhold>",
 //       "Properties": [
 //         {
 //           "JsonName": "altinnRowId",
 //           "CSharpName": "AltinnRowId",
 //           "TypeName": "global::System.Guid",
-//           "IsImmutableValue": "true",
+//           "IsJsonValueType": true,
 //         },
 //         {
 //           "JsonName": "navn",
 //           "CSharpName": "Navn",
 //           "TypeName": "global::System.String",
-//           "IsImmutableValue": "true",
+//           "IsJsonValueType": true,
 //         },
 //         {
 //           "JsonName": "alder",
 //           "CSharpName": "Alder",
 //           "TypeName": "global::System.Int32",
-//           "IsImmutableValue": "true",
+//           "IsJsonValueType": true,
 //         },
 //         {
 //           "JsonName": "deltar",
 //           "CSharpName": "Deltar",
 //           "TypeName": "global::System.Boolean",
-//           "IsImmutableValue": "true",
+//           "IsJsonValueType": true,
 //         },
 //         {
 //           "JsonName": "adresse",
 //           "CSharpName": "Adresse",
 //           "TypeName": "global::Altinn.App.SourceGenerator.Tests.Adresse",
-//           "IsImmutableValue": "false",
+//           "IsJsonValueType": false,
 //           "Properties": [
 //             {
 //               "JsonName": "altinnRowId",
 //               "CSharpName": "AltinnRowId",
 //               "TypeName": "global::System.Guid",
-//               "IsImmutableValue": "true",
+//               "IsJsonValueType": true,
 //             },
 //             {
 //               "JsonName": "gate",
 //               "CSharpName": "Gate",
 //               "TypeName": "global::System.String",
-//               "IsImmutableValue": "true",
+//               "IsJsonValueType": true,
 //             },
 //             {
 //               "JsonName": "postnummer",
 //               "CSharpName": "Postnummer",
 //               "TypeName": "global::System.Int32",
-//               "IsImmutableValue": "true",
+//               "IsJsonValueType": true,
 //             },
 //             {
 //               "JsonName": "poststed",
 //               "CSharpName": "Poststed",
 //               "TypeName": "global::System.String",
-//               "IsImmutableValue": "true",
+//               "IsJsonValueType": true,
 //             }
 //           ]
 //         },
@@ -929,32 +933,32 @@ public sealed class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
 //           "JsonName": "tidligere-adresse",
 //           "CSharpName": "TidligereAdresse",
 //           "TypeName": "global::Altinn.App.SourceGenerator.Tests.Adresse",
-//           "IsImmutableValue": "false",
+//           "IsJsonValueType": false,
 //           "ListType": "global::System.Collections.Generic.List<global::Altinn.App.SourceGenerator.Tests.Adresse>",
 //           "Properties": [
 //             {
 //               "JsonName": "altinnRowId",
 //               "CSharpName": "AltinnRowId",
 //               "TypeName": "global::System.Guid",
-//               "IsImmutableValue": "true",
+//               "IsJsonValueType": true,
 //             },
 //             {
 //               "JsonName": "gate",
 //               "CSharpName": "Gate",
 //               "TypeName": "global::System.String",
-//               "IsImmutableValue": "true",
+//               "IsJsonValueType": true,
 //             },
 //             {
 //               "JsonName": "postnummer",
 //               "CSharpName": "Postnummer",
 //               "TypeName": "global::System.Int32",
-//               "IsImmutableValue": "true",
+//               "IsJsonValueType": true,
 //             },
 //             {
 //               "JsonName": "poststed",
 //               "CSharpName": "Poststed",
 //               "TypeName": "global::System.String",
-//               "IsImmutableValue": "true",
+//               "IsJsonValueType": true,
 //             }
 //           ]
 //         }
@@ -964,31 +968,31 @@ public sealed class Altinn_App_SourceGenerator_Tests_SkjemaFormDataWrapper
 //       "JsonName": "eierAdresse",
 //       "CSharpName": "EierAdresse",
 //       "TypeName": "global::Altinn.App.SourceGenerator.Tests.Adresse",
-//       "IsImmutableValue": "false",
+//       "IsJsonValueType": false,
 //       "Properties": [
 //         {
 //           "JsonName": "altinnRowId",
 //           "CSharpName": "AltinnRowId",
 //           "TypeName": "global::System.Guid",
-//           "IsImmutableValue": "true",
+//           "IsJsonValueType": true,
 //         },
 //         {
 //           "JsonName": "gate",
 //           "CSharpName": "Gate",
 //           "TypeName": "global::System.String",
-//           "IsImmutableValue": "true",
+//           "IsJsonValueType": true,
 //         },
 //         {
 //           "JsonName": "postnummer",
 //           "CSharpName": "Postnummer",
 //           "TypeName": "global::System.Int32",
-//           "IsImmutableValue": "true",
+//           "IsJsonValueType": true,
 //         },
 //         {
 //           "JsonName": "poststed",
 //           "CSharpName": "Poststed",
 //           "TypeName": "global::System.String",
-//           "IsImmutableValue": "true",
+//           "IsJsonValueType": true,
 //         }
 //       ]
 //     }

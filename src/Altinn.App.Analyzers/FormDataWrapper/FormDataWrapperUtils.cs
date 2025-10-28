@@ -4,7 +4,7 @@ using NanoJsonReader;
 
 namespace Altinn.App.Analyzers;
 
-internal static class FormDataWrapperUtils
+public static class FormDataWrapperUtils
 {
     public static bool IsApplicationMetadataFile(AdditionalText text)
     {
@@ -114,25 +114,6 @@ internal static class FormDataWrapperUtils
         return rootClasses;
     }
 
-    public sealed record Result<T>(T? Value, List<Diagnostic> Diagnostics)
-        where T : class
-    {
-        public Result(Diagnostic diagnostics)
-            : this(null, [diagnostics]) { }
-
-        public Result(T value)
-            : this(value, []) { }
-    };
-
-    public sealed record ModelClassOrDiagnostic(string? ClassName, Location? Location, List<Diagnostic> Diagnostics)
-    {
-        public ModelClassOrDiagnostic(Diagnostic diagnostic)
-            : this(null, null, new([diagnostic])) { }
-
-        public ModelClassOrDiagnostic(string className, Location? location)
-            : this(className, location, []) { }
-    };
-
     public static ModelPathNode? CreateRootSymbolNode(
         string classFullName,
         Compilation compilation,
@@ -149,16 +130,23 @@ internal static class FormDataWrapperUtils
             "",
             "",
             SourceReaderUtils.TypeSymbolToString(rootSymbol),
-            isImmutableValue: false,
             GetNodeProperties(rootSymbol, diagnostics)
         );
     }
 
-    public static EquatableArray<ModelPathNode>? GetNodeProperties(
-        INamedTypeSymbol namedTypeSymbol,
-        List<Diagnostic> diagnostics
-    )
+    private static ModelPathNode[]? GetNodeProperties(ITypeSymbol typeSymbol, List<Diagnostic> diagnostics)
     {
+        if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
+        {
+            return null;
+        }
+
+        // If this is a JSON value type, we do not want to explore its properties
+        if (IsJsonValueType(namedTypeSymbol.ContainingNamespace?.ToDisplayString(), namedTypeSymbol.Name))
+        {
+            return null;
+        }
+
         var nodeProperties = new List<ModelPathNode>();
         foreach (var property in namedTypeSymbol.GetMembers().OfType<IPropertySymbol>())
         {
@@ -178,41 +166,70 @@ internal static class FormDataWrapperUtils
                 ? null
                 : SourceReaderUtils.TypeSymbolToString(propertyCollectionTypeSymbol);
 
-            // TODO: Find a better way to identify "value types" than to check for System namespace
-            // this works because the only value types we expect are numbers, datatimes, bools and strings,
-            // all defined in System namespace
-            //
-            if (
-                propertyTypeSymbol is INamedTypeSymbol propertyNamedTypeSymbol
-                && !propertyNamedTypeSymbol.ContainingNamespace.ToString().StartsWith("System")
-            )
+            var subProperties = GetNodeProperties(propertyTypeSymbol, diagnostics);
+
+            nodeProperties.Add(
+                new ModelPathNode(cSharpName, jsonName, typeString, subProperties, collectionTypeString)
+            );
+        }
+        return nodeProperties.ToArray();
+    }
+
+    // <summary>
+    // Determine if the given symbol represents something that System.Text.Json can serialize as a JSON value
+    // (primitive types, string, DateTime, Guid, Uri)
+    // </summary>
+    // <remarks>
+    // Based on https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/supported-types#supported-key-types
+    // </remarks>
+    public static bool IsJsonValueType(string? ns, string name)
+    {
+        if (ns == "System")
+        {
+            return name switch
             {
-                nodeProperties.Add(
-                    new ModelPathNode(
-                        cSharpName,
-                        jsonName,
-                        typeString,
-                        isImmutableValue: false,
-                        GetNodeProperties(propertyNamedTypeSymbol, diagnostics),
-                        collectionTypeString
-                    )
-                );
-            }
-            else
+                "Boolean"
+                or "Byte"
+                or "DateTime"
+                or "DateTimeOffset"
+                or "Decimal"
+                or "Double"
+                or "Enum"
+                or "Guid"
+                or "Int16"
+                or "Int32"
+                or "Int64"
+                or "SByte"
+                or "Single"
+                or "String"
+                or "TimeSpan"
+                or "UInt16"
+                or "UInt32"
+                or "UInt64"
+                or "Uri"
+                or "Version" => true,
+                _ => false,
+            };
+        }
+
+        if (ns == "System.Text.Json")
+        {
+            if (name is "JsonElement" or "JsonDocument")
             {
-                nodeProperties.Add(
-                    new ModelPathNode(
-                        cSharpName,
-                        jsonName,
-                        typeString,
-                        isImmutableValue: true,
-                        null,
-                        collectionTypeString
-                    )
-                );
+                return true;
             }
         }
-        return nodeProperties;
+
+        if (ns == "System.Text.Json.Nodes" && name == "JsonNode")
+        {
+            return true;
+        }
+
+        // TODO: Add support for other types that System.Text.Json can serialize as JSON values,
+        // In addition, the JsonConverter<T>.WriteAsPropertyName(Utf8JsonWriter, T, JsonSerializerOptions)
+        // and JsonConverter<T>.ReadAsPropertyName(Utf8JsonReader, Type, JsonSerializerOptions) methods let
+        // you add dictionary key support for any type of your choosing.
+        return false;
     }
 
     private static bool PropertyShouldBeSkipped(IPropertySymbol property)
