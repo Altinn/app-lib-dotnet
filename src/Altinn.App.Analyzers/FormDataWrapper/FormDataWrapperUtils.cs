@@ -182,55 +182,35 @@ public static class FormDataWrapperUtils
     // <remarks>
     // Based on https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/supported-types#supported-key-types
     // </remarks>
-    public static bool IsJsonValueType(string? ns, string name)
-    {
-        if (ns == "System")
+    public static bool IsJsonValueType(string? ns, string name) =>
+        ns switch
         {
-            return name switch
-            {
-                "Boolean"
-                or "Byte"
-                or "DateTime"
-                or "DateTimeOffset"
-                or "Decimal"
-                or "Double"
-                or "Enum"
-                or "Guid"
-                or "Int16"
-                or "Int32"
-                or "Int64"
-                or "SByte"
-                or "Single"
-                or "String"
-                or "TimeSpan"
-                or "UInt16"
-                or "UInt32"
-                or "UInt64"
-                or "Uri"
-                or "Version" => true,
-                _ => false,
-            };
-        }
-
-        if (ns == "System.Text.Json")
-        {
-            if (name is "JsonElement" or "JsonDocument")
-            {
-                return true;
-            }
-        }
-
-        if (ns == "System.Text.Json.Nodes" && name == "JsonNode")
-        {
-            return true;
-        }
-
-        // TODO: Add support for other types that System.Text.Json can serialize as JSON values,
-        // In addition, the JsonConverter<T>.WriteAsPropertyName(Utf8JsonWriter, T, JsonSerializerOptions)
-        // and JsonConverter<T>.ReadAsPropertyName(Utf8JsonReader, Type, JsonSerializerOptions) methods let
-        // you add dictionary key support for any type of your choosing.
-        return false;
-    }
+            "System"
+                when name
+                    is "Boolean"
+                        or "Byte"
+                        or "DateTime"
+                        or "DateTimeOffset"
+                        or "Decimal"
+                        or "Double"
+                        or "Enum"
+                        or "Guid"
+                        or "Int16"
+                        or "Int32"
+                        or "Int64"
+                        or "SByte"
+                        or "Single"
+                        or "String"
+                        or "TimeSpan"
+                        or "UInt16"
+                        or "UInt32"
+                        or "UInt64"
+                        or "Uri"
+                        or "Version" => true,
+            // "System.Text.Json" when name is "JsonElement" or "JsonDocument" => true,
+            // "System.Text.Json.Nodes" when name is "JsonNode" => true,
+            _ => false,
+        };
 
     private static bool PropertyShouldBeSkipped(IPropertySymbol property)
     {
