@@ -1327,6 +1327,7 @@ public static class Snippets
                                 Example = new OpenApiString("Actually useful description of the error"),
                             },
                             ["instance"] = new OpenApiSchema() { Type = "string", Nullable = true },
+                            ["traceId"] = new OpenApiSchema() { Type = "string", Nullable = true },
                         },
                         AdditionalProperties = new()
                         {

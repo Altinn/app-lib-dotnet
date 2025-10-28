@@ -3471,6 +3471,10 @@
                 "instance": {
                   "type": "string",
                   "nullable": true
+                },
+                "traceId": {
+                  "type": "string",
+                  "nullable": true
                 }
               },
               "additionalProperties": {

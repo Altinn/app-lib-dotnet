@@ -73,14 +73,13 @@ public class ValidateControllerTests
 
         // Assert
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
-        result.Should().BeOfType<ConflictObjectResult>();
+        result.Should().BeOfType<ObjectResult>();
 
         var objectResult = result as ObjectResult;
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(409, problemDetails?.Status);
         Assert.Equal("Validation error", problemDetails?.Title);
         Assert.Equal("Unable to validate instance without a started process.", problemDetails?.Detail);
-        Assert.Equal(_instanceId.ToString(), problemDetails?.Instance);
     }
 
     [Fact]
@@ -103,14 +102,13 @@ public class ValidateControllerTests
 
         // Assert
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
-        result.Should().BeOfType<ConflictObjectResult>();
+        result.Should().BeOfType<ObjectResult>();
 
         var objectResult = result as ObjectResult;
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(409, problemDetails?.Status);
         Assert.Equal("Validation error", problemDetails?.Title);
         Assert.Equal("Unable to validate instance without a started process.", problemDetails?.Detail);
-        Assert.Equal(_instanceId.ToString(), problemDetails?.Instance);
     }
 
     [Fact]
@@ -195,7 +193,6 @@ public class ValidateControllerTests
             $"Something went wrong. Exception of type {exception.GetType()} was thrown.",
             problemDetails?.Title
         );
-        Assert.Equal(_instanceId.ToString(), problemDetails?.Instance);
     }
 
     [Fact]
@@ -231,11 +228,10 @@ public class ValidateControllerTests
         result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(500);
         var objectResult = result as ObjectResult;
         var problemDetails = objectResult?.Value as ProblemDetails;
-        Assert.Equal(problemDetails?.Status, 500);
+        Assert.Equal(500, problemDetails?.Status);
         Assert.Equal(
-            problemDetails?.Title,
-            $"Something went wrong. Exception of type {exception.GetType()} was thrown."
+            $"Something went wrong. Exception of type {exception.GetType()} was thrown.",
+            problemDetails?.Title
         );
-        Assert.Equal(problemDetails?.Instance, _instanceId.ToString());
     }
 }

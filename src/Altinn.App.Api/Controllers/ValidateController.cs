@@ -73,14 +73,10 @@ public class ValidateController : ControllerBase
             string? taskId = instance.Process?.CurrentTask?.ElementId;
             if (taskId == null)
             {
-                return Conflict(
-                    new ProblemDetails
-                    {
-                        Status = StatusCodes.Status409Conflict,
-                        Title = "Validation error",
-                        Detail = "Unable to validate instance without a started process.",
-                        Instance = instanceGuid.ToString(),
-                    }
+                return Problem(
+                    statusCode: StatusCodes.Status409Conflict,
+                    title: "Validation error",
+                    detail: "Unable to validate instance without a started process."
                 );
             }
 
@@ -102,15 +98,10 @@ public class ValidateController : ControllerBase
             if (exception is PlatformHttpException platformHttpException)
                 statusCode = (int)platformHttpException.Response.StatusCode;
 
-            return StatusCode(
-                statusCode,
-                new ProblemDetails
-                {
-                    Status = statusCode,
-                    Title = $"Something went wrong. Exception of type {exception.GetType()} was thrown.",
-                    Detail = exception.Message,
-                    Instance = instanceGuid.ToString(),
-                }
+            return Problem(
+                statusCode: statusCode,
+                title: $"Something went wrong. Exception of type {exception.GetType()} was thrown.",
+                detail: exception.Message
             );
         }
     }
