@@ -54,6 +54,7 @@ public class ValidateController : ControllerBase
     [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/validate")]
     [ProducesResponseType(typeof(List<ValidationIssueWithSource>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ValidateInstance(
@@ -82,7 +83,9 @@ public class ValidateController : ControllerBase
 
             var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
 
-            var ignoredSources = ignoredValidators?.Split(',').ToList();
+            var ignoredSources = ignoredValidators?
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
             List<ValidationIssueWithSource> messages = await _validationService.ValidateInstanceAtTask(
                 dataAccessor,
                 taskId,
@@ -94,13 +97,13 @@ public class ValidateController : ControllerBase
         }
         catch (Exception exception)
         {
-            var statusCode = StatusCodes.Status500InternalServerError;
-            if (exception is PlatformHttpException platformHttpException)
-                statusCode = (int)platformHttpException.Response.StatusCode;
+            var statusCode = exception is PlatformHttpException platformHttpException
+                ? (int)platformHttpException.Response.StatusCode
+                : StatusCodes.Status500InternalServerError;
 
             return Problem(
                 statusCode: statusCode,
-                title: $"Something went wrong. Exception of type {exception.GetType()} was thrown.",
+                title: $"Something went wrong.",
                 detail: exception.Message
             );
         }

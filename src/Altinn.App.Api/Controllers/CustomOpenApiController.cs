@@ -617,7 +617,7 @@ public class CustomOpenApiController : Controller
                             },
                             new OpenApiParameter()
                             {
-                                Name = "Autorization",
+                                Name = "Authorization",
                                 Description =
                                     "Bearer token from the selected token provider to exchange for an Altinn token",
                                 In = ParameterLocation.Header,
@@ -787,7 +787,7 @@ public class CustomOpenApiController : Controller
                             },
                         ],
                         Responses = Snippets.AddCommonErrorResponses(
-                            new()
+                            new OpenApiResponses
                             {
                                 ["200"] = new()
                                 {
@@ -803,8 +803,12 @@ public class CustomOpenApiController : Controller
                                         },
                                     },
                                 },
-                            }
-                        ),
+                                ["409"] = new()
+                                {
+                                    Description = "Validation cannot be performed (e.g., no active task)",
+                                    Reference = Snippets.ProblemDetailsResponseReference,
+                                },
+                            })
                     },
                 },
             }

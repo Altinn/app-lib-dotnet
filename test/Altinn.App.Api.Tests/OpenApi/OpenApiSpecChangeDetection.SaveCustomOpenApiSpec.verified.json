@@ -527,7 +527,7 @@
             }
           },
           {
-            "name": "Autorization",
+            "name": "Authorization",
             "in": "header",
             "description": "Bearer token from the selected token provider to exchange for an Altinn token",
             "required": true,

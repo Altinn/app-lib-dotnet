@@ -190,7 +190,7 @@ public class ValidateControllerTests
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(403, problemDetails?.Status);
         Assert.Equal(
-            $"Something went wrong. Exception of type {exception.GetType()} was thrown.",
+            $"Something went wrong.",
             problemDetails?.Title
         );
     }
@@ -230,7 +230,7 @@ public class ValidateControllerTests
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(500, problemDetails?.Status);
         Assert.Equal(
-            $"Something went wrong. Exception of type {exception.GetType()} was thrown.",
+            $"Something went wrong.",
             problemDetails?.Title
         );
     }
