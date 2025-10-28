@@ -149,6 +149,7 @@ internal static class FormDataWrapperUtils
             "",
             "",
             SourceReaderUtils.TypeSymbolToString(rootSymbol),
+            isImmutableValue: false,
             GetNodeProperties(rootSymbol, diagnostics)
         );
     }
@@ -177,6 +178,10 @@ internal static class FormDataWrapperUtils
                 ? null
                 : SourceReaderUtils.TypeSymbolToString(propertyCollectionTypeSymbol);
 
+            // TODO: Find a better way to identify "value types" than to check for System namespace
+            // this works because the only value types we expect are numbers, datatimes, bools and strings,
+            // all defined in System namespace
+            //
             if (
                 propertyTypeSymbol is INamedTypeSymbol propertyNamedTypeSymbol
                 && !propertyNamedTypeSymbol.ContainingNamespace.ToString().StartsWith("System")
@@ -187,6 +192,7 @@ internal static class FormDataWrapperUtils
                         cSharpName,
                         jsonName,
                         typeString,
+                        isImmutableValue: false,
                         GetNodeProperties(propertyNamedTypeSymbol, diagnostics),
                         collectionTypeString
                     )
@@ -194,7 +200,16 @@ internal static class FormDataWrapperUtils
             }
             else
             {
-                nodeProperties.Add(new ModelPathNode(cSharpName, jsonName, typeString, null, collectionTypeString));
+                nodeProperties.Add(
+                    new ModelPathNode(
+                        cSharpName,
+                        jsonName,
+                        typeString,
+                        isImmutableValue: true,
+                        null,
+                        collectionTypeString
+                    )
+                );
             }
         }
         return nodeProperties;

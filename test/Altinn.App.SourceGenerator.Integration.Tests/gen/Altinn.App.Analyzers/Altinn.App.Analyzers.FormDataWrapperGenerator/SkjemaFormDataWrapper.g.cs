@@ -47,19 +47,18 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
         int offset
     )
     {
-        if(model is null)
+        if (model is null || offset == -1)
         {
-            return null;
+            return model;
         }
 
         return ParseSegment(path, offset, out int nextOffset, out int literalIndex) switch
         {
             "skjemanummer" when nextOffset is -1 && literalIndex is -1 => model.Skjemanummer,
             "skjemaversjon" when nextOffset is -1 && literalIndex is -1 => model.Skjemaversjon,
-            "skjemainnhold" when nextOffset > -1 && literalIndex > -1 => GetRecursive(model.Skjemainnhold, path, literalIndex, nextOffset),
-            "eierAdresse" when nextOffset > -1 && literalIndex is -1 => GetRecursive(model.EierAdresse, path, nextOffset),
-            "" => model,
-            // _ => throw new global::System.ArgumentException("{path} is not a valid path."),
+            "skjemainnhold" => GetRecursive(model.Skjemainnhold, path, literalIndex, nextOffset),
+            "eierAdresse" when literalIndex is -1 => GetRecursive(model.EierAdresse, path, nextOffset),
+            // _ => throw new global::Altinn.App.Core.Helpers.DataModel.DataModelException($"{path} is not a valid path."),
             _ => null,
         };
     }
@@ -71,6 +70,11 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
         int offset
     )
     {
+        if (literalIndex == -1)
+        {
+            return model;
+        }
+
         if (model is null || literalIndex < 0 || literalIndex >= model.Count)
         {
             return null;
@@ -85,9 +89,9 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
         int offset
     )
     {
-        if(model is null)
+        if (model is null || offset == -1)
         {
-            return null;
+            return model;
         }
 
         return ParseSegment(path, offset, out int nextOffset, out int literalIndex) switch
@@ -96,10 +100,9 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
             "navn" when nextOffset is -1 && literalIndex is -1 => model.Navn,
             "alder" when nextOffset is -1 && literalIndex is -1 => model.Alder,
             "deltar" when nextOffset is -1 && literalIndex is -1 => model.Deltar,
-            "adresse" when nextOffset > -1 && literalIndex is -1 => GetRecursive(model.Adresse, path, nextOffset),
-            "tidligere-adresse" when nextOffset > -1 && literalIndex > -1 => GetRecursive(model.TidligereAdresse, path, literalIndex, nextOffset),
-            "" => model,
-            // _ => throw new global::System.ArgumentException("{path} is not a valid path."),
+            "adresse" when literalIndex is -1 => GetRecursive(model.Adresse, path, nextOffset),
+            "tidligere-adresse" => GetRecursive(model.TidligereAdresse, path, literalIndex, nextOffset),
+            // _ => throw new global::Altinn.App.Core.Helpers.DataModel.DataModelException($"{path} is not a valid path."),
             _ => null,
         };
     }
@@ -110,9 +113,9 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
         int offset
     )
     {
-        if(model is null)
+        if (model is null || offset == -1)
         {
-            return null;
+            return model;
         }
 
         return ParseSegment(path, offset, out int nextOffset, out int literalIndex) switch
@@ -121,10 +124,30 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
             "gate" when nextOffset is -1 && literalIndex is -1 => model.Gate,
             "postnummer" when nextOffset is -1 && literalIndex is -1 => model.Postnummer,
             "poststed" when nextOffset is -1 && literalIndex is -1 => model.Poststed,
-            "" => model,
-            // _ => throw new global::System.ArgumentException("{path} is not a valid path."),
+            "tags" => GetRecursive(model.Tags, path, literalIndex, nextOffset),
+            // _ => throw new global::Altinn.App.Core.Helpers.DataModel.DataModelException($"{path} is not a valid path."),
             _ => null,
         };
+    }
+
+    private static object? GetRecursive(
+        global::System.Collections.Generic.List<string>? model,
+        global::System.ReadOnlySpan<char> path,
+        int literalIndex,
+        int offset
+    )
+    {
+        if (literalIndex == -1)
+        {
+            return model;
+        }
+
+        if (model is null || literalIndex < 0 || literalIndex >= model.Count)
+        {
+            return null;
+        }
+
+        return model[literalIndex];
     }
 
     private static object? GetRecursive(
@@ -134,6 +157,11 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
         int offset
     )
     {
+        if (literalIndex == -1)
+        {
+            return model;
+        }
+
         if (model is null || literalIndex < 0 || literalIndex >= model.Count)
         {
             return null;
@@ -392,6 +420,10 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
                 segment.CopyTo(buffer.Slice(bufferOffset));
                 bufferOffset += 8;
                 return;
+            case "tags":
+                segment.CopyTo(buffer.Slice(bufferOffset));
+                bufferOffset += 4;
+                return;
             default:
                 bufferOffset = 0;
                 return;
@@ -482,7 +514,27 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
             Gate = data.Gate,
             Postnummer = data.Postnummer,
             Poststed = data.Poststed,
+            Tags = CopyRecursive(data.Tags),
         };
+    }
+
+    [return: global::System.Diagnostics.CodeAnalysis.NotNullIfNotNull("list")]
+    private static global::System.Collections.Generic.List<string>? CopyRecursive(
+        global::System.Collections.Generic.List<string>? list
+    )
+    {
+        if (list is null)
+        {
+            return null;
+        }
+
+        global::System.Collections.Generic.List<string> result = new(list.Count);
+        foreach (var item in list)
+        {
+            result.Add(item);
+        }
+
+        return result;
     }
 
     [return: global::System.Diagnostics.CodeAnalysis.NotNullIfNotNull("list")]
@@ -651,9 +703,45 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
             case "poststed" when (nextOffset is -1) && (literalIndex is -1):
                 model.Poststed = default;
                 break;
+            case "tags" when (nextOffset is -1) && (literalIndex is -1):
+                model.Tags = default;
+                break;
+            case "tags":
+                RemoveRecursive(model.Tags, path, nextOffset, literalIndex, rowRemovalOption);
+                break;
             default:
                 // throw new ArgumentException("{path} is not a valid path.");
                 return;
+        }
+    }
+
+    private static void RemoveRecursive(
+        global::System.Collections.Generic.List<string>? model,
+        global::System.ReadOnlySpan<char> path,
+        int offset,
+        int index,
+        global::Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption
+    )
+    {
+        if (model is null)
+        {
+            return;
+        }
+        if (index < 0 || index >= model.Count)
+        {
+            return;
+        }
+        if (offset == -1)
+        {
+            switch (rowRemovalOption)
+            {
+                case global::Altinn.App.Core.Helpers.RowRemovalOption.DeleteRow:
+                    model.RemoveAt(index);
+                    break;
+                case global::Altinn.App.Core.Helpers.RowRemovalOption.SetToNull:
+                    model[index] = default!;
+                    break;
+            }
         }
     }
 
@@ -765,7 +853,7 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
     #endregion AltinnRowIds
     public static global::System.ReadOnlySpan<char> ParseSegment(global::System.ReadOnlySpan<char> path, int offset, out int nextOffset, out int literalIndex)
     {
-        if (offset < 0 || offset >= path.Length)
+        if (offset < 0 || offset > path.Length)
         {
             throw new global::System.ArgumentOutOfRangeException(nameof(offset));
         }
@@ -809,11 +897,19 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
             throw new global::Altinn.App.Core.Helpers.DataModel.DataModelException($"Invalid negative index in {path}.");
         }
 
-        nextOffset = offset + bracketOffset + 2;
-        if (nextOffset >= path.Length)
+        if (offset + bracketOffset + 1 == path.Length)
         {
+            // End of path
             nextOffset = -1;
+            return index;
         }
+
+        if (path[offset + bracketOffset + 1] != '.')
+        {
+            throw new global::Altinn.App.Core.Helpers.DataModel.DataModelException($"Invalid character after closing bracket ']' in {path}. Expected '.' or end of path.");
+        }
+
+        nextOffset = offset + bracketOffset + 2;
 
         return index;
     }
@@ -833,67 +929,87 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
 //   "JsonName": "",
 //   "CSharpName": "",
 //   "TypeName": "global::Altinn.App.SourceGenerator.Integration.Tests.Models.Skjema",
+//   "IsImmutableValue": "false",
 //   "Properties": [
 //     {
 //       "JsonName": "skjemanummer",
 //       "CSharpName": "Skjemanummer",
 //       "TypeName": "string",
+//       "IsImmutableValue": "true",
 //     },
 //     {
 //       "JsonName": "skjemaversjon",
 //       "CSharpName": "Skjemaversjon",
 //       "TypeName": "string",
+//       "IsImmutableValue": "true",
 //     },
 //     {
 //       "JsonName": "skjemainnhold",
 //       "CSharpName": "Skjemainnhold",
 //       "TypeName": "global::Altinn.App.SourceGenerator.Integration.Tests.Models.SkjemaInnhold",
+//       "IsImmutableValue": "false",
 //       "ListType": "global::System.Collections.Generic.List<global::Altinn.App.SourceGenerator.Integration.Tests.Models.SkjemaInnhold?>",
 //       "Properties": [
 //         {
 //           "JsonName": "altinnRowId",
 //           "CSharpName": "AltinnRowId",
 //           "TypeName": "global::System.Guid",
+//           "IsImmutableValue": "true",
 //         },
 //         {
 //           "JsonName": "navn",
 //           "CSharpName": "Navn",
 //           "TypeName": "string",
+//           "IsImmutableValue": "true",
 //         },
 //         {
 //           "JsonName": "alder",
 //           "CSharpName": "Alder",
 //           "TypeName": "int",
+//           "IsImmutableValue": "true",
 //         },
 //         {
 //           "JsonName": "deltar",
 //           "CSharpName": "Deltar",
 //           "TypeName": "bool",
+//           "IsImmutableValue": "true",
 //         },
 //         {
 //           "JsonName": "adresse",
 //           "CSharpName": "Adresse",
 //           "TypeName": "global::Altinn.App.SourceGenerator.Integration.Tests.Models.Adresse",
+//           "IsImmutableValue": "false",
 //           "Properties": [
 //             {
 //               "JsonName": "altinnRowId",
 //               "CSharpName": "AltinnRowId",
 //               "TypeName": "global::System.Guid",
+//               "IsImmutableValue": "true",
 //             },
 //             {
 //               "JsonName": "gate",
 //               "CSharpName": "Gate",
 //               "TypeName": "string",
+//               "IsImmutableValue": "true",
 //             },
 //             {
 //               "JsonName": "postnummer",
 //               "CSharpName": "Postnummer",
 //               "TypeName": "int",
+//               "IsImmutableValue": "true",
 //             },
 //             {
 //               "JsonName": "poststed",
 //               "CSharpName": "Poststed",
 //               "TypeName": "string",
+//               "IsImmutableValue": "true",
+//             },
+//             {
+//               "JsonName": "tags",
+//               "CSharpName": "Tags",
+//               "TypeName": "string",
+//               "IsImmutableValue": "true",
+//               "ListType": "global::System.Collections.Generic.List<string>",
 //             }
 //           ]
 //         },
@@ -901,27 +1017,39 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
 //           "JsonName": "tidligere-adresse",
 //           "CSharpName": "TidligereAdresse",
 //           "TypeName": "global::Altinn.App.SourceGenerator.Integration.Tests.Models.Adresse",
+//           "IsImmutableValue": "false",
 //           "ListType": "global::System.Collections.Generic.List<global::Altinn.App.SourceGenerator.Integration.Tests.Models.Adresse>",
 //           "Properties": [
 //             {
 //               "JsonName": "altinnRowId",
 //               "CSharpName": "AltinnRowId",
 //               "TypeName": "global::System.Guid",
+//               "IsImmutableValue": "true",
 //             },
 //             {
 //               "JsonName": "gate",
 //               "CSharpName": "Gate",
 //               "TypeName": "string",
+//               "IsImmutableValue": "true",
 //             },
 //             {
 //               "JsonName": "postnummer",
 //               "CSharpName": "Postnummer",
 //               "TypeName": "int",
+//               "IsImmutableValue": "true",
 //             },
 //             {
 //               "JsonName": "poststed",
 //               "CSharpName": "Poststed",
 //               "TypeName": "string",
+//               "IsImmutableValue": "true",
+//             },
+//             {
+//               "JsonName": "tags",
+//               "CSharpName": "Tags",
+//               "TypeName": "string",
+//               "IsImmutableValue": "true",
+//               "ListType": "global::System.Collections.Generic.List<string>",
 //             }
 //           ]
 //         }
@@ -931,26 +1059,38 @@ public sealed class Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFo
 //       "JsonName": "eierAdresse",
 //       "CSharpName": "EierAdresse",
 //       "TypeName": "global::Altinn.App.SourceGenerator.Integration.Tests.Models.Adresse",
+//       "IsImmutableValue": "false",
 //       "Properties": [
 //         {
 //           "JsonName": "altinnRowId",
 //           "CSharpName": "AltinnRowId",
 //           "TypeName": "global::System.Guid",
+//           "IsImmutableValue": "true",
 //         },
 //         {
 //           "JsonName": "gate",
 //           "CSharpName": "Gate",
 //           "TypeName": "string",
+//           "IsImmutableValue": "true",
 //         },
 //         {
 //           "JsonName": "postnummer",
 //           "CSharpName": "Postnummer",
 //           "TypeName": "int",
+//           "IsImmutableValue": "true",
 //         },
 //         {
 //           "JsonName": "poststed",
 //           "CSharpName": "Poststed",
 //           "TypeName": "string",
+//           "IsImmutableValue": "true",
+//         },
+//         {
+//           "JsonName": "tags",
+//           "CSharpName": "Tags",
+//           "TypeName": "string",
+//           "IsImmutableValue": "true",
+//           "ListType": "global::System.Collections.Generic.List<string>",
 //         }
 //       ]
 //     }

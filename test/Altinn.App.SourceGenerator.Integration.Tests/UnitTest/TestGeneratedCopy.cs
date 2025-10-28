@@ -58,6 +58,7 @@ public class TestGeneratedCopy
                             Gate = "TidligereGata2",
                             Postnummer = 1235,
                             Poststed = "TidligereSted2",
+                            Tags = ["Tag1", "Tag2"],
                         },
                     ],
                 },
@@ -86,13 +87,20 @@ public class TestGeneratedCopy
 
         // Modifications to the copy should not affect the original
 
+        Assert.Equal("1", data.Skjemaversjon);
         copy.Skjemaversjon = "Changed";
         Assert.Equal("1", data.Skjemaversjon);
 
+        Assert.Null(data.Skjemainnhold![1]!.Adresse!.Postnummer);
         copy.Skjemainnhold![1]!.Adresse!.Postnummer = 9999;
         Assert.Null(data.Skjemainnhold![1]!.Adresse!.Postnummer);
 
+        Assert.Equal("TidligereGata", data.Skjemainnhold![1]!.TidligereAdresse![0]!.Gate);
         copy.Skjemainnhold![1]!.TidligereAdresse![0]!.Gate = "CHANGED";
         Assert.Equal("TidligereGata", data.Skjemainnhold![1]!.TidligereAdresse![0]!.Gate);
+
+        Assert.Equal("Tag1", data.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags![0]);
+        copy.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags![0] = "CHANGED";
+        Assert.Equal("Tag1", data.Skjemainnhold![1]!.TidligereAdresse![1]!.Tags![0]);
     }
 }

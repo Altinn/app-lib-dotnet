@@ -17,6 +17,7 @@ public record ModelPathNode
         string cSharpName,
         string jsonName,
         string typeName,
+        bool isImmutableValue,
         EquatableArray<ModelPathNode>? properties = null,
         string? listType = null
     )
@@ -25,6 +26,7 @@ public record ModelPathNode
         JsonName = jsonName;
         ListType = listType;
         TypeName = typeName;
+        IsImmutableValue = isImmutableValue;
         Properties = properties ?? EquatableArray<ModelPathNode>.Empty;
     }
 
@@ -67,6 +69,11 @@ public record ModelPathNode
     /// We assume this is a subtype of <see cref="ICollection{T}"/>
     /// </remarks>
     public string? ListType { get; }
+
+    /// <summary>
+    /// Indicates whether the type represented by this node is to be treated as primitive immutable value.
+    /// </summary>
+    public bool IsImmutableValue { get; }
 
     /// <summary>
     /// The sub properties of this node.

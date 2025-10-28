@@ -47,7 +47,7 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
     private ModelPathNode GetRoot<T>()
     {
         var children = typeof(T).GetProperties().Select(GetFromType).ToArray();
-        return new ModelPathNode("", "", "global::" + typeof(T).FullName!, children);
+        return new ModelPathNode("", "", "global::" + typeof(T).FullName!, isImmutableValue: false, children);
     }
 
     private ModelPathNode GetFromType(PropertyInfo propertyInfo)
@@ -56,24 +56,36 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
         var cSharpName = propertyInfo.Name;
         var jsonPath = propertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? cSharpName;
 
-        string? listType = null;
-        var typeString = FullTypeName(propertyType);
         var collectionInterface = propertyType.GetInterface("System.Collections.Generic.ICollection`1");
 
         if (collectionInterface != null)
         {
             var typeParam = collectionInterface.GetGenericArguments()[0];
-            typeString = FullTypeName(typeParam);
-            listType = $"{FullTypeName(propertyType.GetGenericTypeDefinition())}<{typeString}>";
+            var typeString = FullTypeName(typeParam);
+            var listType = $"{FullTypeName(propertyType.GetGenericTypeDefinition())}<{typeString}>";
             var children = GetChildren(typeParam);
 
-            return new ModelPathNode(cSharpName, jsonPath, typeString, children, listType: listType);
+            return new ModelPathNode(
+                cSharpName,
+                jsonPath,
+                typeString,
+                isImmutableValue: typeString.StartsWith("global::System."),
+                children,
+                listType: listType
+            );
         }
         else
         {
+            var typeString = FullTypeName(propertyType);
             var children = GetChildren(propertyType);
 
-            return new ModelPathNode(cSharpName, jsonPath, typeString, children);
+            return new ModelPathNode(
+                cSharpName,
+                jsonPath,
+                typeString,
+                isImmutableValue: typeString.StartsWith("global::System."),
+                children
+            );
         }
     }
 

@@ -34,6 +34,10 @@ public static class GenerateJsonComment
         sb.Append("\"TypeName\": \"");
         sb.Append(node.TypeName);
         sb.Append("\",");
+        sb.Append(linePrefix);
+        sb.Append("\"IsImmutableValue\": \"");
+        sb.Append(node.IsImmutableValue ? "true" : "false");
+        sb.Append("\",");
         if (node.ListType != null)
         {
             sb.Append(linePrefix);
