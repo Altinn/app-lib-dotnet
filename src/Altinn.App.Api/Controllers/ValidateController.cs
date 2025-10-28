@@ -98,7 +98,7 @@ public class ValidateController : ControllerBase
         }
         catch (Exception exception)
         {
-            var statusCode = StatusCodes.Status409Conflict;
+            var statusCode = StatusCodes.Status500InternalServerError;
             if (exception is PlatformHttpException platformHttpException)
                 statusCode = (int)platformHttpException.Response.StatusCode;
 
@@ -110,7 +110,6 @@ public class ValidateController : ControllerBase
                     Title = $"Something went wrong. Exception of type {exception.GetType()} was thrown.",
                     Detail = exception.Message,
                     Instance = instanceGuid.ToString(),
-                    Extensions = { ["stackTrace"] = exception.StackTrace },
                 }
             );
         }

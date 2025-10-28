@@ -28,9 +28,9 @@ public class ValidateControllerTests
     private const int InstanceOwnerPartyId = 1337;
     private static readonly Guid _instanceId = Guid.NewGuid();
 
-    private readonly Mock<IInstanceClient> _instanceMock = new(MockBehavior.Strict);
+    private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
-    private readonly Mock<IValidationService> _validationMock = new(MockBehavior.Strict);
+    private readonly Mock<IValidationService> _validationServiceMock = new(MockBehavior.Strict);
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<ITranslationService> _translationServiceMock = new(MockBehavior.Strict);
@@ -43,9 +43,9 @@ public class ValidateControllerTests
             .Setup(a => a.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata($"{Org}/{App}") { DataTypes = [] });
 
-        _services.AddSingleton(_instanceMock.Object);
+        _services.AddSingleton(_instanceClientMock.Object);
         _services.AddSingleton(_appMetadataMock.Object);
-        _services.AddSingleton(_validationMock.Object);
+        _services.AddSingleton(_validationServiceMock.Object);
         _services.AddSingleton(_dataClientMock.Object);
         _services.AddSingleton(_appModelMock.Object);
         _services.AddSingleton(_translationServiceMock.Object);
@@ -57,46 +57,34 @@ public class ValidateControllerTests
     }
 
     [Fact]
-    public async Task ValidateInstance_returns_NotFound_when_GetInstance_returns_null()
-    {
-        // Arrange
-        _instanceMock
-            .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
-            .Returns(Task.FromResult<Instance>(null!));
-
-        // Act
-        await using var sp = _services.BuildStrictServiceProvider();
-        var validateController = sp.GetRequiredService<ValidateController>();
-        var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
-
-        // Assert
-        Assert.IsType<NotFoundResult>(result);
-    }
-
-    [Fact]
-    public async Task ValidateInstance_throws_ValidationException_when_Instance_Process_is_null()
+    public async Task ValidateInstance_returns_409_when_Instance_Process_is_null()
     {
         // Arrange
 
         Instance instance = new Instance { Id = "instanceId", Process = null };
 
-        _instanceMock
+        _instanceClientMock
             .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
-            .Returns(Task.FromResult<Instance>(instance));
+            .Returns(Task.FromResult(instance));
 
         // Act
         await using var sp = _services.BuildStrictServiceProvider();
         var validateController = sp.GetRequiredService<ValidateController>();
 
         // Assert
-        var exception = await Assert.ThrowsAsync<ValidationException>(() =>
-            validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId)
-        );
-        Assert.Equal("Unable to validate instance without a started process.", exception.Message);
+        var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
+        result.Should().BeOfType<ConflictObjectResult>();
+
+        var objectResult = result as ObjectResult;
+        var problemDetails = objectResult?.Value as ProblemDetails;
+        Assert.Equal(409, problemDetails?.Status);
+        Assert.Equal("Validation error", problemDetails?.Title);
+        Assert.Equal("Unable to validate instance without a started process.", problemDetails?.Detail);
+        Assert.Equal(_instanceId.ToString(), problemDetails?.Instance);
     }
 
     [Fact]
-    public async Task ValidateInstance_throws_ValidationException_when_Instance_Process_CurrentTask_is_null()
+    public async Task ValidateInstance_returns_409_when_Instance_Process_CurrentTask_is_null()
     {
         // Arrange
         Instance instance = new Instance
@@ -105,7 +93,7 @@ public class ValidateControllerTests
             Process = new ProcessState { CurrentTask = null },
         };
 
-        _instanceMock
+        _instanceClientMock
             .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
             .Returns(Task.FromResult<Instance>(instance));
 
@@ -114,17 +102,21 @@ public class ValidateControllerTests
         var validateController = sp.GetRequiredService<ValidateController>();
 
         // Assert
-        var exception = await Assert.ThrowsAsync<ValidationException>(() =>
-            validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId)
-        );
-        Assert.Equal("Unable to validate instance without a started process.", exception.Message);
+        var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
+        result.Should().BeOfType<ConflictObjectResult>();
+
+        var objectResult = result as ObjectResult;
+        var problemDetails = objectResult?.Value as ProblemDetails;
+        Assert.Equal(409, problemDetails?.Status);
+        Assert.Equal("Validation error", problemDetails?.Title);
+        Assert.Equal("Unable to validate instance without a started process.", problemDetails?.Detail);
+        Assert.Equal(_instanceId.ToString(), problemDetails?.Instance);
     }
 
     [Fact]
     public async Task ValidateInstance_returns_OK_with_messages()
     {
         // Arrange
-
         Instance instance = new Instance
         {
             Id = $"{InstanceOwnerPartyId}/{_instanceId}",
@@ -148,11 +140,11 @@ public class ValidateControllerTests
             },
         };
 
-        _instanceMock
+        _instanceClientMock
             .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
             .Returns(Task.FromResult<Instance>(instance));
 
-        _validationMock
+        _validationServiceMock
             .Setup(v => v.ValidateInstanceAtTask(It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null))
             .ReturnsAsync(validationResult);
 
@@ -166,7 +158,7 @@ public class ValidateControllerTests
     }
 
     [Fact]
-    public async Task ValidateInstance_returns_403_when_not_authorized()
+    public async Task ValidateInstance_returns_status_code_from_PlatformHttpException_when_caught()
     {
         // Arrange
         Instance instance = new Instance
@@ -181,11 +173,11 @@ public class ValidateControllerTests
         var updateProcessResult = new HttpResponseMessage(HttpStatusCode.Forbidden);
         PlatformHttpException exception = await PlatformHttpException.CreateAsync(updateProcessResult);
 
-        _instanceMock
+        _instanceClientMock
             .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
-            .Returns(Task.FromResult<Instance>(instance));
+            .Returns(Task.FromResult(instance));
 
-        _validationMock
+        _validationServiceMock
             .Setup(v => v.ValidateInstanceAtTask(It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null))
             .Throws(exception);
 
@@ -195,11 +187,19 @@ public class ValidateControllerTests
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
 
         // Assert
-        result.Should().BeOfType<StatusCodeResult>().Which.StatusCode.Should().Be(403);
+        result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(403);
+        var objectResult = result as ObjectResult;
+        var problemDetails = objectResult?.Value as ProblemDetails;
+        Assert.Equal(403, problemDetails?.Status);
+        Assert.Equal(
+            $"Something went wrong. Exception of type {exception.GetType()} was thrown.",
+            problemDetails?.Title
+        );
+        Assert.Equal(_instanceId.ToString(), problemDetails?.Instance);
     }
 
     [Fact]
-    public async Task ValidateInstance_throws_PlatformHttpException_when_not_403()
+    public async Task ValidateInstance_returns_500_when_none_PlatformHttpException_is_caught()
     {
         // Arrange
         Instance instance = new Instance
@@ -211,14 +211,13 @@ public class ValidateControllerTests
             Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "dummy" } },
         };
 
-        var updateProcessResult = new HttpResponseMessage(HttpStatusCode.BadRequest);
-        PlatformHttpException exception = await PlatformHttpException.CreateAsync(updateProcessResult);
+        var exception = new Exception("Some random exception");
 
-        _instanceMock
+        _instanceClientMock
             .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
             .Returns(Task.FromResult<Instance>(instance));
 
-        _validationMock
+        _validationServiceMock
             .Setup(v => v.ValidateInstanceAtTask(It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null))
             .Throws(exception);
 
@@ -227,9 +226,16 @@ public class ValidateControllerTests
         var validateController = sp.GetRequiredService<ValidateController>();
 
         // Assert
-        var thrownException = await Assert.ThrowsAsync<PlatformHttpException>(() =>
-            validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId)
+        var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
+
+        result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(500);
+        var objectResult = result as ObjectResult;
+        var problemDetails = objectResult?.Value as ProblemDetails;
+        Assert.Equal(problemDetails?.Status, 500);
+        Assert.Equal(
+            problemDetails?.Title,
+            $"Something went wrong. Exception of type {exception.GetType()} was thrown."
         );
-        Assert.Equal(exception, thrownException);
+        Assert.Equal(problemDetails?.Instance, _instanceId.ToString());
     }
 }
