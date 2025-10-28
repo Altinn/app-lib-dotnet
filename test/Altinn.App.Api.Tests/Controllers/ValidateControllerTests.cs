@@ -189,10 +189,7 @@ public class ValidateControllerTests
         var objectResult = result as ObjectResult;
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(403, problemDetails?.Status);
-        Assert.Equal(
-            $"Something went wrong.",
-            problemDetails?.Title
-        );
+        Assert.Equal($"Something went wrong.", problemDetails?.Title);
     }
 
     [Fact]
@@ -229,9 +226,6 @@ public class ValidateControllerTests
         var objectResult = result as ObjectResult;
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(500, problemDetails?.Status);
-        Assert.Equal(
-            $"Something went wrong.",
-            problemDetails?.Title
-        );
+        Assert.Equal($"Something went wrong.", problemDetails?.Title);
     }
 }

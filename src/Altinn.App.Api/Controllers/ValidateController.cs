@@ -83,8 +83,8 @@ public class ValidateController : ControllerBase
 
             var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
 
-            var ignoredSources = ignoredValidators?
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            var ignoredSources = ignoredValidators
+                ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .ToList();
             List<ValidationIssueWithSource> messages = await _validationService.ValidateInstanceAtTask(
                 dataAccessor,
@@ -101,11 +101,7 @@ public class ValidateController : ControllerBase
                 ? (int)platformHttpException.Response.StatusCode
                 : StatusCodes.Status500InternalServerError;
 
-            return Problem(
-                statusCode: statusCode,
-                title: $"Something went wrong.",
-                detail: exception.Message
-            );
+            return Problem(statusCode: statusCode, title: $"Something went wrong.", detail: exception.Message);
         }
     }
 

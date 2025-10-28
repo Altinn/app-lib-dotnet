@@ -808,7 +808,8 @@ public class CustomOpenApiController : Controller
                                     Description = "Validation cannot be performed (e.g., no active task)",
                                     Reference = Snippets.ProblemDetailsResponseReference,
                                 },
-                            })
+                            }
+                        ),
                     },
                 },
             }

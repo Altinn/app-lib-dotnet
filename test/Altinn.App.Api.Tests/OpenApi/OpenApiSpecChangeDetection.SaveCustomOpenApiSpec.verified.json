@@ -684,6 +684,9 @@
               }
             }
           },
+          "409": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
           "400": {
             "$ref": "#/components/responses/ProblemDetails"
           },
