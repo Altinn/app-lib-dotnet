@@ -105,11 +105,6 @@ public class FiksArkivHostTest
         var fiksArkivConfigResolverMock = new Mock<IFiksArkivConfigResolver>(MockBehavior.Strict);
         var fiksArkivPayloadGeneratorMock = new Mock<IFiksArkivPayloadGenerator>(MockBehavior.Strict);
         FiksIOMessageRequest? capturedRequest = null;
-        var instance = new Instance
-        {
-            Id = "12345/8a19d133-f897-4c41-aac1-ec3859b0d67c",
-            Data = [new DataElement { Id = Guid.NewGuid().ToString(), DataType = "archive-record-type" }],
-        };
         var customFiksArkivSettings = new FiksArkivSettings
         {
             Receipt = new FiksArkivReceiptSettings
@@ -117,6 +112,19 @@ public class FiksArkivHostTest
                 ArchiveRecord = new FiksArkivDataTypeSettings { DataType = "archive-record-type" },
                 ConfirmationRecord = new FiksArkivDataTypeSettings { DataType = "confirmation-record-type" },
             },
+        };
+        var instance = new Instance
+        {
+            Id = "12345/8a19d133-f897-4c41-aac1-ec3859b0d67c",
+            Data =
+            [
+                new DataElement
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    DataType = customFiksArkivSettings.Receipt.ArchiveRecord.DataType,
+                    Filename = customFiksArkivSettings.Receipt.ArchiveRecord.GetFilenameOrDefault(),
+                },
+            ],
         };
 
         await using var fixture = TestFixture.Create(

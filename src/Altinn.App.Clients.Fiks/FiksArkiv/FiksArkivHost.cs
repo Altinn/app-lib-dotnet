@@ -278,7 +278,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
             new InstanceIdentifier(instance),
             _fiksArkivSettings.Receipt.ArchiveRecord.DataType,
             "application/xml",
-            _fiksArkivSettings.Receipt.ArchiveRecord.GetFilenameOrDefault(".xml"),
+            _fiksArkivSettings.Receipt.ArchiveRecord.GetFilenameOrDefault(),
             request.Payload.Single(x => x.Filename == FiksArkivConstants.Filenames.ArchiveRecord).Data
         );
 
@@ -306,7 +306,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
             new InstanceIdentifier(instance),
             _fiksArkivSettings.Receipt.ConfirmationRecord.DataType,
             "application/xml",
-            _fiksArkivSettings.Receipt.ConfirmationRecord.GetFilenameOrDefault(".xml"),
+            _fiksArkivSettings.Receipt.ConfirmationRecord.GetFilenameOrDefault(),
             receipt.Details.SerializeXmlBytes()
         );
 
@@ -324,7 +324,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
     {
         var dataElements = instance
             .GetOptionalDataElements(dataTypeSettings.DataType)
-            .Where(x => x.Filename == dataTypeSettings.Filename)
+            .Where(x => x.Filename == dataTypeSettings.GetFilenameOrDefault())
             .ToList();
 
         if (dataElements.Count == 0)
