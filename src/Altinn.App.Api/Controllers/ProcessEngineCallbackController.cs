@@ -1,8 +1,12 @@
+using Altinn.App.Core.Infrastructure.Clients.Storage;
+using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.ProcessEngine;
 using Altinn.App.Core.Models;
 using Altinn.App.ProcessEngine.Constants;
-using Altinn.App.ProcessEngine.Models;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ProcessEngineCallbackPayload = Altinn.App.Core.Internal.ProcessEngine.Models.ProcessEngineCallbackPayload;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -14,19 +18,21 @@ namespace Altinn.App.Api.Controllers;
 [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engine-callback")]
 public class ProcessEngineCallbackController : ControllerBase
 {
-    private readonly ILogger<ProcessEngineCallbackController> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly InstanceClient _instanceClient;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngineCallbackController"/> class.
     /// </summary>
     public ProcessEngineCallbackController(
         IServiceProvider serviceProvider,
-        ILogger<ProcessEngineCallbackController> logger
+        InstanceClient instanceClient
     )
     {
         _serviceProvider = serviceProvider;
-        _logger = logger;
+        _instanceClient = instanceClient;
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <summary>
@@ -39,7 +45,8 @@ public class ProcessEngineCallbackController : ControllerBase
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromRoute] string commandKey,
-        [FromBody] ProcessEngineCallbackPayload payload
+        [FromBody] ProcessEngineCallbackPayload payload,
+        CancellationToken cancellationToken
     )
     {
         var appId = new AppIdentifier(org, app);
@@ -49,19 +56,28 @@ public class ProcessEngineCallbackController : ControllerBase
             _serviceProvider.GetServices<IProcessEngineCallbackHandler>().FirstOrDefault(x => x.Key == commandKey)
             ?? throw new KeyNotFoundException("yikes");
 
-        var result = await handler.Execute(appId, instanceId, payload);
+        Instance instance =
+            await _instanceClient.GetInstance(appId.App, appId.Org, instanceOwnerPartyId, instanceId.InstanceGuid);
 
-        return result ? Ok() : BadRequest();
+        InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            instance.Process?.CurrentTask?.ElementId,
+            payload.ProcessEngineActor.Language
+        );
+
+        ProcessEngineCallbackHandlerResult result = await handler.Execute(new ProcessEngineCallbackHandlerParameters
+        {
+            AppId = appId,
+            InstanceId = instanceId,
+            InstanceDataMutator = instanceDataUnitOfWork,
+            CancellationToken = cancellationToken,
+            Payload = payload
+        });
+
+        // TODO: Do we have to check for abandon issues here?
+        DataElementChanges changes = instanceDataUnitOfWork.GetDataElementChanges(false);
+        await instanceDataUnitOfWork.SaveChanges(changes);
+
+        return result is SuccessfulProcessEngineCallbackHandlerResult ? Ok() : BadRequest();
     }
 }
-
-// TODO: Move this somewhere more reasonable and create some implementations
-internal interface IProcessEngineCallbackHandler
-{
-    string Key { get; }
-    Task<bool> Execute(
-        AppIdentifier appIdentifier,
-        InstanceIdentifier instanceIdentifier,
-        ProcessEngineCallbackPayload payload
-    );
-};
