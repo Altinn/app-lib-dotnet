@@ -175,13 +175,13 @@ public static class FormDataWrapperUtils
         return nodeProperties.ToArray();
     }
 
-    // <summary>
-    // Determine if the given symbol represents something that System.Text.Json can serialize as a JSON value
-    // (primitive types, string, DateTime, Guid, Uri)
-    // </summary>
-    // <remarks>
-    // Based on https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/supported-types#supported-key-types
-    // </remarks>
+    /// <summary>
+    /// Determine if the given symbol represents something that System.Text.Json can serialize as a JSON value
+    /// (primitive types, string, DateTime, Guid, Uri)
+    /// </summary>
+    /// <remarks>
+    /// Based on https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/supported-types#supported-key-types
+    /// </remarks>
     public static bool IsJsonValueType(string? ns, string name) =>
         ns switch
         {
