@@ -392,7 +392,7 @@ public class FiksArkivHostTest
             Times.Once
         );
         loggerMock.Verify(
-            TestHelpers.MatchLogEntry(LogLevel.Error, "failed with error", loggerMock.Object),
+            TestHelpers.MatchLogEntry(LogLevel.Error, "failed with unrecoverable error", loggerMock.Object),
             Times.Once
         );
     }
