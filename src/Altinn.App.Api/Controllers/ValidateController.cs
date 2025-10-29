@@ -101,7 +101,7 @@ public class ValidateController : ControllerBase
                 ? (int)platformHttpException.Response.StatusCode
                 : StatusCodes.Status500InternalServerError;
 
-            return Problem(statusCode: statusCode, title: $"Something went wrong.", detail: exception.Message);
+            return Problem(statusCode: statusCode, title: "Something went wrong.", detail: exception.Message);
         }
     }
 

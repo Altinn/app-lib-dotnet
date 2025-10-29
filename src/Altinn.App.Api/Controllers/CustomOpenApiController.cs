@@ -61,7 +61,7 @@ public class CustomOpenApiController : Controller
     /// </summary>
     public static string InfoDescriptionWarningText =>
         """
-            App API description for both end users and service owners, as well as open metadata information<br><br>All operations* described within this document require authentication and authorization. Read more at <a href="https://docs.altinn.studio/authentication/guides">https://docs.altinn.studio/authentication/guides</a><br><br><strong>All GET operations* and POST operations may return or contain, respectively, personally identifiable information (PII; national identity numbers and names).</strong><br><br>For more information about this product, see <a href="https://docs.altinn.studio/api/apps">https://docs.altinn.studio/api/apps</a><br><br><em>* Except the metadata APIs
+            App API description for both end users and service owners, as well as open metadata information<br><br>All operations* described within this document require authentication and authorization. Read more at <a href="https://docs.altinn.studio/authentication/guides">https://docs.altinn.studio/authentication/guides</a><br><br><strong>All GET operations* and POST operations may return or contain, respectively, personally identifiable information (PII; national identity numbers and names).</strong><br><br>For more information about this product, see <a href="https://docs.altinn.studio/api/apps">https://docs.altinn.studio/api/apps</a><br><br><em>* Except the metadata APIs</em>
 
             """;
 
@@ -751,6 +751,7 @@ public class CustomOpenApiController : Controller
                     [OperationType.Get] = new()
                     {
                         Tags = validationTags,
+                        OperationId = "ValidateInstance",
                         Summary = "Validate an app instance",
                         Description =
                             "This will validate all individual data elements, both the binary elements and the elements bound to a model, and then finally the state of the instance.",

@@ -60,7 +60,6 @@ public class ValidateControllerTests
     public async Task ValidateInstance_returns_409_when_Instance_Process_is_null()
     {
         // Arrange
-
         Instance instance = new Instance { Id = "instanceId", Process = null };
 
         _instanceClientMock
@@ -73,7 +72,7 @@ public class ValidateControllerTests
 
         // Assert
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
-        result.Should().BeOfType<ObjectResult>();
+        result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(409);
 
         var objectResult = result as ObjectResult;
         var problemDetails = objectResult?.Value as ProblemDetails;
@@ -102,8 +101,8 @@ public class ValidateControllerTests
 
         // Assert
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
-        result.Should().BeOfType<ObjectResult>();
-
+        result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(409);
+        ;
         var objectResult = result as ObjectResult;
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(409, problemDetails?.Status);
@@ -121,7 +120,6 @@ public class ValidateControllerTests
             InstanceOwner = new() { PartyId = InstanceOwnerPartyId.ToString() },
             Org = Org,
             AppId = $"{Org}/{App}",
-
             Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "dummy" } },
         };
 
@@ -153,6 +151,62 @@ public class ValidateControllerTests
 
         // Assert
         result.Should().BeOfType<OkObjectResult>().Which.Value.Should().BeEquivalentTo(validationResult);
+    }
+
+    [Fact]
+    public async Task ValidateInstance_forwards_trimmed_ignoredValidators_to_validation_service()
+    {
+        // Arrange
+        var instance = new Instance
+        {
+            Id = $"{InstanceOwnerPartyId}/{_instanceId}",
+            InstanceOwner = new() { PartyId = InstanceOwnerPartyId.ToString() },
+            Org = Org,
+            AppId = $"{Org}/{App}",
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "dummy" } },
+        };
+        _instanceClientMock
+            .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
+            .Returns(Task.FromResult(instance));
+
+        List<ValidationIssueWithSource> empty = [];
+        _validationServiceMock
+            .Setup(v =>
+                v.ValidateInstanceAtTask(
+                    It.IsAny<IInstanceDataAccessor>(),
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>?>(),
+                    null,
+                    null
+                )
+            )
+            .ReturnsAsync(empty);
+
+        await using var sp = _services.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<ValidateController>();
+
+        // Act
+        var result = await controller.ValidateInstance(
+            Org,
+            App,
+            InstanceOwnerPartyId,
+            _instanceId,
+            ignoredValidators: " A ,  B  , "
+        );
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        _validationServiceMock.Verify(
+            v =>
+                v.ValidateInstanceAtTask(
+                    It.IsAny<IInstanceDataAccessor>(),
+                    "dummy",
+                    It.Is<List<string>?>(lst => lst != null && lst.SequenceEqual(new[] { "A", "B" })),
+                    null,
+                    null
+                ),
+            Times.Once()
+        );
     }
 
     [Fact]
@@ -189,11 +243,11 @@ public class ValidateControllerTests
         var objectResult = result as ObjectResult;
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(403, problemDetails?.Status);
-        Assert.Equal($"Something went wrong.", problemDetails?.Title);
+        Assert.Equal("Something went wrong.", problemDetails?.Title);
     }
 
     [Fact]
-    public async Task ValidateInstance_returns_500_when_none_PlatformHttpException_is_caught()
+    public async Task ValidateInstance_returns_500_when_non_PlatformHttpException_is_caught()
     {
         // Arrange
         Instance instance = new Instance
@@ -226,6 +280,6 @@ public class ValidateControllerTests
         var objectResult = result as ObjectResult;
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(500, problemDetails?.Status);
-        Assert.Equal($"Something went wrong.", problemDetails?.Title);
+        Assert.Equal("Something went wrong.", problemDetails?.Title);
     }
 }
