@@ -655,7 +655,7 @@
           {
             "name": "onlyIncrementalValidators",
             "in": "query",
-            "description": "Ignore validators that don't run on PATCH requests",
+            "description": "When true, only run incremental validators (those that run on PATCH requests)",
             "schema": {
               "type": "boolean",
               "example": false

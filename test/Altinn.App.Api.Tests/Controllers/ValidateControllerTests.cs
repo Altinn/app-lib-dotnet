@@ -72,14 +72,12 @@ public class ValidateControllerTests
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
 
         // Assert
-        Assert.IsType<ObjectResult>(result);
-        var objectResult = result as ObjectResult;
-        Assert.Equal(409, objectResult?.StatusCode);
-        Assert.IsType<ProblemDetails>(objectResult?.Value);
-        var problemDetails = objectResult?.Value as ProblemDetails;
-        Assert.Equal(409, problemDetails?.Status);
-        Assert.Equal("Validation error", problemDetails?.Title);
-        Assert.Equal("Unable to validate instance without a started process.", problemDetails?.Detail);
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(409, objectResult.StatusCode);
+        var problemDetails = Assert.IsType<ProblemDetails>(objectResult.Value);
+        Assert.Equal(409, problemDetails.Status);
+        Assert.Equal("Validation error", problemDetails.Title);
+        Assert.Equal("Unable to validate instance without a started process.", problemDetails.Detail);
     }
 
     [Fact]
@@ -103,14 +101,12 @@ public class ValidateControllerTests
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
 
         // Assert
-        Assert.IsType<ObjectResult>(result);
-        var objectResult = result as ObjectResult;
-        Assert.Equal(409, objectResult?.StatusCode);
-        Assert.IsType<ProblemDetails>(objectResult?.Value);
-        var problemDetails = objectResult?.Value as ProblemDetails;
-        Assert.Equal(409, problemDetails?.Status);
-        Assert.Equal("Validation error", problemDetails?.Title);
-        Assert.Equal("Unable to validate instance without a started process.", problemDetails?.Detail);
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(409, objectResult.StatusCode);
+        var problemDetails = Assert.IsType<ProblemDetails>(objectResult.Value);
+        Assert.Equal(409, problemDetails.Status);
+        Assert.Equal("Validation error", problemDetails.Title);
+        Assert.Equal("Unable to validate instance without a started process.", problemDetails.Detail);
     }
 
     [Fact]
@@ -154,9 +150,9 @@ public class ValidateControllerTests
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
 
         // Assert
-        Assert.IsType<OkObjectResult>(result);
-        var okObjectResult = result as OkObjectResult;
-        Assert.Equal(validationResult, okObjectResult?.Value);
+        var okObjectResult = Assert.IsType<OkObjectResult>(result);
+        var actual = Assert.IsType<List<ValidationIssueWithSource>>(okObjectResult.Value);
+        Assert.Equal(validationResult, actual);
     }
 
     [Fact]
@@ -216,7 +212,7 @@ public class ValidateControllerTests
     }
 
     [Fact]
-    public async Task ValidateInstance_returns_status_code_from_PlatformHttpException_when_caught()
+    public async Task ValidateInstance_returns_status_code_from_PlatformHttpException_when_thrown()
     {
         // Arrange
         Instance instance = new Instance
@@ -246,17 +242,16 @@ public class ValidateControllerTests
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
 
         // Assert
-        Assert.IsType<ObjectResult>(result);
-        var objectResult = result as ObjectResult;
-        Assert.Equal(403, objectResult?.StatusCode);
-        Assert.IsType<ProblemDetails>(objectResult?.Value);
-        var problemDetails = objectResult?.Value as ProblemDetails;
-        Assert.Equal(403, problemDetails?.Status);
-        Assert.Equal("Something went wrong.", problemDetails?.Title);
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, objectResult.StatusCode);
+        var problemDetails = Assert.IsType<ProblemDetails>(objectResult.Value);
+        Assert.Equal(403, problemDetails.Status);
+        Assert.Equal("Something went wrong.", problemDetails.Title);
+        Assert.Equal(exception.Message, problemDetails?.Detail);
     }
 
     [Fact]
-    public async Task ValidateInstance_returns_500_when_non_PlatformHttpException_is_caught()
+    public async Task ValidateInstance_returns_500_when_unexpected_exception_type_is_thrown()
     {
         // Arrange
         Instance instance = new Instance
@@ -285,12 +280,11 @@ public class ValidateControllerTests
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
 
         // Assert
-        Assert.IsType<ObjectResult>(result);
-        var objectResult = result as ObjectResult;
-        Assert.Equal(500, objectResult?.StatusCode);
-        Assert.IsType<ProblemDetails>(objectResult?.Value);
-        var problemDetails = objectResult?.Value as ProblemDetails;
-        Assert.Equal(500, problemDetails?.Status);
-        Assert.Equal("Something went wrong.", problemDetails?.Title);
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, objectResult.StatusCode);
+        var problemDetails = Assert.IsType<ProblemDetails>(objectResult.Value);
+        Assert.Equal(500, problemDetails.Status);
+        Assert.Equal("Something went wrong.", problemDetails.Title);
+        Assert.Equal(exception.Message, problemDetails?.Detail);
     }
 }

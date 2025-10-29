@@ -67,8 +67,7 @@ public class InstanceClient : IInstanceClient
         HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            string instanceData = await response.Content.ReadAsStringAsync();
-            Instance instance = DeserializeOrThrow<Instance>(instanceData);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
             return instance;
         }
         else
@@ -120,8 +119,9 @@ public class InstanceClient : IInstanceClient
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            string responseString = await response.Content.ReadAsStringAsync();
-            QueryResponse<Instance> queryResponse = DeserializeOrThrow<QueryResponse<Instance>>(responseString);
+            QueryResponse<Instance> queryResponse = await JsonSerializerPermissive.DeserializeAsync<
+                QueryResponse<Instance>
+            >(response.Content);
             return queryResponse;
         }
         else
@@ -147,8 +147,7 @@ public class InstanceClient : IInstanceClient
         HttpResponseMessage response = await _client.PutAsync(token, apiUrl, httpContent);
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            string instanceData = await response.Content.ReadAsStringAsync();
-            Instance updatedInstance = DeserializeOrThrow<Instance>(instanceData);
+            Instance updatedInstance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
             return updatedInstance;
         }
         else
@@ -178,8 +177,7 @@ public class InstanceClient : IInstanceClient
         HttpResponseMessage response = await _client.PutAsync(token, apiUrl, httpContent);
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            string instanceData = await response.Content.ReadAsStringAsync();
-            Instance updatedInstance = DeserializeOrThrow<Instance>(instanceData);
+            Instance updatedInstance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
             return updatedInstance;
         }
         else
@@ -201,7 +199,7 @@ public class InstanceClient : IInstanceClient
 
         if (response.IsSuccessStatusCode)
         {
-            Instance createdInstance = DeserializeOrThrow<Instance>(await response.Content.ReadAsStringAsync());
+            Instance createdInstance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
             _telemetry?.InstanceCreated(createdInstance);
             return createdInstance;
         }
@@ -223,8 +221,7 @@ public class InstanceClient : IInstanceClient
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            string instanceData = await response.Content.ReadAsStringAsync();
-            Instance instance = DeserializeOrThrow<Instance>(instanceData);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
             _telemetry?.InstanceCompleted(instance);
             return instance;
         }
@@ -243,8 +240,7 @@ public class InstanceClient : IInstanceClient
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            string instanceData = await response.Content.ReadAsStringAsync();
-            Instance instance = DeserializeOrThrow<Instance>(instanceData);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
             return instance;
         }
 
@@ -271,8 +267,7 @@ public class InstanceClient : IInstanceClient
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            string instanceData = await response.Content.ReadAsStringAsync();
-            Instance instance = DeserializeOrThrow<Instance>(instanceData);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
             return instance;
         }
 
@@ -298,8 +293,7 @@ public class InstanceClient : IInstanceClient
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            string instanceData = await response.Content.ReadAsStringAsync();
-            Instance instance = DeserializeOrThrow<Instance>(instanceData);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
             return instance;
         }
 
@@ -321,8 +315,7 @@ public class InstanceClient : IInstanceClient
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            string instanceData = await response.Content.ReadAsStringAsync();
-            Instance instance = DeserializeOrThrow<Instance>(instanceData);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
             return instance;
         }
 
@@ -340,23 +333,11 @@ public class InstanceClient : IInstanceClient
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            string instanceData = await response.Content.ReadAsStringAsync();
-            Instance instance = DeserializeOrThrow<Instance>(instanceData);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
             _telemetry?.InstanceDeleted(instance);
             return instance;
         }
 
         throw await PlatformHttpException.CreateAsync(response);
     }
-
-    /// <summary>
-    /// Deserializes JSON string to object type T and throws JsonException if result is null.
-    /// </summary>
-    /// <typeparam name="T">Type to deserialize to</typeparam>
-    /// <param name="json">JSON string to deserialize.</param>
-    /// <returns>Deserialized object.</returns>
-    /// <exception cref="JsonException">Thrown when deserialization result is null.</exception>
-    private static T DeserializeOrThrow<T>(string json)
-        where T : class =>
-        JsonConvert.DeserializeObject<T>(json) ?? throw new JsonException($"Could not deserialize {typeof(T).Name}.");
 }
