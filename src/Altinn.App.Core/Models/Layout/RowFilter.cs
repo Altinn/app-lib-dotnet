@@ -12,17 +12,17 @@ internal sealed class RowFilter
     public required int Start { get; init; }
 
     /// <summary>
-    /// The stopping index (exclusive) of rows to show. Rows at or after this index are hidden.
+    /// The stopping index (inclusive) of rows to show. Rows after this index are hidden.
     /// </summary>
     public required int Stop { get; init; }
 
     /// <summary>
-    /// Determines whether the specified row index should be visible based on the filter.
+    /// Determines whether the specified row index is within the filter range.
     /// </summary>
     /// <param name="rowIndex">The zero-based index of the row to check.</param>
-    /// <returns>True if the row should be visible; false if it should be hidden.</returns>
-    public bool IsRowVisible(int rowIndex)
+    /// <returns>True if the row is within the filter range; false otherwise.</returns>
+    public bool IsInRange(int rowIndex)
     {
-        return rowIndex >= Start && rowIndex < Stop;
+        return rowIndex >= Start && rowIndex <= Stop;
     }
 }

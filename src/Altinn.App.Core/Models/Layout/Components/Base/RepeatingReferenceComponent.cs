@@ -21,10 +21,25 @@ public abstract class RepeatingReferenceComponent : BaseComponent
     public required Expression HiddenRow { get; init; }
 
     /// <summary>
-    /// Optional filter for row indices. When specified, only rows within the start (inclusive) and stop (exclusive) range are shown.
-    /// Rows outside this range are treated as hidden for removal purposes.
+    /// Optional filter for row indices. When specified, only rows within the start (inclusive) and stop (inclusive) range are shown.
+    /// Rows outside this range are not rendered or bound to the component.
     /// </summary>
     internal RowFilter? RowFilter { get; init; }
+
+    /// <summary>
+    /// Determines whether a specific data model binding should be skipped when evaluating hidden fields
+    /// at the component level (when RowIndices is null).
+    /// By default, repeating components don't skip any bindings.
+    /// Likert components override this to skip certain bindings to ensure only indexed row bindings
+    /// are processed for data removal.
+    /// </summary>
+    /// <param name="binding">The data model binding to check</param>
+    /// <param name="isRowContext">True if this is being called from a row context (RowIndices is not null)</param>
+    /// <returns>True if the binding should be skipped for hidden field evaluation</returns>
+    internal virtual bool ShouldSkipBindingForHiddenEvaluation(ModelBinding binding, bool isRowContext)
+    {
+        return false;
+    }
 
     /// <summary>
     /// List of references to child components that are repeated for each row in the repeating group.
@@ -129,24 +144,20 @@ public abstract class RepeatingReferenceComponent : BaseComponent
 
         for (int i = 0; i < rowCount; i++)
         {
-            var subRowIndexes = GetSubRowIndexes(rowIndexes, i);
-
-            // Determine if the row should be hidden based on HiddenRow expression or RowFilter
-            var rowHidden = HiddenRow;
-            if (RowFilter is not null && !RowFilter.IsRowVisible(i))
+            // Skip rows that are outside the filter range (they are not hidden, they're just not included in the layout)
+            if (RowFilter is not null && !RowFilter.IsInRange(i))
             {
-                // If the row is outside the filter range, treat it as hidden
-                // Combine with HiddenRow using OR logic (hidden if either condition is true)
-                rowHidden = new Expression(ExpressionFunction.or, HiddenRow, Expression.True);
+                continue;
             }
 
+            var subRowIndexes = GetSubRowIndexes(rowIndexes, i);
             var rowComponent = new RepeatingGroupRowComponent
             {
                 Id = $"{Id}__group_row_{i}",
                 PageId = PageId,
                 LayoutId = LayoutId,
                 DataModelBindings = DataModelBindings,
-                Hidden = rowHidden,
+                Hidden = HiddenRow,
                 RemoveWhenHidden = RemoveWhenHidden,
                 Type = "repeatingGroupRow",
                 ReadOnly = Expression.False, // We don't have a row level readOnly, only at the group or child component level

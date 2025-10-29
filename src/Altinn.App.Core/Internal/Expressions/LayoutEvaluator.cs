@@ -68,24 +68,19 @@ public static class LayoutEvaluator
         List<DataReference> childIgnoredPrefixes = [.. ignoredPrefixes];
 
         // For repeating reference components, get the group binding path to filter out row-level bindings
-        string? groupBindingPath = null;
-        if (context.Component is Models.Layout.Components.Base.RepeatingReferenceComponent repeatingRefComponent)
+        Models.Layout.Components.Base.RepeatingReferenceComponent? repeatingRefComponent = null;
+        if (context.Component is Models.Layout.Components.Base.RepeatingReferenceComponent component)
         {
-            groupBindingPath = repeatingRefComponent.GroupModelBinding.Field;
+            repeatingRefComponent = component;
         }
 
         // Schedule fields for removal
         foreach (var (_, binding) in context.Component.DataModelBindings)
         {
-            // Skip bindings that reference fields within the repeating group collection
-            // These will be processed in the row contexts, not at the component level
-            // This is especially important for Likert, which has both a questions (group) binding and answers
-            // binding (inside each group row).
+            // For repeating reference components, check if this binding should be skipped at the component level
             if (
-                groupBindingPath is not null
-                && binding.Field is not null
-                && binding.Field.StartsWith(groupBindingPath + ".", StringComparison.Ordinal)
-                && context.RowIndices is null
+                repeatingRefComponent is not null
+                && repeatingRefComponent.ShouldSkipBindingForHiddenEvaluation(binding, context.RowIndices is not null)
             )
             {
                 continue;

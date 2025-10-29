@@ -1,4 +1,4 @@
-[
+﻿[
   {
     Field: root.questions[0],
     DataElementIdentifier: {

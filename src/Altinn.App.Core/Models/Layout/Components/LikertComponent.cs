@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout.Components;
 
@@ -9,6 +8,46 @@ namespace Altinn.App.Core.Models.Layout.Components;
 /// </summary>
 public sealed class LikertComponent : Base.RepeatingReferenceComponent
 {
+    /// <summary>
+    /// Likert components need row-level granularity for hidden field removal since they're self-contained
+    /// and don't have external child components. Skip both the group binding itself and child bindings
+    /// at the component level, letting only row contexts process the indexed bindings.
+    /// </summary>
+    internal override bool ShouldSkipBindingForHiddenEvaluation(ModelBinding binding, bool isRowContext)
+    {
+        // In row contexts, process all bindings normally
+        if (isRowContext)
+        {
+            return false;
+        }
+
+        var groupBindingPath = GroupModelBinding.Field;
+
+        // Skip bindings that reference fields within the repeating group collection
+        // (e.g., "questions.Answer") - these will be processed in row contexts
+        if (
+            binding.Field is not null
+            && groupBindingPath is not null
+            && binding.Field.StartsWith(groupBindingPath + ".", StringComparison.Ordinal)
+        )
+        {
+            return true;
+        }
+
+        // Also skip the group binding itself (e.g., "questions") at component level
+        // Only the indexed row bindings (e.g., "questions[0]") matter for data removal
+        if (
+            binding.Field is not null
+            && groupBindingPath is not null
+            && binding.Field.Equals(groupBindingPath, StringComparison.Ordinal)
+        )
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     /// <summary>
     /// Parser for LikertComponent
     /// </summary>
@@ -40,6 +79,8 @@ public sealed class LikertComponent : Base.RepeatingReferenceComponent
         // Parse optional filter for row indices
         var rowFilter = ParseRowFilter(componentElement);
 
+        var hidden = ParseHiddenExpression(componentElement);
+
         return new LikertComponent
         {
             Id = id,
@@ -48,13 +89,13 @@ public sealed class LikertComponent : Base.RepeatingReferenceComponent
             LayoutId = layoutId,
             Required = ParseRequiredExpression(componentElement),
             ReadOnly = ParseReadOnlyExpression(componentElement),
-            Hidden = ParseHiddenExpression(componentElement),
+            Hidden = hidden,
             RemoveWhenHidden = ParseRemoveWhenHiddenExpression(componentElement),
             DataModelBindings = dataModelBindings,
             TextResourceBindings = ParseTextResourceBindings(componentElement),
             GroupModelBinding = questionsModelBinding,
             RepeatingChildReferences = repeatingChildReferences,
-            HiddenRow = Expression.False,
+            HiddenRow = hidden,
             BeforeChildReferences = beforeChildReferences,
             AfterChildReferences = afterChildReferences,
             RowFilter = rowFilter,
