@@ -1,0 +1,34 @@
+[
+  {
+    Field: root.questions[0],
+    DataElementIdentifier: {
+      Guid: Guid_1,
+      Id: Guid_1,
+      DataTypeId: default
+    }
+  },
+  {
+    Field: root.questions[0].Answer,
+    DataElementIdentifier: {
+      Guid: Guid_1,
+      Id: Guid_1,
+      DataTypeId: default
+    }
+  },
+  {
+    Field: root.questions[4],
+    DataElementIdentifier: {
+      Guid: Guid_1,
+      Id: Guid_1,
+      DataTypeId: default
+    }
+  },
+  {
+    Field: root.questions[4].Answer,
+    DataElementIdentifier: {
+      Guid: Guid_1,
+      Id: Guid_1,
+      DataTypeId: default
+    }
+  }
+]

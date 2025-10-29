@@ -21,6 +21,12 @@ public abstract class RepeatingReferenceComponent : BaseComponent
     public required Expression HiddenRow { get; init; }
 
     /// <summary>
+    /// Optional filter for row indices. When specified, only rows within the start (inclusive) and stop (exclusive) range are shown.
+    /// Rows outside this range are treated as hidden for removal purposes.
+    /// </summary>
+    internal RowFilter? RowFilter { get; init; }
+
+    /// <summary>
     /// List of references to child components that are repeated for each row in the repeating group.
     /// </summary>
     public required IReadOnlyList<string> RepeatingChildReferences { get; init; }
@@ -124,13 +130,23 @@ public abstract class RepeatingReferenceComponent : BaseComponent
         for (int i = 0; i < rowCount; i++)
         {
             var subRowIndexes = GetSubRowIndexes(rowIndexes, i);
+
+            // Determine if the row should be hidden based on HiddenRow expression or RowFilter
+            var rowHidden = HiddenRow;
+            if (RowFilter is not null && !RowFilter.IsRowVisible(i))
+            {
+                // If the row is outside the filter range, treat it as hidden
+                // Combine with HiddenRow using OR logic (hidden if either condition is true)
+                rowHidden = new Expression(ExpressionFunction.or, HiddenRow, Expression.True);
+            }
+
             var rowComponent = new RepeatingGroupRowComponent
             {
                 Id = $"{Id}__group_row_{i}",
                 PageId = PageId,
                 LayoutId = LayoutId,
                 DataModelBindings = DataModelBindings,
-                Hidden = HiddenRow,
+                Hidden = rowHidden,
                 RemoveWhenHidden = RemoveWhenHidden,
                 Type = "repeatingGroupRow",
                 ReadOnly = Expression.False, // We don't have a row level readOnly, only at the group or child component level

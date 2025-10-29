@@ -4598,6 +4598,11 @@ namespace Altinn.App.Core.Models.Layout.Components
             public required System.Collections.Generic.List<Altinn.App.Core.Models.Layout.Components.GridComponent.GridCellConfig?> Cells { get; set; }
         }
     }
+    public sealed class LikertComponent : Altinn.App.Core.Models.Layout.Components.Base.RepeatingReferenceComponent
+    {
+        public LikertComponent() { }
+        public static Altinn.App.Core.Models.Layout.Components.LikertComponent Parse(System.Text.Json.JsonElement componentElement, string pageId, string layoutId) { }
+    }
     public sealed class NonRepeatingGroupComponent : Altinn.App.Core.Models.Layout.Components.Base.SimpleReferenceComponent
     {
         public NonRepeatingGroupComponent() { }
