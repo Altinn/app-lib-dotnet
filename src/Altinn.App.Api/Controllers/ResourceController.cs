@@ -11,14 +11,17 @@ namespace Altinn.App.Api.Controllers;
 public class ResourceController : ControllerBase
 {
     private readonly IAppResources _appResourceService;
+    private readonly IInstanceContext _instanceContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResourceController"/> class
     /// </summary>
     /// <param name="appResourcesService">The execution service</param>
-    public ResourceController(IAppResources appResourcesService)
+    /// <param name="instanceContext">The instance context</param>
+    public ResourceController(IAppResources appResourcesService, IInstanceContext instanceContext)
     {
         _appResourceService = appResourcesService;
+        _instanceContext = instanceContext;
     }
 
     /// <summary>
@@ -68,6 +71,32 @@ public class ResourceController : ControllerBase
     public ActionResult GetLayouts(string org, string app, string id)
     {
         string layouts = _appResourceService.GetLayoutsForSet(id);
+        return Ok(layouts);
+    }
+
+    /// <summary>
+    /// Endpoint for layouts with instance context
+    /// </summary>
+    /// <param name="org"></param>
+    /// <param name="app"></param>
+    /// <param name="instanceOwnerPartyId"></param>
+    /// <param name="instanceId"></param>
+    /// <param name="layoutSetId"></param>
+    /// <returns></returns>
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "text/plain")]
+    [HttpGet]
+    [Route("{org}/{app}/instance/{instanceOwnerPartyId:int}/{instanceId}/layouts/{layoutSetId}")]
+    public ActionResult GetInstanceLayouts(
+        string org,
+        string app,
+        int instanceOwnerPartyId,
+        string instanceId,
+        string layoutSetId
+    )
+    {
+        _instanceContext.InstanceId = instanceId;
+        _instanceContext.InstanceOwnerPartyId = instanceOwnerPartyId;
+        string layouts = _appResourceService.GetLayoutsForSet(layoutSetId);
         return Ok(layouts);
     }
 
