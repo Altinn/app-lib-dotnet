@@ -150,20 +150,25 @@ public class MockedServiceCollection
         }
     }
 
-    public void AddDataType<T>(DataType dataType)
+    public DataType AddDataType<T>(string contentType = "application/xml", int maxCount = 1)
         where T : class, new()
     {
         var classRef =
             typeof(T).FullName
             ?? throw new InvalidOperationException("DataType for formData does not have a ClassRef defined.");
-
-        dataType.AppLogic ??= new();
-        dataType.AppLogic.ClassRef = classRef;
+        var dataType = new DataType()
+        {
+            Id = typeof(T).Name.ToLowerInvariant(),
+            AppLogic = new() { ClassRef = classRef },
+            MaxCount = maxCount,
+            AllowedContentTypes = [contentType],
+        };
 
         AppModelMock.Setup(a => a.GetModelType(classRef)).Returns(typeof(T));
-        AppModelMock.Setup(a => a.Create(classRef)).Returns(new T());
+        AppModelMock.Setup(a => a.Create(classRef)).Returns(() => new T());
 
         AddDataType(dataType);
+        return dataType;
     }
 
     private readonly Dictionary<string, TextResource> _textResources = new();
@@ -201,6 +206,7 @@ public static class MockedServiceProviderExtensions
         where T : class, new()
     {
         var appServices = serviceProvider.GetRequiredService<MockedServiceCollection>();
+        var serializer = serviceProvider.GetRequiredService<ModelSerializationService>();
         var instanceGuid = Guid.NewGuid();
         var dataGuid = Guid.NewGuid();
         var partyId = 123456;
@@ -224,14 +230,7 @@ public static class MockedServiceProviderExtensions
                 TextResourceBindings = ImmutableDictionary<string, Expression>.Empty,
             });
 
-        DataType defaultDataType = new()
-        {
-            Id = dataTypeId,
-            MaxCount = 1,
-            AllowedContentTypes = ["application/xml"],
-        };
-
-        appServices.AddDataType<T>(defaultDataType);
+        DataType defaultDataType = appServices.AddDataType<T>();
 
         var layoutModel = new LayoutModel(
             [new LayoutSetComponent(pages.ToList(), layoutSetName, defaultDataType)],
@@ -249,6 +248,7 @@ public static class MockedServiceProviderExtensions
             Id = dataGuid.ToString(),
             InstanceGuid = instanceGuid.ToString(),
             DataType = defaultDataType.Id,
+            ContentType = "application/xml",
         };
         var instance = new Instance()
         {
@@ -260,27 +260,11 @@ public static class MockedServiceProviderExtensions
         };
 
         appServices.Storage.AddInstance(instance);
-        appServices.Storage.AddData(dataGuid, SerializeXml(model));
+        appServices.Storage.AddData(dataGuid, serializer.SerializeToStorage(model, defaultDataType).data.ToArray());
 
         var instanceCopy = JsonSerializer.Deserialize<Instance>(JsonSerializer.SerializeToUtf8Bytes(instance))!;
 
         var initializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         return await initializer.Init(instanceCopy, taskId, language);
-    }
-
-    private static byte[] SerializeXml<T>(T model)
-        where T : class, new()
-    {
-        XmlWriterSettings xmlWriterSettings = new XmlWriterSettings()
-        {
-            Encoding = new UTF8Encoding(false),
-            NewLineHandling = NewLineHandling.None,
-        };
-        using var memoryStream = new MemoryStream();
-        using XmlWriter xmlWriter = XmlWriter.Create(memoryStream, xmlWriterSettings);
-
-        XmlSerializer serializer = new XmlSerializer(model.GetType());
-        serializer.Serialize(xmlWriter, model);
-        return memoryStream.ToArray();
     }
 }

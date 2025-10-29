@@ -14,6 +14,7 @@ using Altinn.App.Core.Internal;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Tests.Infrastructure.Clients.Storage.TestData;
 using Altinn.App.PlatformServices.Tests.Data;
@@ -34,7 +35,7 @@ public class DataClientTests
     public DataClientTests() { }
 
     private const string ApiStorageEndpoint = "https://local.platform.altinn.no/api/storage/";
-    private static readonly ApplicationMetadata _appMetadata = new("test-org/test-app");
+    private static readonly ApplicationMetadata _appMetadata = new("test-org/test-app") { DataTypes = [] };
     private static readonly Authenticated _defaultAuth = TestAuthentication.GetUserAuthentication();
 
     private static readonly TestTokens _testTokens = new(
@@ -395,8 +396,6 @@ public class DataClientTests
             UriKind.RelativeOrAbsolute
         );
         var response = await fixture.DataClient.GetBinaryData(
-            "ttd",
-            "app",
             instanceIdentifier.InstanceOwnerPartyId,
             instanceIdentifier.InstanceGuid,
             dataGuid,
@@ -436,8 +435,6 @@ public class DataClientTests
             UriKind.RelativeOrAbsolute
         );
         var response = await fixture.DataClient.GetBinaryData(
-            "ttd",
-            "app",
             instanceIdentifier.InstanceOwnerPartyId,
             instanceIdentifier.InstanceGuid,
             dataGuid,
@@ -468,8 +465,6 @@ public class DataClientTests
 
         var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () =>
             await fixture.DataClient.GetBinaryData(
-                "ttd",
-                "app",
                 instanceIdentifier.InstanceOwnerPartyId,
                 instanceIdentifier.InstanceGuid,
                 dataGuid
@@ -716,12 +711,11 @@ public class DataClientTests
             $"{ApiStorageEndpoint}instances/{instanceIdentifier}/data/{dataGuid}?delay=False",
             UriKind.RelativeOrAbsolute
         );
-        var result = await fixture.DataClient.DeleteBinaryData(
-            "ttd",
-            "app",
+        var result = await fixture.DataClient.DeleteData(
             instanceIdentifier.InstanceOwnerPartyId,
             instanceIdentifier.InstanceGuid,
-            dataGuid
+            dataGuid,
+            delay: false
         );
         invocations.Should().Be(1);
         platformRequest?.Should().NotBeNull();
@@ -753,12 +747,11 @@ public class DataClientTests
             UriKind.RelativeOrAbsolute
         );
         var actual = await Assert.ThrowsAsync<PlatformHttpException>(async () =>
-            await fixture.DataClient.DeleteBinaryData(
-                "ttd",
-                "app",
+            await fixture.DataClient.DeleteData(
                 instanceIdentifier.InstanceOwnerPartyId,
                 instanceIdentifier.InstanceGuid,
-                dataGuid
+                dataGuid,
+                delay: false
             )
         );
         invocations.Should().Be(1);
@@ -877,7 +870,7 @@ public class DataClientTests
             await fixture.DataClient.UpdateData(
                 exampleModel,
                 instanceIdentifier.InstanceGuid,
-                typeof(DataElement),
+                exampleModel.GetType(),
                 "ttd",
                 "app",
                 instanceIdentifier.InstanceOwnerPartyId,
@@ -1143,7 +1136,7 @@ public class DataClientTests
 
     private sealed record Fixture : IAsyncDisposable
     {
-        public required DataClient DataClient { get; init; }
+        public required IDataClient DataClient { get; init; }
         public required ServiceProvider ServiceProvider { get; init; }
         public required FixtureMocks Mocks { get; init; }
         public required HttpClient BaseHttpClient { get; init; }

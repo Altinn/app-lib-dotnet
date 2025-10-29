@@ -42,8 +42,6 @@ public class DataServiceTests
         _mockDataClient
             .Setup(dc =>
                 dc.GetBinaryData(
-                    applicationMetadata.AppIdentifier.Org,
-                    applicationMetadata.AppIdentifier.App,
                     instanceIdentifier.InstanceOwnerPartyId,
                     instanceIdentifier.InstanceGuid,
                     new Guid(instance.Data.First().Id),
@@ -99,8 +97,6 @@ public class DataServiceTests
         _mockDataClient
             .Setup(dc =>
                 dc.GetBinaryData(
-                    applicationMetadata.AppIdentifier.Org,
-                    applicationMetadata.AppIdentifier.App,
                     instanceIdentifier.InstanceOwnerPartyId,
                     instanceIdentifier.InstanceGuid,
                     expectedDataId,
