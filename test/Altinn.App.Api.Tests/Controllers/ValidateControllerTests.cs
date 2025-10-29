@@ -13,7 +13,6 @@ using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -64,17 +63,19 @@ public class ValidateControllerTests
 
         _instanceClientMock
             .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
-            .Returns(Task.FromResult(instance));
+            .ReturnsAsync(instance);
 
-        // Act
         await using var sp = _services.BuildStrictServiceProvider();
         var validateController = sp.GetRequiredService<ValidateController>();
 
-        // Assert
+        // Act
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
-        result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(409);
 
+        // Assert
+        Assert.IsType<ObjectResult>(result);
         var objectResult = result as ObjectResult;
+        Assert.Equal(409, objectResult?.StatusCode);
+        Assert.IsType<ProblemDetails>(objectResult?.Value);
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(409, problemDetails?.Status);
         Assert.Equal("Validation error", problemDetails?.Title);
@@ -93,17 +94,19 @@ public class ValidateControllerTests
 
         _instanceClientMock
             .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
-            .Returns(Task.FromResult<Instance>(instance));
+            .ReturnsAsync(instance);
 
-        // Act
         await using var sp = _services.BuildStrictServiceProvider();
         var validateController = sp.GetRequiredService<ValidateController>();
 
-        // Assert
+        // Act
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
-        result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(409);
-        ;
+
+        // Assert
+        Assert.IsType<ObjectResult>(result);
         var objectResult = result as ObjectResult;
+        Assert.Equal(409, objectResult?.StatusCode);
+        Assert.IsType<ProblemDetails>(objectResult?.Value);
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(409, problemDetails?.Status);
         Assert.Equal("Validation error", problemDetails?.Title);
@@ -138,19 +141,22 @@ public class ValidateControllerTests
 
         _instanceClientMock
             .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
-            .Returns(Task.FromResult<Instance>(instance));
+            .ReturnsAsync(instance);
 
         _validationServiceMock
             .Setup(v => v.ValidateInstanceAtTask(It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null))
             .ReturnsAsync(validationResult);
 
-        // Act
         await using var sp = _services.BuildStrictServiceProvider();
         var validateController = sp.GetRequiredService<ValidateController>();
+
+        // Act
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
 
         // Assert
-        result.Should().BeOfType<OkObjectResult>().Which.Value.Should().BeEquivalentTo(validationResult);
+        Assert.IsType<OkObjectResult>(result);
+        var okObjectResult = result as OkObjectResult;
+        Assert.Equal(validationResult, okObjectResult?.Value);
     }
 
     [Fact]
@@ -167,7 +173,7 @@ public class ValidateControllerTests
         };
         _instanceClientMock
             .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
-            .Returns(Task.FromResult(instance));
+            .ReturnsAsync(instance);
 
         List<ValidationIssueWithSource> empty = [];
         _validationServiceMock
@@ -195,7 +201,7 @@ public class ValidateControllerTests
         );
 
         // Assert
-        result.Should().BeOfType<OkObjectResult>();
+        Assert.IsType<OkObjectResult>(result);
         _validationServiceMock.Verify(
             v =>
                 v.ValidateInstanceAtTask(
@@ -227,20 +233,23 @@ public class ValidateControllerTests
 
         _instanceClientMock
             .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
-            .Returns(Task.FromResult(instance));
+            .ReturnsAsync(instance);
 
         _validationServiceMock
             .Setup(v => v.ValidateInstanceAtTask(It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null))
             .Throws(exception);
 
-        // Act
         await using var sp = _services.BuildStrictServiceProvider();
         var validateController = sp.GetRequiredService<ValidateController>();
+
+        // Act
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
 
         // Assert
-        result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(403);
+        Assert.IsType<ObjectResult>(result);
         var objectResult = result as ObjectResult;
+        Assert.Equal(403, objectResult?.StatusCode);
+        Assert.IsType<ProblemDetails>(objectResult?.Value);
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(403, problemDetails?.Status);
         Assert.Equal("Something went wrong.", problemDetails?.Title);
@@ -263,21 +272,23 @@ public class ValidateControllerTests
 
         _instanceClientMock
             .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
-            .Returns(Task.FromResult<Instance>(instance));
+            .ReturnsAsync(instance);
 
         _validationServiceMock
             .Setup(v => v.ValidateInstanceAtTask(It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null))
             .Throws(exception);
 
-        // Act
         await using var sp = _services.BuildStrictServiceProvider();
         var validateController = sp.GetRequiredService<ValidateController>();
 
-        // Assert
+        // Act
         var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
 
-        result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(500);
+        // Assert
+        Assert.IsType<ObjectResult>(result);
         var objectResult = result as ObjectResult;
+        Assert.Equal(500, objectResult?.StatusCode);
+        Assert.IsType<ProblemDetails>(objectResult?.Value);
         var problemDetails = objectResult?.Value as ProblemDetails;
         Assert.Equal(500, problemDetails?.Status);
         Assert.Equal("Something went wrong.", problemDetails?.Title);

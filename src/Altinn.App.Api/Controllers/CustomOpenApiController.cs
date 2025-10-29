@@ -775,7 +775,8 @@ public class CustomOpenApiController : Controller
                             new()
                             {
                                 Name = "onlyIncrementalValidators",
-                                Description = "Ignore validators that don't run on PATCH requests",
+                                Description =
+                                    "When true, only run incremental validators (those that run on PATCH requests)",
                                 In = ParameterLocation.Query,
                                 Schema = new OpenApiSchema() { Type = "boolean", Example = new OpenApiBoolean(false) },
                             },
