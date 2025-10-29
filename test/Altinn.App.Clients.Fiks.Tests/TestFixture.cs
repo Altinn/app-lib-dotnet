@@ -1,4 +1,5 @@
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -29,6 +30,7 @@ using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -68,7 +70,8 @@ internal sealed record TestFixture(
     Mock<IFiksIOClientFactory> FiksIOClientFactoryMock
 ) : IAsyncDisposable
 {
-    public IFiksIOClient FiksIOClient => App.Services.GetRequiredService<IFiksIOClient>();
+    public IConfigurationRoot ConfigurationRoot => (IConfigurationRoot)App.Configuration;
+    public FiksIOClient FiksIOClient => (FiksIOClient)App.Services.GetRequiredService<IFiksIOClient>();
     public FiksIOSettings FiksIOSettings => App.Services.GetRequiredService<IOptions<FiksIOSettings>>().Value;
     public FiksArkivSettings FiksArkivSettings => App.Services.GetRequiredService<IOptions<FiksArkivSettings>>().Value;
     public MaskinportenSettings MaskinportenSettings =>
@@ -116,22 +119,21 @@ internal sealed record TestFixture(
         var builder = WebApplication.CreateBuilder();
 
         // Default configuration values
-        Dictionary<string, object> config = new();
         if (useDefaultFiksIOSettings)
-        {
-            config["FiksIOSettings"] = TestHelpers.DefaultFiksIOSettings;
-        }
+            builder.Configuration.AddJsonStream(GetJsonStream("FiksIOSettings", TestHelpers.DefaultFiksIOSettings));
+
         if (useDefaultFiksArkivSettings)
-        {
-            config["FiksArkivSettings"] = TestHelpers.DefaultFiksArkivSettings;
-        }
+            builder.Configuration.AddJsonStream(
+                GetJsonStream("FiksArkivSettings", TestHelpers.DefaultFiksArkivSettings)
+            );
+
         if (useDefaultMaskinportenSettings)
         {
-            config["MaskinportenSettings"] = TestHelpers.DefaultMaskinportenSettings;
+            builder.Configuration.AddJsonStream(
+                GetJsonStream("MaskinportenSettings", TestHelpers.DefaultMaskinportenSettings)
+            );
             builder.Services.ConfigureMaskinportenClient("MaskinportenSettings");
         }
-
-        builder.Configuration.AddJsonStream(GetJsonStream(config));
 
         // User supplied configuration values
         if (configurationCollection is not null)
@@ -237,6 +239,13 @@ internal sealed record TestFixture(
             translationServiceMock,
             mockFiksIOClientFactory ? fiksIOClientFactoryMock : null!
         );
+    }
+
+    private static Stream GetJsonStream(string key, object data)
+    {
+        var dict = new Dictionary<string, object> { { key, data } };
+        var json = JsonSerializer.Serialize(dict, _jsonSerializerOptions);
+        return new MemoryStream(Encoding.UTF8.GetBytes(json));
     }
 
     private static Stream GetJsonStream(IDictionary<string, object> data)

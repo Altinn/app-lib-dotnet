@@ -51,4 +51,30 @@ public class FiksIOMaskinportenClientTest
             Assert.Equal(requestedTokenDuration.TotalSeconds, actualResult.ExpiresIn);
         }
     }
+
+    [Fact]
+    public async Task UnsupportedMethods_ThrowNotImplementedException()
+    {
+        // Arrange
+        var altinnMaskinportenClientMock = new Mock<IAltinnMaskinportenClient>();
+        var fiksIOMaskinportenClient = new FiksIOMaskinportenClient(altinnMaskinportenClientMock.Object);
+
+        List<Func<Task<MaskinportenToken>>> unsupportedMethods =
+        [
+            () => fiksIOMaskinportenClient.GetDelegatedAccessToken("hello", "hi"),
+            () => fiksIOMaskinportenClient.GetDelegatedAccessToken("hello", ["hi"]),
+            () => fiksIOMaskinportenClient.GetDelegatedAccessTokenForAudience("hello", "hi", "howdy"),
+            () => fiksIOMaskinportenClient.GetDelegatedAccessTokenForAudience("hello", "hi", ["howdy"]),
+            () => fiksIOMaskinportenClient.GetOnBehalfOfAccessToken("hello", "hi"),
+            () => fiksIOMaskinportenClient.GetOnBehalfOfAccessToken("hello", ["hi"]),
+        ];
+
+        // Act & Assert
+        await Task.WhenAll(
+            unsupportedMethods.Select(async method =>
+            {
+                await Assert.ThrowsAsync<NotImplementedException>(method);
+            })
+        );
+    }
 }

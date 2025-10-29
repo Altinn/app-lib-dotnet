@@ -3,10 +3,14 @@ using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using KS.Fiks.IO.Client.Models;
+using KS.Fiks.IO.Client.Send;
 using KS.Fiks.IO.Crypto.Models;
 using KS.Fiks.IO.Send.Client.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using RabbitMQ.Client.Events;
 using ExternalFiksIOConfiguration = KS.Fiks.IO.Client.Configuration.FiksIOConfiguration;
@@ -47,7 +51,7 @@ public class FiksIOClientTest
             .Verifiable(Times.Once);
 
         // Act
-        var result = await ((FiksIOClient)fixture.FiksIOClient).InitialiseFiksIOClient();
+        var result = await ((FiksIOClient)fixture.FiksIOClient).InitializeFiksIOClient();
 
         // Assert
         Assert.Same(externalFiksIOClientMock.Object, result);
@@ -103,7 +107,7 @@ public class FiksIOClientTest
             .Verifiable(Times.Once);
 
         // Act
-        var result = await ((FiksIOClient)fixture.FiksIOClient).InitialiseFiksIOClient();
+        var result = await ((FiksIOClient)fixture.FiksIOClient).InitializeFiksIOClient();
 
         // Assert
         Assert.Same(externalFiksIOClientMock.Object, result);
@@ -143,7 +147,7 @@ public class FiksIOClientTest
 
         // Act
         await fixture.FiksIOClient.OnMessageReceived(_ => Task.CompletedTask);
-        await ((FiksIOClient)fixture.FiksIOClient).InitialiseFiksIOClient();
+        await ((FiksIOClient)fixture.FiksIOClient).InitializeFiksIOClient();
 
         // Assert
         fixture.FiksIOClientFactoryMock.Verify();
@@ -271,6 +275,109 @@ public class FiksIOClientTest
             TestHelpers.MatchLogEntry(LogLevel.Warning, "Failed to send FiksIO message", loggerMock.Object),
             Times.Exactly(5)
         );
+    }
+
+    [Fact]
+    public async Task UpdatedSettingsObject_TriggersReinitializationOfFiksIOClient()
+    {
+        // Arrange
+        Action<FiksIOSettings, string?>? capturedCallback = null;
+        var optionsMock = new Mock<IOptionsMonitor<FiksIOSettings>>();
+        var externalFiksIOClientMock1 = new Mock<KS.Fiks.IO.Client.IFiksIOClient>();
+        var externalFiksIOClientMock2 = new Mock<KS.Fiks.IO.Client.IFiksIOClient>();
+        var fixture = TestFixture.Create(
+            services =>
+            {
+                services.AddFiksIOClient();
+                services.AddSingleton(optionsMock.Object);
+            },
+            useDefaultFiksIOSettings: false
+        );
+
+        fixture
+            .FiksIOClientFactoryMock.SetupSequence(x => x.CreateClient(It.IsAny<ExternalFiksIOConfiguration>()))
+            .ReturnsAsync(externalFiksIOClientMock1.Object)
+            .ReturnsAsync(externalFiksIOClientMock2.Object);
+        externalFiksIOClientMock1.Setup(x => x.DisposeAsync()).Verifiable(Times.Once);
+        externalFiksIOClientMock2.Setup(x => x.DisposeAsync()).Verifiable(Times.Never);
+        optionsMock.Setup(x => x.CurrentValue).Returns(() => TestHelpers.DefaultFiksIOSettings);
+        optionsMock
+            .Setup(x => x.OnChange(It.IsAny<Action<FiksIOSettings, string?>>()))
+            .Callback(
+                (Action<FiksIOSettings, string?> callback) =>
+                {
+                    capturedCallback = callback;
+                }
+            );
+
+        // Act
+        await fixture.FiksIOClient.InitializeFiksIOClient(); // triggers first creation
+        capturedCallback?.Invoke(TestHelpers.DefaultFiksIOSettings, null!);
+
+        // Assert
+        fixture.FiksIOClientFactoryMock.Verify();
+        externalFiksIOClientMock1.Verify();
+        externalFiksIOClientMock2.Verify();
+        fixture.AppMetadataMock.Verify(x => x.GetApplicationMetadata(), Times.Exactly(2));
+        Assert.Same(externalFiksIOClientMock2.Object, fixture.FiksIOClient.GetUnderlyingFiksIOClient());
+    }
+
+    [Fact]
+    public async Task InitializeFiksIOClient_SubscribesToEvents()
+    {
+        // Arrange
+        Func<MottattMeldingArgs, Task>? capturedInternalMessageReceivedHandler = null;
+        Func<ConsumerEventArgs, Task>? capturedInternalSubscriptionCancelledHandler = null;
+        FiksIOReceivedMessage? capturedReceivedMessage = null;
+        Func<FiksIOReceivedMessage, Task> messageListener = x =>
+        {
+            capturedReceivedMessage = x;
+            return Task.CompletedTask;
+        };
+
+        var externalFiksIOClientMock = new Mock<KS.Fiks.IO.Client.IFiksIOClient>();
+        var fixture = TestFixture.Create(services => services.AddFiksIOClient());
+
+        fixture
+            .FiksIOClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<ExternalFiksIOConfiguration>()))
+            .ReturnsAsync(externalFiksIOClientMock.Object);
+
+        externalFiksIOClientMock
+            .Setup(x =>
+                x.NewSubscriptionAsync(
+                    It.IsAny<Func<MottattMeldingArgs, Task>>(),
+                    It.IsAny<Func<ConsumerEventArgs, Task>>()
+                )
+            )
+            .Returns(
+                (Func<MottattMeldingArgs, Task> onReceived, Func<ConsumerEventArgs, Task> onCancelled) =>
+                {
+                    capturedInternalMessageReceivedHandler = onReceived;
+                    capturedInternalSubscriptionCancelledHandler = onCancelled;
+
+                    return Task.CompletedTask;
+                }
+            );
+
+        Mock<ISvarSender> svarSenderMock = new();
+        svarSenderMock.Setup(x => x.AckAsync()).Verifiable(Times.Once);
+
+        MottattMeldingArgs mottattMeldingArgs = new(
+            Mock.Of<IMottattMelding>(x => x.MeldingId == Guid.Parse("0810fb93-c0a8-4d51-9587-80619fbe6b21")),
+            svarSenderMock.Object
+        );
+
+        // Act
+        await fixture.FiksIOClient.OnMessageReceived(messageListener);
+        await capturedInternalMessageReceivedHandler!.Invoke(mottattMeldingArgs);
+        await capturedReceivedMessage!.Responder.Ack();
+
+        // Assert
+        Assert.NotNull(capturedReceivedMessage);
+        Assert.NotNull(capturedInternalMessageReceivedHandler);
+        Assert.NotNull(capturedInternalSubscriptionCancelledHandler);
+        Assert.Equal("0810fb93-c0a8-4d51-9587-80619fbe6b21", capturedReceivedMessage.Message.MessageId.ToString());
+        svarSenderMock.Verify();
     }
 
     private static (FiksIOMessageRequest, SendtMelding) MessageRequestAndResponseFactory()

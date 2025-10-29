@@ -90,7 +90,7 @@ internal sealed class FiksIOClient : IFiksIOClient
                 async context =>
                 {
                     if (_fiksIoClient is null || await _fiksIoClient.IsOpenAsync() is false)
-                        _fiksIoClient = await InitialiseFiksIOClient();
+                        _fiksIoClient = await InitializeFiksIOClient();
 
                     numAttempts += 1;
 
@@ -137,7 +137,7 @@ internal sealed class FiksIOClient : IFiksIOClient
             return;
 
         if (_fiksIoClient is null)
-            await InitialiseFiksIOClient();
+            await InitializeFiksIOClient();
         else
             await SubscribeToEvents();
     }
@@ -150,9 +150,9 @@ internal sealed class FiksIOClient : IFiksIOClient
         return await _fiksIoClient.IsOpenAsync();
     }
 
-    public Task Reconnect() => InitialiseFiksIOClient();
+    public Task Reconnect() => InitializeFiksIOClient();
 
-    internal async Task<IExternalFiksIOClient> InitialiseFiksIOClient()
+    internal async Task<IExternalFiksIOClient> InitializeFiksIOClient()
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
 
@@ -197,7 +197,7 @@ internal sealed class FiksIOClient : IFiksIOClient
     {
         try
         {
-            await InitialiseFiksIOClient();
+            await InitializeFiksIOClient();
         }
         catch (Exception e)
         {
@@ -247,6 +247,8 @@ internal sealed class FiksIOClient : IFiksIOClient
 
         return certificate;
     }
+
+    internal IExternalFiksIOClient? GetUnderlyingFiksIOClient() => _fiksIoClient;
 
     public async ValueTask DisposeAsync()
     {
