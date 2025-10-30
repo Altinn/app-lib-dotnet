@@ -53,7 +53,7 @@ public class LikertHiddenTests
         );
         var data = await dataAccessor.GetFormData(dataAccessor.Instance.Data.First());
         var state = await LayoutTestUtils.GetLayoutModelTools(data, "LikertHidden");
-        var hidden = await LayoutEvaluator.GetHiddenFieldsForRemoval(state);
+        var hidden = await LayoutEvaluator.GetHiddenFieldsForRemoval(state, false);
 
         await Verify(hidden).UseMethodName("TestLikertWithMultipleComponents");
     }

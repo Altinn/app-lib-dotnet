@@ -2,7 +2,7 @@ namespace Altinn.App.Core.Models.Layout;
 
 /// <summary>
 /// Represents a filter for row indices in repeating components.
-/// Rows with indices less than <see cref="Start"/> or greater than or equal to <see cref="Stop"/> are hidden.
+/// Rows with indices less than <see cref="Start"/> or greater than <see cref="Stop"/> are hidden.
 /// </summary>
 internal sealed class RowFilter
 {

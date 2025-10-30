@@ -123,25 +123,40 @@ public sealed class LikertComponent : Base.RepeatingReferenceComponent
                 )
                 {
                     var key = keyProp.GetString();
-                    if (key == "start" && valueProp.ValueKind == JsonValueKind.String)
+                    if (key == "start")
                     {
-                        if (int.TryParse(valueProp.GetString(), out var startValue))
+                        if (valueProp.ValueKind == JsonValueKind.Number)
                         {
-                            start = startValue;
+                            start = valueProp.GetInt32();
+                        }
+                        else if (valueProp.ValueKind == JsonValueKind.String)
+                        {
+                            if (int.TryParse(valueProp.GetString(), out var startValue))
+                            {
+                                start = startValue;
+                            }
                         }
                     }
-                    else if (key == "stop" && valueProp.ValueKind == JsonValueKind.String)
+                    else if (key == "stop")
                     {
-                        if (int.TryParse(valueProp.GetString(), out var stopValue))
+                        if (valueProp.ValueKind == JsonValueKind.Number)
                         {
-                            stop = stopValue;
+                            stop = valueProp.GetInt32();
+                        }
+                        else if (valueProp.ValueKind == JsonValueKind.String)
+                        {
+                            if (int.TryParse(valueProp.GetString(), out var stopValue))
+                            {
+                                stop = stopValue;
+                            }
                         }
                     }
                 }
             }
         }
 
-        if (start.HasValue && stop.HasValue)
+        // Only return a filter if both values are present and the range is valid
+        if (start.HasValue && stop.HasValue && start.Value <= stop.Value)
         {
             return new RowFilter { Start = start.Value, Stop = stop.Value };
         }
