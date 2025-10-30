@@ -23,8 +23,6 @@ internal class SubformPdfServiceTask(
 
         logger.LogDebug("Calling PdfService for PDF Service Task {TaskId}.", taskId);
 
-        // http://local.altinn.cloud/ttd/subform-test/#/instance/512345/405fbe07-0e04-4687-b925-cbedb83ec79f/Task_1/utfylling/subform-mopeder/fd75cb71-672e-4670-bb93-1da91e1d79e3/?pdf=1
-
         ValidAltinnSubformPdfConfiguration config = GetValidAltinnSubformPdfConfiguration(taskId);
 
         string? filenameTextResourceKey = config.FilenameTextResourceKey;
