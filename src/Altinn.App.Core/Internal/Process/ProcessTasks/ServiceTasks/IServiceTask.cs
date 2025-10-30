@@ -36,19 +36,55 @@ public sealed record ServiceTaskContext
 /// </summary>
 public abstract record ServiceTaskResult
 {
-    /// <summary>Creates a successful result.</summary>
-    public static ServiceTaskSuccessResult Success() => new();
+    /// <summary>
+    /// Indicates whether the process should automatically move to the next task after this service task.
+    /// </summary>
+    public bool? AutoMoveNext { get; init; }
 
-    /// <summary>Creates a failed result.</summary>
-    public static ServiceTaskFailedResult Failed() => new();
+    /// <summary>
+    /// The action to use when automatically moving to the next task.
+    /// </summary>
+    public string? AutoMoveNextAction { get; init; }
+
+    /// <summary>
+    /// Creates a successful result.
+    /// </summary>
+    /// <param name="autoMoveNext">Should the process automatically move to the next task? Defaults to <c>true</c>.</param>
+    /// <param name="autoMoveNextAction">The action to use when automatically moving to the next task. Defaults to <c>null</c>.</param>
+    public static ServiceTaskSuccessResult Success(bool? autoMoveNext = true, string? autoMoveNextAction = null) =>
+        new(autoMoveNext, autoMoveNextAction);
+
+    /// <summary>
+    /// Creates a failed result.
+    /// </summary>
+    /// <param name="autoMoveNext">Should the process automatically move to the next task? Defaults to <c>false</c>.</param>
+    /// <param name="autoMoveNextAction">The action to use when automatically moving to the next task. Defaults to <c>reject</c>.</param>
+    public static ServiceTaskFailedResult Failed(bool? autoMoveNext = false, string? autoMoveNextAction = "reject") =>
+        new(autoMoveNext, autoMoveNextAction);
 }
 
 /// <summary>
 /// Represents a successful result of executing a service task.
 /// </summary>
-public sealed record ServiceTaskSuccessResult : ServiceTaskResult;
+public sealed record ServiceTaskSuccessResult : ServiceTaskResult
+{
+    /// <inheritdoc cref="ServiceTaskResult.Success"/>
+    public ServiceTaskSuccessResult(bool? autoMoveNext = null, string? autoMoveNextAction = null)
+    {
+        AutoMoveNext = autoMoveNext;
+        AutoMoveNextAction = autoMoveNextAction;
+    }
+}
 
 /// <summary>
 /// Represents a failed result of executing a service task.
 /// </summary>
-public sealed record ServiceTaskFailedResult : ServiceTaskResult;
+public sealed record ServiceTaskFailedResult : ServiceTaskResult
+{
+    /// <inheritdoc cref="ServiceTaskResult.Failed"/>
+    public ServiceTaskFailedResult(bool? autoMoveNext = null, string? autoMoveNextAction = null)
+    {
+        AutoMoveNext = autoMoveNext;
+        AutoMoveNextAction = autoMoveNextAction;
+    }
+}

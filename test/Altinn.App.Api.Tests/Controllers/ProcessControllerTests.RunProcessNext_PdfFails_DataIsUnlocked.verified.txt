@@ -81,16 +81,6 @@
       HasParent: true
     },
     {
-      Name: ApplicationMetadata.Service.GetTexts,
-      IdFormat: W3C,
-      HasParent: true
-    },
-    {
-      Name: ApplicationMetadata.Service.GetTexts,
-      IdFormat: W3C,
-      HasParent: true
-    },
-    {
       Name: ApplicationMetadata.Service.GetValidationConfiguration,
       IdFormat: W3C,
       HasParent: true
@@ -275,6 +265,11 @@
       HasParent: true
     },
     {
+      Name: ProcessReader.GetAltinnTaskExtension,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
       Name: ProcessReader.GetEndEventIds,
       IdFormat: W3C,
       HasParent: true
@@ -291,6 +286,11 @@
     },
     {
       Name: ProcessReader.GetExclusiveGateways,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: ProcessReader.GetFlowElement,
       IdFormat: W3C,
       HasParent: true
     },

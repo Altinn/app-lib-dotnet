@@ -7,6 +7,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
@@ -39,8 +40,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     private readonly IAppResources _appResources;
     private readonly IOptions<FrontEndSettings> _frontEndSettings;
-    private readonly string? _taskId;
-    private readonly string? _language;
     private readonly ITranslationService _translationService;
     private readonly Telemetry? _telemetry;
 
@@ -89,8 +88,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         _appMetadata = appMetadata;
         _translationService = translationService;
         _modelSerializationService = modelSerializationService;
-        _taskId = taskId;
-        _language = language;
+        TaskId = taskId;
+        Language = language;
         _frontEndSettings = frontEndSettings;
         _appResources = appResources;
         _instanceClient = instanceClient;
@@ -100,6 +99,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     public Instance Instance { get; }
 
     public IReadOnlyCollection<DataType> DataTypes { get; }
+
+    public string? TaskId { get; }
+
+    public string? Language { get; }
 
     /// <inheritdoc />
     public void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method)
@@ -141,12 +144,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     {
         return new CleanInstanceDataAccessor(
             this,
-            _taskId,
             _appResources,
             _translationService,
             _frontEndSettings.Value,
             rowRemovalOption,
-            _language,
             _telemetry
         );
     }
@@ -163,15 +164,44 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
         _previousDataAccessorCache = new PreviousDataAccessor(
             this,
-            _taskId,
             _appResources,
             _translationService,
             _modelSerializationService,
             _frontEndSettings.Value,
-            _language,
             _telemetry
         );
         return _previousDataAccessorCache;
+    }
+
+    private LayoutEvaluatorState? _layoutEvaluatorStateCache;
+
+    public LayoutEvaluatorState? GetLayoutEvaluatorState()
+    {
+        if (TaskId is null)
+        {
+            return null;
+        }
+        if (_layoutEvaluatorStateCache is not null)
+        {
+            return _layoutEvaluatorStateCache;
+        }
+
+        // Could use a double lock here, but a deadlock is more problematic than creating the state twice
+        var layouts = _appResources.GetLayoutModelForTask(TaskId);
+        if (layouts is null)
+        {
+            return null;
+        }
+
+        _layoutEvaluatorStateCache = new LayoutEvaluatorState(
+            this,
+            layouts,
+            _translationService,
+            _frontEndSettings.Value,
+            gatewayAction: null,
+            Language
+        );
+        return _layoutEvaluatorStateCache;
     }
 
     /// <inheritdoc />
@@ -448,10 +478,12 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             new MemoryAsStream(bytes),
             authenticationMethod: GetAuthenticationMethod(change.DataType)
         );
+        // Update caches
         _binaryCache.Set(dataElement, bytes);
+        change.DataElement = dataElement; // Set the data element so that it can be referenced later in the save process
         if (change is FormDataChange formDataChange)
         {
-            _formDataCache.Set(dataElement, FormDataWrapperFactory.Create(formDataChange.CurrentFormData));
+            _formDataCache.Set(dataElement, formDataChange.CurrentFormDataWrapper);
         }
         createdDataElements.TryAdd(change, dataElement);
     }
@@ -526,24 +558,15 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         // Add Created data elements to instance
         Instance.Data.AddRange(createdDataElements.Values);
 
-        // update data elements on new elements
-        foreach (var change in changes.AllChanges)
+        // Update DataValues and presentation texts
+        // These cannot run in parallel with creating the data elements, because they need the data element id
+
+        foreach (var (dataElementIdentifier, formData) in _formDataCache.GetCachedEntries())
         {
-            change.DataElement ??= createdDataElements.TryGetValue(change, out var value)
-                ? value
-                : throw new InvalidOperationException(
-                    "DataElementChange without DataElement must be a new data element"
-                );
-            if (change is FormDataChange formDataChange)
+            if (dataElementIdentifier.DataTypeId is not null)
             {
-                //Update DataValues and presentation texts
-                // These can not run in parallel with creating the data elements, because they need the data element id
-                await UpdateDataValuesOnInstance(Instance, formDataChange.DataType.Id, formDataChange.CurrentFormData);
-                await UpdatePresentationTextsOnInstance(
-                    Instance,
-                    formDataChange.DataType.Id,
-                    formDataChange.CurrentFormData
-                );
+                var dataType = GetDataTypeByString(dataElementIdentifier.DataTypeId);
+                await UpdatePresentationTextsAndDataValues(dataType, formData);
             }
         }
     }
@@ -644,41 +667,65 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         }
     }
 
-    private async Task UpdatePresentationTextsOnInstance(Instance instance, string dataType, object serviceModel)
+    private async Task UpdatePresentationTextsAndDataValues(DataType dataType, IFormDataWrapper dataWrapper)
     {
-        var updatedValues = DataHelper.GetUpdatedDataValues(
+        var updatedTexts = DataHelper.GetUpdatedDataValues(
             _appMetadata.PresentationFields,
-            instance.PresentationTexts,
-            dataType,
-            serviceModel
+            Instance.PresentationTexts,
+            dataType.Id,
+            dataWrapper.BackingData<object>()
         );
 
-        if (updatedValues.Count > 0)
+        if (updatedTexts.Count > 0)
         {
             await _instanceClient.UpdatePresentationTexts(
-                int.Parse(instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
-                Guid.Parse(instance.Id.Split("/")[1]),
-                new PresentationTexts { Texts = updatedValues }
+                int.Parse(Instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
+                Guid.Parse(Instance.Id.Split("/")[1]),
+                new PresentationTexts { Texts = updatedTexts }
             );
-        }
-    }
 
-    private async Task UpdateDataValuesOnInstance(Instance instance, string dataType, object serviceModel)
-    {
+            // Maintain local copy of presentation texts
+            Instance.PresentationTexts ??= [];
+            foreach (var (key, value) in updatedTexts)
+            {
+                if (value is null)
+                {
+                    Instance.PresentationTexts.Remove(key); // Remove key if value is null
+                }
+                else
+                {
+                    Instance.PresentationTexts[key] = value; // Update local copy of presentation texts
+                }
+            }
+        }
         var updatedValues = DataHelper.GetUpdatedDataValues(
             _appMetadata.DataFields,
-            instance.DataValues,
-            dataType,
-            serviceModel
+            Instance.DataValues,
+            dataType.Id,
+            dataWrapper.BackingData<object>()
         );
 
         if (updatedValues.Count > 0)
         {
             await _instanceClient.UpdateDataValues(
-                int.Parse(instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
-                Guid.Parse(instance.Id.Split("/")[1]),
+                int.Parse(Instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
+                Guid.Parse(Instance.Id.Split("/")[1]),
                 new DataValues { Values = updatedValues }
             );
+
+            // Maintain local copy of data values
+            Instance.DataValues ??= [];
+            foreach (var (key, value) in updatedValues)
+            {
+                if (value is null)
+                {
+                    Instance.DataValues.Remove(key); // Remove key if value is null
+                }
+                else
+                {
+                    Instance.DataValues[key] = value; // Update local copy of data values
+                }
+            }
         }
     }
 }
