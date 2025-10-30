@@ -392,7 +392,7 @@ public class ProcessController : ControllerBase
                 {
                     Instance = instance,
                     User = User,
-                    Action = ConvertTaskTypeToAction(instance.Process.CurrentTask.AltinnTaskType),
+                    Action = ProcessEngine.ConvertTaskTypeToAction(instance.Process.CurrentTask.AltinnTaskType),
                     Language = language,
                 };
                 ProcessChangeResult result = await _processEngine.Next(request);
@@ -644,25 +644,6 @@ public class ProcessController : ControllerBase
     private async Task<List<UserAction>> AuthorizeActions(List<AltinnAction> actions, Instance instance)
     {
         return await _authorization.AuthorizeActions(instance, HttpContext.User, actions);
-    }
-
-    private static string ConvertTaskTypeToAction(string actionOrTaskType)
-    {
-        switch (actionOrTaskType)
-        {
-            case "data":
-            case "feedback":
-            case "pdf":
-            case "eFormidling":
-                return "write";
-            case "confirmation":
-                return "confirm";
-            case "signing":
-                return "sign";
-            default:
-                // Not any known task type, so assume it is an action type
-                return actionOrTaskType;
-        }
     }
 
     private ActionResult HandlePlatformHttpException(PlatformHttpException e, string defaultMessage)
