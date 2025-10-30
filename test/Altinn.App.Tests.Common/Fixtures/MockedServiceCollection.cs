@@ -247,7 +247,10 @@ public static class MockedServiceProviderExtensions
         };
 
         appServices.Storage.AddInstance(instance);
-        appServices.Storage.AddDataRaw(dataGuid, serializer.SerializeToStorage(model, defaultDataType).data.ToArray());
+        appServices.Storage.AddDataRaw(
+            dataGuid,
+            serializer.SerializeToStorage(model, defaultDataType, data).data.ToArray()
+        );
 
         var instanceCopy = JsonSerializer.Deserialize<Instance>(JsonSerializer.SerializeToUtf8Bytes(instance))!;
 

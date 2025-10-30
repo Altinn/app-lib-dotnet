@@ -142,14 +142,15 @@ public class DataClientMock : IDataClient
     }
 
     public async Task<List<AttachmentList>> GetBinaryDataList(
-        string org,
-        string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
         StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
+        (string org, string app) = TestData.GetInstanceOrgApp(
+            new InstanceIdentifier(instanceOwnerPartyId, instanceGuid)
+        );
         var dataElements = await GetDataElements(org, app, instanceOwnerPartyId, instanceGuid, cancellationToken);
         List<AttachmentList> list = new();
         foreach (DataElement dataElement in dataElements)

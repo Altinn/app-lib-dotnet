@@ -273,9 +273,25 @@ public interface IDataClient
     /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     /// <returns>A list with attachments metadata ordered by attachmentType</returns>
+    [Obsolete("Org and App parameters are not used, use the overload without these parameters")]
     Task<List<AttachmentList>> GetBinaryDataList(
         string org,
         string app,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    ) => GetBinaryDataList(instanceOwnerPartyId, instanceGuid, authenticationMethod, cancellationToken);
+
+    /// <summary>
+    /// Method that gets metadata on form attachments ordered by attachmentType
+    /// </summary>
+    /// <param name="instanceOwnerPartyId">The instance owner id</param>
+    /// <param name="instanceGuid">The instance id</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
+    /// <param name="cancellationToken">An optional cancellation token</param>
+    /// <returns>A list with attachments metadata ordered by attachmentType</returns>
+    Task<List<AttachmentList>> GetBinaryDataList(
         int instanceOwnerPartyId,
         Guid instanceGuid,
         StorageAuthenticationMethod? authenticationMethod = null,

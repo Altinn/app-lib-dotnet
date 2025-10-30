@@ -413,8 +413,6 @@ public sealed class DataClient : IDataClient
 
     /// <inheritdoc />
     public async Task<List<AttachmentList>> GetBinaryDataList(
-        string org,
-        string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
         StorageAuthenticationMethod? authenticationMethod = null,
