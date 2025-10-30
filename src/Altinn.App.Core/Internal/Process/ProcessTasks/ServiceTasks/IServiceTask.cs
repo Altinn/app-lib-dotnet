@@ -46,6 +46,19 @@ public abstract record ServiceTaskResult
     /// </summary>
     /// <param name="errorHandling">Instructions to the process engine on how to handle this error</param>
     public static ServiceTaskFailedResult Failed(ServiceTaskErrorHandling errorHandling) => new(errorHandling);
+
+    /// <summary>
+    /// Creates a service task result representing failed execution with instruction to abort the process next request.
+    /// </summary>
+    public static ServiceTaskFailedResult FailedAbortProcessNext() =>
+        new(new ServiceTaskErrorHandling(ServiceTaskErrorStrategy.AbortProcessNext));
+
+    /// <summary>
+    /// Creates a service task result representing failed execution with instruction to continue to the next element in the process.
+    /// </summary>
+    /// <param name="action">A optional action can be supplied for the process next</param>
+    public static ServiceTaskFailedResult FailedContinueProcessNext(string? action = "reject") =>
+        new(new ServiceTaskErrorHandling(ServiceTaskErrorStrategy.ContinueProcessNext, action));
 }
 
 /// <summary>
