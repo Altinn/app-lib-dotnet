@@ -37,54 +37,87 @@ public sealed record ServiceTaskContext
 public abstract record ServiceTaskResult
 {
     /// <summary>
-    /// Indicates whether the process should automatically move to the next task after this service task.
+    /// Creates a service task result representing successful execution.
     /// </summary>
-    public bool? AutoMoveNext { get; init; }
+    public static ServiceTaskSuccessResult Success() => new();
 
     /// <summary>
-    /// The action to use when automatically moving to the next task.
+    /// Creates a service task result representing failed execution.
     /// </summary>
-    public string? AutoMoveNextAction { get; init; }
-
-    /// <summary>
-    /// Creates a successful result.
-    /// </summary>
-    /// <param name="autoMoveNext">Should the process automatically move to the next task? Defaults to <c>true</c>.</param>
-    /// <param name="autoMoveNextAction">The action to use when automatically moving to the next task. Defaults to <c>null</c>.</param>
-    public static ServiceTaskSuccessResult Success(bool? autoMoveNext = true, string? autoMoveNextAction = null) =>
-        new(autoMoveNext, autoMoveNextAction);
-
-    /// <summary>
-    /// Creates a failed result.
-    /// </summary>
-    /// <param name="autoMoveNext">Should the process automatically move to the next task? Defaults to <c>false</c>.</param>
-    /// <param name="autoMoveNextAction">The action to use when automatically moving to the next task. Defaults to <c>reject</c>.</param>
-    public static ServiceTaskFailedResult Failed(bool? autoMoveNext = false, string? autoMoveNextAction = "reject") =>
-        new(autoMoveNext, autoMoveNextAction);
+    /// <param name="errorHandling">Instructions to the process engine on how to handle this error</param>
+    public static ServiceTaskFailedResult Failed(ServiceTaskErrorHandling errorHandling) => new(errorHandling);
 }
 
 /// <summary>
 /// Represents a successful result of executing a service task.
 /// </summary>
-public sealed record ServiceTaskSuccessResult : ServiceTaskResult
-{
-    /// <inheritdoc cref="ServiceTaskResult.Success"/>
-    public ServiceTaskSuccessResult(bool? autoMoveNext = null, string? autoMoveNextAction = null)
-    {
-        AutoMoveNext = autoMoveNext;
-        AutoMoveNextAction = autoMoveNextAction;
-    }
-}
+public sealed record ServiceTaskSuccessResult : ServiceTaskResult;
 
 /// <summary>
 /// Represents a failed result of executing a service task.
 /// </summary>
 public sealed record ServiceTaskFailedResult : ServiceTaskResult
 {
+    /// <summary>
+    /// Instructions to the process engine on how to handle this error
+    /// </summary>
+    public ServiceTaskErrorHandling ErrorHandling { get; init; }
+
     /// <inheritdoc cref="ServiceTaskResult.Failed"/>
-    public ServiceTaskFailedResult(bool? autoMoveNext = null, string? autoMoveNextAction = null)
+    public ServiceTaskFailedResult(ServiceTaskErrorHandling errorHandling)
     {
-        AutoMoveNext = autoMoveNext;
-        AutoMoveNextAction = autoMoveNextAction;
+        ErrorHandling = errorHandling;
     }
+}
+
+/// <summary>
+/// Instructions to the process engine on how to handle errors from service tasks.
+/// </summary>
+/// <param name="Strategy">Should the process engine stop the <c>process/next</c> exection?</param>
+/// <param name="Action">If proceeding with <c>process/next</c>, should we send an action? Defaults to <c>reject</c></param>
+public sealed record ServiceTaskErrorHandling(ServiceTaskErrorStrategy Strategy, string? Action = "reject");
+
+/// <summary>
+/// Strategy for handling errors from service tasks.
+/// </summary>
+public enum ServiceTaskErrorStrategy
+{
+    /// <summary>
+    /// Abort the entire process execution.
+    /// </summary>
+    AbortProcess,
+
+    /// <summary>
+    /// Move to the next task in the process.
+    /// </summary>
+    MoveToNext,
+}
+
+internal static class ServiceTaskResultExtensions
+{
+    /// <summary>
+    /// Indicates whether the service task execution was successful.
+    /// </summary>
+    internal static bool IsSuccess(this ServiceTaskResult result) => result is ServiceTaskSuccessResult;
+
+    /// <summary>
+    /// Indicates whether the service task execution failed.
+    /// </summary>
+    internal static bool IsFailed(this ServiceTaskResult result) => result is ServiceTaskFailedResult;
+
+    /// <summary>
+    /// Indicates whether the process should continue or be aborted.
+    /// </summary>
+    internal static bool ShouldContinueProcess(this ServiceTaskResult result) =>
+        result
+            is ServiceTaskSuccessResult
+                or ServiceTaskFailedResult { ErrorHandling.Strategy: ServiceTaskErrorStrategy.MoveToNext };
+
+    /// <summary>
+    /// If the error handling strategy is to move to the next task, this property contains the action to be taken.
+    /// </summary>
+    internal static string? GetProcessNextAction(this ServiceTaskResult result) =>
+        result is ServiceTaskFailedResult { ErrorHandling.Strategy: ServiceTaskErrorStrategy.MoveToNext } failedResult
+            ? failedResult.ErrorHandling.Action
+            : null;
 }

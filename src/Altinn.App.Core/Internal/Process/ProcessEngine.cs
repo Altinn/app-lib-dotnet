@@ -203,8 +203,14 @@ public class ProcessEngine : IProcessEngine
                 return result;
             }
 
-            // NOTE: `instance` has now been mutated by ProcessNext
-            moveToNextTaskAutomatically = IsServiceTask(instance);
+            if (result.MutatedInstance is null)
+            {
+                throw new ProcessException(
+                    "ProcessNext returned successfully, but ProcessChangeResult.MutatedInstance is null. Conundrum."
+                );
+            }
+
+            moveToNextTaskAutomatically = IsServiceTask(result.MutatedInstance);
             firstIteration = false;
             iterationCount++;
         } while (moveToNextTaskAutomatically);
@@ -275,7 +281,7 @@ public class ProcessEngine : IProcessEngine
                     ct
                 );
 
-                if (serviceTaskResult?.AutoMoveNext is not true)
+                if (serviceTaskResult?.ShouldContinueProcess() is not true)
                 {
                     return serviceTaskProcessChangeResult;
                 }
@@ -342,7 +348,7 @@ public class ProcessEngine : IProcessEngine
         }
 
         MoveToNextResult moveToNextResult = serviceTaskResult is not null
-            ? await HandleMoveToNext(instance, serviceTaskResult.AutoMoveNextAction)
+            ? await HandleMoveToNext(instance, serviceTaskResult.GetProcessNextAction())
             : await HandleMoveToNext(instance, request.Action);
 
         if (moveToNextResult.IsEndEvent)
@@ -351,7 +357,11 @@ public class ProcessEngine : IProcessEngine
             await RunAppDefinedProcessEndHandlers(instance, moveToNextResult.ProcessStateChange?.Events);
         }
 
-        return new ProcessChangeResult { Success = true, ProcessStateChange = moveToNextResult.ProcessStateChange };
+        return new ProcessChangeResult(mutatedInstance: instance)
+        {
+            Success = true,
+            ProcessStateChange = moveToNextResult.ProcessStateChange,
+        };
     }
 
     /// <summary>
