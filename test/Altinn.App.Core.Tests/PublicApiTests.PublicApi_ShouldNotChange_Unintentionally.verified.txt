@@ -3780,8 +3780,8 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks
     }
     public enum ServiceTaskErrorStrategy
     {
-        AbortProcess = 0,
-        MoveToNext = 1,
+        AbortProcessNext = 0,
+        ContinueProcessNext = 1,
     }
     public sealed class ServiceTaskFailedResult : Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult, System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskFailedResult>
     {

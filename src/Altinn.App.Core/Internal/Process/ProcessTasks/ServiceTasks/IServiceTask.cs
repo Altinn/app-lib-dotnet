@@ -83,41 +83,12 @@ public sealed record ServiceTaskErrorHandling(ServiceTaskErrorStrategy Strategy,
 public enum ServiceTaskErrorStrategy
 {
     /// <summary>
-    /// Abort the entire process execution.
+    /// Abort the process/next execution.
     /// </summary>
-    AbortProcess,
+    AbortProcessNext,
 
     /// <summary>
     /// Move to the next task in the process.
     /// </summary>
-    MoveToNext,
-}
-
-internal static class ServiceTaskResultExtensions
-{
-    /// <summary>
-    /// Indicates whether the service task execution was successful.
-    /// </summary>
-    internal static bool IsSuccess(this ServiceTaskResult result) => result is ServiceTaskSuccessResult;
-
-    /// <summary>
-    /// Indicates whether the service task execution failed.
-    /// </summary>
-    internal static bool IsFailed(this ServiceTaskResult result) => result is ServiceTaskFailedResult;
-
-    /// <summary>
-    /// Indicates whether the process should continue or be aborted.
-    /// </summary>
-    internal static bool ShouldContinueProcess(this ServiceTaskResult result) =>
-        result
-            is ServiceTaskSuccessResult
-                or ServiceTaskFailedResult { ErrorHandling.Strategy: ServiceTaskErrorStrategy.MoveToNext };
-
-    /// <summary>
-    /// If the error handling strategy is to move to the next task, this property contains the action to be taken.
-    /// </summary>
-    internal static string? GetProcessNextAction(this ServiceTaskResult result) =>
-        result is ServiceTaskFailedResult { ErrorHandling.Strategy: ServiceTaskErrorStrategy.MoveToNext } failedResult
-            ? failedResult.ErrorHandling.Action
-            : null;
+    ContinueProcessNext,
 }
