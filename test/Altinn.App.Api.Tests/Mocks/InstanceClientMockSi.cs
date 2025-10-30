@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;
@@ -33,7 +34,13 @@ public class InstanceClientMockSi : IInstanceClient
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<Instance> CreateInstance(string org, string app, Instance instance)
+    public async Task<Instance> CreateInstance(
+        string org,
+        string app,
+        Instance instance,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
     {
         string partyId = instance.InstanceOwner.PartyId;
         Guid instanceGuid = Guid.NewGuid();
@@ -60,7 +67,11 @@ public class InstanceClientMockSi : IInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task<Instance> GetInstance(Instance instance)
+    public async Task<Instance> GetInstance(
+        Instance instance,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
     {
         string app = instance.AppId.Split("/")[1];
         string org = instance.Org;
@@ -70,7 +81,14 @@ public class InstanceClientMockSi : IInstanceClient
         return await GetInstance(app, org, instanceOwnerId, instanceGuid);
     }
 
-    public async Task<Instance> GetInstance(string app, string org, int instanceOwnerPartyId, Guid instanceId)
+    public async Task<Instance> GetInstance(
+        string app,
+        string org,
+        int instanceOwnerPartyId,
+        Guid instanceId,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
     {
         Instance instance = await GetTestInstance(app, org, instanceOwnerPartyId, instanceId);
 
@@ -85,7 +103,11 @@ public class InstanceClientMockSi : IInstanceClient
         return instance;
     }
 
-    public async Task<Instance> UpdateProcess(Instance instance)
+    public async Task<Instance> UpdateProcess(
+        Instance instance,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
     {
         ProcessState process = instance.Process;
 
@@ -117,9 +139,14 @@ public class InstanceClientMockSi : IInstanceClient
         return storedInstance;
     }
 
-    public Task<Instance> UpdateProcessAndEvents(Instance instance, List<InstanceEvent> events)
+    public Task<Instance> UpdateProcessAndEvents(
+        Instance instance,
+        List<InstanceEvent> events,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
     {
-        return UpdateProcess(instance);
+        return UpdateProcess(instance, cancellationToken: cancellationToken);
     }
 
     private static async Task<Instance> GetTestInstance(string app, string org, int instanceOwnerId, Guid instanceId)
@@ -201,7 +228,12 @@ public class InstanceClientMockSi : IInstanceClient
         throw new NotImplementedException();
     }
 
-    public async Task<Instance> AddCompleteConfirmation(int instanceOwnerPartyId, Guid instanceGuid)
+    public async Task<Instance> AddCompleteConfirmation(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
     {
         string org;
         string app;
@@ -228,7 +260,13 @@ public class InstanceClientMockSi : IInstanceClient
         return instance;
     }
 
-    public async Task<Instance> UpdateReadStatus(int instanceOwnerPartyId, Guid instanceGuid, string readStatus)
+    public async Task<Instance> UpdateReadStatus(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        string readStatus,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
     {
         if (!Enum.TryParse(readStatus, true, out ReadStatus newStatus))
         {
@@ -254,7 +292,13 @@ public class InstanceClientMockSi : IInstanceClient
         return storedInstance;
     }
 
-    public async Task<Instance> UpdateSubstatus(int instanceOwnerPartyId, Guid instanceGuid, Substatus substatus)
+    public async Task<Instance> UpdateSubstatus(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        Substatus substatus,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
     {
         DateTime creationTime = DateTime.UtcNow;
 
@@ -288,7 +332,9 @@ public class InstanceClientMockSi : IInstanceClient
     public async Task<Instance> UpdatePresentationTexts(
         int instanceOwnerPartyId,
         Guid instanceGuid,
-        PresentationTexts presentationTexts
+        PresentationTexts presentationTexts,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
     )
     {
         string instancePath = GetInstancePath(instanceOwnerPartyId, instanceGuid);
@@ -326,7 +372,13 @@ public class InstanceClientMockSi : IInstanceClient
         return storedInstance;
     }
 
-    public async Task<Instance> UpdateDataValues(int instanceOwnerPartyId, Guid instanceGuid, DataValues dataValues)
+    public async Task<Instance> UpdateDataValues(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        DataValues dataValues,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
     {
         string instancePath = GetInstancePath(instanceOwnerPartyId, instanceGuid);
         if (!File.Exists(instancePath))
@@ -363,7 +415,13 @@ public class InstanceClientMockSi : IInstanceClient
         return storedInstance;
     }
 
-    public async Task<Instance> DeleteInstance(int instanceOwnerPartyId, Guid instanceGuid, bool hard)
+    public async Task<Instance> DeleteInstance(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        bool hard,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
     {
         string instancePath = GetInstancePath(instanceOwnerPartyId, instanceGuid);
         if (!File.Exists(instancePath))
@@ -395,7 +453,11 @@ public class InstanceClientMockSi : IInstanceClient
     /// <summary>
     /// Searches through all instance documents (including pretest)
     /// </summary>
-    public async Task<List<Instance>> GetInstances(Dictionary<string, StringValues> queryParams)
+    public async Task<List<Instance>> GetInstances(
+        Dictionary<string, StringValues> queryParams,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
     {
         List<string> validQueryParams = new()
         {
