@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -94,7 +95,6 @@ public class DataClientTests
 
         // Assert
         Assert.NotNull(actual);
-        Assert.NotNull(platformRequest);
         AssertHttpRequest(
             platformRequest,
             expectedUri,
@@ -152,7 +152,6 @@ public class DataClientTests
 
         // Assert
         Assert.NotNull(actual);
-        Assert.NotNull(platformRequest);
         AssertHttpRequest(
             platformRequest,
             expectedUri,
@@ -217,10 +216,9 @@ public class DataClientTests
         // Assert
         var actual = response as SkjemaWithNamespace;
         Assert.NotNull(actual);
-        Assert.NotNull(actual!.Foretakgrp8820);
-        Assert.NotNull(actual!.Foretakgrp8820.EnhetNavnEndringdatadef31);
+        Assert.NotNull(actual.Foretakgrp8820);
+        Assert.NotNull(actual.Foretakgrp8820.EnhetNavnEndringdatadef31);
 
-        Assert.NotNull(platformRequest);
         AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
     }
 
@@ -297,9 +295,8 @@ public class DataClientTests
             authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
-        platformRequest?.Should().NotBeNull();
         AssertHttpRequest(
-            platformRequest!,
+            platformRequest,
             expectedUri,
             HttpMethod.Put,
             "test.json",
@@ -402,8 +399,7 @@ public class DataClientTests
             authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
-        platformRequest?.Should().NotBeNull();
-        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
+        AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
         using StreamReader streamReader = new StreamReader(response);
         var responseString = await streamReader.ReadToEndAsync();
 
@@ -442,8 +438,7 @@ public class DataClientTests
         );
         response.Should().BeNull();
         invocations.Should().Be(1);
-        platformRequest?.Should().NotBeNull();
-        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
+        AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
     }
 
     [Fact]
@@ -626,8 +621,7 @@ public class DataClientTests
             authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
-        platformRequest?.Should().NotBeNull();
-        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
+        AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Get, expectedAuth: testCase?.ExpectedToken);
 
         var expectedList = new List<AttachmentList>()
         {
@@ -718,8 +712,7 @@ public class DataClientTests
             delay: false
         );
         invocations.Should().Be(1);
-        platformRequest?.Should().NotBeNull();
-        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete);
+        AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Delete);
         result.Should().BeTrue();
     }
 
@@ -755,7 +748,7 @@ public class DataClientTests
             )
         );
         invocations.Should().Be(1);
-        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete);
+        AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Delete);
         actual.Response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -793,8 +786,7 @@ public class DataClientTests
             authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
-        platformRequest?.Should().NotBeNull();
-        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete, expectedAuth: testCase?.ExpectedToken);
+        AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Delete, expectedAuth: testCase?.ExpectedToken);
         result.Should().BeTrue();
     }
 
@@ -833,9 +825,8 @@ public class DataClientTests
             authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
-        platformRequest?.Should().NotBeNull();
         AssertHttpRequest(
-            platformRequest!,
+            platformRequest,
             expectedUri,
             HttpMethod.Put,
             null,
@@ -919,9 +910,8 @@ public class DataClientTests
             )
         );
         invocations.Should().Be(1);
-        platformRequest?.Should().NotBeNull();
         AssertHttpRequest(
-            platformRequest!,
+            platformRequest,
             expectedUri,
             HttpMethod.Put,
             null,
@@ -967,9 +957,8 @@ public class DataClientTests
             authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
-        platformRequest?.Should().NotBeNull();
         response.Should().BeEquivalentTo(dataElement);
-        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put, expectedAuth: testCase?.ExpectedToken);
+        AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Put, expectedAuth: testCase?.ExpectedToken);
     }
 
     [Theory]
@@ -1005,7 +994,7 @@ public class DataClientTests
             )
         );
         invocations.Should().Be(1);
-        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Put, expectedAuth: testCase?.ExpectedToken);
+        AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Put, expectedAuth: testCase?.ExpectedToken);
         result.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
     }
 
@@ -1045,9 +1034,8 @@ public class DataClientTests
             authenticationMethod: testCase?.AuthenticationMethod
         );
         invocations.Should().Be(1);
-        platformRequest?.Should().NotBeNull();
         response.Should().BeEquivalentTo(dataElement);
-        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete, expectedAuth: testCase?.ExpectedToken);
+        AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Delete, expectedAuth: testCase?.ExpectedToken);
     }
 
     [Theory]
@@ -1083,12 +1071,12 @@ public class DataClientTests
             )
         );
         invocations.Should().Be(1);
-        AssertHttpRequest(platformRequest!, expectedUri, HttpMethod.Delete, expectedAuth: testCase?.ExpectedToken);
+        AssertHttpRequest(platformRequest, expectedUri, HttpMethod.Delete, expectedAuth: testCase?.ExpectedToken);
         result.Response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
     }
 
     private static void AssertHttpRequest(
-        HttpRequestMessage actual,
+        [NotNull] HttpRequestMessage? actual,
         Uri expectedUri,
         HttpMethod method,
         string? expectedFilename = null,
@@ -1096,12 +1084,13 @@ public class DataClientTests
         JwtToken? expectedAuth = null
     )
     {
+        Assert.NotNull(actual);
         Assert.Equal(method, actual.Method);
 
         var authHeader = actual.Headers.Authorization;
         Assert.NotNull(authHeader);
         Assert.Equal("Bearer", authHeader.Scheme);
-        Assert.Equal(authHeader.Parameter, expectedAuth ?? _defaultAuth.Token);
+        Assert.Equal(expectedAuth ?? _defaultAuth.Token, authHeader.Parameter);
 
         const int uriComparisonIdentical = 0;
         Assert.Equivalent(expectedUri, actual.RequestUri);

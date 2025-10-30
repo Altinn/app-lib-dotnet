@@ -262,7 +262,7 @@ internal sealed class TranslationService : ITranslationService
             if (_appMetadata is not null)
             {
                 var appMetadata = await _appMetadata.GetApplicationMetadata();
-                if (appMetadata?.Title.Count > 0)
+                if (appMetadata?.Title?.Count > 0)
                 {
                     return appMetadata.Title.TryGetValue(language, out var title)
                         ? new TextResourceElement() { Id = "appName", Value = title }
