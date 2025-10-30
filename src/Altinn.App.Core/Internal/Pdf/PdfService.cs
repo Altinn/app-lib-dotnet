@@ -185,9 +185,15 @@ public class PdfService : IPdfService
             autoGeneratePdfForTaskIds
         );
 
-        Uri uri = BuildUri(instance.Process?.CurrentTask?.ElementId ?? string.Empty, baseUrl, pagePath, language,
+        Uri uri = BuildUri(
+            instance.Process?.CurrentTask?.ElementId ?? string.Empty,
+            baseUrl,
+            pagePath,
+            language,
             subformComponentId,
-            subformDataElementId, autoPdfTaskIdsQueryParams);
+            subformDataElementId,
+            autoPdfTaskIdsQueryParams
+        );
 
         bool displayFooter = _pdfGeneratorSettings.DisplayFooter;
 

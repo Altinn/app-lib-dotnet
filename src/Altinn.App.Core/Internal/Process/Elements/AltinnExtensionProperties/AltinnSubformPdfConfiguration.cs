@@ -10,10 +10,10 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 public class AltinnSubformPdfConfiguration
 {
     /// <summary>
-    /// Set the filename of the PDF. Supports text resource keys for language support.
+    /// Set the filename of the PDF using a text resource key.
     /// </summary>
-    [XmlElement("filename", Namespace = "http://altinn.no/process")]
-    public string? Filename { get; set; }
+    [XmlElement("filenameTextResourceKey", Namespace = "http://altinn.no/process")]
+    public string? FilenameTextResourceKey { get; set; }
 
     /// <summary>
     /// The ID of the subform component to render in the PDFs.
@@ -39,7 +39,9 @@ public class AltinnSubformPdfConfiguration
     {
         List<string>? errorMessages = null;
 
-        string? normalizedFilename = string.IsNullOrWhiteSpace(Filename) ? null : Filename.Trim();
+        string? normalizedFilename = string.IsNullOrWhiteSpace(FilenameTextResourceKey)
+            ? null
+            : FilenameTextResourceKey.Trim();
 
         if (SubformComponentId.IsNullOrWhitespace(ref errorMessages, $"{nameof(SubformComponentId)} is missing."))
             ThrowApplicationConfigException(errorMessages);
@@ -65,7 +67,7 @@ public class AltinnSubformPdfConfiguration
 }
 
 internal readonly record struct ValidAltinnSubformPdfConfiguration(
-    string? Filename,
+    string? FilenameTextResourceKey,
     string SubformComponentId,
     string SubformDataTypeId,
     bool ParallelExecution

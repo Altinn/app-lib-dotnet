@@ -27,7 +27,7 @@ internal class SubformPdfServiceTask(
 
         ValidAltinnSubformPdfConfiguration config = GetValidAltinnSubformPdfConfiguration(taskId);
 
-        string? filename = config.Filename;
+        string? filenameTextResourceKey = config.FilenameTextResourceKey;
         string subformComponentId = config.SubformComponentId;
         string subformDataTypeId = config.SubformDataTypeId;
         bool parallelExecution = config.ParallelExecution;
@@ -44,7 +44,7 @@ internal class SubformPdfServiceTask(
                 pdfService.GenerateAndStoreSubformPdfs(
                     instance,
                     taskId,
-                    filename,
+                    filenameTextResourceKey,
                     subformComponentId,
                     dataElement.Id,
                     context.CancellationToken
@@ -61,7 +61,7 @@ internal class SubformPdfServiceTask(
                 await pdfService.GenerateAndStoreSubformPdfs(
                     instance,
                     taskId,
-                    filename,
+                    filenameTextResourceKey,
                     subformComponentId,
                     dataElement.Id,
                     context.CancellationToken

@@ -21,7 +21,7 @@ public class SubformPdfServiceTaskTests
 
     private const string SubformComponentId = "subform-mopeder";
     private const string SubformDataTypeId = "subform-data-type";
-    private const string FileName = "My subform file";
+    private const string FileName = "customFilenameTextResourceKey";
 
     public SubformPdfServiceTaskTests()
     {
@@ -176,7 +176,7 @@ public class SubformPdfServiceTaskTests
                     {
                         SubformComponentId = SubformComponentId,
                         SubformDataTypeId = SubformDataTypeId,
-                        Filename = FileName,
+                        FilenameTextResourceKey = FileName,
                         ParallelExecution = parallelExecution,
                     },
                 }

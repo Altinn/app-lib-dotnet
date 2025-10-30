@@ -52,8 +52,6 @@ public interface IPdfService
         CancellationToken ct
     ) => throw new NotImplementedException();
 
-
-
     /// <summary>
     /// Generate a PDF of what the user can currently see from the given instance of an app.
     /// </summary>
