@@ -228,7 +228,7 @@ public class DataClientMock : IDataClient
         string org,
         string app,
         int instanceOwnerPartyId,
-        string dataTypeString,
+        string dataType,
         StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
@@ -239,7 +239,7 @@ public class DataClientMock : IDataClient
 
     public async Task<DataElement> InsertFormData(
         Instance instance,
-        string dataTypeString,
+        string dataTypeId,
         object dataToSerialize,
         StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
@@ -247,8 +247,8 @@ public class DataClientMock : IDataClient
     {
         var application = await _appMetadata.GetApplicationMetadata();
         var dataType =
-            application.DataTypes.Find(d => d.Id == dataTypeString)
-            ?? throw new InvalidOperationException($"Data type {dataTypeString} not found in applicationmetadata.json");
+            application.DataTypes.Find(d => d.Id == dataTypeId)
+            ?? throw new InvalidOperationException($"Data type {dataTypeId} not found in applicationmetadata.json");
         var instanceIdentifier = new InstanceIdentifier(instance);
         Guid dataGuid = Guid.NewGuid();
 
@@ -267,7 +267,7 @@ public class DataClientMock : IDataClient
         {
             Id = dataGuid.ToString(),
             InstanceGuid = instanceIdentifier.InstanceGuid.ToString(),
-            DataType = dataTypeString,
+            DataType = dataTypeId,
             ContentType = contentType,
         };
 
@@ -292,7 +292,7 @@ public class DataClientMock : IDataClient
         string org,
         string app,
         int instanceOwnerPartyId,
-        Guid dataGuid,
+        Guid dataId,
         StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )

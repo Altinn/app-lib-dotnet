@@ -89,7 +89,7 @@ public sealed class DataClient : IDataClient
     /// <inheritdoc />
     public async Task<DataElement> InsertFormData(
         Instance instance,
-        string dataTypeString,
+        string dataTypeId,
         object dataToSerialize,
         StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
@@ -98,14 +98,14 @@ public sealed class DataClient : IDataClient
         using var activity = _telemetry?.StartInsertFormDataActivity(instance);
         var appMetadata = await _appMetadata.GetApplicationMetadata();
         var dataType =
-            appMetadata.DataTypes.Find(d => d.Id == dataTypeString)
-            ?? throw new InvalidOperationException($"Data type {dataTypeString} not found in applicationmetadata.json");
+            appMetadata.DataTypes.Find(d => d.Id == dataTypeId)
+            ?? throw new InvalidOperationException($"Data type {dataTypeId} not found in applicationmetadata.json");
 
         var (data, contentType) = _modelSerializationService.SerializeToStorage(dataToSerialize, dataType, null);
 
         return await InsertBinaryData(
             instance.Id,
-            dataTypeString,
+            dataTypeId,
             contentType,
             null,
             new MemoryAsStream(data),

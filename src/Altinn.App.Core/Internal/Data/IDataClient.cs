@@ -72,14 +72,14 @@ public interface IDataClient
     /// Creates a new data element for the given instance and data model
     /// </summary>
     /// <param name="instance">The instance to add the element to</param>
-    /// <param name="dataTypeString">The id of the data type to add</param>
+    /// <param name="dataTypeId">The id of the data type to add</param>
     /// <param name="dataToSerialize">An instance of the class for the form data</param>
     /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     /// <returns></returns>
     Task<DataElement> InsertFormData(
         Instance instance,
-        string dataTypeString,
+        string dataTypeId,
         object dataToSerialize,
         StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
