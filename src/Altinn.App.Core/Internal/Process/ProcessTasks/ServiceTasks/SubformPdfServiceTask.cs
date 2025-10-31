@@ -112,7 +112,6 @@ internal class SubformPdfServiceTask(
                 );
 
                 var instanceIdentifier = new InstanceIdentifier(instance);
-                var appIdentifier = new AppIdentifier(instance);
 
                 foreach (DataElement? pdf in existingPdfs)
                 {
