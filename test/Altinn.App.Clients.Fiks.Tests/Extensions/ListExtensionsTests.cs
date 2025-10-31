@@ -36,7 +36,7 @@ public class ListExtensionsTests
     {
         // Arrange
         var payloads = GetPayloads(
-            "duplicate.txt",
+            "duplicate(1).txt", // pre-existing numbered filename
             "duplicate.txt",
             "duplicate.txt",
             "duplicate.doc",

@@ -173,6 +173,14 @@
     <tittel>Custom Journal Entry Title</tittel>
     <offentligTittel>Custom Journal Entry Title</offentligTittel>
     <korrespondansepart>
+      <korrespondansepartID>recipient-id</korrespondansepartID>
+      <korrespondanseparttype>
+        <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">EM</kode>
+        <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Mottaker</beskrivelse>
+      </korrespondanseparttype>
+      <korrespondansepartNavn>Recipient Name</korrespondansepartNavn>
+    </korrespondansepart>
+    <korrespondansepart>
       <korrespondansepartID>org-number</korrespondansepartID>
       <korrespondanseparttype>
         <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">EA</kode>

@@ -60,7 +60,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 primaryDocumentSettings: Factories.DocumentSettings("model"),
                 attachmentSettings: [Factories.DocumentSettings("ref-data-as-pdf")],
                 archiveDocumentMetadata: null,
-                recipientParty: null,
+                recipientParty: Factories.RecipientParty("recipient-id", "Recipient Name"),
                 serviceOwnerParty: Factories.ServiceOwnerParty("org-number", "Org Name"),
                 instanceOwnerParty: null,
                 instanceOwnerClassification: Factories.InstanceOwnerClassification(Auth.User)
@@ -82,7 +82,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     "Custom Case File Title",
                     "Custom Journal Entry Title"
                 ),
-                recipientParty: null,
+                recipientParty: Factories.RecipientParty("recipient-id", "Recipient Name"),
                 serviceOwnerParty: Factories.ServiceOwnerParty("org-number", "Org Name"),
                 instanceOwnerParty: null,
                 instanceOwnerClassification: Factories.InstanceOwnerClassification(Auth.SystemUser)
@@ -167,7 +167,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
     [Fact]
     public async Task GeneratePayload_ThrowsException_ForUnsupportedMessageType()
     {
-        var fixture = PayloadGeneratorFixture.Create(null!, null!, null, null, null!, null, null!, null!);
+        var fixture = PayloadGeneratorFixture.Create(null!, null!, null, null!, null!, null, null!, null!);
 
         var ex = await Assert.ThrowsAsync<FiksArkivException>(() =>
             fixture.GeneratePayload(Factories.Instance(null!, []), "non-create-type")
@@ -190,7 +190,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
             FiksArkivDataTypeSettings primaryDocumentSettings,
             IReadOnlyList<FiksArkivDataTypeSettings>? attachmentSettings,
             FiksArkivDocumentMetadata? archiveDocumentMetadata,
-            Korrespondansepart? recipientParty,
+            Korrespondansepart recipientParty,
             Korrespondansepart serviceOwnerParty,
             Korrespondansepart? instanceOwnerParty,
             Klassifikasjon instanceOwnerClassification,
@@ -245,7 +245,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
             FiksArkivDataTypeSettings primaryDocumentSettings,
             IReadOnlyList<FiksArkivDataTypeSettings>? attachmentSettings,
             FiksArkivDocumentMetadata? archiveDocumentMetadata,
-            Korrespondansepart? recipientParty,
+            Korrespondansepart recipientParty,
             Korrespondansepart serviceOwnerParty,
             Korrespondansepart? instanceOwnerParty,
             Klassifikasjon instanceOwnerClassification,

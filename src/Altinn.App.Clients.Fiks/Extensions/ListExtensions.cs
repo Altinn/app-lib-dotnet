@@ -16,14 +16,30 @@ internal static class ListExtensions
 
         foreach (var duplicates in hasDuplicateFilenames)
         {
-            for (int i = 0; i < duplicates.Count; i++)
+            int uniqueId = 0;
+            foreach (var dupe in duplicates)
             {
-                int uniqueId = i + 1;
-                string filename = Path.GetFileNameWithoutExtension(duplicates[i].Payload.Filename);
-                string extension = Path.GetExtension(duplicates[i].Payload.Filename);
+                uniqueId++;
+                string filename = Path.GetFileNameWithoutExtension(dupe.Payload.Filename);
+                string extension = Path.GetExtension(dupe.Payload.Filename);
+                string proposedFilename = FormatFilename(filename, extension, uniqueId);
 
-                duplicates[i].Payload.Filename = $"{filename}({uniqueId}){extension}";
+                // Ensure that the new filename is unique within the entire attachments list
+                while (
+                    attachments.Any(a =>
+                        a.Payload.Filename.Equals(proposedFilename, StringComparison.OrdinalIgnoreCase)
+                    )
+                )
+                {
+                    uniqueId++;
+                    proposedFilename = FormatFilename(filename, extension, uniqueId);
+                }
+
+                dupe.Payload.Filename = proposedFilename;
             }
         }
     }
+
+    private static string FormatFilename(string filenameBase, string extension, int? id) =>
+        id is null ? $"{filenameBase}{extension}" : $"{filenameBase}({id}){extension}";
 }
