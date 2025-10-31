@@ -86,7 +86,7 @@ public sealed record ServiceTaskFailedResult : ServiceTaskResult
 /// <summary>
 /// Instructions to the process engine on how to handle errors from service tasks.
 /// </summary>
-/// <param name="Strategy">Should the process engine stop the <c>process/next</c> exection?</param>
+/// <param name="Strategy">Should the process engine stop the <c>process/next</c> execution?</param>
 /// <param name="Action">If proceeding with <c>process/next</c>, should we send an action? Defaults to <c>reject</c></param>
 public sealed record ServiceTaskErrorHandling(ServiceTaskErrorStrategy Strategy, string? Action = "reject");
 
