@@ -101,7 +101,7 @@ internal sealed record TestFixture(
         App.Services.GetRequiredService<AppImplementationFactory>();
 
     private static JsonSerializerOptions _jsonSerializerOptions =>
-        new() { DefaultIgnoreCondition = JsonIgnoreCondition.Never };
+        new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
 
     /// <summary>
     /// Creates a new test fixture instance

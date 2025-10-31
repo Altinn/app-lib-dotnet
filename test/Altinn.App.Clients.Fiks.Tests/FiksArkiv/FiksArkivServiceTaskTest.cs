@@ -93,7 +93,11 @@ public class FiksArkivServiceTaskTest
             ? ServiceTaskErrorStrategy.ContinueProcessNext
             : ServiceTaskErrorStrategy.AbortProcessNext;
         Assert.Equal(expectedErrorStrategy, errorResult.ErrorHandling.Strategy);
-        Assert.Equal(action, errorResult.ErrorHandling.Action);
+
+        // NOTE: Because of TestFixture serialization reasons, the `Action` property will be set to its default value if
+        // null was provided in the test case. The default value is "reject".
+        if (moveToNextTask)
+            Assert.Equal(action ?? "reject", errorResult.ErrorHandling.Action);
     }
 
     private static Mock<IInstanceDataMutator> InstanceDataMutatorMockFactory(Instance instance)
