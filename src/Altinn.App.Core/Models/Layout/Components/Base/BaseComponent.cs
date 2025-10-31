@@ -84,7 +84,7 @@ public abstract class BaseComponent
 
         foreach (var binding in DataModelBindings.Values)
         {
-            references.Add(await context.AddIndexes(binding, context));
+            references.Add(await context.AddIndexes(binding));
         }
 
         return references;
