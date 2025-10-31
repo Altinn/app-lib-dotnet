@@ -221,8 +221,6 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         CancellationToken cancellationToken = default
     )
     {
-        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-
         if (string.IsNullOrWhiteSpace(filename) is false)
             dataElement.Filename = filename;
         else if (string.IsNullOrWhiteSpace(dataElement.Filename))
@@ -232,8 +230,6 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
             new FiksIOMessagePayload(
                 dataElement.Filename,
                 await _dataClient.GetDataBytes(
-                    appMetadata.AppIdentifier.Org,
-                    appMetadata.AppIdentifier.App,
                     instanceId.InstanceOwnerPartyId,
                     instanceId.InstanceGuid,
                     Guid.Parse(dataElement.Id),
