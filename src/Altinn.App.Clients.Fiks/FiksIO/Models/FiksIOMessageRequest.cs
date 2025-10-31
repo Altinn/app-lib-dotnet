@@ -33,7 +33,7 @@ public sealed record FiksIOMessageRequest(
             mottakerKontoId: Recipient,
             meldingType: MessageType,
             ttl: MessageLifetime,
-            headere: Headers?.ToDictionary(x => x.Key, x => x.Value),
+            headere: Headers,
             svarPaMelding: InReplyToMessage,
             klientMeldingId: SendersReference,
             klientKorrelasjonsId: CorrelationId?.ToUrlSafeBase64()
