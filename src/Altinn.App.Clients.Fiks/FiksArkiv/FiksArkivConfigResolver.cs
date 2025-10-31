@@ -208,7 +208,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
     public string GetCorrelationId(Instance instance) => instance.GetInstanceUrl(_generalSettings);
 
     /// <inheritdoc />
-    public Korrespondansepart? GetRecipientParty(Instance instance, FiksArkivRecipient recipient) =>
+    public Korrespondansepart GetRecipientParty(Instance instance, FiksArkivRecipient recipient) =>
         KorrespondansepartFactory.CreateRecipient(
             partyId: recipient.Identifier,
             partyName: recipient.Name,

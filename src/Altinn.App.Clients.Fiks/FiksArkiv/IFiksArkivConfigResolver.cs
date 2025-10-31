@@ -46,7 +46,7 @@ public interface IFiksArkivConfigResolver
     /// <summary>
     /// Gets the recipient party (korrespondansepart).
     /// </summary>
-    Korrespondansepart? GetRecipientParty(Instance instance, FiksArkivRecipient recipient);
+    Korrespondansepart GetRecipientParty(Instance instance, FiksArkivRecipient recipient);
 
     /// <summary>
     /// Gets the service owner party (korrespondansepart).

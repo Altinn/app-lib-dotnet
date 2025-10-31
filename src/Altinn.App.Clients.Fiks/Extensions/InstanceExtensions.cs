@@ -11,7 +11,7 @@ internal static class InstanceExtensions
     /// Get data elements of a given type from an instance. Returns an empty collection if none are found.
     /// </summary>
     public static IEnumerable<DataElement> GetOptionalDataElements(this Instance instance, string dataType) =>
-        instance.Data.Where(x => x.DataType.Equals(dataType, StringComparison.OrdinalIgnoreCase));
+        instance.Data?.Where(x => x.DataType.Equals(dataType, StringComparison.OrdinalIgnoreCase)) ?? [];
 
     /// <summary>
     /// Get a required data element of a given type from an instance. Throws an exception if not found.

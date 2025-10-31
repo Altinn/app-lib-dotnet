@@ -50,8 +50,8 @@ internal static class KorrespondansepartFactory
                 KodeProperty = KorrespondanseparttypeKoder.InternAvsender.Verdi,
                 Beskrivelse = KorrespondanseparttypeKoder.InternAvsender.Beskrivelse,
             },
-            KorrespondansepartNavn = partyName.EnsureNotNullOrEmpty("FiksArkiv->InternalSender.ID"),
-            KorrespondansepartID = partyId.EnsureNotNullOrEmpty("FiksArkiv->InternalSender.Name"),
+            KorrespondansepartNavn = partyName.EnsureNotNullOrEmpty("FiksArkiv->InternalSender.Name"),
+            KorrespondansepartID = partyId.EnsureNotNullOrEmpty("FiksArkiv->InternalSender.ID"),
         };
 
     /// <summary>

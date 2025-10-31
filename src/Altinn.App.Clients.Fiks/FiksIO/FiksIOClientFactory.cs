@@ -6,7 +6,7 @@ using IExternalFiksIOClient = KS.Fiks.IO.Client.IFiksIOClient;
 
 namespace Altinn.App.Clients.Fiks.FiksIO;
 
-internal class FiksIOClientFactory : IFiksIOClientFactory
+internal sealed class FiksIOClientFactory : IFiksIOClientFactory
 {
     private readonly ILoggerFactory _loggerFactory;
     private readonly IMaskinportenClient _maskinportenClient;

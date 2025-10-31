@@ -238,21 +238,25 @@ public sealed record FiksArkivRecipientSettings
     /// <summary>
     /// The Fiks Arkiv recipient account. This is a <see cref="Guid"/> address to ship messages to.
     /// </summary>
+    [JsonPropertyName("fiksAccount")]
     public required FiksArkivBindableValue<Guid?> FiksAccount { get; set; }
 
     /// <summary>
     /// An optional identifier for the recipient. This can be a municipality number or other relevant identifier.
     /// </summary>
+    [JsonPropertyName("identifier")]
     public required FiksArkivBindableValue<string> Identifier { get; set; }
 
     /// <summary>
     /// An optional name for the recipient.
     /// </summary>
+    [JsonPropertyName("name")]
     public required FiksArkivBindableValue<string> Name { get; set; }
 
     /// <summary>
     /// An optional organization number for the recipient.
     /// </summary>
+    [JsonPropertyName("organizationNumber")]
     public FiksArkivBindableValue<string>? OrganizationNumber { get; set; }
 
     /// <summary>

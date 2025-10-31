@@ -5,12 +5,14 @@ internal static class StreamExtensions
     /// <summary>
     /// Reads the entire stream to a string.
     /// </summary>
-    public static string ReadToString(this Stream stream)
+    public static string ReadToString(this Stream stream, bool leaveOpen = true)
     {
         ArgumentNullException.ThrowIfNull(stream);
 
-        stream.Position = 0;
-        using var reader = new StreamReader(stream);
+        if (stream.CanSeek && stream.Position != 0)
+            stream.Position = 0;
+
+        using var reader = new StreamReader(stream, leaveOpen: leaveOpen);
         return reader.ReadToEnd();
     }
 }
