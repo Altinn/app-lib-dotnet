@@ -35,19 +35,37 @@ internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask
             Instance instance = context.InstanceDataMutator.Instance;
             string taskId = instance.Process.CurrentTask.ElementId;
 
-            _logger.LogInformation($"FiksArkivServiceTask is executing for instance {instance.Id} and task {taskId}");
+            _logger.LogInformation(
+                "FiksArkivServiceTask is executing for instance {InstanceId} and task {TaskId}",
+                instance.Id,
+                taskId
+            );
 
-            await _fiksArkivHost.GenerateAndSendMessage(taskId, instance, FiksArkivConstants.MessageTypes.Create);
+            var response = await _fiksArkivHost.GenerateAndSendMessage(
+                taskId,
+                instance,
+                FiksArkivConstants.MessageTypes.Create
+            );
+
+            _logger.LogInformation(
+                "FiksArkivServiceTask completed for instance {InstanceId} with response: {Response}",
+                instance.Id,
+                response
+            );
 
             return ServiceTaskResult.Success();
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Error occurred while executing FiksArkivServiceTask: {ErrorMessage}", e.Message);
-            return ServiceTaskResult.Failed(
-                autoMoveNext: _fiksArkivSettings.ErrorHandling?.MoveToNextTask,
-                autoMoveNextAction: _fiksArkivSettings.ErrorHandling?.Action
-            );
+
+            string? action = !string.IsNullOrWhiteSpace(_fiksArkivSettings.ErrorHandling?.Action)
+                ? _fiksArkivSettings.ErrorHandling?.Action
+                : null;
+
+            return _fiksArkivSettings.ErrorHandling?.MoveToNextTask is true
+                ? ServiceTaskResult.FailedContinueProcessNext(action)
+                : ServiceTaskResult.FailedAbortProcessNext();
         }
     }
 }
