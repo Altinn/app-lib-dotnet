@@ -169,6 +169,7 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IPDP, PDPAppSI>();
         services.TryAddTransient<IPrefill, PrefillSI>();
         services.TryAddTransient<ISigningCredentialsResolver, SigningCredentialsResolver>();
+        services.TryAddSingleton<IInstanceContext, InstanceContext>();
         services.TryAddSingleton<IAppResources, AppResourcesSI>();
         services.TryAddSingleton<IAppMetadata, AppMetadata>();
         services.TryAddSingleton<IFrontendFeatures, FrontendFeatures>();
