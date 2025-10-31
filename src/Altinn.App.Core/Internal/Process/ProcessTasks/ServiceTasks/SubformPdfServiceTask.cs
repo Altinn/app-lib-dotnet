@@ -119,8 +119,6 @@ internal class SubformPdfServiceTask(
                     try
                     {
                         await dataClient.DeleteData(
-                            appIdentifier.Org,
-                            appIdentifier.App,
                             instanceIdentifier.InstanceOwnerPartyId,
                             instanceIdentifier.InstanceGuid,
                             Guid.Parse(pdf.Id),
