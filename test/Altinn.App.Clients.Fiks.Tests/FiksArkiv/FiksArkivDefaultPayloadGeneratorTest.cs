@@ -299,8 +299,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
             dataClientMock
                 .Setup(x =>
                     x.GetDataBytes(
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
                         It.IsAny<int>(),
                         It.IsAny<Guid>(),
                         It.IsAny<Guid>(),
