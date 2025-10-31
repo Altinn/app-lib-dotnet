@@ -67,19 +67,12 @@ public static class LayoutEvaluator
 
         List<DataReference> childIgnoredPrefixes = [.. ignoredPrefixes];
 
-        // For repeating reference components, get the group binding path to filter out row-level bindings
-        Models.Layout.Components.Base.RepeatingReferenceComponent? repeatingRefComponent = null;
-        if (context.Component is Models.Layout.Components.Base.RepeatingReferenceComponent component)
-        {
-            repeatingRefComponent = component;
-        }
-
         // Schedule fields for removal
         foreach (var (_, binding) in context.Component.DataModelBindings)
         {
             // For repeating reference components, check if this binding should be skipped at the component level
             if (
-                repeatingRefComponent is not null
+                context.Component is Models.Layout.Components.Base.RepeatingReferenceComponent repeatingRefComponent
                 && repeatingRefComponent.ShouldSkipBindingForHiddenEvaluation(binding, context.RowIndices is not null)
             )
             {
