@@ -95,13 +95,13 @@ public class ValidateController : ControllerBase
             );
             return Ok(messages);
         }
-        catch (Exception exception)
+        catch (PlatformHttpException exception)
         {
-            var statusCode = exception is PlatformHttpException platformHttpException
-                ? (int)platformHttpException.Response.StatusCode
-                : StatusCodes.Status500InternalServerError;
-
-            return Problem(statusCode: statusCode, title: "Something went wrong.", detail: exception.Message);
+            return Problem(
+                statusCode: (int)exception.Response.StatusCode,
+                title: "Something went wrong.",
+                detail: exception.Message
+            );
         }
     }
 

@@ -249,42 +249,4 @@ public class ValidateControllerTests
         Assert.Equal("Something went wrong.", problemDetails.Title);
         Assert.Equal(exception.Message, problemDetails?.Detail);
     }
-
-    [Fact]
-    public async Task ValidateInstance_returns_500_when_unexpected_exception_type_is_thrown()
-    {
-        // Arrange
-        Instance instance = new Instance
-        {
-            Id = $"{InstanceOwnerPartyId}/{_instanceId}",
-            InstanceOwner = new() { PartyId = InstanceOwnerPartyId.ToString() },
-            Org = Org,
-            AppId = $"{Org}/{App}",
-            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "dummy" } },
-        };
-
-        var exception = new Exception("Some random exception");
-
-        _instanceClientMock
-            .Setup(i => i.GetInstance(App, Org, InstanceOwnerPartyId, _instanceId))
-            .ReturnsAsync(instance);
-
-        _validationServiceMock
-            .Setup(v => v.ValidateInstanceAtTask(It.IsAny<IInstanceDataAccessor>(), "dummy", null, null, null))
-            .Throws(exception);
-
-        await using var sp = _services.BuildStrictServiceProvider();
-        var validateController = sp.GetRequiredService<ValidateController>();
-
-        // Act
-        var result = await validateController.ValidateInstance(Org, App, InstanceOwnerPartyId, _instanceId);
-
-        // Assert
-        var objectResult = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(500, objectResult.StatusCode);
-        var problemDetails = Assert.IsType<ProblemDetails>(objectResult.Value);
-        Assert.Equal(500, problemDetails.Status);
-        Assert.Equal("Something went wrong.", problemDetails.Title);
-        Assert.Equal(exception.Message, problemDetails?.Detail);
-    }
 }
