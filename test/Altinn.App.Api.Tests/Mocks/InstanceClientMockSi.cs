@@ -10,7 +10,7 @@ using Microsoft.Extensions.Primitives;
 
 namespace Altinn.App.Api.Tests.Mocks;
 
-public class InstanceClientMockSi : IInstanceClient
+public sealed class InstanceClientMockSi : IInstanceClient
 {
     private readonly ILogger _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
