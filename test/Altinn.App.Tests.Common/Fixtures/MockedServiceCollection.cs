@@ -84,7 +84,7 @@ public class MockedServiceCollection
         _services.TryAddSingleton<InstanceDataUnitOfWorkInitializer>();
         _services.TryAddSingleton<ModelSerializationService>();
 
-        // There is no TryAddHttpClient, but theses are the core of the mocked service collection
+        // There is no TryAddHttpClient, but these are the core of the mocked service collection
         _services.AddHttpClient<IDataClient, DataClient>().ConfigurePrimaryHttpMessageHandler(() => Storage);
         _services.AddHttpClient<IInstanceClient, InstanceClient>().ConfigurePrimaryHttpMessageHandler(() => Storage);
 

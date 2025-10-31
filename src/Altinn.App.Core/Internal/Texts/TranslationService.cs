@@ -297,15 +297,15 @@ internal sealed class TranslationService : ITranslationService
                 {
                     Id = "backend.pdf_default_file_name",
                     Value = "{0}.pdf",
-                    Variables = new List<TextResourceVariable>()
-                    {
+                    Variables =
+                    [
                         new TextResourceVariable()
                         {
                             Key = "appName",
                             DataSource = "text",
                             DefaultValue = "Altinn PDF",
                         },
-                    },
+                    ],
                 };
             case "pdfPreviewText":
                 return new TextResourceElement()

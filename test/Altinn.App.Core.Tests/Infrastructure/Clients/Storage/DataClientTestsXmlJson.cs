@@ -420,13 +420,6 @@ public class DataClientTestsXmlJson
     {
         var wrongElementId = Guid.NewGuid();
         var wrongInstanceId = Guid.NewGuid();
-        var wrongDataElement = new DataElement()
-        {
-            Id = wrongElementId.ToString(),
-            InstanceGuid = wrongInstanceId.ToString(),
-            DataType = "jsonDataType",
-            ContentType = "application/json",
-        };
         await using var serviceProvider = _mockedServiceCollection.BuildServiceProvider();
         var dataClient = serviceProvider.GetRequiredService<IDataClient>();
         await Assert.ThrowsAsync<PlatformHttpException>(() =>

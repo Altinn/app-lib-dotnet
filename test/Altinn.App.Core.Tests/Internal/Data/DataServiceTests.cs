@@ -20,7 +20,7 @@ public class DataServiceTests
     {
         _mockDataClient = new Mock<IDataClient>();
         _mockAppMetadata = new Mock<IAppMetadata>();
-        _dataService = new DataService(_mockDataClient.Object, _mockAppMetadata.Object);
+        _dataService = new DataService(_mockDataClient.Object);
     }
 
     [Fact]

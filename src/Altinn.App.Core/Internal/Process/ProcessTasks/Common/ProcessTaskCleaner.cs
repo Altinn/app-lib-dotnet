@@ -20,7 +20,6 @@ internal sealed class ProcessTaskCleaner : IProcessTaskCleaner
     /// <inheritdoc/>
     public async Task RemoveAllDataElementsGeneratedFromTask(Instance instance, string taskId)
     {
-        AppIdentifier appIdentifier = new(instance.AppId);
         InstanceIdentifier instanceIdentifier = new(instance);
         var dataElements =
             instance

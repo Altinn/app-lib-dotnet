@@ -516,7 +516,7 @@ public static class IDataClientExtensions
         }
 
         throw new InvalidCastException(
-            $"Failed to cast form data of type {formData.GetType().FullName} to requested type {typeof(T).FullName}"
+            $"Failed to cast form data of type {formData?.GetType().FullName ?? "null"} to requested type {typeof(T).FullName}"
         );
     }
 }

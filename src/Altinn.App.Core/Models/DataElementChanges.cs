@@ -34,7 +34,12 @@ public sealed class DataElementChanges
 /// </summary>
 public abstract class DataElementChange
 {
-    internal DataElementChange(ChangeType type, DataType dataType, string contentType, DataElement? dataElement = null)
+    private protected DataElementChange(
+        ChangeType type,
+        DataType dataType,
+        string contentType,
+        DataElement? dataElement = null
+    )
     {
         Type = type;
         DataElement = dataElement;

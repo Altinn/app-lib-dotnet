@@ -337,20 +337,6 @@ public sealed class DataClient : IDataClient
         throw await PlatformHttpException.CreateAsync(response);
     }
 
-    private static bool TypeAllowsJson(string? classRef, ApplicationMetadata appMetadata)
-    {
-        return appMetadata.DataTypes.Where(dt => dt?.AppLogic?.ClassRef == classRef).Any(TypeAllowsJson);
-    }
-
-    internal static bool TypeAllowsJson(DataType? dataType)
-    {
-        if (dataType?.AllowedContentTypes is null)
-            return false;
-        return !dataType.AllowedContentTypes.TrueForAll(ct =>
-            !ct.Equals("application/json", StringComparison.OrdinalIgnoreCase)
-        );
-    }
-
     /// <inheritdoc />
     public async Task<object> GetFormData(
         Instance instance,
@@ -822,5 +808,19 @@ public sealed class DataClient : IDataClient
             response.StatusCode
         );
         throw await PlatformHttpException.CreateAsync(response);
+    }
+
+    private static bool TypeAllowsJson(string? classRef, ApplicationMetadata appMetadata)
+    {
+        return appMetadata.DataTypes.Where(dt => dt?.AppLogic?.ClassRef == classRef).Any(TypeAllowsJson);
+    }
+
+    internal static bool TypeAllowsJson(DataType? dataType)
+    {
+        if (dataType?.AllowedContentTypes is null)
+            return false;
+        return !dataType.AllowedContentTypes.TrueForAll(ct =>
+            !ct.Equals("application/json", StringComparison.OrdinalIgnoreCase)
+        );
     }
 }

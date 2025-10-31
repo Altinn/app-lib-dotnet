@@ -535,19 +535,17 @@ public class DataController : ControllerBase
             {
                 return await GetFormData(
                     org,
-                    app,
                     instanceOwnerPartyId,
                     instanceGuid,
                     instance,
                     dataGuid,
                     dataElement,
-                    dataTypeObject,
                     includeRowId,
                     language
                 );
             }
 
-            return await GetBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, dataElement);
+            return await GetBinaryData(org, instanceOwnerPartyId, instanceGuid, dataGuid, dataElement);
         }
         catch (PlatformHttpException e)
         {
@@ -898,7 +896,6 @@ public class DataController : ControllerBase
     /// <returns>The data element is returned in the body of the response</returns>
     private async Task<ActionResult> GetBinaryData(
         string org,
-        string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataGuid,
@@ -935,13 +932,11 @@ public class DataController : ControllerBase
     /// <returns>data element is returned in response body</returns>
     private async Task<ActionResult> GetFormData(
         string org,
-        string app,
         int instanceOwnerId,
         Guid instanceGuid,
         Instance instance,
         Guid dataGuid,
         DataElement dataElement,
-        DataType dataType,
         bool includeRowId,
         string? language
     )
