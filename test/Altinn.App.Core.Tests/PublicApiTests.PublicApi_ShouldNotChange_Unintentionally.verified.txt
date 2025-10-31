@@ -3792,6 +3792,8 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks
     {
         protected ServiceTaskResult() { }
         public static Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskFailedResult Failed(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskErrorHandling errorHandling) { }
+        public static Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskFailedResult FailedAbortProcessNext() { }
+        public static Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskFailedResult FailedContinueProcessNext(string? action = "reject") { }
         public static Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskSuccessResult Success() { }
     }
     public sealed class ServiceTaskSuccessResult : Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult, System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskSuccessResult>
