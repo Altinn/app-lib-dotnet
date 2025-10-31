@@ -55,6 +55,7 @@ public class LikertHiddenTests
         var state = await LayoutTestUtils.GetLayoutModelTools(data, "LikertHidden");
         var hidden = await LayoutEvaluator.GetHiddenFieldsForRemoval(state, false);
 
-        await Verify(hidden).UseMethodName("TestLikertWithMultipleComponents");
+        // Likert component does not yet remove answers when component is hidden
+        Assert.Empty(hidden);
     }
 }

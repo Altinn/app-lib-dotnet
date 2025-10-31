@@ -135,6 +135,9 @@ public sealed class ComponentContext
         return _removeWhenHidden.Value;
     }
 
+    internal async Task<DataReference> AddIndexes(ModelBinding binding, ComponentContext context) =>
+        await State.AddInidicies(binding, context);
+
     /// <summary>
     /// Indicates whether this context was initialized with child contexts
     /// </summary>

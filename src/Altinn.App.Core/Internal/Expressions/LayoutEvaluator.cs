@@ -68,31 +68,21 @@ public static class LayoutEvaluator
         List<DataReference> childIgnoredPrefixes = [.. ignoredPrefixes];
 
         // Schedule fields for removal
-        foreach (var (_, binding) in context.Component.DataModelBindings)
+        foreach (var reference in await context.Component.GetDataReferencesToRemoveWhenHidden(context))
         {
-            // For repeating reference components, check if this binding should be skipped at the component level
-            if (
-                context.Component is Models.Layout.Components.Base.RepeatingReferenceComponent repeatingRefComponent
-                && repeatingRefComponent.ShouldSkipBindingForHiddenEvaluation(binding, context.RowIndices is not null)
-            )
-            {
-                continue;
-            }
-
-            var indexedBinding = await state.AddInidicies(binding, context);
-            if (ignoredPrefixes.Any(prefix => indexedBinding.StartsWith(prefix)))
+            if (ignoredPrefixes.Any(prefix => reference.StartsWith(prefix)))
             {
                 continue; // Skip fields with ignored prefixes
             }
 
             if (isHidden)
             {
-                hiddenModelBindings.Add(indexedBinding);
-                childIgnoredPrefixes.Add(indexedBinding);
+                hiddenModelBindings.Add(reference);
+                childIgnoredPrefixes.Add(reference);
             }
             else
             {
-                nonHiddenModelBindings.Add(indexedBinding);
+                nonHiddenModelBindings.Add(reference);
             }
         }
 
