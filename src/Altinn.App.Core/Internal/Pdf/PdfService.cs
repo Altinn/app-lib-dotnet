@@ -246,16 +246,6 @@ public class PdfService : IPdfService
     private static string GetValidFileName(string fileName)
     {
         fileName = Uri.EscapeDataString(fileName.AsFileName(false));
-        return AddPdfFileTypeIfMissing(fileName);
-    }
-
-    private static string AddPdfFileTypeIfMissing(string fileName)
-    {
-        if (!fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-        {
-            return fileName + ".pdf";
-        }
-
         return fileName;
     }
 

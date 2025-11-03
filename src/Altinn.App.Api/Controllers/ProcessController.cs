@@ -9,7 +9,6 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.Validation;
@@ -267,8 +266,7 @@ public class ProcessController : ControllerBase
     {
         try
         {
-            Instance instance;
-            ProcessChangeResult result;
+            Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
             var processNextRequest = new ProcessNextRequest
             {
@@ -394,7 +392,9 @@ public class ProcessController : ControllerBase
                 {
                     Instance = instance,
                     User = User,
-                    Action = ProcessEngine.ConvertTaskTypeToAction(instance.Process.CurrentTask.AltinnTaskType),
+                    Action = Altinn.App.Core.Internal.Process.ProcessEngine.ConvertTaskTypeToAction(
+                        instance.Process.CurrentTask.AltinnTaskType
+                    ),
                     Language = language,
                 };
                 ProcessChangeResult result = await _processEngine.Next(request);
