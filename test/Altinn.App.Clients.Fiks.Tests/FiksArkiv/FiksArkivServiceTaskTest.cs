@@ -71,7 +71,7 @@ public class FiksArkivServiceTaskTest
     [InlineData(true, "something-custom")]
     [InlineData(true, null)]
     [InlineData(false, null)]
-    public async Task Execute_FailedSend_ReturnsSuccessResult(bool moveToNextTask, string? action)
+    public async Task Execute_FailedSend_ReturnsFailedResult(bool moveToNextTask, string? action)
     {
         // Arrange
         var fiksArkivSettings = new FiksArkivSettings
