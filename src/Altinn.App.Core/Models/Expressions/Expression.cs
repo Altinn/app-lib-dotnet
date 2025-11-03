@@ -130,7 +130,8 @@ public readonly struct Expression : IEquatable<Expression>
     public bool IsLiteralString => ValueUnion.ValueKind == JsonValueKind.String;
 
     /// <summary>
-    /// We have a custom JsonSerializer so this will return the json array representation of this expression
+    /// The custom <see cref="ExpressionConverter"/> is a <see cref="JsonConverter{T}"/>
+    /// that serializes the expression to JSON (array for function or literal value).
     /// </summary>
     public override string ToString()
     {
