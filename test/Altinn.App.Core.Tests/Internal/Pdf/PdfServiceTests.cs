@@ -142,9 +142,9 @@ public class PdfServiceTests
     {
         // Arrange
         TelemetrySink telemetrySink = new();
-        _pdfGeneratorClient.Setup(s =>
-            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
-        );
+        _pdfGeneratorClient
+            .Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemoryStream([1, 2, 3, 4]));
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
         var target = SetupPdfService(
@@ -201,9 +201,9 @@ public class PdfServiceTests
     public async Task GenerateAndStorePdf_with_generatedFrom()
     {
         // Arrange
-        _pdfGeneratorClient.Setup(s =>
-            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
-        );
+        _pdfGeneratorClient
+            .Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemoryStream([1, 2, 3, 4]));
 
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
@@ -263,43 +263,51 @@ public class PdfServiceTests
         );
     }
 
-    [Fact]
-    public void GetOverridenLanguage_ShouldReturnLanguageFromQuery()
+    [Theory]
+    [InlineData("lang")]
+    [InlineData("language")]
+    public async Task GeneratePdf_WithLanguageQueryParameter_ShouldUseQueryLanguage(string queryParameterName)
     {
         // Arrange
-        var queries = new QueryCollection(new Dictionary<string, StringValues> { { "lang", LanguageConst.Nb } });
+        _pdfGeneratorClient
+            .Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemoryStream([1, 2, 3, 4]));
+        _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
+
+        // Set up HTTP context with query parameter
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Query = new QueryCollection(
+            new Dictionary<string, StringValues> { { queryParameterName, "en" } }
+        );
+        var httpContextAccessor = new Mock<IHttpContextAccessor>();
+        httpContextAccessor.Setup(s => s.HttpContext).Returns(httpContext);
+
+        var target = SetupPdfService(
+            pdfGeneratorClient: _pdfGeneratorClient,
+            generalSettingsOptions: _generalSettingsOptions,
+            httpContentAccessor: httpContextAccessor
+        );
+
+        Instance instance = new()
+        {
+            Id = $"509378/{Guid.NewGuid()}",
+            AppId = "digdir/not-really-an-app",
+            Org = "digdir",
+        };
 
         // Act
-        var language = PdfService.GetOverriddenLanguage(queries);
+        await target.GeneratePdf(instance, "Task_1", CancellationToken.None);
 
-        // Assert
-        language.Should().Be(LanguageConst.Nb);
-    }
-
-    [Fact]
-    public void GetOverridenLanguage_HttpContextIsNull_ShouldReturnNull()
-    {
-        // Arrange
-        QueryCollection? queries = null;
-
-        // Act
-        var language = PdfService.GetOverriddenLanguage(queries);
-
-        // Assert
-        language.Should().BeNull();
-    }
-
-    [Fact]
-    public void GetOverridenLanguage_NoLanguageInQuery_ShouldReturnNull()
-    {
-        // Arrange
-        IQueryCollection queries = new QueryCollection();
-
-        // Act
-        var language = PdfService.GetOverriddenLanguage(queries);
-
-        // Assert
-        language.Should().BeNull();
+        // Assert - verify the URI contains the query language
+        _pdfGeneratorClient.Verify(
+            s =>
+                s.GeneratePdf(
+                    It.Is<Uri>(u => u.AbsoluteUri.Contains("lang=en")),
+                    It.IsAny<string?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -308,9 +316,9 @@ public class PdfServiceTests
         // Arrange
         var autoGeneratePdfForTaskIds = new List<string> { "Task_1", "Task_2", "Task_3" };
 
-        _pdfGeneratorClient.Setup(s =>
-            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
-        );
+        _pdfGeneratorClient
+            .Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemoryStream([1, 2, 3, 4]));
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
         var target = SetupPdfService(
@@ -323,10 +331,19 @@ public class PdfServiceTests
             Id = $"509378/{Guid.NewGuid()}",
             AppId = "digdir/not-really-an-app",
             Org = "digdir",
+            Process = new() { CurrentTask = new() { ElementId = "Task_PDF" } },
         };
 
+        var instanceDataMutator = new Mock<IInstanceDataMutator>();
+        instanceDataMutator.Setup(m => m.Instance).Returns(instance);
+
         // Act
-        await target.GenerateAndStorePdf(instance, "Task_PDF", null, autoGeneratePdfForTaskIds, CancellationToken.None);
+        await target.GenerateAndStorePdf(
+            instanceDataMutator.Object,
+            null,
+            autoGeneratePdfForTaskIds,
+            CancellationToken.None
+        );
 
         // Assert
         _pdfGeneratorClient.Verify(
@@ -367,9 +384,9 @@ public class PdfServiceTests
             .Setup(s => s.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(resource);
 
-        _pdfGeneratorClient.Setup(s =>
-            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
-        );
+        _pdfGeneratorClient
+            .Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemoryStream([1, 2, 3, 4]));
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
         var target = SetupPdfService(
@@ -383,23 +400,29 @@ public class PdfServiceTests
             Id = $"509378/{Guid.NewGuid()}",
             AppId = "digdir/not-really-an-app",
             Org = "digdir",
+            Process = new() { CurrentTask = new() { ElementId = "Task_1" } },
         };
 
+        var instanceDataMutator = new Mock<IInstanceDataMutator>();
+        instanceDataMutator.Setup(m => m.Instance).Returns(instance);
+
         // Act
-        await target.GenerateAndStorePdf(instance, "Task_1", customTextResourceKey, null, CancellationToken.None);
+        await target.GenerateAndStorePdf(
+            instanceDataMutator.Object,
+            customTextResourceKey,
+            null,
+            CancellationToken.None
+        );
 
         // Assert
-        _dataClient.Verify(
-            s =>
-                s.InsertBinaryData(
-                    It.Is<string>(s => s == instance.Id),
+        instanceDataMutator.Verify(
+            m =>
+                m.AddBinaryDataElement(
                     It.Is<string>(s => s == "ref-data-as-pdf"),
                     It.Is<string>(s => s == "application/pdf"),
                     It.Is<string>(s => s == "My%20Custom%20Receipt.pdf"),
-                    It.IsAny<Stream>(),
-                    It.Is<string>(s => s == "Task_1"),
-                    It.IsAny<StorageAuthenticationMethod>(),
-                    It.IsAny<CancellationToken>()
+                    It.IsAny<ReadOnlyMemory<byte>>(),
+                    It.Is<string>(s => s == "Task_1")
                 ),
             Times.Once
         );
@@ -424,9 +447,9 @@ public class PdfServiceTests
             .Setup(s => s.GetTexts(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(resource);
 
-        _pdfGeneratorClient.Setup(s =>
-            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
-        );
+        _pdfGeneratorClient
+            .Setup(s => s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemoryStream([1, 2, 3, 4]));
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
         var target = SetupPdfService(
@@ -440,23 +463,29 @@ public class PdfServiceTests
             Id = $"509378/{Guid.NewGuid()}",
             AppId = "digdir/not-really-an-app",
             Org = "digdir",
+            Process = new() { CurrentTask = new() { ElementId = "Task_1" } },
         };
 
+        var instanceDataMutator = new Mock<IInstanceDataMutator>();
+        instanceDataMutator.Setup(m => m.Instance).Returns(instance);
+
         // Act
-        await target.GenerateAndStorePdf(instance, "Task_1", customTextResourceKey, null, CancellationToken.None);
+        await target.GenerateAndStorePdf(
+            instanceDataMutator.Object,
+            customTextResourceKey,
+            null,
+            CancellationToken.None
+        );
 
         // Assert
-        _dataClient.Verify(
-            s =>
-                s.InsertBinaryData(
-                    It.Is<string>(s => s == instance.Id),
+        instanceDataMutator.Verify(
+            m =>
+                m.AddBinaryDataElement(
                     It.Is<string>(s => s == "ref-data-as-pdf"),
                     It.Is<string>(s => s == "application/pdf"),
                     It.Is<string>(s => s == "My%20Custom%20Receipt.pdf"),
-                    It.IsAny<Stream>(),
-                    It.Is<string>(s => s == "Task_1"),
-                    It.IsAny<StorageAuthenticationMethod>(),
-                    It.IsAny<CancellationToken>()
+                    It.IsAny<ReadOnlyMemory<byte>>(),
+                    It.Is<string>(s => s == "Task_1")
                 ),
             Times.Once
         );

@@ -106,11 +106,13 @@ public sealed class BinaryDataChange : DataElementChange
         string contentType,
         DataElement? dataElement,
         string? fileName,
-        ReadOnlyMemory<byte> currentBinaryData
+        ReadOnlyMemory<byte> currentBinaryData,
+        string? generatedFromTaskId = null
     )
         : base(type, dataType, contentType, dataElement)
     {
         FileName = fileName;
+        GeneratedFromTaskId = generatedFromTaskId;
         CurrentBinaryData = currentBinaryData;
     }
 
@@ -118,6 +120,11 @@ public sealed class BinaryDataChange : DataElementChange
     /// The file name of the attachment file
     /// </summary>
     public string? FileName { get; }
+
+    /// <summary>
+    /// Optional reference to the task that generated the data element. If set, the data element will be deleted during task initialization if the task is revisited by the process engine. Used for PDF and signatures among potentially other things.
+    /// </summary>
+    public string? GeneratedFromTaskId { get; set; }
 
     /// <summary>
     /// The binary data

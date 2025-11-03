@@ -54,8 +54,7 @@ public class PdfServiceTaskTests
         _pdfServiceMock.Verify(
             x =>
                 x.GenerateAndStorePdf(
-                    instance,
-                    instance.Process.CurrentTask.ElementId,
+                    instanceMutatorMock.Object,
                     FileName,
                     It.IsAny<List<string>?>(),
                     It.IsAny<CancellationToken>()
@@ -103,8 +102,7 @@ public class PdfServiceTaskTests
         _pdfServiceMock.Verify(
             x =>
                 x.GenerateAndStorePdf(
-                    instance,
-                    "pdfTask",
+                    instanceMutatorMock.Object,
                     "customFilenameTextResourceKey",
                     taskIds,
                     It.IsAny<CancellationToken>()
