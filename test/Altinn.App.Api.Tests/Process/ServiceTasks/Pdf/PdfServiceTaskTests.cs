@@ -1,7 +1,8 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
+using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.EFormidling.Interface;
 using Altinn.Platform.Storage.Interface.Models;
 using Argon;
@@ -26,9 +27,11 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
         : base(factory, outputHelper)
     {
         var eFormidlingServiceMock = new Mock<IEFormidlingService>();
+        var eFormidlingConfigurationProviderMock = new Mock<IEFormidlingLegacyConfigurationProvider>();
         OverrideServicesForAllTests = (services) =>
         {
             services.AddSingleton(eFormidlingServiceMock.Object);
+            services.AddSingleton(eFormidlingConfigurationProviderMock.Object);
         };
 
         TestData.DeleteInstanceAndData(Org, App, InstanceOwnerPartyId, _instanceGuid);

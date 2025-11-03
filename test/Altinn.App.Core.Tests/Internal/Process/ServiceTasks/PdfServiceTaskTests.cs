@@ -1,4 +1,4 @@
-﻿using Altinn.App.Core.Features;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -16,7 +16,7 @@ public class PdfServiceTaskTests
     private readonly Mock<IProcessReader> _processReaderMock = new();
     private readonly PdfServiceTask _serviceTask;
 
-    private const string FileName = "My file name";
+    private const string FileName = "customFilenameTextResourceKey";
 
     public PdfServiceTaskTests()
     {
@@ -26,7 +26,7 @@ public class PdfServiceTaskTests
                 new AltinnTaskExtension
                 {
                     TaskType = "pdf",
-                    PdfConfiguration = new AltinnPdfConfiguration { Filename = FileName },
+                    PdfConfiguration = new AltinnPdfConfiguration { FilenameTextResourceKey = FileName },
                 }
             );
 
@@ -56,8 +56,57 @@ public class PdfServiceTaskTests
                 x.GenerateAndStorePdf(
                     instance,
                     instance.Process.CurrentTask.ElementId,
-                    null,
                     FileName,
+                    It.IsAny<List<string>?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task Execute_Should_Pass_AutoPdfTaskIds_To_PdfService()
+    {
+        // Arrange
+        var taskIds = new List<string> { "Task_1", "Task_2", "Task_3" };
+
+        _processReaderMock
+            .Setup(x => x.GetAltinnTaskExtension("pdfTask"))
+            .Returns(
+                new AltinnTaskExtension
+                {
+                    TaskType = "pdf",
+                    PdfConfiguration = new AltinnPdfConfiguration
+                    {
+                        FilenameTextResourceKey = "customFilenameTextResourceKey",
+                        AutoPdfTaskIds = taskIds,
+                    },
+                }
+            );
+
+        var instance = new Instance
+        {
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "pdfTask" } },
+        };
+
+        var instanceMutatorMock = new Mock<IInstanceDataMutator>();
+        instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
+
+        var parameters = new ServiceTaskContext { InstanceDataMutator = instanceMutatorMock.Object };
+
+        var serviceTask = new PdfServiceTask(_pdfServiceMock.Object, _processReaderMock.Object, _loggerMock.Object);
+
+        // Act
+        await serviceTask.Execute(parameters);
+
+        // Assert
+        _pdfServiceMock.Verify(
+            x =>
+                x.GenerateAndStorePdf(
+                    instance,
+                    "pdfTask",
+                    "customFilenameTextResourceKey",
+                    taskIds,
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once

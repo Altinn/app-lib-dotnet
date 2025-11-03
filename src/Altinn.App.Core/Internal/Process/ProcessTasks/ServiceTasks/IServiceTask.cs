@@ -36,11 +36,29 @@ public sealed record ServiceTaskContext
 /// </summary>
 public abstract record ServiceTaskResult
 {
-    /// <summary>Creates a successful result.</summary>
+    /// <summary>
+    /// Creates a service task result representing successful execution.
+    /// </summary>
     public static ServiceTaskSuccessResult Success() => new();
 
-    /// <summary>Creates a failed result.</summary>
-    public static ServiceTaskFailedResult Failed() => new();
+    /// <summary>
+    /// Creates a service task result representing failed execution.
+    /// </summary>
+    /// <param name="errorHandling">Instructions to the process engine on how to handle this error</param>
+    public static ServiceTaskFailedResult Failed(ServiceTaskErrorHandling errorHandling) => new(errorHandling);
+
+    /// <summary>
+    /// Creates a service task result representing failed execution with instruction to abort the process next request.
+    /// </summary>
+    public static ServiceTaskFailedResult FailedAbortProcessNext() =>
+        new(new ServiceTaskErrorHandling(ServiceTaskErrorStrategy.AbortProcessNext, null));
+
+    /// <summary>
+    /// Creates a service task result representing failed execution with instruction to continue to the next element in the process.
+    /// </summary>
+    /// <param name="action">An optional action can be supplied for the process next call</param>
+    public static ServiceTaskFailedResult FailedContinueProcessNext(string? action = "reject") =>
+        new(new ServiceTaskErrorHandling(ServiceTaskErrorStrategy.ContinueProcessNext, action));
 }
 
 /// <summary>
@@ -51,4 +69,39 @@ public sealed record ServiceTaskSuccessResult : ServiceTaskResult;
 /// <summary>
 /// Represents a failed result of executing a service task.
 /// </summary>
-public sealed record ServiceTaskFailedResult : ServiceTaskResult;
+public sealed record ServiceTaskFailedResult : ServiceTaskResult
+{
+    /// <summary>
+    /// Instructions to the process engine on how to handle this error
+    /// </summary>
+    public ServiceTaskErrorHandling ErrorHandling { get; init; }
+
+    /// <inheritdoc cref="ServiceTaskResult.Failed"/>
+    public ServiceTaskFailedResult(ServiceTaskErrorHandling errorHandling)
+    {
+        ErrorHandling = errorHandling;
+    }
+}
+
+/// <summary>
+/// Instructions to the process engine on how to handle errors from service tasks.
+/// </summary>
+/// <param name="Strategy">Should the process engine stop the <c>process/next</c> execution?</param>
+/// <param name="Action">If proceeding with <c>process/next</c>, should we send an action? Defaults to <c>reject</c></param>
+public sealed record ServiceTaskErrorHandling(ServiceTaskErrorStrategy Strategy, string? Action = "reject");
+
+/// <summary>
+/// Strategy for handling errors from service tasks.
+/// </summary>
+public enum ServiceTaskErrorStrategy
+{
+    /// <summary>
+    /// Abort the process/next execution.
+    /// </summary>
+    AbortProcessNext,
+
+    /// <summary>
+    /// Move to the next task in the process.
+    /// </summary>
+    ContinueProcessNext,
+}

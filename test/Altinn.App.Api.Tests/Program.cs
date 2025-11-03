@@ -17,6 +17,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Sign;
+using Altinn.App.Tests.Common.Mocks;
 using AltinnCore.Authentication.JwtCookie;
 using App.IntegrationTests.Mocks.Services;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;

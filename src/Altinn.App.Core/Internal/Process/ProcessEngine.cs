@@ -6,6 +6,7 @@ using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
@@ -26,6 +27,8 @@ namespace Altinn.App.Core.Internal.Process;
 /// </summary>
 public class ProcessEngine : IProcessEngine
 {
+    private const int MaxNextIterationsAllowed = 100;
+
     private readonly IProcessReader _processReader;
     private readonly IProcessNavigator _processNavigator;
     private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
@@ -38,6 +41,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IValidationService _validationService;
+    private readonly IInstanceClient _instanceClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -52,6 +56,7 @@ public class ProcessEngine : IProcessEngine
         IServiceProvider serviceProvider,
         IProcessEngineAuthorizer processEngineAuthorizer,
         IValidationService validationService,
+        IInstanceClient instanceClient,
         ILogger<ProcessEngine> logger,
         Telemetry? telemetry = null
     )
@@ -65,6 +70,7 @@ public class ProcessEngine : IProcessEngine
         _authenticationContext = authenticationContext;
         _processEngineAuthorizer = processEngineAuthorizer;
         _validationService = validationService;
+        _instanceClient = instanceClient;
         _logger = logger;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
@@ -147,6 +153,79 @@ public class ProcessEngine : IProcessEngine
 
         using Activity? activity = _telemetry?.StartProcessNextActivity(instance, request.Action);
 
+        ProcessChangeResult result;
+        bool moveToNextTaskAutomatically;
+        bool firstIteration = true;
+        int iterationCount = 0;
+
+        do
+        {
+            if (iterationCount >= MaxNextIterationsAllowed)
+            {
+                _logger.LogError(
+                    "More than {MaxIterations} iterations detected in process for instance {InstanceId}. Possible loop in process definition.",
+                    MaxNextIterationsAllowed,
+                    instance.Id
+                );
+                var loopError = new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorType = ProcessErrorType.Internal,
+                    ErrorTitle = "Process loop detected",
+                    ErrorMessage =
+                        $"More than {MaxNextIterationsAllowed} iterations detected in process. Possible loop in process definition.",
+                };
+                activity?.SetProcessChangeResult(loopError);
+                return loopError;
+            }
+
+            // Fetch fresh instance on subsequent iterations
+            if (!firstIteration)
+            {
+                instance = await _instanceClient.GetInstance(instance);
+            }
+
+            // Only use action and actionOnBehalfOf on first iteration
+            var processNextRequest = new ProcessNextRequest
+            {
+                User = request.User,
+                Instance = instance,
+                Action = firstIteration ? request.Action : null,
+                ActionOnBehalfOf = firstIteration ? request.ActionOnBehalfOf : null,
+                Language = request.Language,
+            };
+
+            result = await ProcessNext(processNextRequest, ct);
+
+            if (!result.Success)
+            {
+                activity?.SetProcessChangeResult(result);
+                return result;
+            }
+
+            if (result.MutatedInstance is null)
+            {
+                throw new ProcessException(
+                    "ProcessNext returned successfully, but ProcessChangeResult.MutatedInstance is null. Conundrum."
+                );
+            }
+
+            moveToNextTaskAutomatically = IsServiceTask(result.MutatedInstance);
+            firstIteration = false;
+            iterationCount++;
+        } while (moveToNextTaskAutomatically);
+
+        activity?.SetProcessChangeResult(result);
+        return result;
+    }
+
+    /// <summary>
+    /// Internal method that performs a single process next operation without automatic service task handling.
+    /// </summary>
+    private async Task<ProcessChangeResult> ProcessNext(ProcessNextRequest request, CancellationToken ct = default)
+    {
+        Instance instance = request.Instance;
+
         if (
             !TryGetCurrentTaskIdAndAltinnTaskType(
                 instance,
@@ -155,7 +234,6 @@ public class ProcessEngine : IProcessEngine
             )
         )
         {
-            activity?.SetProcessChangeResult(invalidProcessStateError);
             return invalidProcessStateError;
         }
 
@@ -165,26 +243,26 @@ public class ProcessEngine : IProcessEngine
 
         if (!authorized)
         {
-            var result = new ProcessChangeResult
+            return new ProcessChangeResult
             {
                 Success = false,
                 ErrorType = ProcessErrorType.Unauthorized,
                 ErrorMessage =
-                    $"User is not authorized to perform process next. Task ID: {currentTaskId}. Task type: {altinnTaskType}. Action: {request.Action ?? "none"}.",
+                    $"User is not authorized to perform process next. Task ID: {LogSanitizer.Sanitize(currentTaskId)}. Task type: {LogSanitizer.Sanitize(altinnTaskType)}. Action: {LogSanitizer.Sanitize(request.Action ?? "none")}.",
             };
-            activity?.SetProcessChangeResult(result);
-            return result;
         }
 
         _logger.LogDebug(
             "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",
-            currentTaskId,
-            altinnTaskType,
+            LogSanitizer.Sanitize(currentTaskId),
+            LogSanitizer.Sanitize(altinnTaskType),
             LogSanitizer.Sanitize(request.Action ?? "none")
         );
 
         string checkedAction = request.Action ?? ConvertTaskTypeToAction(altinnTaskType);
-        var isServiceTask = false;
+        bool isServiceTask = false;
+        string? processNextAction = request.Action;
+
         // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
         if (request.Action is not "reject")
         {
@@ -192,7 +270,7 @@ public class ProcessEngine : IProcessEngine
             if (serviceTask is not null)
             {
                 isServiceTask = true;
-                ProcessChangeResult serviceTaskProcessChangeResult = await HandleServiceTask(
+                var (serviceTaskProcessChangeResult, serviceTaskResult) = await HandleServiceTask(
                     instance,
                     serviceTask,
                     request with
@@ -202,11 +280,20 @@ public class ProcessEngine : IProcessEngine
                     ct
                 );
 
-                if (!serviceTaskProcessChangeResult.Success)
+                var serviceTaskRequiresContinue =
+                    serviceTaskResult
+                        is ServiceTaskFailedResult
+                        {
+                            ErrorHandling.Strategy: ServiceTaskErrorStrategy.ContinueProcessNext
+                        };
+
+                if (!serviceTaskProcessChangeResult.Success && !serviceTaskRequiresContinue)
                 {
-                    activity?.SetProcessChangeResult(serviceTaskProcessChangeResult);
                     return serviceTaskProcessChangeResult;
                 }
+
+                // `processNextAction` should be null at this loop iteration, but regardless, the service task result takes precedence (which may very well evaluate to null).
+                processNextAction = (serviceTaskResult as ServiceTaskFailedResult)?.ErrorHandling.Action;
             }
             else
             {
@@ -216,14 +303,12 @@ public class ProcessEngine : IProcessEngine
 
                     if (userActionResult.ResultType is ResultType.Failure)
                     {
-                        var result = new ProcessChangeResult()
+                        return new ProcessChangeResult()
                         {
                             Success = false,
                             ErrorMessage = $"Action handler for action {LogSanitizer.Sanitize(request.Action)} failed!",
                             ErrorType = userActionResult.ErrorType,
                         };
-                        activity?.SetProcessChangeResult(result);
-                        return result;
                     }
                 }
             }
@@ -260,7 +345,7 @@ public class ProcessEngine : IProcessEngine
 
             if (errorCount > 0)
             {
-                var result = new ProcessChangeResult
+                return new ProcessChangeResult
                 {
                     Success = false,
                     ErrorType = ProcessErrorType.Conflict,
@@ -268,12 +353,10 @@ public class ProcessEngine : IProcessEngine
                     ErrorMessage = $"{errorCount} validation errors found for task {currentTaskId}",
                     ValidationIssues = validationIssues,
                 };
-                activity?.SetProcessChangeResult(result);
-                return result;
             }
         }
 
-        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, request.Action);
+        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, processNextAction);
 
         if (moveToNextResult.IsEndEvent)
         {
@@ -281,14 +364,25 @@ public class ProcessEngine : IProcessEngine
             await RunAppDefinedProcessEndHandlers(instance, moveToNextResult.ProcessStateChange?.Events);
         }
 
-        var changeResult = new ProcessChangeResult()
+        return new ProcessChangeResult(mutatedInstance: instance)
         {
             Success = true,
             ProcessStateChange = moveToNextResult.ProcessStateChange,
         };
+    }
 
-        activity?.SetProcessChangeResult(changeResult);
-        return changeResult;
+    /// <summary>
+    /// Check if the current task is a service task that should be automatically processed.
+    /// </summary>
+    private bool IsServiceTask(Instance instance)
+    {
+        if (instance.Process?.CurrentTask is null)
+        {
+            return false;
+        }
+
+        IServiceTask? serviceTask = CheckIfServiceTask(instance.Process.CurrentTask.AltinnTaskType);
+        return serviceTask is not null;
     }
 
     /// <inheritdoc/>
@@ -377,7 +471,7 @@ public class ProcessEngine : IProcessEngine
         return actionResult;
     }
 
-    private async Task<ProcessChangeResult> HandleServiceTask(
+    private async Task<(ProcessChangeResult, ServiceTaskResult?)> HandleServiceTask(
         Instance instance,
         IServiceTask serviceTask,
         ProcessNextRequest request,
@@ -388,15 +482,16 @@ public class ProcessEngine : IProcessEngine
 
         if (request.Action is not "write" && request.Action != serviceTask.Type) // serviceTask.Type is accepted to support custom service task types
         {
-            var result = new ProcessChangeResult()
-            {
-                ErrorTitle = "User action not supported!",
-                ErrorMessage =
-                    $"Service tasks do not support running user actions! Received action param {LogSanitizer.Sanitize(request.Action)}.",
-                ErrorType = ProcessErrorType.Conflict,
-            };
-
-            return result;
+            return (
+                new ProcessChangeResult
+                {
+                    ErrorTitle = "User action not supported!",
+                    ErrorMessage =
+                        $"Service tasks do not support running user actions! Received action param {LogSanitizer.Sanitize(request.Action)}.",
+                    ErrorType = ProcessErrorType.Conflict,
+                },
+                null
+            );
         }
 
         try
@@ -415,13 +510,16 @@ public class ProcessEngine : IProcessEngine
             {
                 _logger.LogError("Service task {ServiceTaskType} returned a failed result.", serviceTask.Type);
 
-                return new ProcessChangeResult()
-                {
-                    Success = false,
-                    ErrorTitle = "Service task failed!",
-                    ErrorMessage = $"Service task {serviceTask.Type} returned a failed result!",
-                    ErrorType = ProcessErrorType.Internal,
-                };
+                return (
+                    new ProcessChangeResult
+                    {
+                        Success = false,
+                        ErrorTitle = "Service task failed!",
+                        ErrorMessage = $"Service task {serviceTask.Type} returned a failed result!",
+                        ErrorType = ProcessErrorType.Internal,
+                    },
+                    result
+                );
             }
 
             if (cachedDataMutator.HasAbandonIssues)
@@ -435,20 +533,23 @@ public class ProcessEngine : IProcessEngine
             await cachedDataMutator.UpdateInstanceData(changes);
             await cachedDataMutator.SaveChanges(changes);
 
-            return new ProcessChangeResult { Success = true };
+            return (new ProcessChangeResult { Success = true }, result);
         }
         catch (Exception ex)
         {
             activity?.Errored(ex);
             _logger.LogError(ex, "Service task {ServiceTaskType} returned a failed result.", serviceTask.Type);
 
-            return new ProcessChangeResult()
-            {
-                Success = false,
-                ErrorTitle = "Service task failed!",
-                ErrorMessage = $"Service task {serviceTask.Type} failed with an exception!",
-                ErrorType = ProcessErrorType.Internal,
-            };
+            return (
+                new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorTitle = "Service task failed!",
+                    ErrorMessage = $"Service task {serviceTask.Type} failed with an exception!",
+                    ErrorType = ProcessErrorType.Internal,
+                },
+                null
+            );
         }
     }
 
@@ -681,7 +782,7 @@ public class ProcessEngine : IProcessEngine
         public bool IsEndEvent => ProcessStateChange?.NewProcessState?.Ended is not null;
     };
 
-    private static string ConvertTaskTypeToAction(string actionOrTaskType)
+    internal static string ConvertTaskTypeToAction(string actionOrTaskType)
     {
         switch (actionOrTaskType)
         {

@@ -270,32 +270,21 @@ public class ProcessController : ControllerBase
             Instance instance;
             ProcessChangeResult result;
 
-            bool moveToNextTaskAutomatically;
-            bool firstIteration = true;
-
-            do
+            var processNextRequest = new ProcessNextRequest
             {
-                instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+                User = User,
+                Instance = instance,
+                Action = processNext?.Action,
+                ActionOnBehalfOf = processNext?.ActionOnBehalfOf,
+                Language = language,
+            };
 
-                var processNextRequest = new ProcessNextRequest
-                {
-                    User = User,
-                    Instance = instance,
-                    Action = firstIteration ? processNext?.Action : null,
-                    ActionOnBehalfOf = firstIteration ? processNext?.ActionOnBehalfOf : null,
-                    Language = language,
-                };
+            ProcessChangeResult result = await _processEngine.Next(processNextRequest, ct);
 
-                result = await _processEngine.Next(processNextRequest, ct);
-
-                if (!result.Success)
-                {
-                    return GetResultForError(result);
-                }
-
-                moveToNextTaskAutomatically = IsServiceTask(instance);
-                firstIteration = false;
-            } while (moveToNextTaskAutomatically);
+            if (!result.Success)
+            {
+                return GetResultForError(result);
+            }
 
             AppProcessState appProcessState = await ConvertAndAuthorizeActions(
                 instance,
@@ -405,7 +394,7 @@ public class ProcessController : ControllerBase
                 {
                     Instance = instance,
                     User = User,
-                    Action = ConvertTaskTypeToAction(instance.Process.CurrentTask.AltinnTaskType),
+                    Action = ProcessEngine.ConvertTaskTypeToAction(instance.Process.CurrentTask.AltinnTaskType),
                     Language = language,
                 };
                 ProcessChangeResult result = await _processEngine.Next(request);
@@ -518,17 +507,6 @@ public class ProcessController : ControllerBase
         return appProcessState;
     }
 
-    private bool IsServiceTask(Instance instance)
-    {
-        if (instance.Process.CurrentTask is null)
-        {
-            return false;
-        }
-
-        IServiceTask? serviceTask = _processEngine.CheckIfServiceTask(instance.Process.CurrentTask.AltinnTaskType);
-        return serviceTask is not null;
-    }
-
     private ActionResult<AppProcessState> GetResultForError(ProcessChangeResult result)
     {
         switch (result.ErrorType)
@@ -582,6 +560,19 @@ public class ProcessController : ControllerBase
     private ObjectResult ExceptionResponse(Exception exception, string message)
     {
         _logger.LogError(exception, message);
+
+        if (exception is PlatformHttpResponseSnapshotException phse)
+        {
+            return StatusCode(
+                phse.StatusCode,
+                new ProblemDetails()
+                {
+                    Detail = phse.Message,
+                    Status = phse.StatusCode,
+                    Title = message,
+                }
+            );
+        }
 
         if (exception is PlatformHttpException phe)
         {
@@ -655,25 +646,6 @@ public class ProcessController : ControllerBase
     private async Task<List<UserAction>> AuthorizeActions(List<AltinnAction> actions, Instance instance)
     {
         return await _authorization.AuthorizeActions(instance, HttpContext.User, actions);
-    }
-
-    private static string ConvertTaskTypeToAction(string actionOrTaskType)
-    {
-        switch (actionOrTaskType)
-        {
-            case "data":
-            case "feedback":
-            case "pdf":
-            case "eFormidling":
-                return "write";
-            case "confirmation":
-                return "confirm";
-            case "signing":
-                return "sign";
-            default:
-                // Not any known task type, so assume it is an action type
-                return actionOrTaskType;
-        }
     }
 
     private ActionResult HandlePlatformHttpException(PlatformHttpException e, string defaultMessage)
