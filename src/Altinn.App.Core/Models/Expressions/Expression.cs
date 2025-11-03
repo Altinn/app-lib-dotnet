@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -15,29 +16,26 @@ namespace Altinn.App.Core.Models.Expressions;
 public readonly struct Expression : IEquatable<Expression>
 {
     /// <summary>
-    ///     Construct a value expression with the given value
+    ///     Construct a value expression with the given literal value
     /// </summary>
     /// <param name="value"></param>
     public Expression(ExpressionValue value)
     {
+        Function = ExpressionFunction.LITERAL_VALUE;
+        Args = null;
         ValueUnion = value;
-    }
-
-    /// <summary>
-    ///     Construct a value expression with the given value
-    /// </summary>
-    /// <param name="value"></param>
-    [Obsolete("Use the constructor with ExpressionValue instead")]
-    public Expression(object? value)
-    {
-        ValueUnion = ExpressionValue.FromObject(value);
     }
 
     /// <summary>
     /// Construct a function expression with the given function and arguments
     /// </summary>
-    public Expression(ExpressionFunction function, List<Expression>? args)
+    public Expression(ExpressionFunction function, Expression[] args)
     {
+        Debug.Assert(
+            function != ExpressionFunction.LITERAL_VALUE,
+            "Function cannot be LITERAL_VALUE when Args are provided"
+        );
+        Debug.Assert(args != null, "Args cannot be null when constructing a function expression");
         Function = function;
         Args = args;
     }
@@ -45,30 +43,60 @@ public readonly struct Expression : IEquatable<Expression>
     /// <summary>
     /// Construct a function expression with the given function and arguments
     /// </summary>
+    [Obsolete("Use the constructor with Expression[] instead")]
+    public Expression(ExpressionFunction function, List<Expression> args)
+        : this(function, args.ToArray()) { }
+
+    /// <summary>
+    ///     Construct a value expression with the given value
+    /// </summary>
+    /// <param name="value"></param>
+    [Obsolete("Use the constructor with ExpressionValue instead")]
+    public Expression(object? value)
+        : this(ExpressionValue.FromObject(value)) { }
+
+    /// <summary>
+    /// Construct a function expression with the given function and arguments
+    /// </summary>
     public Expression(ExpressionFunction function, Expression arg1)
-    {
-        Function = function;
-        Args = [arg1];
-    }
+        : this(function, new[] { arg1 }) { }
 
     /// <summary>
     /// Construct a function expression with the given function and arguments
     /// </summary>
     public Expression(ExpressionFunction function, Expression arg1, Expression arg2)
-    {
-        Function = function;
-        Args = [arg1, arg2];
-    }
+        : this(function, new[] { arg1, arg2 }) { }
 
     /// <summary>
     /// Test function to see if this is representing a function with args.
     /// </summary>
-    [MemberNotNullWhen(true, nameof(Function), nameof(Args))]
-#pragma warning disable CS0618 // Type or member is obsolete
-    [MemberNotNullWhen(false, nameof(Value))]
-#pragma warning restore CS0618 // Type or member is obsolete
-    [MemberNotNullWhen(false, nameof(ValueUnion))]
-    public bool IsFunctionExpression => Function != ExpressionFunction.INVALID && Args != null;
+    [MemberNotNullWhen(true, nameof(Args))]
+    [Obsolete("Use IsLiteralExpression instead")]
+    public bool IsFunctionExpression => !IsLiteralValue;
+
+    /// <summary>
+    /// Test to see if this expression must be evaluated or is just a literal value.
+    /// </summary>
+    [MemberNotNullWhen(false, nameof(Args))]
+    public bool IsLiteralValue
+    {
+        get
+        {
+            if (Args == null)
+            {
+                Debug.Assert(
+                    Function == ExpressionFunction.LITERAL_VALUE,
+                    "If Args is null, Function must be LITERAL_VALUE"
+                );
+                return true;
+            }
+            Debug.Assert(
+                Function != ExpressionFunction.LITERAL_VALUE,
+                "If Args is not null, Function must not be LITERAL_VALUE"
+            );
+            return false;
+        }
+    }
 
     /// <summary>
     /// Name of the function. Must be one those actually implemented in <see cref="ExpressionEvaluator" />
@@ -78,7 +106,7 @@ public readonly struct Expression : IEquatable<Expression>
     /// <summary>
     /// List of arguments to the function. These expressions will be evaluated before passed to the function.
     /// </summary>
-    public List<Expression>? Args { get; }
+    public Expression[]? Args { get; }
 
     /// <summary>
     /// Get the object value for backwards compatibility
