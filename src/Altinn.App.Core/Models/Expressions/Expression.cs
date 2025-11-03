@@ -31,11 +31,17 @@ public readonly struct Expression : IEquatable<Expression>
     /// </summary>
     public Expression(ExpressionFunction function, Expression[] args)
     {
-        Debug.Assert(
-            function != ExpressionFunction.LITERAL_VALUE,
-            "Function cannot be LITERAL_VALUE when Args are provided"
-        );
-        Debug.Assert(args != null, "Args cannot be null when constructing a function expression");
+        if (function == ExpressionFunction.LITERAL_VALUE)
+        {
+            throw new ArgumentException("Function LITERAL_VALUE cannot have arguments", nameof(function));
+        }
+        if (args == null)
+        {
+            throw new ArgumentNullException(
+                nameof(args),
+                "Args cannot be null when constructing a function expression"
+            );
+        }
         Function = function;
         Args = args;
     }
@@ -71,32 +77,14 @@ public readonly struct Expression : IEquatable<Expression>
     /// Test function to see if this is representing a function with args.
     /// </summary>
     [MemberNotNullWhen(true, nameof(Args))]
-    [Obsolete("Use IsLiteralExpression instead")]
+    [Obsolete("Use !IsLiteralValue instead")]
     public bool IsFunctionExpression => !IsLiteralValue;
 
     /// <summary>
     /// Test to see if this expression must be evaluated or is just a literal value.
     /// </summary>
     [MemberNotNullWhen(false, nameof(Args))]
-    public bool IsLiteralValue
-    {
-        get
-        {
-            if (Args == null)
-            {
-                Debug.Assert(
-                    Function == ExpressionFunction.LITERAL_VALUE,
-                    "If Args is null, Function must be LITERAL_VALUE"
-                );
-                return true;
-            }
-            Debug.Assert(
-                Function != ExpressionFunction.LITERAL_VALUE,
-                "If Args is not null, Function must not be LITERAL_VALUE"
-            );
-            return false;
-        }
-    }
+    public bool IsLiteralValue => Args == null;
 
     /// <summary>
     /// Name of the function. Must be one those actually implemented in <see cref="ExpressionEvaluator" />
@@ -143,7 +131,7 @@ public readonly struct Expression : IEquatable<Expression>
     public bool IsLiteralString => ValueUnion.ValueKind == JsonValueKind.String;
 
     /// <summary>
-    /// Overridden for better debugging experience
+    /// We have a custom JsonSerializer so this will return the json array representation of this expression
     /// </summary>
     public override string ToString()
     {
@@ -159,7 +147,7 @@ public readonly struct Expression : IEquatable<Expression>
         //     return false;
         //
         // // For function expressions, compare arguments
-        // if (IsFunctionExpression)
+        // if (!IsLiteralValue)
         // {
         //     if (other.Args == null || Args.Count != other.Args.Count)
         //         return false;
@@ -181,7 +169,7 @@ public readonly struct Expression : IEquatable<Expression>
     public override int GetHashCode()
     {
         throw new NotImplementedException();
-        // if (IsFunctionExpression)
+        // if (!IsLiteralValue)
         // {
         //     var hash = Function.GetHashCode();
         //     if (Args != null)

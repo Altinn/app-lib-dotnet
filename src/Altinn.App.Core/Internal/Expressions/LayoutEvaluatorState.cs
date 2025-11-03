@@ -401,7 +401,7 @@ public class LayoutEvaluatorState
 
     // private void GetModelErrorsForExpression(Expression expr, BaseComponent component, List<string> errors)
     // {
-    //     if (!expr.IsFunctionExpression)
+    //     if (expr.IsLiteralValue)
     //     {
     //         return;
     //     }

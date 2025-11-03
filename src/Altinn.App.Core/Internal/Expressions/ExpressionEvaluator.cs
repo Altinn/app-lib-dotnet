@@ -133,11 +133,9 @@ public static class ExpressionEvaluator
             ExpressionFunction.gatewayAction => state.GetGatewayAction(),
             ExpressionFunction.language => state.GetLanguage(),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
-                $"Function {expr.Args.FirstOrDefault()} not implemented in backend" + expr.ToString()
+                $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
-            _ => throw new UnreachableException(
-                $"Function {(int)expr.Function} not a valid enum value" + expr.ToString()
-            ),
+            _ => throw new UnreachableException($"Function {(int)expr.Function} not a valid enum value {expr}"),
         };
         return ret;
     }
@@ -777,7 +775,7 @@ public static class ExpressionEvaluator
         var all = true;
         foreach (var arg in args)
         {
-            // Ensure all args gets converted, because they might throw an Exception
+            // the LINQ All() method would short-circuit and not evaluate all args, so we do it manually to ensure exceptions are thrown correctly
             if (!PrepareBooleanArg(arg))
             {
                 all = false;
@@ -819,7 +817,7 @@ public static class ExpressionEvaluator
         bool any = false;
         foreach (var arg in args)
         {
-            // Ensure all args gets converted, because they might throw an Exception
+            // the LINQ Any() method would short-circuit and not evaluate all args, so we do it manually to ensure exceptions are thrown correctly
             if (PrepareBooleanArg(arg))
             {
                 any = true;
