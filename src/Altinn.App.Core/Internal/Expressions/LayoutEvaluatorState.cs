@@ -270,7 +270,7 @@ public class LayoutEvaluatorState
                 $"Failed to add indexes to path {binding.Field} with indexes "
                     + $"{(context.RowIndices is null ? "null" : string.Join(", ", context.RowIndices))} on {dataElementId}"
             );
-        ;
+
         return new DataReference() { Field = field, DataElementIdentifier = dataElementId };
     }
 

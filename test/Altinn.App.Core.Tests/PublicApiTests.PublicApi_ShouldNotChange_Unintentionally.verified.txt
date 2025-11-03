@@ -4435,7 +4435,7 @@ namespace Altinn.App.Core.Models.Expressions
         public Altinn.App.Core.Models.Expressions.Expression[]? Args { get; }
         public Altinn.App.Core.Models.Expressions.ExpressionFunction Function { get; }
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Args")]
-        [System.Obsolete("Use IsLiteralExpression instead")]
+        [System.Obsolete("Use !IsLiteralValue instead")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Args")]
         public bool IsFunctionExpression { get; }
         public bool IsLiteralString { get; }
