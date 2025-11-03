@@ -208,6 +208,12 @@ public sealed record FiksArkivSuccessHandlingSettings
     /// </summary>
     [JsonPropertyName("markInstanceComplete")]
     public bool MarkInstanceComplete { get; set; }
+
+    /// <summary>
+    /// Gets the action if set to an actual value, otherwise returns null.
+    /// </summary>
+    /// <remarks><c>IOptions</c> can on occasion deserialize null as empty string, which is undesirable.</remarks>
+    internal string? GetActionOrDefault() => string.IsNullOrWhiteSpace(Action) ? null : Action;
 }
 
 /// <summary>
@@ -228,6 +234,12 @@ public sealed record FiksArkivErrorHandlingSettings
     /// </summary>
     [JsonPropertyName("action")]
     public string? Action { get; set; } = "reject";
+
+    /// <summary>
+    /// Gets the action if set to an actual value, otherwise returns null.
+    /// </summary>
+    /// <remarks><c>IOptions</c> can on occasion deserialize null as empty string, which is undesirable.</remarks>
+    internal string? GetActionOrDefault() => string.IsNullOrWhiteSpace(Action) ? null : Action;
 }
 
 /// <summary>

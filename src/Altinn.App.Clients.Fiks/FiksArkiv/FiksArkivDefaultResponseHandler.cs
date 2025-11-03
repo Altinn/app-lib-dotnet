@@ -68,7 +68,7 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
         if (_fiksArkivSettings.SuccessHandling.MoveToNextTask)
             await _fiksArkivInstanceClient.ProcessMoveNext(
                 instanceIdentifier,
-                action: _fiksArkivSettings.SuccessHandling.Action,
+                action: _fiksArkivSettings.SuccessHandling.GetActionOrDefault(),
                 cancellationToken: cancellationToken
             );
 
@@ -104,7 +104,7 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
         if (_fiksArkivSettings.ErrorHandling.MoveToNextTask)
             await _fiksArkivInstanceClient.ProcessMoveNext(
                 new InstanceIdentifier(instance),
-                action: _fiksArkivSettings.ErrorHandling?.Action,
+                action: _fiksArkivSettings.ErrorHandling.GetActionOrDefault(),
                 cancellationToken: cancellationToken
             );
     }
