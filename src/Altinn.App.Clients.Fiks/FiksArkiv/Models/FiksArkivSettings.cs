@@ -434,6 +434,6 @@ public sealed record FiksArkivDataTypeSettings
     /// <summary>
     /// Gets the filename if set, otherwise derives a filename from the data type and the provided default extension.
     /// </summary>
-    internal string GetFilenameOrDefault(string defaultExtension = "xml") =>
+    public string GetFilenameOrDefault(string defaultExtension = "xml") =>
         !string.IsNullOrWhiteSpace(Filename) ? Filename : $"{DataType}.{defaultExtension.TrimStart('.')}";
 }

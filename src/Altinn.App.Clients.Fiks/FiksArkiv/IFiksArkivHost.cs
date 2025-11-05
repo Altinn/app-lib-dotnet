@@ -1,4 +1,5 @@
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
@@ -6,7 +7,7 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 /// <summary>
 /// Orchestrator of the sending and receiving of messages via Fiks Arkiv.
 /// </summary>
-internal interface IFiksArkivHost : IFiksArkivConfigValidation
+public interface IFiksArkivHost
 {
     /// <summary>
     /// Generates a message of the given type for the given instance and sends it via Fiks Arkiv.
@@ -23,5 +24,15 @@ internal interface IFiksArkivHost : IFiksArkivConfigValidation
         Instance instance,
         string messageType,
         CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Validates the configuration of the FIKS Arkiv client.
+    /// </summary>
+    /// <param name="configuredDataTypes">All datatypes defined in applicationmetadata.json.</param>
+    /// <param name="configuredProcessTasks">All process tasks defined in process.bpmn.</param>
+    Task ValidateConfiguration(
+        IReadOnlyList<DataType> configuredDataTypes,
+        IReadOnlyList<ProcessTask> configuredProcessTasks
     );
 }
