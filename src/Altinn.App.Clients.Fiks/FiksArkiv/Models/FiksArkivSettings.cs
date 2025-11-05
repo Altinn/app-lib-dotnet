@@ -370,7 +370,7 @@ public sealed record FiksArkivDataModelBinding
         DataType? dataType = dataTypes.FirstOrDefault(x => x.Id == DataType);
         if (dataType is null || string.IsNullOrWhiteSpace(dataType.AppLogic?.ClassRef))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(DataType)}->{DataType} mismatch with application data types. Available candidates are: {string.Join(",", dataTypes)}"
+                $"{propertyName}.{nameof(DataType)}->{DataType} mismatch with application data types. Available candidates are: {string.Join(", ", dataTypes.Select(x => x.Id))}"
             );
 
         if (string.IsNullOrWhiteSpace(Field))
