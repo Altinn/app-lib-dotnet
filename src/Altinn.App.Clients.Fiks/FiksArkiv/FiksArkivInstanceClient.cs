@@ -286,7 +286,6 @@ internal sealed class FiksArkivInstanceClient : IFiksArkivInstanceClient
         Exception? innerException = null
     )
     {
-        // TODO: Replace with new dispose-safe PlatformHttpException variant
         string errorMessage = $"{(int)response.StatusCode} {response.ReasonPhrase}: {content}";
         return new PlatformHttpException(response, errorMessage, innerException);
     }
