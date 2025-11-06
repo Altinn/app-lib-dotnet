@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Microsoft.AspNetCore.Mvc;
@@ -11,17 +12,17 @@ namespace Altinn.App.Api.Controllers;
 public class ResourceController : ControllerBase
 {
     private readonly IAppResources _appResourceService;
-    private readonly IInstanceContext _instanceContext;
+    private readonly AppImplementationFactory _appImplementationFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResourceController"/> class
     /// </summary>
     /// <param name="appResourcesService">The execution service</param>
-    /// <param name="instanceContext">The instance context</param>
-    public ResourceController(IAppResources appResourcesService, IInstanceContext instanceContext)
+    /// <param name="serviceProvider">The service provider</param>
+    public ResourceController(IAppResources appResourcesService, IServiceProvider serviceProvider)
     {
         _appResourceService = appResourcesService;
-        _instanceContext = instanceContext;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <summary>
@@ -75,7 +76,8 @@ public class ResourceController : ControllerBase
     }
 
     /// <summary>
-    /// Endpoint for layouts with instance context
+    /// Endpoint for layouts with instance context.
+    /// Uses ICustomLayoutForInstance if implemented with IAppResources as fallback.
     /// </summary>
     /// <param name="org"></param>
     /// <param name="app"></param>
@@ -86,7 +88,7 @@ public class ResourceController : ControllerBase
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "text/plain")]
     [HttpGet]
     [Route("{org}/{app}/instance/{instanceOwnerPartyId:int}/{instanceId}/layouts/{layoutSetId}")]
-    public ActionResult GetInstanceLayouts(
+    public async Task<ActionResult> GetInstanceLayouts(
         string org,
         string app,
         int instanceOwnerPartyId,
@@ -94,8 +96,16 @@ public class ResourceController : ControllerBase
         string layoutSetId
     )
     {
-        _instanceContext.InstanceId = instanceId;
-        _instanceContext.InstanceOwnerPartyId = instanceOwnerPartyId;
+        ICustomLayoutForInstance? customLayoutService = _appImplementationFactory.Get<ICustomLayoutForInstance>();
+        if (customLayoutService is not null)
+        {
+            string? customLayout = await customLayoutService.GetCustomLayoutForInstance(
+                layoutSetId,
+                instanceOwnerPartyId,
+                Guid.Parse(instanceId)
+            );
+            return Ok(customLayout);
+        }
         string layouts = _appResourceService.GetLayoutsForSet(layoutSetId);
         return Ok(layouts);
     }
