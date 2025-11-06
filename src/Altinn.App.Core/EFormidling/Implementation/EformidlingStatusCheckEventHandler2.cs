@@ -6,11 +6,14 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Maskinporten;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Models;
 using Altinn.Common.EFormidlingClient;
 using Altinn.Common.EFormidlingClient.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -32,6 +35,10 @@ public class EformidlingStatusCheckEventHandler2 : IEventHandler
 
     private readonly PlatformSettings _platformSettings;
     private readonly GeneralSettings _generalSettings;
+    private readonly AppSettings _appSettings;
+    private readonly IAppMetadata _appMetadata;
+    private readonly IProcessReader _processReader;
+    private readonly IHostEnvironment _hostEnvironment;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EformidlingStatusCheckEventHandler2"/> class.
@@ -44,7 +51,11 @@ public class EformidlingStatusCheckEventHandler2 : IEventHandler
         IMaskinportenTokenProvider maskinportenTokenProvider,
 #pragma warning restore CS0618
         IOptions<PlatformSettings> platformSettings,
-        IOptions<GeneralSettings> generalSettings
+        IOptions<GeneralSettings> generalSettings,
+        IOptions<AppSettings> appSettings,
+        IAppMetadata appMetadata,
+        IProcessReader processReader,
+        IHostEnvironment hostEnvironment
     )
     {
         _eFormidlingClient = eFormidlingClient;
@@ -53,6 +64,10 @@ public class EformidlingStatusCheckEventHandler2 : IEventHandler
         _maskinportenTokenProvider = maskinportenTokenProvider;
         _platformSettings = platformSettings.Value;
         _generalSettings = generalSettings.Value;
+        _appSettings = appSettings.Value;
+        _appMetadata = appMetadata;
+        _processReader = processReader;
+        _hostEnvironment = hostEnvironment;
     }
 
     /// <inheritDoc/>
@@ -64,6 +79,13 @@ public class EformidlingStatusCheckEventHandler2 : IEventHandler
         var subject = cloudEvent.Subject;
 
         _logger.LogInformation("Received reminder for subject {subject}", subject);
+
+        // Check if eFormidling is enabled before attempting to process the event
+        if (!await IsEFormidlingEnabled())
+        {
+            _logger.LogInformation("eFormidling is not enabled. Marking event as processed to prevent retries.");
+            return true;
+        }
 
         AppIdentifier appIdentifier = AppIdentifier.CreateFromUrl(cloudEvent.Source.ToString());
         InstanceIdentifier instanceIdentifier = InstanceIdentifier.CreateFromUrl(cloudEvent.Source.ToString());
@@ -162,6 +184,8 @@ public class EformidlingStatusCheckEventHandler2 : IEventHandler
         throw await PlatformHttpException.CreateAsync(response);
     }
 
+
+
     private async Task<string> GetOrganizationToken()
     {
         string scopes = "altinn:serviceowner/instances.read altinn:serviceowner/instances.write";
@@ -231,5 +255,52 @@ public class EformidlingStatusCheckEventHandler2 : IEventHandler
         }
 
         return (isError, errorMessage);
+    }
+
+    private async Task<bool> IsEFormidlingEnabled()
+    {
+        // Check if legacy eFormidling is enabled
+        if (_appSettings.EnableEFormidling)
+        {
+            ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
+            if (applicationMetadata.EFormidling != null)
+            {
+                _logger.LogDebug("Legacy eFormidling is enabled");
+                return true;
+            }
+        }
+
+        // Check if any service task has eFormidling enabled
+        HostingEnvironment env = AltinnEnvironments.GetHostingEnvironment(_hostEnvironment);
+        var processTasks = _processReader.GetProcessTasks();
+
+        foreach (var task in processTasks)
+        {
+            var taskExtension = _processReader.GetAltinnTaskExtension(task.Id);
+            if (taskExtension?.EFormidlingConfiguration != null)
+            {
+                try
+                {
+                    var config = taskExtension.EFormidlingConfiguration.Validate(env);
+                    if (!config.Disabled)
+                    {
+                        _logger.LogDebug("eFormidling service task found and enabled for task {TaskId}", task.Id);
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // If validation fails, we assume it's not properly configured for this environment
+                    _logger.LogDebug(
+                        ex,
+                        "eFormidling configuration validation failed for task {TaskId}. Treating as disabled for this environment.",
+                        task.Id
+                    );
+                }
+            }
+        }
+
+        _logger.LogDebug("No enabled eFormidling configuration found");
+        return false;
     }
 }

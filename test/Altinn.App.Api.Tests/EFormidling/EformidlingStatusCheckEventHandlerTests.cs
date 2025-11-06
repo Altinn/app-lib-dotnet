@@ -6,11 +6,16 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Infrastructure.Clients.Maskinporten;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Maskinporten;
+using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Models;
 using Altinn.Common.EFormidlingClient;
 using Altinn.Common.EFormidlingClient.Models;
+using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -120,6 +125,28 @@ public class EformidlingStatusCheckEventHandlerTests
         );
         var generalSettingsMock = new Mock<GeneralSettings>();
 
+        // Mock AppSettings with EnableEFormidling = true
+        var appSettingsMock = Options.Create(new AppSettings() { EnableEFormidling = true });
+
+        // Mock IAppMetadata with eFormidling configuration
+        var appMetadataMock = new Mock<IAppMetadata>();
+        appMetadataMock
+            .Setup(a => a.GetApplicationMetadata())
+            .ReturnsAsync(
+                new ApplicationMetadata("ttd/app")
+                {
+                    EFormidling = new EFormidlingContract { SendAfterTaskId = "Task_1" },
+                }
+            );
+
+        // Mock IProcessReader to return empty process tasks
+        var processReaderMock = new Mock<IProcessReader>();
+        processReaderMock.Setup(p => p.GetProcessTasks()).Returns(new List<ProcessTask>());
+
+        // Mock IHostEnvironment
+        var hostEnvironmentMock = new Mock<IHostEnvironment>();
+        hostEnvironmentMock.Setup(h => h.EnvironmentName).Returns("Development");
+
         IEventHandler eventHandler;
         if (useJwk)
         {
@@ -129,7 +156,11 @@ public class EformidlingStatusCheckEventHandlerTests
                 eFormidlingLoggerMock2.Object,
                 maskinPortenTokenProviderMock.Object,
                 platformSettingsMock,
-                Options.Create(generalSettingsMock.Object)
+                Options.Create(generalSettingsMock.Object),
+                appSettingsMock,
+                appMetadataMock.Object,
+                processReaderMock.Object,
+                hostEnvironmentMock.Object
             );
         }
         else
