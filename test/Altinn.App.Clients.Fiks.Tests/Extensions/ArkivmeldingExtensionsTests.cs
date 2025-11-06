@@ -60,7 +60,7 @@ public class ArkivmeldingExtensionsTests
         };
 
         // Act
-        var result = archiveRecord.SerializeXmlBytes(indent: true);
+        var result = archiveRecord.SerializeXml(indent: true);
         var xml = Encoding.UTF8.GetString(result.Span);
 
         // Assert

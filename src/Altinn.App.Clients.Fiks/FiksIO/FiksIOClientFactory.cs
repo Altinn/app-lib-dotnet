@@ -17,12 +17,10 @@ internal sealed class FiksIOClientFactory : IFiksIOClientFactory
         _maskinportenClient = maskinportenClient;
     }
 
-    public async Task<IExternalFiksIOClient> CreateClient(ExternalFiksIOConfiguration fiksConfiguration)
-    {
-        return await ExternalFiksIOClient.CreateAsync(
+    public async Task<IExternalFiksIOClient> CreateClient(ExternalFiksIOConfiguration fiksConfiguration) =>
+        await ExternalFiksIOClient.CreateAsync(
             configuration: fiksConfiguration,
             maskinportenClient: new FiksIOMaskinportenClient(_maskinportenClient),
             loggerFactory: _loggerFactory
         );
-    }
 }

@@ -63,9 +63,9 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         CancellationToken cancellationToken = default
     )
     {
-        if (messageType != FiksArkivConstants.MessageTypes.Create)
+        if (messageType != FiksArkivConstants.MessageTypes.CreateArchiveRecord)
             throw new FiksArkivException(
-                $"Unsupported message type: {messageType}. {nameof(FiksArkivDefaultPayloadGenerator)} can only handle {FiksArkivConstants.MessageTypes.Create} requests."
+                $"Unsupported message type: {messageType}. {nameof(FiksArkivDefaultPayloadGenerator)} can only handle {FiksArkivConstants.MessageTypes.CreateArchiveRecord} requests."
             );
 
         var appMetadata = await _appMetadata.GetApplicationMetadata();
@@ -162,7 +162,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
 
         if (!_hostEnvironment.IsProduction())
         {
-            string xmlResult = Encoding.UTF8.GetString(archiveRecord.SerializeXmlBytes(_indentXmlSerialization).Span);
+            string xmlResult = Encoding.UTF8.GetString(archiveRecord.SerializeXml(_indentXmlSerialization).Span);
             _logger.LogInformation(xmlResult);
         }
 

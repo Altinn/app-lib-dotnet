@@ -12,7 +12,7 @@ internal static class KorrespondansepartFactory
     /// </summary>
     /// <remarks>
     /// <c>partyName</c> and <c>partyId</c> are nullable only for caller convenience.
-    /// Null or empty values for these parameters will result in a FiksArkivConfigurationException.
+    /// Null or empty values for these parameters will result in a FiksArkivException.
     /// </remarks>
     public static Korrespondansepart CreateSender(
         string? partyId,
@@ -42,6 +42,9 @@ internal static class KorrespondansepartFactory
         return party;
     }
 
+    /// <summary>
+    /// Creates a Korrespondansepart of type InternAvsender (Internal Sender).
+    /// </summary>
     public static Korrespondansepart CreateInternalSender(string partyId, string partyName) =>
         new()
         {
@@ -59,7 +62,7 @@ internal static class KorrespondansepartFactory
     /// </summary>
     /// <remarks>
     /// <c>partyName</c> and <c>partyId</c> are nullable only for caller convenience.
-    /// Null or empty values for these parameters will result in a FiksArkivConfigurationException.
+    /// Null or empty values for these parameters will result in a FiksArkivException.
     /// </remarks>
     public static Korrespondansepart CreateRecipient(
         string? partyId,

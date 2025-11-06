@@ -70,12 +70,20 @@ internal sealed class FiksIOClient : IFiksIOClient
         CancellationToken cancellationToken = default
     )
     {
-        using Activity? activity = _telemetry?.StartSendFiksActivity();
+        using Activity? activity = _telemetry?.StartSendFiksActivity(
+            request.Recipient,
+            request.MessageType,
+            request.SendersReference,
+            request.InReplyToMessage,
+            request.CorrelationId
+        );
+
         _logger.LogInformation(
             "Sending Fiks IO message {MessageType}:{ClientMessageId}",
             request.MessageType,
             request.SendersReference
         );
+
         var numAttempts = 0;
 
         try

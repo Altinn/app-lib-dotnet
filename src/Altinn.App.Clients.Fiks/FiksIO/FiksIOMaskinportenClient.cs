@@ -27,53 +27,34 @@ internal sealed class FiksIOMaskinportenClient : IFiksMaskinportenClient
         return new TokenWrapper(token.Value, (int)expiresIn.TotalSeconds);
     }
 
-    public Task<FiksMaskinportenToken> GetAccessToken(TokenRequest tokenRequest)
-    {
-        return GetAccessToken([tokenRequest.Scopes]);
-    }
+    public Task<FiksMaskinportenToken> GetAccessToken(TokenRequest tokenRequest) =>
+        GetAccessToken([tokenRequest.Scopes]);
 
-    public Task<FiksMaskinportenToken> GetAccessToken(string scopes)
-    {
-        return GetAccessToken([scopes]);
-    }
+    public Task<FiksMaskinportenToken> GetAccessToken(string scopes) => GetAccessToken([scopes]);
 
-    public Task<FiksMaskinportenToken> GetDelegatedAccessToken(string consumerOrg, IEnumerable<string> scopes)
-    {
-        throw new NotImplementedException();
-    }
+    public Task<FiksMaskinportenToken> GetDelegatedAccessToken(string consumerOrg, IEnumerable<string> scopes) =>
+        throw new NotSupportedException();
 
-    public Task<FiksMaskinportenToken> GetDelegatedAccessToken(string consumerOrg, string scopes)
-    {
-        throw new NotImplementedException();
-    }
+    public Task<FiksMaskinportenToken> GetDelegatedAccessToken(string consumerOrg, string scopes) =>
+        throw new NotSupportedException();
 
     public Task<FiksMaskinportenToken> GetDelegatedAccessTokenForAudience(
         string consumerOrg,
         string audience,
         IEnumerable<string> scopes
-    )
-    {
-        throw new NotImplementedException();
-    }
+    ) => throw new NotSupportedException();
 
     public Task<FiksMaskinportenToken> GetDelegatedAccessTokenForAudience(
         string consumerOrg,
         string audience,
         string scopes
-    )
-    {
-        throw new NotImplementedException();
-    }
+    ) => throw new NotSupportedException();
 
-    public Task<FiksMaskinportenToken> GetOnBehalfOfAccessToken(string consumerOrg, IEnumerable<string> scopes)
-    {
-        throw new NotImplementedException();
-    }
+    public Task<FiksMaskinportenToken> GetOnBehalfOfAccessToken(string consumerOrg, IEnumerable<string> scopes) =>
+        throw new NotSupportedException();
 
-    public Task<FiksMaskinportenToken> GetOnBehalfOfAccessToken(string consumerOrg, string scopes)
-    {
-        throw new NotImplementedException();
-    }
+    public Task<FiksMaskinportenToken> GetOnBehalfOfAccessToken(string consumerOrg, string scopes) =>
+        throw new NotSupportedException();
 
     internal sealed class TokenWrapper : FiksMaskinportenToken
     {

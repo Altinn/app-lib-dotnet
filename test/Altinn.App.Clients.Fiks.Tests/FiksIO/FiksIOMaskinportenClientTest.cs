@@ -73,7 +73,7 @@ public class FiksIOMaskinportenClientTest
         await Task.WhenAll(
             unsupportedMethods.Select(async method =>
             {
-                await Assert.ThrowsAsync<NotImplementedException>(method);
+                await Assert.ThrowsAsync<NotSupportedException>(method);
             })
         );
     }

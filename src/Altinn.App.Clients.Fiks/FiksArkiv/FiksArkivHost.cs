@@ -116,6 +116,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
     )
     {
         _logger.LogInformation("Sending Fiks Arkiv message for instance {InstanceId}", instance.Id);
+        using Activity? mainActivity = _telemetry?.StartGenerateAndSendFiksActivity(taskId, instance, messageType);
 
         var instanceId = new InstanceIdentifier(instance.Id);
         var recipient = await _fiksArkivConfigResolver.GetRecipient(instance, cancellationToken);
@@ -179,7 +180,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
             {
                 _logger.LogWarning(
                     "No receipt payload found in Fiks message of type {ReceiptMessageType}. This is unexpected. Payloads were: {Payloads}",
-                    FiksArkivConstants.MessageTypes.CreateReceipt,
+                    FiksArkivConstants.MessageTypes.ArchiveRecordCreationReceipt,
                     payloads
                 );
                 return;
@@ -192,8 +193,12 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
     internal async Task IncomingMessageListener(FiksIOReceivedMessage message)
     {
         using Activity? mainActivity = _telemetry?.StartReceiveFiksActivity(
+            message.Message.Sender,
             message.Message.MessageId,
-            message.Message.MessageType
+            message.Message.MessageType,
+            message.Message.SendersReference,
+            message.Message.InReplyToMessage,
+            message.Message.CorrelationId
         );
 
         Instance? instance = null;
@@ -262,7 +267,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
     /// </summary>
     private static bool CurrentTaskIsFiksArkiv(Instance? instance) =>
         instance?.Process?.CurrentTask?.AltinnTaskType?.Equals(
-            FiksArkivServiceTask.TaskIdentifier,
+            FiksArkivServiceTask.Identifier,
             StringComparison.OrdinalIgnoreCase
         )
             is true;
@@ -307,7 +312,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
             _fiksArkivSettings.Receipt.ConfirmationRecord.DataType,
             "application/xml",
             _fiksArkivSettings.Receipt.ConfirmationRecord.GetFilenameOrDefault(),
-            receipt.Details.SerializeXmlBytes()
+            receipt.Details.SerializeXml()
         );
 
         _logger.LogInformation(

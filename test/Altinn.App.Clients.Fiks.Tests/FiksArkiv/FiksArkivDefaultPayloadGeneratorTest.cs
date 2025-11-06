@@ -55,7 +55,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
         [
             TestCase.Create(
                 testIdentifier: "1",
-                fiksArkivMessageType: FiksArkivConstants.MessageTypes.Create,
+                fiksArkivMessageType: FiksArkivConstants.MessageTypes.CreateArchiveRecord,
                 expectedAttachmentFilenames: ["model.xml", "ref-data-as-pdf.pdf"],
                 primaryDocumentSettings: Factories.DocumentSettings("model"),
                 attachmentSettings: [Factories.DocumentSettings("ref-data-as-pdf")],
@@ -67,7 +67,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
             ),
             TestCase.Create(
                 testIdentifier: "2",
-                fiksArkivMessageType: FiksArkivConstants.MessageTypes.Create,
+                fiksArkivMessageType: FiksArkivConstants.MessageTypes.CreateArchiveRecord,
                 expectedAttachmentFilenames: ["Form.xml", "Form.pdf", "receipt2.pdf", "letter.docx", "drawing_1a.jpg"],
                 primaryDocumentSettings: Factories.DocumentSettings("model", "Form.xml"),
                 attachmentSettings:
@@ -89,7 +89,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
             ),
             TestCase.Create(
                 testIdentifier: "3",
-                fiksArkivMessageType: FiksArkivConstants.MessageTypes.Create,
+                fiksArkivMessageType: FiksArkivConstants.MessageTypes.CreateArchiveRecord,
                 expectedAttachmentFilenames: ["Form.xml"],
                 primaryDocumentSettings: Factories.DocumentSettings("model", "Form.xml"),
                 attachmentSettings: [Factories.DocumentSettings("doesnt-exist")],
@@ -111,7 +111,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
             ),
             TestCase.Create(
                 testIdentifier: "4",
-                fiksArkivMessageType: FiksArkivConstants.MessageTypes.Create,
+                fiksArkivMessageType: FiksArkivConstants.MessageTypes.CreateArchiveRecord,
                 expectedAttachmentFilenames: ["Form.xml"],
                 primaryDocumentSettings: Factories.DocumentSettings("model", "Form.xml"),
                 attachmentSettings: null,
@@ -147,7 +147,10 @@ public class FiksArkivDefaultPayloadGeneratorTest
         var fixture = testCase.Fixture;
 
         // Act
-        var result = await fixture.GeneratePayload(_defaultInstance, FiksArkivConstants.MessageTypes.Create);
+        var result = await fixture.GeneratePayload(
+            _defaultInstance,
+            FiksArkivConstants.MessageTypes.CreateArchiveRecord
+        );
 
         // Assert
         Assert.NotNull(result);

@@ -40,11 +40,11 @@ internal sealed class FiksArkivDefaultResponseHandler : IFiksArkivResponseHandle
             payloads?.Select(x => x.Content) ?? ["Message contains no content."]
         );
 
-        if (message.Message.MessageType != FiksArkivConstants.MessageTypes.CreateReceipt)
+        if (message.Message.MessageType != FiksArkivConstants.MessageTypes.ArchiveRecordCreationReceipt)
         {
             _logger.LogInformation(
                 "We are only interested in {TargetMessageType} messages. Skipping further processing for message of type {MessageType}.",
-                FiksArkivConstants.MessageTypes.CreateReceipt,
+                FiksArkivConstants.MessageTypes.ArchiveRecordCreationReceipt,
                 message.Message.MessageType
             );
             return;

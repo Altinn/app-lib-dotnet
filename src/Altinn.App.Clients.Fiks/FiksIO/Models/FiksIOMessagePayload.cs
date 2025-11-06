@@ -47,10 +47,7 @@ public sealed record FiksIOMessagePayload
         return upperCase ? extension.ToUpperInvariant() : extension;
     }
 
-    internal IPayload ToPayload()
-    {
-        return new PayloadWrapper(Filename, Data);
-    }
+    internal IPayload ToPayload() => new PayloadWrapper(Filename, Data);
 
     private sealed record PayloadWrapper(string Filename, Stream Payload) : IPayload;
 }

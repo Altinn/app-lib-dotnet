@@ -30,12 +30,12 @@ public static class FiksArkivConstants
         /// <summary>
         /// Indicates a request to create a new archive record.
         /// </summary>
-        public const string Create = FiksArkivMeldingtype.ArkivmeldingOpprett;
+        public const string CreateArchiveRecord = FiksArkivMeldingtype.ArkivmeldingOpprett;
 
         /// <summary>
         /// Indicates a receipt for the creation of an archive record.
         /// </summary>
-        public const string CreateReceipt = FiksArkivMeldingtype.ArkivmeldingOpprettKvittering;
+        public const string ArchiveRecordCreationReceipt = FiksArkivMeldingtype.ArkivmeldingOpprettKvittering;
     }
 
     internal static class ClassificationId

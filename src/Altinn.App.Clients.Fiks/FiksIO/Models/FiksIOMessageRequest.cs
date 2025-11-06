@@ -26,9 +26,8 @@ public sealed record FiksIOMessageRequest(
     Dictionary<string, string>? Headers = null
 )
 {
-    internal MeldingRequest ToMeldingRequest(Guid sender)
-    {
-        return new MeldingRequest(
+    internal MeldingRequest ToMeldingRequest(Guid sender) =>
+        new(
             avsenderKontoId: sender,
             mottakerKontoId: Recipient,
             meldingType: MessageType,
@@ -38,10 +37,6 @@ public sealed record FiksIOMessageRequest(
             klientMeldingId: SendersReference,
             klientKorrelasjonsId: CorrelationId?.ToUrlSafeBase64()
         );
-    }
 
-    internal IList<IPayload> ToPayload()
-    {
-        return Payload.Select(a => a.ToPayload()).ToList();
-    }
+    internal IList<IPayload> ToPayload() => Payload.Select(a => a.ToPayload()).ToList();
 }

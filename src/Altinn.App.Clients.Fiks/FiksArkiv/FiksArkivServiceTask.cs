@@ -7,14 +7,14 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
 
-internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask
+internal sealed class FiksArkivServiceTask : IServiceTask
 {
     private readonly ILogger<FiksArkivServiceTask> _logger;
     private readonly IFiksArkivHost _fiksArkivHost;
     private readonly FiksArkivSettings _fiksArkivSettings;
 
-    internal const string TaskIdentifier = "fiksArkiv";
-    public string Type => TaskIdentifier;
+    internal const string Identifier = "fiksArkiv";
+    public string Type => Identifier;
 
     public FiksArkivServiceTask(
         IFiksArkivHost fiksArkivHost,
@@ -44,7 +44,7 @@ internal sealed class FiksArkivServiceTask : IFiksArkivServiceTask
             var response = await _fiksArkivHost.GenerateAndSendMessage(
                 taskId,
                 instance,
-                FiksArkivConstants.MessageTypes.Create
+                FiksArkivConstants.MessageTypes.CreateArchiveRecord
             );
 
             _logger.LogInformation(

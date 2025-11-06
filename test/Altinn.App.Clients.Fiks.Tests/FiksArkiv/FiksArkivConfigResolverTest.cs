@@ -446,7 +446,7 @@ public class FiksArkivConfigResolverTest
 
         // Assert
         Assert.NotNull(result);
-        var serialized = result.SerializeXmlBytes(indent: true);
+        var serialized = result.SerializeXml(indent: true);
         var xml = Encoding.UTF8.GetString(serialized.Span);
         await Verify(xml).UseDefaultSettings(testCaseNumber);
     }
@@ -502,7 +502,7 @@ public class FiksArkivConfigResolverTest
 
         // // Assert
         Assert.NotNull(result);
-        var serialized = result.SerializeXmlBytes(indent: true);
+        var serialized = result.SerializeXml(indent: true);
         var xml = Encoding.UTF8.GetString(serialized.Span);
         await Verify(xml).UseDefaultSettings(testCaseNumber);
     }
@@ -533,7 +533,7 @@ public class FiksArkivConfigResolverTest
 
         // Assert
         Assert.NotNull(result);
-        var serialized = result.SerializeXmlBytes(indent: true);
+        var serialized = result.SerializeXml(indent: true);
         var xml = Encoding.UTF8.GetString(serialized.Span);
         await Verify(xml).UseDefaultSettings(authType.Name.Split("+").Last());
     }
@@ -618,7 +618,7 @@ public class FiksArkivConfigResolverTest
 
         // Assert
         Assert.NotNull(result);
-        var serialized = result.SerializeXmlBytes(indent: true);
+        var serialized = result.SerializeXml(indent: true);
         var xml = Encoding.UTF8.GetString(serialized.Span);
         await Verify(xml).UseDefaultSettings(testCaseNumber);
     }

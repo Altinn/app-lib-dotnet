@@ -32,8 +32,8 @@ namespace Altinn.App.Clients.Fiks.Constants
         }
         public static class MessageTypes
         {
-            public const string Create = "no.ks.fiks.arkiv.v1.arkivering.arkivmelding.opprett";
-            public const string CreateReceipt = "no.ks.fiks.arkiv.v1.arkivering.arkivmelding.opprett.kvittering";
+            public const string ArchiveRecordCreationReceipt = "no.ks.fiks.arkiv.v1.arkivering.arkivmelding.opprett.kvittering";
+            public const string CreateArchiveRecord = "no.ks.fiks.arkiv.v1.arkivering.arkivmelding.opprett";
         }
     }
     public static class FiksIOConstants

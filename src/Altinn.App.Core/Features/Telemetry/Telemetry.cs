@@ -228,6 +228,31 @@ public sealed partial class Telemetry : IDisposable
         /// Label for the Fiks Message type.
         /// </summary>
         public const string FiksMessageType = "fiks.message.type";
+
+        /// <summary>
+        /// Label for the Fiks Message sender account.
+        /// </summary>
+        public const string FiksMessageSender = "fiks.message.sender";
+
+        /// <summary>
+        /// Label for the Fiks Message recipient account.
+        /// </summary>
+        public const string FiksMessageRecipient = "fiks.message.recipient";
+
+        /// <summary>
+        /// Label for the Fiks Message this was sent in reply to.
+        /// </summary>
+        public const string FiksInReplyToMessage = "fiks.message.inReplyTo";
+
+        /// <summary>
+        /// Label for the Fiks Message senders internal reference.
+        /// </summary>
+        public const string FiksSendersReference = "fiks.message.sendersReference";
+
+        /// <summary>
+        /// Label for the Fiks Message correlation id.
+        /// </summary>
+        public const string FiksMessageCorrelationId = "fiks.message.correlationId";
     }
 
     internal static class InternalLabels

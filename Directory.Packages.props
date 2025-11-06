@@ -65,7 +65,6 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="Xunit.Combinatorial" Version="1.6.24" />
     <PackageVersion Include="System.IO.Hashing" Version="9.0.10" />
-    <PackageVersion Include="Polly.Testing" Version="8.5.2" />
     <PackageVersion Include="PublicApiGenerator" Version="11.5.0" />
   </ItemGroup>
   <ItemGroup>
@@ -77,8 +76,9 @@
     <!-- End JWTCookieAuthentication deps -->
   </ItemGroup>
   <ItemGroup>
-    <PackageVersion Include="KS.Fiks.Arkiv.Models.V1" Version="1.0.4" />
-    <PackageVersion Include="KS.Fiks.IO.Client" Version="6.0.0" />
-    <PackageVersion Include="Polly.Extensions" Version="8.5.2" />
+    <PackageVersion Include="KS.Fiks.Arkiv.Models.V1" Version="1.0.7" />
+    <PackageVersion Include="KS.Fiks.IO.Client" Version="6.1.0" />
+    <PackageVersion Include="Polly.Extensions" Version="8.6.4" />
+    <PackageVersion Include="Polly.Testing" Version="8.6.4" />
   </ItemGroup>
 </Project>

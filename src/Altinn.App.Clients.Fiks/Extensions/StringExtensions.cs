@@ -1,28 +1,10 @@
 using System.Text;
-using System.Xml;
-using System.Xml.Serialization;
 using Altinn.App.Clients.Fiks.Exceptions;
 
 namespace Altinn.App.Clients.Fiks.Extensions;
 
 internal static class StringExtensions
 {
-    /// <summary>
-    /// Deserializes an XML string to an object of a given type.
-    /// </summary>
-    public static T? DeserializeXml<T>(this string xml)
-        where T : class
-    {
-        if (string.IsNullOrWhiteSpace(xml))
-            return null;
-
-        var serializer = new XmlSerializer(typeof(T));
-        using var stringReader = new StringReader(xml);
-        using var xmlReader = XmlReader.Create(stringReader);
-
-        return serializer.Deserialize(xmlReader) as T;
-    }
-
     /// <summary>
     /// Converts a text string to a URL safe base64 encoded string.
     /// </summary>

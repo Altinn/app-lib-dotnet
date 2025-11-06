@@ -89,7 +89,9 @@ internal sealed record TestFixture(
     public IFiksArkivInstanceClient FiksArkivInstanceClient =>
         App.Services.GetRequiredService<IFiksArkivInstanceClient>();
     public IServiceTask FiksArkivServiceTask =>
-        AppImplementationFactory.GetAll<IServiceTask>().First(x => x is IFiksArkivServiceTask);
+        AppImplementationFactory
+            .GetAll<IServiceTask>()
+            .First(x => x.Type == Altinn.App.Clients.Fiks.FiksArkiv.FiksArkivServiceTask.Identifier);
     public ResiliencePipeline<FiksIOMessageResponse> FiksIOResiliencePipeline =>
         App.Services.ResolveResiliencePipeline();
     public IFiksIOClientFactory FiksIOClientFactory => App.Services.GetRequiredService<IFiksIOClientFactory>();
