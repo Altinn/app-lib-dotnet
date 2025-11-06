@@ -53,7 +53,7 @@ public class FiksIOMaskinportenClientTest
     }
 
     [Fact]
-    public async Task UnsupportedMethods_ThrowNotImplementedException()
+    public async Task UnsupportedMethods_ThrowNotSupportedException()
     {
         // Arrange
         var altinnMaskinportenClientMock = new Mock<IAltinnMaskinportenClient>();

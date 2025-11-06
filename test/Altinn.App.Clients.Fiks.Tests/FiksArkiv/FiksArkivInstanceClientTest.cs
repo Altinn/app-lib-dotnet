@@ -234,6 +234,7 @@ public class FiksArkivInstanceClientTest
         // Arrange
         await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
         var data = "test content"u8.ToArray();
+        var dataStream = new MemoryStream(data);
         var dataElement = new DataElement
         {
             Id = Guid.NewGuid().ToString(),
@@ -263,7 +264,7 @@ public class FiksArkivInstanceClientTest
             dataElement.DataType,
             dataElement.ContentType,
             dataElement.Filename,
-            new MemoryStream(data)
+            dataStream
         );
 
         // Assert
@@ -272,6 +273,7 @@ public class FiksArkivInstanceClientTest
         Assert.Equal(dataElement.DataType, result.DataType);
         Assert.Equal(dataElement.ContentType, result.ContentType);
         Assert.Equal(dataElement.Filename, result.Filename);
+        Assert.True(dataStream.CanRead);
 
         var insertBinaryDataRequest = requests.Last();
         Assert.Equal(HttpMethod.Post, insertBinaryDataRequest.Request.Method);

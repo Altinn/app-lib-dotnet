@@ -56,5 +56,5 @@ internal static class StringExtensions
     public static string? EnsureNotEmpty(this string? input, string paramName) =>
         input is null || input.Length > 0
             ? input
-            : throw new FiksArkivException($"Property cannot be null or empty: {paramName}");
+            : throw new FiksArkivException($"Property cannot be empty: {paramName}");
 }
