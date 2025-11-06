@@ -62,7 +62,7 @@ public class PdfService : IPdfService
     {
         using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
 
-        await GenerateAndStorePdfInternal(instance, taskId, null, null, ct);
+        await GenerateAndStorePdfInternal(instance, taskId, null, null, null, null, ct);
     }
 
     /// <inheritdoc/>
@@ -80,7 +80,30 @@ public class PdfService : IPdfService
             instance,
             taskId,
             customFileNameTextResourceKey,
+            null,
+            null,
             autoGeneratePdfForTaskIds,
+            ct
+        );
+    }
+
+    /// <inheritdoc/>
+    public async Task GenerateAndStoreSubformPdfs(
+        Instance instance,
+        string taskId,
+        string? customFileNameTextResourceKey,
+        string subformComponentId,
+        string subformDataElementId,
+        CancellationToken ct
+    )
+    {
+        await GenerateAndStorePdfInternal(
+            instance,
+            taskId,
+            customFileNameTextResourceKey,
+            subformComponentId,
+            subformDataElementId,
+            null,
             ct
         );
     }
@@ -96,7 +119,7 @@ public class PdfService : IPdfService
 
         var language = GetOverriddenLanguage(queries) ?? await auth.GetLanguage();
 
-        return await GeneratePdfContent(instance, language, isPreview, null, ct);
+        return await GeneratePdfContent(instance, language, isPreview, null, null, null, ct);
     }
 
     /// <inheritdoc/>
@@ -109,6 +132,8 @@ public class PdfService : IPdfService
         Instance instance,
         string taskId,
         string? customFileNameTextResourceKey,
+        string? subformComponentId,
+        string? subformDataElementId,
         List<string>? autoGeneratePdfForTaskIds = null,
         CancellationToken ct = default
     )
@@ -123,6 +148,8 @@ public class PdfService : IPdfService
             instance,
             language,
             false,
+            subformComponentId,
+            subformDataElementId,
             autoGeneratePdfForTaskIds,
             ct
         );
@@ -143,6 +170,8 @@ public class PdfService : IPdfService
         Instance instance,
         string language,
         bool isPreview,
+        string? subformComponentId,
+        string? subformDataElementId,
         List<string>? autoGeneratePdfForTaskIds,
         CancellationToken ct
     )
@@ -156,7 +185,15 @@ public class PdfService : IPdfService
             autoGeneratePdfForTaskIds
         );
 
-        Uri uri = BuildUri(baseUrl, pagePath, language, autoPdfTaskIdsQueryParams);
+        Uri uri = BuildUri(
+            instance.Process?.CurrentTask?.ElementId ?? string.Empty,
+            baseUrl,
+            pagePath,
+            language,
+            subformComponentId,
+            subformDataElementId,
+            autoPdfTaskIdsQueryParams
+        );
 
         bool displayFooter = _pdfGeneratorSettings.DisplayFooter;
 
@@ -177,15 +214,35 @@ public class PdfService : IPdfService
     }
 
     private static Uri BuildUri(
+        string currentTaskId,
         string baseUrl,
         string pagePath,
         string language,
+        string? subformComponentId,
+        string? subformDataElementId,
         List<KeyValuePair<string, string>>? additionalQueryParams = null
     )
     {
         // Uses string manipulation instead of UriBuilder, since UriBuilder messes up
         // query parameters in combination with hash fragments in the url.
         string url = baseUrl + pagePath;
+
+        if (!string.IsNullOrEmpty(subformComponentId) && !string.IsNullOrEmpty(subformDataElementId))
+        {
+            // Remove the ?pdf=1 part temporarily to insert subform segments
+            int pdfIndex = url.IndexOf("?pdf=1", StringComparison.OrdinalIgnoreCase);
+            if (pdfIndex > 0)
+            {
+                string beforePdf = $"{url[..pdfIndex]}/{currentTaskId}/subform";
+                string afterPdf = url[pdfIndex..];
+                url = $"{beforePdf}/{subformComponentId}/{subformDataElementId}/{afterPdf}";
+            }
+            else
+            {
+                url += $"/{currentTaskId}/subform/{subformComponentId}/{subformDataElementId}";
+            }
+        }
+
         string lang = Uri.EscapeDataString(language);
         if (url.Contains('?'))
         {
