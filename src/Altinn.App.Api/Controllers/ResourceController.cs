@@ -79,12 +79,12 @@ public class ResourceController : ControllerBase
     /// Endpoint for layouts with instance context.
     /// Uses ICustomLayoutForInstance if implemented with IAppResources as fallback.
     /// </summary>
-    /// <param name="org"></param>
-    /// <param name="app"></param>
-    /// <param name="instanceOwnerPartyId"></param>
-    /// <param name="instanceId"></param>
-    /// <param name="layoutSetId"></param>
-    /// <returns></returns>
+    /// <param name="org">The application owner short name</param>
+    /// <param name="app">The application name</param>
+    /// <param name="instanceOwnerPartyId">The instance owner party id</param>
+    /// <param name="instanceId">The instance id</param>
+    /// <param name="layoutSetId">The layout set id</param>
+    /// <returns>A collection of FormLayout objects in JSON format.</returns>
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "text/plain")]
     [HttpGet]
     [Route("{org}/{app}/instance/{instanceOwnerPartyId:int}/{instanceId}/layouts/{layoutSetId}")]
