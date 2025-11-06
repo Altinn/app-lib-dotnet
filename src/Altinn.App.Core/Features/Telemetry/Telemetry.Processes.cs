@@ -49,7 +49,6 @@ partial class Telemetry
         return activity;
     }
 
-    // TODO: Does this belong here? Re Fiks, eFormidling and the like...
     internal Activity? StartApiProcessNextActivity(InstanceIdentifier instanceIdentifier)
     {
         var activity = ActivitySource.StartActivity($"{Prefix}.ApiNext");
@@ -57,7 +56,6 @@ partial class Telemetry
         return activity;
     }
 
-    // TODO: Does this belong here? Re Fiks, eFormidling and the like...
     internal Activity? StartApiProcessCompleteActivity(InstanceIdentifier instanceIdentifier)
     {
         var activity = ActivitySource.StartActivity($"{Prefix}.ApiComplete");
