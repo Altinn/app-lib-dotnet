@@ -1,7 +1,10 @@
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Options.Altinn2Provider;
+using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 using Altinn.App.Core.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Options;
 
@@ -42,8 +45,8 @@ public static class CommonOptionProviderServiceCollectionExtensions
     )
     {
         if (
-            !serviceCollection.Any(serviceDescriptor =>
-                serviceDescriptor.ServiceType == typeof(Altinn2MetadataApiClient)
+            serviceCollection.All(serviceDescriptor =>
+                serviceDescriptor.ServiceType != typeof(Altinn2MetadataApiClient)
             )
         )
         {
@@ -58,6 +61,25 @@ public static class CommonOptionProviderServiceCollectionExtensions
             filter,
             metadataApiId,
             codeListVersion
+        ));
+        return serviceCollection;
+    }
+
+    public static IServiceCollection AddAltinn3CodeList(
+        this IServiceCollection serviceCollection,
+        string optionid,
+        string org,
+        string codeListId,
+        string? version = null
+    )
+    {
+        serviceCollection.AddSingleton<IAppOptionsProvider>(sp => new Altinn3LibraryOptionsProvider(
+            optionid,
+            org,
+            codeListId,
+            version,
+            sp.GetRequiredService<IHttpClientFactory>(),
+            sp.GetRequiredService<IOptions<PlatformSettings>>()
         ));
         return serviceCollection;
     }

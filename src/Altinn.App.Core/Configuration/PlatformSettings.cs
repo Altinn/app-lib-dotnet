@@ -64,4 +64,10 @@ public class PlatformSettings
 #nullable disable
     public string SubscriptionKey { get; set; }
 #nullable restore
+
+    /// <summary>
+    /// Url to Altinn3 library api endpoint that serves shared and updated resources like codelists...
+    /// </summary>
+    public string Altinn3LibraryApiEndpoint { get; set; } =
+        "https://studiostagingsc.blob.core.windows.net/studiostagingsharedcontentcontainer/";
 }
