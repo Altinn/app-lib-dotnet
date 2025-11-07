@@ -153,12 +153,11 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection ConfigureMaskinportenClient(
         this IServiceCollection services,
         Action<MaskinportenSettings> configureOptions
-    )
-    {
-        services.AddOptions<MaskinportenSettings>().Configure(configureOptions).ValidateDataAnnotations();
-
-        return services;
-    }
+    ) =>
+        Altinn.App.Core.Features.Maskinporten.Extensions.ServiceCollectionExtensions.ConfigureMaskinportenClient(
+            services,
+            configureOptions
+        );
 
     /// <summary>
     /// <p>Binds a <see cref="MaskinportenClient"/> configuration to the supplied config section path.</p>
@@ -170,12 +169,11 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection ConfigureMaskinportenClient(
         this IServiceCollection services,
         string configSectionPath
-    )
-    {
-        services.AddOptions<MaskinportenSettings>().BindConfiguration(configSectionPath).ValidateDataAnnotations();
-
-        return services;
-    }
+    ) =>
+        Altinn.App.Core.Features.Maskinporten.Extensions.ServiceCollectionExtensions.ConfigureMaskinportenClient(
+            services,
+            configSectionPath
+        );
 
     /// <summary>
     /// Adds Application Insights to the service collection.
