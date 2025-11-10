@@ -85,9 +85,9 @@ public class ResourceController : ControllerBase
     /// <param name="instanceId">The instance id</param>
     /// <param name="layoutSetId">The layout set id</param>
     /// <returns>A collection of FormLayout objects in JSON format.</returns>
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "text/plain")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "application/json")]
     [HttpGet]
-    [Route("{org}/{app}/instance/{instanceOwnerPartyId:int}/{instanceId}/layouts/{layoutSetId}")]
+    [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceId}/layouts/{layoutSetId}")]
     public async Task<ActionResult> GetInstanceLayouts(
         string org,
         string app,

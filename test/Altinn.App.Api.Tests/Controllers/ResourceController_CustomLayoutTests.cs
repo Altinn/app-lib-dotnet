@@ -39,7 +39,7 @@ public class ResourceController_CustomLayoutTests : ApiTestBase, IClassFixture<W
 
         TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
         var response = await client.GetAsync(
-            $"/{org}/{app}/instance/{instanceOwnerPartyId}/{instanceGuid}/layouts/{layoutSetId}"
+            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/layouts/{layoutSetId}"
         );
 
         response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -59,7 +59,7 @@ public class ResourceController_CustomLayoutTests : ApiTestBase, IClassFixture<W
 
         TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
         var response = await client.GetAsync(
-            $"/{org}/{app}/instance/{instanceOwnerPartyId}/{instanceGuid}/layouts/{layoutSetId}"
+            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/layouts/{layoutSetId}"
         );
 
         response.Should().HaveStatusCode(HttpStatusCode.OK);
