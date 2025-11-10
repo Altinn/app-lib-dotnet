@@ -55,6 +55,7 @@
   Response: {
     Id: ttd/basic,
     Features: {
+      addInstanceIdentifierToLayoutRequests: false,
       footer: true,
       jsonObjectInDataResponse: false,
       processActions: true
