@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Internal.App;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -42,9 +41,9 @@ public class ResourceController_CustomLayoutTests : ApiTestBase, IClassFixture<W
             $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/layouts/{layoutSetId}"
         );
 
-        response.Should().HaveStatusCode(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
-        content.Should().Be(instanceGuid.ToString());
+        Assert.Equal(instanceGuid.ToString(), content);
     }
 
     [Fact]
@@ -62,15 +61,15 @@ public class ResourceController_CustomLayoutTests : ApiTestBase, IClassFixture<W
             $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/layouts/{layoutSetId}"
         );
 
-        response.Should().HaveStatusCode(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         using var jsonDoc = JsonDocument.Parse(content);
         var root = jsonDoc.RootElement;
-        root.ValueKind.Should().Be(JsonValueKind.Object);
-        root.TryGetProperty("page", out var pageLayout).Should().BeTrue();
-        pageLayout.TryGetProperty("data", out var data).Should().BeTrue();
-        data.TryGetProperty("layout", out var layout).Should().BeTrue();
-        layout.ValueKind.Should().Be(JsonValueKind.Array);
-        layout.GetArrayLength().Should().BeGreaterThan(0);
+        Assert.Equal(JsonValueKind.Object, root.ValueKind);
+        Assert.True(root.TryGetProperty("page", out var pageLayout));
+        Assert.True(pageLayout.TryGetProperty("data", out var data));
+        Assert.True(data.TryGetProperty("layout", out var layout));
+        Assert.Equal(JsonValueKind.Array, layout.ValueKind);
+        Assert.True(layout.GetArrayLength() > 0);
     }
 }
