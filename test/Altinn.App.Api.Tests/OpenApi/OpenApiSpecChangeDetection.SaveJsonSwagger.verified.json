@@ -5176,6 +5176,74 @@
         }
       }
     },
+    "/{org}/{app}/instance/{instanceOwnerPartyId}/{instanceId}/layouts/{layoutSetId}": {
+      "get": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Endpoint for layouts with instance context.\nUses ICustomLayoutForInstance if implemented with IAppResources as fallback.",
+        "parameters": [
+          {
+            "name": "org",
+            "in": "path",
+            "description": "The application owner short name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "description": "The application name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "instanceOwnerPartyId",
+            "in": "path",
+            "description": "The instance owner party id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "instanceId",
+            "in": "path",
+            "description": "The instance id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "layoutSetId",
+            "in": "path",
+            "description": "The layout set id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/{org}/{app}/api/layoutsettings": {
       "get": {
         "tags": [
