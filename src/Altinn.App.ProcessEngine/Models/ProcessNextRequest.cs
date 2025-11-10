@@ -7,7 +7,7 @@ public sealed record ProcessNextRequest(
     IEnumerable<ProcessEngineCommandRequest> Tasks
 )
 {
-    public ProcessEngineRequest ToProcessEngineRequest(InstanceInformation instanceInformation) =>
+    internal ProcessEngineRequest ToProcessEngineRequest(InstanceInformation instanceInformation) =>
         new(
             $"{instanceInformation.InstanceGuid}-next-from-{CurrentElementId}-to-{DesiredElementId}",
             instanceInformation,

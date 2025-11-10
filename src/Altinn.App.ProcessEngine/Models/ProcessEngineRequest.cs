@@ -3,7 +3,7 @@ namespace Altinn.App.ProcessEngine.Models;
 /// <summary>
 /// A request to enqueue one or more task in the process engine.
 /// </summary>
-public record ProcessEngineRequest(
+internal record ProcessEngineRequest(
     string JobIdentifier,
     InstanceInformation InstanceInformation,
     ProcessEngineActor ProcessEngineActor,

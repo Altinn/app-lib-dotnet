@@ -27,7 +27,8 @@ internal sealed class InitializeTaskHandler : IProcessEngineCallbackHandler
     /// </summary>
     public string Key => "InitializeTask";
 
-    public InitializeTaskHandler(ILogger<InitializeTaskHandler> logger,
+    public InitializeTaskHandler(
+        ILogger<InitializeTaskHandler> logger,
         IAppMetadata appMetadata,
         IPrefill prefillService,
         IAppModel appModel,
@@ -45,11 +46,7 @@ internal sealed class InitializeTaskHandler : IProcessEngineCallbackHandler
 
     public async Task<ProcessEngineCallbackHandlerResult> Execute(ProcessEngineCallbackHandlerParameters parameters)
     {
-        await Initialize(
-            parameters.InstanceDataMutator.Instance.Process.CurrentTask.ElementId,
-            parameters.InstanceDataMutator.Instance,
-            null
-        );
+        await Initialize(parameters.InstanceDataMutator, null);
 
         return new SuccessfulProcessEngineCallbackHandlerResult();
     }
@@ -79,26 +76,20 @@ internal sealed class InitializeTaskHandler : IProcessEngineCallbackHandler
                 continue;
             }
 
-            var data = _appModel.Create(dataType.AppLogic.ClassRef);
+            object data = _appModel.Create(dataType.AppLogic.ClassRef);
 
             // runs prefill from repo configuration if config exists
             await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, dataType.Id, data, prefill);
             var instantiationProcessor = _appImplementationFactory.GetRequired<IInstantiationProcessor>();
             await instantiationProcessor.DataCreation(instance, data, prefill);
 
-            Type type = _appModel.GetModelType(dataType.AppLogic.ClassRef);
-
             ObjectUtils.InitializeAltinnRowId(data);
             ObjectUtils.PrepareModelForXmlStorage(data);
 
-            DataElement createdDataElement = await _dataClient.InsertFormData(instance, dataType.Id, data, type);
-            instance.Data ??= [];
-            instance.Data.Add(createdDataElement);
+            instanceDataMutator.AddFormDataElement(dataType.Id, data);
 
             await UpdatePresentationTextsOnInstance(instance, dataType.Id, data);
             await UpdateDataValuesOnInstance(instance, dataType.Id, data);
-
-            _logger.LogDebug("Created data element: {CreatedDataElementId}", createdDataElement.Id);
         }
     }
 

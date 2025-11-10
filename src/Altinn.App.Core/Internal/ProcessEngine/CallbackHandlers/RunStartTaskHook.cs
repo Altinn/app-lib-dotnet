@@ -26,10 +26,7 @@ internal sealed class RunStartTaskHook : IProcessEngineCallbackHandler
             return new SuccessfulProcessEngineCallbackHandlerResult();
         }
 
-        var hookParameters = new StartTaskParameters
-        {
-            InstanceDataMutator = parameters.InstanceDataMutator
-        };
+        var hookParameters = new StartTaskParameters { InstanceDataMutator = parameters.InstanceDataMutator };
 
         await hook.ExecuteAsync(hookParameters);
 

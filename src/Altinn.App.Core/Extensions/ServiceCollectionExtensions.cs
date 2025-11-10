@@ -347,7 +347,7 @@ public static class ServiceCollectionExtensions
     private static void AddProcessServices(IServiceCollection services)
     {
         services.AddTransient<IProcessExclusiveGateway, ExpressionsExclusiveGateway>();
-        services.TryAddTransient<IProcessEngine, ProcessEngine>();
+        services.TryAddTransient<IProcessEngine, Internal.Process.ProcessEngine>();
         services.TryAddTransient<IProcessEngineAuthorizer, ProcessEngineAuthorizer>();
         services.TryAddTransient<IProcessNavigator, ProcessNavigator>();
         services.TryAddSingleton<IProcessReader, ProcessReader>();
