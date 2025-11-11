@@ -27,7 +27,11 @@ internal partial class ProcessEngine
             );
 
         await AcquireQueueSlot(cancellationToken); // Only acquire slots for public requests
-        await EnqueueJob(ProcessEngineJob.FromRequest(request), true, cancellationToken);
+        await EnqueueJob(
+            job: ProcessEngineJob.FromRequest(request),
+            updateDatabase: true,
+            cancellationToken: cancellationToken
+        );
 
         return ProcessEngineResponse.Accepted();
     }

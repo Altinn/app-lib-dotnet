@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace Altinn.App.ProcessEngine.Models;
 
 internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
@@ -15,9 +13,6 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
 
     // TODO: Find a better name for this
     public Task<ProcessEngineExecutionResult>? ExecutionTask { get; set; }
-
-    [MemberNotNullWhen(true, nameof(ExecutionTask))]
-    public bool IsExecuting => ExecutionTask is not null;
 
     public static ProcessEngineTask FromRequest(
         ProcessEngineCommandRequest request,

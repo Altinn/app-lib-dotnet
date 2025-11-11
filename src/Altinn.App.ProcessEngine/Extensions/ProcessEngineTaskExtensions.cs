@@ -37,9 +37,4 @@ internal static class ProcessEngineTaskExtensions
         IsReadyForExecution(task, timeProvider.GetUtcNow());
 
     public static bool IsDone(this ProcessEngineTask task) => task.Status.IsDone();
-
-    public static void Save(this ProcessEngineTask task, Func<ProcessEngineTask, Task> saveTask)
-    {
-        task.DatabaseTask = saveTask(task);
-    }
 }

@@ -1,9 +1,7 @@
 using System.Collections.Concurrent;
-using System.Globalization;
 using Altinn.App.ProcessEngine.Constants;
 using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

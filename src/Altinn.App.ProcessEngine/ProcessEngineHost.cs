@@ -28,6 +28,9 @@ internal sealed class ProcessEngineHost(IServiceProvider serviceProvider) : Back
             await Task.Delay(healthCheckInterval, stoppingToken);
             var status = _processEngine.Status;
 
+            if (status.IsDisabled())
+                continue;
+
             if (status.HasFullQueue())
                 _logger.LogWarning(
                     "Process engine has backpressure, processing queue is full ({InboxCount}). Current status: {HealthStatus}",
@@ -35,7 +38,7 @@ internal sealed class ProcessEngineHost(IServiceProvider serviceProvider) : Back
                     status
                 );
 
-            if (status.IsDisabled() || status.IsHealthy())
+            if (status.IsHealthy())
             {
                 if (failCount > 0)
                     _logger.LogInformation(
@@ -45,23 +48,22 @@ internal sealed class ProcessEngineHost(IServiceProvider serviceProvider) : Back
 
                 failCount = 0;
                 _logger.LogDebug("Process engine inbox count: {InboxCount}", _processEngine.InboxCount);
+                continue;
             }
-            else
-            {
-                _logger.LogWarning("Process engine is unhealthy. Current status: {HealthStatus}", status);
 
-                failCount++;
-                if (failCount >= maxFailsAllowed)
-                {
-                    _logger.LogCritical(
-                        "The process engine has failed {FailCount} times. Shutting down host.",
-                        failCount
-                    );
-                    throw new ProcessEngineCriticalException(
-                        "Critical failure in ProcessEngineHost. Forcing application shutdown."
-                    );
-                }
+            failCount++;
+            _logger.LogWarning("Process engine is unhealthy. Current status: {HealthStatus}", status);
+
+            if (failCount >= maxFailsAllowed)
+            {
+                _logger.LogCritical("The process engine has failed {FailCount} times. Shutting down host.", failCount);
+                throw new ProcessEngineCriticalException(
+                    "Critical failure in ProcessEngineHost. Forcing application shutdown."
+                );
             }
+
+            _logger.LogWarning("Forcing process engine restart");
+            await _processEngine.Start(stoppingToken);
         }
 
         _logger.LogInformation("Process engine host shutting down.");

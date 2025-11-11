@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace Altinn.App.ProcessEngine.Models;
 
 internal abstract record ProcessEngineDatabaseItem : IDisposable
@@ -9,9 +7,6 @@ internal abstract record ProcessEngineDatabaseItem : IDisposable
     public required DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset? UpdatedAt { get; set; }
     public Task? DatabaseTask { get; set; }
-
-    [MemberNotNullWhen(true, nameof(DatabaseTask))]
-    public bool IsUpdatingDatabase => DatabaseTask is not null;
 
     public override string ToString() => $"{GetType().Name}: {Identifier} ({Status})";
 
