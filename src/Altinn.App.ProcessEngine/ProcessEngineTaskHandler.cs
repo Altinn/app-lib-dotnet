@@ -36,7 +36,9 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
             return task.Command switch
             {
                 ProcessEngineCommand.AppCommand cmd => await AppCommand(cmd, task, cts.Token),
-                _ => throw new InvalidOperationException($"Unknown instruction: {task.Command}"),
+                ProcessEngineCommand.Noop => ProcessEngineExecutionResult.Success(),
+                ProcessEngineCommand.Throw => throw new InvalidOperationException("Intentional error thrown"),
+                _ => throw new ArgumentException($"Unknown instruction: {task.Command}"),
             };
         }
         catch (Exception e)

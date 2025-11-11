@@ -7,7 +7,8 @@ public record ProcessEngineRequest(
     string JobIdentifier,
     InstanceInformation InstanceInformation,
     ProcessEngineActor ProcessEngineActor,
-    IEnumerable<ProcessEngineCommandRequest> Tasks
+    IEnumerable<ProcessEngineCommandRequest> Tasks,
+    DateTimeOffset? CreatedAt = null
 )
 {
     // TODO: Implement some basic validation here

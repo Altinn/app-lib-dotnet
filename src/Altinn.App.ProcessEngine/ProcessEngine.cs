@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Altinn.App.ProcessEngine.Exceptions;
 using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.Extensions.Options;
@@ -22,7 +23,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IProcessEngineTaskHandler _taskHandler;
-    private readonly Buffer<bool> _enabledStatusHistory = new();
+    private readonly Buffer<bool> _isEnabledHistory = new();
     private readonly SemaphoreSlim _cleanupLock = new(1, 1);
     private readonly ProcessEngineRetryStrategy _statusCheckBackoffStrategy = new(
         ProcessEngineBackoffType.Exponential,
@@ -67,10 +68,10 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
             cancellationToken
         );
 
-        await _enabledStatusHistory.Add(placeholderEnabledResponse);
+        await _isEnabledHistory.Add(placeholderEnabledResponse);
 
-        var latest = await _enabledStatusHistory.Latest();
-        var previous = await _enabledStatusHistory.Previous();
+        var latest = await _isEnabledHistory.Latest();
+        var previous = await _isEnabledHistory.Previous();
 
         // Populate queue if we just transitioned from disabled to enabled
         if (latest is true && previous is false)
@@ -79,7 +80,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
         // Progressive backoff we have been disabled for two or more consecutive checks
         if (latest is false && previous is false)
         {
-            int iteration = await _enabledStatusHistory.ConsecutiveCount(x => !x);
+            int iteration = await _isEnabledHistory.ConsecutiveCount(x => !x);
             var backoffDelay = _statusCheckBackoffStrategy.CalculateDelay(iteration);
 
             _logger.LogInformation("Process engine is disabled. Backing off for {BackoffDelay}", backoffDelay);
@@ -156,6 +157,43 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
     {
         _logger.LogDebug("Processing job: {Job}", job);
 
+        switch (job.DatabaseUpdateStatus())
+        {
+            // Process the tasks
+            case ProcessEngineTaskStatus.None:
+                await ProcessTasks(job, cancellationToken);
+                job.Status = job.OverallStatus();
+                job.DatabaseTask = UpdateJobInStorage(job, cancellationToken);
+                return;
+
+            // Waiting on database operation to finish
+            case ProcessEngineTaskStatus.Started:
+                _logger.LogDebug("Job is waiting for database operation to complete");
+                return;
+
+            // Database operation is finished
+            case ProcessEngineTaskStatus.Finished:
+                job.CleanupDatabaseTask();
+                break;
+
+            default:
+                throw new ProcessEngineException($"Unknown database update status: {job.DatabaseUpdateStatus()}");
+        }
+
+        // Job still has work pending (requeued tasks, etc)
+        if (!job.IsDone())
+        {
+            _logger.LogDebug("Job {Job} is still has tasks processing. Leaving in queue for next iteration", job);
+            return;
+        }
+
+        // Job is done (success or permanent failure). Remove and release queue slot
+        RemoveJobAndReleaseQueueSlot(job);
+        _logger.LogDebug("Job {Job} is done", job);
+    }
+
+    private async Task ProcessTasks(ProcessEngineJob job, CancellationToken cancellationToken)
+    {
         foreach (var task in job.OrderedIncompleteTasks())
         {
             _logger.LogDebug("Processing task: {Task}", task);
@@ -167,83 +205,68 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
                 break;
             }
 
-            // Already processing and not finished
-            if (task.ExecutionTask?.IsCompleted is false)
+            // We are waiting for database operations
+            if (task.IsUpdatingDatabase)
             {
-                _logger.LogDebug("Task is already processing, but not yet finished");
-                break;
-            }
+                // Database operation still in progress
+                if (task.DatabaseUpdateStatus() != ProcessEngineTaskStatus.Finished)
+                {
+                    _logger.LogDebug("Task is waiting for database operation to complete");
+                    break;
+                }
 
-            // Execute job instructions
-            task.ExecutionTask ??= _taskHandler.Execute(task, cancellationToken);
-
-            // Background wait
-            if (!task.ExecutionTask.IsCompleted)
-            {
-                _logger.LogDebug("Performing background wait for task {Task}", task);
-                task.Status = ProcessEngineItemStatus.Processing; // Don't persist this, we're dependent on the in-memory task anyway
-                break;
-            }
-
-            var result = await task.ExecutionTask.WaitAsync(cancellationToken);
-
-            // Success
-            if (result.IsSuccess())
-            {
-                await TaskSucceeded(task);
+                // Database operation completed. Cleanup and move to next step
+                task.CleanupDatabaseTask();
                 continue;
             }
 
-            // Error
-            await TaskFailed(task);
-            break;
-        }
-
-        // Job needs requeue or is done
-        job.Status = job.OverallStatus();
-        await UpdateJobInStorage(job, cancellationToken);
-
-        if (job.Status.IsDone())
-        {
-            _logger.LogDebug("Job {Job} is done", job);
-            RemoveJobAndReleaseQueueSlot(job);
-        }
-        else
-        {
-            _logger.LogDebug("Job {Job} is still processing", job);
-        }
-
-        return;
-
-        async Task TaskSucceeded(ProcessEngineTask task)
-        {
-            _logger.LogDebug("Task {Task} completed successfully", task);
-            task.ExecutionTask?.Dispose();
-            task.ExecutionTask = null;
-            task.Status = ProcessEngineItemStatus.Completed;
-            await UpdateTaskInStorage(task, cancellationToken);
-        }
-
-        async Task TaskFailed(ProcessEngineTask task)
-        {
-            task.RequeueCount++;
-            task.ExecutionTask?.Dispose();
-            task.ExecutionTask = null;
-
-            var retryStrategy = task.RetryStrategy ?? Settings.DefaultTaskRetryStrategy;
-            if (retryStrategy.CanRetry(task.RequeueCount))
+            // We are waiting for the execution task
+            if (task.IsExecuting)
             {
-                _logger.LogDebug("Requeuing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
-                task.Status = ProcessEngineItemStatus.Requeued;
-                task.BackoffUntil = _timeProvider.GetUtcNow().Add(retryStrategy.CalculateDelay(task.RequeueCount));
-            }
-            else
-            {
-                _logger.LogError("Failing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
-                task.Status = ProcessEngineItemStatus.Failed;
+                // Already processing and not finished
+                if (task.ExecutionStatus() != ProcessEngineTaskStatus.Finished)
+                {
+                    _logger.LogDebug("Task is already processing, but not yet finished");
+                    break;
+                }
+
+                // Execution completed, unwrap result and handle outcome
+                var result = await task.ExecutionTask;
+
+                if (result.IsSuccess())
+                {
+                    _logger.LogDebug("Task {Task} completed successfully", task);
+                    task.Status = ProcessEngineItemStatus.Completed;
+                }
+                else
+                {
+                    task.RequeueCount++;
+
+                    var retryStrategy = task.RetryStrategy ?? Settings.DefaultTaskRetryStrategy;
+                    if (retryStrategy.CanRetry(task.RequeueCount))
+                    {
+                        _logger.LogDebug("Requeuing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
+                        task.Status = ProcessEngineItemStatus.Requeued;
+                        task.BackoffUntil = _timeProvider
+                            .GetUtcNow()
+                            .Add(retryStrategy.CalculateDelay(task.RequeueCount));
+                    }
+                    else
+                    {
+                        _logger.LogError("Failing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
+                        task.Status = ProcessEngineItemStatus.Failed;
+                    }
+                }
+
+                // Cleanup and update database
+                task.CleanupExecutionTask();
+                task.Save(x => UpdateTaskInStorage(x, cancellationToken));
+
+                break;
             }
 
-            await UpdateTaskInStorage(task, cancellationToken);
+            // Execute the task
+            task.ExecutionTask = _taskHandler.Execute(task, cancellationToken);
         }
     }
 }

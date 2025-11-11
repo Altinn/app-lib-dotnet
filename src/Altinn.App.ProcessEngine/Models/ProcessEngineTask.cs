@@ -1,19 +1,23 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Altinn.App.ProcessEngine.Models;
 
-internal sealed record ProcessEngineTask
+internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
 {
-    public string Identifier => Command.Identifier;
-    public ProcessEngineItemStatus Status { get; set; }
     public required int ProcessingOrder { get; init; }
     public required ProcessEngineCommand Command { get; init; }
     public required InstanceInformation InstanceInformation { get; init; }
     public required ProcessEngineActor ProcessEngineActor { get; init; }
     public DateTimeOffset? StartTime { get; init; }
-    public DateTimeOffset? LastUpdate { get; set; }
     public DateTimeOffset? BackoffUntil { get; set; }
     public ProcessEngineRetryStrategy? RetryStrategy { get; init; }
     public int RequeueCount { get; set; }
+
+    // TODO: Find a better name for this
     public Task<ProcessEngineExecutionResult>? ExecutionTask { get; set; }
+
+    [MemberNotNullWhen(true, nameof(ExecutionTask))]
+    public bool IsExecuting => ExecutionTask is not null;
 
     public static ProcessEngineTask FromRequest(
         ProcessEngineCommandRequest request,
@@ -22,6 +26,8 @@ internal sealed record ProcessEngineTask
     ) =>
         new()
         {
+            Identifier = $"{request.InstanceInformation.InstanceGuid}/{request.Command}",
+            CreatedAt = request.CreatedAt ?? DateTimeOffset.UtcNow, // TODO: Hmm...
             ProcessEngineActor = processEngineActor,
             StartTime = request.StartTime,
             ProcessingOrder = index,
@@ -36,4 +42,10 @@ internal sealed record ProcessEngineTask
         other?.Identifier.Equals(Identifier, StringComparison.OrdinalIgnoreCase) is true;
 
     public override int GetHashCode() => Identifier.GetHashCode();
+
+    public new void Dispose()
+    {
+        ExecutionTask?.Dispose();
+        DatabaseTask?.Dispose();
+    }
 }

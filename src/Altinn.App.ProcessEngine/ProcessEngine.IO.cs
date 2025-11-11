@@ -20,7 +20,7 @@ internal partial class ProcessEngine
         if (_mainLoopTask is null)
             return ProcessEngineResponse.Rejected("Process engine is not running. Did you call Start()?");
 
-        var enabled = await _enabledStatusHistory.Latest() ?? await ShouldRun(cancellationToken);
+        var enabled = await _isEnabledHistory.Latest() ?? await ShouldRun(cancellationToken);
         if (!enabled)
             return ProcessEngineResponse.Rejected(
                 "Process engine is currently inactive. Did you call the right instance?"
@@ -41,7 +41,8 @@ internal partial class ProcessEngine
         _logger.LogDebug("(internal) Enqueuing job {Job}. Update database: {UpdateDb}", job, updateDatabase);
 
         // TODO: persist to database if `updateDatabase` is true
-        await Task.CompletedTask;
+        if (updateDatabase)
+            await TempRandomDelay(cancellationToken: cancellationToken);
 
         _inbox[job.Identifier] = job;
     }
@@ -51,25 +52,31 @@ internal partial class ProcessEngine
         return _inbox.ContainsKey(jobIdentifier);
     }
 
-    private Task PopulateJobsFromStorage(CancellationToken cancellationToken)
+    private async Task PopulateJobsFromStorage(CancellationToken cancellationToken)
     {
         // TODO: Populate the queue from the database. This must be a resilient call to db
         _logger.LogDebug("Populating jobs from storage");
-        return Task.CompletedTask;
+        await TempRandomDelay(cancellationToken: cancellationToken);
     }
 
-    private Task UpdateJobInStorage(ProcessEngineJob job, CancellationToken cancellationToken)
+    private async Task UpdateJobInStorage(ProcessEngineJob job, CancellationToken cancellationToken)
     {
         // TODO: Should we update the `Instance` with something here too? Like if the job has failed, etc
         // TODO: This must be a resilient call to db
         _logger.LogDebug("Updating job in storage: {Job}", job);
-        return Task.CompletedTask;
+        await TempRandomDelay(cancellationToken: cancellationToken);
     }
 
-    private Task UpdateTaskInStorage(ProcessEngineTask task, CancellationToken cancellationToken)
+    private async Task UpdateTaskInStorage(ProcessEngineTask task, CancellationToken cancellationToken)
     {
         // TODO: This must be a resilient call to db
         _logger.LogDebug("Updating task in storage: {Task}", task);
-        return Task.CompletedTask;
+        await TempRandomDelay(cancellationToken: cancellationToken);
     }
+
+    private static async Task TempRandomDelay(
+        int minMs = 50,
+        int maxMs = 500,
+        CancellationToken cancellationToken = default
+    ) => await Task.Delay(Random.Shared.Next(minMs, maxMs), cancellationToken);
 }

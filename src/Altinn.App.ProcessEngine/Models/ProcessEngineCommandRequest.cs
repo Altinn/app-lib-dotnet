@@ -7,5 +7,6 @@ public sealed record ProcessEngineCommandRequest(
     InstanceInformation InstanceInformation,
     ProcessEngineCommand Command,
     DateTimeOffset? StartTime = null,
-    ProcessEngineRetryStrategy? RetryStrategy = null
+    ProcessEngineRetryStrategy? RetryStrategy = null,
+    DateTimeOffset? CreatedAt = null
 );

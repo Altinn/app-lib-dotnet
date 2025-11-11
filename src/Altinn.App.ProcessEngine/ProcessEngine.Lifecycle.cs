@@ -120,7 +120,7 @@ internal partial class ProcessEngine
             _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = null;
 
-            await _enabledStatusHistory.Clear();
+            await _isEnabledHistory.Clear();
 
             _inbox.Clear();
             _inboxCapacityLimit.Dispose();
@@ -141,7 +141,7 @@ internal partial class ProcessEngine
         _disposed = true;
         _cancellationTokenSource?.Dispose();
         _mainLoopTask?.Dispose();
-        _enabledStatusHistory.Dispose();
+        _isEnabledHistory.Dispose();
         _cleanupLock.Dispose();
         _inboxCapacityLimit.Dispose();
     }

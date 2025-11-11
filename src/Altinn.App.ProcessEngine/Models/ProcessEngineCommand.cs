@@ -15,4 +15,14 @@ public abstract record ProcessEngineCommand
     {
         public override string Identifier => CommandKey;
     };
+
+    public sealed record Throw : ProcessEngineCommand
+    {
+        public override string Identifier => Guid.NewGuid().ToString();
+    }
+
+    public sealed record Noop : ProcessEngineCommand
+    {
+        public override string Identifier => Guid.NewGuid().ToString();
+    }
 }
