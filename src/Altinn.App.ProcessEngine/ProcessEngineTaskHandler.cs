@@ -48,8 +48,8 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
             var result = task.Command switch
             {
                 ProcessEngineCommand.AppCommand cmd => await AppCommand(cmd, job, task, cts.Token),
-                ProcessEngineCommand.Delay cmd => await Task.Delay(cmd.Duration, cts.Token)
-                    .ContinueWith(_ => ProcessEngineExecutionResult.Success(), cts.Token),
+                ProcessEngineCommand.Delay cmd => await Delay(cmd, job, task, cts.Token),
+                ProcessEngineCommand.Callback cmd => await Callback(cmd, job, task, cts.Token),
                 ProcessEngineCommand.Noop => ProcessEngineExecutionResult.Success(),
                 ProcessEngineCommand.Throw => throw new InvalidOperationException("Intentional error thrown"),
                 _ => throw new ArgumentException($"Unknown instruction: {task.Command}"),
@@ -93,6 +93,32 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
             JsonContent.Create(payload),
             cancellationToken
         );
+
+        return response.IsSuccessStatusCode
+            ? ProcessEngineExecutionResult.Success()
+            : ProcessEngineExecutionResult.Error("uh oh");
+    }
+
+    private async Task<ProcessEngineExecutionResult> Delay(
+        ProcessEngineCommand.Delay command,
+        ProcessEngineJob job,
+        ProcessEngineTask task,
+        CancellationToken cancellationToken
+    )
+    {
+        await Task.Delay(command.Duration, cancellationToken);
+        return ProcessEngineExecutionResult.Success();
+    }
+
+    private async Task<ProcessEngineExecutionResult> Callback(
+        ProcessEngineCommand.Callback command,
+        ProcessEngineJob job,
+        ProcessEngineTask task,
+        CancellationToken cancellationToken
+    )
+    {
+        using var httpClient = _httpClientFactory.CreateClient();
+        using var response = await httpClient.GetAsync(command.Uri, cancellationToken);
 
         return response.IsSuccessStatusCode
             ? ProcessEngineExecutionResult.Success()

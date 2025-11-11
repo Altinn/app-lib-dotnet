@@ -1,4 +1,3 @@
-using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
 
 namespace Altinn.App.ProcessEngine;
@@ -45,7 +44,8 @@ internal partial class ProcessEngine
     {
         _logger.LogTrace("Enqueuing job {Job}. Update database: {UpdateDb}", job, updateDatabase);
 
-        // TODO: persist to database if `updateDatabase` is true
+        // TODO: persist job to database if `updateDatabase` is true
+        // TODO: Don't forget to write the TASKS also
         if (updateDatabase)
             await TempRandomDelay(cancellationToken: cancellationToken);
 

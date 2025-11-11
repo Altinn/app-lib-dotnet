@@ -31,5 +31,10 @@ public abstract record ProcessEngineCommand
         public override string Identifier => "delay";
     }
 
+    public sealed record Callback(string Uri, object? Payload = null) : ProcessEngineCommand
+    {
+        public override string Identifier => "callback";
+    }
+
     public sealed override string ToString() => Identifier;
 }
