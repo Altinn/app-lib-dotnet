@@ -7,7 +7,7 @@ internal partial class ProcessEngine
 {
     public async Task Start(CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Starting process engine");
+        _logger.LogInformation("Starting process engine");
 
         if (_cancellationTokenSource is not null || _mainLoopTask is not null)
             await Stop();
@@ -55,7 +55,7 @@ internal partial class ProcessEngine
 
     public async Task Stop()
     {
-        _logger.LogDebug("(public) Stopping process engine");
+        _logger.LogInformation("Stopping process engine");
 
         if (!Status.HasFlag(ProcessEngineHealthStatus.Running))
             return;
@@ -78,7 +78,7 @@ internal partial class ProcessEngine
 
     private async Task AcquireQueueSlot(CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Acquiring queue slot");
+        _logger.LogTrace("Acquiring queue slot");
         await _inboxCapacityLimit.WaitAsync(cancellationToken);
 
         if (InboxCount >= Settings.QueueCapacity)
@@ -86,12 +86,12 @@ internal partial class ProcessEngine
         else
             Status &= ~ProcessEngineHealthStatus.QueueFull;
 
-        _logger.LogDebug("Status after acquiring slot: {Status}", Status);
+        _logger.LogTrace("Status after acquiring slot: {Status}", Status);
     }
 
     private void RemoveJobAndReleaseQueueSlot(ProcessEngineJob job)
     {
-        _logger.LogDebug("Releasing queue slot");
+        _logger.LogTrace("Releasing queue slot");
         bool removed = _inbox.TryRemove(job.Identifier, out _);
         if (!removed)
             throw new InvalidOperationException($"Unable to release queue slot {job.Identifier}");

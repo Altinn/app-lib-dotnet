@@ -411,7 +411,7 @@ public sealed class ProcessEngineTest
     )
     {
         using var fixture = Fixture.Create();
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -463,7 +463,7 @@ public sealed class ProcessEngineTest
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("org/app"));
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -535,7 +535,7 @@ public sealed class ProcessEngineTest
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("org/app"));
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -602,7 +602,7 @@ public sealed class ProcessEngineTest
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("org/app"));
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -937,7 +937,7 @@ public sealed class ProcessEngineTest
                 .Verifiable(Times.Once);
         }
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        LegacyProcessEngine processEngine = fixture.ProcessEngine;
         InstanceOwner instanceOwner = new() { PartyId = _instanceOwnerPartyId.ToString() };
         Instance instance = new Instance()
         {

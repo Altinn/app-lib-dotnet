@@ -57,7 +57,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
     private async Task<bool> ShouldRun(CancellationToken cancellationToken)
     {
         // E.g. "do we hold the lock?"
-        _logger.LogDebug("Checking if process engine should run");
+        _logger.LogTrace("Checking if process engine should run");
 
         // TODO: Replace this with actual check
         bool placeholderEnabledResponse = await Task.Run(
@@ -92,29 +92,29 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
         if (placeholderEnabledResponse)
         {
             Status &= ~ProcessEngineHealthStatus.Disabled;
-            _logger.LogDebug("Process engine is enabled");
+            _logger.LogTrace("Process engine is enabled");
         }
         else
         {
             Status |= ProcessEngineHealthStatus.Disabled;
-            _logger.LogDebug("Process engine is disabled");
+            _logger.LogTrace("Process engine is disabled");
         }
         return placeholderEnabledResponse;
     }
 
     private async Task<bool> HaveJobs(CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Checking if we have jobs to process");
+        _logger.LogTrace("Checking if we have jobs to process");
         bool haveJobs = InboxCount > 0;
 
         if (haveJobs)
         {
-            _logger.LogDebug("We have jobs to process: {InboxCount}", InboxCount);
+            _logger.LogTrace("We have jobs to process: {InboxCount}", InboxCount);
             Status &= ~ProcessEngineHealthStatus.Idle;
         }
         else
         {
-            _logger.LogDebug("No jobs to process, taking a short nap");
+            _logger.LogTrace("No jobs to process, taking a short nap");
             Status |= ProcessEngineHealthStatus.Idle;
             await Task.Delay(500, cancellationToken);
         }
@@ -124,8 +124,8 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
 
     private async Task MainLoop(CancellationToken cancellationToken)
     {
-        _logger.LogDebug(
-            "Entering MainLoop. Inbox count: {InboxCount}. Queue slots taken: {OccupiedQueueSlots}",
+        _logger.LogTrace(
+            "Entering MainLoop. Inbox count: {InboxCount}. Queue slots available: {AvailableQueueSlots}",
             InboxCount,
             _inboxCapacityLimit.CurrentCount
         );
@@ -139,7 +139,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
             return;
 
         // Process jobs in parallel
-        _logger.LogDebug("Processing jobs. Queue size: {InboxCount}", InboxCount);
+        _logger.LogTrace("Processing jobs. Queue size: {InboxCount}", InboxCount);
         await Parallel.ForEachAsync(
             _inbox.Values.ToList(), // Copy so we can modify the original collection during iteration
             cancellationToken,
@@ -150,7 +150,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
         );
 
         // Small delay before next iteration
-        _logger.LogDebug("Tiny nap");
+        _logger.LogTrace("Tiny nap");
         await Task.Delay(100, cancellationToken);
     }
 
@@ -163,17 +163,23 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
             // Process the tasks
             case ProcessEngineTaskStatus.None:
                 await ProcessTasks(job, cancellationToken);
-                job.Status = job.OverallStatus();
-                job.DatabaseTask = UpdateJobInStorage(job, cancellationToken); // TODO: Might not need to update the job so often. Tasks are already saved. Only update here is the job status
+
+                ProcessEngineItemStatus updatedJobStatus = job.OverallStatus();
+                if (job.Status != updatedJobStatus)
+                {
+                    job.Status = updatedJobStatus;
+                    job.DatabaseTask = UpdateJobInStorage(job, cancellationToken);
+                }
                 return;
 
             // Waiting on database operation to finish
             case ProcessEngineTaskStatus.Started:
-                _logger.LogDebug("Job is waiting for database operation to complete");
+                _logger.LogDebug("Job {Job} is waiting for database operation to complete", job);
                 return;
 
             // Database operation is finished
             case ProcessEngineTaskStatus.Finished:
+                _logger.LogDebug("Job {Job} database operation has completed. Cleaning up", job);
                 job.CleanupDatabaseTask();
                 break;
 
@@ -202,7 +208,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
             // Not time to process yet
             if (!task.IsReadyForExecution(_timeProvider))
             {
-                _logger.LogDebug("Task not ready for execution");
+                _logger.LogTrace("Task {Task} not ready for execution", task);
                 return;
             }
 
@@ -216,24 +222,24 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
             {
                 // Waiting for database operation to complete
                 case { DatabaseUpdateStatus: ProcessEngineTaskStatus.Started }:
-                    _logger.LogDebug("Task is waiting for database operation to complete");
+                    _logger.LogDebug("Task {Task} is waiting for database operation to complete", task);
                     return;
 
                 // Database operation completed
                 case { DatabaseUpdateStatus: ProcessEngineTaskStatus.Finished }:
-
-                    // Cleanup and move to next task
+                    _logger.LogDebug("Task {Task} database operation has completed. Cleaning up", task);
                     task.CleanupDatabaseTask();
                     continue;
 
                 // Waiting for execution task to complete
                 case { ExecutionStatus: ProcessEngineTaskStatus.Started }:
-                    _logger.LogDebug("Task is already processing, but not yet finished");
+                    _logger.LogDebug("Task {Task} is waiting for execution to complete", task);
                     return;
 
                 // Execution task completed
                 case { ExecutionStatus: ProcessEngineTaskStatus.Finished }:
-                    Debug.Assert(task.ExecutionTask is not null);
+                    _logger.LogDebug("Task {Task} execution has completed. Need to update database", task);
+                    Debug.Assert(task.ExecutionTask is not null); // TODO: This is annoying
 
                     // Unwrap result and handle outcome
                     ProcessEngineExecutionResult result = await task.ExecutionTask;
@@ -246,9 +252,8 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
 
                 // Task is new
                 default:
-
-                    // Start the execution task
-                    task.ExecutionTask = _taskHandler.Execute(task, cancellationToken);
+                    _logger.LogDebug("Task {Task} is new. Starting execution", task);
+                    task.ExecutionTask = _taskHandler.Execute(job, task, cancellationToken);
                     return;
             }
         }
@@ -264,6 +269,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
                 return;
             }
 
+            _logger.LogDebug("Task {Task} failed", task);
             var retryStrategy = task.RetryStrategy ?? Settings.DefaultTaskRetryStrategy;
 
             if (retryStrategy.CanRetry(task.RequeueCount + 1))
@@ -277,7 +283,11 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
             {
                 task.Status = ProcessEngineItemStatus.Failed;
                 task.BackoffUntil = null;
-                _logger.LogError("Failing task {Task} (Retry count: {Retries})", task, task.RequeueCount);
+                _logger.LogError(
+                    "Failing task {Task}. No more retries available after {Retries} attempts",
+                    task,
+                    task.RequeueCount
+                );
             }
         }
     }

@@ -8,9 +8,8 @@ internal abstract record ProcessEngineDatabaseItem : IDisposable
     public DateTimeOffset? UpdatedAt { get; set; }
     public Task? DatabaseTask { get; set; }
 
-    public override string ToString() => $"{GetType().Name}: {Identifier} ({Status})";
-
-    public bool Equals(ProcessEngineJob? other) =>
+    // TODO: Write a test for equality for inheritors. A bit suss on the persistence of these overrides during inheritance
+    public virtual bool Equals(ProcessEngineDatabaseItem? other) =>
         other?.Identifier.Equals(Identifier, StringComparison.OrdinalIgnoreCase) is true;
 
     public override int GetHashCode() => Identifier.GetHashCode();

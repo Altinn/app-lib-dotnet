@@ -1,3 +1,4 @@
+using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
 
 namespace Altinn.App.ProcessEngine;
@@ -9,7 +10,7 @@ internal partial class ProcessEngine
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("(public) Enqueuing job {JobIdentifier}", request.JobIdentifier);
+        _logger.LogDebug("Enqueuing job {JobIdentifier}", request.JobIdentifier);
 
         if (!request.IsValid())
             return ProcessEngineResponse.Rejected("Invalid request");
@@ -42,7 +43,7 @@ internal partial class ProcessEngine
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("(internal) Enqueuing job {Job}. Update database: {UpdateDb}", job, updateDatabase);
+        _logger.LogTrace("Enqueuing job {Job}. Update database: {UpdateDb}", job, updateDatabase);
 
         // TODO: persist to database if `updateDatabase` is true
         if (updateDatabase)

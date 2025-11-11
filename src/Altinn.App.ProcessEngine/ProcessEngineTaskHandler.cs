@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Altinn.App.ProcessEngine.Constants;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.Extensions.Options;
@@ -6,7 +7,11 @@ namespace Altinn.App.ProcessEngine;
 
 internal interface IProcessEngineTaskHandler
 {
-    Task<ProcessEngineExecutionResult> Execute(ProcessEngineTask task, CancellationToken cancellationToken);
+    Task<ProcessEngineExecutionResult> Execute(
+        ProcessEngineJob job,
+        ProcessEngineTask task,
+        CancellationToken cancellationToken
+    );
 }
 
 internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
@@ -26,35 +31,60 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         _logger = serviceProvider.GetRequiredService<ILogger<ProcessEngineTaskHandler>>();
     }
 
-    public async Task<ProcessEngineExecutionResult> Execute(ProcessEngineTask task, CancellationToken cancellationToken)
+    public async Task<ProcessEngineExecutionResult> Execute(
+        ProcessEngineJob job,
+        ProcessEngineTask task,
+        CancellationToken cancellationToken
+    )
     {
+        _logger.LogInformation("Executing task {Task} for job {Job}", task, job);
+
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(task.Command.MaxExecutionTime ?? _settings.DefaultTaskExecutionTimeout);
 
+        var stopwatch = Stopwatch.StartNew();
         try
         {
-            return task.Command switch
+            var result = task.Command switch
             {
-                ProcessEngineCommand.AppCommand cmd => await AppCommand(cmd, task, cts.Token),
+                ProcessEngineCommand.AppCommand cmd => await AppCommand(cmd, job, task, cts.Token),
+                ProcessEngineCommand.Delay cmd => await Task.Delay(cmd.Duration, cts.Token)
+                    .ContinueWith(_ => ProcessEngineExecutionResult.Success(), cts.Token),
                 ProcessEngineCommand.Noop => ProcessEngineExecutionResult.Success(),
                 ProcessEngineCommand.Throw => throw new InvalidOperationException("Intentional error thrown"),
                 _ => throw new ArgumentException($"Unknown instruction: {task.Command}"),
             };
+
+            _logger.LogInformation("Task {Task} executed successfully in {Elapsed}", task, stopwatch.Elapsed);
+
+            return result;
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error executing task {Task}: {Message}", task, e.Message);
+            _logger.LogError(
+                e,
+                "Execution of task {Task} failed after {Elapsed}: {Message}",
+                task,
+                stopwatch.Elapsed,
+                e.Message
+            );
+
             return ProcessEngineExecutionResult.Error(e.Message);
+        }
+        finally
+        {
+            stopwatch.Stop();
         }
     }
 
     private async Task<ProcessEngineExecutionResult> AppCommand(
         ProcessEngineCommand.AppCommand command,
+        ProcessEngineJob job,
         ProcessEngineTask task,
         CancellationToken cancellationToken
     )
     {
-        using var httpClient = GetAuthorizedAppClient(task.InstanceInformation);
+        using var httpClient = GetAuthorizedAppClient(job.InstanceInformation);
         httpClient.Timeout = command.MaxExecutionTime ?? _settings.DefaultTaskExecutionTimeout;
 
         var payload = new ProcessEngineCallbackPayload(task.ProcessEngineActor, command.Metadata);

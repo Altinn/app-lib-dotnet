@@ -33,11 +33,8 @@ public class TestController : ControllerBase
 
     private readonly IReadOnlyList<TestScenario> _testScenarios =
     [
-        new(
-            new ProcessEngineCommand.AppCommand("a", "b"),
-            ProcessEngineRetryStrategy.Constant(TimeSpan.FromSeconds(1), 10)
-        ),
         new(new ProcessEngineCommand.Noop(), ProcessEngineRetryStrategy.None()),
+        new(new ProcessEngineCommand.Delay(TimeSpan.FromSeconds(1)), ProcessEngineRetryStrategy.None()),
         new(new ProcessEngineCommand.Throw(), ProcessEngineRetryStrategy.None()),
     ];
 
@@ -48,7 +45,8 @@ public class TestController : ControllerBase
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromQuery] int numJobs = 1000,
-        [FromQuery] int testScenario = 0
+        [FromQuery] int testScenario = 0,
+        [FromQuery] bool block = true
     )
     {
         ConcurrentBag<ProcessEngineResponse> responses = [];
@@ -60,21 +58,34 @@ public class TestController : ControllerBase
                 new ProcessEngineActor("nb", "callers-altinn-party-id?"),
                 [
                     new ProcessEngineCommandRequest(
-                        new InstanceInformation(org, app, instanceOwnerPartyId, instanceGuid),
                         _testScenarios[testScenario].Command,
                         RetryStrategy: _testScenarios[testScenario].RetryStrategy
                     ),
                 ]
             ));
 
-        await Parallel.ForEachAsync(
-            requests,
-            async (request, ct) =>
-            {
-                var response = await _processEngine.EnqueueJob(request, ct);
-                responses.Add(response);
-            }
-        );
+        var tasks = requests.Select(async x =>
+        {
+            var response = await _processEngine.EnqueueJob(x);
+            responses.Add(response);
+        });
+
+        await Task.WhenAll(tasks);
+
+        // await Parallel.ForEachAsync(
+        //     requests,
+        //     async (request, ct) =>
+        //     {
+        //         var response = await _processEngine.EnqueueJob(request, ct);
+        //         responses.Add(response);
+        //     }
+        // );
+
+        // Wait for queue to finish?
+        while (block && _processEngine.InboxCount > 0)
+        {
+            await Task.Delay(50);
+        }
 
         return responses.All(x => x.IsAccepted()) ? Ok() : BadRequest(responses.First().Message);
     }

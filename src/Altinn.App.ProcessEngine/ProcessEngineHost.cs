@@ -47,7 +47,10 @@ internal sealed class ProcessEngineHost(IServiceProvider serviceProvider) : Back
                     );
 
                 failCount = 0;
-                _logger.LogDebug("Process engine inbox count: {InboxCount}", _processEngine.InboxCount);
+                _logger.LogDebug(
+                    "Process engine is healthy and has inbox count: {InboxCount}",
+                    _processEngine.InboxCount
+                );
                 continue;
             }
 
@@ -63,6 +66,7 @@ internal sealed class ProcessEngineHost(IServiceProvider serviceProvider) : Back
             }
 
             _logger.LogWarning("Forcing process engine restart");
+            await _processEngine.Stop();
             await _processEngine.Start(stoppingToken);
         }
 

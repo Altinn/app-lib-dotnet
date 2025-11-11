@@ -9,7 +9,7 @@ public sealed record ProcessNextRequest(
 {
     public ProcessEngineRequest ToProcessEngineRequest(InstanceInformation instanceInformation) =>
         new(
-            $"{instanceInformation.InstanceGuid}-next-from-{CurrentElementId}-to-{DesiredElementId}",
+            $"{instanceInformation.InstanceGuid}/next/from-{CurrentElementId}-to-{DesiredElementId}",
             instanceInformation,
             ProcessEngineActor,
             Tasks

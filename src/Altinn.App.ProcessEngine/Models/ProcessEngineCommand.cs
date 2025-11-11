@@ -18,11 +18,18 @@ public abstract record ProcessEngineCommand
 
     public sealed record Throw : ProcessEngineCommand
     {
-        public override string Identifier => Guid.NewGuid().ToString();
+        public override string Identifier => "throw";
     }
 
     public sealed record Noop : ProcessEngineCommand
     {
-        public override string Identifier => Guid.NewGuid().ToString();
+        public override string Identifier => "noop";
     }
+
+    public sealed record Delay(TimeSpan Duration) : ProcessEngineCommand
+    {
+        public override string Identifier => "delay";
+    }
+
+    public sealed override string ToString() => Identifier;
 }
