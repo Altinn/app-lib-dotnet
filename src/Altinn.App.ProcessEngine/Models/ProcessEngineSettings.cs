@@ -4,7 +4,7 @@ public sealed record ProcessEngineSettings
 {
     public string ApiKey { get; set; } = Guid.NewGuid().ToString();
     public int QueueCapacity { get; set; } = 10000;
-    public TimeSpan DefaultTaskExecutionTimeout { get; set; } = TimeSpan.FromMinutes(5);
+    public TimeSpan DefaultTaskExecutionTimeout { get; set; } = TimeSpan.FromSeconds(100);
 
     public ProcessEngineRetryStrategy DefaultTaskRetryStrategy { get; set; } =
         new(
