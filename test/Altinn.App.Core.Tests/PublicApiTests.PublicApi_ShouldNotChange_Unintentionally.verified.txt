@@ -1147,6 +1147,7 @@ namespace Altinn.App.Core.Features
     }
     public static class FeatureFlags
     {
+        public const string AddInstanceIdentifierToLayoutRequests = "AddInstanceIdentifierToLayoutRequests";
         public const string JsonObjectInDataResponse = "JsonObjectInDataResponse";
     }
     public interface IAppOptionsProvider
@@ -2893,6 +2894,10 @@ namespace Altinn.App.Core.Internal.App
     public interface IApplicationClient
     {
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Application?> GetApplication(string org, string app);
+    }
+    public interface ICustomLayoutForInstance
+    {
+        System.Threading.Tasks.Task<string?> GetCustomLayoutForInstance(string layoutSetId, int instanceOwnerPartyId, System.Guid instanceGuid);
     }
     public interface IFrontendFeatures
     {
