@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Altinn.App.Api.Infrastructure.Lifetime;
@@ -17,15 +18,13 @@ internal sealed class AppHostLifetime(
 
     public Task WaitForStartAsync(CancellationToken cancellationToken)
     {
-        if (!_environment.IsDevelopment())
-        {
-            _disposables =
-            [
-                PosixSignalRegistration.Create(PosixSignal.SIGINT, HandleSignal),
-                PosixSignalRegistration.Create(PosixSignal.SIGQUIT, HandleSignal),
-                PosixSignalRegistration.Create(PosixSignal.SIGTERM, HandleSignal),
-            ];
-        }
+        Debug.Assert(!_environment.IsDevelopment(), "We don't need graceful shutdown in development environments");
+        _disposables =
+        [
+            PosixSignalRegistration.Create(PosixSignal.SIGINT, HandleSignal),
+            PosixSignalRegistration.Create(PosixSignal.SIGQUIT, HandleSignal),
+            PosixSignalRegistration.Create(PosixSignal.SIGTERM, HandleSignal),
+        ];
         return Task.CompletedTask;
     }
 

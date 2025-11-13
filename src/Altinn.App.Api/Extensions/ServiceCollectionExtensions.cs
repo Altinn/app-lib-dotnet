@@ -125,7 +125,7 @@ public static class ServiceCollectionExtensions
             options.AllowSynchronousIO = true;
         });
 
-        ConfigureGracefulShutdown(services);
+        ConfigureGracefulShutdown(services, env);
 
         // HttpClients for platform functionality. Registered as HttpClient so default HttpClientFactory is used
         services.AddHttpClient<AuthorizationApiClient>();
@@ -548,8 +548,11 @@ public static class ServiceCollectionExtensions
         return $"InstrumentationKey={key}";
     }
 
-    private static void ConfigureGracefulShutdown(IServiceCollection services)
+    private static void ConfigureGracefulShutdown(IServiceCollection services, IHostEnvironment env)
     {
+        if (env.IsDevelopment())
+            return;
+
         // Need to coordinate graceful shutdown (let's assume k8s as the scheduler/runtime):
         // - deployment is configured with a terminationGracePeriod of 30s (default timeout before SIGKILL)
         // - k8s flow of information is eventually consistent.
@@ -567,13 +570,9 @@ public static class ServiceCollectionExtensions
         var shutdownDelay = TimeSpan.FromSeconds(5);
         var shutdownTimeout = TimeSpan.FromSeconds(20);
 
-        services.AddSingleton<IHostLifetime>(serviceProvider =>
-        {
-            var logger = serviceProvider.GetRequiredService<ILogger<AppHostLifetime>>();
-            var env = serviceProvider.GetRequiredService<IHostEnvironment>();
-            var lifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
-            return new AppHostLifetime(logger, env, lifetime, shutdownDelay);
-        });
+        services.AddSingleton<IHostLifetime>(sp =>
+            ActivatorUtilities.CreateInstance<AppHostLifetime>(sp, shutdownDelay)
+        );
 
         services.Configure<HostOptions>(options => options.ShutdownTimeout = shutdownTimeout);
     }
