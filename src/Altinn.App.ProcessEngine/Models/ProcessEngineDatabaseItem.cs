@@ -4,7 +4,7 @@ internal abstract record ProcessEngineDatabaseItem : IDisposable
 {
     public required string Identifier { get; init; }
     public ProcessEngineItemStatus Status { get; set; }
-    public required DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? UpdatedAt { get; set; }
     public Task? DatabaseTask { get; set; }
 

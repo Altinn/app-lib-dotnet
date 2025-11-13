@@ -7,8 +7,7 @@ public record ProcessEngineRequest(
     string JobIdentifier,
     InstanceInformation InstanceInformation,
     ProcessEngineActor ProcessEngineActor,
-    IEnumerable<ProcessEngineCommandRequest> Tasks,
-    DateTimeOffset? CreatedAt = null
+    IEnumerable<ProcessEngineCommandRequest> Tasks
 )
 {
     public bool IsValid() => Tasks.Any();

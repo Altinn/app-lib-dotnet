@@ -20,7 +20,6 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
         new()
         {
             Identifier = $"{jobIdentifier}/{request.Command}",
-            CreatedAt = request.CreatedAt ?? DateTimeOffset.UtcNow, // TODO: Hmm...
             ProcessEngineActor = processEngineActor,
             StartTime = request.StartTime,
             ProcessingOrder = index,

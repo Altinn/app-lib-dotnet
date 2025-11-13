@@ -28,7 +28,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
     private readonly SemaphoreSlim _cleanupLock = new(1, 1);
     private readonly ProcessEngineRetryStrategy _statusCheckBackoffStrategy = new(
         ProcessEngineBackoffType.Exponential,
-        Delay: TimeSpan.FromSeconds(1),
+        BaseInterval: TimeSpan.FromSeconds(1),
         MaxDelay: TimeSpan.FromMinutes(1)
     );
 

@@ -11,7 +11,6 @@ internal sealed record ProcessEngineJob : ProcessEngineDatabaseItem
         {
             Identifier = request.JobIdentifier,
             InstanceInformation = request.InstanceInformation,
-            CreatedAt = request.CreatedAt ?? DateTimeOffset.UtcNow, // TODO: Hmm...
             ProcessEngineActor = request.ProcessEngineActor,
             Tasks = request
                 .Tasks.Select(

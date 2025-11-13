@@ -1,4 +1,3 @@
-//using Altinn.App.Core.Extensions;
 using Altinn.App.ProcessEngine.Constants;
 using Altinn.App.ProcessEngine.Controllers;
 using Altinn.App.ProcessEngine.Controllers.Auth;
@@ -9,8 +8,14 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.ProcessEngine.Extensions;
 
+/// <summary>
+/// Extension methods for registering the process engine and its dependencies in the service collection.
+/// </summary>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Adds the process engine services to the service collection.
+    /// </summary>
     public static IServiceCollection AddProcessEngine(this IServiceCollection services)
     {
         if (services.IsConfigured<ProcessEngineSettings>() is false)
@@ -33,6 +38,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Configures the process engine settings by binding to a configuration section.
+    /// </summary>
     public static IServiceCollection ConfigureProcessEngine(this IServiceCollection services, string configSectionPath)
     {
         services.AddOptions<ProcessEngineSettings>().BindConfiguration(configSectionPath);
@@ -40,6 +48,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Configures the process engine settings using a delegate.
+    /// </summary>
     public static IServiceCollection ConfigureProcessEngine(
         this IServiceCollection services,
         Action<ProcessEngineSettings> configureOptions
@@ -49,6 +60,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Checks if the specified options type has already been configured in the service collection.
+    /// </summary>
     internal static bool IsConfigured<TOptions>(this IServiceCollection services)
         where TOptions : class
     {

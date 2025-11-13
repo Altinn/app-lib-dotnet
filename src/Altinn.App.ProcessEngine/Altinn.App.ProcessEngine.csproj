@@ -8,7 +8,6 @@
 
     <ItemGroup>
       <PackageReference Include="Altinn.Platform.Storage.Interface" />
-      <PackageReference Include="Polly.Extensions" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,5 +1,8 @@
 namespace Altinn.App.ProcessEngine.Models;
 
+/// <summary>
+///
+/// </summary>
 public abstract record ProcessEngineCommand
 {
     public abstract string Identifier { get; }
@@ -16,22 +19,22 @@ public abstract record ProcessEngineCommand
         public override string Identifier => CommandKey;
     };
 
-    public sealed record Throw : ProcessEngineCommand
+    internal sealed record Throw : ProcessEngineCommand
     {
         public override string Identifier => "throw";
     }
 
-    public sealed record Noop : ProcessEngineCommand
+    internal sealed record Noop : ProcessEngineCommand
     {
         public override string Identifier => "noop";
     }
 
-    public sealed record Delay(TimeSpan Duration) : ProcessEngineCommand
+    internal sealed record Delay(TimeSpan Duration) : ProcessEngineCommand
     {
         public override string Identifier => "delay";
     }
 
-    public sealed record Callback(string Uri, object? Payload = null) : ProcessEngineCommand
+    internal sealed record Callback(string Uri, object? Payload = null) : ProcessEngineCommand
     {
         public override string Identifier => "callback";
     }

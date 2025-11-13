@@ -11,10 +11,10 @@ internal static class ProcessEngineRetryStrategyExtensions
     {
         var delay = strategy.BackoffType switch
         {
-            ProcessEngineBackoffType.Constant => strategy.Delay,
-            ProcessEngineBackoffType.Linear => TimeSpan.FromSeconds(strategy.Delay.TotalSeconds * iteration),
+            ProcessEngineBackoffType.Constant => strategy.BaseInterval,
+            ProcessEngineBackoffType.Linear => TimeSpan.FromSeconds(strategy.BaseInterval.TotalSeconds * iteration),
             ProcessEngineBackoffType.Exponential => TimeSpan.FromSeconds(
-                strategy.Delay.TotalSeconds * Math.Pow(2, iteration - 2)
+                strategy.BaseInterval.TotalSeconds * Math.Pow(2, iteration - 2)
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(strategy), strategy, null),
         };
