@@ -16,6 +16,7 @@ using Altinn.App.Core.Features.Payment.Processors.FakePaymentProcessor;
 using Altinn.App.Core.Features.Payment.Processors.Nets;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Features.Pdf;
+using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
@@ -49,6 +50,12 @@ using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
+using Altinn.App.Core.Internal.ProcessEngine.Commands;
+using Altinn.App.Core.Internal.ProcessEngine.Commands.ServiceTask;
+using Altinn.App.Core.Internal.ProcessEngine.Commands.Transition.ProcessEnd;
+using Altinn.App.Core.Internal.ProcessEngine.Commands.Transition.TaskAbandon;
+using Altinn.App.Core.Internal.ProcessEngine.Commands.Transition.TaskEnd;
+using Altinn.App.Core.Internal.ProcessEngine.Commands.Transition.TaskStart;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
 using Altinn.App.Core.Internal.Sign;
@@ -69,7 +76,6 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 using IProcessReader = Altinn.App.Core.Internal.Process.IProcessReader;
-using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
 using ProcessReader = Altinn.App.Core.Internal.Process.ProcessReader;
 
 namespace Altinn.App.Core.Extensions;
@@ -363,6 +369,33 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
         services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
         services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
+
+        // Process engine callback helpers
+        services.AddTransient<ProcessTaskResolver>();
+
+        // Process engine callback handlers - TaskEnter (StartTask phase)
+        services.AddTransient<UnlockTaskData>();
+        services.AddTransient<StartTaskLegacyHook>();
+        services.AddTransient<CommonTaskInitialization>();
+        services.AddTransient<OnTaskStartingHook>();
+        services.AddTransient<ProcessTaskStart>();
+
+        // Process engine callback handlers - ServiceTask
+        services.AddTransient<ExecuteServiceTask>();
+
+        // Process engine callback handlers - TaskExit (EndTask phase)
+        services.AddTransient<ProcessTaskEnd>();
+        services.AddTransient<OnTaskEndingHook>();
+        services.AddTransient<CommonTaskFinalization>();
+        services.AddTransient<EndTaskLegacyHook>();
+        services.AddTransient<LockTaskData>();
+
+        // Process engine callback handlers - TaskAbandon
+        services.AddTransient<OnAbandonTask>();
+        services.AddTransient<AbandonTaskLegacyHook>();
+
+        // Process engine callback handlers - ProcessEnd
+        services.AddTransient<PublishProcessEndAppEvent>();
 
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();

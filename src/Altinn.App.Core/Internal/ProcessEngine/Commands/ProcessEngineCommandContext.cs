@@ -2,9 +2,9 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.ProcessEngine.Models;
 using Altinn.App.Core.Models;
 
-namespace Altinn.App.Core.Internal.ProcessEngine;
+namespace Altinn.App.Core.Internal.ProcessEngine.Commands;
 
-internal struct ProcessEngineCallbackHandlerParameters
+internal struct ProcessEngineCommandContext
 {
     public AppIdentifier AppId { get; init; }
     public InstanceIdentifier InstanceId { get; init; }

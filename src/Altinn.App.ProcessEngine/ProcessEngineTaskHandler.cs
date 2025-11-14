@@ -62,9 +62,25 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
             cancellationToken
         );
 
-        return response.IsSuccessStatusCode
-            ? ProcessEngineExecutionResult.Success()
-            : ProcessEngineExecutionResult.Error("uh oh");
+        if (response.IsSuccessStatusCode)
+        {
+            return ProcessEngineExecutionResult.Success();
+        }
+
+        // Extract error information from response body
+        try
+        {
+            var errorResponse = await response.Content.ReadFromJsonAsync<ProcessEngineCallbackErrorResponse>(
+                cancellationToken
+            );
+            var errorMessage = errorResponse?.Message ?? $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}";
+            return ProcessEngineExecutionResult.Error(errorMessage);
+        }
+        catch
+        {
+            // Fallback if we can't parse the error response
+            return ProcessEngineExecutionResult.Error($"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}");
+        }
     }
 
     private HttpClient GetAuthorizedAppClient(InstanceInformation instanceInformation)

@@ -1,6 +1,6 @@
-using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Process.ProcessTasks;
 
-namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
+namespace Altinn.App.Core.Features.Process;
 
 /// <summary>
 /// Interface for service tasks that can be executed during a process.

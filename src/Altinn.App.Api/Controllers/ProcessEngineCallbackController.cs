@@ -1,8 +1,11 @@
+using System.Diagnostics;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.ProcessEngine;
+using Altinn.App.Core.Internal.ProcessEngine.Commands;
 using Altinn.App.Core.Models;
 using Altinn.App.ProcessEngine.Constants;
+using Altinn.App.ProcessEngine.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,18 +24,24 @@ public class ProcessEngineCallbackController : ControllerBase
     private readonly IServiceProvider _serviceProvider;
     private readonly InstanceClient _instanceClient;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly ILogger<ProcessEngineCallbackController> _logger;
+    private readonly Telemetry? _telemetry;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngineCallbackController"/> class.
     /// </summary>
     public ProcessEngineCallbackController(
         IServiceProvider serviceProvider,
-        InstanceClient instanceClient
+        InstanceClient instanceClient,
+        ILogger<ProcessEngineCallbackController> logger,
+        Telemetry? telemetry = null
     )
     {
         _serviceProvider = serviceProvider;
         _instanceClient = instanceClient;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _logger = logger;
+        _telemetry = telemetry;
     }
 
     /// <summary>
@@ -49,15 +58,40 @@ public class ProcessEngineCallbackController : ControllerBase
         CancellationToken cancellationToken
     )
     {
+        using Activity? activity = _telemetry?.StartProcessEngineCallbackActivity(instanceGuid, commandKey);
+
         var appId = new AppIdentifier(org, app);
         var instanceId = new InstanceIdentifier(instanceOwnerPartyId, instanceGuid);
 
-        var handler =
-            _serviceProvider.GetServices<IProcessEngineCallbackHandler>().FirstOrDefault(x => x.Key == commandKey)
-            ?? throw new KeyNotFoundException("yikes");
+        IProcessEngineCommand? command = _serviceProvider
+            .GetServices<IProcessEngineCommand>()
+            .FirstOrDefault(x => x.GetKey() == commandKey);
 
-        Instance instance =
-            await _instanceClient.GetInstance(appId.App, appId.Org, instanceOwnerPartyId, instanceId.InstanceGuid);
+        if (command is null)
+        {
+            _logger.LogError(
+                "Handler not found for command key '{CommandKey}'. Instance: {InstanceId}.",
+                commandKey,
+                instanceId
+            );
+            activity?.SetStatus(ActivityStatusCode.Error, "Handler not found");
+            return NotFound(
+                new ProcessEngineCallbackErrorResponse
+                {
+                    Message = $"No handler registered for command key: {commandKey}",
+                    ExceptionType = "HandlerNotFoundException",
+                }
+            );
+        }
+
+        Instance instance = await _instanceClient.GetInstance(
+            appId.App,
+            appId.Org,
+            instanceOwnerPartyId,
+            instanceId.InstanceGuid
+        );
+
+        string? currentTaskId = instance.Process?.CurrentTask?.ElementId;
 
         InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
             instance,
@@ -65,19 +99,70 @@ public class ProcessEngineCallbackController : ControllerBase
             payload.ProcessEngineActor.Language
         );
 
-        ProcessEngineCallbackHandlerResult result = await handler.Execute(new ProcessEngineCallbackHandlerParameters
+        ProcessEngineCommandResult result = await command.Execute(
+            new ProcessEngineCommandContext
+            {
+                AppId = appId,
+                InstanceId = instanceId,
+                InstanceDataMutator = instanceDataUnitOfWork,
+                CancellationToken = cancellationToken,
+                Payload = payload,
+            }
+        );
+
+        //TODO: Consider rewriting IInstanceDataMutator so that we can construct one that doesn't allow abandonment in this scenario. Don't think it makes sense when the process engine is the caller.
+        if (instanceDataUnitOfWork.HasAbandonIssues)
         {
-            AppId = appId,
-            InstanceId = instanceId,
-            InstanceDataMutator = instanceDataUnitOfWork,
-            CancellationToken = cancellationToken,
-            Payload = payload
-        });
+            _logger.LogError(
+                "Data abandonment detected during callback. CommandKey: {CommandKey}, Instance: {InstanceId}, Task: {TaskId}",
+                commandKey,
+                instanceId,
+                currentTaskId
+            );
+            activity?.SetStatus(ActivityStatusCode.Error, "Data abandonment detected");
+            return BadRequest(
+                new ProcessEngineCallbackErrorResponse
+                {
+                    Message = "Data abandonment detected. One or more data elements could not be saved.",
+                    ExceptionType = "DataAbandonmentException",
+                }
+            );
+        }
 
-        // TODO: Do we have to check for abandon issues here?
-        DataElementChanges changes = instanceDataUnitOfWork.GetDataElementChanges(false);
-        await instanceDataUnitOfWork.SaveChanges(changes);
+        switch (result)
+        {
+            case SuccessfulProcessEngineCommandResult:
+                DataElementChanges changes = instanceDataUnitOfWork.GetDataElementChanges(false);
+                await instanceDataUnitOfWork.SaveChanges(changes);
+                activity?.SetStatus(ActivityStatusCode.Ok);
+                return Ok();
 
-        return result is SuccessfulProcessEngineCallbackHandlerResult ? Ok() : BadRequest();
+            case FailedProcessEngineCommandResult failed:
+                _logger.LogError(
+                    "Callback handler failed. CommandKey: {CommandKey}, Instance: {InstanceId}, Task: {TaskId}, Error: {ErrorMessage}, ExceptionType: {ExceptionType}",
+                    commandKey,
+                    instanceId,
+                    currentTaskId,
+                    failed.ErrorMessage,
+                    failed.ExceptionType
+                );
+                activity?.SetStatus(ActivityStatusCode.Error, failed.ErrorMessage);
+                return BadRequest(
+                    new ProcessEngineCallbackErrorResponse
+                    {
+                        Message = failed.ErrorMessage,
+                        ExceptionType = failed.ExceptionType,
+                    }
+                );
+
+            default:
+                _logger.LogError(
+                    "Unexpected callback result type: {ResultType}. CommandKey: {CommandKey}, Instance: {InstanceId}",
+                    result.GetType().Name,
+                    commandKey,
+                    instanceId
+                );
+                throw new InvalidOperationException($"Unexpected result type: {result.GetType().Name}");
+        }
     }
 }

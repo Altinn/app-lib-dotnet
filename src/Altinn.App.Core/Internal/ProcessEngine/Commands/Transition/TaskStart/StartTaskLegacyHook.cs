@@ -1,32 +1,37 @@
-using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Features;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Altinn.App.Core.Internal.ProcessEngine.CallbackHandlers;
+#pragma warning disable CS0618 // Type or member is obsolete
+
+namespace Altinn.App.Core.Internal.ProcessEngine.Commands.Transition.TaskStart;
 
 //TODO: Research to what degree TEs would accept a move to new hook interface
 /// <summary>
 /// Run the legacy IProcessTaskStart implementations defined in the app. No unit of work and rollback support.
 /// </summary>
-internal sealed class RunAppDefinedProcessTaskStartHandler : IProcessEngineCallbackHandler
+internal sealed class StartTaskLegacyHook : IProcessEngineCommand
 {
-    private readonly AppImplementationFactory _appImplementationFactory;
-    public string Key => "RunAppDefinedProcessTaskStart";
+    public static string Key => "StartTaskLegacyHook";
 
-    public RunAppDefinedProcessTaskStartHandler(IServiceProvider serviceProvider)
+    public string GetKey() => Key;
+
+    private readonly AppImplementationFactory _appImplementationFactory;
+
+    public StartTaskLegacyHook(IServiceProvider serviceProvider)
     {
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
-    public async Task<ProcessEngineCallbackHandlerResult> Execute(ProcessEngineCallbackHandlerParameters parameters)
+    public async Task<ProcessEngineCommandResult> Execute(ProcessEngineCommandContext parameters)
     {
-        IEnumerable<IProcessTaskStart> handlers = _appImplementationFactory.GetAll<IProcessTaskStart>();
         Instance instance = parameters.InstanceDataMutator.Instance;
         string? taskId = instance.Process.CurrentTask.ElementId;
 
         try
         {
+            IEnumerable<IProcessTaskStart> handlers = _appImplementationFactory.GetAll<IProcessTaskStart>();
+
             foreach (IProcessTaskStart processTaskStarts in handlers)
             {
                 //TODO: How to get prefill??
@@ -35,9 +40,9 @@ internal sealed class RunAppDefinedProcessTaskStartHandler : IProcessEngineCallb
         }
         catch (Exception ex)
         {
-            return new FailedProcessEngineCallbackHandlerResult(ex);
+            return new FailedProcessEngineCommandResult(ex);
         }
 
-        return new SuccessfulProcessEngineCallbackHandlerResult();
+        return new SuccessfulProcessEngineCommandResult();
     }
 }

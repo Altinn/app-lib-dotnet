@@ -30,6 +30,7 @@ using Moq;
 using Newtonsoft.Json;
 using Xunit.Abstractions;
 using LegacyProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
+using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
 
 namespace Altinn.App.Core.Tests.Internal.Process;
 
@@ -411,7 +412,7 @@ public sealed class ProcessEngineTest
     )
     {
         using var fixture = Fixture.Create();
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        var processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -463,7 +464,7 @@ public sealed class ProcessEngineTest
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("org/app"));
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        var processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -535,7 +536,7 @@ public sealed class ProcessEngineTest
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("org/app"));
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        var processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -602,7 +603,7 @@ public sealed class ProcessEngineTest
             .Setup(x => x.GetApplicationMetadata())
             .ReturnsAsync(new ApplicationMetadata("org/app"));
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        var processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
         {
@@ -937,7 +938,7 @@ public sealed class ProcessEngineTest
                 .Verifiable(Times.Once);
         }
 
-        ProcessEngine processEngine = fixture.ProcessEngine;
+        var processEngine = fixture.ProcessEngine;
         InstanceOwner instanceOwner = new() { PartyId = _instanceOwnerPartyId.ToString() };
         Instance instance = new Instance()
         {
