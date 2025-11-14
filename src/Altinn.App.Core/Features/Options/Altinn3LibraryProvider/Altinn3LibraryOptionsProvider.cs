@@ -17,7 +17,7 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
     // Consider making this configurable via options, but there does not seem to be a strong use case
     private static readonly HybridCacheEntryOptions _defaultCacheExpiration = new()
     {
-        Expiration = TimeSpan.FromSeconds(15),
+        Expiration = TimeSpan.FromMinutes(15),
     };
 
     public Altinn3LibraryOptionsProvider(
