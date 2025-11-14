@@ -121,7 +121,9 @@ public class Altinn3LibraryOptionsProviderCacheTests
 
         public static Fixture Create(Action<IServiceCollection>? configure = null)
         {
-            var mockHandler = new Altinn3LibraryOptionsProviderMessageHandlerMock();
+            var mockHandler = new Altinn3LibraryOptionsProviderMessageHandlerMock(
+                Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage
+            );
             var app = AppBuilder.Build(registerCustomAppServices: services =>
             {
                 services.AddHttpClient(ClientName).ConfigurePrimaryHttpMessageHandler(() => mockHandler);

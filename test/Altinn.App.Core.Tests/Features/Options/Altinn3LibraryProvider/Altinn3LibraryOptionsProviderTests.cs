@@ -6,8 +6,6 @@ using Altinn.App.Core.Internal.Language;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Moq;
-using Moq.Protected;
 
 namespace Altinn.App.Core.Tests.Features.Options.Altinn3LibraryProvider;
 
@@ -23,11 +21,7 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_RequestingEnThenNb_ShouldReturnNbOptionsOnSecondCall()
     {
         // Arrange
-        await using var fixture = Fixture.Create();
-
-        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
-
-        SetupHttpClientFactory(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage, mockHttpClientFactory);
+        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage);
 
         // Act
         var optionsProvider = fixture.GetOptionsProvider(OptionId);
@@ -48,10 +42,6 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_LanguageCollectionsIsEmpty_ShouldReturnOptionsWithOnlyValueAndTags()
     {
         // Arrange
-        await using var fixture = Fixture.Create();
-
-        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
-
         var responseMessage = () =>
             new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -81,7 +71,7 @@ public class Altinn3LibraryOptionsProviderTests
                 ),
             };
 
-        SetupHttpClientFactory(responseMessage, mockHttpClientFactory);
+        await using var fixture = Fixture.Create(responseMessage);
 
         // Act
         var optionsProvider = fixture.GetOptionsProvider(OptionId);
@@ -103,10 +93,6 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_LanguageCollectionsIsNull_ShouldReturnOptionsWithOnlyValueAndTags()
     {
         // Arrange
-        await using var fixture = Fixture.Create();
-
-        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
-
         var responseMessage = () =>
             new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -136,7 +122,7 @@ public class Altinn3LibraryOptionsProviderTests
                 ),
             };
 
-        SetupHttpClientFactory(responseMessage, mockHttpClientFactory);
+        await using var fixture = Fixture.Create(responseMessage);
 
         // Act
         var optionsProvider = fixture.GetOptionsProvider(OptionId);
@@ -156,10 +142,6 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_NoLanguageProvided_ShouldSortAndUseFirstLanguageInDictionaryWhenNeitherNbNorEnExists()
     {
         // Arrange
-        await using var fixture = Fixture.Create();
-
-        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
-
         var responseMessage = () =>
             new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -198,7 +180,7 @@ public class Altinn3LibraryOptionsProviderTests
                 ),
             };
 
-        SetupHttpClientFactory(responseMessage, mockHttpClientFactory);
+        await using var fixture = Fixture.Create(responseMessage);
 
         // Act
         var optionsProvider = fixture.GetOptionsProvider(OptionId);
@@ -218,10 +200,6 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_NoLanguageProvided_ShouldDefaultToEnWhenNbIsNotPresentInResponseButEnIs()
     {
         // Arrange
-        await using var fixture = Fixture.Create();
-
-        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
-
         var responseMessage = () =>
             new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -260,7 +238,7 @@ public class Altinn3LibraryOptionsProviderTests
                 ),
             };
 
-        SetupHttpClientFactory(responseMessage, mockHttpClientFactory);
+        await using var fixture = Fixture.Create(responseMessage);
 
         // Act
         var optionsProvider = fixture.GetOptionsProvider(OptionId);
@@ -280,11 +258,7 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_NoLanguageProvided_ShouldDefaultToNbWhenNbIsPresentInResponse()
     {
         // Arrange
-        await using var fixture = Fixture.Create();
-
-        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
-
-        SetupHttpClientFactory(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage, mockHttpClientFactory);
+        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage);
 
         // Act
         var optionsProvider = fixture.GetOptionsProvider(OptionId);
@@ -304,14 +278,8 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_TwoCallsRequestingTheSameHybridCacheKey_ShouldCallMessageHandlerOnce()
     {
         // Arrange
-        await using var fixture = Fixture.Create();
+        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage);
         const string uri = $"{Org}/code_lists/{CodeListId}/{Version}.json";
-
-        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
-        var mockHttpMessageHandler = SetupHttpClientFactory(
-            Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage,
-            mockHttpClientFactory
-        );
 
         var platformSettings = fixture.App.Services.GetService<IOptions<PlatformSettings>>()?.Value!;
 
@@ -321,32 +289,16 @@ public class Altinn3LibraryOptionsProviderTests
         await optionsProvider.GetAppOptionsAsync(LanguageConst.Nb, new Dictionary<string, string>());
 
         // Assert
-        mockHttpMessageHandler
-            .Protected()
-            .Verify(
-                "SendAsync",
-                Times.Once(),
-                ItExpr.Is<HttpRequestMessage>(m =>
-                    m.Method == HttpMethod.Get
-                    && m.RequestUri != null
-                    && m.RequestUri.ToString() == platformSettings.Altinn3LibraryApiEndpoint + uri
-                ),
-                ItExpr.IsAny<CancellationToken>()
-            );
+        Assert.Equal(platformSettings.Altinn3LibraryApiEndpoint + uri, fixture.MockHandler.LastRequestUri);
+        Assert.Equal(1, fixture.MockHandler.CallCount);
     }
 
     [Fact]
     public async Task Altinn3LibraryOptionsProvider_CallsGetAppOptionsAsyncOnce_ShouldReturnsOptions()
     {
         // Arrange
-        await using var fixture = Fixture.Create();
+        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage);
         const string uri = $"{Org}/code_lists/{CodeListId}/{Version}.json";
-
-        var mockHttpClientFactory = fixture.HttpClientFactoryMock;
-        var mockHttpMessageHandler = SetupHttpClientFactory(
-            Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage,
-            mockHttpClientFactory
-        );
 
         var platformSettings = fixture.App.Services.GetService<IOptions<PlatformSettings>>()?.Value!;
 
@@ -367,68 +319,29 @@ public class Altinn3LibraryOptionsProviderTests
         Assert.Equal("ttd/code_lists/someNewCodeList/1.json", versionParam.Value);
         var sourceParam = result.Parameters.Single(p => p.Key == "source");
         Assert.Equal("test-data-files", sourceParam.Value);
-
-        mockHttpMessageHandler
-            .Protected()
-            .Verify(
-                "SendAsync",
-                Times.Once(),
-                ItExpr.Is<HttpRequestMessage>(m =>
-                    m.Method == HttpMethod.Get
-                    && m.RequestUri != null
-                    && m.RequestUri.ToString() == platformSettings.Altinn3LibraryApiEndpoint + uri
-                ),
-                ItExpr.IsAny<CancellationToken>()
-            );
+        Assert.Equal(platformSettings.Altinn3LibraryApiEndpoint + uri, fixture.MockHandler.LastRequestUri);
+        Assert.Equal(1, fixture.MockHandler.CallCount);
     }
 
     private sealed record Fixture(WebApplication App) : IAsyncDisposable
     {
-        public Mock<IHttpClientFactory> HttpClientFactoryMock =>
-            Mock.Get(App.Services.GetRequiredService<IHttpClientFactory>());
+        public Altinn3LibraryOptionsProviderMessageHandlerMock MockHandler { get; private set; } = null!;
 
         public IAppOptionsProvider GetOptionsProvider(string id) =>
             App.Services.GetRequiredService<IEnumerable<IAppOptionsProvider>>().Single(p => p.Id == id);
 
-        public static Fixture Create()
+        public static Fixture Create(Func<HttpResponseMessage> responseMessage)
         {
-            var mockHttpClientFactory = new Mock<IHttpClientFactory>(MockBehavior.Strict);
-
+            var mockHandler = new Altinn3LibraryOptionsProviderMessageHandlerMock(responseMessage);
             var app = AppBuilder.Build(registerCustomAppServices: services =>
             {
-                services.AddSingleton(mockHttpClientFactory.Object);
+                services.AddHttpClient(ClientName).ConfigurePrimaryHttpMessageHandler(() => mockHandler);
                 services.AddAltinn3CodeList(optionId: OptionId, org: Org, codeListId: CodeListId, version: Version);
             });
 
-            return new Fixture(app);
+            return new Fixture(app) { MockHandler = mockHandler };
         }
 
         public async ValueTask DisposeAsync() => await App.DisposeAsync();
-    }
-
-    private static Mock<HttpMessageHandler> SetupHttpClientFactory(
-        Func<HttpResponseMessage> responseMessage,
-        Mock<IHttpClientFactory> mockHttpClientFactory
-    )
-    {
-        var mockHttpMessageHandler = new Mock<HttpMessageHandler>();
-
-        mockHttpMessageHandler
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>()
-            )
-            .ReturnsAsync(() => responseMessage());
-
-        mockHttpClientFactory
-            .Setup(f => f.CreateClient(ClientName))
-            .Returns(() =>
-            {
-                return new HttpClient(mockHttpMessageHandler.Object);
-            });
-
-        return mockHttpMessageHandler;
     }
 }
