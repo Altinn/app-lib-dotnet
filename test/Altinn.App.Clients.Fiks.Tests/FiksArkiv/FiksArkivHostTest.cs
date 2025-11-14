@@ -49,6 +49,8 @@ public class FiksArkivHostTest
             await cts.CancelAsync();
         }
 
+        await Task.Delay(50); // TODO: hopes and prayers that scheduled continuations have now run
+
         // Assert
         Assert.Single(createdClients);
         createdClients[0].Verify(x => x.DisposeAsync(), Times.Once);
