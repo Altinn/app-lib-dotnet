@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using Altinn.App.ProcessEngine.Constants;
 using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.Extensions.Configuration;
@@ -19,14 +19,8 @@ public class ServiceCollectionExtensionsTests
         Assert.NotNull(fixture.ProcessEngineHost);
         Assert.NotNull(fixture.ProcessEngineSettings);
 
-        Assert.True(fixture.ProcessEngineSettings.QueueCapacity > 0);
-        Assert.Equal(
-            new ProcessEngineSettings { ApiKey = "none" },
-            fixture.ProcessEngineSettings with
-            {
-                ApiKey = "none",
-            }
-        );
+        Assert.Equal(new ProcessEngineSettings(), fixture.ProcessEngineSettings);
+        Assert.Equal(Defaults.ApiKey, fixture.ProcessEngineSettings.ApiKey);
     }
 
     [Fact]
