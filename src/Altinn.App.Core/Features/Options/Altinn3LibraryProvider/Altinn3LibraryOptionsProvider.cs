@@ -1,0 +1,118 @@
+using System.Diagnostics.CodeAnalysis;
+using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Language;
+using Altinn.App.Core.Models;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Options;
+
+namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+
+internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
+{
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly PlatformSettings _platformSettings;
+    private readonly HybridCache _codeListCache;
+
+    // Consider making this configurable via options, but there does not seem to be a strong use case
+    private static readonly HybridCacheEntryOptions _defaultCacheExpiration = new()
+    {
+        Expiration = TimeSpan.FromMinutes(15),
+    };
+
+    public Altinn3LibraryOptionsProvider(
+        string optionId,
+        string org,
+        string codeListId,
+        string? version,
+        HybridCache codeListCache,
+        IHttpClientFactory httpClientFactory,
+        IOptions<PlatformSettings> platformSettings
+    )
+    {
+        _httpClientFactory = httpClientFactory;
+        Id = optionId;
+        _org = org;
+        _codeListId = codeListId;
+        _version = !string.IsNullOrEmpty(version) ? version : "latest";
+        _codeListCache = codeListCache;
+        _platformSettings = platformSettings.Value;
+    }
+
+    public string Id { get; }
+    private string _org { get; }
+    private string _codeListId { get; }
+    private string _version { get; }
+
+    public async Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
+    {
+        var result = await _codeListCache.GetOrCreateAsync(
+            $"{_org}-{_codeListId}-{_version}",
+            async cancel => await GetAppOptions(cancellationToken: cancel),
+            options: _defaultCacheExpiration
+        );
+        return ParseAppOptions(result, language);
+    }
+
+    private static AppOptions ParseAppOptions(Altinn3LibraryCodeListResponse codeListResponse, string? language)
+    {
+        var options = codeListResponse
+            .Codes.Select(code => new AppOption
+            {
+                Value = code.Value,
+                Label = GetValueWithLanguageFallback(code.Label, language),
+                Description = GetValueWithLanguageFallback(code.Description, language),
+                HelpText = GetValueWithLanguageFallback(code.HelpText, language),
+            })
+            .ToList();
+
+        return new AppOptions
+        {
+            IsCacheable = true,
+            Options = options,
+            Parameters = new Dictionary<string, string?>
+            {
+                { "version", codeListResponse.Version },
+                { "source", codeListResponse.Source.Name },
+            },
+        };
+    }
+
+    [return: NotNullIfNotNull(nameof(languageCollection))]
+    private static string? GetValueWithLanguageFallback(
+        Dictionary<string, string>? languageCollection,
+        string? language
+    )
+    {
+        if (languageCollection == null)
+        {
+            return null;
+        }
+        if (languageCollection.Count == 0)
+        {
+            return string.Empty;
+        }
+        if (
+            language != null && languageCollection.TryGetValue(language, out var value)
+            || languageCollection.TryGetValue(LanguageConst.Nb, out value)
+            || languageCollection.TryGetValue(LanguageConst.En, out value)
+        )
+        {
+            return value;
+        }
+
+        return languageCollection.OrderBy(x => x.Key).First().Value;
+    }
+
+    private async Task<Altinn3LibraryCodeListResponse> GetAppOptions(CancellationToken cancellationToken)
+    {
+        var httpClient = _httpClientFactory.CreateClient("Altinn3LibraryClient");
+        httpClient.BaseAddress = new Uri(_platformSettings.Altinn3LibraryApiEndpoint);
+        var response = await httpClient.GetAsync($"{_org}/code_lists/{_codeListId}/{_version}.json", cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await JsonSerializerPermissive.DeserializeAsync<Altinn3LibraryCodeListResponse>(
+            response.Content,
+            cancellationToken
+        );
+    }
+}
