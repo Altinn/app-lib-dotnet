@@ -1669,9 +1669,9 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider
         [System.Text.Json.Serialization.JsonPropertyName("value")]
         public required string Value { get; set; }
     }
-    public class Altinn3LibraryCodeListRoot
+    public class Altinn3LibraryCodeListResponse
     {
-        public Altinn3LibraryCodeListRoot() { }
+        public Altinn3LibraryCodeListResponse() { }
         [System.Text.Json.Serialization.JsonPropertyName("codes")]
         public required System.Collections.Generic.List<Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListItem> Codes { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("source")]
