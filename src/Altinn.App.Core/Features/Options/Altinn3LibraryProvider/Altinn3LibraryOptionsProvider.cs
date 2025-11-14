@@ -1,10 +1,9 @@
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
@@ -13,23 +12,20 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly PlatformSettings _platformSettings;
-    private readonly SemaphoreSlim _cacheLock = new(1, 1);
-
-    private byte[]? _appOptionsCache;
-
-    private DateTimeOffset _cacheExpiration = DateTimeOffset.MinValue;
+    private readonly HybridCache _codeListCache;
 
     // Consider making this configurable via options, but there does not seem to be a strong use case
-    private static readonly TimeSpan _cacheDurationSuccess = TimeSpan.FromMinutes(15);
-    private static readonly TimeSpan _cacheDurationFailure = TimeSpan.FromMinutes(1);
-
-    private bool _isFetching;
+    private static readonly HybridCacheEntryOptions _defaultCacheExpiration = new()
+    {
+        Expiration = TimeSpan.FromSeconds(15),
+    };
 
     public Altinn3LibraryOptionsProvider(
         string optionId,
         string org,
         string codeListId,
         string? version,
+        HybridCache codeListCache,
         IHttpClientFactory httpClientFactory,
         IOptions<PlatformSettings> platformSettings
     )
@@ -39,6 +35,7 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         _org = org;
         _codeListId = codeListId;
         _version = !string.IsNullOrEmpty(version) ? version : "latest";
+        _codeListCache = codeListCache;
         _platformSettings = platformSettings.Value;
     }
 
@@ -49,45 +46,17 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
 
     public async Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
     {
-        if (_appOptionsCache is not null && (_cacheExpiration > DateTimeOffset.UtcNow || _isFetching))
-        {
-            // there is a cached value and it is either valid or another thread is fetching an updated value
-            return ParseAppOptionsFromCache(language);
-        }
-
-        await _cacheLock.WaitAsync();
-        try
-        {
-            _isFetching = true;
-            _appOptionsCache = await FetchAppOptionsFromAltinn3Library();
-            _cacheExpiration = DateTimeOffset.UtcNow.Add(_cacheDurationSuccess);
-            return ParseAppOptionsFromCache(language);
-        }
-        catch (Exception ex)
-        {
-            // Log the exception, but return cached value if available
-
-            if (_appOptionsCache is not null)
-            {
-                _cacheExpiration = DateTimeOffset.UtcNow.Add(_cacheDurationFailure);
-                return ParseAppOptionsFromCache(language);
-            }
-            throw;
-        }
-        finally
-        {
-            _isFetching = false;
-            _cacheLock.Release();
-        }
+        var result = await _codeListCache.GetOrCreateAsync(
+            $"{_org}-{_codeListId}-{_version}",
+            async cancel => await GetAppOptions(cancellationToken: cancel),
+            options: _defaultCacheExpiration
+        );
+        return ParseAppOptions(result, language);
     }
 
-    private AppOptions ParseAppOptionsFromCache(string? language)
+    private static AppOptions ParseAppOptions(Altinn3LibraryCodeListResponse codeListResponse, string? language)
     {
-        var codeListRoot =
-            JsonSerializer.Deserialize<Altinn3LibraryCodeListRoot>(_appOptionsCache)
-            ?? throw new UnreachableException("Cached app options was \"null\"");
-
-        var options = codeListRoot
+        var options = codeListResponse
             .Codes.Select(code => new AppOption
             {
                 Value = code.Value,
@@ -103,84 +72,47 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
             Options = options,
             Parameters = new Dictionary<string, string?>
             {
-                { "version", codeListRoot.Version },
-                { "source", codeListRoot.Source.Name },
+                { "version", codeListResponse.Version },
+                { "source", codeListResponse.Source.Name },
             },
         };
     }
 
-    [return: NotNullIfNotNull(nameof(values))]
-    private static string? GetValueWithLanguageFallback(Dictionary<string, string>? values, string? language)
+    [return: NotNullIfNotNull(nameof(languageCollection))]
+    private static string? GetValueWithLanguageFallback(
+        Dictionary<string, string>? languageCollection,
+        string? language
+    )
     {
-        if (values == null)
+        if (languageCollection == null)
         {
             return null;
         }
-        if (values.Count == 0)
+        if (languageCollection.Count == 0)
         {
             return string.Empty;
         }
-        if (language != null && values.TryGetValue(language, out var value))
-        {
-            return value;
-        }
-        if (values.TryGetValue(LanguageConst.Nb, out value))
-        {
-            return value;
-        }
-        if (values.TryGetValue(LanguageConst.En, out value))
+        if (
+            language != null && languageCollection.TryGetValue(language, out var value)
+            || languageCollection.TryGetValue(LanguageConst.Nb, out value)
+            || languageCollection.TryGetValue(LanguageConst.En, out value)
+        )
         {
             return value;
         }
 
-        return values.Values.First();
+        return languageCollection.OrderBy(x => x.Key).First().Value;
     }
 
-    private async Task<byte[]> FetchAppOptionsFromAltinn3Library()
+    private async Task<Altinn3LibraryCodeListResponse> GetAppOptions(CancellationToken cancellationToken)
     {
-        var client = _httpClientFactory.CreateClient("Altinn3LibraryClient");
-        client.BaseAddress = new Uri(_platformSettings.Altinn3LibraryApiEndpoint);
-        var response = await client.GetAsync($"{_org}/code_lists/{_codeListId}/{_version}.json");
+        var httpClient = _httpClientFactory.CreateClient("Altinn3LibraryClient");
+        httpClient.BaseAddress = new Uri(_platformSettings.Altinn3LibraryApiEndpoint);
+        var response = await httpClient.GetAsync($"{_org}/code_lists/{_codeListId}/{_version}.json", cancellationToken);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsByteArrayAsync();
+        return await JsonSerializerPermissive.DeserializeAsync<Altinn3LibraryCodeListResponse>(
+            response.Content,
+            cancellationToken
+        );
     }
-}
-
-public class Altinn3LibraryCodeListRoot
-{
-    [JsonPropertyName("codes")]
-    public required List<Altinn3LibraryCodeListItem> Codes { get; set; }
-
-    [JsonPropertyName("version")]
-    public required string Version { get; set; }
-
-    [JsonPropertyName("source")]
-    public required Altinn3LibraryCodeListSource Source { get; set; }
-
-    [JsonPropertyName("tagNames")]
-    public required List<string> TagNames { get; set; }
-}
-
-public class Altinn3LibraryCodeListSource
-{
-    [JsonPropertyName("name")]
-    public required string Name { get; set; }
-}
-
-public class Altinn3LibraryCodeListItem
-{
-    [JsonPropertyName("value")]
-    public required string Value { get; set; }
-
-    [JsonPropertyName("label")]
-    public required Dictionary<string, string> Label { get; set; }
-
-    [JsonPropertyName("description")]
-    public Dictionary<string, string>? Description { get; set; }
-
-    [JsonPropertyName("helpText")]
-    public Dictionary<string, string>? HelpText { get; set; }
-
-    [JsonPropertyName("tags")]
-    public required List<string> Tags { get; set; }
 }

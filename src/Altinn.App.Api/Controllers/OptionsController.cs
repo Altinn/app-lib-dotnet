@@ -54,15 +54,6 @@ public class OptionsController : ControllerBase
         return Ok(appOptions.Options);
     }
 
-    [HttpGet("{org}/{codelistId}")]
-    public IActionResult GetCodelist(
-        [FromRoute] string org,
-        [FromRoute] string codelistId,
-        [FromQuery] string? version = null)
-    {
-        return Redirect($"/{org}/api/codelists/{codelistId}" + (version != null ? $"/{version}" : string.Empty));
-    }
-
     /// <summary>
     /// Exposes options related to the app and logged in user
     /// </summary>
