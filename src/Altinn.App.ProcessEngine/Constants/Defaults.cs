@@ -8,7 +8,7 @@ namespace Altinn.App.ProcessEngine.Constants;
 internal static class Defaults
 {
     /// <summary>
-    /// The session API key used by endpoints.
+    /// The session API key used by endpoints and for app command callbacks.
     /// </summary>
     public static readonly string ApiKey = Guid.NewGuid().ToString();
 

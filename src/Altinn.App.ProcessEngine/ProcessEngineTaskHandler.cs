@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Net.Http.Headers;
 using Altinn.App.ProcessEngine.Constants;
+using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.Extensions.Options;
 
@@ -48,8 +50,8 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
             var result = task.Command switch
             {
                 ProcessEngineCommand.AppCommand cmd => await AppCommand(cmd, job, task, cts.Token),
-                ProcessEngineCommand.Delay cmd => await Delay(cmd, job, task, cts.Token),
-                ProcessEngineCommand.Callback cmd => await Callback(cmd, job, task, cts.Token),
+                ProcessEngineCommand.Timeout cmd => await Timeout(cmd, job, task, cts.Token),
+                ProcessEngineCommand.Webhook cmd => await Webhook(cmd, job, task, cts.Token),
                 ProcessEngineCommand.Noop => ProcessEngineExecutionResult.Success(),
                 ProcessEngineCommand.Throw => throw new InvalidOperationException("Intentional error thrown"),
                 _ => throw new ArgumentException($"Unknown instruction: {task.Command}"),
@@ -87,7 +89,7 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         using var httpClient = GetAuthorizedAppClient(job.InstanceInformation);
         httpClient.Timeout = command.MaxExecutionTime ?? _settings.DefaultTaskExecutionTimeout;
 
-        var payload = new ProcessEngineCallbackPayload(task.ProcessEngineActor, command.Metadata);
+        var payload = new ProcessEngineAppCallbackPayload(task.ProcessEngineActor, command.Metadata);
         using var response = await httpClient.PostAsync(
             command.CommandKey,
             JsonContent.Create(payload),
@@ -96,11 +98,13 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
 
         return response.IsSuccessStatusCode
             ? ProcessEngineExecutionResult.Success()
-            : ProcessEngineExecutionResult.Error("uh oh");
+            : ProcessEngineExecutionResult.Error(
+                $"AppCommand execution failed: {await response.Content.ReadAsStringAsync(cancellationToken)}"
+            );
     }
 
-    private async Task<ProcessEngineExecutionResult> Delay(
-        ProcessEngineCommand.Delay command,
+    private static async Task<ProcessEngineExecutionResult> Timeout(
+        ProcessEngineCommand.Timeout command,
         ProcessEngineJob job,
         ProcessEngineTask task,
         CancellationToken cancellationToken
@@ -110,30 +114,44 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         return ProcessEngineExecutionResult.Success();
     }
 
-    private async Task<ProcessEngineExecutionResult> Callback(
-        ProcessEngineCommand.Callback command,
+    private async Task<ProcessEngineExecutionResult> Webhook(
+        ProcessEngineCommand.Webhook command,
         ProcessEngineJob job,
         ProcessEngineTask task,
         CancellationToken cancellationToken
     )
     {
         using var httpClient = _httpClientFactory.CreateClient();
-        using var response = await httpClient.GetAsync(command.Uri, cancellationToken);
+        HttpResponseMessage response;
 
-        return response.IsSuccessStatusCode
+        if (command.Payload != null)
+        {
+            using var content = new StringContent(command.Payload);
+            content.Headers.ContentType = command.ContentType is not null
+                ? new MediaTypeHeaderValue(command.ContentType)
+                : null;
+            response = await httpClient.PostAsync(command.Uri, content, cancellationToken);
+        }
+        else
+        {
+            response = await httpClient.GetAsync(command.Uri, cancellationToken);
+        }
+
+        var result = response.IsSuccessStatusCode
             ? ProcessEngineExecutionResult.Success()
-            : ProcessEngineExecutionResult.Error("uh oh");
+            : ProcessEngineExecutionResult.Error(
+                $"Webhook execution failed: {await response.Content.ReadAsStringAsync(cancellationToken)}"
+            );
+        response.Dispose();
+
+        return result;
     }
 
     private HttpClient GetAuthorizedAppClient(InstanceInformation instanceInformation)
     {
         var client = _httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Add(AuthConstants.ApiKeyHeaderName, _settings.ApiKey);
-
-        // TODO: Fix this! Needs a way to resolve the correct address for the app
-        client.BaseAddress = new Uri(
-            $"http://local.altinn.cloud/{instanceInformation.Org}/{instanceInformation.App}/instances/{instanceInformation.InstanceOwnerPartyId}/{instanceInformation.InstanceGuid}/process-engine-callbacks/"
-        );
+        client.BaseAddress = new Uri(_settings.AppCommandEndpoint.FormatWith(instanceInformation));
 
         return client;
     }

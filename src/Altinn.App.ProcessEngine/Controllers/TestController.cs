@@ -33,15 +33,15 @@ public class TestController : ControllerBase
         new(new ProcessEngineCommand.Throw(), ProcessEngineRetryStrategy.None()),
         new(
             [
-                new ProcessEngineCommand.Delay(TimeSpan.FromSeconds(0.5)),
-                new ProcessEngineCommand.Delay(TimeSpan.FromSeconds(0.5)),
+                new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(0.5)),
+                new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(0.5)),
             ],
             ProcessEngineRetryStrategy.None()
         ),
         new(
             [
-                new ProcessEngineCommand.Delay(TimeSpan.FromSeconds(1)),
-                new ProcessEngineCommand.Callback("/process-engine/test/scenario-callback"),
+                new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(1)),
+                new ProcessEngineCommand.Webhook("/process-engine/test/scenario-callback"),
             ],
             ProcessEngineRetryStrategy.None()
         ),
@@ -66,7 +66,7 @@ public class TestController : ControllerBase
             .Select(i => new ProcessEngineRequest(
                 $"job-identifier-{i}",
                 instanceInfo,
-                new ProcessEngineActor("nb", "callers-altinn-party-id?"),
+                new ProcessEngineActor("callers-altinn-party-id?", "nb"),
                 _testScenarios[testScenario].ToCommandRequests(instanceInfo)
             ));
 
@@ -126,10 +126,10 @@ public class TestController : ControllerBase
 
             foreach (var command in Commands)
             {
-                var cmd = command is ProcessEngineCommand.Callback callbackCommand
-                    ? callbackCommand with
+                var cmd = command is ProcessEngineCommand.Webhook webhook
+                    ? webhook with
                     {
-                        Uri = $"{uriPrefix}/{callbackCommand.Uri}",
+                        Uri = $"{uriPrefix}/{webhook.Uri}",
                     }
                     : command;
 

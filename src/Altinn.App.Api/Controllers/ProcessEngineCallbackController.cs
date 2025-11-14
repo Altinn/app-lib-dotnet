@@ -39,7 +39,7 @@ public class ProcessEngineCallbackController : ControllerBase
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromRoute] string commandKey,
-        [FromBody] ProcessEngineCallbackPayload payload
+        [FromBody] ProcessEngineAppCallbackPayload payload
     )
     {
         var appId = new AppIdentifier(org, app);
@@ -62,6 +62,6 @@ internal interface IProcessEngineCallbackHandler
     Task<bool> Execute(
         AppIdentifier appIdentifier,
         InstanceIdentifier instanceIdentifier,
-        ProcessEngineCallbackPayload payload
+        ProcessEngineAppCallbackPayload payload
     );
 };
