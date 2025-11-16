@@ -7,12 +7,13 @@ namespace Altinn.App.Tests.Common.Utils;
 public static class OtelVisualizers
 {
     public static string VisualizeActivities(
-        IEnumerable<Activity> activities,
-        IEnumerable<LogRecord> logs,
+        List<Activity> activities,
+        List<LogRecord> logs,
         bool includeDuration = true,
         int initialIndent = 0
     )
     {
+        var allSpanIds = new HashSet<ActivitySpanId>(activities.Select(a => a.SpanId));
         var logsByActivityId = logs.GroupBy(l => l.SpanId)
             .ToDictionary(k => k.Key, v => v.OrderBy(l => l.Timestamp).ToList());
         var activityByParentId = activities
@@ -21,7 +22,7 @@ public static class OtelVisualizers
 
         // Find root activities: those whose parent span ID is not in our collection
         var rootActivities = activityByParentId
-            .Where(kvp => !activityByParentId.ContainsKey(kvp.Key))
+            .Where(kvp => !allSpanIds.Contains(kvp.Key))
             .SelectMany(kvp => kvp.Value);
 
         var sb = new StringBuilder();
