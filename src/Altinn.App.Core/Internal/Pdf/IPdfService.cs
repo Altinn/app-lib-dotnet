@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Pdf;
@@ -20,18 +21,24 @@ public interface IPdfService
     /// Generate a PDF of what the user can currently see from the given instance of an app. Saves the PDF
     /// to storage as a new binary file associated with the predefined PDF data type in most apps.
     /// </summary>
-    /// <param name="instance">The instance details.</param>
-    /// <param name="taskId">The task id for which the PDF is generated.</param>
+    /// <param name="instanceDataMutator">An instance data accessor used to lookup instance data</param>
     /// <param name="customFileNameTextResourceKey">A text resource element id for the file name of the PDF. If null, a default file name will be used.</param>
     /// <param name="autoGeneratePdfForTaskIds">Enable auto-pdf for a list of tasks. Will not respect pdfLayoutName on those tasks, but use the main layout-set of the given tasks and render the components in summary mode. This setting will be ignored if the PDF task has a pdf layout set defined.</param>
     /// <param name="ct">Cancellation token for when a request should be stopped before it's completed.</param>
     Task GenerateAndStorePdf(
-        Instance instance,
-        string taskId,
+        IInstanceDataMutator instanceDataMutator,
         string? customFileNameTextResourceKey,
         List<string>? autoGeneratePdfForTaskIds = null,
         CancellationToken ct = default
-    ) => GenerateAndStorePdf(instance, taskId, ct);
+    )
+    {
+        string currentTask =
+            instanceDataMutator.Instance.Process.CurrentTask.ElementId ?? throw new InvalidOperationException(
+                "There was no current task on the instance, which is required for storing the PDF."
+            );
+
+        return GenerateAndStorePdf(instanceDataMutator.Instance, currentTask, ct);
+    }
 
     /// <summary>
     /// Generate a PDF of what the user can currently see from the given instance of an app.

@@ -62,27 +62,52 @@ public class PdfService : IPdfService
     {
         using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
 
-        await GenerateAndStorePdfInternal(instance, taskId, null, null, ct);
+        string language = await GetLanguageForPdf();
+
+        await using Stream pdfContent = await GeneratePdfContent(instance, language, false, null, ct);
+
+        await _dataClient.InsertBinaryData(
+            instance.Id,
+            PdfElementType,
+            PdfContentType,
+            await GetFileName(language, null),
+            pdfContent,
+            taskId,
+            cancellationToken: ct
+        );
     }
 
     /// <inheritdoc/>
     public async Task GenerateAndStorePdf(
-        Instance instance,
-        string taskId,
+        IInstanceDataMutator instanceDataMutator,
         string? customFileNameTextResourceKey,
         List<string>? autoGeneratePdfForTaskIds = null,
         CancellationToken ct = default
     )
     {
-        using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
+        string taskId =
+            instanceDataMutator.Instance.Process.CurrentTask.ElementId ?? throw new InvalidOperationException(
+                "There was no current task on the instance, which is required for storing the PDF."
+            );
 
-        await GenerateAndStorePdfInternal(
-            instance,
-            taskId,
-            customFileNameTextResourceKey,
+        using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instanceDataMutator.Instance, taskId);
+
+        string language = await GetLanguageForPdf();
+
+        await using Stream pdfContent = await GeneratePdfContent(
+            instanceDataMutator.Instance,
+            language,
+            false,
             autoGeneratePdfForTaskIds,
             ct
         );
+
+        using var memoryStream = new MemoryStream();
+        await pdfContent.CopyToAsync(memoryStream, ct);
+        var pdfData = new ReadOnlyMemory<byte>(memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
+
+        string fileName = await GetFileName(language, customFileNameTextResourceKey);
+        instanceDataMutator.AddBinaryDataElement(PdfElementType, PdfContentType, fileName, pdfData, taskId);
     }
 
     /// <inheritdoc/>
@@ -90,11 +115,7 @@ public class PdfService : IPdfService
     {
         using var activity = _telemetry?.StartGeneratePdfActivity(instance, taskId);
 
-        HttpContext? httpContext = _httpContextAccessor.HttpContext;
-        var queries = httpContext?.Request.Query;
-        var auth = _authenticationContext.Current;
-
-        var language = GetOverriddenLanguage(queries) ?? await auth.GetLanguage();
+        var language = await GetLanguageForPdf();
 
         return await GeneratePdfContent(instance, language, isPreview, null, ct);
     }
@@ -103,40 +124,6 @@ public class PdfService : IPdfService
     public async Task<Stream> GeneratePdf(Instance instance, string taskId, CancellationToken ct)
     {
         return await GeneratePdf(instance, taskId, false, ct);
-    }
-
-    private async Task GenerateAndStorePdfInternal(
-        Instance instance,
-        string taskId,
-        string? customFileNameTextResourceKey,
-        List<string>? autoGeneratePdfForTaskIds = null,
-        CancellationToken ct = default
-    )
-    {
-        HttpContext? httpContext = _httpContextAccessor.HttpContext;
-        var queries = httpContext?.Request.Query;
-        var auth = _authenticationContext.Current;
-
-        var language = GetOverriddenLanguage(queries) ?? await auth.GetLanguage();
-
-        await using Stream pdfContent = await GeneratePdfContent(
-            instance,
-            language,
-            false,
-            autoGeneratePdfForTaskIds,
-            ct
-        );
-
-        string fileName = await GetFileName(language, customFileNameTextResourceKey);
-        await _dataClient.InsertBinaryData(
-            instance.Id,
-            PdfElementType,
-            PdfContentType,
-            fileName,
-            pdfContent,
-            taskId,
-            cancellationToken: ct
-        );
     }
 
     private async Task<Stream> GeneratePdfContent(
@@ -207,22 +194,26 @@ public class PdfService : IPdfService
         return new Uri(url);
     }
 
-    internal static string? GetOverriddenLanguage(IQueryCollection? queries)
+    private async Task<string> GetLanguageForPdf()
     {
-        if (queries is null)
+        HttpContext? httpContext = _httpContextAccessor.HttpContext;
+        IQueryCollection? queries = httpContext?.Request.Query;
+        Authenticated auth = _authenticationContext.Current;
+
+        // Check for language override in query parameters
+        if (queries is not null)
         {
-            return null;
+            if (
+                queries.TryGetValue("language", out StringValues queryLanguage)
+                || queries.TryGetValue("lang", out queryLanguage)
+            )
+            {
+                return queryLanguage.ToString();
+            }
         }
 
-        if (
-            queries.TryGetValue("language", out StringValues queryLanguage)
-            || queries.TryGetValue("lang", out queryLanguage)
-        )
-        {
-            return queryLanguage.ToString();
-        }
-
-        return null;
+        // Fall back to user's language from authentication context
+        return await auth.GetLanguage();
     }
 
     private async Task<string> GetFileName(string? language, string? customFileNameTextResourceKey)

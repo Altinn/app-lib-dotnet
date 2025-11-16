@@ -17,7 +17,7 @@ public interface IServiceTask : IProcessTask
 /// <summary>
 /// This class represents the parameters for executing a service task.
 /// </summary>
-public sealed record ServiceTaskContext
+public sealed class ServiceTaskContext
 {
     /// <summary>
     /// An instance data mutator that can be used to read and modify the instance data during the service task execution.

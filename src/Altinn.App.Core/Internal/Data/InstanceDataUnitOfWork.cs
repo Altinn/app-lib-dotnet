@@ -279,7 +279,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         string dataTypeId,
         string contentType,
         string? filename,
-        ReadOnlyMemory<byte> bytes
+        ReadOnlyMemory<byte> bytes,
+        string? generatedFromTaskId = null
     )
     {
         var dataType = GetDataTypeByString(dataTypeId);
@@ -310,7 +311,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             dataType: dataType,
             fileName: filename,
             contentType: contentType,
-            currentBinaryData: bytes
+            currentBinaryData: bytes,
+            generatedFromTaskId: generatedFromTaskId
         );
         _changesForCreation.Add(change);
         return change;
