@@ -4,7 +4,7 @@ using Altinn.App.Core.Models.Expressions;
 namespace Altinn.App.Core.Models.Layout.Components.Base;
 
 /// <summary>
-/// Components that can be be directly read from a layout with extra tools related to layout parsing
+/// Components that can be directly read from a layout with extra tools related to layout parsing
 /// </summary>
 public abstract class BaseLayoutComponent : BaseComponent
 {
