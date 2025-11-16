@@ -306,7 +306,8 @@ public class WrappedServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         outputHelper.WriteLine($"Meters collected: {Metrics.Count}");
         foreach (var metric in Metrics)
         {
-            outputHelper.WriteLine($"{metric.Name}");
+            // Figure out a better way to dump metric data later
+            outputHelper.WriteLine($"{metric.Name} - {metric.Temporality} - {metric.Unit}");
         }
     }
 
@@ -396,10 +397,16 @@ public class WrappedServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         return _serviceProvider.GetRequiredKeyedService(serviceType, serviceKey);
     }
 
+    private bool _dumpedTracesAndMetrics;
+
 #pragma warning disable CA1816
     public void Dispose()
     {
-        DumpTracesAndMetrics();
+        if (!_dumpedTracesAndMetrics)
+        {
+            _dumpedTracesAndMetrics = true;
+            DumpTracesAndMetrics();
+        }
         _serviceProvider.Dispose();
         _tracerProvider.Dispose();
         _meterProvider.Dispose();
@@ -407,7 +414,11 @@ public class WrappedServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     public async ValueTask DisposeAsync()
     {
-        DumpTracesAndMetrics();
+        if (!_dumpedTracesAndMetrics)
+        {
+            _dumpedTracesAndMetrics = true;
+            DumpTracesAndMetrics();
+        }
         await _serviceProvider.DisposeAsync();
         _tracerProvider.Dispose();
         _meterProvider.Dispose();

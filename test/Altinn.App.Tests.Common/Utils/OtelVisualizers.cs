@@ -19,15 +19,20 @@ public static class OtelVisualizers
             .GroupBy(a => a.ParentSpanId)
             .ToDictionary(k => k.Key, g => g.OrderBy(a => a.StartTimeUtc).ToList());
 
+        // Find root activities: those whose parent span ID is not in our collection
+        var rootActivities = activityByParentId
+            .Where(kvp => !activityByParentId.ContainsKey(kvp.Key))
+            .SelectMany(kvp => kvp.Value);
+
         var sb = new StringBuilder();
-        if (activityByParentId.TryGetValue(default, out var rootActivities))
+        int rootActivityCount = 0;
+        foreach (var activity in rootActivities)
         {
-            foreach (var activity in rootActivities)
-            {
-                VisualizeActivity(sb, activityByParentId, logsByActivityId, activity, initialIndent, includeDuration);
-            }
+            rootActivityCount++;
+            VisualizeActivity(sb, activityByParentId, logsByActivityId, activity, initialIndent, includeDuration);
         }
-        else
+
+        if (rootActivityCount == 0)
         {
             sb.AppendLine("No root activities found.");
         }
