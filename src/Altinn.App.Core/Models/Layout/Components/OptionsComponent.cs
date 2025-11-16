@@ -1,9 +1,10 @@
 using System.Text.Json;
+using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout.Components;
 
 /// <summary>
-/// Custom component for handeling the special fields that represents an option.
+/// Custom component for handling the special fields that represents an option.
 /// </summary>
 public sealed class OptionsComponent : Base.NoReferenceComponent
 {
@@ -13,12 +14,12 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
     public required string? OptionsId { get; init; }
 
     /// <summary>
-    /// Alternaltive to <see cref="OptionsId" /> where the options are listed inline instead of referencing an external generator
+    /// Alternative to <see cref="OptionsId" /> where the options are listed inline instead of referencing an external generator
     /// </summary>
     public required List<AppOption>? Options { get; init; }
 
     /// <summary>
-    /// Alternaltive to <see cref="OptionsId" /> where the options are sourced from a repeating group in the datamodel
+    /// Alternative to <see cref="OptionsId" /> where the options are sourced from a repeating group in the datamodel
     /// </summary>
     public required OptionsSource? OptionsSource { get; init; }
 
@@ -87,6 +88,19 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
             OptionsSource = optionsSource,
             Secure = secure,
         };
+    }
+
+    /// <inheritdoc />
+    public override async Task<IEnumerable<DataReference>> GetDataReferencesToRemoveWhenHidden(ComponentContext context)
+    {
+        // Return only the group binding when we have group backing
+        // Otherwise call base implementation to return all data bindings
+        if (DataModelBindings.TryGetValue("group", out var groupBinding))
+        {
+            return [await context.AddIndexes(groupBinding)];
+        }
+
+        return await base.GetDataReferencesToRemoveWhenHidden(context);
     }
 
     private static string? ParseStringOrNull(JsonElement componentElement, string propertyName) =>
