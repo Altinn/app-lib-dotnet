@@ -187,7 +187,7 @@ public static class MockedServiceProviderExtensions
     internal static async Task<InstanceDataUnitOfWork> CreateInstanceDataMutatorWithDataAndLayout<T>(
         this ServiceProvider serviceProvider,
         T model,
-        List<BaseComponent> components,
+        List<BaseLayoutComponent> components,
         string? language
     )
         where T : class, new()
