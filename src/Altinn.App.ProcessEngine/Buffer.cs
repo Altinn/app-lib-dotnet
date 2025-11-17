@@ -43,9 +43,9 @@ internal sealed class Buffer<T>(int maxSize = 10) : IDisposable
 
     public Task Clear() => ExecuteLocked(() => _queue.Clear());
 
-    public Task<T?> Latest() => ExecuteLocked(() => (T?)_queue.LastOrDefault());
+    public Task<T?> Latest() => ExecuteLocked<T?>(() => _queue.Count == 0 ? null : _queue.Last());
 
-    public Task<T?> Previous() => ExecuteLocked(() => (T?)_queue.ElementAtOrDefault(_queue.Count - 2));
+    public Task<T?> Previous() => ExecuteLocked<T?>(() => _queue.Count < 2 ? null : _queue.ElementAt(_queue.Count - 2));
 
     public Task<int> ConsecutiveCount(Func<T, bool> predicate) =>
         ExecuteLocked(() =>
