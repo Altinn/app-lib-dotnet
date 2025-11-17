@@ -70,6 +70,8 @@ internal sealed record TestFixture(
 
     public async ValueTask DisposeAsync()
     {
+        await ProcessEngine.Stop();
+        ProcessEngine.Dispose();
         await App.DisposeAsync();
     }
 }

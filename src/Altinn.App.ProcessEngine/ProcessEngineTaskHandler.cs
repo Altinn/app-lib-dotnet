@@ -52,6 +52,7 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
                 ProcessEngineCommand.AppCommand cmd => await AppCommand(cmd, job, task, cts.Token),
                 ProcessEngineCommand.Timeout cmd => await Timeout(cmd, job, task, cts.Token),
                 ProcessEngineCommand.Webhook cmd => await Webhook(cmd, job, task, cts.Token),
+                ProcessEngineCommand.Delegate cmd => await Delegate(cmd, job, task, cts.Token),
                 ProcessEngineCommand.Noop => ProcessEngineExecutionResult.Success(),
                 ProcessEngineCommand.Throw => throw new InvalidOperationException("Intentional error thrown"),
                 _ => throw new ArgumentException($"Unknown instruction: {task.Command}"),
@@ -145,6 +146,25 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         response.Dispose();
 
         return result;
+    }
+
+    private async Task<ProcessEngineExecutionResult> Delegate(
+        ProcessEngineCommand.Delegate command,
+        ProcessEngineJob job,
+        ProcessEngineTask task,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            await command.Action(job, task, cancellationToken);
+            return ProcessEngineExecutionResult.Success();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Delegate execution of task {Task} failed: {Message}", task, e.Message);
+            return ProcessEngineExecutionResult.Error(e.Message);
+        }
     }
 
     private HttpClient GetAuthorizedAppClient(InstanceInformation instanceInformation)

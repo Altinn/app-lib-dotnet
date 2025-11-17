@@ -72,8 +72,19 @@ public abstract record ProcessEngineCommand
     internal sealed record Webhook(string Uri, string? Payload = null, string? ContentType = null)
         : ProcessEngineCommand
     {
-        public override string Identifier => "callback";
+        public override string Identifier => "webhook";
     }
 
+    /// <summary>
+    /// Debug: A command that executes a delegate function.
+    /// </summary>
+    /// <param name="Action">The delegate method</param>
+    internal sealed record Delegate(Func<ProcessEngineJob, ProcessEngineTask, CancellationToken, Task> Action)
+        : ProcessEngineCommand
+    {
+        public override string Identifier => "delegate";
+    }
+
+    /// <inheritdoc/>
     public sealed override string ToString() => Identifier;
 }
