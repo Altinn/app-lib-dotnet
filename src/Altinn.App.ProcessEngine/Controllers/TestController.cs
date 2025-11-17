@@ -9,7 +9,7 @@ namespace Altinn.App.ProcessEngine.Controllers;
 /// Controller for handling incoming process engine requests.
 /// </summary>
 [ApiController]
-[Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engine/test")]
+[Route("/process-engine/test")]
 public class TestController : ControllerBase
 {
     private readonly ILogger<ProcessEngineController> _logger;
@@ -29,58 +29,51 @@ public class TestController : ControllerBase
 
     private readonly IReadOnlyList<TestScenario> _testScenarios =
     [
-        new(new ProcessEngineCommand.Noop(), ProcessEngineRetryStrategy.None()),
-        new(new ProcessEngineCommand.Throw(), ProcessEngineRetryStrategy.None()),
-        new(
-            [
-                new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(0.5)),
-                new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(0.5)),
-            ],
-            ProcessEngineRetryStrategy.None()
-        ),
-        new(
-            [
-                new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(1)),
-                new ProcessEngineCommand.Webhook("/process-engine/test/scenario-callback"),
-            ],
-            ProcessEngineRetryStrategy.None()
-        ),
-        new(
-            [
-                new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(1)),
-                new ProcessEngineCommand.Delegate(
-                    (job, task, ct) =>
-                    {
-                        Interlocked.Increment(ref _scenarioCallbackCounter);
-                        return Task.CompletedTask;
-                    }
-                ),
-            ],
-            ProcessEngineRetryStrategy.None()
-        ),
+        new(new ProcessEngineCommand.Noop()),
+        new(new ProcessEngineCommand.Throw()),
+        new([
+            new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(0.5)),
+            new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(0.5)),
+        ]),
+        new([
+            new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(1)),
+            new ProcessEngineCommand.Webhook("/process-engine/test/scenario-callback"),
+        ]),
+        new([
+            new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(1)),
+            new ProcessEngineCommand.Delegate(
+                (job, task, ct) =>
+                {
+                    Interlocked.Increment(ref _scenarioCallbackCounter);
+                    return Task.CompletedTask;
+                }
+            ),
+        ]),
     ];
 
     [HttpPost("scenario")]
     public async Task<ActionResult> Scenario(
-        [FromRoute] string org,
-        [FromRoute] string app,
-        [FromRoute] int instanceOwnerPartyId,
-        [FromRoute] Guid instanceGuid,
         [FromQuery] int numJobs = 1000,
         [FromQuery] int testScenario = 0,
         [FromQuery] bool block = true
     )
     {
         ConcurrentBag<ProcessEngineResponse> responses = [];
-        InstanceInformation instanceInfo = new(org, app, instanceOwnerPartyId, instanceGuid);
+        InstanceInformation instanceInfo = new()
+        {
+            Org = "test-org",
+            App = "test-app",
+            InstanceOwnerPartyId = 12345,
+            InstanceGuid = Guid.NewGuid(),
+        };
 
         var requests = Enumerable
             .Range(1, numJobs)
             .Select(i => new ProcessEngineRequest(
                 $"job-identifier-{i}",
                 instanceInfo,
-                new ProcessEngineActor("callers-altinn-party-id?", "nb"),
-                _testScenarios[testScenario].ToCommandRequests(instanceInfo)
+                new ProcessEngineActor { UserIdOrOrgNumber = "callers-altinn-party-id?" },
+                _testScenarios[testScenario].ToCommandRequests()
             ));
 
         _scenarioCallbackCounter = 0;
@@ -120,34 +113,26 @@ public class TestController : ControllerBase
         public IEnumerable<ProcessEngineCommand> Commands { get; init; }
         public ProcessEngineRetryStrategy RetryStrategy { get; init; }
 
-        public TestScenario(ProcessEngineCommand command, ProcessEngineRetryStrategy retryStrategy)
+        public TestScenario(ProcessEngineCommand command, ProcessEngineRetryStrategy? retryStrategy = null)
         {
             Commands = [command];
-            RetryStrategy = retryStrategy;
+            RetryStrategy = retryStrategy ?? ProcessEngineRetryStrategy.None();
         }
 
-        public TestScenario(IEnumerable<ProcessEngineCommand> commands, ProcessEngineRetryStrategy retryStrategy)
+        public TestScenario(
+            IEnumerable<ProcessEngineCommand> commands,
+            ProcessEngineRetryStrategy? retryStrategy = null
+        )
         {
             Commands = commands;
-            RetryStrategy = retryStrategy;
+            RetryStrategy = retryStrategy ?? ProcessEngineRetryStrategy.None();
         }
 
-        public IEnumerable<ProcessEngineCommandRequest> ToCommandRequests(InstanceInformation instanceInformation)
-        {
-            var uriPrefix =
-                $"http://local.altinn.cloud/{instanceInformation.Org}/{instanceInformation.App}/instances/{instanceInformation.InstanceOwnerPartyId}/{instanceInformation.InstanceGuid}";
-
-            foreach (var command in Commands)
+        public IEnumerable<ProcessEngineCommandRequest> ToCommandRequests() =>
+            Commands.Select(command => new ProcessEngineCommandRequest
             {
-                var cmd = command is ProcessEngineCommand.Webhook webhook
-                    ? webhook with
-                    {
-                        Uri = $"{uriPrefix}/{webhook.Uri}",
-                    }
-                    : command;
-
-                yield return new ProcessEngineCommandRequest(cmd, RetryStrategy: RetryStrategy);
-            }
-        }
+                Command = command,
+                RetryStrategy = RetryStrategy,
+            });
     }
 }

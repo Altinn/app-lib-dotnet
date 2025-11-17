@@ -1,8 +1,15 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.ProcessEngine.Models;
 
 /// <summary>
 /// Describes a command to be executed by the process engine.
 /// </summary>
+[JsonPolymorphic(
+    TypeDiscriminatorPropertyName = "type",
+    UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FallBackToNearestAncestor
+)]
+[JsonDerivedType(typeof(AppCommand), "app")]
 public abstract record ProcessEngineCommand
 {
     /// <summary>

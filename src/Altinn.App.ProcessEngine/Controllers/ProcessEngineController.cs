@@ -11,7 +11,7 @@ namespace Altinn.App.ProcessEngine.Controllers;
 /// </summary>
 [ApiController]
 [Authorize(AuthenticationSchemes = AuthConstants.ApiKeySchemeName)]
-[Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engine")]
+[Route("/process-engine")]
 public class ProcessEngineController : ControllerBase
 {
     private readonly ILogger<ProcessEngineController> _logger;
@@ -32,17 +32,9 @@ public class ProcessEngineController : ControllerBase
     /// Enqueue a request to move the process forward.
     /// </summary>
     [HttpPost("next")]
-    public async Task<ActionResult> Next(
-        [FromRoute] string org,
-        [FromRoute] string app,
-        [FromRoute] int instanceOwnerPartyId,
-        [FromRoute] Guid instanceGuid,
-        [FromBody] ProcessNextRequest request
-    )
+    public async Task<ActionResult> Next([FromBody] ProcessNextRequest request)
     {
-        var processEngineRequest = request.ToProcessEngineRequest(
-            new InstanceInformation(org, app, instanceOwnerPartyId, instanceGuid)
-        );
+        var processEngineRequest = request.ToProcessEngineRequest();
 
         if (_processEngine.HasQueuedJob(processEngineRequest.JobIdentifier))
             return Ok(); // TODO: 200-OK for duplicates. Perhaps this should be another code at some points?
