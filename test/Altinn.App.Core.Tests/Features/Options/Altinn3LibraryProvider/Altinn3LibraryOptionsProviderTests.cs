@@ -195,7 +195,7 @@ public class Altinn3LibraryOptionsProviderTests
     }
 
     [Fact]
-    public async Task Altinn3LibraryOptionsProvider_HttpClientThrowsHttpRequestException_ShouldLogErrorAndThrow()
+    public async Task Altinn3LibraryOptionsProvider_ThrowsServiceException_ShouldLogErrorAndThrow()
     {
         // Arrange
         var fakeLogger = new FakeLogger<Altinn3LibraryOptionsProvider>();
