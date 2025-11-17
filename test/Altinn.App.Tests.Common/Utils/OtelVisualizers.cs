@@ -13,7 +13,7 @@ public static class OtelVisualizers
         int initialIndent = 0
     )
     {
-        var allSpanIds = new HashSet<ActivitySpanId>(activities.Select(a => a.SpanId));
+        var allActivitySpans = new HashSet<ActivitySpanId>(activities.Select(a => a.SpanId));
         var logsByActivityId = logs.GroupBy(l => l.SpanId)
             .ToDictionary(k => k.Key, v => v.OrderBy(l => l.Timestamp).ToList());
         var activityByParentId = activities
@@ -21,9 +21,7 @@ public static class OtelVisualizers
             .ToDictionary(k => k.Key, g => g.OrderBy(a => a.StartTimeUtc).ToList());
 
         // Find root activities: those whose parent span ID is not in our collection
-        var rootActivities = activityByParentId
-            .Where(kvp => !allSpanIds.Contains(kvp.Key))
-            .SelectMany(kvp => kvp.Value);
+        var rootActivities = activities.Where(activity => !allActivitySpans.Contains(activity.ParentSpanId));
 
         var sb = new StringBuilder();
         int rootActivityCount = 0;
@@ -38,12 +36,20 @@ public static class OtelVisualizers
             sb.AppendLine("No root activities found.");
         }
 
-        var remainingLogs = logsByActivityId.Values.SelectMany(l => l).OrderBy(l => l.Timestamp).ToList();
-        if (remainingLogs.Count > 0)
+        // Find any logs that were not associated with any activity
+        bool firstOrphanedLog = true;
+        foreach (
+            var (activitySpanId, activityLogs) in logsByActivityId.Where(kvp => !allActivitySpans.Contains(kvp.Key))
+        )
         {
-            sb.AppendLine();
-            sb.AppendLine("Orphaned Logs:");
-            foreach (var log in remainingLogs)
+            if (firstOrphanedLog)
+            {
+                firstOrphanedLog = false;
+                sb.AppendLine();
+                sb.AppendLine("Orphaned Logs:");
+            }
+            sb.AppendLine($"Logs for ActivitySpanId: {activitySpanId}");
+            foreach (var log in activityLogs)
             {
                 sb.AppendLine($"[{log.LogLevel}] {log.FormattedMessage}");
             }
@@ -92,7 +98,6 @@ public static class OtelVisualizers
                 sb.Append(' ', indent + 2);
                 sb.AppendLine($"[{log.LogLevel}] {log.FormattedMessage}");
             }
-            logsByActivityId.Remove(activity.SpanId);
         }
     }
 }
