@@ -45,6 +45,19 @@ public class TestController : ControllerBase
             ],
             ProcessEngineRetryStrategy.None()
         ),
+        new(
+            [
+                new ProcessEngineCommand.Timeout(TimeSpan.FromSeconds(1)),
+                new ProcessEngineCommand.Delegate(
+                    (job, task, ct) =>
+                    {
+                        Interlocked.Increment(ref _scenarioCallbackCounter);
+                        return Task.CompletedTask;
+                    }
+                ),
+            ],
+            ProcessEngineRetryStrategy.None()
+        ),
     ];
 
     [HttpPost("scenario")]
