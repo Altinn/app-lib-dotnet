@@ -1,9 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
@@ -11,6 +13,7 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<Altinn3LibraryOptionsProvider> _logger;
     private readonly PlatformSettings _platformSettings;
     private readonly HybridCache _codeListCache;
 
@@ -27,6 +30,7 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         string? version,
         HybridCache codeListCache,
         IHttpClientFactory httpClientFactory,
+        ILogger<Altinn3LibraryOptionsProvider> logger,
         IOptions<PlatformSettings> platformSettings
     )
     {
@@ -36,13 +40,14 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         _codeListId = codeListId;
         _version = !string.IsNullOrEmpty(version) ? version : "latest";
         _codeListCache = codeListCache;
+        _logger = logger;
         _platformSettings = platformSettings.Value;
     }
 
     public string Id { get; }
-    private string _org { get; }
-    private string _codeListId { get; }
-    private string _version { get; }
+    private readonly string _org;
+    private readonly string _codeListId;
+    private readonly string _version;
 
     public async Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
     {
@@ -106,13 +111,33 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
 
     private async Task<Altinn3LibraryCodeListResponse> GetAppOptions(CancellationToken cancellationToken)
     {
-        var httpClient = _httpClientFactory.CreateClient("Altinn3LibraryClient");
-        httpClient.BaseAddress = new Uri(_platformSettings.Altinn3LibraryApiEndpoint);
-        var response = await httpClient.GetAsync($"{_org}/code_lists/{_codeListId}/{_version}.json", cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await JsonSerializerPermissive.DeserializeAsync<Altinn3LibraryCodeListResponse>(
-            response.Content,
-            cancellationToken
-        );
+        try
+        {
+            var httpClient = _httpClientFactory.CreateClient("Altinn3LibraryClient");
+            httpClient.BaseAddress = new Uri(_platformSettings.Altinn3LibraryApiEndpoint);
+            var response = await httpClient.GetAsync(
+                $"{_org}/code_lists/{_codeListId}/{_version}.json",
+                cancellationToken
+            );
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                throw new ServiceException(response.StatusCode, "Unexpected response from Altinn3Library");
+            }
+            return await JsonSerializerPermissive.DeserializeAsync<Altinn3LibraryCodeListResponse>(
+                response.Content,
+                cancellationToken
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Exception in GetAppOptions. Code list id: {CodeListId}, Version: {Version}, Org: {Org}",
+                _codeListId,
+                _version,
+                _org
+            );
+            throw;
+        }
     }
 }

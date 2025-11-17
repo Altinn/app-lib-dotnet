@@ -21,7 +21,7 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_RequestingEnThenNb_ShouldReturnNbOptionsOnSecondCall()
     {
         // Arrange
-        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage);
+        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage());
 
         // Act
         var optionsProvider = fixture.GetOptionsProvider(OptionId);
@@ -42,34 +42,11 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_LanguageCollectionsIsEmpty_ShouldReturnOptionsWithOnlyValueAndTags()
     {
         // Arrange
-        var responseMessage = () =>
-            new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(
-                    """
-                    {
-                      "codes": [
-                        {
-                          "value": "value1",
-                          "label": {},
-                          "description": {},
-                          "helpText": {},
-                          "tags": [
-                            "test-data"
-                          ]
-                        }
-                      ],
-                      "version": "ttd/code_lists/someNewCodeList/1.json",
-                      "source": {
-                        "name": "test-data-files"
-                      },
-                      "tagNames": [
-                        "test-data-category"
-                      ]
-                    }
-                    """
-                ),
-            };
+        var responseMessage = Altinn3LibraryOptionsProviderTestData.GetResponseMessage(
+            new Dictionary<string, string>(),
+            new Dictionary<string, string>(),
+            new Dictionary<string, string>()
+        );
 
         await using var fixture = Fixture.Create(responseMessage);
 
@@ -93,34 +70,7 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_LanguageCollectionsIsNull_ShouldReturnOptionsWithOnlyValueAndTags()
     {
         // Arrange
-        var responseMessage = () =>
-            new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(
-                    """
-                    {
-                      "codes": [
-                        {
-                          "value": "value1",
-                          "label": null,
-                          "description": null,
-                          "helpText": null,
-                          "tags": [
-                            "test-data"
-                          ]
-                        }
-                      ],
-                      "version": "ttd/code_lists/someNewCodeList/1.json",
-                      "source": {
-                        "name": "test-data-files"
-                      },
-                      "tagNames": [
-                        "test-data-category"
-                      ]
-                    }
-                    """
-                ),
-            };
+        var responseMessage = Altinn3LibraryOptionsProviderTestData.GetResponseMessage(null, null, null);
 
         await using var fixture = Fixture.Create(responseMessage);
 
@@ -142,43 +92,18 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_NoLanguageProvided_ShouldSortAndUseFirstLanguageInDictionaryWhenNeitherNbNorEnExists()
     {
         // Arrange
-        var responseMessage = () =>
-            new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(
-                    """
-                    {
-                      "codes": [
-                        {
-                          "value": "value1",
-                          "label": {
-                            "de": "text",
-                            "se": "text"
-                          },
-                          "description": {
-                            "de": "Das ist ein Text",
-                            "se": "Det här är en text"
-                          },
-                          "helpText": {
-                            "se": "Välj det här alternativet för att få ett text",
-                            "de": "Wählen Sie diese Option, um eine Text zu erhalten"
-                          },
-                          "tags": [
-                            "test-data"
-                          ]
-                        }
-                      ],
-                      "version": "ttd/code_lists/someNewCodeList/1.json",
-                      "source": {
-                        "name": "test-data-files"
-                      },
-                      "tagNames": [
-                        "test-data-category"
-                      ]
-                    }
-                    """
-                ),
-            };
+        var labels = new Dictionary<string, string> { { "de", "text" }, { "se", "text" } };
+        var descriptions = new Dictionary<string, string>
+        {
+            { "de", "Das ist ein Text" },
+            { "se", "Det här är en text" },
+        };
+        var helpTexts = new Dictionary<string, string>
+        {
+            { "se", "Välj det här alternativet för att få ett text" },
+            { "de", "Wählen Sie diese Option, um eine Text zu erhalten" },
+        };
+        var responseMessage = Altinn3LibraryOptionsProviderTestData.GetResponseMessage(labels, descriptions, helpTexts);
 
         await using var fixture = Fixture.Create(responseMessage);
 
@@ -200,43 +125,14 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_NoLanguageProvided_ShouldDefaultToEnWhenNbIsNotPresentInResponseButEnIs()
     {
         // Arrange
-        var responseMessage = () =>
-            new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(
-                    """
-                    {
-                      "codes": [
-                        {
-                          "value": "value1",
-                          "label": {
-                            "de": "text",
-                            "en": "text"
-                          },
-                          "description": {
-                            "de": "Das ist ein Text",
-                            "en": "This is a text"
-                          },
-                          "helpText": {
-                            "en": "Choose this option to get a text",
-                            "de": "Wählen Sie diese Option, um eine Text zu erhalten"
-                          },
-                          "tags": [
-                            "test-data"
-                          ]
-                        }
-                      ],
-                      "version": "ttd/code_lists/someNewCodeList/1.json",
-                      "source": {
-                        "name": "test-data-files"
-                      },
-                      "tagNames": [
-                        "test-data-category"
-                      ]
-                    }
-                    """
-                ),
-            };
+        var labels = new Dictionary<string, string> { { "de", "text" }, { "en", "text" } };
+        var description = new Dictionary<string, string> { { "de", "Das ist ein Text" }, { "en", "This is a text" } };
+        var helpText = new Dictionary<string, string>
+        {
+            { "en", "Choose this option to get a text" },
+            { "de", "Wählen Sie diese Option, um eine Text zu erhalten" },
+        };
+        var responseMessage = Altinn3LibraryOptionsProviderTestData.GetResponseMessage(labels, description, helpText);
 
         await using var fixture = Fixture.Create(responseMessage);
 
@@ -258,7 +154,7 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_NoLanguageProvided_ShouldDefaultToNbWhenNbIsPresentInResponse()
     {
         // Arrange
-        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage);
+        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage());
 
         // Act
         var optionsProvider = fixture.GetOptionsProvider(OptionId);
@@ -278,7 +174,7 @@ public class Altinn3LibraryOptionsProviderTests
     public async Task Altinn3LibraryOptionsProvider_TwoCallsRequestingTheSameHybridCacheKey_ShouldCallMessageHandlerOnce()
     {
         // Arrange
-        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage);
+        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage());
         const string uri = $"{Org}/code_lists/{CodeListId}/{Version}.json";
 
         var platformSettings = fixture.App.Services.GetService<IOptions<PlatformSettings>>()?.Value!;
@@ -294,10 +190,26 @@ public class Altinn3LibraryOptionsProviderTests
     }
 
     [Fact]
+    public async Task Altinn3LibraryOptionsProvider_HttpClientThrowsHttpRequestException_ShouldLogErrorAndThrow()
+    {
+        // Arrange
+        await using var fixture = Fixture.Create(() =>
+            new HttpResponseMessage(HttpStatusCode.Conflict) { Content = new StringContent("Conflict") }
+        );
+
+        // Act
+        var result = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            fixture.GetOptionsProvider(OptionId).GetAppOptionsAsync(LanguageConst.Nb, new Dictionary<string, string>())
+        );
+
+        Assert.Equal($"Failed to fetch code list {CodeListId} version {Version} for org {Org}", result.Message);
+    }
+
+    [Fact]
     public async Task Altinn3LibraryOptionsProvider_CallsGetAppOptionsAsyncOnce_ShouldReturnsOptions()
     {
         // Arrange
-        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage);
+        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage());
         const string uri = $"{Org}/code_lists/{CodeListId}/{Version}.json";
 
         var platformSettings = fixture.App.Services.GetService<IOptions<PlatformSettings>>()?.Value!;
@@ -325,7 +237,7 @@ public class Altinn3LibraryOptionsProviderTests
 
     private sealed record Fixture(WebApplication App) : IAsyncDisposable
     {
-        public Altinn3LibraryOptionsProviderMessageHandlerMock MockHandler { get; private set; } = null!;
+        public required Altinn3LibraryOptionsProviderMessageHandlerMock MockHandler { get; init; }
 
         public IAppOptionsProvider GetOptionsProvider(string id) =>
             App.Services.GetRequiredService<IEnumerable<IAppOptionsProvider>>().Single(p => p.Id == id);

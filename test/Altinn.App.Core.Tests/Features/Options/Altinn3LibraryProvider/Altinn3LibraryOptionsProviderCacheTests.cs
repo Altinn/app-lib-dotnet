@@ -51,7 +51,7 @@ public class Altinn3LibraryOptionsProviderCacheTests
     }
 
     [Fact]
-    public async Task Altinn3LibraryOptionsProvicer_CallsMessageHandlerOnceWhenADifferentLanguageOnTheSameOptionIdIsRequested()
+    public async Task Altinn3LibraryOptionsProvider_CallsMessageHandlerOnceWhenADifferentLanguageOnTheSameOptionIdIsRequested()
     {
         // Arrange
         await using var fixture = Fixture.Create();
@@ -117,12 +117,12 @@ public class Altinn3LibraryOptionsProviderCacheTests
 
     private sealed record Fixture(WebApplication App) : IAsyncDisposable
     {
-        public Altinn3LibraryOptionsProviderMessageHandlerMock MockHandler { get; private set; } = null!;
+        public required Altinn3LibraryOptionsProviderMessageHandlerMock MockHandler { get; init; }
 
         public static Fixture Create(Action<IServiceCollection>? configure = null)
         {
             var mockHandler = new Altinn3LibraryOptionsProviderMessageHandlerMock(
-                Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage
+                Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage()
             );
             var app = AppBuilder.Build(registerCustomAppServices: services =>
             {
