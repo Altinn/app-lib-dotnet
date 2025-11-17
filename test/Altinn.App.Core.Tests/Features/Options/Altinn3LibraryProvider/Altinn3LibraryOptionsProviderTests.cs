@@ -5,7 +5,6 @@ using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Language;
-using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -211,10 +210,12 @@ public class Altinn3LibraryOptionsProviderTests
 
         // Assert
         var latestRecord = fakeLogger.LatestRecord;
-        latestRecord.Should().NotBe(null);
-        latestRecord
-            .Message.Should()
-            .Be($"Exception in GetAppOptions. Code list id: {CodeListId}, Version: {Version}, Org: {Org}");
+        Assert.NotNull(latestRecord);
+        Assert.Equal(LogLevel.Error, latestRecord.Level);
+        Assert.Equal(
+            $"Exception in GetAppOptions. Code list id: {CodeListId}, Version: {Version}, Org: {Org}",
+            latestRecord.Message
+        );
         Assert.Equal("Unexpected response from Altinn3Library", result.Message);
     }
 
