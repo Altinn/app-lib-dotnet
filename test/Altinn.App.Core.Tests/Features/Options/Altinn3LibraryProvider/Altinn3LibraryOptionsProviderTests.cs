@@ -3,9 +3,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
-using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Language;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
@@ -181,7 +179,7 @@ public class Altinn3LibraryOptionsProviderTests
         await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage());
         const string uri = $"{Org}/code_lists/{CodeListId}/{Version}.json";
 
-        var platformSettings = fixture.App.Services.GetService<IOptions<PlatformSettings>>()?.Value!;
+        var platformSettings = fixture.ServiceProvider.GetService<IOptions<PlatformSettings>>()?.Value!;
 
         // Act
         var optionsProvider = fixture.GetOptionsProvider(OptionId);
@@ -204,7 +202,7 @@ public class Altinn3LibraryOptionsProviderTests
         );
 
         // Act
-        var result = await Assert.ThrowsAsync<ServiceException>(() =>
+        var result = await Assert.ThrowsAsync<HttpRequestException>(() =>
             fixture.GetOptionsProvider(OptionId).GetAppOptionsAsync(LanguageConst.Nb, new Dictionary<string, string>())
         );
 
@@ -226,7 +224,7 @@ public class Altinn3LibraryOptionsProviderTests
         await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage());
         const string uri = $"{Org}/code_lists/{CodeListId}/{Version}.json";
 
-        var platformSettings = fixture.App.Services.GetService<IOptions<PlatformSettings>>()?.Value!;
+        var platformSettings = fixture.ServiceProvider.GetService<IOptions<PlatformSettings>>()?.Value!;
 
         // Act
         var optionsProvider = fixture.GetOptionsProvider(OptionId);
@@ -250,12 +248,12 @@ public class Altinn3LibraryOptionsProviderTests
         Assert.Equal(1, fixture.MockHandler.CallCount);
     }
 
-    private sealed record Fixture(WebApplication App) : IAsyncDisposable
+    private sealed record Fixture(ServiceProvider ServiceProvider) : IAsyncDisposable
     {
         public required Altinn3LibraryOptionsProviderMessageHandlerMock MockHandler { get; init; }
 
         public IAppOptionsProvider GetOptionsProvider(string id) =>
-            App.Services.GetRequiredService<IEnumerable<IAppOptionsProvider>>().Single(p => p.Id == id);
+            ServiceProvider.GetRequiredService<IEnumerable<IAppOptionsProvider>>().Single(p => p.Id == id);
 
         public static Fixture Create(
             Func<HttpResponseMessage> responseMessage,
@@ -263,16 +261,20 @@ public class Altinn3LibraryOptionsProviderTests
         )
         {
             var mockHandler = new Altinn3LibraryOptionsProviderMessageHandlerMock(responseMessage);
-            var app = AppBuilder.Build(registerCustomAppServices: services =>
-            {
-                configure?.Invoke(services);
-                services.AddHttpClient(ClientName).ConfigurePrimaryHttpMessageHandler(() => mockHandler);
-                services.AddAltinn3CodeList(optionId: OptionId, org: Org, codeListId: CodeListId, version: Version);
-            });
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddHttpClient(ClientName).ConfigurePrimaryHttpMessageHandler(() => mockHandler);
+            serviceCollection.AddHybridCache();
+            serviceCollection.AddAltinn3CodeList(
+                optionId: OptionId,
+                org: Org,
+                codeListId: CodeListId,
+                version: Version
+            );
+            configure?.Invoke(serviceCollection);
 
-            return new Fixture(app) { MockHandler = mockHandler };
+            return new Fixture(serviceCollection.BuildServiceProvider()) { MockHandler = mockHandler };
         }
 
-        public async ValueTask DisposeAsync() => await App.DisposeAsync();
+        public async ValueTask DisposeAsync() => await ServiceProvider.DisposeAsync();
     }
 }

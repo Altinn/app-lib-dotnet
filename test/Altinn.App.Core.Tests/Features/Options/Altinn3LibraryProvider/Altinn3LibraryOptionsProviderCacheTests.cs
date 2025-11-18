@@ -1,7 +1,6 @@
 ﻿using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Internal.Language;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Tests.Features.Options.Altinn3LibraryProvider;
@@ -25,7 +24,7 @@ public class Altinn3LibraryOptionsProviderCacheTests
             services.AddAltinn3CodeList(optionId: optionIdTwo, org: Org, codeListId: codeListIdTwo, version: Version)
         );
 
-        var serviceProvider = fixture.App.Services;
+        var serviceProvider = fixture.ServiceProvider;
 
         // Act/Assert: First scope
         using (var scope = serviceProvider.CreateScope())
@@ -51,12 +50,12 @@ public class Altinn3LibraryOptionsProviderCacheTests
     }
 
     [Fact]
-    public async Task Altinn3LibraryOptionsProvider_CallsMessageHandlerOnceWhenADifferentLanguageOnTheSameOptionIdIsRequested()
+    public async Task Altinn3LibraryOptionsProvider_RequestsDifferentLanguageOnTheSameOptionId_ShouldCallMessageHandlerOnce()
     {
         // Arrange
         await using var fixture = Fixture.Create();
 
-        var serviceProvider = fixture.App.Services;
+        var serviceProvider = fixture.ServiceProvider;
 
         // Act/Assert: First scope
         using (var scope = serviceProvider.CreateScope())
@@ -84,12 +83,12 @@ public class Altinn3LibraryOptionsProviderCacheTests
     }
 
     [Fact]
-    public async Task Altinn3LibraryOptionsProvider_ReturnsCachedValueWhenASecondApiCallIsMade()
+    public async Task Altinn3LibraryOptionsProvider_RequestsWithTheSameParametersTwice_ShouldCallMessageHandlerOnce()
     {
         // Arrange
         await using var fixture = Fixture.Create();
 
-        var serviceProvider = fixture.App.Services;
+        var serviceProvider = fixture.ServiceProvider;
 
         // Act/Assert: First scope
         using (var scope = serviceProvider.CreateScope())
@@ -115,7 +114,7 @@ public class Altinn3LibraryOptionsProviderCacheTests
         }
     }
 
-    private sealed record Fixture(WebApplication App) : IAsyncDisposable
+    private sealed record Fixture(ServiceProvider ServiceProvider) : IAsyncDisposable
     {
         public required Altinn3LibraryOptionsProviderMessageHandlerMock MockHandler { get; init; }
 
@@ -124,16 +123,20 @@ public class Altinn3LibraryOptionsProviderCacheTests
             var mockHandler = new Altinn3LibraryOptionsProviderMessageHandlerMock(
                 Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage()
             );
-            var app = AppBuilder.Build(registerCustomAppServices: services =>
-            {
-                services.AddHttpClient(ClientName).ConfigurePrimaryHttpMessageHandler(() => mockHandler);
-                services.AddAltinn3CodeList(optionId: OptionId, org: Org, codeListId: CodeListId, version: Version);
-                configure?.Invoke(services);
-            });
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddHttpClient(ClientName).ConfigurePrimaryHttpMessageHandler(() => mockHandler);
+            serviceCollection.AddHybridCache();
+            serviceCollection.AddAltinn3CodeList(
+                optionId: OptionId,
+                org: Org,
+                codeListId: CodeListId,
+                version: Version
+            );
+            configure?.Invoke(serviceCollection);
 
-            return new Fixture(app) { MockHandler = mockHandler };
+            return new Fixture(serviceCollection.BuildServiceProvider()) { MockHandler = mockHandler };
         }
 
-        public async ValueTask DisposeAsync() => await App.DisposeAsync();
+        public async ValueTask DisposeAsync() => await ServiceProvider.DisposeAsync();
     }
 }

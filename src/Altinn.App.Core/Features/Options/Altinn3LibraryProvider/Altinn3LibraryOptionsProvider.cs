@@ -1,12 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 
@@ -14,7 +12,6 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<Altinn3LibraryOptionsProvider> _logger;
-    private readonly PlatformSettings _platformSettings;
     private readonly HybridCache _codeListCache;
 
     private static readonly HybridCacheEntryOptions _defaultCacheExpiration = new()
@@ -29,10 +26,13 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         string? version,
         HybridCache codeListCache,
         IHttpClientFactory httpClientFactory,
-        ILogger<Altinn3LibraryOptionsProvider> logger,
-        IOptions<PlatformSettings> platformSettings
+        ILogger<Altinn3LibraryOptionsProvider> logger
     )
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(optionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(org);
+        ArgumentException.ThrowIfNullOrWhiteSpace(codeListId);
+
         _httpClientFactory = httpClientFactory;
         Id = optionId;
         _org = org;
@@ -40,7 +40,6 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         _version = !string.IsNullOrEmpty(version) ? version : "latest";
         _codeListCache = codeListCache;
         _logger = logger;
-        _platformSettings = platformSettings.Value;
     }
 
     public string Id { get; }
@@ -51,14 +50,14 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
     public async Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
     {
         var result = await _codeListCache.GetOrCreateAsync(
-            $"{_org}-{_codeListId}-{_version}",
+            $"Altinn3Library:{_org}-{_codeListId}-{_version}",
             async cancel => await GetAppOptions(cancellationToken: cancel),
             options: _defaultCacheExpiration
         );
-        return ParseAppOptions(result, language);
+        return MapAppOptions(result, language);
     }
 
-    private static AppOptions ParseAppOptions(Altinn3LibraryCodeListResponse codeListResponse, string? language)
+    private static AppOptions MapAppOptions(Altinn3LibraryCodeListResponse codeListResponse, string? language)
     {
         var options = codeListResponse
             .Codes.Select(code => new AppOption
@@ -113,7 +112,6 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         try
         {
             var httpClient = _httpClientFactory.CreateClient("Altinn3LibraryClient");
-            httpClient.BaseAddress = new Uri(_platformSettings.Altinn3LibraryApiEndpoint);
             var response = await httpClient.GetAsync(
                 $"{_org}/code_lists/{_codeListId}/{_version}.json",
                 cancellationToken

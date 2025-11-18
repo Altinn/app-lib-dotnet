@@ -94,6 +94,15 @@ public static class CommonOptionProviderServiceCollectionExtensions
         string? version = null
     )
     {
+        serviceCollection.AddHttpClient(
+            "Altinn3LibraryClient",
+            (serviceProvider, client) =>
+            {
+                var platformSettings = serviceProvider.GetRequiredService<IOptions<PlatformSettings>>().Value;
+                client.BaseAddress = new Uri(platformSettings.Altinn3LibraryApiEndpoint);
+            }
+        );
+
         serviceCollection.AddSingleton<IAppOptionsProvider>(sp => new Altinn3LibraryOptionsProvider(
             optionId,
             org,
@@ -101,8 +110,7 @@ public static class CommonOptionProviderServiceCollectionExtensions
             version,
             sp.GetRequiredService<HybridCache>(),
             sp.GetRequiredService<IHttpClientFactory>(),
-            sp.GetRequiredService<ILogger<Altinn3LibraryOptionsProvider>>(),
-            sp.GetRequiredService<IOptions<PlatformSettings>>()
+            sp.GetRequiredService<ILogger<Altinn3LibraryOptionsProvider>>()
         ));
         return serviceCollection;
     }
