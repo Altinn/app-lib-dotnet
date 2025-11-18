@@ -126,7 +126,7 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
             .Select(i => new ComponentContext(
                 state,
                 new OptionsRowComponent(this, i),
-                Base.RepeatingReferenceComponent.GetSubRowIndexes(rowIndexes, i),
+                RepeatingGroupComponent.GetSubRowIndexes(rowIndexes, i),
                 defaultDataElementIdentifier
             ))
             .ToList();

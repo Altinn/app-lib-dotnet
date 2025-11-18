@@ -49,7 +49,7 @@ public class PageComponentConverterTests
             component switch
             {
                 PageComponent page => page.Components,
-                RepeatingReferenceComponent repeatingGroup => repeatingGroup.AllChildren,
+                RepeatingGroupComponent repeatingGroup => repeatingGroup.AllChildren,
                 SimpleReferenceComponent nonRepeatingGroup => nonRepeatingGroup.AllChildren,
                 NoReferenceComponent => [],
                 _ => throw new NotSupportedException(

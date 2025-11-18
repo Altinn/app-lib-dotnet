@@ -48,19 +48,17 @@ public class RunTest2
         hidden
             .Select(d => d.Field)
             .Should()
-            .BeEquivalentTo(
-                [
-                    "some.data",
-                    "some.data[0]",
-                    "some.data[0].binding",
-                    "some.data[0].binding2",
-                    "some.data[0].binding3",
-                    "some.data[1]",
-                    "some.data[1].binding",
-                    "some.data[1].binding2",
-                    "some.data[1].binding3",
-                ]
-            );
+            .BeEquivalentTo([
+                "some.data",
+                "some.data[0]",
+                "some.data[0].binding",
+                "some.data[0].binding2",
+                "some.data[0].binding3",
+                "some.data[1]",
+                "some.data[1].binding",
+                "some.data[1].binding2",
+                "some.data[1].binding3",
+            ]);
 
         // Verify before removing data
         data.Some.Data[0].Binding.Should().BeNull();

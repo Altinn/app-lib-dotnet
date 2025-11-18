@@ -219,11 +219,19 @@ public sealed class ComponentContext
     }
 
     /// <summary>
+    /// Evaluate the given expression in the context of this component context
+    /// </summary>
+    public async Task<ExpressionValue> EvaluateExpression(Expression expression)
+    {
+        return await ExpressionEvaluator.EvaluateExpression_internal(State, expression, this);
+    }
+
+    /// <summary>
     /// Evaluate the given expression in the context of this component context, and return the boolean result
     /// </summary>
     public async Task<bool> EvaluateBooleanExpression(Expression expression, bool defaultReturn)
     {
-        var result = await ExpressionEvaluator.EvaluateExpression_internal(State, expression, this);
+        var result = await EvaluateExpression(expression);
         return result.ValueKind switch
         {
             JsonValueKind.True => true,
