@@ -130,13 +130,13 @@ public class Altinn3LibraryOptionsProviderTests
     {
         // Arrange
         var labels = new Dictionary<string, string> { { "de", "text" }, { "en", "text" } };
-        var description = new Dictionary<string, string> { { "de", "Das ist ein Text" }, { "en", "This is a text" } };
-        var helpText = new Dictionary<string, string>
+        var descriptions = new Dictionary<string, string> { { "de", "Das ist ein Text" }, { "en", "This is a text" } };
+        var helpTexts = new Dictionary<string, string>
         {
             { "en", "Choose this option to get a text" },
             { "de", "Wählen Sie diese Option, um eine Text zu erhalten" },
         };
-        var responseMessage = Altinn3LibraryOptionsProviderTestData.GetResponseMessage(labels, description, helpText);
+        var responseMessage = Altinn3LibraryOptionsProviderTestData.GetResponseMessage(labels, descriptions, helpTexts);
 
         await using var fixture = Fixture.Create(responseMessage);
 
