@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
 using Altinn.App.ProcessEngine.Constants;
 using Altinn.App.ProcessEngine.Extensions;
@@ -58,7 +59,15 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
                 _ => throw new ArgumentException($"Unknown instruction: {task.Command}"),
             };
 
-            _logger.LogInformation("Task {Task} executed successfully in {Elapsed}", task, stopwatch.Elapsed);
+            if (result.IsSuccess())
+                _logger.LogInformation("Task {Task} executed with success in {Elapsed}", task, stopwatch.Elapsed);
+            else
+                _logger.LogError(
+                    "Task {Task} executed with error in {Elapsed}: {Message}",
+                    task,
+                    stopwatch.Elapsed,
+                    result.Message ?? "no details specified"
+                );
 
             return result;
         }
@@ -90,7 +99,12 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         using var httpClient = GetAuthorizedAppClient(job.InstanceInformation);
         httpClient.Timeout = command.MaxExecutionTime ?? _settings.DefaultTaskExecutionTimeout;
 
-        var payload = new ProcessEngineAppCallbackPayload(task.ProcessEngineActor, command.Metadata);
+        var payload = new ProcessEngineAppCallbackPayload
+        {
+            CommandKey = command.CommandKey,
+            Actor = task.Actor,
+            Metadata = command.Metadata,
+        };
         using var response = await httpClient.PostAsync(
             command.CommandKey,
             JsonContent.Create(payload),
@@ -100,7 +114,7 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         return response.IsSuccessStatusCode
             ? ProcessEngineExecutionResult.Success()
             : ProcessEngineExecutionResult.Error(
-                $"AppCommand execution failed: {await response.Content.ReadAsStringAsync(cancellationToken)}"
+                $"AppCommand execution failed with status code {response.StatusCode}: {await response.GetContentOrDefault("<no body content>", cancellationToken)}"
             );
     }
 
@@ -167,6 +181,11 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         }
     }
 
+    [SuppressMessage(
+        "Globalization",
+        "CA1305:Specify IFormatProvider",
+        Justification = "Method explicitly uses InvariantCulture"
+    )]
     private HttpClient GetAuthorizedAppClient(InstanceInformation instanceInformation)
     {
         var client = _httpClientFactory.CreateClient();

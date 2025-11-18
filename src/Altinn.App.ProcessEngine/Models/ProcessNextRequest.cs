@@ -28,8 +28,8 @@ public sealed record ProcessNextRequest
     /// <summary>
     /// The actor this request is executed on behalf of.
     /// </summary>
-    [JsonPropertyName("processEngineActor")]
-    public required ProcessEngineActor ProcessEngineActor { get; init; }
+    [JsonPropertyName("actor")]
+    public required ProcessEngineActor Actor { get; init; }
 
     /// <summary>
     /// Process engine tasks associated with this request.
@@ -44,7 +44,7 @@ public sealed record ProcessNextRequest
         new(
             $"{InstanceInformation.InstanceGuid}/next/from-{CurrentElementId}-to-{DesiredElementId}",
             InstanceInformation,
-            ProcessEngineActor,
+            Actor,
             Tasks
         );
 };

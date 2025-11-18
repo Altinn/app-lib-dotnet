@@ -4,7 +4,7 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
 {
     public required int ProcessingOrder { get; init; }
     public required ProcessEngineCommand Command { get; init; }
-    public required ProcessEngineActor ProcessEngineActor { get; init; }
+    public required ProcessEngineActor Actor { get; init; }
     public DateTimeOffset? StartTime { get; init; }
     public DateTimeOffset? BackoffUntil { get; set; }
     public ProcessEngineRetryStrategy? RetryStrategy { get; init; }
@@ -14,13 +14,13 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
     public static ProcessEngineTask FromRequest(
         string jobIdentifier,
         ProcessEngineCommandRequest request,
-        ProcessEngineActor processEngineActor,
+        ProcessEngineActor actor,
         int index
     ) =>
         new()
         {
             Identifier = $"{jobIdentifier}/{request.Command}",
-            ProcessEngineActor = processEngineActor,
+            Actor = actor,
             StartTime = request.StartTime,
             ProcessingOrder = index,
             Command = request.Command,

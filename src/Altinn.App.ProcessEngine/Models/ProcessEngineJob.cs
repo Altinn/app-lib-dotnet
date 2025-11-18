@@ -2,7 +2,7 @@ namespace Altinn.App.ProcessEngine.Models;
 
 internal sealed record ProcessEngineJob : ProcessEngineDatabaseItem
 {
-    public required ProcessEngineActor ProcessEngineActor { get; init; }
+    public required ProcessEngineActor Actor { get; init; }
     public required InstanceInformation InstanceInformation { get; init; }
     public required IReadOnlyList<ProcessEngineTask> Tasks { get; init; }
 
@@ -11,12 +11,9 @@ internal sealed record ProcessEngineJob : ProcessEngineDatabaseItem
         {
             Identifier = request.JobIdentifier,
             InstanceInformation = request.InstanceInformation,
-            ProcessEngineActor = request.ProcessEngineActor,
+            Actor = request.Actor,
             Tasks = request
-                .Tasks.Select(
-                    (task, i) =>
-                        ProcessEngineTask.FromRequest(request.JobIdentifier, task, request.ProcessEngineActor, i)
-                )
+                .Tasks.Select((task, i) => ProcessEngineTask.FromRequest(request.JobIdentifier, task, request.Actor, i))
                 .ToList(),
         };
 

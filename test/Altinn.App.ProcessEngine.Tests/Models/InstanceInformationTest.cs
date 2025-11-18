@@ -8,8 +8,20 @@ public class InstanceInformationTest
     [Fact]
     public void SupportsCaseInsensitiveEquality()
     {
-        var a = new InstanceInformation("org", "app", 123, Guid.NewGuid());
-        var b = new InstanceInformation("ORG", "App", 123, a.InstanceGuid);
+        var a = new InstanceInformation
+        {
+            Org = "org",
+            App = "app",
+            InstanceOwnerPartyId = 123,
+            InstanceGuid = Guid.NewGuid(),
+        };
+        var b = new InstanceInformation
+        {
+            Org = "ORG",
+            App = "App",
+            InstanceOwnerPartyId = 123,
+            InstanceGuid = a.InstanceGuid,
+        };
 
         Assert.Equal(a, b);
     }

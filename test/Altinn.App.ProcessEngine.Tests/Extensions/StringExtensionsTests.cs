@@ -11,12 +11,13 @@ public class StringExtensionsTests
     public void FormatWith_HandlesInstanceInformationScenario()
     {
         // Arrange
-        var instanceInfo = new InstanceInformation(
-            "the-org",
-            "the-app",
-            1234,
-            Guid.Parse("013b0a97-19d9-464c-b5ce-7ca0f95bfce4")
-        );
+        var instanceInfo = new InstanceInformation
+        {
+            Org = "the-org",
+            App = "the-app",
+            InstanceOwnerPartyId = 1234,
+            InstanceGuid = Guid.Parse("013b0a97-19d9-464c-b5ce-7ca0f95bfce4"),
+        };
         const string template =
             "http://the-host.com/{Org}/{APP}/instances/{instanceOwnerPartyId}/{instanceGuid}/the-endpoint";
 

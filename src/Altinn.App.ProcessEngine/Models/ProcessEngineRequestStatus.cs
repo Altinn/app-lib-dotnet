@@ -5,6 +5,13 @@ namespace Altinn.App.ProcessEngine.Models;
 /// </summary>
 public enum ProcessEngineRequestStatus
 {
+    /// <summary>
+    /// The request has been accepted.
+    /// </summary>
     Accepted,
+
+    /// <summary>
+    /// The request has been rejected.
+    /// </summary>
     Rejected,
 }

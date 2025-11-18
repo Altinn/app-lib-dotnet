@@ -27,27 +27,35 @@ public class ProcessEngineTests
                 await fixture.ProcessEngine.EnqueueJob(
                     new ProcessEngineRequest(
                         $"test-job-{i}",
-                        new InstanceInformation("test-org", "test-app", 1234, Guid.NewGuid()),
-                        new ProcessEngineActor("501337"),
+                        new InstanceInformation
+                        {
+                            Org = "test-org",
+                            App = "test-app",
+                            InstanceOwnerPartyId = 1234,
+                            InstanceGuid = Guid.NewGuid(),
+                        },
+                        new ProcessEngineActor { UserIdOrOrgNumber = "501337" },
                         [
-                            new ProcessEngineCommandRequest(
-                                new ProcessEngineCommand.Delegate(
+                            new ProcessEngineCommandRequest
+                            {
+                                Command = new ProcessEngineCommand.Delegate(
                                     (job, task, ct) =>
                                     {
                                         testResults.Enqueue($"{job.Identifier}-task-delegate-1");
                                         return Task.CompletedTask;
                                     }
-                                )
-                            ),
-                            new ProcessEngineCommandRequest(
-                                new ProcessEngineCommand.Delegate(
+                                ),
+                            },
+                            new ProcessEngineCommandRequest
+                            {
+                                Command = new ProcessEngineCommand.Delegate(
                                     (job, task, ct) =>
                                     {
                                         testResults.Enqueue($"{job.Identifier}-task-delegate-2");
                                         return Task.CompletedTask;
                                     }
-                                )
-                            ),
+                                ),
+                            },
                         ]
                     )
                 )

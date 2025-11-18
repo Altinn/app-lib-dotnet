@@ -5,9 +5,15 @@ namespace Altinn.App.ProcessEngine.Models;
 /// </summary>
 public sealed record ProcessEngineResponse(ProcessEngineRequestStatus Status, string? Message = null)
 {
-    public static ProcessEngineResponse Accepted(string? message = null) =>
-        new(ProcessEngineRequestStatus.Accepted, message);
+    /// <summary>
+    /// Creates an accepted response.
+    /// </summary>
+    public static ProcessEngineResponse Accepted() => new(ProcessEngineRequestStatus.Accepted);
 
+    /// <summary>
+    /// Creates a rejected response.
+    /// </summary>
+    /// <param name="message">Optional message for the caller, describing why the request was rejected.</param>
     public static ProcessEngineResponse Rejected(string? message = null) =>
         new(ProcessEngineRequestStatus.Rejected, message);
 };
