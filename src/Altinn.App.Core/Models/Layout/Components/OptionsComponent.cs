@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
-using Altinn.App.Core.Models.Layout.Components.Base;
 
 namespace Altinn.App.Core.Models.Layout.Components;
 
@@ -127,7 +126,7 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
             .Select(i => new ComponentContext(
                 state,
                 new OptionsRowComponent(this, i),
-                RepeatingReferenceComponent.GetSubRowIndexes(rowIndexes, i),
+                Base.RepeatingReferenceComponent.GetSubRowIndexes(rowIndexes, i),
                 defaultDataElementIdentifier
             ))
             .ToList();

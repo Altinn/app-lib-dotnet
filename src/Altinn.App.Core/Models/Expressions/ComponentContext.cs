@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components.Base;
@@ -45,6 +46,8 @@ public sealed class ComponentContext
 
     /// <summary>
     /// The component from <see cref="LayoutModel"/> that should be used as context
+    /// Might be null when evaluating expressions not tied to a specific component
+    /// (eg Gateway conditions)
     /// </summary>
     public BaseComponent? Component { get; }
 
@@ -93,24 +96,9 @@ public sealed class ComponentContext
         {
             return _isHidden.Value;
         }
+        ArgumentNullException.ThrowIfNull(Component, "To get the hidden status, the Context needs a component.");
 
-        // If the data has already been cleaned, rows are set to null for validation
-        // but if the "hiddenRow" expression hides rows with specific values, the expression
-        // might not hide the row when the data is null.
-        //
-        // The only reason for a row to be null is that the data has been cleaned and the row was considered hidden
-        // so we just check the data and assume it was hidden.
-        if (Component is RepeatingGroupRowComponent rgc && rgc.DataModelBindings.TryGetValue("group", out var binding))
-        {
-            var data = await State.GetModelData(binding, DataElementIdentifier, RowIndices);
-            if (data is null)
-            {
-                _isHidden = true;
-                return _isHidden.Value;
-            }
-        }
-
-        var isHidden = await ExpressionEvaluator.EvaluateBooleanExpression(State, this, "hidden", false);
+        var isHidden = await EvaluateBooleanExpression(Component.Hidden, defaultReturn: false);
         _isHidden = isHidden;
         return _isHidden.Value;
     }
@@ -121,15 +109,14 @@ public sealed class ComponentContext
         {
             return _removeWhenHidden.Value;
         }
-
-        var removeWhenHidden = await ExpressionEvaluator.EvaluateBooleanExpression(
-            State,
-            this,
-            "removeWhenHidden",
-            // Default return should match AppSettings.RemoveHiddenData,
-            // but currently we only run removal when it is true, so we set it to true here
-            defaultReturn: true
+        ArgumentNullException.ThrowIfNull(
+            Component,
+            "To get the removeWhenHidden status, the Context needs a component."
         );
+
+        // The default return should match AppSettings.RemoveHiddenData,
+        // but currently we only run removal when it is true, so we set it to true here
+        var removeWhenHidden = await EvaluateBooleanExpression(Component.RemoveWhenHidden, defaultReturn: true);
 
         _removeWhenHidden = removeWhenHidden;
         return _removeWhenHidden.Value;
@@ -229,5 +216,23 @@ public sealed class ComponentContext
                 return _expression.ToString();
             }
         }
+    }
+
+    /// <summary>
+    /// Evaluate the given expression in the context of this component context, and return the boolean result
+    /// </summary>
+    public async Task<bool> EvaluateBooleanExpression(Expression expression, bool defaultReturn)
+    {
+        var result = await ExpressionEvaluator.EvaluateExpression_internal(State, expression, this);
+        return result.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => defaultReturn,
+            JsonValueKind.Undefined => defaultReturn,
+            _ => throw new ExpressionEvaluatorTypeErrorException(
+                $"Expression did not evaluate to a boolean value: {expression}, got {result.ValueKind}"
+            ),
+        };
     }
 }

@@ -36,8 +36,7 @@ public static class LayoutEvaluator
                 hiddenModelBindings,
                 nonHiddenModelBindings,
                 pageContext,
-                evaluateRemoveWhenHidden,
-                []
+                evaluateRemoveWhenHidden
             );
         }
 
@@ -51,8 +50,7 @@ public static class LayoutEvaluator
         HashSet<DataReference> hiddenModelBindings,
         HashSet<DataReference> nonHiddenModelBindings,
         ComponentContext context,
-        bool evaluateRemoveWhenHidden,
-        IReadOnlyList<DataReference> ignoredPrefixes
+        bool evaluateRemoveWhenHidden
     )
     {
         if (context.Component is null)
@@ -65,20 +63,12 @@ public static class LayoutEvaluator
 
         var isHidden = await context.IsHidden(evaluateRemoveWhenHidden);
 
-        List<DataReference> childIgnoredPrefixes = [.. ignoredPrefixes];
-
         // Schedule fields for removal
         foreach (var reference in await context.Component.GetDataReferencesToRemoveWhenHidden(context))
         {
-            if (ignoredPrefixes.Any(prefix => reference.StartsWith(prefix)))
-            {
-                continue; // Skip fields with ignored prefixes
-            }
-
             if (isHidden)
             {
                 hiddenModelBindings.Add(reference);
-                childIgnoredPrefixes.Add(reference);
             }
             else
             {
@@ -94,8 +84,7 @@ public static class LayoutEvaluator
                 hiddenModelBindings,
                 nonHiddenModelBindings,
                 childContext,
-                evaluateRemoveWhenHidden,
-                childIgnoredPrefixes
+                evaluateRemoveWhenHidden
             );
         }
     }
