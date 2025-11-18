@@ -218,7 +218,7 @@ public class Altinn3LibraryOptionsProviderTests
     }
 
     [Fact]
-    public async Task Altinn3LibraryOptionsProvider_CallsGetAppOptionsAsyncOnce_ShouldReturnsOptions()
+    public async Task Altinn3LibraryOptionsProvider_OnSuccess_ShouldReturnsOptions()
     {
         // Arrange
         await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage());
