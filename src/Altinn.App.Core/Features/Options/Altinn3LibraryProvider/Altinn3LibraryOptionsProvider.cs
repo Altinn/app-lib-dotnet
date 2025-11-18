@@ -17,7 +17,6 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
     private readonly PlatformSettings _platformSettings;
     private readonly HybridCache _codeListCache;
 
-    // Consider making this configurable via options, but there does not seem to be a strong use case
     private static readonly HybridCacheEntryOptions _defaultCacheExpiration = new()
     {
         Expiration = TimeSpan.FromMinutes(15),
@@ -121,7 +120,7 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
             );
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                throw new ServiceException(response.StatusCode, "Unexpected response from Altinn3Library");
+                throw new HttpRequestException("Unexpected response from Altinn3Library");
             }
             return await JsonSerializerPermissive.DeserializeAsync<Altinn3LibraryCodeListResponse>(
                 response.Content,
