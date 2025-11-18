@@ -186,11 +186,11 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         "CA1305:Specify IFormatProvider",
         Justification = "Method explicitly uses InvariantCulture"
     )]
-    private HttpClient GetAuthorizedAppClient(InstanceInformation instanceInformation)
+    internal HttpClient GetAuthorizedAppClient(InstanceInformation instanceInformation)
     {
         var client = _httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Add(AuthConstants.ApiKeyHeaderName, _settings.ApiKey);
-        client.BaseAddress = new Uri(_settings.AppCommandEndpoint.FormatWith(instanceInformation));
+        client.BaseAddress = new Uri(_settings.AppCommandEndpoint.FormatWith(instanceInformation).TrimEnd('/') + "/");
 
         return client;
     }

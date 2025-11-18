@@ -27,7 +27,7 @@ internal static class Defaults
     /// </summary>
     public static readonly ProcessEngineRetryStrategy DefaultTaskRetryStrategy = ProcessEngineRetryStrategy.Exponential(
         baseInterval: TimeSpan.FromSeconds(1),
-        maxRetries: int.MaxValue,
-        maxDelay: TimeSpan.FromSeconds(35)
+        maxRetries: 1000,
+        maxDelay: TimeSpan.FromSeconds(60)
     );
 }

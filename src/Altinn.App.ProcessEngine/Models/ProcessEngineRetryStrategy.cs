@@ -1,19 +1,39 @@
+using System.Text.Json.Serialization;
+
 namespace Altinn.App.ProcessEngine.Models;
 
 /// <summary>
 /// Defines a retry strategy for process engine tasks.
 /// </summary>
-/// <param name="BackoffType">The type of backoff to use.</param>
-/// <param name="BaseInterval">The base interval between attempts. The actual delay grows or stays constant based on the backoff type.</param>
-/// <param name="MaxRetries">The maximum allowed number of retries before giving up.</param>
-/// <param name="MaxDelay">The maximum allowed delay between retries. Useful for linear and exponential types.</param>
-public sealed record ProcessEngineRetryStrategy(
-    ProcessEngineBackoffType BackoffType,
-    TimeSpan BaseInterval,
-    int? MaxRetries = null,
-    TimeSpan? MaxDelay = null
-)
+public sealed record ProcessEngineRetryStrategy
 {
+    /// <summary>
+    /// The type of backoff to use.
+    /// </summary>
+    [JsonPropertyName("backoffType")]
+    public ProcessEngineBackoffType BackoffType { get; init; }
+
+    /// <summary>
+    /// The base interval between attempts. The actual delay grows or stays constant based on the backoff type.
+    /// </summary>
+    [JsonPropertyName("baseInterval")]
+    public TimeSpan BaseInterval { get; init; }
+
+    /// <summary>
+    /// The maximum allowed number of retries before giving up.
+    /// </summary>
+    [JsonPropertyName("maxRetries")]
+    public int? MaxRetries { get; init; }
+
+    /// <summary>
+    /// The maximum allowed delay between retries. Useful for linear and exponential types.
+    /// </summary>
+    [JsonPropertyName("maxDelay")]
+    public TimeSpan? MaxDelay { get; init; }
+
+    // TODO: Consider adding jitter option
+    // TODO: Consider adding short-circuit option (avoid retrying on certain error codes)
+
     /// <summary>
     /// Creates an exponential backoff retry strategy.
     /// </summary>
@@ -21,7 +41,14 @@ public sealed record ProcessEngineRetryStrategy(
         TimeSpan baseInterval,
         int? maxRetries = null,
         TimeSpan? maxDelay = null
-    ) => new(ProcessEngineBackoffType.Exponential, baseInterval, maxRetries, maxDelay);
+    ) =>
+        new()
+        {
+            BackoffType = ProcessEngineBackoffType.Exponential,
+            BaseInterval = baseInterval,
+            MaxRetries = maxRetries,
+            MaxDelay = maxDelay,
+        };
 
     /// <summary>
     /// Creates a linear backoff retry strategy.
@@ -30,13 +57,26 @@ public sealed record ProcessEngineRetryStrategy(
         TimeSpan baseInterval,
         int? maxRetries = null,
         TimeSpan? maxDelay = null
-    ) => new(ProcessEngineBackoffType.Linear, baseInterval, maxRetries, maxDelay);
+    ) =>
+        new()
+        {
+            BackoffType = ProcessEngineBackoffType.Linear,
+            BaseInterval = baseInterval,
+            MaxRetries = maxRetries,
+            MaxDelay = maxDelay,
+        };
 
     /// <summary>
     /// Creates a constant backoff retry strategy.
     /// </summary>
     public static ProcessEngineRetryStrategy Constant(TimeSpan interval, int? maxRetries = null) =>
-        new(ProcessEngineBackoffType.Constant, interval, maxRetries, interval);
+        new()
+        {
+            BackoffType = ProcessEngineBackoffType.Constant,
+            BaseInterval = interval,
+            MaxRetries = maxRetries,
+            MaxDelay = interval,
+        };
 
     /// <summary>
     /// Alias for <see cref="Constant"/>
@@ -48,5 +88,11 @@ public sealed record ProcessEngineRetryStrategy(
     /// Creates a retry strategy with no retries.
     /// </summary>
     public static ProcessEngineRetryStrategy None() =>
-        new(ProcessEngineBackoffType.Constant, TimeSpan.Zero, 0, TimeSpan.Zero);
+        new()
+        {
+            BackoffType = ProcessEngineBackoffType.Constant,
+            BaseInterval = TimeSpan.Zero,
+            MaxRetries = 0,
+            MaxDelay = TimeSpan.Zero,
+        };
 }

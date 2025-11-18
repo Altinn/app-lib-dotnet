@@ -12,10 +12,17 @@ internal partial class ProcessEngine
         _logger.LogDebug("Enqueuing job {JobIdentifier}", request.JobIdentifier);
 
         if (!request.IsValid())
-            return ProcessEngineResponse.Rejected("Invalid request");
+            return ProcessEngineResponse.Rejected($"Invalid request: {request}");
 
-        if (HasQueuedJob(request.JobIdentifier))
-            return ProcessEngineResponse.Rejected("Duplicate request");
+        if (HasDuplicateJob(request.JobIdentifier))
+            return ProcessEngineResponse.Rejected(
+                "Duplicate request. A job with the same identifier is already being processed"
+            );
+
+        if (HasQueuedJobForInstance(request.InstanceInformation))
+            return ProcessEngineResponse.Rejected(
+                "A job for this instance is already processing. Concurrency is currently not supported"
+            );
 
         if (_mainLoopTask is null)
             return ProcessEngineResponse.Rejected("Process engine is not running. Did you call Start()?");
@@ -52,9 +59,14 @@ internal partial class ProcessEngine
         _inbox[job.Identifier] = job;
     }
 
-    public bool HasQueuedJob(string jobIdentifier)
+    public bool HasDuplicateJob(string jobIdentifier)
     {
         return _inbox.ContainsKey(jobIdentifier);
+    }
+
+    public bool HasQueuedJobForInstance(InstanceInformation instanceInformation)
+    {
+        return _inbox.Values.Any(x => x.InstanceInformation.Equals(instanceInformation));
     }
 
     private async Task PopulateJobsFromStorage(CancellationToken cancellationToken)
