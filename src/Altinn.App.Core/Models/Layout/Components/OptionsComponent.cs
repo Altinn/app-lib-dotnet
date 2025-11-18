@@ -121,14 +121,18 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
 
         // For group backed options, we create a child context for each item in the group
         var numRows = await state.GetModelDataCount(groupBinding, defaultDataElementIdentifier, rowIndexes) ?? 0;
+        var component = OptionsRowComponent.FromOptionsComponent(this);
         var childContexts = Enumerable
             .Range(0, numRows)
-            .Select(i => new ComponentContext(
-                state,
-                new OptionsRowComponent(this, i),
-                RepeatingGroupComponent.GetSubRowIndexes(rowIndexes, i),
-                defaultDataElementIdentifier
-            ))
+            .Select(i =>
+            {
+                return new ComponentContext(
+                    state,
+                    component,
+                    RepeatingGroupComponent.GetSubRowIndexes(rowIndexes, i),
+                    defaultDataElementIdentifier
+                );
+            })
             .ToList();
 
         return new ComponentContext(state, this, rowIndexes, defaultDataElementIdentifier, childContexts);
@@ -189,22 +193,18 @@ public class OptionsRowComponent : Base.BaseComponent
     /// Initializes a new instance of the <see cref="OptionsRowComponent"/> class from the
     /// surrounding group component.
     /// </summary>
-    [SetsRequiredMembers]
-    public OptionsRowComponent(OptionsComponent parent, int rowIndex)
+    public static OptionsRowComponent FromOptionsComponent(OptionsComponent parent)
     {
-        Id = $"{parent.Id}_row_{rowIndex}";
-        PageId = parent.PageId;
-        LayoutId = parent.LayoutId;
-        Type = "optionsrow";
-        Required = Expression.False;
-        ReadOnly = parent.ReadOnly;
-        RemoveWhenHidden = parent.RemoveWhenHidden;
-        DataModelBindings = parent.DataModelBindings;
-        TextResourceBindings = parent.TextResourceBindings;
-        if (DataModelBindings.TryGetValue("checked", out var checkedBinding))
+        Expression hidden;
+        if (!parent.DataModelBindings.TryGetValue("checked", out var checkedBinding))
+        {
+            // All rows are visible if there is no checked binding
+            hidden = Expression.False;
+        }
+        else
         {
             // Hidden for a row is based on the checked binding being false
-            Hidden = new Expression(
+            hidden = new Expression(
                 ExpressionFunction.not,
                 checkedBinding.DataType is null
                     ? new Expression(ExpressionFunction.dataModel, new Expression(checkedBinding.Field))
@@ -215,10 +215,18 @@ public class OptionsRowComponent : Base.BaseComponent
                     )
             );
         }
-        else
+        return new OptionsRowComponent()
         {
-            // All rows are visible if there is no checked binding
-            Hidden = Expression.False;
-        }
+            Id = $"{parent.Id}_row",
+            PageId = parent.PageId,
+            LayoutId = parent.LayoutId,
+            Type = "optionsrow",
+            Required = Expression.False,
+            ReadOnly = parent.ReadOnly,
+            Hidden = hidden,
+            RemoveWhenHidden = parent.RemoveWhenHidden,
+            DataModelBindings = parent.DataModelBindings,
+            TextResourceBindings = parent.TextResourceBindings,
+        };
     }
 }

@@ -50,7 +50,7 @@ public class PageComponentConverterTests
             {
                 PageComponent page => page.Components,
                 RepeatingGroupComponent repeatingGroup => repeatingGroup.AllChildren,
-                SimpleReferenceComponent nonRepeatingGroup => nonRepeatingGroup.AllChildren,
+                ReferenceComponent nonRepeatingGroup => nonRepeatingGroup.AllChildren,
                 NoReferenceComponent => [],
                 _ => throw new NotSupportedException(
                     $"Component type {component.GetType().Name} is not supported for hierarchy generation."

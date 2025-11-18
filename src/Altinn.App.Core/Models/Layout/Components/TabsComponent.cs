@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Models.Layout.Components;
 /// <summary>
 /// This class represents multiple component types
 /// </summary>
-public sealed class TabsComponent : SimpleReferenceComponent
+public sealed class TabsComponent : ReferenceComponent
 {
     /// <summary>
     /// Parser for TabsComponent
