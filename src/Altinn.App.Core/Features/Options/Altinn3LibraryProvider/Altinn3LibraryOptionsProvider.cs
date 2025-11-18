@@ -81,6 +81,10 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         };
     }
 
+    /// <summary>
+    /// Gets a value from a language collection with fallback logic.
+    /// Attempts to find a value in this order: requested language, Nb, En, then first available (alphabetically by key).
+    /// </summary>
     [return: NotNullIfNotNull(nameof(languageCollection))]
     private static string? GetValueWithLanguageFallback(
         Dictionary<string, string>? languageCollection,

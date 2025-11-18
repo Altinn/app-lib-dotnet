@@ -100,6 +100,7 @@ public static class CommonOptionProviderServiceCollectionExtensions
             {
                 var platformSettings = serviceProvider.GetRequiredService<IOptions<PlatformSettings>>().Value;
                 client.BaseAddress = new Uri(platformSettings.Altinn3LibraryApiEndpoint);
+                client.Timeout = TimeSpan.FromSeconds(30);
             }
         );
 

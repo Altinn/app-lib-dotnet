@@ -18,6 +18,7 @@ public class Altinn3LibraryOptionsProviderTests
     private const string Org = "ttd";
     private const string CodeListId = "SomeCodeListId";
     private const string Version = "1";
+    private const string ExpectedUri = $"{Org}/code_lists/{CodeListId}/{Version}.json";
 
     [Fact]
     public async Task Altinn3LibraryOptionsProvider_RequestingEnThenNb_ShouldReturnNbOptionsOnSecondCall()
@@ -177,7 +178,6 @@ public class Altinn3LibraryOptionsProviderTests
     {
         // Arrange
         await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage());
-        const string uri = $"{Org}/code_lists/{CodeListId}/{Version}.json";
 
         var platformSettings = fixture.ServiceProvider.GetService<IOptions<PlatformSettings>>()?.Value!;
 
@@ -187,12 +187,12 @@ public class Altinn3LibraryOptionsProviderTests
         await optionsProvider.GetAppOptionsAsync(LanguageConst.Nb, new Dictionary<string, string>());
 
         // Assert
-        Assert.Equal(platformSettings.Altinn3LibraryApiEndpoint + uri, fixture.MockHandler.LastRequestUri);
+        Assert.Equal(platformSettings.Altinn3LibraryApiEndpoint + ExpectedUri, fixture.MockHandler.LastRequestUri);
         Assert.Equal(1, fixture.MockHandler.CallCount);
     }
 
     [Fact]
-    public async Task Altinn3LibraryOptionsProvider_ThrowsServiceException_ShouldLogErrorAndThrow()
+    public async Task Altinn3LibraryOptionsProvider_ThrowsHttpRequestException_ShouldLogErrorAndThrow()
     {
         // Arrange
         var fakeLogger = new FakeLogger<Altinn3LibraryOptionsProvider>();
@@ -222,7 +222,6 @@ public class Altinn3LibraryOptionsProviderTests
     {
         // Arrange
         await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage());
-        const string uri = $"{Org}/code_lists/{CodeListId}/{Version}.json";
 
         var platformSettings = fixture.ServiceProvider.GetService<IOptions<PlatformSettings>>()?.Value!;
 
@@ -244,7 +243,7 @@ public class Altinn3LibraryOptionsProviderTests
         Assert.Equal("ttd/code_lists/someNewCodeList/1.json", versionParam.Value);
         var sourceParam = result.Parameters.Single(p => p.Key == "source");
         Assert.Equal("test-data-files", sourceParam.Value);
-        Assert.Equal(platformSettings.Altinn3LibraryApiEndpoint + uri, fixture.MockHandler.LastRequestUri);
+        Assert.Equal(platformSettings.Altinn3LibraryApiEndpoint + ExpectedUri, fixture.MockHandler.LastRequestUri);
         Assert.Equal(1, fixture.MockHandler.CallCount);
     }
 
