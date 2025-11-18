@@ -192,11 +192,11 @@ public class OptionsRowComponent : Base.BaseComponent
     [SetsRequiredMembers]
     public OptionsRowComponent(OptionsComponent parent, int rowIndex)
     {
-        Id = $"{parent.Id}_row_{rowIndex}'";
+        Id = $"{parent.Id}_row_{rowIndex}";
         PageId = parent.PageId;
         LayoutId = parent.LayoutId;
         Type = "optionsrow";
-        // Required = parent.Required;
+        Required = Expression.False;
         ReadOnly = parent.ReadOnly;
         RemoveWhenHidden = parent.RemoveWhenHidden;
         DataModelBindings = parent.DataModelBindings;

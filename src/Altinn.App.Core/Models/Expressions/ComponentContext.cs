@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components.Base;
@@ -98,7 +97,7 @@ public sealed class ComponentContext
         }
         ArgumentNullException.ThrowIfNull(Component, "To get the hidden status, the Context needs a component.");
 
-        var isHidden = await EvaluateBooleanExpression(Component.Hidden, defaultReturn: false);
+        var isHidden = await Component.IsHidden(this);
         _isHidden = isHidden;
         return _isHidden.Value;
     }
@@ -114,12 +113,20 @@ public sealed class ComponentContext
             "To get the removeWhenHidden status, the Context needs a component."
         );
 
-        // The default return should match AppSettings.RemoveHiddenData,
-        // but currently we only run removal when it is true, so we set it to true here
-        var removeWhenHidden = await EvaluateBooleanExpression(Component.RemoveWhenHidden, defaultReturn: true);
-
-        _removeWhenHidden = removeWhenHidden;
+        _removeWhenHidden = await Component.ShouldRemoveWhenHidden(this);
         return _removeWhenHidden.Value;
+    }
+
+    /// <summary>
+    /// Evaluates whether the associated component is required based on the "required" expression.
+    /// </summary>
+    public async Task<bool> IsRequired()
+    {
+        ArgumentNullException.ThrowIfNull(
+            Component,
+            "To get the removeWhenHidden status, the Context needs a component."
+        );
+        return await Component.IsRequired(this);
     }
 
     internal async Task<DataReference> AddIndexes(ModelBinding binding) => await State.AddInidicies(binding, this);
@@ -224,23 +231,5 @@ public sealed class ComponentContext
     public async Task<ExpressionValue> EvaluateExpression(Expression expression)
     {
         return await ExpressionEvaluator.EvaluateExpression_internal(State, expression, this);
-    }
-
-    /// <summary>
-    /// Evaluate the given expression in the context of this component context, and return the boolean result
-    /// </summary>
-    public async Task<bool> EvaluateBooleanExpression(Expression expression, bool defaultReturn)
-    {
-        var result = await EvaluateExpression(expression);
-        return result.ValueKind switch
-        {
-            JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            JsonValueKind.Null => defaultReturn,
-            JsonValueKind.Undefined => defaultReturn,
-            _ => throw new ExpressionEvaluatorTypeErrorException(
-                $"Expression did not evaluate to a boolean value: {expression}, got {result.ValueKind}"
-            ),
-        };
     }
 }

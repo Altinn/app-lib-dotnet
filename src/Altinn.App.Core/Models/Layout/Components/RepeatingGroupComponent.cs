@@ -321,19 +321,25 @@ public class RepeatingGroupRowComponent : Base.BaseComponent
         ReadOnly = Expression.False; // We don't have a row level readOnly, only at the group or child component level
         Required = Expression.False; // We don't have a row level required, only at the group or child component level
         TextResourceBindings = repeatingGroupComponent.TextResourceBindings;
-        if (!DataModelBindings.TryGetValue("group", out var groupBinding))
+        Hidden = repeatingGroupComponent.HiddenRow;
+    }
+
+    /// <inheritdoc />
+    public override async Task<bool> IsHidden(ComponentContext context)
+    {
+        if (DataModelBindings.TryGetValue("group", out var groupBinding))
         {
-            // Groups must have a group binding, so this code should never run.
-            throw new UnreachableException("RepeatingGroupComponent must have a group binding.");
+            // The row is always considered hidden if the row is null in the data model
+            var rowValue = await context.State.GetModelData(
+                groupBinding,
+                context.DataElementIdentifier,
+                context.RowIndices
+            );
+            if (rowValue is null)
+            {
+                return true;
+            }
         }
-        Hidden = new Expression(
-            ExpressionFunction.or,
-            new Expression(
-                ExpressionFunction.dataModel,
-                new Expression(groupBinding.Field),
-                new Expression(groupBinding.DataType)
-            ),
-            repeatingGroupComponent.HiddenRow
-        );
+        return await base.IsHidden(context);
     }
 }

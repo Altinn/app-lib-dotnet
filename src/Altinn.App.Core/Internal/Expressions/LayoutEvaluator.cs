@@ -153,7 +153,7 @@ public static class LayoutEvaluator
                 await RunLayoutValidationsForRequiredRecurs(validationIssues, state, childContext);
             }
 
-            var required = await ExpressionEvaluator.EvaluateBooleanExpression(state, context, "required", false);
+            var required = await context.IsRequired();
             if (required)
             {
                 foreach (var (bindingName, binding) in context.Component.DataModelBindings)

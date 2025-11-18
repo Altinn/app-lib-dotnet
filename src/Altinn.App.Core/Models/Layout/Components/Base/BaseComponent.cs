@@ -80,6 +80,35 @@ public abstract class BaseComponent
     }
 
     /// <summary>
+    /// Overridable method to determine if the component is hidden in the given context.
+    /// </summary>
+    public virtual async Task<bool> IsHidden(ComponentContext context)
+    {
+        var isHidden = await context.EvaluateExpression(Hidden);
+        return isHidden.ToBoolLoose(false);
+    }
+
+    /// <summary>
+    /// Overridable method to determine if the component is required in the given context.
+    /// </summary>
+    public virtual async Task<bool> IsRequired(ComponentContext context)
+    {
+        var isRequired = await context.EvaluateExpression(Required);
+        return isRequired.ToBoolLoose(false);
+    }
+
+    /// <summary>
+    /// Overridable method to determine if the component's data should be removed when hidden in the given context.
+    /// </summary>
+    public virtual async Task<bool> ShouldRemoveWhenHidden(ComponentContext context)
+    {
+        var removeWhenHidden = await context.EvaluateExpression(RemoveWhenHidden);
+        // The default return should match AppSettings.RemoveHiddenData,
+        // but currently we only run removal when it is true, so we set it to true here
+        return removeWhenHidden.ToBoolLoose(true);
+    }
+
+    /// <summary>
     /// Parse the Id property from a JsonElement
     /// </summary>
     protected static string ParseId(JsonElement componentElement)
@@ -150,7 +179,7 @@ public abstract class BaseComponent
     /// Parses the 'removeWhenHidden' expression from a JSON element.
     /// </summary>
     protected static Expression ParseRemoveWhenHiddenExpression(JsonElement componentElement) =>
-        ParseExpression(componentElement, "removeWhenHidden", ExpressionValue.Undefined);
+        ParseExpression(componentElement, "removeWhenHidden", ExpressionValue.True);
 
     /// <summary>
     /// Parses the data model bindings from a JSON element.

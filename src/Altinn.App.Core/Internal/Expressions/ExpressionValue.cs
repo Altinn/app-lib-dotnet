@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace Altinn.App.Core.Internal.Expressions;
 
@@ -390,6 +391,71 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
+
+    /// <summary>
+    /// Convert the value to boolean using loose conversion rules
+    /// </summary>
+    /// <remarks>
+    /// Loose conversion rules:
+    ///     * Null is false
+    ///     * "true" (case sensitive) is true
+    ///     * "false" (case sensitive) is false
+    ///     * "1" is true
+    ///     * "0" is false
+    ///     * 1 is true
+    ///     * 0 is false
+    ///     * Anything else throws an exception
+    /// </remarks>
+    public bool ToBoolLoose(bool? defaultReturn)
+    {
+        return ValueKind switch
+        {
+            JsonValueKind.Null => defaultReturn ?? false,
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+
+            JsonValueKind.String => String switch
+            {
+                "true" => true,
+                "false" => false,
+                "1" => true,
+                "0" => false,
+                _ => ParseNumber(String, throwException: false) switch
+                {
+                    1 => true,
+                    0 => false,
+                    _ => throw new ExpressionEvaluatorTypeErrorException($"Expected boolean, got value \"{String}\""),
+                },
+            },
+            JsonValueKind.Number => Number switch
+            {
+                1 => true,
+                0 => false,
+                _ => throw new ExpressionEvaluatorTypeErrorException($"Expected boolean, got value {Number}"),
+            },
+            JsonValueKind.Undefined => defaultReturn
+                ?? throw new ExpressionEvaluatorTypeErrorException("Expected boolean, got undefined value"),
+            _ => throw new ExpressionEvaluatorTypeErrorException(
+                "Unknown data type encountered in expression: " + ValueKind
+            ),
+        };
+    }
+
+    private static readonly Regex _numberRegex = new Regex(@"^-?\d+(\.\d+)?$");
+
+    private static double? ParseNumber(string s, bool throwException = true)
+    {
+        if (_numberRegex.IsMatch(s) && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+        {
+            return d;
+        }
+
+        if (throwException)
+        {
+            throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value \"{s}\"");
+        }
+        return null;
+    }
 }
 
 /// <summary>
