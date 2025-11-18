@@ -203,6 +203,10 @@ public static class ExpressionEvaluator
         ModelBinding key = args switch
         {
             [{ ValueKind: JsonValueKind.String } field] => new ModelBinding { Field = field.String },
+            [{ ValueKind: JsonValueKind.String } field, { ValueKind: JsonValueKind.Null }] => new ModelBinding
+            {
+                Field = field.String,
+            },
             [{ ValueKind: JsonValueKind.String } field, { ValueKind: JsonValueKind.String } dataType] =>
                 new ModelBinding { Field = field.String, DataType = dataType.String },
             [{ ValueKind: JsonValueKind.Null }] => throw new ExpressionEvaluatorTypeErrorException(

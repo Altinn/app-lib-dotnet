@@ -10,6 +10,7 @@ namespace Altinn.App.Core.Internal.Expressions;
 /// Discriminated union for the JSON types that can be arguments and result of expressions
 /// </summary>
 [JsonConverter(typeof(ExpressionTypeUnionConverter))]
+[DebuggerDisplay("{ToString(),nq}")]
 public readonly struct ExpressionValue : IEquatable<ExpressionValue>
 {
     private readonly JsonValueKind _valueKind;
@@ -263,6 +264,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         ValueKind switch
         {
             JsonValueKind.Null => "null",
+            JsonValueKind.Undefined => "undefined",
             JsonValueKind.True => "true",
             JsonValueKind.False => "false",
             JsonValueKind.String => JsonSerializer.Serialize(String, _unsafeSerializerOptionsForSerializingDates),

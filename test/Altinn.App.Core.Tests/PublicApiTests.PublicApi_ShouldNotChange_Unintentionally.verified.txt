@@ -3078,6 +3078,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public ExpressionEvaluatorTypeErrorException(string msg) { }
         public ExpressionEvaluatorTypeErrorException(string msg, System.Exception innerException) { }
     }
+    [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
     [System.Text.Json.Serialization.JsonConverter(typeof(Altinn.App.Core.Internal.Expressions.ExpressionTypeUnionConverter?))]
     public readonly struct ExpressionValue : System.IEquatable<Altinn.App.Core.Internal.Expressions.ExpressionValue>
     {
@@ -4533,7 +4534,7 @@ namespace Altinn.App.Core.Models.Layout.Components.Base
         public virtual System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<Altinn.App.Core.Models.Layout.DataReference>> GetDataReferencesToRemoveWhenHidden(Altinn.App.Core.Models.Expressions.ComponentContext context) { }
         protected static System.Collections.Generic.List<string> ParseChildReferences(System.Text.Json.JsonElement componentElement, string layoutId, string pageId) { }
         protected static System.Collections.Generic.IReadOnlyDictionary<string, Altinn.App.Core.Models.Layout.ModelBinding> ParseDataModelBindings(System.Text.Json.JsonElement element) { }
-        protected static Altinn.App.Core.Models.Expressions.Expression ParseExpression(System.Text.Json.JsonElement componentElement, string property) { }
+        protected static Altinn.App.Core.Models.Expressions.Expression ParseExpression(System.Text.Json.JsonElement componentElement, string property, Altinn.App.Core.Internal.Expressions.ExpressionValue defaultValue) { }
         protected static Altinn.App.Core.Models.Expressions.Expression ParseHiddenExpression(System.Text.Json.JsonElement componentElement) { }
         protected static string ParseId(System.Text.Json.JsonElement componentElement) { }
         protected static Altinn.App.Core.Models.Expressions.Expression ParseReadOnlyExpression(System.Text.Json.JsonElement componentElement) { }
@@ -4653,7 +4654,7 @@ namespace Altinn.App.Core.Models.Layout.Components
     public class RepeatingGroupRowComponent : Altinn.App.Core.Models.Layout.Components.Base.BaseComponent
     {
         [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
-        public RepeatingGroupRowComponent(Altinn.App.Core.Models.Layout.Components.RepeatingGroupComponent repeatingReferenceComponent, int index) { }
+        public RepeatingGroupRowComponent(Altinn.App.Core.Models.Layout.Components.RepeatingGroupComponent repeatingGroupComponent, int index) { }
     }
     public sealed class SubFormComponent : Altinn.App.Core.Models.Layout.Components.Base.BaseLayoutComponent
     {

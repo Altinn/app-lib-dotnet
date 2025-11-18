@@ -77,7 +77,7 @@ public sealed class RepeatingGroupComponent : Base.BaseLayoutComponent
             MaxCount = maxCount,
             GroupModelBinding = groupModelBinding,
             RepeatingChildReferences = repeatingChildReferences,
-            HiddenRow = ParseExpression(componentElement, "hiddenRow"),
+            HiddenRow = ParseExpression(componentElement, "hiddenRow", ExpressionValue.False),
             RowsBefore = rowsBefore,
             RowsAfter = rowsAfter,
             BeforeChildReferences = beforeChildReferences,
@@ -310,31 +310,30 @@ public class RepeatingGroupRowComponent : Base.BaseComponent
     /// Initializes a new instance of the <see cref="RepeatingGroupRowComponent"/> class from the surrounding group component.
     /// </summary>
     [SetsRequiredMembers]
-    public RepeatingGroupRowComponent(RepeatingGroupComponent repeatingReferenceComponent, int index)
+    public RepeatingGroupRowComponent(RepeatingGroupComponent repeatingGroupComponent, int index)
     {
-        Id = $"{repeatingReferenceComponent.Id}__group_row_{index}";
-        PageId = repeatingReferenceComponent.PageId;
-        LayoutId = repeatingReferenceComponent.LayoutId;
-        DataModelBindings = repeatingReferenceComponent.DataModelBindings;
-        RemoveWhenHidden = repeatingReferenceComponent.RemoveWhenHidden;
+        Id = $"{repeatingGroupComponent.Id}__group_row_{index}";
+        PageId = repeatingGroupComponent.PageId;
+        LayoutId = repeatingGroupComponent.LayoutId;
+        DataModelBindings = repeatingGroupComponent.DataModelBindings;
+        RemoveWhenHidden = repeatingGroupComponent.RemoveWhenHidden;
         Type = "repeatingGroupRow";
         ReadOnly = Expression.False; // We don't have a row level readOnly, only at the group or child component level
         Required = Expression.False; // We don't have a row level required, only at the group or child component level
-        TextResourceBindings = repeatingReferenceComponent.TextResourceBindings;
-        if (DataModelBindings.TryGetValue("group", out var groupBinding))
+        TextResourceBindings = repeatingGroupComponent.TextResourceBindings;
+        if (!DataModelBindings.TryGetValue("group", out var groupBinding))
         {
             // Groups must have a group binding, so this code should never run.
             throw new UnreachableException("RepeatingGroupComponent must have a group binding.");
         }
-        else
-            Hidden = new Expression(
-                ExpressionFunction.or,
-                new Expression(
-                    ExpressionFunction.dataModel,
-                    new Expression(groupBinding.Field),
-                    new Expression(groupBinding.DataType)
-                ),
-                repeatingReferenceComponent.HiddenRow
-            );
+        Hidden = new Expression(
+            ExpressionFunction.or,
+            new Expression(
+                ExpressionFunction.dataModel,
+                new Expression(groupBinding.Field),
+                new Expression(groupBinding.DataType)
+            ),
+            repeatingGroupComponent.HiddenRow
+        );
     }
 }
