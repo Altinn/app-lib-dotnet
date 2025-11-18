@@ -3,7 +3,6 @@ using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 
 namespace Altinn.App.Core.Internal.Expressions;
 
@@ -420,7 +419,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 "false" => false,
                 "1" => true,
                 "0" => false,
-                _ => ParseNumber(String, throwException: false) switch
+                _ => ExpressionEvaluator.ParseNumber(String, throwException: false) switch
                 {
                     1 => true,
                     0 => false,
@@ -439,22 +438,6 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 "Unknown data type encountered in expression: " + ValueKind
             ),
         };
-    }
-
-    private static readonly Regex _numberRegex = new Regex(@"^-?\d+(\.\d+)?$");
-
-    private static double? ParseNumber(string s, bool throwException = true)
-    {
-        if (_numberRegex.IsMatch(s) && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
-        {
-            return d;
-        }
-
-        if (throwException)
-        {
-            throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value \"{s}\"");
-        }
-        return null;
     }
 }
 

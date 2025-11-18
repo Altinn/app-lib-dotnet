@@ -862,7 +862,7 @@ public static class ExpressionEvaluator
 
     private static readonly Regex _numberRegex = new Regex(@"^-?\d+(\.\d+)?$");
 
-    private static double? ParseNumber(string s, bool throwException = true)
+    internal static double? ParseNumber(string s, bool throwException = true)
     {
         if (_numberRegex.IsMatch(s) && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
         {

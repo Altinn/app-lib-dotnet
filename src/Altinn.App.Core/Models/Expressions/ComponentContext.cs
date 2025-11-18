@@ -122,10 +122,7 @@ public sealed class ComponentContext
     /// </summary>
     public async Task<bool> IsRequired()
     {
-        ArgumentNullException.ThrowIfNull(
-            Component,
-            "To get the removeWhenHidden status, the Context needs a component."
-        );
+        ArgumentNullException.ThrowIfNull(Component, "To get the required status, the Context needs a component.");
         return await Component.IsRequired(this);
     }
 
@@ -174,6 +171,14 @@ public sealed class ComponentContext
         }
     }
 
+    /// <summary>
+    /// Evaluate the given expression in the context of this component context
+    /// </summary>
+    public async Task<ExpressionValue> EvaluateExpression(Expression expression)
+    {
+        return await ExpressionEvaluator.EvaluateExpression_internal(State, expression, this);
+    }
+
     private string _debuggerName =>
         $"{Component?.Type}" + (RowIndices is not null ? $"[{string.Join(',', RowIndices)}]" : "");
     private string _debuggerDisplay =>
@@ -216,20 +221,12 @@ public sealed class ComponentContext
             public Task<ExpressionValue> EvaluationResult =>
                 _expression.IsLiteralValue
                     ? Task.FromResult(_expression.ValueUnion)
-                    : ExpressionEvaluator.EvaluateExpression_internal(_context.State, _expression, _context, null);
+                    : _context.EvaluateExpression(_expression);
 
             public override string ToString()
             {
                 return _expression.ToString();
             }
         }
-    }
-
-    /// <summary>
-    /// Evaluate the given expression in the context of this component context
-    /// </summary>
-    public async Task<ExpressionValue> EvaluateExpression(Expression expression)
-    {
-        return await ExpressionEvaluator.EvaluateExpression_internal(State, expression, this);
     }
 }

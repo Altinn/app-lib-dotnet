@@ -159,6 +159,8 @@ public sealed class RepeatingGroupComponent : Base.ReferenceComponent
         return result;
     }
 
+    private RepeatingGroupRowComponent? _repeatingGroupRowComponent;
+
     /// <inheritdoc />
     public override async Task<ComponentContext> GetContext(
         LayoutEvaluatorState state,
@@ -196,7 +198,7 @@ public sealed class RepeatingGroupComponent : Base.ReferenceComponent
 
         var rowCount = await state.GetModelDataCount(GroupModelBinding, defaultDataElementIdentifier, rowIndexes) ?? 0;
 
-        var repeatingGroupRowComponent = RepeatingGroupRowComponent.FromGroup(this);
+        _repeatingGroupRowComponent ??= RepeatingGroupRowComponent.FromGroup(this);
 
         for (int i = 0; i < rowCount; i++)
         {
@@ -218,7 +220,7 @@ public sealed class RepeatingGroupComponent : Base.ReferenceComponent
             childContexts.Add(
                 new ComponentContext(
                     state,
-                    repeatingGroupRowComponent,
+                    _repeatingGroupRowComponent,
                     subRowIndexes,
                     defaultDataElementIdentifier,
                     rowChildren
