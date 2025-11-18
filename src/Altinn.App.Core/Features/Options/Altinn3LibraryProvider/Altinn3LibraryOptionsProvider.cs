@@ -132,7 +132,7 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         {
             _logger.LogError(
                 ex,
-                "Exception in GetAppOptions. Code list id: {CodeListId}, Version: {Version}, Org: {Org}",
+                "Exception thrown in GetAppOptions. Code list id: {CodeListId}, Version: {Version}, Org: {Org}",
                 _codeListId,
                 _version,
                 _org

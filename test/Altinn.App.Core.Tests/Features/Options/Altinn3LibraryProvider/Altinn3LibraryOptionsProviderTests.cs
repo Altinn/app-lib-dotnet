@@ -213,7 +213,7 @@ public class Altinn3LibraryOptionsProviderTests
         Assert.NotNull(latestRecord);
         Assert.Equal(LogLevel.Error, latestRecord.Level);
         Assert.Equal(
-            $"Exception in GetAppOptions. Code list id: {CodeListId}, Version: {Version}, Org: {Org}",
+            $"Exception thrown in GetAppOptions. Code list id: {CodeListId}, Version: {Version}, Org: {Org}",
             latestRecord.Message
         );
         Assert.Equal("Unexpected response from Altinn3Library", result.Message);
@@ -234,6 +234,7 @@ public class Altinn3LibraryOptionsProviderTests
 
         // Assert
         Assert.NotNull(result);
+        Assert.True(result.IsCacheable);
         Assert.NotNull(result.Options);
         Assert.Single(result.Options);
         var option = result.Options.Single();
