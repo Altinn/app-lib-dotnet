@@ -13,7 +13,7 @@ public class PublicApiTests
     ];
 
     [Fact]
-    public async Task PublicApi_ShouldNotChange_Unintentionally()
+    public void PublicApi_ShouldNotChange_Unintentionally()
     {
         // Arrange
         var assembly = typeof(Altinn.App.Api.Extensions.ServiceCollectionExtensions).Assembly;
