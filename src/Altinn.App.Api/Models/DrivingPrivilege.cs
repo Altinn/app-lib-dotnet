@@ -24,4 +24,7 @@ public class DrivingPrivilege
     /// </summary>
     [JsonPropertyName("expiry_date")]
     public string? ExpiryDate { get; init; }
+
+    [JsonPropertyName("codes")]
+    public string? Codes { get; init; }
 }

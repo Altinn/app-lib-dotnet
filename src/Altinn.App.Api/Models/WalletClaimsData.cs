@@ -53,11 +53,11 @@ public class WalletClaimsData
     /// The credential/document number.
     /// </summary>
     [JsonPropertyName("document_number")]
-    public string? DocumentNumber { get; init; }
+    public int? DocumentNumber { get; init; }
 
     /// <summary>
     /// List of driving privileges (for driver's license credentials).
     /// </summary>
     [JsonPropertyName("driving_privileges")]
-    public List<DrivingPrivilege>? DrivingPrivileges { get; init; }
+    public DrivingPrivilege? DrivingPrivileges { get; init; }
 }
