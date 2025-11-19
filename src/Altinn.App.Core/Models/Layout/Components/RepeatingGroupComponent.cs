@@ -169,18 +169,6 @@ public sealed class RepeatingGroupComponent : Base.ReferenceComponent
         Dictionary<string, LayoutSetComponent> layoutsLookup
     )
     {
-        if (
-            RepeatingChildReferences is null
-            || BeforeChildReferences is null
-            || GroupModelBinding.Field is null
-            || AfterChildReferences is null
-        )
-        {
-            throw new InvalidOperationException(
-                $"{GetType().Name} must call {nameof(ClaimChildren)} before calling {nameof(GetContext)}."
-            );
-        }
-
         var childContexts = new List<ComponentContext>();
 
         foreach (var componentId in BeforeChildReferences)
@@ -269,25 +257,29 @@ public class RepeatingGroupRowComponent : Base.BaseComponent
             Required = Expression.False,
             TextResourceBindings = repeatingGroupComponent.TextResourceBindings,
             Hidden = repeatingGroupComponent.HiddenRow,
+            GroupModelBinding = repeatingGroupComponent.GroupModelBinding,
         };
     }
+
+    /// <summary>
+    /// Model binding for the group
+    /// </summary>
+    public required ModelBinding GroupModelBinding { get; init; }
 
     /// <inheritdoc />
     public override async Task<bool> IsHidden(ComponentContext context)
     {
-        if (DataModelBindings.TryGetValue("group", out var groupBinding))
+        var rowValue = await context.State.GetModelData(
+            GroupModelBinding,
+            context.DataElementIdentifier,
+            context.RowIndices
+        );
+        // The row is always considered hidden if the row is null in the data model
+        if (rowValue is null)
         {
-            // The row is always considered hidden if the row is null in the data model
-            var rowValue = await context.State.GetModelData(
-                groupBinding,
-                context.DataElementIdentifier,
-                context.RowIndices
-            );
-            if (rowValue is null)
-            {
-                return true;
-            }
+            return true;
         }
+
         return await base.IsHidden(context);
     }
 }

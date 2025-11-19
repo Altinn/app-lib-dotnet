@@ -396,9 +396,10 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// </summary>
     /// <remarks>
     /// Loose conversion rules:
-    ///     * Null is false
-    ///     * "true" (case sensitive) is true
-    ///     * "false" (case sensitive) is false
+    ///     * Undefined is defaultReturn ?? exception
+    ///     * Null is defaultReturn ?? false
+    ///     * "true" (case-insensitive) is true
+    ///     * "false" (case-insensitive) is false
     ///     * "1" is true
     ///     * "0" is false
     ///     * 1 is true
@@ -419,6 +420,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 "false" => false,
                 "1" => true,
                 "0" => false,
+                { } sValue when sValue.Equals("true", StringComparison.OrdinalIgnoreCase) => true,
+                { } sValue when sValue.Equals("false", StringComparison.OrdinalIgnoreCase) => false,
                 _ => ExpressionEvaluator.ParseNumber(String, throwException: false) switch
                 {
                     1 => true,

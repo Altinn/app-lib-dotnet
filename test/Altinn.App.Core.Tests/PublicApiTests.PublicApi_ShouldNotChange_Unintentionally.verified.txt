@@ -4657,6 +4657,7 @@ namespace Altinn.App.Core.Models.Layout.Components
     public class RepeatingGroupRowComponent : Altinn.App.Core.Models.Layout.Components.Base.BaseComponent
     {
         public RepeatingGroupRowComponent() { }
+        public required Altinn.App.Core.Models.Layout.ModelBinding GroupModelBinding { get; init; }
         public override System.Threading.Tasks.Task<bool> IsHidden(Altinn.App.Core.Models.Expressions.ComponentContext context) { }
         public static Altinn.App.Core.Models.Layout.Components.RepeatingGroupRowComponent FromGroup(Altinn.App.Core.Models.Layout.Components.RepeatingGroupComponent repeatingGroupComponent) { }
     }
