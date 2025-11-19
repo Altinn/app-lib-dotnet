@@ -60,7 +60,7 @@ public class WalletVerificationController : ControllerBase
                     new ProblemDetails
                     {
                         Title = "Wallet verification start failed",
-                        Detail = "Failed to initiate wallet verification with external service",
+                        Detail = response.Content.ReadAsStringAsync().Result,
                         Status = (int)response.StatusCode,
                     }
                 );
@@ -77,7 +77,7 @@ public class WalletVerificationController : ControllerBase
                     new ProblemDetails
                     {
                         Title = "Deserialization error",
-                        Detail = "Failed to parse response from wallet verification service",
+                        Detail = responseJson,
                         Status = StatusCodes.Status500InternalServerError,
                     }
                 );
@@ -98,7 +98,7 @@ public class WalletVerificationController : ControllerBase
                 new ProblemDetails
                 {
                     Title = "Service unavailable",
-                    Detail = "Unable to reach wallet verification service",
+                    Detail = ex.Message,
                     Status = StatusCodes.Status503ServiceUnavailable,
                 }
             );
@@ -111,7 +111,7 @@ public class WalletVerificationController : ControllerBase
                 new ProblemDetails
                 {
                     Title = "Internal server error",
-                    Detail = "An unexpected error occurred while starting wallet verification",
+                    Detail = ex.Message,
                     Status = StatusCodes.Status500InternalServerError,
                 }
             );
