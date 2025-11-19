@@ -699,6 +699,29 @@ namespace Altinn.App.Api.Controllers
         [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/validate")]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> ValidateInstance([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid, [Microsoft.AspNetCore.Mvc.FromQuery] string? ignoredValidators = null, [Microsoft.AspNetCore.Mvc.FromQuery] bool? onlyIncrementalValidators = default, [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null) { }
     }
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+    [Microsoft.AspNetCore.Mvc.ApiController]
+    [Microsoft.AspNetCore.Mvc.Consumes("application/json", new string[0])]
+    [Microsoft.AspNetCore.Mvc.Produces("application/json", new string[0])]
+    [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/api/wallet/verify")]
+    public class WalletVerificationController : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        public WalletVerificationController(System.Net.Http.IHttpClientFactory httpClientFactory, Microsoft.Extensions.Logging.ILogger<Altinn.App.Api.Controllers.WalletVerificationController> logger) { }
+        [Microsoft.AspNetCore.Mvc.HttpGet("result/{verificationId}")]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Altinn.App.Api.Models.VerificationResultResponse), 200)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails), 404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails), 500)]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Models.VerificationResultResponse>> GetResult(string verificationId) { }
+        [Microsoft.AspNetCore.Mvc.HttpGet("status/{verificationId}")]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Altinn.App.Api.Models.VerificationStatusResponse), 200)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails), 404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails), 500)]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Models.VerificationStatusResponse>> GetStatus(string verificationId) { }
+        [Microsoft.AspNetCore.Mvc.HttpPost("start")]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Altinn.App.Api.Models.VerificationStartResponse), 200)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails), 500)]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Models.VerificationStartResponse>> StartVerification([Microsoft.AspNetCore.Mvc.FromBody] System.Text.Json.JsonElement requestBody) { }
+    }
 }
 namespace Altinn.App.Api.Controllers.Conventions
 {
@@ -992,6 +1015,16 @@ namespace Altinn.App.Api.Models
         [System.Text.Json.Serialization.JsonPropertyName("validationIssues")]
         public required System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationSourcePair> ValidationIssues { get; init; }
     }
+    public class DrivingPrivilege
+    {
+        public DrivingPrivilege() { }
+        [System.Text.Json.Serialization.JsonPropertyName("expiry_date")]
+        public string? ExpiryDate { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("issue_date")]
+        public string? IssueDate { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("vehicle_category_code")]
+        public string? VehicleCategoryCode { get; init; }
+    }
     public class InstanceFileScanResult
     {
         public InstanceFileScanResult(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier) { }
@@ -1205,5 +1238,47 @@ namespace Altinn.App.Api.Models
         public UserDefinedMetadataDto() { }
         [System.Text.Json.Serialization.JsonPropertyName("userDefinedMetadata")]
         public System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.KeyValueEntry> UserDefinedMetadata { get; init; }
+    }
+    public class VerificationResultResponse
+    {
+        public VerificationResultResponse() { }
+        [System.Text.Json.Serialization.JsonPropertyName("claims")]
+        public required Altinn.App.Api.Models.WalletClaimsData Claims { get; init; }
+    }
+    public class VerificationStartResponse
+    {
+        public VerificationStartResponse() { }
+        [System.Text.Json.Serialization.JsonPropertyName("authorization_request")]
+        public required string AuthorizationRequest { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("verifier_transaction_id")]
+        public required string VerifierTransactionId { get; init; }
+    }
+    public class VerificationStatusResponse
+    {
+        public VerificationStatusResponse() { }
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        public required string Status { get; init; }
+    }
+    public class WalletClaimsData
+    {
+        public WalletClaimsData() { }
+        [System.Text.Json.Serialization.JsonPropertyName("birth_date")]
+        public string? BirthDate { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("document_number")]
+        public string? DocumentNumber { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("driving_privileges")]
+        public System.Collections.Generic.List<Altinn.App.Api.Models.DrivingPrivilege>? DrivingPrivileges { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("expiry_date")]
+        public string? ExpiryDate { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("family_name")]
+        public string? FamilyName { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("given_name")]
+        public string? GivenName { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("issue_date")]
+        public string? IssueDate { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("issuing_country")]
+        public string? IssuingCountry { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("portrait")]
+        public string? Portrait { get; init; }
     }
 }
