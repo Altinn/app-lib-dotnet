@@ -1,7 +1,6 @@
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
-using Altinn.App.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -39,9 +38,9 @@ public class WalletVerificationController : ControllerBase
     /// <param name="requestBody">The request body to forward to the external wallet API.</param>
     /// <returns>Verification transaction details including the authorization request URL.</returns>
     [HttpPost("start")]
-    [ProducesResponseType(typeof(VerificationStartResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(JsonElement), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<VerificationStartResponse>> StartVerification([FromBody] JsonElement requestBody)
+    public async Task<IActionResult> StartVerification([FromBody] JsonElement requestBody)
     {
         try
         {
@@ -60,35 +59,16 @@ public class WalletVerificationController : ControllerBase
                     new ProblemDetails
                     {
                         Title = "Wallet verification start failed",
-                        Detail = response.Content.ReadAsStringAsync().Result,
+                        Detail = await response.Content.ReadAsStringAsync(),
                         Status = (int)response.StatusCode,
                     }
                 );
             }
 
             var responseJson = await response.Content.ReadAsStringAsync();
-            var responseData = JsonSerializer.Deserialize<VerificationStartResponse>(responseJson);
+            _logger.LogInformation("Wallet verification started successfully");
 
-            if (responseData == null)
-            {
-                _logger.LogError("Failed to deserialize wallet verification start response");
-                return StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new ProblemDetails
-                    {
-                        Title = "Deserialization error",
-                        Detail = responseJson,
-                        Status = StatusCodes.Status500InternalServerError,
-                    }
-                );
-            }
-
-            _logger.LogInformation(
-                "Wallet verification started successfully with transaction ID {TransactionId}",
-                responseData.VerifierTransactionId
-            );
-
-            return Ok(responseData);
+            return Content(responseJson, MediaTypeNames.Application.Json);
         }
         catch (HttpRequestException ex)
         {
@@ -124,10 +104,10 @@ public class WalletVerificationController : ControllerBase
     /// <param name="verificationId">The verification transaction ID.</param>
     /// <returns>The current verification status (PENDING, AVAILABLE, or FAILED).</returns>
     [HttpGet("status/{verificationId}")]
-    [ProducesResponseType(typeof(VerificationStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(JsonElement), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<VerificationStatusResponse>> GetStatus(string verificationId)
+    public async Task<IActionResult> GetStatus(string verificationId)
     {
         try
         {
@@ -160,26 +140,7 @@ public class WalletVerificationController : ControllerBase
             }
 
             var responseJson = await response.Content.ReadAsStringAsync();
-            var responseData = JsonSerializer.Deserialize<VerificationStatusResponse>(responseJson);
-
-            if (responseData == null)
-            {
-                _logger.LogError(
-                    "Failed to deserialize wallet verification status response for transaction {VerificationId}",
-                    verificationId
-                );
-                return StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new ProblemDetails
-                    {
-                        Title = "Deserialization error",
-                        Detail = "Failed to parse status response from wallet verification service",
-                        Status = StatusCodes.Status500InternalServerError,
-                    }
-                );
-            }
-
-            return Ok(responseData);
+            return Content(responseJson, MediaTypeNames.Application.Json);
         }
         catch (HttpRequestException ex)
         {
@@ -223,10 +184,10 @@ public class WalletVerificationController : ControllerBase
     /// <param name="verificationId">The verification transaction ID.</param>
     /// <returns>The verified credential claims including portrait and personal data.</returns>
     [HttpGet("result/{verificationId}")]
-    [ProducesResponseType(typeof(VerificationResultResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(JsonElement), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<VerificationResultResponse>> GetResult(string verificationId)
+    public async Task<IActionResult> GetResult(string verificationId)
     {
         try
         {
@@ -259,31 +220,12 @@ public class WalletVerificationController : ControllerBase
             }
 
             var responseJson = await response.Content.ReadAsStringAsync();
-            var responseData = JsonSerializer.Deserialize<VerificationResultResponse>(responseJson);
-
-            if (responseData == null)
-            {
-                _logger.LogError(
-                    "Failed to deserialize wallet verification result response for transaction {VerificationId}",
-                    verificationId
-                );
-                return StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new ProblemDetails
-                    {
-                        Title = "Deserialization error",
-                        Detail = "Failed to parse result response from wallet verification service",
-                        Status = StatusCodes.Status500InternalServerError,
-                    }
-                );
-            }
-
             _logger.LogInformation(
                 "Successfully fetched wallet verification result for transaction {VerificationId}",
                 verificationId
             );
 
-            return Ok(responseData);
+            return Content(responseJson, MediaTypeNames.Application.Json);
         }
         catch (HttpRequestException ex)
         {
