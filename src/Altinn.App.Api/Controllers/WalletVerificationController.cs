@@ -1,12 +1,9 @@
-using System.Net.Http;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
 using Altinn.App.Api.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -39,29 +36,20 @@ public class WalletVerificationController : ControllerBase
     /// <summary>
     /// Initiates a wallet credential verification request.
     /// </summary>
+    /// <param name="requestBody">The request body to forward to the external wallet API.</param>
     /// <returns>Verification transaction details including the authorization request URL.</returns>
     [HttpPost("start")]
     [ProducesResponseType(typeof(VerificationStartResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<VerificationStartResponse>> StartVerification()
+    public async Task<ActionResult<VerificationStartResponse>> StartVerification([FromBody] JsonElement requestBody)
     {
         try
         {
             var httpClient = _httpClientFactory.CreateClient("WalletApiClient");
 
-            var requestBody = new
-            {
-                credential_issuer = "https://utsteder.test.eidas2sandkasse.net",
-                credential_configuration_id = "org.iso.18013.5.1.mDL_mso_mdoc",
-            };
+            var content = new StringContent(requestBody.GetRawText(), Encoding.UTF8, MediaTypeNames.Application.Json);
 
-            var content = new StringContent(
-                JsonSerializer.Serialize(requestBody),
-                Encoding.UTF8,
-                MediaTypeNames.Application.Json
-            );
-
-            _logger.LogInformation("Starting wallet verification request");
+            _logger.LogInformation("Proxying wallet verification start request");
             var response = await httpClient.PostAsync("/v1/verify/start", content);
 
             if (!response.IsSuccessStatusCode)
