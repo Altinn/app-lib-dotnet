@@ -16,7 +16,7 @@ public sealed class NonRepeatingGroupComponent : ReferenceComponent
         var id = ParseId(componentElement);
         var type = ParseType(componentElement);
 
-        var children = ParseChildReferences(componentElement, pageId, layoutId);
+        var children = ParseChildReferences(componentElement, layoutId, pageId);
 
         return new NonRepeatingGroupComponent()
         {

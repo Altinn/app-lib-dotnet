@@ -39,7 +39,7 @@ public sealed class TabsComponent : ReferenceComponent
         if (!componentElement.TryGetProperty("tabs", out JsonElement tabsElement))
         {
             var type = ParseType(componentElement);
-            throw new JsonException($"{type} component must have a \"tabs\" property.");
+            throw new JsonException($"{type} component on {layoutId}.{pageId} must have a \"tabs\" property.");
         }
 
         return tabsElement.Deserialize<List<TabsConfig>>()
