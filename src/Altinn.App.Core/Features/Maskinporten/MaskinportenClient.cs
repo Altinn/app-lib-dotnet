@@ -84,20 +84,22 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// <inheritdoc/>
     public async Task<JwtToken> GetAccessToken(
         IEnumerable<string> scopes,
+        Dictionary<string, string>? additionalClaims = null,
         CancellationToken cancellationToken = default
     )
     {
-        var result = await GetOrCreateTokenFromCache(TokenAuthority.Maskinporten, scopes, cancellationToken);
+        var result = await GetOrCreateTokenFromCache(TokenAuthority.Maskinporten, scopes, additionalClaims, cancellationToken);
         return result.Token;
     }
 
     /// <inheritdoc/>
     public async Task<JwtToken> GetAltinnExchangedToken(
         IEnumerable<string> scopes,
+        Dictionary<string, string>? additionalClaims = null,
         CancellationToken cancellationToken = default
     )
     {
-        var result = await GetOrCreateTokenFromCache(TokenAuthority.AltinnTokenExchange, scopes, cancellationToken);
+        var result = await GetOrCreateTokenFromCache(TokenAuthority.AltinnTokenExchange, scopes, additionalClaims, cancellationToken);
         return result.Token;
     }
 
@@ -109,6 +111,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     internal async Task<TokenCacheEntry> GetOrCreateTokenFromCache(
         TokenAuthority authority,
         IEnumerable<string> scopes,
+        Dictionary<string, string>? additionalClaims = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -127,7 +130,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
 
         var result = await _tokenCache.GetOrCreateAsync(
             cacheKey,
-            new CacheFactoryState(this, formattedScopes),
+            new CacheFactoryState(this, formattedScopes, additionalClaims),
             tokenFactory,
             cancellationToken: cancellationToken,
             options: _defaultCacheExpiration
@@ -163,18 +166,20 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// Handles the sending of grant requests to Maskinporten and parsing the returned response.
     /// </summary>
     /// <param name="formattedScopes">A single space-separated string containing the scopes to authorize for.</param>
+    /// <param name="additionalClaims">Additional claims to include in the JWT grant sent to Maskinporten.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns><inheritdoc cref="GetAccessToken"/></returns>
     /// <exception cref="MaskinportenAuthenticationException"><inheritdoc cref="GetAccessToken"/></exception>
     private async Task<JwtToken> HandleMaskinportenAuthentication(
         string formattedScopes,
+        Dictionary<string, string>? additionalClaims = null,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
             _logger.LogDebug("Using MaskinportenClient.Variant={Variant} for authorization", Variant);
-            string jwtGrant = GenerateJwtGrant(formattedScopes);
+            string jwtGrant = GenerateJwtGrant(formattedScopes, additionalClaims);
             FormUrlEncodedContent payload = AuthenticationPayloadFactory(jwtGrant);
 
             _logger.LogDebug(
@@ -262,9 +267,10 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     /// Generates a JWT grant for the supplied scope claims along with the pre-configured client id and private key.
     /// </summary>
     /// <param name="formattedScopes">A space-separated list of scopes to make a claim for.</param>
+    /// <param name="additionalClaims">Additional claims to include in the JWT grant sent to Maskinporten.</param>
     /// <returns><inheritdoc cref="JsonWebTokenHandler.CreateToken(SecurityTokenDescriptor)"/></returns>
     /// <exception cref="MaskinportenConfigurationException"></exception>
-    internal string GenerateJwtGrant(string formattedScopes)
+    internal string GenerateJwtGrant(string formattedScopes, Dictionary<string, string>? additionalClaims = null)
     {
         MaskinportenSettings? settings;
         try
@@ -294,6 +300,14 @@ internal sealed class MaskinportenClient : IMaskinportenClient
                 [JwtClaimTypes.JwtId] = Guid.NewGuid().ToString(),
             },
         };
+
+        if (additionalClaims != null)
+        {
+            foreach (var claim in additionalClaims)
+            {
+                jwtDescriptor.Claims[claim.Key] = claim.Value;
+            }
+        }
 
         return new JsonWebTokenHandler().CreateToken(jwtDescriptor);
     }
@@ -420,7 +434,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     {
         state.Self._logger.LogDebug("Token is not in cache, generating new");
 
-        JwtToken token = await state.Self.HandleMaskinportenAuthentication(state.FormattedScopes, cancellationToken);
+        JwtToken token = await state.Self.HandleMaskinportenAuthentication(state.FormattedScopes, state.AdditionalClaims, cancellationToken);
 
         var expiresIn = state.Self.GetTokenExpiryWithMargin(token);
         if (expiresIn <= TimeSpan.Zero)
@@ -445,7 +459,7 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     )
     {
         state.Self._logger.LogDebug("Token is not in cache, generating new");
-        JwtToken maskinportenToken = await state.Self.GetAccessToken([state.FormattedScopes], cancellationToken);
+        JwtToken maskinportenToken = await state.Self.GetAccessToken([state.FormattedScopes], state.AdditionalClaims, cancellationToken);
         JwtToken altinnToken = await state.Self.HandleMaskinportenAltinnTokenExchange(
             maskinportenToken,
             cancellationToken
@@ -462,5 +476,5 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         return new TokenCacheEntry(Token: altinnToken, ExpiresIn: expiresIn, HasSetExpiration: false);
     }
 
-    private sealed record CacheFactoryState(MaskinportenClient Self, string FormattedScopes);
+    private sealed record CacheFactoryState(MaskinportenClient Self, string FormattedScopes, Dictionary<string, string>? AdditionalClaims);
 }

@@ -13,6 +13,7 @@ public interface IMaskinportenClient
     /// which means this method is safe to call in a loop or concurrent environment without encountering rate concerns.</p>
     /// </summary>
     /// <param name="scopes">A list of scopes to claim authorization for with Maskinporten.</param>
+    /// <param name="additionalClaims">Additional claims to include in the JWT grant sent to Maskinporten.</param>
     /// <param name="cancellationToken">An optional cancellation token to be forwarded to internal http calls.</param>
     /// <returns>A <see cref="JwtToken"/> which contains an access token, amongst other things.</returns>
     /// <exception cref="Exceptions.MaskinportenAuthenticationException">
@@ -22,7 +23,7 @@ public interface IMaskinportenClient
     /// The Maskinporten configuration is incomplete or invalid. Very possibly because of a missing or corrupt maskinporten-settings.json file.
     /// </exception>
     /// <exception cref="Exceptions.MaskinportenTokenExpiredException">The token received from Maskinporten has already expired.</exception>
-    public Task<JwtToken> GetAccessToken(IEnumerable<string> scopes, CancellationToken cancellationToken = default);
+    public Task<JwtToken> GetAccessToken(IEnumerable<string> scopes, Dictionary<string, string>? additionalClaims = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// <p>Sends an authorization request to Maskinporten, then exchanges the grant for an Altinn issued token.</p>
@@ -30,6 +31,7 @@ public interface IMaskinportenClient
     /// which means this method is safe to call in a loop or concurrent environment without encountering rate concerns.</p>
     /// </summary>
     /// <param name="scopes">A list of scopes to claim authorization for with Maskinporten. These scopes will carry through to the Altinn issued token.</param>
+    /// <param name="additionalClaims">Additional claims to include in the JWT grant sent to Maskinporten.</param>
     /// <param name="cancellationToken">An optional cancellation token to be forwarded to internal http calls.</param>
     /// <returns>A <see cref="JwtToken"/> which contains an access token, amongst other things.</returns>
     /// <exception cref="Exceptions.MaskinportenAuthenticationException">
@@ -42,6 +44,7 @@ public interface IMaskinportenClient
     /// <seealso cref="GetAccessToken"/>
     public Task<JwtToken> GetAltinnExchangedToken(
         IEnumerable<string> scopes,
+        Dictionary<string, string>? additionalClaims = null,
         CancellationToken cancellationToken = default
     );
 }
