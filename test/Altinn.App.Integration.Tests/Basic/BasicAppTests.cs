@@ -159,11 +159,11 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
         {
             TestCase.SimplifiedNoPrefill => await fixture.Instances.PostSimplified(
                 token,
-                new InstansiationInstance { InstanceOwner = new InstanceOwner { PartyId = "501337" } }
+                new InstantiationInstance { InstanceOwner = new InstanceOwner { PartyId = "501337" } }
             ),
             TestCase.SimplifiedWithPrefill => await fixture.Instances.PostSimplified(
                 token,
-                new InstansiationInstance
+                new InstantiationInstance
                 {
                     InstanceOwner = new InstanceOwner { PartyId = "501337" },
                     Prefill = new() { { "property1", "1" }, { "property2", "1" } },
