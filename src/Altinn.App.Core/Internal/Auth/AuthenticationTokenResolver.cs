@@ -54,12 +54,12 @@ internal class AuthenticationTokenResolver : IAuthenticationTokenResolver
     private async Task<JwtToken> GetMaskinportenToken(
         AuthenticationMethod.MaskinportenToken request,
         CancellationToken cancellationToken
-    ) => await _maskinportenClient.GetAccessToken(request.Scopes, cancellationToken);
+    ) => await _maskinportenClient.GetAccessToken(request.Scopes, null, cancellationToken);
 
     private async Task<JwtToken> GetAltinnToken(
         AuthenticationMethod.AltinnToken request,
         CancellationToken cancellationToken
-    ) => await _maskinportenClient.GetAltinnExchangedToken(request.Scopes, cancellationToken);
+    ) => await _maskinportenClient.GetAltinnExchangedToken(request.Scopes, null, cancellationToken);
 
     private JwtToken GetCurrentUserToken()
     {

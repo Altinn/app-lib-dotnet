@@ -88,7 +88,12 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         CancellationToken cancellationToken = default
     )
     {
-        var result = await GetOrCreateTokenFromCache(TokenAuthority.Maskinporten, scopes, additionalClaims, cancellationToken);
+        var result = await GetOrCreateTokenFromCache(
+            TokenAuthority.Maskinporten,
+            scopes,
+            additionalClaims,
+            cancellationToken
+        );
         return result.Token;
     }
 
@@ -99,7 +104,12 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         CancellationToken cancellationToken = default
     )
     {
-        var result = await GetOrCreateTokenFromCache(TokenAuthority.AltinnTokenExchange, scopes, additionalClaims, cancellationToken);
+        var result = await GetOrCreateTokenFromCache(
+            TokenAuthority.AltinnTokenExchange,
+            scopes,
+            additionalClaims,
+            cancellationToken
+        );
         return result.Token;
     }
 
@@ -434,7 +444,11 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     {
         state.Self._logger.LogDebug("Token is not in cache, generating new");
 
-        JwtToken token = await state.Self.HandleMaskinportenAuthentication(state.FormattedScopes, state.AdditionalClaims, cancellationToken);
+        JwtToken token = await state.Self.HandleMaskinportenAuthentication(
+            state.FormattedScopes,
+            state.AdditionalClaims,
+            cancellationToken
+        );
 
         var expiresIn = state.Self.GetTokenExpiryWithMargin(token);
         if (expiresIn <= TimeSpan.Zero)
@@ -459,7 +473,11 @@ internal sealed class MaskinportenClient : IMaskinportenClient
     )
     {
         state.Self._logger.LogDebug("Token is not in cache, generating new");
-        JwtToken maskinportenToken = await state.Self.GetAccessToken([state.FormattedScopes], state.AdditionalClaims, cancellationToken);
+        JwtToken maskinportenToken = await state.Self.GetAccessToken(
+            [state.FormattedScopes],
+            state.AdditionalClaims,
+            cancellationToken
+        );
         JwtToken altinnToken = await state.Self.HandleMaskinportenAltinnTokenExchange(
             maskinportenToken,
             cancellationToken
@@ -476,5 +494,9 @@ internal sealed class MaskinportenClient : IMaskinportenClient
         return new TokenCacheEntry(Token: altinnToken, ExpiresIn: expiresIn, HasSetExpiration: false);
     }
 
-    private sealed record CacheFactoryState(MaskinportenClient Self, string FormattedScopes, Dictionary<string, string>? AdditionalClaims);
+    private sealed record CacheFactoryState(
+        MaskinportenClient Self,
+        string FormattedScopes,
+        Dictionary<string, string>? AdditionalClaims
+    );
 }
