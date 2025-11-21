@@ -120,7 +120,7 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
     {
         try
         {
-            var httpClient = _httpClientFactory.CreateClient();
+            var httpClient = _httpClientFactory.CreateClient("Altinn3LibraryClient");
             httpClient.BaseAddress = new Uri(_platformSettings.Altinn3LibraryApiEndpoint);
             httpClient.Timeout = TimeSpan.FromSeconds(30);
             var response = await httpClient.GetAsync(
