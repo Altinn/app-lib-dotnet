@@ -117,6 +117,16 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IPersonClient, PersonClient>();
         services.AddHttpClient<IAccessManagementClient, AccessManagementClient>();
 
+        // Wallet verification client for external wallet API integration
+        services.AddHttpClient(
+            "WalletApiClient",
+            client =>
+            {
+                client.BaseAddress = new Uri("https://verifier-proxy.test.eidas2sandkasse.net");
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+            }
+        );
+
 #pragma warning disable EXTEXP0018 // is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         services.AddHybridCache();
 

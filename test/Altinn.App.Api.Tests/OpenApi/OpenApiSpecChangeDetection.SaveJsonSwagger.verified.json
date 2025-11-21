@@ -6976,6 +6976,196 @@
         },
         "deprecated": true
       }
+    },
+    "/{org}/{app}/api/wallet/verify/start": {
+      "post": {
+        "tags": [
+          "WalletVerification"
+        ],
+        "summary": "Initiates a wallet credential verification request.",
+        "parameters": [
+          {
+            "name": "org",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The request body to forward to the external wallet API.",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationStartResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{org}/{app}/api/wallet/verify/status/{verificationId}": {
+      "get": {
+        "tags": [
+          "WalletVerification"
+        ],
+        "summary": "Checks the status of a wallet verification request.",
+        "parameters": [
+          {
+            "name": "verificationId",
+            "in": "path",
+            "description": "The verification transaction ID.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "org",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{org}/{app}/api/wallet/verify/result/{verificationId}": {
+      "get": {
+        "tags": [
+          "WalletVerification"
+        ],
+        "summary": "Retrieves the verified credential data from a completed verification.",
+        "parameters": [
+          {
+            "name": "verificationId",
+            "in": "path",
+            "description": "The verification transaction ID.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "org",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationResultResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -8108,6 +8298,28 @@
           }
         },
         "additionalProperties": false
+      },
+      "DrivingPrivilege": {
+        "type": "object",
+        "properties": {
+          "vehicle_category_code": {
+            "type": "string",
+            "description": "The vehicle category code (e.g., \"B\", \"C\", \"D\").",
+            "nullable": true
+          },
+          "issue_date": {
+            "type": "string",
+            "description": "The date the privilege was issued (YYYY-MM-DD format).",
+            "nullable": true
+          },
+          "expiry_date": {
+            "type": "string",
+            "description": "The date the privilege expires (YYYY-MM-DD format).",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Represents a driving privilege from a driver's license credential."
       },
       "EFormidlingContract": {
         "type": "object",
@@ -10300,6 +10512,110 @@
           }
         },
         "additionalProperties": false
+      },
+      "VerificationResultResponse": {
+        "required": [
+          "claims"
+        ],
+        "type": "object",
+        "properties": {
+          "claims": {
+            "$ref": "#/components/schemas/WalletClaimsData"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response from the wallet verification result endpoint containing the verified credential claims."
+      },
+      "VerificationStartResponse": {
+        "required": [
+          "authorization_request",
+          "verifier_transaction_id"
+        ],
+        "type": "object",
+        "properties": {
+          "verifier_transaction_id": {
+            "type": "string",
+            "description": "The unique verification transaction ID.",
+            "nullable": true
+          },
+          "authorization_request": {
+            "type": "string",
+            "description": "The authorization request URL to redirect the user to their wallet app.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response from the wallet verification start endpoint."
+      },
+      "VerificationStatusResponse": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "The current status of the verification.\nPossible values: PENDING, AVAILABLE, FAILED",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response from the wallet verification status endpoint."
+      },
+      "WalletClaimsData": {
+        "type": "object",
+        "properties": {
+          "portrait": {
+            "type": "string",
+            "description": "Base64-encoded portrait image (JPEG format).",
+            "nullable": true
+          },
+          "given_name": {
+            "type": "string",
+            "description": "The person's given name(s).",
+            "nullable": true
+          },
+          "family_name": {
+            "type": "string",
+            "description": "The person's family name.",
+            "nullable": true
+          },
+          "birth_date": {
+            "type": "string",
+            "description": "The person's date of birth (YYYY-MM-DD format).",
+            "nullable": true
+          },
+          "issue_date": {
+            "type": "string",
+            "description": "The date the credential was issued (YYYY-MM-DD format).",
+            "nullable": true
+          },
+          "expiry_date": {
+            "type": "string",
+            "description": "The date the credential expires (YYYY-MM-DD format).",
+            "nullable": true
+          },
+          "issuing_country": {
+            "type": "string",
+            "description": "The issuing country (ISO 3166-1 alpha-2 code, e.g., \"NO\").",
+            "nullable": true
+          },
+          "document_number": {
+            "type": "string",
+            "description": "The credential/document number.",
+            "nullable": true
+          },
+          "driving_privileges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DrivingPrivilege"
+            },
+            "description": "List of driving privileges (for driver's license credentials).",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Claims data from a verified wallet credential (e.g., mobile driver's license)."
       }
     }
   }
