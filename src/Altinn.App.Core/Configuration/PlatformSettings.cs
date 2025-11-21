@@ -6,9 +6,6 @@ namespace Altinn.App.Core.Configuration;
 /// </summary>
 public class PlatformSettings
 {
-    private string _altinn3LibraryApiEndpoint =
-        "https://studiostagingsc.blob.core.windows.net/studiostagingsharedcontentcontainer/";
-
     /// <summary>
     /// Gets or sets the url for the Storage API endpoint.
     /// </summary>
@@ -72,13 +69,6 @@ public class PlatformSettings
     /// <summary>
     /// Url to Altinn3 library api endpoint that serves shared and updated resources like codelists...
     /// </summary>
-    public string Altinn3LibraryApiEndpoint
-    {
-        get
-        {
-            // Makes the implementation more robust against configuration mistakes by composing a full absolute URL
-            return _altinn3LibraryApiEndpoint.TrimEnd('/') + '/';
-        }
-        set { _altinn3LibraryApiEndpoint = value; }
-    }
+    public string Altinn3LibraryApiEndpoint { get; set; } =
+        "https://studiostagingsc.blob.core.windows.net/studiostagingsharedcontentcontainer/";
 }

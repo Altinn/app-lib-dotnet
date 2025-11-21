@@ -1,18 +1,21 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 
 internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
 {
+    private readonly HybridCache _hybridCache;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<Altinn3LibraryOptionsProvider> _logger;
-    private readonly HybridCache _codeListCache;
+    private readonly PlatformSettings _platformSettings;
 
     private static readonly HybridCacheEntryOptions _defaultCacheExpiration = new()
     {
@@ -24,9 +27,10 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         string org,
         string codeListId,
         string? version,
-        HybridCache codeListCache,
+        HybridCache hybridCache,
         IHttpClientFactory httpClientFactory,
-        ILogger<Altinn3LibraryOptionsProvider> logger
+        ILogger<Altinn3LibraryOptionsProvider> logger,
+        IOptions<PlatformSettings> platformSettings
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(optionId);
@@ -38,8 +42,9 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         _org = org;
         _codeListId = codeListId;
         _version = !string.IsNullOrEmpty(version) ? version : "latest";
-        _codeListCache = codeListCache;
+        _hybridCache = hybridCache;
         _logger = logger;
+        _platformSettings = platformSettings.Value;
     }
 
     public string Id { get; }
@@ -49,7 +54,7 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
 
     public async Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
     {
-        var result = await _codeListCache.GetOrCreateAsync(
+        var result = await _hybridCache.GetOrCreateAsync(
             $"Altinn3Library:{_org}-{_codeListId}-{_version}",
             async cancel => await GetAppOptions(cancellationToken: cancel),
             options: _defaultCacheExpiration
@@ -116,6 +121,8 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         try
         {
             var httpClient = _httpClientFactory.CreateClient("Altinn3LibraryClient");
+            httpClient.BaseAddress = new Uri(_platformSettings.Altinn3LibraryApiEndpoint);
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
             var response = await httpClient.GetAsync(
                 $"{_org}/code_lists/{_codeListId}/{_version}.json",
                 cancellationToken
