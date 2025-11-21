@@ -33,6 +33,11 @@ public interface IInstanceDataMutator : IInstanceDataAccessor
     /// <summary>
     /// Add a new data element without app logic to the instance.
     /// </summary>
+    /// <param name="dataTypeId">The data type identifier from application metadata</param>
+    /// <param name="contentType">The MIME content type of the binary data</param>
+    /// <param name="filename">Optional filename for the data element</param>
+    /// <param name="bytes">The binary data to store</param>
+    /// <param name="generatedFromTaskId">Optional reference to the task that generated the data element. If set, the data element will be deleted during task initialization if the task is revisited by the process engine. Used for PDF and signatures among potentially other things.</param>
     /// <remarks>
     /// Saving to storage is not done until the instance is saved, so mutations to data might or might not be sent to storage.
     /// </remarks>
@@ -40,7 +45,8 @@ public interface IInstanceDataMutator : IInstanceDataAccessor
         string dataTypeId,
         string contentType,
         string? filename,
-        ReadOnlyMemory<byte> bytes
+        ReadOnlyMemory<byte> bytes,
+        string? generatedFromTaskId = null
     );
 
     /// <summary>
@@ -53,8 +59,9 @@ public interface IInstanceDataMutator : IInstanceDataAccessor
         DataType dataType,
         string contentType,
         string? filename,
-        ReadOnlyMemory<byte> bytes
-    ) => AddBinaryDataElement(dataType.Id, contentType, filename, bytes);
+        ReadOnlyMemory<byte> bytes,
+        string? generatedFromTaskId = null
+    ) => AddBinaryDataElement(dataType.Id, contentType, filename, bytes, generatedFromTaskId);
 
     /// <summary>
     /// Remove a data element from the instance.
