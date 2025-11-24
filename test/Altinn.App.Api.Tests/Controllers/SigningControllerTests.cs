@@ -88,18 +88,16 @@ public class SigningControllerTests
         _processReaderMock.Setup(s => s.GetAltinnTaskExtension(It.IsAny<string>())).Returns(_altinnTaskExtension);
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
                     },
-                ]
-            );
+                },
+            ]);
 
         _applicationMetadataMock
             .Setup(a => a.GetApplicationMetadata())
@@ -615,18 +613,16 @@ public class SigningControllerTests
 
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "not-signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "not-signing" },
                     },
-                ]
-            );
+                },
+            ]);
 
         // Act
         var actionResult = await controller.GetAuthorizedOrganizations(
@@ -774,18 +770,16 @@ public class SigningControllerTests
 
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "not-signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "not-signing" },
                     },
-                ]
-            );
+                },
+            ]);
 
         // Act
         var actionResult = await controller.GetDataElements("tdd", "app", 1337, Guid.NewGuid());
@@ -893,26 +887,24 @@ public class SigningControllerTests
         // Setup multiple tasks - current task is a data task, but we'll override to a signing task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
                     },
-                    new ProcessTask
+                },
+                new ProcessTask
+                {
+                    Id = "task2",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task2",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
                     },
-                ]
-            );
+                },
+            ]);
 
         var altinnTaskExtensionTask2 = new AltinnTaskExtension
         {
@@ -1005,26 +997,24 @@ public class SigningControllerTests
         // Setup multiple tasks - task2 is not a signing task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
                     },
-                    new ProcessTask
+                },
+                new ProcessTask
+                {
+                    Id = "task2",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task2",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
                     },
-                ]
-            );
+                },
+            ]);
 
         // Act
         var actionResult = await controller.GetSigneesState(
@@ -1060,18 +1050,16 @@ public class SigningControllerTests
         // Setup single task - taskIdOverride will point to a non-existent task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
                     },
-                ]
-            );
+                },
+            ]);
 
         // Act
         var actionResult = await controller.GetSigneesState(
@@ -1121,26 +1109,24 @@ public class SigningControllerTests
         // Setup multiple tasks - current task is a data task, but we'll override to a signing task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
                     },
-                    new ProcessTask
+                },
+                new ProcessTask
+                {
+                    Id = "task2",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task2",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
                     },
-                ]
-            );
+                },
+            ]);
 
         var altinnTaskExtensionTask2 = new AltinnTaskExtension
         {
@@ -1221,26 +1207,24 @@ public class SigningControllerTests
         // Setup multiple tasks - task2 is not a signing task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
                     },
-                    new ProcessTask
+                },
+                new ProcessTask
+                {
+                    Id = "task2",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task2",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
                     },
-                ]
-            );
+                },
+            ]);
 
         // Act
         var actionResult = await controller.GetAuthorizedOrganizations(
@@ -1272,18 +1256,16 @@ public class SigningControllerTests
         // Setup single task - taskIdOverride will point to a non-existent task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
                     },
-                ]
-            );
+                },
+            ]);
 
         // Act
         var actionResult = await controller.GetAuthorizedOrganizations(
@@ -1365,26 +1347,24 @@ public class SigningControllerTests
         // Setup multiple tasks - current task is a data task, but we'll override to a signing task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
                     },
-                    new ProcessTask
+                },
+                new ProcessTask
+                {
+                    Id = "task2",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task2",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
                     },
-                ]
-            );
+                },
+            ]);
 
         var altinnTaskExtensionTask2 = new AltinnTaskExtension
         {
@@ -1444,26 +1424,24 @@ public class SigningControllerTests
         // Setup multiple tasks - task2 is not a signing task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
                     },
-                    new ProcessTask
+                },
+                new ProcessTask
+                {
+                    Id = "task2",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task2",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "data" },
                     },
-                ]
-            );
+                },
+            ]);
 
         // Act
         var actionResult = await controller.GetDataElements(
@@ -1507,18 +1485,16 @@ public class SigningControllerTests
         // Setup single task - taskIdOverride will point to a non-existent task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
-            .Returns(
-                [
-                    new ProcessTask
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements()
                     {
-                        Id = "task1",
-                        ExtensionElements = new ExtensionElements()
-                        {
-                            TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
-                        },
+                        TaskExtension = new AltinnTaskExtension() { TaskType = "signing" },
                     },
-                ]
-            );
+                },
+            ]);
 
         // Act
         var actionResult = await controller.GetDataElements(
