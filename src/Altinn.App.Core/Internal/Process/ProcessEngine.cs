@@ -281,11 +281,10 @@ public class ProcessEngine : IProcessEngine
                 );
 
                 var serviceTaskRequiresContinue =
-                    serviceTaskResult
-                        is ServiceTaskFailedResult
-                        {
-                            ErrorHandling.Strategy: ServiceTaskErrorStrategy.ContinueProcessNext
-                        };
+                    serviceTaskResult is ServiceTaskFailedResult
+                    {
+                        ErrorHandling.Strategy: ServiceTaskErrorStrategy.ContinueProcessNext
+                    };
 
                 if (!serviceTaskProcessChangeResult.Success && !serviceTaskRequiresContinue)
                 {
@@ -790,6 +789,7 @@ public class ProcessEngine : IProcessEngine
             case "feedback":
             case "pdf":
             case "eFormidling":
+            case "fiksArkiv":
                 return "write";
             case "confirmation":
                 return "confirm";
