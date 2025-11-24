@@ -8,6 +8,7 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -61,6 +62,7 @@ public class SigningController : ControllerBase
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="ct">Cancellation token, populated by the framework</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
+    /// <param name="taskIdOverride">If data should be loaded from a different task than the current one.</param>
     /// <returns>An object containing updated signee state</returns>
     [HttpGet]
     [ProducesResponseType(typeof(SigningStateResponse), StatusCodes.Status200OK)]
@@ -71,7 +73,8 @@ public class SigningController : ControllerBase
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         CancellationToken ct,
-        [FromQuery] string? language = null
+        [FromQuery] string? language = null,
+        [FromQuery] string? taskIdOverride = null
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
@@ -84,25 +87,27 @@ public class SigningController : ControllerBase
             instanceOwnerPartyId
         );
 
-        string? taskId = instance.Process.CurrentTask.ElementId;
         InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
             instance,
-            taskId,
+            // Using actual current task here, since mutations etc. would crash hard if another task is used. Data elements would be locked.
+            instance.Process.CurrentTask.ElementId,
             language
         );
 
-        if (instance.Process.CurrentTask.AltinnTaskType != "signing")
+        string taskId = taskIdOverride ?? instance.Process.CurrentTask.ElementId;
+        if (!VerifyIsSigningTask(taskId))
         {
             return NotSigningTask();
         }
 
         AltinnSignatureConfiguration signingConfiguration =
-            (_processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.SignatureConfiguration)
+            (_processReader.GetAltinnTaskExtension(taskId)?.SignatureConfiguration)
             ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
         List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(
             cachedDataMutator,
             signingConfiguration,
+            taskIdOverride,
             ct
         );
 
@@ -165,6 +170,7 @@ public class SigningController : ControllerBase
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="ct">Cancellation token, populated by the framework</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
+    /// <param name="taskIdOverride">If data should be loaded from a different task than the current one.</param>
     /// <returns>An object containing a list of organizations that the user can sign on behalf of</returns>
     [HttpGet("organizations")]
     [ProducesResponseType(typeof(SigningAuthorizedOrganizationsResponse), StatusCodes.Status200OK)]
@@ -176,25 +182,27 @@ public class SigningController : ControllerBase
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         CancellationToken ct,
-        [FromQuery] string? language = null
+        [FromQuery] string? language = null,
+        [FromQuery] string? taskIdOverride = null
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
-        string? taskId = instance.Process.CurrentTask.ElementId;
         InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
             instance,
-            taskId,
+            // Using actual current task here, since mutations etc. would crash hard if another task is used. Data elements would be locked.
+            instance.Process.CurrentTask.ElementId,
             language
         );
 
-        if (instance.Process.CurrentTask.AltinnTaskType != "signing")
+        string taskId = taskIdOverride ?? instance.Process.CurrentTask.ElementId;
+        if (!VerifyIsSigningTask(taskId))
         {
             return NotSigningTask();
         }
 
         AltinnSignatureConfiguration signingConfiguration =
-            (_processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.SignatureConfiguration)
+            (_processReader.GetAltinnTaskExtension(taskId)?.SignatureConfiguration)
             ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
         Authenticated currentAuth = _authenticationContext.Current;
@@ -241,6 +249,7 @@ public class SigningController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
+    /// <param name="taskIdOverride">If data should be loaded from a different task than the current one.</param>
     /// <returns>An object containing the documents to be signed</returns>
     [HttpGet("data-elements")]
     [ProducesResponseType(typeof(SigningDataElementsResponse), StatusCodes.Status200OK)]
@@ -250,18 +259,20 @@ public class SigningController : ControllerBase
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromQuery] string? language = null
+        [FromQuery] string? language = null,
+        [FromQuery] string? taskIdOverride = null
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
-        if (instance.Process.CurrentTask.AltinnTaskType != "signing")
+        string taskId = taskIdOverride ?? instance.Process.CurrentTask.ElementId;
+        if (!VerifyIsSigningTask(taskId))
         {
             return NotSigningTask();
         }
 
         AltinnSignatureConfiguration? signingConfiguration =
-            (_processReader.GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)?.SignatureConfiguration)
+            (_processReader.GetAltinnTaskExtension(taskId)?.SignatureConfiguration)
             ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
         List<DataElement> dataElements =
@@ -282,13 +293,22 @@ public class SigningController : ControllerBase
         return Ok(response);
     }
 
+    private bool VerifyIsSigningTask(string taskId)
+    {
+        List<ProcessTask> allTasks = _processReader.GetProcessTasks();
+        ProcessTask? processTask = allTasks.FirstOrDefault(t => t.Id == taskId);
+
+        return processTask?.ExtensionElements?.TaskExtension?.TaskType == "signing";
+    }
+
     private BadRequestObjectResult NotSigningTask()
     {
         return BadRequest(
             new ProblemDetails
             {
                 Title = "Not a signing task",
-                Detail = "This endpoint is only callable while the current task is a signing task.",
+                Detail =
+                    "This endpoint is only callable while the current task is a signing task, or when taskIdOverride query param is set to a signing task's ID.",
                 Status = StatusCodes.Status400BadRequest,
             }
         );
