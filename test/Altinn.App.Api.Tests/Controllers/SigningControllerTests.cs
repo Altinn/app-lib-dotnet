@@ -792,7 +792,7 @@ public class SigningControllerTests
         Assert.NotNull(problemDetails);
         Assert.Equal("Not a signing task", problemDetails.Title);
         Assert.Equal(
-            "This endpoint is only callable while the current task is a signing task, or when taskIdOverride query param is set to a signing task's ID.",
+            "This endpoint is only callable while the current task is a signing task, or when taskId query param is set to a signing task's ID.",
             problemDetails.Detail
         );
         Assert.Equal(StatusCodes.Status400BadRequest, problemDetails.Status);
@@ -863,7 +863,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetSigneesState_WithTaskIdOverride_UsesOverriddenTask()
+    public async Task GetSigneesState_WithtaskId_UsesOverriddenTask()
     {
         // Arrange
         SetupAuthenticationContextMock();
@@ -962,7 +962,7 @@ public class SigningControllerTests
             1337,
             Guid.NewGuid(),
             CancellationToken.None,
-            taskIdOverride: "task2"
+            taskId: "task2"
         );
 
         // Assert
@@ -987,7 +987,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetSigneesState_WithTaskIdOverride_NonSigningTask_Returns_BadRequest()
+    public async Task GetSigneesState_WithtaskId_NonSigningTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock();
@@ -1023,7 +1023,7 @@ public class SigningControllerTests
             1337,
             Guid.NewGuid(),
             CancellationToken.None,
-            taskIdOverride: "task2"
+            taskId: "task2"
         );
 
         // Assert
@@ -1034,20 +1034,20 @@ public class SigningControllerTests
         Assert.NotNull(problemDetails);
         Assert.Equal("Not a signing task", problemDetails.Title);
         Assert.Equal(
-            "This endpoint is only callable while the current task is a signing task, or when taskIdOverride query param is set to a signing task's ID.",
+            "This endpoint is only callable while the current task is a signing task, or when taskId query param is set to a signing task's ID.",
             problemDetails.Detail
         );
     }
 
     [Fact]
-    public async Task GetSigneesState_WithTaskIdOverride_NonExistentTask_Returns_BadRequest()
+    public async Task GetSigneesState_WithtaskId_NonExistentTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock();
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
-        // Setup single task - taskIdOverride will point to a non-existent task
+        // Setup single task - taskId will point to a non-existent task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
             .Returns([
@@ -1068,7 +1068,7 @@ public class SigningControllerTests
             1337,
             Guid.NewGuid(),
             CancellationToken.None,
-            taskIdOverride: "nonExistentTask"
+            taskId: "nonExistentTask"
         );
 
         // Assert
@@ -1079,13 +1079,13 @@ public class SigningControllerTests
         Assert.NotNull(problemDetails);
         Assert.Equal("Not a signing task", problemDetails.Title);
         Assert.Equal(
-            "This endpoint is only callable while the current task is a signing task, or when taskIdOverride query param is set to a signing task's ID.",
+            "This endpoint is only callable while the current task is a signing task, or when taskId query param is set to a signing task's ID.",
             problemDetails.Detail
         );
     }
 
     [Fact]
-    public async Task GetAuthorizedOrganizations_WithTaskIdOverride_UsesOverriddenTask()
+    public async Task GetAuthorizedOrganizations_WithtaskId_UsesOverriddenTask()
     {
         // Arrange
         SetupAuthenticationContextMock(authenticated: CreateAuthenticatedUser());
@@ -1172,7 +1172,7 @@ public class SigningControllerTests
             1337,
             Guid.NewGuid(),
             CancellationToken.None,
-            taskIdOverride: "task2"
+            taskId: "task2"
         );
 
         // Assert
@@ -1197,7 +1197,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetAuthorizedOrganizations_WithTaskIdOverride_NonSigningTask_Returns_BadRequest()
+    public async Task GetAuthorizedOrganizations_WithtaskId_NonSigningTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock(authenticated: CreateAuthenticatedUser());
@@ -1233,7 +1233,7 @@ public class SigningControllerTests
             1337,
             Guid.NewGuid(),
             CancellationToken.None,
-            taskIdOverride: "task2"
+            taskId: "task2"
         );
 
         // Assert
@@ -1246,14 +1246,14 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetAuthorizedOrganizations_WithTaskIdOverride_NonExistentTask_Returns_BadRequest()
+    public async Task GetAuthorizedOrganizations_WithtaskId_NonExistentTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock(authenticated: CreateAuthenticatedUser());
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
-        // Setup single task - taskIdOverride will point to a non-existent task
+        // Setup single task - taskId will point to a non-existent task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
             .Returns([
@@ -1274,7 +1274,7 @@ public class SigningControllerTests
             1337,
             Guid.NewGuid(),
             CancellationToken.None,
-            taskIdOverride: "nonExistentTask"
+            taskId: "nonExistentTask"
         );
 
         // Assert
@@ -1285,13 +1285,13 @@ public class SigningControllerTests
         Assert.NotNull(problemDetails);
         Assert.Equal("Not a signing task", problemDetails.Title);
         Assert.Equal(
-            "This endpoint is only callable while the current task is a signing task, or when taskIdOverride query param is set to a signing task's ID.",
+            "This endpoint is only callable while the current task is a signing task, or when taskId query param is set to a signing task's ID.",
             problemDetails.Detail
         );
     }
 
     [Fact]
-    public async Task GetDataElements_WithTaskIdOverride_UsesOverriddenTask()
+    public async Task GetDataElements_WithtaskId_UsesOverriddenTask()
     {
         // Arrange
         SetupAuthenticationContextMock();
@@ -1383,13 +1383,7 @@ public class SigningControllerTests
         _processReaderMock.Setup(s => s.GetAltinnTaskExtension("task2")).Returns(altinnTaskExtensionTask2);
 
         // Act
-        var actionResult = await controller.GetDataElements(
-            "tdd",
-            "app",
-            1337,
-            Guid.NewGuid(),
-            taskIdOverride: "task2"
-        );
+        var actionResult = await controller.GetDataElements("tdd", "app", 1337, Guid.NewGuid(), taskId: "task2");
 
         // Assert
         var okResult = actionResult as OkObjectResult;
@@ -1405,7 +1399,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetDataElements_WithTaskIdOverride_NonSigningTask_Returns_BadRequest()
+    public async Task GetDataElements_WithtaskId_NonSigningTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock();
@@ -1444,13 +1438,7 @@ public class SigningControllerTests
             ]);
 
         // Act
-        var actionResult = await controller.GetDataElements(
-            "tdd",
-            "app",
-            1337,
-            Guid.NewGuid(),
-            taskIdOverride: "task2"
-        );
+        var actionResult = await controller.GetDataElements("tdd", "app", 1337, Guid.NewGuid(), taskId: "task2");
 
         // Assert
         var badRequestResult = actionResult as BadRequestObjectResult;
@@ -1460,13 +1448,13 @@ public class SigningControllerTests
         Assert.NotNull(problemDetails);
         Assert.Equal("Not a signing task", problemDetails.Title);
         Assert.Equal(
-            "This endpoint is only callable while the current task is a signing task, or when taskIdOverride query param is set to a signing task's ID.",
+            "This endpoint is only callable while the current task is a signing task, or when taskId query param is set to a signing task's ID.",
             problemDetails.Detail
         );
     }
 
     [Fact]
-    public async Task GetDataElements_WithTaskIdOverride_NonExistentTask_Returns_BadRequest()
+    public async Task GetDataElements_WithtaskId_NonExistentTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock();
@@ -1482,7 +1470,7 @@ public class SigningControllerTests
 
         controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
-        // Setup single task - taskIdOverride will point to a non-existent task
+        // Setup single task - taskId will point to a non-existent task
         _processReaderMock
             .Setup(s => s.GetProcessTasks())
             .Returns([
@@ -1502,7 +1490,7 @@ public class SigningControllerTests
             "app",
             1337,
             Guid.NewGuid(),
-            taskIdOverride: "nonExistentTask"
+            taskId: "nonExistentTask"
         );
 
         // Assert
@@ -1513,7 +1501,7 @@ public class SigningControllerTests
         Assert.NotNull(problemDetails);
         Assert.Equal("Not a signing task", problemDetails.Title);
         Assert.Equal(
-            "This endpoint is only callable while the current task is a signing task, or when taskIdOverride query param is set to a signing task's ID.",
+            "This endpoint is only callable while the current task is a signing task, or when taskId query param is set to a signing task's ID.",
             problemDetails.Detail
         );
     }
