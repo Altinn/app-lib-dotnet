@@ -8,6 +8,7 @@ using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Process.ProcessLock;
 using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage;
@@ -15,6 +16,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 internal sealed class ProcessLockClient
 {
     private readonly AppSettings _appSettings;
+    private readonly ILogger<ProcessLockClient> _logger;
     private readonly HttpClient _client;
     private readonly Telemetry? _telemetry;
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -22,12 +24,14 @@ internal sealed class ProcessLockClient
     public ProcessLockClient(
         IOptions<PlatformSettings> platformSettings,
         IOptions<AppSettings> appSettings,
+        ILogger<ProcessLockClient> logger,
         IHttpContextAccessor httpContextAccessor,
         HttpClient httpClient,
         Telemetry? telemetry = null
     )
     {
         _appSettings = appSettings.Value;
+        _logger = logger;
         _httpContextAccessor = httpContextAccessor;
         httpClient.BaseAddress = new Uri(platformSettings.Value.ApiStorageEndpoint);
         httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.Value.SubscriptionKey);
@@ -48,7 +52,7 @@ internal sealed class ProcessLockClient
         var request = new ProcessLockRequest { Expiration = (int)expiration.TotalSeconds };
         var content = JsonContent.Create(request);
 
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
+        var response = await _client.PostAsync(token, apiUrl, content);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -61,9 +65,9 @@ internal sealed class ProcessLockClient
             var lockResponse = await response.Content.ReadFromJsonAsync<ProcessLockResponse>();
             lockId = lockResponse?.LockId;
         }
-        catch
+        catch (Exception e)
         {
-            // Throw exception below
+            _logger.LogError(e, "Error reading response from the lock acquisition endpoint.");
         }
 
         if (lockId is null || lockId.Value == Guid.Empty)
@@ -89,7 +93,7 @@ internal sealed class ProcessLockClient
         var request = new ProcessLockRequest { Expiration = 0 };
         var content = JsonContent.Create(request);
 
-        HttpResponseMessage response = await _client.PatchAsync(token, apiUrl, content);
+        var response = await _client.PatchAsync(token, apiUrl, content);
 
         if (!response.IsSuccessStatusCode)
         {
