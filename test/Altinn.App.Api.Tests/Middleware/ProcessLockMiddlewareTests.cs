@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using Altinn.App.Api.Infrastructure.Middleware;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
@@ -7,7 +6,6 @@ using Altinn.App.Core.Internal.Process.ProcessLock;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -248,7 +246,8 @@ public sealed class ProcessLockMiddlewareTests
         var acquireRequests = fixture.Server.FindLogEntries(fixture.GetAcquireLockRequestBuilder());
         Assert.Single(acquireRequests);
         var requestBody = acquireRequests[0].RequestMessage.Body;
-        Assert.Contains($"\"expiration\":{customExpirationSeconds}", requestBody);
+
+        await Verify(new { RequestBody = requestBody });
     }
 
     [Fact]
@@ -260,9 +259,8 @@ public sealed class ProcessLockMiddlewareTests
             await fixture.GetTestClient().GetAsync("/invalid-route")
         );
 
-        Assert.Contains("Unable to extract instance identifiers.", exception.Message);
-
         Assert.Empty(fixture.Server.LogEntries);
+        await Verify(new { Exception = exception });
     }
 
     [Fact]
@@ -313,15 +311,9 @@ public sealed class ProcessLockMiddlewareTests
             .GetTestClient()
             .GetAsync($"/instances/{fixture.InstanceOwnerPartyId}/{fixture.InstanceGuid}/test");
 
-        Assert.Equal(storageStatusCode, response.StatusCode);
-
-        var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-
-        Assert.NotNull(problemDetails);
-        Assert.Equal("Failed to acquire lock.", problemDetails.Title);
-        Assert.Equal((int)storageStatusCode, problemDetails.Status);
-
         Assert.Single(fixture.Server.LogEntries);
+
+        await Verify(new { Response = response }).UseParameters(storageStatusCode);
     }
 
     [Fact]
@@ -343,16 +335,9 @@ public sealed class ProcessLockMiddlewareTests
             .GetTestClient()
             .GetAsync($"/instances/{fixture.InstanceOwnerPartyId}/{fixture.InstanceGuid}/test");
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-
-        var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-
-        Assert.NotNull(problemDetails);
-        Assert.Equal("Failed to acquire lock.", problemDetails.Title);
-        Assert.Equal("The response from the lock acquisition endpoint was not expected.", problemDetails.Detail);
-        Assert.Equal((int)HttpStatusCode.InternalServerError, problemDetails.Status);
-
         Assert.Single(fixture.Server.LogEntries);
+
+        await Verify(new { Response = response });
     }
 
     [Fact]
@@ -374,15 +359,8 @@ public sealed class ProcessLockMiddlewareTests
             .GetTestClient()
             .GetAsync($"/instances/{fixture.InstanceOwnerPartyId}/{fixture.InstanceGuid}/test");
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-
-        var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-
-        Assert.NotNull(problemDetails);
-        Assert.Equal("Failed to acquire lock.", problemDetails.Title);
-        Assert.Equal("The response from the lock acquisition endpoint was not expected.", problemDetails.Detail);
-        Assert.Equal((int)HttpStatusCode.InternalServerError, problemDetails.Status);
-
         Assert.Single(fixture.Server.LogEntries);
+
+        await Verify(new { Response = response });
     }
 }

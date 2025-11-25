@@ -1,0 +1,16 @@
+﻿{
+  Response: {
+    Status: 500 Internal Server Error,
+    Content: {
+      Headers: {
+        Content-Type: application/problem+json
+      },
+      Value: {
+        type: https://tools.ietf.org/html/rfc9110#section-15.6.1,
+        title: Failed to acquire lock.,
+        status: 500,
+        detail: 500 - Internal Server Error - 
+      }
+    }
+  }
+}
