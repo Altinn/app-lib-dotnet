@@ -52,11 +52,11 @@ internal sealed class ProcessLockClient
         var request = new ProcessLockRequest { Expiration = (int)expiration.TotalSeconds };
         var content = JsonContent.Create(request);
 
-        var response = await _client.PostAsync(token, apiUrl, content);
+        using var response = await _client.PostAsync(token, apiUrl, content);
 
         if (!response.IsSuccessStatusCode)
         {
-            throw await PlatformHttpException.CreateAsync(response);
+            throw await PlatformHttpResponseSnapshotException.CreateAndDisposeHttpResponse(response);
         }
 
         Guid? lockId = null;
@@ -72,9 +72,9 @@ internal sealed class ProcessLockClient
 
         if (lockId is null || lockId.Value == Guid.Empty)
         {
-            throw new PlatformHttpException(
-                response,
-                "The response from the lock acquisition endpoint was not expected."
+            throw PlatformHttpResponseSnapshotException.Create(
+                "The response from the lock acquisition endpoint was not expected.",
+                response
             );
         }
 
@@ -93,11 +93,11 @@ internal sealed class ProcessLockClient
         var request = new ProcessLockRequest { Expiration = 0 };
         var content = JsonContent.Create(request);
 
-        var response = await _client.PatchAsync(token, apiUrl, content);
+        using var response = await _client.PatchAsync(token, apiUrl, content);
 
         if (!response.IsSuccessStatusCode)
         {
-            throw await PlatformHttpException.CreateAsync(response);
+            throw await PlatformHttpResponseSnapshotException.CreateAndDisposeHttpResponse(response);
         }
     }
 }

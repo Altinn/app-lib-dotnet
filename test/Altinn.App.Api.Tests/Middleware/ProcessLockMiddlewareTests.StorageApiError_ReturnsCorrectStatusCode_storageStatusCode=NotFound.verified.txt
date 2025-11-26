@@ -9,7 +9,7 @@
         type: https://tools.ietf.org/html/rfc9110#section-15.5.5,
         title: Failed to acquire lock.,
         status: 404,
-        detail: 404 - Not Found - 
+        detail: 404 Not Found
       }
     }
   }

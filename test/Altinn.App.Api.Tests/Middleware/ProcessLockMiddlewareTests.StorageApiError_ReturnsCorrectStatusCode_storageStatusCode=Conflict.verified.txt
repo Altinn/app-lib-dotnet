@@ -9,7 +9,7 @@
         type: https://tools.ietf.org/html/rfc9110#section-15.5.10,
         title: Failed to acquire lock.,
         status: 409,
-        detail: 409 - Conflict - 
+        detail: 409 Conflict
       }
     }
   }
