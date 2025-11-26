@@ -55,6 +55,33 @@ public class OptionsController : ControllerBase
     }
 
     /// <summary>
+    /// API endpoint for fetching Altinn 3 library code lists
+    /// </summary>
+    /// <param name="creatorOrg">The organization that initially created the code list</param>
+    /// <param name="codeListId">The code list id</param>
+    /// <param name="version">The code list version, defaults to latest if not provided</param>
+    /// <param name="language">The language requested, ISO 639-1 (eg. nb)</param>
+    /// <param name="tags"></param>
+    /// <returns>The code list</returns>
+    [HttpGet("{creatorOrg}/{codeListId}")]
+    public async Task<IActionResult> GetCodelist(
+        [FromRoute] string creatorOrg,
+        [FromRoute] string codeListId,
+        [FromQuery] string? version = null,
+        [FromQuery] string? language = null
+    )
+    // [FromQuery] string? tags = null
+    {
+        var orgLibraryAppOptions = await _appOptionsService.GetCachableCodeListResponseAsync(
+            creatorOrg,
+            codeListId,
+            version
+        );
+
+        return Ok(_appOptionsService.MapOrgLibraryAppOptions(orgLibraryAppOptions, language));
+    }
+
+    /// <summary>
     /// Exposes options related to the app and logged in user
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>

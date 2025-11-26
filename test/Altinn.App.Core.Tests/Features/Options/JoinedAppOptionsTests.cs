@@ -1,5 +1,6 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Options;
+using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using FluentAssertions;
@@ -54,6 +55,8 @@ public class JoinedAppOptionsTests
         _neverUsedOptionsProviderMock.Setup(p => p.Id).Returns("never-used");
         _serviceCollection.AddSingleton(_neverUsedOptionsProviderMock.Object);
 
+        _serviceCollection.AddHttpClient<IAltinn3LibraryCodeListApiClient, Altinn3LibraryCodeListApiClient>();
+        _serviceCollection.AddHybridCache();
         _serviceCollection.AddSingleton<AppOptionsFactory>();
         _serviceCollection.AddSingleton<InstanceAppOptionsFactory>();
         _serviceCollection.AddSingleton<AppOptionsService>();

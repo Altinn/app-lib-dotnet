@@ -26,8 +26,6 @@ public class AppOptionsFactory
     /// <param name="optionsId">Id matching the options requested.</param>
     public IAppOptionsProvider GetOptionsProvider(string optionsId)
     {
-        bool isDefault = optionsId == DEFAULT_PROVIDER_NAME;
-
         var appOptionsProviders = _appImplementationFactory.GetAll<IAppOptionsProvider>();
         foreach (var appOptionProvider in appOptionsProviders)
         {
@@ -39,6 +37,7 @@ public class AppOptionsFactory
             return appOptionProvider;
         }
 
+        var isDefault = optionsId == DEFAULT_PROVIDER_NAME;
         if (isDefault)
         {
             throw new KeyNotFoundException(

@@ -1,5 +1,6 @@
 ﻿using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Options;
+using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 using Altinn.App.Core.Internal.Language;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -7,7 +8,6 @@ namespace Altinn.App.Core.Tests.Features.Options.Altinn3LibraryProvider;
 
 public class Altinn3LibraryOptionsProviderCacheTests
 {
-    private const string ClientName = "Altinn3LibraryClient";
     private const string OptionId = "SomeId";
     private const string Org = "ttd";
     private const string CodeListId = "SomeCodeListId";
@@ -124,7 +124,14 @@ public class Altinn3LibraryOptionsProviderCacheTests
                 Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage()
             );
             var serviceCollection = new ServiceCollection();
-            serviceCollection.AddHttpClient(ClientName).ConfigurePrimaryHttpMessageHandler(() => mockHandler);
+            serviceCollection
+                .AddHttpClient<IAltinn3LibraryCodeListApiClient, Altinn3LibraryCodeListApiClient>()
+                .ConfigurePrimaryHttpMessageHandler(() => mockHandler);
+            serviceCollection.AddTransient<IAppOptionsService, AppOptionsService>();
+            serviceCollection.AddTransient<AppOptionsFactory>();
+            // Services related to instance aware and secure app options
+            serviceCollection.AddTransient<InstanceAppOptionsFactory>();
+            serviceCollection.AddSingleton<AppImplementationFactory>();
             serviceCollection.AddHybridCache();
             serviceCollection.AddAltinn3CodeList(
                 optionId: OptionId,

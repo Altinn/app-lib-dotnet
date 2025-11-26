@@ -1,12 +1,8 @@
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Options.Altinn2Provider;
 using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 using Altinn.App.Core.Models;
-using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Options;
 
@@ -99,10 +95,7 @@ public static class CommonOptionProviderServiceCollectionExtensions
             org,
             codeListId,
             version,
-            sp.GetRequiredService<HybridCache>(),
-            sp.GetRequiredService<IHttpClientFactory>(),
-            sp.GetRequiredService<ILogger<Altinn3LibraryOptionsProvider>>(),
-            sp.GetRequiredService<IOptions<PlatformSettings>>()
+            sp.GetRequiredService<IAppOptionsService>()
         ));
         return serviceCollection;
     }

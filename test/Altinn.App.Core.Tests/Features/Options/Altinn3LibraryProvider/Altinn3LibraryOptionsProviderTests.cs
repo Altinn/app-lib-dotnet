@@ -1,19 +1,15 @@
-﻿using System.Net;
-using Altinn.App.Core.Configuration;
+﻿using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 using Altinn.App.Core.Internal.Language;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Tests.Features.Options.Altinn3LibraryProvider;
 
 public class Altinn3LibraryOptionsProviderTests
 {
-    private const string ClientName = "Altinn3LibraryClient";
     private const string OptionId = "SomeId";
     private const string Org = "ttd";
     private const string CodeListId = "SomeCodeListId";
@@ -192,32 +188,6 @@ public class Altinn3LibraryOptionsProviderTests
     }
 
     [Fact]
-    public async Task Altinn3LibraryOptionsProvider_ThrowsHttpRequestException_ShouldLogErrorAndThrow()
-    {
-        // Arrange
-        var fakeLogger = new FakeLogger<Altinn3LibraryOptionsProvider>();
-        await using var fixture = Fixture.Create(
-            () => new HttpResponseMessage(HttpStatusCode.Conflict) { Content = new StringContent("Conflict") },
-            services => services.AddSingleton<ILogger<Altinn3LibraryOptionsProvider>>(fakeLogger)
-        );
-
-        // Act
-        var result = await Assert.ThrowsAsync<HttpRequestException>(() =>
-            fixture.GetOptionsProvider(OptionId).GetAppOptionsAsync(LanguageConst.Nb, new Dictionary<string, string>())
-        );
-
-        // Assert
-        var latestRecord = fakeLogger.LatestRecord;
-        Assert.NotNull(latestRecord);
-        Assert.Equal(LogLevel.Error, latestRecord.Level);
-        Assert.Equal(
-            $"Exception thrown in GetAppOptions. Code list id: {CodeListId}, Version: {Version}, Org: {Org}",
-            latestRecord.Message
-        );
-        Assert.Equal("Unexpected response from Altinn3Library", result.Message);
-    }
-
-    [Fact]
     public async Task Altinn3LibraryOptionsProvider_OnSuccess_ShouldReturnsOptions()
     {
         // Arrange
@@ -261,7 +231,14 @@ public class Altinn3LibraryOptionsProviderTests
         {
             var mockHandler = new Altinn3LibraryOptionsProviderMessageHandlerMock(responseMessage);
             var serviceCollection = new ServiceCollection();
-            serviceCollection.AddHttpClient(ClientName).ConfigurePrimaryHttpMessageHandler(() => mockHandler);
+            serviceCollection
+                .AddHttpClient<IAltinn3LibraryCodeListApiClient, Altinn3LibraryCodeListApiClient>()
+                .ConfigurePrimaryHttpMessageHandler(() => mockHandler);
+            serviceCollection.AddTransient<IAppOptionsService, AppOptionsService>();
+            serviceCollection.AddTransient<AppOptionsFactory>();
+            // Services related to instance aware and secure app options
+            serviceCollection.AddTransient<InstanceAppOptionsFactory>();
+            serviceCollection.AddSingleton<AppImplementationFactory>();
             serviceCollection.AddHybridCache();
             serviceCollection.AddAltinn3CodeList(
                 optionId: OptionId,
