@@ -6,6 +6,7 @@ using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Profile;
@@ -474,6 +475,35 @@ public class PdfServiceTests
         TelemetrySink? telemetrySink = null
     )
     {
+        // Setup a mock service provider with InstanceDataUnitOfWorkInitializer
+        var mockServiceProvider = new Mock<IServiceProvider>();
+        var mockInstanceClient = new Mock<IInstanceClient>();
+        var mockAppMetadata = new Mock<IAppMetadata>();
+
+        // Setup GetApplicationMetadata to return an ApplicationMetadata with DataTypes initialized
+        var applicationMetadata = new ApplicationMetadata("digdir/not-really-an-app")
+        {
+            DataTypes = new List<DataType>(),
+        };
+        mockAppMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
+
+        var initializer = new InstanceDataUnitOfWorkInitializer(
+            dataClient?.Object ?? _dataClient.Object,
+            mockInstanceClient.Object,
+            mockAppMetadata.Object,
+            new TranslationService(
+                new AppIdentifier("digdir", "not-really-an-app"),
+                appResources?.Object ?? _appResources.Object,
+                FakeLoggerXunit.Get<TranslationService>(_outputHelper)
+            ),
+            null!, // ModelSerializationService not needed for these tests
+            appResources?.Object ?? _appResources.Object,
+            Options.Create(new FrontEndSettings()),
+            null
+        );
+
+        mockServiceProvider.Setup(x => x.GetService(typeof(InstanceDataUnitOfWorkInitializer))).Returns(initializer);
+
         return new PdfService(
             dataClient?.Object ?? _dataClient.Object,
             httpContentAccessor?.Object ?? _httpContextAccessor.Object,
@@ -487,6 +517,7 @@ public class PdfServiceTests
                 appResources?.Object ?? _appResources.Object,
                 FakeLoggerXunit.Get<TranslationService>(_outputHelper)
             ),
+            mockServiceProvider.Object,
             telemetrySink?.Object
         );
     }

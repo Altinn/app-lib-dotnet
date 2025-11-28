@@ -8,6 +8,7 @@ using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -27,6 +28,7 @@ public class PdfService : IPdfService
     private readonly IAuthenticationContext _authenticationContext;
     private readonly ITranslationService _translationService;
     private readonly GeneralSettings _generalSettings;
+    private readonly InstanceDataUnitOfWorkInitializer? _instanceDataUnitOfWorkInitializer;
     private readonly Telemetry? _telemetry;
     private const string PdfElementType = "ref-data-as-pdf";
     private const string PdfContentType = "application/pdf";
@@ -43,6 +45,7 @@ public class PdfService : IPdfService
         ILogger<PdfService> logger,
         IAuthenticationContext authenticationContext,
         ITranslationService translationService,
+        IServiceProvider? serviceProvider = null,
         Telemetry? telemetry = null
     )
     {
@@ -54,6 +57,7 @@ public class PdfService : IPdfService
         _logger = logger;
         _authenticationContext = authenticationContext;
         _translationService = translationService;
+        _instanceDataUnitOfWorkInitializer = serviceProvider?.GetService<InstanceDataUnitOfWorkInitializer>();
         _telemetry = telemetry;
     }
 
@@ -154,7 +158,7 @@ public class PdfService : IPdfService
             ct
         );
 
-        string fileName = await GetFileName(language, customFileNameTextResourceKey);
+        string fileName = await GetFileName(instance, language, customFileNameTextResourceKey);
         DataElement dataElement = await _dataClient.InsertBinaryData(
             instance.Id,
             PdfElementType,
@@ -284,12 +288,29 @@ public class PdfService : IPdfService
         return null;
     }
 
-    private async Task<string> GetFileName(string? language, string? customFileNameTextResourceKey)
+    private async Task<string> GetFileName(Instance instance, string? language, string? customFileNameTextResourceKey)
     {
-        string? titleText = await _translationService.TranslateTextKey(
-            customFileNameTextResourceKey ?? "backend.pdf_default_file_name",
-            language
-        );
+        string? titleText;
+
+        if (_instanceDataUnitOfWorkInitializer != null && customFileNameTextResourceKey != null)
+        {
+            // Use the full translation with variable substitution support for custom file names
+            InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
+                instance,
+                instance.Process?.CurrentTask?.ElementId,
+                language
+            );
+
+            titleText = await _translationService.TranslateTextKey(customFileNameTextResourceKey, cachedDataMutator);
+        }
+        else
+        {
+            // Fall back to simple translation without variable substitution
+            titleText = await _translationService.TranslateTextKey(
+                customFileNameTextResourceKey ?? "backend.pdf_default_file_name",
+                language
+            );
+        }
 
         if (string.IsNullOrEmpty(titleText))
         {
