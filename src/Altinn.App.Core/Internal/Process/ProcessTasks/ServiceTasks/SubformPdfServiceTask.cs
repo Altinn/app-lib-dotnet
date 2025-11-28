@@ -38,16 +38,25 @@ internal class SubformPdfServiceTask(
         if (parallelExecution)
         {
             // Generate PDFs in parallel for better performance when PDF microservice can handle concurrent requests
-            var pdfTasks = subformDataElements.Select(dataElement =>
-                pdfService.GenerateAndStoreSubformPdfs(
+            var pdfTasks = subformDataElements.Select(async dataElement =>
+            {
+                DataElement pdfDataElement = await pdfService.GenerateAndStoreSubformPdf(
                     instance,
                     taskId,
                     filenameTextResourceKey,
                     subformComponentId,
                     dataElement.Id,
                     context.CancellationToken
-                )
-            );
+                );
+
+                await AddSubformPdfMetadata(
+                    instance,
+                    pdfDataElement,
+                    subformComponentId,
+                    dataElement.Id,
+                    context.CancellationToken
+                );
+            });
 
             await Task.WhenAll(pdfTasks);
         }
@@ -56,10 +65,18 @@ internal class SubformPdfServiceTask(
             // Generate PDFs sequentially to avoid overwhelming the PDF microservice
             foreach (DataElement dataElement in subformDataElements)
             {
-                await pdfService.GenerateAndStoreSubformPdfs(
+                DataElement pdfDataElement = await pdfService.GenerateAndStoreSubformPdf(
                     instance,
                     taskId,
                     filenameTextResourceKey,
+                    subformComponentId,
+                    dataElement.Id,
+                    context.CancellationToken
+                );
+
+                await AddSubformPdfMetadata(
+                    instance,
+                    pdfDataElement,
                     subformComponentId,
                     dataElement.Id,
                     context.CancellationToken
@@ -155,26 +172,19 @@ internal class SubformPdfServiceTask(
 
     private async Task AddSubformPdfMetadata(
         Instance instance,
-        string dataElementId,
+        DataElement pdfDataElement,
         string subformComponentId,
         string subformDataElementId,
         CancellationToken ct
     )
     {
-        DataElement? dataElement = instance.Data.FirstOrDefault(d => d.Id == dataElementId);
-
-        if (dataElement == null)
-        {
-            throw new InvalidOperationException($"DataElement {dataElementId} not found in instance {instance.Id}");
-        }
-
-        dataElement.Metadata = new List<KeyValueEntry>
+        pdfDataElement.Metadata = new List<KeyValueEntry>
         {
             new() { Key = "subformComponentId", Value = subformComponentId },
             new() { Key = "subformDataElementId", Value = subformDataElementId },
         };
 
-        await dataClient.Update(instance, dataElement, cancellationToken: ct);
+        await dataClient.Update(instance, pdfDataElement, cancellationToken: ct);
     }
 
     private static bool HasSubformMetadata(

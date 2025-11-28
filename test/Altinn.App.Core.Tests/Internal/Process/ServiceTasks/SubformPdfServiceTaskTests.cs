@@ -25,6 +25,42 @@ public class SubformPdfServiceTaskTests
 
     public SubformPdfServiceTaskTests()
     {
+        // Setup PDF service to return a DataElement
+        _pdfServiceMock
+            .Setup(x =>
+                x.GenerateAndStoreSubformPdf(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(
+                (Instance _, string _, string _, string _, string subformDataElementId, CancellationToken _) =>
+                    new DataElement { Id = $"pdf-{subformDataElementId}" }
+            );
+
+        // Setup data client to allow metadata updates
+        _dataClientMock
+            .Setup(x =>
+                x.Update(
+                    It.IsAny<Instance>(),
+                    It.IsAny<DataElement>(),
+                    It.IsAny<Altinn.App.Core.Features.StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(
+                (
+                    Instance _,
+                    DataElement de,
+                    Altinn.App.Core.Features.StorageAuthenticationMethod? _,
+                    CancellationToken _
+                ) => de
+            );
+
         _serviceTask = new SubformPdfServiceTask(
             _processReaderMock.Object,
             _pdfServiceMock.Object,
@@ -50,7 +86,7 @@ public class SubformPdfServiceTaskTests
         // Verify that GenerateAndStoreSubformPdfs was called for each data element (parallel execution pattern)
         _pdfServiceMock.Verify(
             x =>
-                x.GenerateAndStoreSubformPdfs(
+                x.GenerateAndStoreSubformPdf(
                     It.Is<Instance>(i => i == instance),
                     It.Is<string>(taskId => taskId == "taskId"),
                     It.Is<string?>(filename => filename == FileName),
@@ -79,7 +115,7 @@ public class SubformPdfServiceTaskTests
         // Verify that GenerateAndStoreSubformPdfs was called for each data element (sequential execution pattern)
         _pdfServiceMock.Verify(
             x =>
-                x.GenerateAndStoreSubformPdfs(
+                x.GenerateAndStoreSubformPdf(
                     It.Is<Instance>(i => i == instance),
                     It.Is<string>(taskId => taskId == "taskId"),
                     It.Is<string?>(filename => filename == FileName),
@@ -108,7 +144,7 @@ public class SubformPdfServiceTaskTests
         // Verify that GenerateAndStoreSubformPdfs was not called
         _pdfServiceMock.Verify(
             x =>
-                x.GenerateAndStoreSubformPdfs(
+                x.GenerateAndStoreSubformPdf(
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
@@ -134,7 +170,7 @@ public class SubformPdfServiceTaskTests
         // Assert - verify that the correct data element IDs were used (sequential execution pattern)
         _pdfServiceMock.Verify(
             x =>
-                x.GenerateAndStoreSubformPdfs(
+                x.GenerateAndStoreSubformPdf(
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),

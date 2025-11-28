@@ -62,11 +62,11 @@ public class PdfService : IPdfService
     {
         using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
 
-        await GenerateAndStorePdfInternal(instance, taskId, null, null, null, null, ct);
+        _ = await GenerateAndStorePdfInternal(instance, taskId, null, null, null, null, ct);
     }
 
     /// <inheritdoc/>
-    public async Task GenerateAndStorePdf(
+    public async Task<DataElement> GenerateAndStorePdf(
         Instance instance,
         string taskId,
         string? customFileNameTextResourceKey,
@@ -76,7 +76,7 @@ public class PdfService : IPdfService
     {
         using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
 
-        await GenerateAndStorePdfInternal(
+        return await GenerateAndStorePdfInternal(
             instance,
             taskId,
             customFileNameTextResourceKey,
@@ -88,7 +88,7 @@ public class PdfService : IPdfService
     }
 
     /// <inheritdoc/>
-    public async Task GenerateAndStoreSubformPdfs(
+    public async Task<DataElement> GenerateAndStoreSubformPdf(
         Instance instance,
         string taskId,
         string? customFileNameTextResourceKey,
@@ -97,7 +97,7 @@ public class PdfService : IPdfService
         CancellationToken ct
     )
     {
-        await GenerateAndStorePdfInternal(
+        return await GenerateAndStorePdfInternal(
             instance,
             taskId,
             customFileNameTextResourceKey,
@@ -128,7 +128,7 @@ public class PdfService : IPdfService
         return await GeneratePdf(instance, taskId, false, ct);
     }
 
-    private async Task GenerateAndStorePdfInternal(
+    private async Task<DataElement> GenerateAndStorePdfInternal(
         Instance instance,
         string taskId,
         string? customFileNameTextResourceKey,
@@ -155,7 +155,7 @@ public class PdfService : IPdfService
         );
 
         string fileName = await GetFileName(language, customFileNameTextResourceKey);
-        await _dataClient.InsertBinaryData(
+        DataElement dataElement = await _dataClient.InsertBinaryData(
             instance.Id,
             PdfElementType,
             PdfContentType,
@@ -164,6 +164,8 @@ public class PdfService : IPdfService
             taskId,
             cancellationToken: ct
         );
+
+        return dataElement;
     }
 
     private async Task<Stream> GeneratePdfContent(
