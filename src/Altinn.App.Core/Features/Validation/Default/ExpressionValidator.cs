@@ -1,12 +1,13 @@
 using System.Text.Json;
-using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Validation.Default;
@@ -26,6 +27,7 @@ public class ExpressionValidator : IValidator
     private readonly IAppResources _appResourceService;
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IAppMetadata _appMetadata;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     /// <summary>
     /// Constructor for the expression validator
@@ -34,13 +36,15 @@ public class ExpressionValidator : IValidator
         ILogger<ExpressionValidator> logger,
         IAppResources appResourceService,
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
-        IAppMetadata appMetadata
+        IAppMetadata appMetadata,
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
         _appResourceService = appResourceService;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _appMetadata = appMetadata;
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
 
     /// <summary>
@@ -84,6 +88,11 @@ public class ExpressionValidator : IValidator
         var validationIssues = new List<ValidationIssue>();
         foreach (var (dataType, dataElement) in dataAccessor.GetDataElementsForTask(taskId))
         {
+            if (await _dataElementAccessChecker.CanRead(dataAccessor.Instance, dataType) is false)
+            {
+                continue;
+            }
+
             var validationConfig = _appResourceService.GetValidationConfiguration(dataType.Id);
             if (!string.IsNullOrEmpty(validationConfig))
             {
@@ -110,7 +119,10 @@ public class ExpressionValidator : IValidator
             gatewayAction: null,
             language
         );
-        var hiddenFields = await LayoutEvaluator.GetHiddenFieldsForRemoval(evaluatorState);
+        var hiddenFields = await LayoutEvaluator.GetHiddenFieldsForRemoval(
+            evaluatorState,
+            evaluateRemoveWhenHidden: false
+        );
 
         var validationIssues = new List<ValidationIssue>();
         DataElementIdentifier dataElementIdentifier = dataElement;
@@ -133,8 +145,9 @@ public class ExpressionValidator : IValidator
                     continue;
                 }
                 var context = new ComponentContext(
+                    evaluatorState,
                     component: null,
-                    rowIndices: DataModel.GetRowIndices(resolvedField.Field),
+                    rowIndices: GetRowIndices(resolvedField.Field),
                     dataElementIdentifier: resolvedField.DataElementIdentifier
                 );
                 var positionalArguments = new object[] { resolvedField.Field };
@@ -153,6 +166,44 @@ public class ExpressionValidator : IValidator
         }
 
         return validationIssues;
+    }
+
+    private static int[]? GetRowIndices(string field)
+    {
+        Span<int> rowIndicesSpan = stackalloc int[200]; // Assuming max 200 indices for simplicity recursion will never go deeper than 3-4
+        int count = 0;
+        for (int index = 0; index < field.Length; index++)
+        {
+            if (field[index] == '[')
+            {
+                int startIndex = index + 1;
+                int endIndex = field.IndexOf(']', startIndex);
+                if (endIndex == -1)
+                {
+                    throw new InvalidOperationException($"Unpaired [ character in field: {field}");
+                }
+                string indexString = field[startIndex..endIndex];
+                if (int.TryParse(indexString, out int rowIndex))
+                {
+                    rowIndicesSpan[count] = rowIndex;
+                    count++;
+                    index = endIndex; // Move index to the end of the current bracket
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"Invalid row index in field: {field} at position {startIndex}"
+                    );
+                }
+            }
+        }
+        if (count == 0)
+        {
+            return null; // No indices found
+        }
+        int[] rowIndices = new int[count];
+        rowIndicesSpan[..count].CopyTo(rowIndices);
+        return rowIndices;
     }
 
     private async Task RunValidation(

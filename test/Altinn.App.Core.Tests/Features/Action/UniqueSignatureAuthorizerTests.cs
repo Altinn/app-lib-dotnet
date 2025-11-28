@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -178,11 +179,11 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
             d.GetBinaryData(
-                "ttd",
-                "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeTrue();
@@ -233,11 +234,11 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
             d.GetBinaryData(
-                "ttd",
-                "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeFalse();
@@ -332,11 +333,11 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
             d.GetBinaryData(
-                "ttd",
-                "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeTrue();
@@ -390,11 +391,11 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
             d.GetBinaryData(
-                "ttd",
-                "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeTrue();
@@ -448,11 +449,11 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
             d.GetBinaryData(
-                "ttd",
-                "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeTrue();
@@ -506,11 +507,11 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
             d.GetBinaryData(
-                "ttd",
-                "xunit-app",
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
-                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751")
+                Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
+                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<CancellationToken>()
             )
         );
         result.Should().BeTrue();
@@ -537,16 +538,16 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 }
             );
         FileStream fileStream = File.OpenRead(
-            Path.Combine(PathUtils.GetCoreTestsPath(), "Features", "Action", "TestData", signatureFileToRead)
+            Path.Join(PathUtils.GetCoreTestsPath(), "Features", "Action", "TestData", signatureFileToRead)
         );
         _dataClientMock
             .Setup(d =>
                 d.GetBinaryData(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<Guid>()
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(fileStream);

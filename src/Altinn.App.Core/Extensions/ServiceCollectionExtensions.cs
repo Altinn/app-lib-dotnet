@@ -1,5 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.AccessManagement;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.DataLists;
@@ -20,6 +21,7 @@ using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Implementation;
+using Altinn.App.Core.Infrastructure.Clients.AccessManagement;
 using Altinn.App.Core.Infrastructure.Clients.Authentication;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
 using Altinn.App.Core.Infrastructure.Clients.Events;
@@ -29,7 +31,6 @@ using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal;
-using Altinn.App.Core.Internal.AccessManagement;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -46,7 +47,8 @@ using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.EventHandlers;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
-using Altinn.App.Core.Internal.Process.ServiceTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
+using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
 using Altinn.App.Core.Internal.Sign;
@@ -180,9 +182,11 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IAppModel, DefaultAppModel>();
         services.TryAddTransient<DataListsFactory>();
         services.TryAddTransient<InstanceDataListsFactory>();
+        services.TryAddTransient<IDataElementAccessChecker, DataElementAccessChecker>();
         services.TryAddTransient<IDataListsService, DataListsService>();
         services.TryAddTransient<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
         services.TryAddTransient<LayoutEvaluatorStateInitializer>();
+        services.AddSingleton<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
         services.AddTransient<IDataService, DataService>();
         services.AddSingleton<ModelSerializationService>();
         services.Configure<Common.PEP.Configuration.PepSettings>(configuration.GetSection("PEPSettings"));
@@ -191,6 +195,7 @@ public static class ServiceCollectionExtensions
         services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
         services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
 
+        services.AddRuntimeEnvironment();
         if (env.IsDevelopment())
             services.AddLocaltestValidation();
 
@@ -226,6 +231,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IDataElementValidator, DefaultDataElementValidator>();
         services.AddTransient<ITaskValidator, DefaultTaskValidator>();
         services.AddTransient<IValidator, SigningTaskValidator>();
+        services.AddTransient<IValidator, SignatureHashValidator>();
 
         var appSettings = configuration.GetSection("AppSettings").Get<AppSettings>();
         if (appSettings?.RequiredValidation is true)
@@ -366,8 +372,11 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IProcessTask, NullTypeProcessTask>();
 
         // Service tasks
+        services.AddTransient<IPdfServiceTaskLegacy, PdfServiceTaskLegacy>();
+        services.AddTransient<IEFormidlingServiceTaskLegacy, EformidlingServiceTaskLegacy>();
+
         services.AddTransient<IServiceTask, PdfServiceTask>();
-        services.AddTransient<IServiceTask, EformidlingServiceTask>();
+        services.AddTransient<IServiceTask, EFormidlingServiceTask>();
     }
 
     private static void AddActionServices(IServiceCollection services)

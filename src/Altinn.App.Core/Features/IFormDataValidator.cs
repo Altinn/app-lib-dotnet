@@ -28,7 +28,20 @@ public interface IFormDataValidator
     /// Returns the group id of the validator. This is used to run partial validations on the backend.
     /// The default is based on the FullName and DataType fields, and should not need customization
     /// </summary>
-    public string ValidationSource => $"{this.GetType().FullName}-{DataType}";
+    string ValidationSource => $"{this.GetType().FullName}-{DataType}";
+
+    /// <inheritdoc cref="IValidator.NoIncrementalValidation"/>
+    /// <remarks>
+    /// <see cref="IFormDataValidator"/> will run on incremental changes using <see cref="HasRelevantChanges"/>.
+    /// </remarks>
+    bool NoIncrementalValidation => false;
+
+    /// <inheritdoc cref="IValidator.ShouldRunAfterRemovingHiddenData"/>
+    /// <remarks>
+    /// Defaults to full data. When <c>true</c>, the pipeline provides a cleaned data accessor to
+    /// both <see cref="ValidateFormData"/> and <see cref="HasRelevantChanges"/> for consistent visibility.
+    /// </remarks>
+    bool ShouldRunAfterRemovingHiddenData => false;
 
     /// <summary>
     /// The actual validation function

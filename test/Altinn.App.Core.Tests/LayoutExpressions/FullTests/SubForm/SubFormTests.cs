@@ -7,6 +7,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
@@ -19,6 +20,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit.Abstractions;
@@ -257,6 +259,8 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
     private readonly Mock<IAppMetadata> _appMetadataMock = new(MockBehavior.Strict);
     private readonly Mock<ITranslationService> _translationServiceMock = new(MockBehavior.Loose);
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new(MockBehavior.Loose);
+    private readonly Mock<IDataElementAccessChecker> _dataElementAccessCheckerMock = new(MockBehavior.Strict);
+    private readonly Mock<IHostEnvironment> _hostEnvironmentMock = new(MockBehavior.Strict);
 
     private readonly IServiceCollection _services = new ServiceCollection();
     private static readonly JsonSerializerOptions _options = new()
@@ -265,6 +269,13 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
+
+    private static readonly JsonDocumentOptions _jsonDocumentOptions = new()
+    {
+        AllowTrailingCommas = true,
+        CommentHandling = JsonCommentHandling.Skip,
+    };
+
     private VerifySettings _verifySettings
     {
         get
@@ -280,12 +291,19 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
 
     public SubFormTests(ITestOutputHelper output, DataAnnotationsTestFixture fixture)
     {
+        _dataElementAccessCheckerMock
+            .Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>()))
+            .ReturnsAsync(true);
+        _hostEnvironmentMock.SetupGet(h => h.EnvironmentName).Returns("Development");
+
         _output = output;
         _services.AddAppImplementationFactory();
         _services.AddSingleton(_appResourcesMock.Object);
         _services.AddSingleton(_appMetadataMock.Object);
         _services.AddSingleton(_translationServiceMock.Object);
         _services.AddSingleton(_httpContextAccessorMock.Object);
+        _services.AddSingleton(_dataElementAccessCheckerMock.Object);
+        _services.AddSingleton(_hostEnvironmentMock.Object);
         _services.AddSingleton(fixture.App.Services.GetRequiredService<IObjectModelValidator>());
         _services.AddSingleton(_generalSettings);
         _services.AddTransient<IValidationService, ValidationService>();
@@ -344,8 +362,8 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
 
     private static PageComponent ParsePage(string layoutId, string pageName, [StringSyntax("json")] string json)
     {
-        PageComponentConverter.SetAsyncLocalPageName(layoutId, pageName);
-        return JsonSerializer.Deserialize<PageComponent>(json) ?? throw new JsonException("Deserialization failed");
+        using var document = JsonDocument.Parse(json, _jsonDocumentOptions);
+        return PageComponent.Parse(document.RootElement, pageName, layoutId);
     }
 
     private static string Json([StringSyntax("json")] string json) => json;

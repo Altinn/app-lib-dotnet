@@ -108,7 +108,7 @@ internal sealed class SigningCallToActionService(
                 .WithContent(correspondenceContent)
                 .WithNotificationIfConfigured(SigningNotificationHelper.CreateNotification(contentWrapper))
                 .Build(),
-            CorrespondenceAuthorisation.Maskinporten
+            CorrespondenceAuthenticationMethod.Default()
         );
 
         SendCorrespondenceResponse response = await _correspondenceClient.Send(request, ct);
@@ -192,7 +192,7 @@ internal sealed class SigningCallToActionService(
                 communicationConfig?.ReminderNotification?.Sms?.BodyTextResourceKey,
                 language
             );
-            appName = await translationService.TranslateFirstMatchingTextKey(language, "appName", "ServiceName");
+            appName = await translationService.TranslateTextKey("appName", language);
         }
         catch (Exception e)
         {

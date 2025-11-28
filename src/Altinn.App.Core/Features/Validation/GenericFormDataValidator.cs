@@ -24,6 +24,17 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
     /// <inheritdoc />
     public string DataType { get; private init; }
 
+    // Add virtual members so that inheriting classes can override them if needed.
+    // Default implementations from the interface are not virtual, so we need to copy them here.
+    /// <inheritdoc/>
+    public virtual string ValidationSource => $"{GetType().FullName}-{DataType}";
+
+    /// <inheritdoc/>
+    public virtual bool NoIncrementalValidation => false;
+
+    /// <inheritdoc />
+    public virtual bool ShouldRunAfterRemovingHiddenData => false;
+
     // ReSharper disable once StaticMemberInGenericType
     private static readonly AsyncLocal<List<ValidationIssue>> _validationIssues = new();
 
@@ -57,14 +68,14 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
     /// <param name="severity">The severity for the issue (default Error)</param>
     /// <param name="description">Optional description if you want to provide a user friendly message that don't rely on the translation system</param>
     /// <param name="code">optional short code for the type of issue</param>
-    /// <param name="customTextParams">List of parameters to replace after looking up the translation. Zero indexed {0}</param>
+    /// <param name="customTextParameters">Dictionary of parameters to replace after looking up the translation.</param>
     protected void CreateValidationIssue<T>(
         Expression<Func<TModel, T>> selector,
         string textKey,
         ValidationIssueSeverity severity = ValidationIssueSeverity.Error,
         string? description = null,
         string? code = null,
-        List<string>? customTextParams = null
+        Dictionary<string, string>? customTextParameters = null
     )
     {
         Debug.Assert(_validationIssues.Value is not null);
@@ -72,10 +83,10 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
             new ValidationIssue
             {
                 Field = LinqExpressionHelpers.GetJsonPath(selector),
-                Description = description ?? textKey,
-                Code = code ?? textKey,
+                Description = description,
+                Code = code,
                 CustomTextKey = textKey,
-                CustomTextParams = customTextParams,
+                CustomTextParameters = customTextParameters,
                 Severity = severity,
             }
         );

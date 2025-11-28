@@ -50,13 +50,11 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
             var uri = _platformSettings.ApiNotificationEndpoint.TrimEnd('/') + "/orders/email";
             var body = JsonSerializer.Serialize(emailNotification);
 
-            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
-            {
-                Content = new StringContent(body, new MediaTypeHeaderValue("application/json")),
-            };
+            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
+            httpRequestMessage.Content = new StringContent(body, new MediaTypeHeaderValue("application/json"));
             httpRequestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             httpRequestMessage.Headers.Add(
-                "PlatformAccessToken",
+                Constants.General.PlatformAccessTokenHeaderName,
                 _accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
             );
 

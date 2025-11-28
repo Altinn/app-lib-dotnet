@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Altinn.App.Core.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing.Exceptions;
+using Altinn.App.Core.Features.Signing.Extensions;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
@@ -52,7 +53,7 @@ internal sealed class SigningService(
     private readonly ISigningCallToActionService _signingCallToActionService = signingCallToActionService;
     private const string ApplicationJsonContentType = "application/json";
 
-    // <inheritdoc />
+    /// <inheritdoc />
     public async Task<List<SigneeContext>> InitializeSignees(
         IInstanceDataMutator instanceDataMutator,
         List<SigneeContext> signeeContexts,
@@ -139,6 +140,13 @@ internal sealed class SigningService(
             }
         }
 
+        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
+        instanceDataMutator.OverrideAuthenticationMethodForRestrictedDataTypes(
+            applicationMetadata,
+            [signeeStateDataTypeId],
+            StorageAuthenticationMethod.ServiceOwner()
+        );
+
         instanceDataMutator.AddBinaryDataElement(
             dataTypeId: signeeStateDataTypeId,
             contentType: ApplicationJsonContentType,
@@ -149,7 +157,7 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
-    // <inheritdoc />
+    /// <inheritdoc />
     public async Task<List<SigneeContext>> GetSigneeContexts(
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -181,7 +189,7 @@ internal sealed class SigningService(
         return signeeContexts;
     }
 
-    // <inheritdoc />
+    /// <inheritdoc />
     public async Task<List<OrganizationSignee>> GetAuthorizedOrganizationSignees(
         IInstanceDataAccessor instanceDataAccessor,
         AltinnSignatureConfiguration signatureConfiguration,
@@ -209,7 +217,7 @@ internal sealed class SigningService(
         return authorizedOrganizations;
     }
 
-    // <inheritdoc />
+    /// <inheritdoc />
     public async Task AbortRuntimeDelegatedSigning(
         IInstanceDataMutator instanceDataMutator,
         AltinnSignatureConfiguration signatureConfiguration,

@@ -65,11 +65,16 @@ public class ActionsController : ControllerBase
     /// <returns><see cref="UserActionResponse"/></returns>
     [HttpPost]
     [Authorize]
-    [ProducesResponseType(typeof(UserActionResponse), 200)]
-    [ProducesResponseType(typeof(ProblemDetails), 400)]
-    [ProducesResponseType(409)]
-    [ProducesResponseType(500)]
-    [ProducesResponseType(401)]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict, "text/plain")]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(UserActionResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UserActionResponse>> Perform(
         [FromRoute] string org,
         [FromRoute] string app,
@@ -198,7 +203,7 @@ public class ActionsController : ControllerBase
             {
                 // If the data mutator missed a that was returned with the deprecated UpdatedDataModels
                 // we still need to return it to the frontend, but we assume it was already saved to storage
-                dataMutator.SetFormData(new DataElementIdentifier(elementId), data);
+                dataMutator.SetFormData(new DataElementIdentifier(elementId), FormDataWrapperFactory.Create(data));
             }
         }
 #pragma warning restore CS0618 // Type or member is obsolete

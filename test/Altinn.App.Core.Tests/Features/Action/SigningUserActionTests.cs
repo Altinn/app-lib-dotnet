@@ -61,10 +61,7 @@ public class SigningUserActionTests
         {
             IProcessReader _processReader =
                 processReader
-                ?? ProcessTestUtils.SetupProcessReader(
-                    testBpmnFilename,
-                    Path.Combine("Features", "Action", "TestData")
-                );
+                ?? ProcessTestUtils.SetupProcessReader(testBpmnFilename, Path.Join("Features", "Action", "TestData"));
             Instance _instance = instance ?? _defaultInstance;
 
             var signingReceiptService = new Mock<ISigningReceiptService>();
@@ -514,7 +511,7 @@ public class SigningUserActionTests
     {
         IProcessReader processReader = ProcessTestUtils.SetupProcessReader(
             testBpmnfilename,
-            Path.Combine("Features", "Action", "TestData")
+            Path.Join("Features", "Action", "TestData")
         );
 
         var signingClientMock = new Mock<ISignClient>();
@@ -705,16 +702,14 @@ public class SigningUserActionHandleOnBehalfOfTests
             .Setup(s =>
                 s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, userId, CancellationToken.None)
             )
-            .ReturnsAsync(
-                [
-                    new()
-                    {
-                        OrgNumber = "111111111",
-                        OrgName = "TestOrg",
-                        OrgParty = new Party { PartyId = 123 },
-                    },
-                ]
-            );
+            .ReturnsAsync([
+                new()
+                {
+                    OrgNumber = "111111111",
+                    OrgName = "TestOrg",
+                    OrgParty = new Party { PartyId = 123 },
+                },
+            ]);
 
         // Act:
         bool result = await action.HandleOnBehalfOf(context, signatureConfig, CancellationToken.None);
@@ -753,16 +748,14 @@ public class SigningUserActionHandleOnBehalfOfTests
             .Setup(s =>
                 s.GetAuthorizedOrganizationSignees(dataMutator.Object, signatureConfig, 200, CancellationToken.None)
             )
-            .ReturnsAsync(
-                [
-                    new OrganizationSignee
-                    {
-                        OrgNumber = onBehalfOrg,
-                        OrgName = "TestOrg",
-                        OrgParty = new Party { PartyId = 123 },
-                    },
-                ]
-            );
+            .ReturnsAsync([
+                new OrganizationSignee
+                {
+                    OrgNumber = onBehalfOrg,
+                    OrgName = "TestOrg",
+                    OrgParty = new Party { PartyId = 123 },
+                },
+            ]);
 
         // Act:
         bool result = await action.HandleOnBehalfOf(context, signatureConfig, CancellationToken.None);

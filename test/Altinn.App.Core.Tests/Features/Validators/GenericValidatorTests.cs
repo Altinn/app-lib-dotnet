@@ -25,6 +25,8 @@ public class GenericValidatorTests
         public TestValidator()
             : base("MyType") { }
 
+        public override bool ShouldRunAfterRemovingHiddenData => true;
+
         protected override bool HasRelevantChanges(MyModel current, MyModel previous)
         {
             throw new NotImplementedException();
@@ -71,11 +73,11 @@ public class GenericValidatorTests
         info.Description.Should().Be("Test info");
 
         var warning = validationIssues.Should().ContainSingle(c => c.Severity == ValidationIssueSeverity.Warning).Which;
-        warning.Description.Should().Be("Test warning");
+        warning.CustomTextKey.Should().Be("Test warning");
         warning.Field.Should().Be("name");
 
         var error = validationIssues.Should().ContainSingle(c => c.Severity == ValidationIssueSeverity.Error).Which;
-        error.Description.Should().Be("childrenError");
+        error.CustomTextKey.Should().Be("childrenError");
         error.Field.Should().Be("children[4].children[0].name");
     }
 }

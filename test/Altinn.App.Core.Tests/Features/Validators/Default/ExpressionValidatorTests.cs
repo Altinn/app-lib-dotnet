@@ -4,13 +4,12 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Validation.Default;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
-using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Models.Validation;
-using Altinn.App.Core.Tests.LayoutExpressions.CommonTests;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
@@ -41,12 +40,21 @@ public class ExpressionValidatorTests
 
     public ExpressionValidatorTests(ITestOutputHelper output)
     {
+        var accessCheckerMock = new Mock<IDataElementAccessChecker>();
+        accessCheckerMock.Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>())).ReturnsAsync(true);
+
+        var serviceProviderMock = new Mock<IServiceProvider>();
+        serviceProviderMock
+            .Setup(x => x.GetService(typeof(IDataElementAccessChecker)))
+            .Returns(accessCheckerMock.Object);
+
         _output = output;
         _validator = new ExpressionValidator(
             _logger.Object,
             _appResources.Object,
             _layoutInitializer.Object,
-            _appMetadata.Object
+            _appMetadata.Object,
+            serviceProviderMock.Object
         );
     }
 
@@ -82,7 +90,7 @@ public class ExpressionValidatorTests
 
         var dataModel = DynamicClassBuilder.DataAccessorFromJsonDocument(instance, testCase.FormData, dataElement);
 
-        var layout = new LayoutSetComponent(testCase.Layouts.Values.ToList(), "layout", dataType);
+        var layout = new LayoutSetComponent(testCase.Layouts, "layout", dataType);
         var componentModel = new LayoutModel([layout], null);
         var translationService = new TranslationService(
             new AppIdentifier("org", "app"),
@@ -152,8 +160,7 @@ public record ExpressionValidationTestModel
     public required JsonElement FormData { get; set; }
 
     [JsonPropertyName("layouts")]
-    [JsonConverter(typeof(LayoutModelConverterFromObject))]
-    public required IReadOnlyDictionary<string, PageComponent> Layouts { get; set; }
+    public required IReadOnlyDictionary<string, JsonElement> Layouts { get; set; }
 
     [JsonPropertyName("textResources")]
     public List<TextResourceElement>? TextResources { get; set; }
@@ -169,8 +176,5 @@ public record ExpressionValidationTestModel
 
         [JsonPropertyName("field")]
         public required string Field { get; set; }
-
-        [JsonPropertyName("componentId")]
-        public required string ComponentId { get; set; }
     }
 }

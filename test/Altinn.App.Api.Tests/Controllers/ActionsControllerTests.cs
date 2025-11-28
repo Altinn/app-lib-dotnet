@@ -7,6 +7,7 @@ using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.task_action.config.models;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models.Process;
@@ -42,7 +43,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
         string token = TestAuthentication.GetUserToken(1000, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent(
             "{\"action\":\"lookup_unauthorized\"}",
             Encoding.UTF8,
@@ -117,7 +118,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
         string token = TestAuthentication.GetUserToken(1000, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":null}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -138,7 +139,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef43");
         TestData.PrepareInstance(org, app, 1337, guid);
         string token = TestAuthentication.GetUserToken(authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -159,7 +160,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef42");
         TestData.PrepareInstance(org, app, 1337, guid);
         string token = TestAuthentication.GetUserToken(1000, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -184,7 +185,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
         string token = TestAuthentication.GetUserToken(1000, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var requestContent = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -236,7 +237,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
         string token = TestAuthentication.GetUserToken(400, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -261,7 +262,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
         string token = TestAuthentication.GetUserToken(userId: 401, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -286,7 +287,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
         string token = TestAuthentication.GetUserToken(userId: 409, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -311,7 +312,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
         string token = TestAuthentication.GetUserToken(userId: 500, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"lookup\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -336,7 +337,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Guid guid = new Guid("b1135209-628e-4a6e-9efd-e4282068ef41");
         TestData.PrepareInstance(org, app, 1337, guid);
         string token = TestAuthentication.GetUserToken(userId: 1001, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
         using var content = new StringContent("{\"action\":\"notfound\"}", Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await client.PostAsync(
             $"/{org}/{app}/instances/1337/{guid}/actions",
@@ -362,7 +363,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         };
         var client = GetRootedUserClient(org, app, 1337);
         string token = TestAuthentication.GetUserToken(userId: 1001, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
         // Run buttonId "add"
         using var content = JsonContent.Create(new { action = "fill", buttonId = "add" });
@@ -486,7 +487,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         };
         var client = GetRootedUserClient(org, app, 1337);
         string token = TestAuthentication.GetUserToken(userId: 1001, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
         // run buttonId "getClientActions"
         using var getClientActionsContent = JsonContent.Create(new { action = "fill", buttonId = "getClientActions" });
@@ -518,7 +519,7 @@ public class ActionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         };
         var client = GetRootedUserClient(org, app, 1337);
         string token = TestAuthentication.GetUserToken(userId: 1001, authenticationLevel: 3);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
 
         // Run buttonId "fail"
         using var failContent = JsonContent.Create(new { action = "fill", buttonId = "fail" });
@@ -689,23 +690,11 @@ public class FillAction : IUserAction
                 data.TestCustomButtonReadOnlyInput = "Her kommer det data fra backend";
                 break;
             case "updateObsolete":
-                var instanceId = context.Instance.Id;
-                var instanceGuid = Guid.Parse(instanceId.Split('/')[1]);
-                var instanceOwner = int.Parse(instanceId.Split('/')[0]);
-                var dataGuid = Guid.Parse(context.Instance.Data.Single().Id);
-
-                var obsoleteData = (Scheme)
-                    await _dataClient.GetFormData(
-                        instanceGuid,
-                        typeof(Scheme),
-                        context.Instance.Org,
-                        context.Instance.AppId.Split('/')[1],
-                        instanceOwner,
-                        dataGuid
-                    );
+                var dataElement = context.Instance.Data.Single();
+                var obsoleteData = await _dataClient.GetFormData<Scheme>(context.Instance, dataElement);
                 obsoleteData.description = "Obsolete data";
                 var result = UserActionResult.SuccessResult(new List<ClientAction>());
-                result.AddUpdatedDataModel(dataGuid.ToString(), obsoleteData);
+                result.AddUpdatedDataModel(dataElement.Id, obsoleteData);
                 return result;
             case "delete":
                 var elementToDelete = context.DataMutator.GetDataElementsForType("Scheme").First();

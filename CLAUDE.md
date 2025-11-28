@@ -23,6 +23,15 @@ dotnet test solutions/All.sln -v m --no-restore --no-build
 dotnet test test/Altinn.App.Core.Tests/ -v m
 ```
 
+**Filter tests:**
+```bash
+dotnet test test/Altinn.App.Integration.Tests/ -v m --filter "<test-method-name>"
+```
+
+**Output logs from tests:**
+
+* Replace `-v m` with `--logger "console;verbosity=detailed` in the arguments of `dotnet test`
+
 **Format code (required before commits):**
 
 Formatting happens automatically when building due to `CSharpier.MSBuild`.
@@ -80,6 +89,13 @@ We have Architecture Decision Records in the `/doc/adr/` folder.
 - **Snapshot testing** for OpenAPI docs and telemetry output
 - **Manual testing** requires localtest environment integration
 - All telemetry changes are considered **breaking changes**
+- **Integration tests** use Docker Testcontainers for isolated, reproducible environments:
+  - **AppFixture pattern** - Central orchestrator managing test lifecycle with feature-specific operations
+  - **Snapshot testing** - Verify both HTTP response and response body content with port/data normalization
+  - **Test apps** - Complete Altinn apps in `_testapps/{app}/` with config, models, UI, and Dockerfile
+  - **Scenario-based testing** - Override config and inject custom services via `_testapps/{app}/_scenarios/{scenario}/` folders
+  - **Container orchestration** - Isolated networks, dynamic ports, health checks for parallel execution
+  - Follow existing `AppFixture.{Feature}.cs` pattern for new API operations (see `InstancesOperations`)
 
 ### Versioning
 - Uses **semantic versioning** with MinVer
@@ -103,6 +119,14 @@ The libraries integrate with:
 - We want to minimize external dependencies
 - For HTTP APIs we should have `...Request` and `...Response` DTOs (see `LookupPersonRequest.cs` and the corresponding response as an example)
 - Types meant to be implemented by apps should be marked with the `ImplementableByApps` attribute
+- _Don't_ use `.GetAwaiter().GetResult()`, `.Result()`, `.Wait()` or other blocking APIs on `Task`
+- _Don't_ use `Async` suffix for async methods
+- Write efficient code
+  - _Don't_ allocate unnecessarily. Examples:
+    - Instead of calling `ToString` twice in a row, store it in a variable
+    - Sometimes a for loop is just as good as LINQ
+  - _Don't_ invoke the same async operation multiple times in the same codepath unless necessary
+  - _Don't_ await async operations in a loop (prefer batching, but have an upper bound on parallelism that makes sense) 
 
 ### Feature Implementation
 New features should follow the established pattern in `/src/Altinn.App.Core/Features/`:

@@ -1,17 +1,17 @@
 namespace Altinn.App.Core.Constants;
 
 /// <summary>
-/// app token
+/// Misc constants, mostly related to HTTP headers and cookies.
 /// </summary>
 public static class General
 {
     /// <summary>
-    /// app token name
+    /// App token name
     /// </summary>
     public const string AppTokenName = "AltinnToken";
 
     /// <summary>
-    /// The name of the authorization token
+    /// The name of the authorization token header
     /// </summary>
     public const string AuthorizationTokenHeaderName = "Authorization";
 
@@ -26,12 +26,17 @@ public static class General
     public const string DesignerCookieName = "AltinnStudioDesigner";
 
     /// <summary>
-    /// Header key for API management subscription key
+    /// Header name for API management subscription key
     /// </summary>
     public const string SubscriptionKeyHeaderName = "Ocp-Apim-Subscription-Key";
 
     /// <summary>
-    /// Header key for access token for eFormidling Integration Point
+    /// The name of the eFormidling Integration Point token header
     /// </summary>
     public const string EFormidlingAccessTokenHeaderName = "AltinnIntegrationPointToken";
+
+    /// <summary>
+    /// Header name for platform access token
+    /// </summary>
+    internal const string PlatformAccessTokenHeaderName = "PlatformAccessToken";
 }

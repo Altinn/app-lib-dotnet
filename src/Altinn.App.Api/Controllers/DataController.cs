@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using Altinn.App.Api.Extensions;
-using Altinn.App.Api.Helpers;
 using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Helpers.RequestHandling;
 using Altinn.App.Api.Infrastructure.Filters;
@@ -56,6 +55,7 @@ public class DataController : ControllerBase
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     private const long REQUEST_SIZE_LIMIT = 2000 * 1024 * 1024;
 
@@ -93,6 +93,7 @@ public class DataController : ControllerBase
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
 
     /// <summary>
@@ -147,17 +148,15 @@ public class DataController : ControllerBase
             // Old clients will expect BadRequest to have a list of issues or a string
             // not problem details.
             return BadRequest(
-                await GetErrorDetails(
-                    [
-                        new ValidationIssueWithSource
-                        {
-                            Description = response.Error.Detail,
-                            Code = response.Error.Title,
-                            Severity = ValidationIssueSeverity.Error,
-                            Source = response.Error.Type ?? "DataController",
-                        },
-                    ]
-                )
+                await GetErrorDetails([
+                    new ValidationIssueWithSource
+                    {
+                        Description = response.Error.Detail,
+                        Code = response.Error.Title,
+                        Severity = ValidationIssueSeverity.Error,
+                        Source = response.Error.Type ?? "DataController",
+                    },
+                ])
             );
         }
 
@@ -238,7 +237,7 @@ public class DataController : ControllerBase
             var (instance, dataType, _) = instanceResult.Ok;
 
             if (
-                DataElementAccessChecker.GetCreateProblem(instance, dataType, _authenticationContext.Current) is
+                await _dataElementAccessChecker.GetCreateProblem(instance, dataType, _authenticationContext.Current) is
                 { } accessProblem
             )
             {
@@ -525,10 +524,7 @@ public class DataController : ControllerBase
                 );
             }
 
-            if (
-                DataElementAccessChecker.GetReaderProblem(instance, dataTypeObject, _authenticationContext.Current) is
-                { } accessProblem
-            )
+            if (await _dataElementAccessChecker.GetReaderProblem(instance, dataTypeObject) is { } accessProblem)
             {
                 return Problem(accessProblem);
             }
@@ -537,19 +533,17 @@ public class DataController : ControllerBase
             {
                 return await GetFormData(
                     org,
-                    app,
                     instanceOwnerPartyId,
                     instanceGuid,
                     instance,
                     dataGuid,
                     dataElement,
-                    dataTypeObject,
                     includeRowId,
                     language
                 );
             }
 
-            return await GetBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, dataElement);
+            return await GetBinaryData(org, instanceOwnerPartyId, instanceGuid, dataGuid, dataElement);
         }
         catch (PlatformHttpException e)
         {
@@ -605,7 +599,11 @@ public class DataController : ControllerBase
             }
 
             if (
-                DataElementAccessChecker.GetUpdateProblem(instance, dataTypeObject, _authenticationContext.Current) is
+                await _dataElementAccessChecker.GetUpdateProblem(
+                    instance,
+                    dataTypeObject,
+                    _authenticationContext.Current
+                ) is
                 { } accessProblem
             )
             {
@@ -667,7 +665,7 @@ public class DataController : ControllerBase
         {
             // Map the new response to the old response
             return Ok(
-                new DataPatchResponse()
+                new DataPatchResponse
                 {
                     ValidationIssues = newResponse.ValidationIssues.ToDictionary(d => d.Source, d => d.Issues),
                     NewDataModel = newResponse.NewDataModels.First(m => m.DataElementId == dataGuid).Data,
@@ -725,7 +723,11 @@ public class DataController : ControllerBase
             foreach (var dataType in dataTypes)
             {
                 if (
-                    DataElementAccessChecker.GetUpdateProblem(instance, dataType, _authenticationContext.Current) is
+                    await _dataElementAccessChecker.GetUpdateProblem(
+                        instance,
+                        dataType,
+                        _authenticationContext.Current
+                    ) is
                     { } accessProblem
                 )
                 {
@@ -745,7 +747,7 @@ public class DataController : ControllerBase
                 return Ok(
                     new DataPatchResponseMultiple()
                     {
-                        Instance = res.Ok.Instance,
+                        Instance = await res.Ok.Instance.WithOnlyAccessibleDataElements(_dataElementAccessChecker),
                         NewDataModels = GetNewDataModels(res.Ok.FormDataChanges),
                         ValidationIssues = res.Ok.ValidationIssues,
                     }
@@ -805,7 +807,7 @@ public class DataController : ControllerBase
             }
 
             if (
-                DataElementAccessChecker.GetDeleteProblem(
+                await _dataElementAccessChecker.GetDeleteProblem(
                     instance,
                     dataTypeObject,
                     dataGuid,
@@ -892,14 +894,13 @@ public class DataController : ControllerBase
     /// <returns>The data element is returned in the body of the response</returns>
     private async Task<ActionResult> GetBinaryData(
         string org,
-        string app,
         int instanceOwnerPartyId,
         Guid instanceGuid,
         Guid dataGuid,
         DataElement dataElement
     )
     {
-        Stream dataStream = await _dataClient.GetBinaryData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid);
+        Stream dataStream = await _dataClient.GetBinaryData(instanceOwnerPartyId, instanceGuid, dataGuid);
 
         if (dataStream is not null)
         {
@@ -929,26 +930,17 @@ public class DataController : ControllerBase
     /// <returns>data element is returned in response body</returns>
     private async Task<ActionResult> GetFormData(
         string org,
-        string app,
         int instanceOwnerId,
         Guid instanceGuid,
         Instance instance,
         Guid dataGuid,
         DataElement dataElement,
-        DataType dataType,
         bool includeRowId,
         string? language
     )
     {
         // Get Form Data from data service. Assumes that the data element is form data.
-        object appModel = await _dataClient.GetFormData(
-            instanceGuid,
-            _appModel.GetModelType(dataType.AppLogic.ClassRef),
-            org,
-            app,
-            instanceOwnerId,
-            dataGuid
-        );
+        object appModel = await _dataClient.GetFormData(instance, dataElement);
 
         if (appModel is null)
         {
@@ -979,15 +971,7 @@ public class DataController : ControllerBase
         {
             try
             {
-                await _dataClient.UpdateData(
-                    appModel,
-                    instanceGuid,
-                    appModel.GetType(),
-                    org,
-                    app,
-                    instanceOwnerId,
-                    dataGuid
-                );
+                await _dataClient.UpdateFormData(instance, appModel, dataElement);
             }
             catch (PlatformHttpException e) when (e.Response.StatusCode is HttpStatusCode.Forbidden)
             {
@@ -1112,19 +1096,18 @@ public class DataController : ControllerBase
         // Get the previous service model for dataProcessing to work
         var oldServiceModel = await dataMutator.GetFormData(dataElement);
         // Set the new service model so that dataAccessors see the new state
-        dataMutator.SetFormData(dataElement, serviceModel);
+        dataMutator.SetFormData(dataElement, FormDataWrapperFactory.Create(serviceModel));
 
-        var requestedChange = new FormDataChange()
-        {
-            Type = ChangeType.Updated,
-            DataElement = dataElement,
-            ContentType = dataElement.ContentType,
-            DataType = dataType,
-            PreviousFormData = oldServiceModel,
-            CurrentFormData = serviceModel,
-            PreviousBinaryData = await dataMutator.GetBinaryData(dataElement),
-            CurrentBinaryData = null, // We don't serialize to xml before running data processors
-        };
+        var requestedChange = new FormDataChange(
+            type: ChangeType.Updated,
+            dataElement: dataElement,
+            contentType: dataElement.ContentType,
+            dataType: dataType,
+            previousFormDataWrapper: FormDataWrapperFactory.Create(oldServiceModel),
+            currentFormDataWrapper: FormDataWrapperFactory.Create(serviceModel),
+            previousBinaryData: await dataMutator.GetBinaryData(dataElement),
+            currentBinaryData: null // We don't serialize to xml before running data processors
+        );
 
         // Run data processors keeping track of changes for diff return
         var jsonBeforeDataProcessors = JsonSerializer.Serialize(serviceModel);

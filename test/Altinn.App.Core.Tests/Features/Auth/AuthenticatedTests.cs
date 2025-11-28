@@ -1,5 +1,3 @@
-namespace Altinn.App.Core.Tests.Features.Auth;
-
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO.Hashing;
@@ -12,6 +10,8 @@ using Altinn.Platform.Register.Enums;
 using Altinn.Platform.Register.Models;
 using AltinnCore.Authentication.Constants;
 using static Altinn.App.Core.Features.Auth.Authenticated;
+
+namespace Altinn.App.Core.Tests.Features.Auth;
 
 public class AuthenticatedTests
 {
@@ -252,10 +252,11 @@ public class AuthenticatedTests
                         Name = "Test Testesen",
                     };
                     Authenticated.Parser parse = description.Contains("localtest", StringComparison.OrdinalIgnoreCase)
-                        ? Authenticated.FromLocalTest
+                        ? Authenticated.FromOldLocalTest
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,
+                        parsedToken: null,
                         isAuthenticated: true,
                         appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
                         getSelectedParty: () =>
@@ -303,10 +304,11 @@ public class AuthenticatedTests
                         Name = "Test Testesen",
                     };
                     Authenticated.Parser parse = description.Contains("localtest", StringComparison.OrdinalIgnoreCase)
-                        ? Authenticated.FromLocalTest
+                        ? Authenticated.FromOldLocalTest
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,
+                        parsedToken: null,
                         isAuthenticated: true,
                         appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
                         getSelectedParty: () =>
@@ -347,6 +349,7 @@ public class AuthenticatedTests
                 {
                     auth = Authenticated.From(
                         tokenStr: token,
+                        parsedToken: null,
                         isAuthenticated: true,
                         appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
                         getSelectedParty: null!,
@@ -374,10 +377,11 @@ public class AuthenticatedTests
             case AuthenticationTypes.ServiceOwner:
                 {
                     Authenticated.Parser parse = description.Contains("localtest", StringComparison.OrdinalIgnoreCase)
-                        ? Authenticated.FromLocalTest
+                        ? Authenticated.FromOldLocalTest
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,
+                        parsedToken: null,
                         isAuthenticated: true,
                         appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
                         getSelectedParty: null!,
@@ -405,10 +409,11 @@ public class AuthenticatedTests
             case AuthenticationTypes.SystemUser:
                 {
                     Authenticated.Parser parse = description.Contains("localtest", StringComparison.OrdinalIgnoreCase)
-                        ? Authenticated.FromLocalTest
+                        ? Authenticated.FromOldLocalTest
                         : Authenticated.From;
                     auth = parse(
                         tokenStr: token,
+                        parsedToken: null,
                         isAuthenticated: true,
                         appMetadata: TestAuthentication.NewApplicationMetadata("digdir"),
                         getSelectedParty: null!,

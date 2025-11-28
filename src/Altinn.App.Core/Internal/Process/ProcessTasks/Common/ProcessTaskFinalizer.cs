@@ -20,6 +20,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IOptions<AppSettings> _appSettings;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessTaskFinalizer"/> class.
@@ -35,6 +36,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         _appMetadata = appMetadata;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
         _appSettings = appSettings;
         _appModel = appModel;
     }
@@ -53,6 +55,11 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
             )
         )
         {
+            if (await _dataElementAccessChecker.CanRead(dataAccessor.Instance, dataType) is false)
+            {
+                continue;
+            }
+
             foreach (var dataElement in instance.Data.Where(de => de.DataType == dataType.Id))
             {
                 tasks.Add(RemoveFieldsOnTaskComplete(dataAccessor, taskId, applicationMetadata, dataElement, dataType));
@@ -74,10 +81,12 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         string? language = null
     )
     {
-        var data = await dataAccessor.GetFormData(dataElement);
+        var formDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement);
 
         // remove AltinnRowIds
-        ObjectUtils.RemoveAltinnRowId(data);
+        formDataWrapper.RemoveAltinnRowIds();
+
+        var data = formDataWrapper.BackingData<object>();
 
         // Remove hidden data before validation, ignore hidden rows.
         if (_appSettings.Value?.RemoveHiddenData == true)
@@ -91,7 +100,11 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
                 gatewayAction: null,
                 language
             );
-            await LayoutEvaluator.RemoveHiddenDataAsync(evaluationState, RowRemovalOption.DeleteRow);
+            await LayoutEvaluator.RemoveHiddenDataAsync(
+                evaluationState,
+                RowRemovalOption.DeleteRow,
+                evaluateRemoveWhenHidden: true
+            );
         }
 
         // Remove shadow fields
@@ -129,7 +142,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
                     ?? throw new JsonException(
                         "Could not deserialize back datamodel after removing shadow fields. Data was \"null\""
                     );
-                dataAccessor.SetFormData(dataElement, newData);
+                dataAccessor.SetFormData(dataElement, FormDataWrapperFactory.Create(newData));
             }
         }
     }

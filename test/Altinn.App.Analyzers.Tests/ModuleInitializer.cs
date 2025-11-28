@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Altinn.App.Analyzers.Tests.Fixtures;
+using DiffEngine;
 
 namespace Altinn.App.Analyzers.Tests;
 
@@ -13,7 +14,7 @@ public class ModuleInitializer
     {
         var testProjectDir = GetTestProjectDirectory();
         Directory.SetCurrentDirectory(testProjectDir.FullName);
-        var path = Path.Combine(testProjectDir.FullName, "testapp", "App.sln");
+        var path = Path.Join(testProjectDir.FullName, "testapp", "App.sln");
         Assert.True(File.Exists(path));
         path = Path.GetFullPath(path);
         Assert.True(File.Exists(path));
@@ -30,13 +31,16 @@ public class ModuleInitializer
             converters.Add(new DiagnosticJsonConverter());
         });
         Verifier.UseProjectRelativeDirectory("_snapshots");
+        var isCi = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CI"));
+        if (BuildServerDetector.Detected && BuildServerDetector.IsWsl && !isCi)
+            BuildServerDetector.Detected = false; // WSL is not a build server
         VerifierSettings.AutoVerify(includeBuildServer: false);
     }
 
     private static DirectoryInfo GetTestProjectDirectory([CallerFilePath] string callerFilePath = "")
     {
         var projDir = Path.GetDirectoryName(callerFilePath) ?? "";
-        var projFile = Path.Combine(projDir, "Altinn.App.Analyzers.Tests.csproj");
+        var projFile = Path.Join(projDir, "Altinn.App.Analyzers.Tests.csproj");
         if (!File.Exists(projFile))
         {
             throw new FileNotFoundException(

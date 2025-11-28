@@ -11,10 +11,10 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Instances;
@@ -61,7 +61,6 @@ public class InstancesController : ControllerBase
     private readonly IProfileClient _profileClient;
 
     private readonly IAppMetadata _appMetadata;
-    private readonly IAppModel _appModel;
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IPDP _pdp;
     private readonly IPrefill _prefillService;
@@ -73,7 +72,8 @@ public class InstancesController : ControllerBase
     private readonly InternalPatchService _patchService;
     private readonly ITranslationService _translationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
-
+    private readonly IAuthenticationContext _authenticationContext;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
     /// <summary>
@@ -85,7 +85,7 @@ public class InstancesController : ControllerBase
         IInstanceClient instanceClient,
         IDataClient dataClient,
         IAppMetadata appMetadata,
-        IAppModel appModel,
+        IAuthenticationContext authenticationContext,
         IPDP pdp,
         IEventsClient eventsClient,
         IOptions<AppSettings> appSettings,
@@ -106,7 +106,6 @@ public class InstancesController : ControllerBase
         _appMetadata = appMetadata;
         _altinnPartyClient = altinnPartyClient;
         _registerClient = serviceProvider.GetRequiredService<IRegisterClient>();
-        _appModel = appModel;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _pdp = pdp;
         _eventsClient = eventsClient;
@@ -120,6 +119,8 @@ public class InstancesController : ControllerBase
         _patchService = patchService;
         _translationService = translationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _authenticationContext = authenticationContext;
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
 
     /// <summary>
@@ -171,7 +172,10 @@ public class InstancesController : ControllerBase
 
             var instanceOwnerParty = await _registerClient.GetPartyUnchecked(instanceOwnerPartyId, cancellationToken);
 
-            var dto = InstanceResponse.From(instance, instanceOwnerParty);
+            var dto = InstanceResponse.From(
+                await instance.WithOnlyAccessibleDataElements(_dataElementAccessChecker),
+                instanceOwnerParty
+            );
 
             return Ok(dto);
         }
@@ -394,7 +398,10 @@ public class InstancesController : ControllerBase
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
 
-        var dto = InstanceResponse.From(instance, party);
+        var dto = InstanceResponse.From(
+            await instance.WithOnlyAccessibleDataElements(_dataElementAccessChecker),
+            party
+        );
 
         return Created(url, dto);
     }
@@ -617,7 +624,8 @@ public class InstancesController : ControllerBase
 
     /// <summary>
     /// This method handles the copy endpoint for when a user wants to create a copy of an existing instance.
-    /// The endpoint will primarily be accessed directly by a user clicking the copy button for an archived instance.
+    /// The endpoint will primarily be accessed directly by a user clicking the copy button for an archived instance
+    /// from the message box in the Altinn 2 portal/Altinn 3 arbeidsflate.
     /// </summary>
     /// <param name="org">Unique identifier of the organisation responsible for the app</param>
     /// <param name="app">Application identifier which is unique within an organisation</param>
@@ -628,9 +636,13 @@ public class InstancesController : ControllerBase
     /// <remarks>
     /// The endpoint will return a redirect to the new instance if the copy operation was successful.
     /// </remarks>
-    [Obsolete("This endpoint will be removed in a future release of the app template packages.")]
     [ApiExplorerSettings(IgnoreApi = true)]
     [Authorize]
+    // The URL contains "legacy", but it is not really legacy.
+    // Originally it was thought of as tech debt to do mutation like this in a GET endpoint,
+    // but after further consideration, it was decided to keep it as is.
+    // A related topic is the fact that Altinn tokens are "global" and not scoped to a specific app.
+    // Since it now would be a breaking change to rename or remove, it still has "legacy" as part of the name.
     [HttpGet("/{org}/{app}/legacy/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/copy")]
     [ProducesResponseType(typeof(Instance), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -643,9 +655,9 @@ public class InstancesController : ControllerBase
     )
     {
         // This endpoint should be used exclusively by end users. Ideally from a browser as a request after clicking
-        // a button in the message box, but for now we simply just exclude app owner(s).
-        string? orgClaim = User.GetOrg();
-        if (orgClaim is not null)
+        // a button in the message box.
+        var auth = _authenticationContext.Current;
+        if (auth is not Authenticated.User)
         {
             return Forbid();
         }
@@ -944,8 +956,6 @@ public class InstancesController : ControllerBase
         Instance sourceInstance
     )
     {
-        string org = application.Org;
-        string app = application.AppIdentifier.App;
         int instanceOwnerPartyId = int.Parse(targetInstance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
 
         string[] sourceSplit = sourceInstance.Id.Split("/");
@@ -971,28 +981,7 @@ public class InstancesController : ControllerBase
             {
                 DataType dt = dts.First(dt => dt.Id.Equals(de.DataType, StringComparison.Ordinal));
 
-                Type type;
-                try
-                {
-                    type = _appModel.GetModelType(dt.AppLogic.ClassRef);
-                }
-                catch (Exception altinnAppException)
-                {
-                    throw new ServiceException(
-                        HttpStatusCode.InternalServerError,
-                        $"App.GetAppModelType failed: {altinnAppException.Message}",
-                        altinnAppException
-                    );
-                }
-
-                object data = await _dataClient.GetFormData(
-                    sourceInstanceGuid,
-                    type,
-                    org,
-                    app,
-                    instanceOwnerPartyId,
-                    Guid.Parse(de.Id)
-                );
+                object data = await _dataClient.GetFormData(sourceInstance, de);
 
                 if (application.CopyInstanceSettings.ExcludedDataFields != null)
                 {
@@ -1010,15 +999,7 @@ public class InstancesController : ControllerBase
 
                 ObjectUtils.InitializeAltinnRowId(data);
 
-                await _dataClient.InsertFormData(
-                    data,
-                    Guid.Parse(targetInstance.Id.Split("/")[1]),
-                    type,
-                    org,
-                    app,
-                    instanceOwnerPartyId,
-                    dt.Id
-                );
+                await _dataClient.InsertFormData(targetInstance, dt.Id, data);
 
                 await UpdatePresentationTextsOnInstance(application.PresentationFields, targetInstance, dt.Id, data);
                 await UpdateDataValuesOnInstance(application.DataFields, targetInstance, dt.Id, data);
@@ -1051,8 +1032,6 @@ public class InstancesController : ControllerBase
             if (binaryDataTypes.Any(dt => dt.Id.Equals(de.DataType, StringComparison.Ordinal)))
             {
                 using var binaryDataStream = await _dataClient.GetBinaryData(
-                    org,
-                    app,
                     instanceOwnerPartyId,
                     sourceInstanceGuid,
                     Guid.Parse(de.Id)
@@ -1384,7 +1363,11 @@ public class InstancesController : ControllerBase
         if (String.IsNullOrEmpty(validationResult.Message) && !String.IsNullOrEmpty(validationResult.CustomTextKey))
         {
             if (
-                await _translationService.TranslateTextKey(validationResult.CustomTextKey, language)
+                await _translationService.TranslateTextKey(
+                    validationResult.CustomTextKey,
+                    language,
+                    validationResult.CustomTextParameters
+                )
                 is string translated
             )
             {
