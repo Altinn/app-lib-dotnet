@@ -1,4 +1,5 @@
 ﻿[basic/signing-simple] [INIT INFO] Fixture configuration updated
+[basic/signing-simple] [INIT INFO] Scenario 'signing-simple' specified but no services directory found at /App/scenario-overrides/services
 [basic/signing-simple] [INFO] ### Request: Instances.PostSimplified - User: User/1337/501337, AuthLevel: 3, AuthMethod: BankID
 [basic/signing-simple] [INFO] IInstantiationValidator.Validate
 [basic/signing-simple] [INFO] IProcessTaskStart.Start

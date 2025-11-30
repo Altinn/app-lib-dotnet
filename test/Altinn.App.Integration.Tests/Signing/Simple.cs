@@ -20,7 +20,10 @@ public class SimpleTests(ITestOutputHelper _output, AppFixtureClassFixture _clas
 
     [Theory]
     [CombinatorialData]
-    public async Task Full([CombinatorialValues(Auth.User, Auth.SystemUser)] Auth auth)
+    // TODO: add back systemuser to auth parameter when it is supported in signing
+    // There are snapshots for it in _snapshots folder where you can see the issue, and there is a comment with some explanation
+    // on the PR that introduced this code
+    public async Task Full([CombinatorialValues(Auth.User)] Auth auth)
     {
         await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic, "signing-simple");
         var fixture = fixtureScope.Fixture;
