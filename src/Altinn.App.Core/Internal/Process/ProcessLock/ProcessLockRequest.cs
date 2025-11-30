@@ -2,5 +2,5 @@ namespace Altinn.App.Core.Internal.Process.ProcessLock;
 
 internal sealed class ProcessLockRequest
 {
-    public int Expiration { get; set; }
+    public int TtlSeconds { get; set; }
 }

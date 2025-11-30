@@ -49,7 +49,7 @@ internal sealed class ProcessLockClient
             _appSettings.RuntimeCookieName
         );
 
-        var request = new ProcessLockRequest { Expiration = (int)expiration.TotalSeconds };
+        var request = new ProcessLockRequest { TtlSeconds = (int)expiration.TotalSeconds };
         var content = JsonContent.Create(request);
 
         using var response = await _client.PostAsync(token, apiUrl, content);
@@ -90,7 +90,7 @@ internal sealed class ProcessLockClient
             _appSettings.RuntimeCookieName
         );
 
-        var request = new ProcessLockRequest { Expiration = 0 };
+        var request = new ProcessLockRequest { TtlSeconds = 0 };
         var content = JsonContent.Create(request);
 
         using var response = await _client.PatchAsync(token, apiUrl, content);
