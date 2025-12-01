@@ -4,6 +4,8 @@
         <OutputType>Library</OutputType>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <!-- Suppress XML doc warnings - mostly internal use -->
+        <NoWarn>CS1591;IDE0052</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

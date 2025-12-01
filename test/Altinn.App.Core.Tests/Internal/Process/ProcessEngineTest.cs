@@ -30,6 +30,7 @@ using Moq;
 using Newtonsoft.Json;
 using Xunit.Abstractions;
 using LegacyProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
+using ProcessEngine = Altinn.App.Core.Internal.Process.ProcessEngine;
 
 namespace Altinn.App.Core.Tests.Internal.Process;
 

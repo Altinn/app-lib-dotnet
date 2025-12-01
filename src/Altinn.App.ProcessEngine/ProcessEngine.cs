@@ -27,10 +27,9 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
     private readonly IProcessEngineTaskHandler _taskHandler;
     private readonly Buffer<bool> _isEnabledHistory = new();
     private readonly SemaphoreSlim _cleanupLock = new(1, 1);
-    private readonly ProcessEngineRetryStrategy _statusCheckBackoffStrategy = new(
-        ProcessEngineBackoffType.Exponential,
-        BaseInterval: TimeSpan.FromSeconds(1),
-        MaxDelay: TimeSpan.FromMinutes(1)
+    private readonly ProcessEngineRetryStrategy _statusCheckBackoffStrategy = ProcessEngineRetryStrategy.Exponential(
+        baseInterval: TimeSpan.FromSeconds(1),
+        maxDelay: TimeSpan.FromMinutes(1)
     );
 
     private ConcurrentDictionary<string, ProcessEngineJob> _inbox;
