@@ -114,6 +114,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IText, TextClient>();
 #pragma warning restore CS0618 // Type or member is obsolete
         services.AddHttpClient<IProcessClient, ProcessClient>();
+        services.AddHttpClient<ProcessLockClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
         services.AddHttpClient<IAccessManagementClient, AccessManagementClient>();
 

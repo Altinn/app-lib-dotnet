@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using Altinn.App.Api.Infrastructure.Filters;
+using Altinn.App.Api.Infrastructure.Middleware;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Helpers;
@@ -253,6 +254,7 @@ public class ProcessController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [EnableProcessLock]
     public async Task<ActionResult<AppProcessState>> NextElement(
         [FromRoute] string org,
         [FromRoute] string app,
