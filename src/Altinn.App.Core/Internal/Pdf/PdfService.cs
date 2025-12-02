@@ -4,8 +4,10 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Expressions;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -158,7 +160,7 @@ public class PdfService : IPdfService
             ct
         );
 
-        string fileName = await GetFileName(instance, language, customFileNameTextResourceKey);
+        string fileName = await GetFileName(instance, language, customFileNameTextResourceKey, subformDataElementId);
         DataElement dataElement = await _dataClient.InsertBinaryData(
             instance.Id,
             PdfElementType,
@@ -288,7 +290,12 @@ public class PdfService : IPdfService
         return null;
     }
 
-    private async Task<string> GetFileName(Instance instance, string? language, string? customFileNameTextResourceKey)
+    private async Task<string> GetFileName(
+        Instance instance,
+        string? language,
+        string? customFileNameTextResourceKey,
+        string? subformDataElementId
+    )
     {
         string? titleText;
 
@@ -301,7 +308,24 @@ public class PdfService : IPdfService
                 language
             );
 
-            titleText = await _translationService.TranslateTextKey(customFileNameTextResourceKey, cachedDataMutator);
+            LayoutEvaluatorState state =
+                cachedDataMutator.GetLayoutEvaluatorState()
+                ?? throw new InvalidOperationException("LayoutEvaluatorState should not be null.");
+            DataElementIdentifier? dataElementIdentifier =
+                subformDataElementId != null ? new DataElementIdentifier(subformDataElementId) : null;
+
+            var componentContext = new ComponentContext(
+                state,
+                component: null,
+                rowIndices: null,
+                dataElementIdentifier: dataElementIdentifier
+            );
+
+            titleText = await _translationService.TranslateTextKey(
+                customFileNameTextResourceKey,
+                state,
+                componentContext
+            );
         }
         else
         {
