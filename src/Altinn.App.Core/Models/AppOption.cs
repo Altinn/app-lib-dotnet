@@ -42,6 +42,12 @@ public class AppOption
     [JsonPropertyName("helpText")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? HelpText { get; set; }
+
+    /// <summary>
+    /// Tags used for grouping in combination with <see cref="AppOptions.TagNames"/>
+    /// Eg: tagNames: ["region"], tags: ["europe"]
+    /// </summary>
+    public Dictionary<string, string>? Tags { get; set; }
 }
 
 /// <summary>

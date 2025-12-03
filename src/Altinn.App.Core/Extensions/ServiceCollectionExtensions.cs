@@ -117,7 +117,6 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IProcessClient, ProcessClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
         services.AddHttpClient<IAccessManagementClient, AccessManagementClient>();
-        services.AddHttpClient<IAltinn3LibraryCodeListApiClient, Altinn3LibraryCodeListApiClient>();
 #pragma warning disable EXTEXP0018 // is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         services.AddHybridCache();
 
@@ -332,11 +331,14 @@ public static class ServiceCollectionExtensions
 
         // Services related to application options
         services.TryAddTransient<AppOptionsFactory>();
-        services.AddTransient<IAppOptionsProvider, DefaultAppOptionsProvider>();
         services.TryAddTransient<IAppOptionsFileHandler, AppOptionsFileHandler>();
 
         // Services related to instance aware and secure app options
         services.TryAddTransient<InstanceAppOptionsFactory>();
+
+        // Services related to Altinn 3 library code list
+        services.AddHttpClient<IAltinn3LibraryCodeListApiClient, Altinn3LibraryCodeListApiClient>();
+        services.TryAddTransient<IAltinn3LibraryCodeListService, Altinn3LibraryCodeListService>();
     }
 
     private static void AddExternalApis(IServiceCollection services)

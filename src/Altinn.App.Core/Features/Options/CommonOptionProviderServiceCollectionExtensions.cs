@@ -95,7 +95,7 @@ public static class CommonOptionProviderServiceCollectionExtensions
             org,
             codeListId,
             version,
-            sp.GetRequiredService<IAppOptionsService>()
+            sp.GetRequiredService<IAltinn3LibraryCodeListService>()
         ));
         return serviceCollection;
     }

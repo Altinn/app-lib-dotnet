@@ -15,7 +15,7 @@ public class Altinn3LibraryCodeListClientTests
         const string org = "ttd";
         const string codeListId = "SomeCodeListId";
         const string version = "1";
-        await using var fixture = Fixture.Create(Altinn3LibraryOptionsProviderTestData.GetNbEnResponseMessage());
+        await using var fixture = Fixture.Create(Altinn3LibraryCodeListServiceTestData.GetNbEnResponseMessage());
 
         // Act
         var result = await fixture
@@ -57,8 +57,6 @@ public class Altinn3LibraryCodeListClientTests
 
     private sealed record Fixture(ServiceProvider ServiceProvider) : IAsyncDisposable
     {
-        public required Altinn3LibraryOptionsProviderMessageHandlerMock MockHandler { get; init; }
-
         public IAltinn3LibraryCodeListApiClient Altinn3LibraryCodeListApiClient() =>
             ServiceProvider.GetRequiredService<IAltinn3LibraryCodeListApiClient>();
 
@@ -67,14 +65,14 @@ public class Altinn3LibraryCodeListClientTests
             Action<IServiceCollection>? configure = null
         )
         {
-            var mockHandler = new Altinn3LibraryOptionsProviderMessageHandlerMock(responseMessage);
+            var mockHandler = new Altinn3LibraryCodeListClientMessageHandlerMock(responseMessage);
             var serviceCollection = new ServiceCollection();
             serviceCollection
                 .AddHttpClient<IAltinn3LibraryCodeListApiClient, Altinn3LibraryCodeListApiClient>()
                 .ConfigurePrimaryHttpMessageHandler(() => mockHandler);
             configure?.Invoke(serviceCollection);
 
-            return new Fixture(serviceCollection.BuildServiceProvider()) { MockHandler = mockHandler };
+            return new Fixture(serviceCollection.BuildServiceProvider());
         }
 
         public async ValueTask DisposeAsync() => await ServiceProvider.DisposeAsync();

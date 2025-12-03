@@ -1,4 +1,4 @@
-﻿# New endpoint for fetching code lists from Altinn 3 library
+﻿# New endpoint for fetching code lists
 
 * Status: in progress
 * Deciders: Squad Data
@@ -35,14 +35,15 @@ Other things that would be nice to solve at the same time:
 * B3: Keep complexity low for developers
 * B4: Prevent confusion between optionId and "optionId" parsed to org, codelist id and version
 * B5: Avoid the need to distinguish between `"secure": true/false` in frontend
+* B6: Performance, consider parsing overhead of different approaches
 
 ## Alternatives considered
 
 * **A1: Use already existing path without modifying it**
   *GET /{org}/{app}/api/options/{optionsId}?language={language}*
-  OptionsId becomes the org, codelist id and version.
-  Formatting org, codelist id and version into the
-  optionsId string eg. org--codelistId--version
+  OptionsId becomes the creator org, codelist id and version.
+  Formatting creator org, codelist id and version into the
+  optionsId string eg. creatorOrg--codelistId--version
 * **A2: Modify existing path with nullable path variables**
   *GET /{org}/{app}/api/options/{optionIdOrCreatorOrg}/
   {codeListId?}/{version?}&language={language}*
@@ -51,18 +52,16 @@ Other things that would be nice to solve at the same time:
   *GET /{org}/{app}/api/options/{optionsIdOrCodeListId}?source=library&creatorOrg={org}&version={version}&language={language}*
   optionsIdOrCodeListId becomes the codeListId when source=library
 * **A4: Modify existing path so that option id is wild card path segment**
-  *GET /{org}/{app}/api/options/{\*\*optionsId}*
+  *GET /{org}/{app}/api/options/{\*\*optionsIdOrLibraryRef}&language={language}*
   OptionId is now allowed to contain slashes,
   and can be formated as /{org}/{codeListId}/{version}
-
-* **C1: Old response**
-* **C2: New response**
 
 ## Pros and cons
 
 ### A1: Use already existing path without modifying it
 
 * Pros
+  * Less work required in the frontend?
 * Cons
   * A1C1: Increased complexity since
   the endpoint now has to encode what is sent
@@ -71,47 +70,44 @@ Other things that would be nice to solve at the same time:
   is an actual optionId and what is not.
   * A1C4: String parsing complexity, what should be
   encoded as optionId and what should not be.
+  * Difficult to determine a format for optionsId that
+  consisting of org, code list id and version
+  that doesnt conflict with actual optionsIds
+  * If org, code list id and version contains special characters (hyphens, dots, etc), the delimiter choice becomes problematic.
+  * Everything is string; framework can't validate individual components.
 
 ### A2: Modify existing path with nullable path variables
 
 * Pros
   * Supports B3; no custom parsing of "optionId"
   will help maintain a lower complexity.
+  * Supports framework validation, each path segment validated separately by routing.
+  * Tools can generate clearer API docs showing both usage patterns
+  * RESTful design, clear resource hierarchy in URL path
 * Cons
+  * Can potentially cause confusion on when certain fields must be provided.
+  * Route ambiguity, /options/something could match either pattern. So some custom validation will be required.
 
 ### A3: Modify existing path with new query parameters
 
 * Pros
-  * Same as for A1
   * Clear semantic distinction via source parameter.
-  * No parsing of optionId required.
+  * Supports B3; no custom parsing of "optionId"
+    will help maintain a lower complexity.
 * Cons
+  * Can potentially cause confusion on when certain fields must be provided.
+  * REST anti-pattern, resource identifiers (org, codeListId) should be in path, not query string
 
 ### A4: Modify existing path so that option id is wild card path segment
 
 * Pros
-  * Same as for A1.
+  * We know that optionsIds never contains slashes. So we can confidently say that
+  optionIds containing / is requesting library code lists
 * Cons
   * A1C2, A1C4.
   * Route conflicts, wild card can accidentally catch routes you didnt intend.
   * Breaking rest conventions, path parameters should be single identifiers, not composite structures.
   * Poor discoverability, API consumers can't tell from the OpenAPI/Swagger docs what format optionsId should be.
 
-### C1: Old response
+## Decision rationale
 
-* Pros
-    * Less work required in the frontend?.
-    * Less code to maintain if this lets us just use the old endpoint.
-    * Supports B2, we can add fields to the response without introducing breaking changes.
-    * Supports B5, can be done by allowing both instance- and app options responses from the same endpoint.
-* Cons
-    * The API response is a list of options instead of an object.
-
-### C2: New response
-* Pros
-  * Supports B1, B4 and B5.
-  * Returning object instead of list adds support for returning metadata in a better way then we do now with a header field.
-  * Supports B2; we can create a new field in layout and move the existing code list fields to it as well as adding new ones.
-* Cons
-  * Increased cost in development time in both frontend and backend.
-  * Will add more code to maintain as we will have to keep the old endpoint around at least for a while.

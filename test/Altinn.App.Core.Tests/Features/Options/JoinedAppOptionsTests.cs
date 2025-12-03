@@ -49,7 +49,6 @@ public class JoinedAppOptionsTests
 
         // Registrer a mocked default handler
         _serviceCollection.AddSingleton(_fileHandlerMock.Object);
-        _serviceCollection.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>();
 
         // This provider should never be used and cause an error if it is
         _neverUsedOptionsProviderMock.Setup(p => p.Id).Returns("never-used");

@@ -8,14 +8,17 @@ namespace Altinn.App.Core.Features.Options;
 /// </summary>
 public class AppOptionsFactory
 {
-    private const string DEFAULT_PROVIDER_NAME = "default";
     private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly IServiceProvider _serviceProvider;
+
+    private const string DefaultProviderName = "default";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AppOptionsFactory"/> class.
     /// </summary>
     public AppOptionsFactory(IServiceProvider serviceProvider)
     {
+        _serviceProvider = serviceProvider;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
@@ -37,20 +40,13 @@ public class AppOptionsFactory
             return appOptionProvider;
         }
 
-        var isDefault = optionsId == DEFAULT_PROVIDER_NAME;
-        if (isDefault)
+        if (optionsId != DefaultProviderName)
         {
-            throw new KeyNotFoundException(
-                "No default app options provider found in the configures services. Please check your services configuration."
-            );
+            return new DefaultAppOptionsProvider(_serviceProvider) { Id = optionsId };
         }
 
-        // In the case of no providers registred specifically for the requested id,
-        // we use the default provider as base. Hence we set the requested id as this is
-        // the key for finding the options file.
-        var defaultAppOptions = (DefaultAppOptionsProvider)GetOptionsProvider(DEFAULT_PROVIDER_NAME);
-        var clonedAppOptions = defaultAppOptions.CloneDefaultTo(optionsId);
-
-        return clonedAppOptions;
+        throw new KeyNotFoundException(
+            "No app options provider found in the configures services. Please check your services configuration."
+        );
     }
 }

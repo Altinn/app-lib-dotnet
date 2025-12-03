@@ -3217,7 +3217,7 @@
         }
       }
     },
-    "/{org}/{app}/api/options/{optionsId}": {
+    "/{org}/{app}/api/options/{optionsIdOrCreatorOrg}/{codeListId}/{version}": {
       "get": {
         "tags": [
           "Options"
@@ -3225,9 +3225,9 @@
         "summary": "Api that exposes app related options",
         "parameters": [
           {
-            "name": "optionsId",
+            "name": "optionsIdOrCreatorOrg",
             "in": "path",
-            "description": "The optionsId",
+            "description": "The optionsId configured for the provider in Program.cs or Organization that initially created the code list",
             "required": true,
             "schema": {
               "type": "string"
@@ -3246,9 +3246,27 @@
             }
           },
           {
+            "name": "codeListId",
+            "in": "path",
+            "description": "Code list id, required if creatorOrg is provided",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "Code list version, only used in combination with creator org and code list id, defaults to latest if not provided",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
+            "description": "The language selected by the user, ISO 639-1 (eg. nb)",
             "schema": {
               "type": "string"
             }

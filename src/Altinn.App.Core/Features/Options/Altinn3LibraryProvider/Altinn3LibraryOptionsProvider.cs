@@ -4,14 +4,14 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 
 internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
 {
-    private readonly IAppOptionsService _appOptionsService;
+    private readonly IAltinn3LibraryCodeListService _altinn3LibraryCodeListService;
 
     public Altinn3LibraryOptionsProvider(
         string optionId,
         string org,
         string codeListId,
         string? version,
-        IAppOptionsService appOptionsService
+        IAltinn3LibraryCodeListService altinn3LibraryCodeListService
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(optionId);
@@ -22,7 +22,7 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         _org = org;
         _codeListId = codeListId;
         _version = !string.IsNullOrEmpty(version) ? version : "latest";
-        _appOptionsService = appOptionsService;
+        _altinn3LibraryCodeListService = altinn3LibraryCodeListService;
     }
 
     public string Id { get; }
@@ -32,7 +32,7 @@ internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
 
     public async Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
     {
-        var result = await _appOptionsService.GetCachableCodeListResponseAsync(_org, _codeListId, _version);
-        return _appOptionsService.MapAppOptions(result, language);
+        var result = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(_org, _codeListId, _version);
+        return _altinn3LibraryCodeListService.MapAppOptions(result, language);
     }
 }

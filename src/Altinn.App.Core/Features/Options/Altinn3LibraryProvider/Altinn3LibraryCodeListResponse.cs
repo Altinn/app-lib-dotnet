@@ -30,7 +30,7 @@ public class Altinn3LibraryCodeListResponse
     /// Eg: tagNames: ["region"], tags: ["europe"]
     /// </summary>
     [JsonPropertyName("tagNames")]
-    public required List<string> TagNames { get; set; }
+    public List<string>? TagNames { get; set; }
 }
 
 /// <summary>
@@ -79,5 +79,5 @@ public class Altinn3LibraryCodeListItem
     /// Eg: tagNames: ["region"], tags: ["europe"]
     /// </summary>
     [JsonPropertyName("tags")]
-    public required List<string> Tags { get; set; }
+    public List<string>? Tags { get; set; }
 }

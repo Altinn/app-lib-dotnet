@@ -1681,6 +1681,12 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider
         [System.Text.Json.Serialization.JsonPropertyName("version")]
         public required string Version { get; set; }
     }
+    public class Altinn3LibraryCodeListService : Altinn.App.Core.Features.Options.Altinn3LibraryProvider.IAltinn3LibraryCodeListService
+    {
+        public Altinn3LibraryCodeListService(Microsoft.Extensions.Caching.Hybrid.HybridCache hybridCache, Altinn.App.Core.Features.Options.Altinn3LibraryProvider.IAltinn3LibraryCodeListApiClient altinn3LibraryCodeListApiClient) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(string org, string codeListId, string? version) { }
+        public Altinn.App.Core.Models.AppOptions MapAppOptions(Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse libraryCodeLists, string? language) { }
+    }
     public class Altinn3LibraryCodeListSource
     {
         public Altinn3LibraryCodeListSource() { }
@@ -1690,6 +1696,11 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider
     public interface IAltinn3LibraryCodeListApiClient
     {
         System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse> GetAltinn3LibraryCodeLists(string org, string codeListId, string version = null, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface IAltinn3LibraryCodeListService
+    {
+        System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(string org, string codeListId, string? version);
+        Altinn.App.Core.Models.AppOptions MapAppOptions(Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse libraryCodeLists, string? language);
     }
 }
 namespace Altinn.App.Core.Features.Options
@@ -1706,12 +1717,9 @@ namespace Altinn.App.Core.Features.Options
     }
     public class AppOptionsService : Altinn.App.Core.Features.Options.IAppOptionsService
     {
-        public AppOptionsService(Altinn.App.Core.Features.Options.AppOptionsFactory appOptionsFactory, Altinn.App.Core.Features.Options.InstanceAppOptionsFactory instanceAppOptionsFactory, Altinn.App.Core.Features.Options.Altinn3LibraryProvider.IAltinn3LibraryCodeListApiClient altinn3LibraryCodeListApiClient, Microsoft.Extensions.Caching.Hybrid.HybridCache hybridCache, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse> GetCachableCodeListResponseAsync(string org, string codeListId, string? version) { }
+        public AppOptionsService(Altinn.App.Core.Features.Options.AppOptionsFactory appOptionsFactory, Altinn.App.Core.Features.Options.InstanceAppOptionsFactory instanceAppOptionsFactory, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions> GetOptionsAsync(string optionId, string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs) { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions> GetOptionsAsync(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string optionId, string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs) { }
-        public Altinn.App.Core.Models.AppOptions MapAppOptions(Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse libraryCodeLists, string? language) { }
-        public Altinn.App.Core.Models.OrgLibraryAppOptions MapOrgLibraryAppOptions(Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse libraryCodeLists, string? language) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions?> GetOptionsAsync(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string optionId, string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs) { }
     }
     public static class AppOptionsServiceExtentions
     {
@@ -1734,28 +1742,19 @@ namespace Altinn.App.Core.Features.Options
     }
     public interface IAppOptionsService
     {
-        System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse> GetCachableCodeListResponseAsync(string org, string codeListId, string? version);
         System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions> GetOptionsAsync(string optionId, string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs);
-        System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions> GetOptionsAsync(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string optionId, string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs);
-        Altinn.App.Core.Models.AppOptions MapAppOptions(Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse libraryCodeLists, string? language);
-        Altinn.App.Core.Models.OrgLibraryAppOptions MapOrgLibraryAppOptions(Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse libraryCodeLists, string? language);
+        System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions?> GetOptionsAsync(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string optionId, string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs);
     }
     public class InstanceAppOptionsFactory
     {
         public InstanceAppOptionsFactory(System.IServiceProvider serviceProvider) { }
-        public Altinn.App.Core.Features.IInstanceAppOptionsProvider GetOptionsProvider(string optionsId) { }
+        public Altinn.App.Core.Features.IInstanceAppOptionsProvider? GetOptionsProvider(string optionsId) { }
     }
     public class JoinedAppOptionsProvider : Altinn.App.Core.Features.IAppOptionsProvider
     {
         public JoinedAppOptionsProvider(string id, System.Collections.Generic.IEnumerable<string> subOptions, System.Func<Altinn.App.Core.Features.Options.AppOptionsFactory> appOptionsFactory) { }
         public string Id { get; }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions> GetAppOptionsAsync(string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs) { }
-    }
-    public class NullInstanceAppOptionsProvider : Altinn.App.Core.Features.IInstanceAppOptionsProvider
-    {
-        public NullInstanceAppOptionsProvider() { }
-        public string Id { get; }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions> GetInstanceAppOptionsAsync(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs) { }
     }
 }
 namespace Altinn.App.Core.Features.PageOrder
@@ -4052,6 +4051,7 @@ namespace Altinn.App.Core.Models
         public string? HelpText { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("label")]
         public required string Label { get; set; }
+        public System.Collections.Generic.Dictionary<string, string>? Tags { get; set; }
         [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.Never)]
         [System.Text.Json.Serialization.JsonPropertyName("value")]
         public required string? Value { get; set; }
@@ -4355,29 +4355,6 @@ namespace Altinn.App.Core.Models
         public OnEntry() { }
         [Newtonsoft.Json.JsonProperty(PropertyName="instanceSelection")]
         public Altinn.App.Core.Models.InstanceSelection? InstanceSelection { get; set; }
-    }
-    public class OrgLibraryAppOption
-    {
-        public OrgLibraryAppOption() { }
-        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; }
-        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
-        [System.Text.Json.Serialization.JsonPropertyName("helpText")]
-        public string? HelpText { get; set; }
-        [System.Text.Json.Serialization.JsonPropertyName("label")]
-        public required string Label { get; set; }
-        public required System.Collections.Generic.List<string> Tags { get; set; }
-        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.Never)]
-        [System.Text.Json.Serialization.JsonPropertyName("value")]
-        public required string Value { get; set; }
-    }
-    public class OrgLibraryAppOptions
-    {
-        public OrgLibraryAppOptions() { }
-        public string Name { get; set; }
-        public System.Collections.Generic.List<Altinn.App.Core.Models.OrgLibraryAppOption> Options { get; set; }
-        public System.Collections.Generic.List<string> TagNames { get; set; }
     }
     public readonly struct OrganisationNumber : System.IEquatable<Altinn.App.Core.Models.OrganisationNumber>
     {

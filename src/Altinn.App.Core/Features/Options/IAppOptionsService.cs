@@ -27,39 +27,10 @@ public interface IAppOptionsService
     /// <param name="language">The language code requested.</param>
     /// <param name="keyValuePairs">Optional list of key/value pairs to use for filtering and further lookup.</param>
     /// <returns>The list of options</returns>
-    Task<AppOptions> GetOptionsAsync(
+    Task<AppOptions?> GetOptionsAsync(
         InstanceIdentifier instanceIdentifier,
         string optionId,
         string? language,
         Dictionary<string, string> keyValuePairs
     );
-
-    /// <summary>
-    /// Getting code list from Altinn3 library, caching the result if not already cached.
-    /// </summary>
-    /// <param name="org">The creating organization</param>
-    /// <param name="codeListId">Code list id</param>
-    /// <param name="version">Code list version</param>
-    /// <returns>Altinn 3 library code list response</returns>
-    Task<Altinn3LibraryCodeListResponse> GetCachableCodeListResponseAsync(
-        string org,
-        string codeListId,
-        string? version
-    );
-
-    /// <summary>
-    /// Mapping Altinn3 library code list response to AppOptions
-    /// </summary>
-    /// <param name="libraryCodeLists">Code list input</param>
-    /// <param name="language">Prefered language to map to. Has fallback, will try to map to requested language, else Nb, En, then first available (alphabetically by key) if not provided or not found.</param>
-    /// <returns>App options</returns>
-    AppOptions MapAppOptions(Altinn3LibraryCodeListResponse libraryCodeLists, string? language);
-
-    /// <summary>
-    /// Mapping Altinn3 library code list response to OrgLibraryAppOptions
-    /// </summary>
-    /// <param name="libraryCodeLists">Code list input</param>
-    /// <param name="language">Prefered language to map to. Has fallback, will try to map to requested language, else Nb, En, then first available (alphabetically by key) if not provided or not found.</param>
-    /// <returns>Org library app options</returns>
-    OrgLibraryAppOptions MapOrgLibraryAppOptions(Altinn3LibraryCodeListResponse libraryCodeLists, string? language);
 }

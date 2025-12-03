@@ -370,9 +370,9 @@ namespace Altinn.App.Api.Controllers
     [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/api/options")]
     public class OptionsController : Microsoft.AspNetCore.Mvc.ControllerBase
     {
-        public OptionsController(Altinn.App.Core.Features.Options.IAppOptionsService appOptionsService) { }
-        [Microsoft.AspNetCore.Mvc.HttpGet("{optionsId}")]
-        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> Get([Microsoft.AspNetCore.Mvc.FromRoute] string optionsId, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.Dictionary<string, string> queryParams, [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null) { }
+        public OptionsController(Altinn.App.Core.Features.Options.IAppOptionsService appOptionsService, Altinn.App.Core.Features.Options.Altinn3LibraryProvider.IAltinn3LibraryCodeListService altinn3LibraryCodeListService, Altinn.App.Core.Features.Telemetry telemetry) { }
+        [Microsoft.AspNetCore.Mvc.HttpGet("{optionsIdOrCreatorOrg}/{codeListId?}/{version?}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> Get([Microsoft.AspNetCore.Mvc.FromRoute] string optionsIdOrCreatorOrg, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.Dictionary<string, string> queryParams, [Microsoft.AspNetCore.Mvc.FromRoute] string? codeListId = null, [Microsoft.AspNetCore.Mvc.FromRoute] string? version = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null) { }
         [Microsoft.AspNetCore.Authorization.Authorize(Policy="InstanceRead")]
         [Microsoft.AspNetCore.Mvc.HttpGet]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(200)]
