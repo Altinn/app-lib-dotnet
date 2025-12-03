@@ -297,11 +297,11 @@ public class PdfService : IPdfService
         string? subformDataElementId
     )
     {
-        string? titleText;
+        string? fileName;
 
         if (_instanceDataUnitOfWorkInitializer != null && customFileNameTextResourceKey != null)
         {
-            // Use the full translation with variable substitution support for custom file names
+            // Variable substitution support for custom file names
             InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
                 instance,
                 instance.Process?.CurrentTask?.ElementId,
@@ -311,8 +311,9 @@ public class PdfService : IPdfService
             LayoutEvaluatorState state =
                 cachedDataMutator.GetLayoutEvaluatorState()
                 ?? throw new InvalidOperationException("LayoutEvaluatorState should not be null.");
+            
             DataElementIdentifier? dataElementIdentifier =
-                subformDataElementId != null ? new DataElementIdentifier(subformDataElementId) : null;
+                subformDataElementId != null ? new DataElementIdentifier(subformDataElementId) : default;
 
             var componentContext = new ComponentContext(
                 state,
@@ -321,7 +322,7 @@ public class PdfService : IPdfService
                 dataElementIdentifier: dataElementIdentifier
             );
 
-            titleText = await _translationService.TranslateTextKey(
+            fileName = await _translationService.TranslateTextKey(
                 customFileNameTextResourceKey,
                 state,
                 componentContext
@@ -330,27 +331,21 @@ public class PdfService : IPdfService
         else
         {
             // Fall back to simple translation without variable substitution
-            titleText = await _translationService.TranslateTextKey(
+            fileName = await _translationService.TranslateTextKey(
                 customFileNameTextResourceKey ?? "backend.pdf_default_file_name",
                 language
             );
         }
 
-        if (string.IsNullOrEmpty(titleText))
+        if (string.IsNullOrEmpty(fileName))
         {
             // translation for backend.pdf_default_file_name should always be present (it has a falback in the translation service),
             // but just in case, we default to a hardcoded string.
-            titleText = "Altinn PDF.pdf";
+            fileName = "Altinn PDF.pdf";
         }
 
-        var file = GetValidFileName(titleText);
-        return file.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? file : $"{file}.pdf";
-    }
-
-    private static string GetValidFileName(string fileName)
-    {
-        fileName = Uri.EscapeDataString(fileName.AsFileName(false));
-        return fileName;
+        string escapedFileName = Uri.EscapeDataString(fileName.AsFileName(false));
+        return escapedFileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? fileName : $"{fileName}.pdf";
     }
 
     private async Task<string> GetPreviewFooter(string language)

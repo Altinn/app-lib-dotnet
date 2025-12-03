@@ -12,6 +12,8 @@ using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Layout;
+using Altinn.App.Core.Models.Layout.Components;
 using Altinn.App.Core.Tests.TestUtils;
 using Altinn.App.PlatformServices.Tests.Mocks;
 using Altinn.Platform.Storage.Interface.Models;
@@ -384,6 +386,11 @@ public class PdfServiceTests
             Id = $"509378/{Guid.NewGuid()}",
             AppId = "digdir/not-really-an-app",
             Org = "digdir",
+            Process = new() { CurrentTask = new() { ElementId = "Task_1" } },
+            Data = new()
+            {
+                new() { Id = Guid.NewGuid().ToString(), DataType = "Model" },
+            },
         };
 
         // Act
@@ -441,6 +448,11 @@ public class PdfServiceTests
             Id = $"509378/{Guid.NewGuid()}",
             AppId = "digdir/not-really-an-app",
             Org = "digdir",
+            Process = new() { CurrentTask = new() { ElementId = "Task_1" } },
+            Data = new()
+            {
+                new() { Id = Guid.NewGuid().ToString(), DataType = "Model" },
+            },
         };
 
         // Act
@@ -481,11 +493,18 @@ public class PdfServiceTests
         var mockAppMetadata = new Mock<IAppMetadata>();
 
         // Setup GetApplicationMetadata to return an ApplicationMetadata with DataTypes initialized
+        var dataType = new DataType() { Id = "Model", AppLogic = new ApplicationLogic() };
         var applicationMetadata = new ApplicationMetadata("digdir/not-really-an-app")
         {
-            DataTypes = new List<DataType>(),
+            DataTypes = new List<DataType> { dataType },
         };
         mockAppMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
+
+        // Setup GetLayoutModelForTask to return a valid LayoutModel
+        var layoutSetComponent = new LayoutSetComponent(new List<PageComponent>(), "layout", dataType);
+        var layoutModel = new LayoutModel([layoutSetComponent], null);
+        var mockAppResourcesForInitializer = appResources ?? _appResources;
+        mockAppResourcesForInitializer.Setup(x => x.GetLayoutModelForTask(It.IsAny<string>())).Returns(layoutModel);
 
         var initializer = new InstanceDataUnitOfWorkInitializer(
             dataClient?.Object ?? _dataClient.Object,
