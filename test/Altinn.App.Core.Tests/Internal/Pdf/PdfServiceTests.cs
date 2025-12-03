@@ -493,11 +493,8 @@ public class PdfServiceTests
         var mockAppMetadata = new Mock<IAppMetadata>();
 
         // Setup GetApplicationMetadata to return an ApplicationMetadata with DataTypes initialized
-        var dataType = new DataType() { Id = "Model", AppLogic = new ApplicationLogic() };
-        var applicationMetadata = new ApplicationMetadata("digdir/not-really-an-app")
-        {
-            DataTypes = new List<DataType> { dataType },
-        };
+        var dataType = new DataType() { Id = "Model" };
+        var applicationMetadata = new ApplicationMetadata("digdir/not-really-an-app") { DataTypes = [dataType] };
         mockAppMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
 
         // Setup GetLayoutModelForTask to return a valid LayoutModel
