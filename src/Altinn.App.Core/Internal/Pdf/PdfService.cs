@@ -311,7 +311,7 @@ public class PdfService : IPdfService
             LayoutEvaluatorState state =
                 cachedDataMutator.GetLayoutEvaluatorState()
                 ?? throw new InvalidOperationException("LayoutEvaluatorState should not be null.");
-            
+
             DataElementIdentifier? dataElementIdentifier =
                 subformDataElementId != null ? new DataElementIdentifier(subformDataElementId) : default;
 
