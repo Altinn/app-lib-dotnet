@@ -30,10 +30,10 @@ internal class SubformPdfServiceTask(
         string subformDataTypeId = config.SubformDataTypeId;
         bool parallelExecution = config.ParallelExecution;
 
-        List<DataElement> subformDataElements = instance.Data.Where(x => x.DataType == subformDataTypeId).ToList();
-
         // Clean up any existing PDFs from previous failed attempts
         await processTaskCleaner.RemoveAllDataElementsGeneratedFromTask(instance, taskId);
+
+        List<DataElement> subformDataElements = instance.Data.Where(x => x.DataType == subformDataTypeId).ToList();
 
         if (parallelExecution)
         {
