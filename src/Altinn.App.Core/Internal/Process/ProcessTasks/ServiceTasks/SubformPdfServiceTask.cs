@@ -1,7 +1,6 @@
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 
@@ -11,6 +10,7 @@ internal class SubformPdfServiceTask(
     IProcessReader processReader,
     IPdfService pdfService,
     IDataClient dataClient,
+    IProcessTaskCleaner processTaskCleaner,
     ILogger<SubformPdfServiceTask> logger
 ) : IServiceTask
 {
@@ -32,8 +32,8 @@ internal class SubformPdfServiceTask(
 
         List<DataElement> subformDataElements = instance.Data.Where(x => x.DataType == subformDataTypeId).ToList();
 
-        // Clean up any existing subform PDFs from previous failed attempts
-        await CleanupExistingSubformPdfs(context, subformComponentId, subformDataElements);
+        // Clean up any existing PDFs from previous failed attempts
+        await processTaskCleaner.RemoveAllDataElementsGeneratedFromTask(instance, taskId);
 
         if (parallelExecution)
         {
@@ -103,73 +103,6 @@ internal class SubformPdfServiceTask(
         return pdfConfiguration.Validate();
     }
 
-    private async Task CleanupExistingSubformPdfs(
-        ServiceTaskContext context,
-        string subformComponentId,
-        List<DataElement> subformDataElements
-    )
-    {
-        try
-        {
-            Instance instance = context.InstanceDataMutator.Instance;
-
-            // Find existing PDF data elements that might be from previous failed attempts
-            List<DataElement> existingPdfs = instance
-                .Data.Where(d => d.DataType == "ref-data-as-pdf")
-                .Where(d => HasSubformMetadata(d, subformComponentId, subformDataElements))
-                .ToList();
-
-            if (existingPdfs.Count > 0)
-            {
-                logger.LogInformation(
-                    "Found {Count} existing subform PDFs to clean up for component {ComponentId} in instance {InstanceId}",
-                    existingPdfs.Count,
-                    subformComponentId,
-                    instance.Id
-                );
-
-                var instanceIdentifier = new InstanceIdentifier(instance);
-
-                foreach (DataElement? pdf in existingPdfs)
-                {
-                    try
-                    {
-                        await dataClient.DeleteData(
-                            instanceIdentifier.InstanceOwnerPartyId,
-                            instanceIdentifier.InstanceGuid,
-                            Guid.Parse(pdf.Id),
-                            delay: false, // Delete immediately
-                            cancellationToken: context.CancellationToken
-                        );
-
-                        logger.LogDebug(
-                            "Deleted existing subform PDF {DataElementId} from instance {InstanceId}",
-                            pdf.Id,
-                            instance.Id
-                        );
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(
-                            ex,
-                            "Failed to delete existing subform PDF {DataElementId} from instance {InstanceId}",
-                            pdf.Id,
-                            instance.Id
-                        );
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(
-                ex,
-                "Error during subform PDF cleanup in instance {InstanceId}",
-                context.InstanceDataMutator.Instance.Id
-            );
-        }
-    }
-
     private async Task AddSubformPdfMetadata(
         Instance instance,
         DataElement pdfDataElement,
@@ -185,24 +118,5 @@ internal class SubformPdfServiceTask(
         };
 
         await dataClient.Update(instance, pdfDataElement, cancellationToken: ct);
-    }
-
-    private static bool HasSubformMetadata(
-        DataElement dataElement,
-        string subformComponentId,
-        List<DataElement> subformDataElements
-    )
-    {
-        // Check if this PDF has metadata indicating it's from our subform component
-        if (dataElement.Metadata?.Any(m => m.Key == "subformComponentId" && m.Value == subformComponentId) == true)
-        {
-            return true;
-        }
-
-        // Fallback: Check if this PDF has metadata indicating it's from any of our subform data elements
-        List<string> subformDataElementIds = subformDataElements.Select(d => d.Id).ToList();
-        return dataElement.Metadata?.Any(m =>
-                m.Key == "subformDataElementId" && subformDataElementIds.Contains(m.Value)
-            ) == true;
     }
 }

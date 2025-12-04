@@ -1,8 +1,10 @@
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
@@ -17,6 +19,7 @@ public class SubformPdfServiceTaskTests
     private readonly Mock<ILogger<SubformPdfServiceTask>> _loggerMock = new();
     private readonly Mock<IProcessReader> _processReaderMock = new();
     private readonly Mock<IDataClient> _dataClientMock = new();
+    private readonly Mock<IProcessTaskCleaner> _processTaskCleanerMock = new();
     private readonly SubformPdfServiceTask _serviceTask;
 
     private const string SubformComponentId = "subform-mopeder";
@@ -65,6 +68,7 @@ public class SubformPdfServiceTaskTests
             _processReaderMock.Object,
             _pdfServiceMock.Object,
             _dataClientMock.Object,
+            _processTaskCleanerMock.Object,
             _loggerMock.Object
         );
     }
@@ -200,6 +204,496 @@ public class SubformPdfServiceTaskTests
         result.Should().BeOfType<ServiceTaskSuccessResult>();
     }
 
+    // ===== CLEANUP TESTS =====
+
+    [Fact]
+    public async Task Execute_Should_CallProcessTaskCleanerWithCorrectTaskId()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: false);
+        var instance = CreateInstanceWithSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        // Act
+        await _serviceTask.Execute(context);
+
+        // Assert - verify ProcessTaskCleaner was called with the correct taskId
+        _processTaskCleanerMock.Verify(
+            x =>
+                x.RemoveAllDataElementsGeneratedFromTask(
+                    It.Is<Instance>(i => i == instance),
+                    It.Is<string>(t => t == "taskId")
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task Execute_WhenCleanupFails_Should_PropagateException()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: false);
+        var instance = CreateInstanceWithSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        _processTaskCleanerMock
+            .Setup(x => x.RemoveAllDataElementsGeneratedFromTask(It.IsAny<Instance>(), It.IsAny<string>()))
+            .ThrowsAsync(new Exception("Cleanup failed"));
+
+        // Act & Assert - should propagate the exception
+        await Assert.ThrowsAsync<Exception>(async () => await _serviceTask.Execute(context));
+    }
+
+    // ===== METADATA TESTS =====
+
+    [Fact]
+    public async Task AddSubformPdfMetadata_Should_SetCorrectMetadata()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: false);
+        var instance = CreateInstanceWithSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        // Act
+        await _serviceTask.Execute(context);
+
+        // Assert - verify metadata was set correctly for both PDFs
+        _dataClientMock.Verify(
+            x =>
+                x.Update(
+                    It.IsAny<Instance>(),
+                    It.Is<DataElement>(de =>
+                        de.Metadata != null
+                        && de.Metadata.Any(m => m.Key == "subformComponentId" && m.Value == SubformComponentId)
+                        && de.Metadata.Any(m =>
+                            m.Key == "subformDataElementId"
+                            && (m.Value == "data-element-1" || m.Value == "data-element-2")
+                        )
+                    ),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(2)
+        );
+    }
+
+    [Fact]
+    public async Task AddSubformPdfMetadata_Should_CallUpdateWithCorrectParameters()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: false);
+        var instance = CreateInstanceWithSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        // Act
+        await _serviceTask.Execute(context);
+
+        // Assert
+        _dataClientMock.Verify(
+            x =>
+                x.Update(
+                    It.Is<Instance>(i => i == instance),
+                    It.Is<DataElement>(de => de.Id.StartsWith("pdf-")),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(2)
+        );
+    }
+
+    // ===== CONFIGURATION VALIDATION TESTS =====
+
+    [Fact]
+    public async Task Execute_WithMissingSubformComponentId_Should_ThrowApplicationConfigException()
+    {
+        // Arrange
+        _processReaderMock
+            .Setup(x => x.GetAltinnTaskExtension(It.IsAny<string>()))
+            .Returns(
+                new AltinnTaskExtension
+                {
+                    TaskType = "subform-pdf",
+                    SubformPdfConfiguration = new AltinnSubformPdfConfiguration
+                    {
+                        SubformComponentId = null, // Missing
+                        SubformDataTypeId = SubformDataTypeId,
+                    },
+                }
+            );
+
+        var instance = CreateInstanceWithSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(async () =>
+            await _serviceTask.Execute(context)
+        );
+        Assert.Contains("SubformComponentId", exception.Message);
+    }
+
+    [Fact]
+    public async Task Execute_WithMissingSubformDataTypeId_Should_ThrowApplicationConfigException()
+    {
+        // Arrange
+        _processReaderMock
+            .Setup(x => x.GetAltinnTaskExtension(It.IsAny<string>()))
+            .Returns(
+                new AltinnTaskExtension
+                {
+                    TaskType = "subform-pdf",
+                    SubformPdfConfiguration = new AltinnSubformPdfConfiguration
+                    {
+                        SubformComponentId = SubformComponentId,
+                        SubformDataTypeId = null, // Missing
+                    },
+                }
+            );
+
+        var instance = CreateInstanceWithSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(async () =>
+            await _serviceTask.Execute(context)
+        );
+        Assert.Contains("SubformDataTypeId", exception.Message);
+    }
+
+    [Fact]
+    public async Task Execute_WithWhitespaceFilename_Should_NormalizeToNull()
+    {
+        // Arrange
+        _processReaderMock
+            .Setup(x => x.GetAltinnTaskExtension(It.IsAny<string>()))
+            .Returns(
+                new AltinnTaskExtension
+                {
+                    TaskType = "subform-pdf",
+                    SubformPdfConfiguration = new AltinnSubformPdfConfiguration
+                    {
+                        SubformComponentId = SubformComponentId,
+                        SubformDataTypeId = SubformDataTypeId,
+                        FilenameTextResourceKey = "   ", // Whitespace only
+                        ParallelExecution = false,
+                    },
+                }
+            );
+
+        var instance = CreateInstanceWithSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        // Act
+        await _serviceTask.Execute(context);
+
+        // Assert - should be called with null filename
+        _pdfServiceMock.Verify(
+            x =>
+                x.GenerateAndStoreSubformPdf(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.Is<string?>(filename => filename == null),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.AtLeastOnce
+        );
+    }
+
+    // ===== ERROR HANDLING TESTS =====
+
+    [Fact]
+    public async Task Execute_WhenPdfGenerationFails_Should_PropagateException()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: false);
+        var instance = CreateInstanceWithSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        _pdfServiceMock
+            .Setup(x =>
+                x.GenerateAndStoreSubformPdf(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ThrowsAsync(new Exception("PDF generation failed"));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(async () => await _serviceTask.Execute(context));
+    }
+
+    [Fact]
+    public async Task Execute_WhenMetadataUpdateFails_Should_PropagateException()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: false);
+        var instance = CreateInstanceWithSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        _dataClientMock
+            .Setup(x =>
+                x.Update(
+                    It.IsAny<Instance>(),
+                    It.IsAny<DataElement>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ThrowsAsync(new Exception("Metadata update failed"));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(async () => await _serviceTask.Execute(context));
+    }
+
+    [Fact]
+    public async Task Execute_ParallelExecution_WhenOnePdfFails_Should_FailEntireOperation()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: true);
+        var instance = CreateInstanceWithMultipleSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        var callCount = 0;
+        _pdfServiceMock
+            .Setup(x =>
+                x.GenerateAndStoreSubformPdf(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(
+                (Instance _, string _, string _, string _, string subformDataElementId, CancellationToken _) =>
+                {
+                    callCount++;
+                    if (callCount == 2)
+                        throw new Exception("Second PDF failed");
+                    return new DataElement { Id = $"pdf-{subformDataElementId}" };
+                }
+            );
+
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(async () => await _serviceTask.Execute(context));
+    }
+
+    [Fact]
+    public async Task Execute_WithCancellationToken_Should_PropagateCancellation()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: false);
+        var instance = CreateInstanceWithSubformData();
+        var cts = new CancellationTokenSource();
+        cts.Cancel(); // Already cancelled
+        var context = CreateServiceTaskContext(instance, cts.Token);
+
+        _pdfServiceMock
+            .Setup(x =>
+                x.GenerateAndStoreSubformPdf(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ThrowsAsync(new OperationCanceledException());
+
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(async () => await _serviceTask.Execute(context));
+    }
+
+    // ===== INTEGRATION SCENARIOS =====
+
+    [Fact]
+    public async Task Execute_Should_CleanupBeforePdfGeneration()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: false);
+        var instance = CreateInstanceWithSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        // Act
+        await _serviceTask.Execute(context);
+
+        // Assert - cleanup should happen before PDF generation
+        _processTaskCleanerMock.Verify(
+            x => x.RemoveAllDataElementsGeneratedFromTask(It.IsAny<Instance>(), It.IsAny<string>()),
+            Times.Once
+        );
+
+        // And PDFs should be generated
+        _pdfServiceMock.Verify(
+            x =>
+                x.GenerateAndStoreSubformPdf(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(2)
+        );
+    }
+
+    [Fact]
+    public async Task Execute_WithMultipleSubformDataElements_Should_CreateCorrectMetadataForEach()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: false);
+        var instance = CreateInstanceWithMultipleSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        // Act
+        await _serviceTask.Execute(context);
+
+        // Assert - verify each PDF gets metadata linking to correct source
+        _dataClientMock.Verify(
+            x =>
+                x.Update(
+                    It.IsAny<Instance>(),
+                    It.Is<DataElement>(de =>
+                        de.Metadata != null
+                        && de.Metadata.Any(m => m.Key == "subformDataElementId" && m.Value == "data-element-1")
+                    ),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+
+        _dataClientMock.Verify(
+            x =>
+                x.Update(
+                    It.IsAny<Instance>(),
+                    It.Is<DataElement>(de =>
+                        de.Metadata != null
+                        && de.Metadata.Any(m => m.Key == "subformDataElementId" && m.Value == "data-element-2")
+                    ),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+
+        _dataClientMock.Verify(
+            x =>
+                x.Update(
+                    It.IsAny<Instance>(),
+                    It.Is<DataElement>(de =>
+                        de.Metadata != null
+                        && de.Metadata.Any(m => m.Key == "subformDataElementId" && m.Value == "data-element-3")
+                    ),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    // ===== EDGE CASES =====
+
+    [Fact]
+    public async Task Execute_WithSingleSubformDataElement_Should_WorkCorrectly()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: false);
+        var instance = CreateInstanceWithSingleSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        // Act
+        var result = await _serviceTask.Execute(context);
+
+        // Assert
+        result.Should().BeOfType<ServiceTaskSuccessResult>();
+        _pdfServiceMock.Verify(
+            x =>
+                x.GenerateAndStoreSubformPdf(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.Is<string>(id => id == "single-data-element"),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task Execute_WithManySubformDataElements_Should_HandleAll()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: true);
+        var instance = CreateInstanceWithManySubformData(10);
+        var context = CreateServiceTaskContext(instance);
+
+        // Act
+        var result = await _serviceTask.Execute(context);
+
+        // Assert
+        result.Should().BeOfType<ServiceTaskSuccessResult>();
+        _pdfServiceMock.Verify(
+            x =>
+                x.GenerateAndStoreSubformPdf(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(10)
+        );
+    }
+
+    [Fact]
+    public async Task Execute_Should_PassCancellationTokenToAllDependencies()
+    {
+        // Arrange
+        SetupProcessReader(parallelExecution: false);
+        var instance = CreateInstanceWithSubformData();
+        var cts = new CancellationTokenSource();
+        var context = CreateServiceTaskContext(instance, cts.Token);
+
+        // Act
+        await _serviceTask.Execute(context);
+
+        // Assert - verify cancellation token was passed to dependencies
+        _pdfServiceMock.Verify(
+            x =>
+                x.GenerateAndStoreSubformPdf(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.Is<CancellationToken>(ct => ct == cts.Token)
+                ),
+            Times.AtLeastOnce
+        );
+
+        _dataClientMock.Verify(
+            x =>
+                x.Update(
+                    It.IsAny<Instance>(),
+                    It.IsAny<DataElement>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.Is<CancellationToken>(ct => ct == cts.Token)
+                ),
+            Times.AtLeastOnce
+        );
+    }
+
     private void SetupProcessReader(bool parallelExecution)
     {
         _processReaderMock
@@ -245,10 +739,58 @@ public class SubformPdfServiceTaskTests
         };
     }
 
-    private static ServiceTaskContext CreateServiceTaskContext(Instance instance)
+    private static ServiceTaskContext CreateServiceTaskContext(
+        Instance instance,
+        CancellationToken cancellationToken = default
+    )
     {
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
         instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
-        return new ServiceTaskContext { InstanceDataMutator = instanceMutatorMock.Object };
+        return new ServiceTaskContext
+        {
+            InstanceDataMutator = instanceMutatorMock.Object,
+            CancellationToken = cancellationToken,
+        };
+    }
+
+    private static Instance CreateInstanceWithMultipleSubformData()
+    {
+        return new Instance
+        {
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "taskId" } },
+            Data = new List<DataElement>
+            {
+                new() { Id = "data-element-1", DataType = SubformDataTypeId },
+                new() { Id = "data-element-2", DataType = SubformDataTypeId },
+                new() { Id = "data-element-3", DataType = SubformDataTypeId },
+            },
+        };
+    }
+
+    private static Instance CreateInstanceWithSingleSubformData()
+    {
+        return new Instance
+        {
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "taskId" } },
+            Data = new List<DataElement>
+            {
+                new() { Id = "single-data-element", DataType = SubformDataTypeId },
+            },
+        };
+    }
+
+    private static Instance CreateInstanceWithManySubformData(int count)
+    {
+        var dataElements = new List<DataElement>();
+        for (int i = 0; i < count; i++)
+        {
+            dataElements.Add(new DataElement { Id = $"data-element-{i}", DataType = SubformDataTypeId });
+        }
+
+        return new Instance
+        {
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "taskId" } },
+            Data = dataElements,
+        };
     }
 }
