@@ -44,9 +44,11 @@ public class AppOption
     public string? HelpText { get; set; }
 
     /// <summary>
-    /// Tags used for grouping in combination with <see cref="AppOptions.TagNames"/>
+    /// Tags used for grouping in combination with tagNames found in library code lists
     /// Eg: tagNames: ["region"], tags: ["europe"]
     /// </summary>
+    [JsonPropertyName("tags")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, string>? Tags { get; set; }
 }
 
@@ -89,6 +91,7 @@ internal class AppOptionConverter : JsonConverter<AppOption>
         string? label = null;
         string? description = null;
         string? helpText = null;
+        Dictionary<string, string>? tags = null;
         AppOptionValueType valueType = AppOptionValueType.Null;
 
         while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
@@ -111,6 +114,9 @@ internal class AppOptionConverter : JsonConverter<AppOption>
                     case "helptext":
                         helpText = reader.GetString();
                         break;
+                    case "tags":
+                        tags = JsonSerializer.Deserialize<Dictionary<string, string>>(ref reader, options);
+                        break;
                     default:
                         throw new JsonException($"Unknown property {propertyName ?? "'NULL'"} on AppOption");
                 }
@@ -124,6 +130,7 @@ internal class AppOptionConverter : JsonConverter<AppOption>
             Label = label ?? throw new JsonException("Missing required property 'label' on AppOption"),
             Description = description,
             HelpText = helpText,
+            Tags = tags,
         };
     }
 
@@ -199,6 +206,12 @@ internal class AppOptionConverter : JsonConverter<AppOption>
         if (!string.IsNullOrEmpty(value.HelpText))
         {
             writer.WriteString("helpText", value.HelpText);
+        }
+
+        if (value.Tags != null)
+        {
+            writer.WritePropertyName("tags");
+            JsonSerializer.Serialize(writer, value.Tags, options);
         }
         writer.WriteEndObject();
     }

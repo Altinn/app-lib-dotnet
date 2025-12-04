@@ -3227,7 +3227,7 @@
           {
             "name": "optionsIdOrCreatorOrg",
             "in": "path",
-            "description": "The optionsId configured for the provider in Program.cs or Organization that initially created the code list",
+            "description": "The optionsId configured for the provider in Program.cs or Organization that created the code list",
             "required": true,
             "schema": {
               "type": "string"

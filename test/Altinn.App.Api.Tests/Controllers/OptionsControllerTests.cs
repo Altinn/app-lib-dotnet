@@ -1,5 +1,6 @@
 using System.Net;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using FluentAssertions;
@@ -178,6 +179,93 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
             .Be(
                 "[{\"value\":null,\"label\":\"\"},{\"value\":\"SomeString\",\"label\":\"False\"},{\"value\":true,\"label\":\"True\"},{\"value\":0,\"label\":\"Zero\"},{\"value\":1,\"label\":\"One\",\"description\":\"This is a description\",\"helpText\":\"This is a help text\"}]"
             );
+    }
+
+    [Fact]
+    public async Task Get_ShouldReturnLibraryOptionsDirectlyNotThroughProvider()
+    {
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddTransient<IAltinn3LibraryCodeListService, DummyAltinn3LibraryCodeListService>();
+        };
+
+        string org = "tdd";
+        string app = "contributer-restriction";
+        HttpClient client = GetRootedClient(org, app);
+
+        string url = $"/{org}/{app}/api/options/someCreatorOrg/someCodeListId/someVersion";
+        HttpResponseMessage response = await client.GetAsync(url);
+        var content = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response
+            .Headers.Should()
+            .ContainKey("Altinn-DownstreamParameters")
+            .WhoseValue.Should()
+            .AllBe("source=test-name,version=1");
+        content
+            .Should()
+            .Be(
+                "[{\"value\":\"Value1\",\"label\":\"En label\",\"description\":\"En beskrivelse\",\"helpText\":\"En hjelpetekst\",\"tags\":{\"test-tag\":\"test-tag-name\"}}]"
+            );
+    }
+}
+
+public class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeListService
+{
+    private readonly Altinn3LibraryCodeListResponse _codeListResponse = new()
+    {
+        Codes = new List<Altinn3LibraryCodeListItem>()
+        {
+            new()
+            {
+                Value = "Value1",
+                Label = new Dictionary<string, string>() { { "nb", "En label" } },
+                Description = new Dictionary<string, string>() { { "nb", "En beskrivelse" } },
+                HelpText = new Dictionary<string, string>() { { "nb", "En hjelpetekst" } },
+                Tags = ["test-tag"],
+            },
+        },
+        Version = "1",
+        Source = new() { Name = "test-name" },
+        TagNames = ["test-tag-name"],
+    };
+
+    public Task<Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(
+        string org,
+        string codeListId,
+        string? version
+    )
+    {
+        return Task.FromResult(_codeListResponse);
+    }
+
+    public AppOptions MapAppOptions(Altinn3LibraryCodeListResponse libraryCodeLists, string? language)
+    {
+        var responseOptionOne = libraryCodeLists.Codes.First();
+        return new AppOptions()
+        {
+            Parameters = new()
+            {
+                { "source", _codeListResponse.Source.Name },
+                { "version", _codeListResponse.Version },
+            },
+            Options = new List<AppOption>()
+            {
+                new()
+                {
+                    Value = responseOptionOne.Value,
+                    Label = responseOptionOne.Label["nb"],
+                    Description = responseOptionOne.Description["nb"],
+                    HelpText = responseOptionOne.HelpText["nb"],
+                    Tags = new Dictionary<string, string>()
+                    {
+                        { libraryCodeLists.TagNames.First(), responseOptionOne.Tags.First() },
+                    },
+                },
+            },
+        };
     }
 }
 

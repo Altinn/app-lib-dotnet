@@ -41,12 +41,15 @@ public class OptionsController : ControllerBase
     /// <summary>
     /// Api that exposes app related options
     /// </summary>
+    /// <remarks>The Tags property in AppOption will only be populated when requesting library code lists</remarks>
     /// <param name="optionsIdOrCreatorOrg">The optionsId configured for the provider in Program.cs or Organization that created the code list</param>
     /// <param name="codeListId">Code list id, required if creatorOrg is provided</param>
     /// <param name="version">Code list version, only used in combination with creator org and code list id, defaults to latest if not provided</param>
     /// <param name="queryParams">Query parameters supplied</param>
     /// <param name="language">The language selected by the user, ISO 639-1 (eg. nb)</param>
-    /// <returns>The options list</returns>
+    /// <returns>The options list.</returns>
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [HttpGet("{optionsIdOrCreatorOrg}/{codeListId?}/{version?}")]
     public async Task<IActionResult> Get(
         [FromRoute] string optionsIdOrCreatorOrg,
@@ -56,30 +59,33 @@ public class OptionsController : ControllerBase
         [FromQuery] string? language = null
     )
     {
+        AppOptions appOptions;
         if (codeListId is null)
         {
-            var appOptions = await _appOptionsService.GetOptionsAsync(optionsIdOrCreatorOrg, language, queryParams);
+            appOptions = await _appOptionsService.GetOptionsAsync(optionsIdOrCreatorOrg, language, queryParams);
             if (appOptions?.Options == null)
             {
                 return NotFound();
             }
-
-            HttpContext.Response.Headers.Append(
-                "Altinn-DownstreamParameters",
-                appOptions.Parameters.ToUrlEncodedNameValueString(',')
+        }
+        else
+        {
+            using var telemetry = _telemetry?.StartGetOptionsActivity();
+            var altinn3LibraryCodeListResponse = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
+                optionsIdOrCreatorOrg,
+                codeListId,
+                version
             );
 
-            return Ok(appOptions.Options);
+            appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
         }
 
-        using var telemetry = _telemetry?.StartGetOptionsActivity();
-        var appOptionsOrgLibrary = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
-            optionsIdOrCreatorOrg,
-            codeListId,
-            version
+        HttpContext.Response.Headers.Append(
+            "Altinn-DownstreamParameters",
+            appOptions.Parameters.ToUrlEncodedNameValueString(',')
         );
 
-        return Ok(_altinn3LibraryCodeListService.MapAppOptions(appOptionsOrgLibrary, language).Options);
+        return Ok(appOptions.Options);
     }
 
     /// <summary>
