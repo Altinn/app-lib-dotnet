@@ -345,7 +345,9 @@ public class PdfService : IPdfService
         }
 
         string escapedFileName = Uri.EscapeDataString(fileName.AsFileName(false));
-        return escapedFileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? fileName : $"{fileName}.pdf";
+        return escapedFileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+            ? escapedFileName
+            : $"{escapedFileName}.pdf";
     }
 
     private async Task<string> GetPreviewFooter(string language)
