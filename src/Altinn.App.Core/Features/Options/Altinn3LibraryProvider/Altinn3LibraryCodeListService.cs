@@ -54,18 +54,18 @@ public class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListService
     }
 
     /// <inheritdoc/>
-    public AppOptions MapAppOptions(Altinn3LibraryCodeListResponse libraryCodeLists, string? language)
+    public AppOptions MapAppOptions(Altinn3LibraryCodeListResponse libraryCodeListResponse, string? language)
     {
-        var options = libraryCodeLists
+        var options = libraryCodeListResponse
             .Codes.Select(code =>
             {
                 Dictionary<string, string>? tagDict = null;
                 if (
-                    (code.Tags is not null && libraryCodeLists.TagNames is not null)
-                    && code.Tags.Count == libraryCodeLists.TagNames.Count
+                    (code.Tags is not null && libraryCodeListResponse.TagNames is not null)
+                    && code.Tags.Count == libraryCodeListResponse.TagNames.Count
                 )
                 {
-                    tagDict = libraryCodeLists
+                    tagDict = libraryCodeListResponse
                         .TagNames.Select((k, index) => new { k, v = code.Tags[index] })
                         .ToDictionary(x => x.k, x => x.v);
                 }
@@ -86,8 +86,8 @@ public class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListService
             Options = options,
             Parameters = new Dictionary<string, string?>
             {
-                { "version", libraryCodeLists.Version },
-                { "source", libraryCodeLists.Source.Name },
+                { "version", libraryCodeListResponse.Version },
+                { "source", libraryCodeListResponse.Source.Name },
             },
         };
     }

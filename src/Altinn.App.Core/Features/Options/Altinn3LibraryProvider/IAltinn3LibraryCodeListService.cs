@@ -19,8 +19,8 @@ public interface IAltinn3LibraryCodeListService
     /// <summary>
     /// Mapping Altinn3 library code list response to AppOptions
     /// </summary>
-    /// <param name="libraryCodeLists">Code list input</param>
+    /// <param name="libraryCodeListResponse">Code list input</param>
     /// <param name="language">Prefered language to map to. Has fallback, will try to map to requested language, else Nb, En, then first available (alphabetically by key) if not provided or not found.</param>
     /// <returns>App options</returns>
-    AppOptions MapAppOptions(Altinn3LibraryCodeListResponse libraryCodeLists, string? language);
+    AppOptions MapAppOptions(Altinn3LibraryCodeListResponse libraryCodeListResponse, string? language);
 }

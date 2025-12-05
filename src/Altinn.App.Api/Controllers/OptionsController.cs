@@ -42,8 +42,8 @@ public class OptionsController : ControllerBase
     /// Api that exposes app related options
     /// </summary>
     /// <remarks>The Tags property in AppOption will only be populated when requesting library code lists</remarks>
-    /// <param name="optionsIdOrCreatorOrg">The optionsId configured for the provider in Program.cs or Organization that created the code list</param>
-    /// <param name="codeListId">Code list id, required if creatorOrg is provided</param>
+    /// <param name="optionsIdOrCreatorOrg">The optionsId configured for the provider in Program.cs or the organization that created the code list</param>
+    /// <param name="codeListId">Code list id, required if creator org is provided</param>
     /// <param name="version">Code list version, only used in combination with creator org and code list id, defaults to latest if not provided</param>
     /// <param name="queryParams">Query parameters supplied</param>
     /// <param name="language">The language selected by the user, ISO 639-1 (eg. nb)</param>
@@ -125,7 +125,7 @@ public class OptionsController : ControllerBase
 
         // Only return NotFound if we can't find an options provider.
         // If we find the options provider, but it doesnt' have values, return empty list.
-        if (appOptions == null)
+        if (appOptions.Options == null)
         {
             return NotFound();
         }
