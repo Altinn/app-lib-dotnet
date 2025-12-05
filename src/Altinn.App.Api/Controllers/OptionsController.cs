@@ -1,6 +1,8 @@
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Options;
+using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -15,35 +17,67 @@ namespace Altinn.App.Api.Controllers;
 [ApiController]
 public class OptionsController : ControllerBase
 {
+    private readonly Telemetry? _telemetry;
     private readonly IAppOptionsService _appOptionsService;
+    private readonly IAltinn3LibraryCodeListService _altinn3LibraryCodeListService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OptionsController"/> class.
     /// </summary>
     /// <param name="appOptionsService">Service for handling app options</param>
-    public OptionsController(IAppOptionsService appOptionsService)
+    /// <param name="altinn3LibraryCodeListService">Service for handling Altinn 3 library code lists.</param>
+    /// <param name="telemetry">The telemetry client.</param>
+    public OptionsController(
+        IAppOptionsService appOptionsService,
+        IAltinn3LibraryCodeListService altinn3LibraryCodeListService,
+        Telemetry? telemetry = null
+    )
     {
         _appOptionsService = appOptionsService;
+        _altinn3LibraryCodeListService = altinn3LibraryCodeListService;
+        _telemetry = telemetry;
     }
 
     /// <summary>
     /// Api that exposes app related options
     /// </summary>
-    /// <param name="optionsId">The optionsId</param>
+    /// <remarks>The Tags property in AppOption will only be populated when requesting library code lists</remarks>
+    /// <param name="optionsIdOrCreatorOrg">The optionsId configured for the provider in Program.cs or the organization that created the code list</param>
+    /// <param name="codeListId">Code list id, required if creator org is provided</param>
+    /// <param name="version">Code list version, only used in combination with creator org and code list id, defaults to latest if not provided</param>
     /// <param name="queryParams">Query parameters supplied</param>
-    /// <param name="language">The language selected by the user.</param>
-    /// <returns>The options list</returns>
-    [HttpGet("{optionsId}")]
+    /// <param name="language">The language selected by the user, ISO 639-1 (eg. nb)</param>
+    /// <returns>The options list.</returns>
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [HttpGet("{optionsIdOrCreatorOrg}/{codeListId?}/{version?}")]
     public async Task<IActionResult> Get(
-        [FromRoute] string optionsId,
+        [FromRoute] string optionsIdOrCreatorOrg,
         [FromQuery] Dictionary<string, string> queryParams,
+        [FromRoute] string? codeListId = null,
+        [FromRoute] string? version = null,
         [FromQuery] string? language = null
     )
     {
-        AppOptions appOptions = await _appOptionsService.GetOptionsAsync(optionsId, language, queryParams);
-        if (appOptions?.Options == null)
+        AppOptions appOptions;
+        if (codeListId is null)
         {
-            return NotFound();
+            appOptions = await _appOptionsService.GetOptionsAsync(optionsIdOrCreatorOrg, language, queryParams);
+            if (appOptions?.Options == null)
+            {
+                return NotFound();
+            }
+        }
+        else
+        {
+            using var telemetry = _telemetry?.StartGetOptionsActivity();
+            var altinn3LibraryCodeListResponse = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
+                optionsIdOrCreatorOrg,
+                codeListId,
+                version
+            );
+
+            appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
         }
 
         HttpContext.Response.Headers.Append(
@@ -82,7 +116,7 @@ public class OptionsController : ControllerBase
     {
         var instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId, instanceGuid);
 
-        AppOptions appOptions = await _appOptionsService.GetOptionsAsync(
+        var appOptions = await _appOptionsService.GetOptionsAsync(
             instanceIdentifier,
             optionsId,
             language ?? LanguageConst.Nb,
@@ -91,7 +125,7 @@ public class OptionsController : ControllerBase
 
         // Only return NotFound if we can't find an options provider.
         // If we find the options provider, but it doesnt' have values, return empty list.
-        if (appOptions.Options == null)
+        if (appOptions?.Options == null)
         {
             return NotFound();
         }

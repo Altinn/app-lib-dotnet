@@ -1,8 +1,8 @@
 using System.Net;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -31,11 +31,10 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpResponseMessage response = await client.GetAsync(url);
         var content = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(content);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var headerValue = response.Headers.GetValues("Altinn-DownstreamParameters");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        headerValue.Should().Contain("lang=esperanto");
+        Assert.Contains("lang=esperanto", headerValue);
     }
 
     [Fact]
@@ -74,28 +73,28 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         string url = $"/{org}/{app}/api/options/test?";
         HttpResponseMessage response = await client.GetAsync(url);
         var content = await response.Content.ReadAsStringAsync();
-        response.StatusCode.Should().Be(HttpStatusCode.OK, content);
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            Assert.Fail($"Expected OK but got {response.StatusCode}. Response: {content}.");
+        }
 
-        var headerValue = response
-            .Headers.Should()
-            .Contain((header) => header.Key == "Altinn-DownstreamParameters")
-            .Which.Value;
-        ;
-        response.Should().HaveStatusCode(HttpStatusCode.OK);
-        headerValue
-            .Should()
-            .ContainSingle()
-            .Which.Split(',')
-            .Should()
-            .Contain(
-                new List<string>()
-                {
-                    "language=espa%C3%B1ol",
-                    "level=1",
-                    "variant=Sm%C3%A5viltjakt",
-                    "special=%2C%22.%25",
-                }
-            );
+        Assert.Contains("Altinn-DownstreamParameters", response.Headers.Select(x => x.Key));
+        var headerValue = response.Headers.Single((header) => header.Key == "Altinn-DownstreamParameters").Value;
+
+        Assert.Single(headerValue);
+        var splitHeader = headerValue.Single().Split(',');
+        var expectedHeaderValues = new[]
+        {
+            "language=espa%C3%B1ol",
+            "level=1",
+            "variant=Sm%C3%A5viltjakt",
+            "special=%2C%22.%25",
+        };
+
+        foreach (var expected in expectedHeaderValues)
+        {
+            Assert.Contains(expected, splitHeader);
+        }
         provider.Verify();
     }
 
@@ -115,11 +114,10 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpResponseMessage response = await client.GetAsync(url);
         var content = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(content);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var headerValue = response.Headers.GetValues("Altinn-DownstreamParameters");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        headerValue.Should().NotContain(LanguageConst.Nb);
+        Assert.DoesNotContain(LanguageConst.Nb, headerValue);
     }
 
     [Fact]
@@ -133,12 +131,11 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpResponseMessage response = await client.GetAsync(url);
         var content = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(content);
-        response.Should().HaveStatusCode(HttpStatusCode.OK);
-        content
-            .Should()
-            .Be(
-                """[{"value":null,"label":""},{"value":"string-value","label":"string-label"},{"value":3,"label":"number"},{"value":true,"label":"boolean-true"},{"value":false,"label":"boolean-false"}]"""
-            );
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            """[{"value":null,"label":""},{"value":"string-value","label":"string-label"},{"value":3,"label":"number"},{"value":true,"label":"boolean-true"},{"value":false,"label":"boolean-false"}]""",
+            content
+        );
     }
 
     [Fact]
@@ -152,7 +149,7 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpResponseMessage response = await client.GetAsync(url);
         var content = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(content);
-        response.Should().HaveStatusCode(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -171,13 +168,101 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         HttpResponseMessage response = await client.GetAsync(url);
         var content = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(content);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "[{\"value\":null,\"label\":\"\"},{\"value\":\"SomeString\",\"label\":\"False\"},{\"value\":true,\"label\":\"True\"},{\"value\":0,\"label\":\"Zero\"},{\"value\":1,\"label\":\"One\",\"description\":\"This is a description\",\"helpText\":\"This is a help text\"}]",
+            content
+        );
+    }
 
-        content
-            .Should()
-            .Be(
-                "[{\"value\":null,\"label\":\"\"},{\"value\":\"SomeString\",\"label\":\"False\"},{\"value\":true,\"label\":\"True\"},{\"value\":0,\"label\":\"Zero\"},{\"value\":1,\"label\":\"One\",\"description\":\"This is a description\",\"helpText\":\"This is a help text\"}]"
-            );
+    [Fact]
+    public async Task Get_ShouldReturnLibraryOptionsDirectlyNotThroughProvider()
+    {
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddTransient<IAltinn3LibraryCodeListService, DummyAltinn3LibraryCodeListService>();
+        };
+
+        string org = "tdd";
+        string app = "contributer-restriction";
+        HttpClient client = GetRootedClient(org, app);
+
+        string url = $"/{org}/{app}/api/options/someCreatorOrg/someCodeListId/someVersion";
+        HttpResponseMessage response = await client.GetAsync(url);
+        var content = await response.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(content);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Altinn-DownstreamParameters", response.Headers.Select(x => x.Key));
+
+        var downstreamHeader = response.Headers.Single(x => x.Key == "Altinn-DownstreamParameters").Value.Single();
+        var downstreamParameters = downstreamHeader.Split(',');
+
+        Assert.Contains("source=test-name", downstreamParameters);
+        Assert.Contains("version=1", downstreamParameters);
+        Assert.Equal(2, downstreamParameters.Length);
+        Assert.Equal(
+            "[{\"value\":\"Value1\",\"label\":\"En label\",\"description\":\"En beskrivelse\",\"helpText\":\"En hjelpetekst\",\"tags\":{\"test-tag-name\":\"test-tag\"}}]",
+            content
+        );
+    }
+}
+
+internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeListService
+{
+    private readonly Altinn3LibraryCodeListResponse _codeListResponse = new()
+    {
+        Codes = new List<Altinn3LibraryCodeListItem>()
+        {
+            new()
+            {
+                Value = "Value1",
+                Label = new Dictionary<string, string>() { { "nb", "En label" } },
+                Description = new Dictionary<string, string>() { { "nb", "En beskrivelse" } },
+                HelpText = new Dictionary<string, string>() { { "nb", "En hjelpetekst" } },
+                Tags = ["test-tag"],
+            },
+        },
+        Version = "1",
+        Source = new() { Name = "test-name" },
+        TagNames = ["test-tag-name"],
+    };
+
+    public Task<Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(
+        string org,
+        string codeListId,
+        string? version,
+        CancellationToken cancellationToken
+    )
+    {
+        return Task.FromResult(_codeListResponse);
+    }
+
+    public AppOptions MapAppOptions(Altinn3LibraryCodeListResponse libraryCodeListResponse, string? language)
+    {
+        var responseOptionOne = libraryCodeListResponse.Codes.First();
+        return new AppOptions()
+        {
+            Parameters = new()
+            {
+                { "source", libraryCodeListResponse.Source.Name },
+                { "version", libraryCodeListResponse.Version },
+            },
+            Options = new()
+            {
+                new()
+                {
+                    Value = responseOptionOne.Value,
+                    Label = responseOptionOne.Label["nb"],
+                    Description = responseOptionOne.Description?["nb"],
+                    HelpText = responseOptionOne.HelpText?["nb"],
+                    Tags = new Dictionary<string, string>
+                    {
+                        { libraryCodeListResponse.TagNames?.First()!, responseOptionOne.Tags?.First()! },
+                    },
+                },
+            },
+        };
     }
 }
 
