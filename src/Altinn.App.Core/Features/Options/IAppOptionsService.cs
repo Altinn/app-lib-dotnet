@@ -1,4 +1,3 @@
-using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Options;

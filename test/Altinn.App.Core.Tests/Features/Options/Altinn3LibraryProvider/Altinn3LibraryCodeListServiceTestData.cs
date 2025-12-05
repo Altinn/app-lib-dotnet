@@ -33,7 +33,7 @@ public static class Altinn3LibraryCodeListServiceTestData
     }
 
     public static Altinn3LibraryCodeListResponse GetAltinn3LibraryCodeListResponse(
-        Dictionary<string, string>? labels,
+        Dictionary<string, string> labels,
         Dictionary<string, string>? descriptions,
         Dictionary<string, string>? helpTexts,
         List<string>? tagNames = null,

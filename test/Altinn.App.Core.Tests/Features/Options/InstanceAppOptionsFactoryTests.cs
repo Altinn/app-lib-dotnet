@@ -19,7 +19,7 @@ public class InstanceAppOptionsFactoryTests
 
         var factory = serviceProvider.GetRequiredService<InstanceAppOptionsFactory>();
 
-        IInstanceAppOptionsProvider optionsProvider = factory.GetOptionsProvider("not-vehicles");
+        IInstanceAppOptionsProvider? optionsProvider = factory.GetOptionsProvider("not-vehicles");
 
         optionsProvider.Should().Be(null);
     }
@@ -34,7 +34,7 @@ public class InstanceAppOptionsFactoryTests
         using var serviceProvider = services.BuildStrictServiceProvider();
 
         var factory = serviceProvider.GetRequiredService<InstanceAppOptionsFactory>();
-        IInstanceAppOptionsProvider optionsProvider = factory.GetOptionsProvider("vehicles");
+        IInstanceAppOptionsProvider? optionsProvider = factory.GetOptionsProvider("vehicles");
 
         optionsProvider.Should().BeOfType<VehiclesInstanceAppOptionsProvider>();
         optionsProvider.Id.Should().Be("vehicles");

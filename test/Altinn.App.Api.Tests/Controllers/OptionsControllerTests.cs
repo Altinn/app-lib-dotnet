@@ -237,7 +237,7 @@ public class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeListService
                 { "source", _codeListResponse.Source.Name },
                 { "version", _codeListResponse.Version },
             },
-            Options = new ()
+            Options = new()
             {
                 new()
                 {

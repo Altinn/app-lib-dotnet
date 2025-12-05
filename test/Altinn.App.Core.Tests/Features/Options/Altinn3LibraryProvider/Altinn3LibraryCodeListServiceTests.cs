@@ -114,7 +114,7 @@ public class Altinn3LibraryCodeListServiceTests
     {
         // Arrange
         var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
-            null,
+            new Dictionary<string, string>(),
             null,
             null
         );
@@ -131,7 +131,7 @@ public class Altinn3LibraryCodeListServiceTests
         Assert.NotNull(result.Options);
         Assert.Single(result.Options);
         var option = result.Options.Single();
-        Assert.Null(option.Label);
+        Assert.Equal("", option.Label);
         Assert.Null(option.Description);
         Assert.Null(option.HelpText);
     }

@@ -1,11 +1,22 @@
 namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 
+/// <summary>
+/// Interface for the Altinn 3 library code list API client
+/// </summary>
 public interface IAltinn3LibraryCodeListApiClient
 {
+    /// <summary>
+    /// Get Altinn 3 library code lists
+    /// </summary>
+    /// <param name="org">Organization that created the code list</param>
+    /// <param name="codeListId">Code list id</param>
+    /// <param name="version">Code list version</param>
+    /// <param name="cancellationToken">Cancellation token, cancels the request and JSON deserialization</param>
+    /// <returns>Altinn 3 library code list response</returns>
     Task<Altinn3LibraryCodeListResponse> GetAltinn3LibraryCodeLists(
         string org,
         string codeListId,
-        string version = null,
+        string version,
         CancellationToken cancellationToken = default
     );
 }

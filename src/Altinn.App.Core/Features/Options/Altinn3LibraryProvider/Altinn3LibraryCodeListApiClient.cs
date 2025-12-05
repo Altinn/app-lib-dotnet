@@ -23,6 +23,7 @@ internal class Altinn3LibraryCodeListApiClient : IAltinn3LibraryCodeListApiClien
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<Altinn3LibraryCodeListResponse> GetAltinn3LibraryCodeLists(
         string org,
         string codeListId,
