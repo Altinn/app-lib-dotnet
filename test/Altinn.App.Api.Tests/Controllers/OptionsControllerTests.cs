@@ -237,17 +237,17 @@ public class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeListService
                 { "source", _codeListResponse.Source.Name },
                 { "version", _codeListResponse.Version },
             },
-            Options = new List<AppOption>()
+            Options = new ()
             {
                 new()
                 {
                     Value = responseOptionOne.Value,
                     Label = responseOptionOne.Label["nb"],
-                    Description = responseOptionOne.Description["nb"],
-                    HelpText = responseOptionOne.HelpText["nb"],
-                    Tags = new Dictionary<string, string>()
+                    Description = responseOptionOne.Description?["nb"],
+                    HelpText = responseOptionOne.HelpText?["nb"],
+                    Tags = new Dictionary<string, string>
                     {
-                        { libraryCodeListResponse.TagNames.First(), responseOptionOne.Tags.First() },
+                        { libraryCodeListResponse.TagNames?.First()!, responseOptionOne.Tags?.First()! },
                     },
                 },
             },
