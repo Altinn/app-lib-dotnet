@@ -1,6 +1,6 @@
 ﻿namespace Altinn.App.Core.Tests.Features.Options.Altinn3LibraryProvider;
 
-public class Altinn3LibraryCodeListClientMessageHandlerMock : DelegatingHandler
+internal sealed class Altinn3LibraryCodeListClientMessageHandlerMock : DelegatingHandler
 {
     // Instrumentation to test that caching works
     public int CallCount => _callCount;

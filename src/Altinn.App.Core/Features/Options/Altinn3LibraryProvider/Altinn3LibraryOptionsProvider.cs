@@ -2,7 +2,7 @@ using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 
-internal class Altinn3LibraryOptionsProvider : IAppOptionsProvider
+internal sealed class Altinn3LibraryOptionsProvider : IAppOptionsProvider
 {
     private readonly IAltinn3LibraryCodeListService _altinn3LibraryCodeListService;
 

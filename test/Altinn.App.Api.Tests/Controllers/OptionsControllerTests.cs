@@ -83,10 +83,18 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
 
         Assert.Single(headerValue);
         var splitHeader = headerValue.Single().Split(',');
-        Assert.Contains(
-            ["language=espa%C3%B1ol", "level=1", "variant=Sm%C3%A5viltjakt", "special=%2C%22.%25"],
-            splitHeader
-        );
+        var expectedHeaderValues = new[]
+        {
+            "language=espa%C3%B1ol",
+            "level=1",
+            "variant=Sm%C3%A5viltjakt",
+            "special=%2C%22.%25",
+        };
+
+        foreach (var expected in expectedHeaderValues)
+        {
+            Assert.Contains(expected, splitHeader);
+        }
         provider.Verify();
     }
 
@@ -221,7 +229,8 @@ public class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeListService
     public Task<Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(
         string org,
         string codeListId,
-        string? version
+        string? version,
+        CancellationToken cancellationToken
     )
     {
         return Task.FromResult(_codeListResponse);

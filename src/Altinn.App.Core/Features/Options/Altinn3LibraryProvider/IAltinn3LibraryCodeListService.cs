@@ -13,8 +13,14 @@ public interface IAltinn3LibraryCodeListService
     /// <param name="org">Creator organization</param>
     /// <param name="codeListId">Code list id</param>
     /// <param name="version">Code list version</param>
+    /// <param name="cancellationToken">Cancellation token, cancels HybridCache GetOrCreateAsync</param>
     /// <returns>Altinn 3 library code list response</returns>
-    Task<Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(string org, string codeListId, string? version);
+    Task<Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(
+        string org,
+        string codeListId,
+        string? version,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Mapping Altinn3 library code list response to AppOptions

@@ -46,7 +46,7 @@ public class AppOptionsFactory
         }
 
         throw new KeyNotFoundException(
-            "No app options provider found in the configures services. Please check your services configuration."
+            "No app options provider found in the configured services. Please check your services configuration."
         );
     }
 }

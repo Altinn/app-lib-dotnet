@@ -33,9 +33,11 @@ public class Altinn3LibraryCodeListClientTests
         const string org = "ttd";
         const string codeListId = "SomeCodeListId";
         const string version = "1";
+        const HttpStatusCode expectedStatusCode = HttpStatusCode.Conflict;
+        const string expectedContent = "Conflict";
         var fakeLogger = new FakeLogger<Altinn3LibraryCodeListApiClient>();
         await using var fixture = Fixture.Create(
-            () => new HttpResponseMessage(HttpStatusCode.Conflict) { Content = new StringContent("Conflict") },
+            () => new HttpResponseMessage(expectedStatusCode) { Content = new StringContent(expectedContent) },
             services => services.AddSingleton<ILogger<Altinn3LibraryCodeListApiClient>>(fakeLogger)
         );
 
@@ -52,7 +54,10 @@ public class Altinn3LibraryCodeListClientTests
             $"Exception thrown in GetAltinn3LibraryCodeLists. Code list id: {codeListId}, Version: {version}, Org: {org}",
             latestRecord.Message
         );
-        Assert.Equal("Unexpected response from Altinn3Library", result.Message);
+        Assert.Equal(
+            $"Unexpected response from Altinn3Library. Status: {expectedStatusCode}, Content: {expectedContent}",
+            result.Message
+        );
     }
 
     private sealed record Fixture(ServiceProvider ServiceProvider) : IAsyncDisposable

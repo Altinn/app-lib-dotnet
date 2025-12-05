@@ -3223,11 +3223,12 @@
           "Options"
         ],
         "summary": "Api that exposes app related options",
+        "description": "The Tags property in AppOption will only be populated when requesting library code lists",
         "parameters": [
           {
             "name": "optionsIdOrCreatorOrg",
             "in": "path",
-            "description": "The optionsId configured for the provider in Program.cs or Organization that created the code list",
+            "description": "The optionsId configured for the provider in Program.cs or the organization that created the code list",
             "required": true,
             "schema": {
               "type": "string"
@@ -3248,7 +3249,7 @@
           {
             "name": "codeListId",
             "in": "path",
-            "description": "Code list id, required if creatorOrg is provided",
+            "description": "Code list id, required if creator org is provided",
             "required": true,
             "schema": {
               "type": "string"
@@ -3291,6 +3292,36 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }

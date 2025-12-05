@@ -34,12 +34,16 @@ internal class Altinn3LibraryCodeListApiClient : IAltinn3LibraryCodeListApiClien
         try
         {
             var response = await _httpClient.GetAsync(
-                $"{org}/code_lists/{codeListId}/{version}.json",
+                $"{Uri.EscapeDataString(org)}/code_lists/{Uri.EscapeDataString(codeListId)}/{Uri.EscapeDataString(version)}.json",
                 cancellationToken
             );
+
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                throw new HttpRequestException("Unexpected response from Altinn3Library");
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new HttpRequestException(
+                    $"Unexpected response from Altinn3Library. Status: {response.StatusCode}, Content: {content}"
+                );
             }
 
             return await JsonSerializerPermissive.DeserializeAsync<Altinn3LibraryCodeListResponse>(

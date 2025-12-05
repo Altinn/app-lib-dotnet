@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 /// <summary>
 /// Service for handling Altinn 3 library code lists.
 /// </summary>
-public class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListService
+internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListService
 {
     private readonly HybridCache _hybridCache;
     private readonly IAltinn3LibraryCodeListApiClient _altinn3LibraryCodeListApiClient;
@@ -34,20 +34,17 @@ public class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListService
     public async Task<Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(
         string org,
         string codeListId,
-        string? version
+        string? version,
+        CancellationToken cancellationToken
     )
     {
         version = !string.IsNullOrEmpty(version) ? version : "latest";
         var result = await _hybridCache.GetOrCreateAsync(
             $"Altinn3Library:{org}-{codeListId}-{version}",
-            async cancellationToken =>
-                await _altinn3LibraryCodeListApiClient.GetAltinn3LibraryCodeLists(
-                    org,
-                    codeListId,
-                    version,
-                    cancellationToken
-                ),
-            options: _defaultCacheExpiration
+            async cancel =>
+                await _altinn3LibraryCodeListApiClient.GetAltinn3LibraryCodeLists(org, codeListId, version, cancel),
+            options: _defaultCacheExpiration,
+            cancellationToken: cancellationToken
         );
 
         return result;
