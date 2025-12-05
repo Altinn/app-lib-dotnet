@@ -393,3 +393,5 @@ test/Altinn.App.Integration.Tests/_testapps/*/_packages/
 test/Altinn.App.Integration.Tests/_testapps/*/_shared/
 
 **/_snapshots/_local/
+
+.claude/settings.local.json
