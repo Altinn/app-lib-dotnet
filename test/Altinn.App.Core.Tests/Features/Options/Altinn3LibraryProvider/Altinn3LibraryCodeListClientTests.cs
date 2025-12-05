@@ -54,10 +54,7 @@ public class Altinn3LibraryCodeListClientTests
             $"Exception thrown in GetAltinn3LibraryCodeLists. Code list id: {codeListId}, Version: {version}, Org: {org}",
             latestRecord.Message
         );
-        Assert.Equal(
-            $"Unexpected response from Altinn3Library. Status: {expectedStatusCode}, Content: {expectedContent}",
-            result.Message
-        );
+        Assert.Equal($"Unexpected response from Altinn3Library. Status code: {expectedStatusCode}", result.Message);
     }
 
     private sealed record Fixture(ServiceProvider ServiceProvider) : IAsyncDisposable

@@ -195,10 +195,12 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("Altinn-DownstreamParameters", response.Headers.Select(x => x.Key));
 
-        Assert.Equal(
-            "source=test-name,version=1",
-            string.Join(",", response.Headers.Single(x => x.Key == "Altinn-DownstreamParameters").Value)
-        );
+        var downstreamHeader = response.Headers.Single(x => x.Key == "Altinn-DownstreamParameters").Value.Single();
+        var downstreamParameters = downstreamHeader.Split(',');
+
+        Assert.Contains("source=test-name", downstreamParameters);
+        Assert.Contains("version=1", downstreamParameters);
+        Assert.Equal(2, downstreamParameters.Length);
         Assert.Equal(
             "[{\"value\":\"Value1\",\"label\":\"En label\",\"description\":\"En beskrivelse\",\"helpText\":\"En hjelpetekst\",\"tags\":{\"test-tag-name\":\"test-tag\"}}]",
             content
@@ -206,7 +208,7 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     }
 }
 
-public class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeListService
+internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeListService
 {
     private readonly Altinn3LibraryCodeListResponse _codeListResponse = new()
     {
@@ -243,8 +245,8 @@ public class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeListService
         {
             Parameters = new()
             {
-                { "source", _codeListResponse.Source.Name },
-                { "version", _codeListResponse.Version },
+                { "source", libraryCodeListResponse.Source.Name },
+                { "version", libraryCodeListResponse.Version },
             },
             Options = new()
             {

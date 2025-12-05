@@ -21,14 +21,14 @@ internal sealed class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         Id = optionId;
         _org = org;
         _codeListId = codeListId;
-        _version = !string.IsNullOrEmpty(version) ? version : "latest";
+        _version = version;
         _altinn3LibraryCodeListService = altinn3LibraryCodeListService;
     }
 
     public string Id { get; }
     private readonly string _org;
     private readonly string _codeListId;
-    private readonly string _version;
+    private readonly string? _version;
 
     public async Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
     {

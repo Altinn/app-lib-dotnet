@@ -40,9 +40,8 @@ internal class Altinn3LibraryCodeListApiClient : IAltinn3LibraryCodeListApiClien
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                var content = await response.Content.ReadAsStringAsync(cancellationToken);
                 throw new HttpRequestException(
-                    $"Unexpected response from Altinn3Library. Status: {response.StatusCode}, Content: {content}"
+                    $"Unexpected response from Altinn3Library. Status code: {response.StatusCode}"
                 );
             }
 
@@ -56,9 +55,9 @@ internal class Altinn3LibraryCodeListApiClient : IAltinn3LibraryCodeListApiClien
             _logger.LogError(
                 ex,
                 "Exception thrown in GetAltinn3LibraryCodeLists. Code list id: {CodeListId}, Version: {Version}, Org: {Org}",
-                codeListId,
-                version,
-                org
+                LogSanitizer.Sanitize(codeListId),
+                LogSanitizer.Sanitize(version),
+                LogSanitizer.Sanitize(org)
             );
             throw;
         }

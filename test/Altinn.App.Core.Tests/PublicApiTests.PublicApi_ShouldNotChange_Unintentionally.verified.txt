@@ -1701,7 +1701,7 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider
 }
 namespace Altinn.App.Core.Features.Options
 {
-    public class AppOptionsFactory
+    public sealed class AppOptionsFactory
     {
         public AppOptionsFactory(System.IServiceProvider serviceProvider) { }
         public Altinn.App.Core.Features.IAppOptionsProvider GetOptionsProvider(string optionsId) { }
