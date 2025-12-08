@@ -3223,7 +3223,7 @@
           "Options"
         ],
         "summary": "Api that exposes app related options",
-        "description": "The Tags property in AppOption will only be populated when requesting library code lists",
+        "description": "The Tags field is only populated when requesting library code lists.",
         "parameters": [
           {
             "name": "creatorOrg",
@@ -3320,12 +3320,12 @@
           "Options"
         ],
         "summary": "Api that exposes app related options",
-        "description": "The Tags property in AppOption will only be populated when requesting library code lists",
+        "description": "The Tags field is only populated when requesting library code lists.",
         "parameters": [
           {
             "name": "optionsId",
             "in": "path",
-            "description": "The optionsId configured for the provider in Program.cs",
+            "description": "The optionsId configured for the options provider in the app startup.",
             "required": true,
             "schema": {
               "type": "string"
@@ -3346,7 +3346,7 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user, ISO 639-1 (eg. nb)",
+            "description": "The language selected by the user (ISO 639-1, e.g., 'nb').",
             "schema": {
               "type": "string"
             }

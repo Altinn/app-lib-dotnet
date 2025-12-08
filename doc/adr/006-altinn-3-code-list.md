@@ -1,4 +1,4 @@
-﻿# New endpoint for fetching code lists
+﻿# New way of getting code lists
 
 * Status: in progress
 * Deciders: Squad Data
@@ -9,15 +9,11 @@
 
 ## Problem context
 
-We want to be able to get code lists through
-the API without registering the provider in
-'Program.cs' as is currently required for
-the Altinn 2 code lists.
+We want to be able to get code lists through the API without registering the provider in
+'Program.cs' as is currently required for the Altinn 2 code lists.
 
-The endpoints we currently have for getting code lists
-takes an optionId, queryParams and the language as input. Where
-the optionId is a random string value configured
-through Program.cs. We want to be able to get the code lists
+The endpoints we currently have for getting code lists takes an optionId, queryParams and the language as input. Where
+the optionId is a random string value configured through Program.cs. We want to be able to get the code lists
 without configuring the optionId in Program.cs.
 
 Other things that would be nice to solve at the same time:
@@ -64,12 +60,12 @@ Other things that would be nice to solve at the same time:
 * Pros
   * Less work required in the frontend?
 * Cons
-  * A1C1: Increased complexity since
+  * Increased complexity since
   the endpoint now has to encode what is sent
   in as "optionId" to org, codelist id and version.
-  * A1C2: Can potentially cause confusion between what
+  * Can potentially cause confusion between what
   is an actual optionId and what is not.
-  * A1C4: String parsing complexity, what should be
+  * String parsing complexity, what should be
   encoded as optionId and what should not be.
   * Difficult to determine a format for optionsId that
   consisting of org, code list id and version
@@ -88,7 +84,7 @@ Other things that would be nice to solve at the same time:
 * Cons
   * Can potentially cause confusion on when certain fields must be provided.
   * Doesnt seem possible to document the optional path parameters out of the box in Swagger, all path parameters are required.
-  * The issue above makes it impossible to call the endpoint the old way with just optionsId through Swagger.
+  * The issue above makes it impossible to call the endpoint the old way with just optionsId through Swagger. Swagger complains about missing required parameters missing
   * Route ambiguity, /options/something could match either pattern. So some custom validation will be required.
 
 ### A3: Modify existing path with new query parameters

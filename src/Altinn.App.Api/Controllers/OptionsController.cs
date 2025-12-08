@@ -41,7 +41,7 @@ public class OptionsController : ControllerBase
     /// <summary>
     /// Api that exposes app related options
     /// </summary>
-    /// <remarks>The Tags property in AppOption will only be populated when requesting library code lists</remarks>
+    /// <remarks>The Tags field is only populated when requesting library code lists.</remarks>
     /// <param name="creatorOrg">The organization that created the code list</param>
     /// <param name="codeListId">Code list id, required if creator org is provided</param>
     /// <param name="version">Code list version, only used in combination with creator org and code list id, defaults to latest if not provided</param>
@@ -61,7 +61,8 @@ public class OptionsController : ControllerBase
         var altinn3LibraryCodeListResponse = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
             creatorOrg,
             codeListId,
-            version
+            version,
+            HttpContext.RequestAborted
         );
 
         var appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
@@ -77,10 +78,10 @@ public class OptionsController : ControllerBase
     /// <summary>
     /// Api that exposes app related options
     /// </summary>
-    /// <remarks>The Tags property in AppOption will only be populated when requesting library code lists</remarks>
-    /// <param name="optionsId">The optionsId configured for the provider in Program.cs</param>
+    /// <remarks>The Tags field is only populated when requesting library code lists.</remarks>
+    /// <param name="optionsId">The optionsId configured for the options provider in the app startup.</param>
     /// <param name="queryParams">Query parameters supplied</param>
-    /// <param name="language">The language selected by the user, ISO 639-1 (eg. nb)</param>
+    /// <param name="language">The language selected by the user (ISO 639-1, e.g., 'nb').</param>
     /// <returns>The options list.</returns>
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

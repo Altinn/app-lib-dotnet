@@ -239,6 +239,7 @@ internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeLi
         return Task.FromResult(_codeListResponse);
     }
 
+    // This is a fake implementation, used for testing the controller behavior
     public AppOptions MapAppOptions(Altinn3LibraryCodeListResponse libraryCodeListResponse, string? language)
     {
         var responseOptionOne = libraryCodeListResponse.Codes.First();
@@ -257,10 +258,13 @@ internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeLi
                     Label = responseOptionOne.Label["nb"],
                     Description = responseOptionOne.Description?["nb"],
                     HelpText = responseOptionOne.HelpText?["nb"],
-                    Tags = new Dictionary<string, string>
-                    {
-                        { libraryCodeListResponse.TagNames?.First()!, responseOptionOne.Tags?.First()! },
-                    },
+                    Tags =
+                        libraryCodeListResponse.TagNames is { Count: > 0 } && responseOptionOne.Tags is { Count: > 0 }
+                            ? new Dictionary<string, string>
+                            {
+                                { libraryCodeListResponse.TagNames?.First()!, responseOptionOne.Tags?.First()! },
+                            }
+                            : null,
                 },
             },
         };
