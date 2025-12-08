@@ -28,12 +28,13 @@ public class AltinnSubformPdfConfiguration
     public string? SubformDataTypeId { get; set; }
 
     /// <summary>
-    /// Whether to generate PDFs for multiple subform data elements in parallel or sequentially.
-    /// Defaults to false (sequential) to avoid overwhelming the PDF microservice.
-    /// Set to true only if your PDF microservice can handle concurrent requests.
+    /// The maximum degree of parallelism when generating PDFs for multiple subform data elements.
+    /// Defaults to 1 (sequential) to avoid overwhelming the PDF microservice.
+    /// Set to a higher value (e.g., 4-8) only if your PDF microservice can handle concurrent requests.
+    /// Must be at least 1.
     /// </summary>
-    [XmlElement("parallelExecution", Namespace = "http://altinn.no/process")]
-    public bool ParallelExecution { get; set; }
+    [XmlElement("degreeOfParallelism", Namespace = "http://altinn.no/process")]
+    public int DegreeOfParallelism { get; set; } = 1;
 
     internal ValidAltinnSubformPdfConfiguration Validate()
     {
@@ -49,11 +50,18 @@ public class AltinnSubformPdfConfiguration
         if (SubformDataTypeId.IsNullOrWhitespace(ref errorMessages, $"{nameof(SubformDataTypeId)} is missing."))
             ThrowApplicationConfigException(errorMessages);
 
+        if (DegreeOfParallelism < 1)
+        {
+            errorMessages ??= [];
+            errorMessages.Add($"{nameof(DegreeOfParallelism)} must be at least 1.");
+            ThrowApplicationConfigException(errorMessages);
+        }
+
         return new ValidAltinnSubformPdfConfiguration(
             normalizedFilename,
             SubformComponentId,
             SubformDataTypeId,
-            ParallelExecution
+            DegreeOfParallelism
         );
     }
 
@@ -70,5 +78,5 @@ internal readonly record struct ValidAltinnSubformPdfConfiguration(
     string? FilenameTextResourceKey,
     string SubformComponentId,
     string SubformDataTypeId,
-    bool ParallelExecution
+    int DegreeOfParallelism
 );

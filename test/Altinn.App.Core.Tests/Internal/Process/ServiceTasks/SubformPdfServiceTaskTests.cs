@@ -77,7 +77,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_WithParallelExecution_Should_Call_GenerateAndStorePdf_InParallel()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: true);
+        SetupProcessReader(degreeOfParallelism: 4);
         var instance = CreateInstanceWithSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -106,7 +106,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_WithSequentialExecution_Should_Call_GenerateAndStorePdf_Sequentially()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -135,7 +135,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_WithNoMatchingDataElements_Should_Not_Call_GenerateAndStorePdf()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithoutSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -164,7 +164,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_WithSpecificDataElements_Should_Call_GenerateAndStorePdf_WithCorrectIds()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -207,7 +207,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_Should_CallProcessTaskCleanerWithCorrectTaskId()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -229,7 +229,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_WhenCleanupFails_Should_PropagateException()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -247,7 +247,7 @@ public class SubformPdfServiceTaskTests
     public async Task AddSubformPdfMetadata_Should_SetCorrectMetadata()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -278,7 +278,7 @@ public class SubformPdfServiceTaskTests
     public async Task AddSubformPdfMetadata_Should_CallUpdateWithCorrectParameters()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -371,7 +371,7 @@ public class SubformPdfServiceTaskTests
                         SubformComponentId = SubformComponentId,
                         SubformDataTypeId = SubformDataTypeId,
                         FilenameTextResourceKey = "   ", // Whitespace only
-                        ParallelExecution = false,
+                        DegreeOfParallelism = 1,
                     },
                 }
             );
@@ -397,13 +397,42 @@ public class SubformPdfServiceTaskTests
         );
     }
 
+    [Fact]
+    public async Task Execute_WithInvalidDegreeOfParallelism_Should_ThrowApplicationConfigException()
+    {
+        // Arrange
+        _processReaderMock
+            .Setup(x => x.GetAltinnTaskExtension(It.IsAny<string>()))
+            .Returns(
+                new AltinnTaskExtension
+                {
+                    TaskType = "subform-pdf",
+                    SubformPdfConfiguration = new AltinnSubformPdfConfiguration
+                    {
+                        SubformComponentId = SubformComponentId,
+                        SubformDataTypeId = SubformDataTypeId,
+                        DegreeOfParallelism = 0, // Invalid
+                    },
+                }
+            );
+
+        var instance = CreateInstanceWithSubformData();
+        var context = CreateServiceTaskContext(instance);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ApplicationConfigException>(async () =>
+            await _serviceTask.Execute(context)
+        );
+        Assert.Contains("DegreeOfParallelism", exception.Message);
+    }
+
     // ===== ERROR HANDLING TESTS =====
 
     [Fact]
     public async Task Execute_WhenPdfGenerationFails_Should_PropagateException()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -428,7 +457,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_WhenMetadataUpdateFails_Should_PropagateException()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -451,7 +480,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_ParallelExecution_WhenOnePdfFails_Should_FailEntireOperation()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: true);
+        SetupProcessReader(degreeOfParallelism: 4);
         var instance = CreateInstanceWithMultipleSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -485,7 +514,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_WithCancellationToken_Should_PropagateCancellation()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSubformData();
         var cts = new CancellationTokenSource();
         cts.Cancel(); // Already cancelled
@@ -505,7 +534,7 @@ public class SubformPdfServiceTaskTests
             .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(async () => await _serviceTask.Execute(context));
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await _serviceTask.Execute(context));
     }
 
     // ===== INTEGRATION SCENARIOS =====
@@ -514,7 +543,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_Should_CleanupBeforePdfGeneration()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -546,7 +575,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_WithMultipleSubformDataElements_Should_CreateCorrectMetadataForEach()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithMultipleSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -603,7 +632,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_WithSingleSubformDataElement_Should_WorkCorrectly()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSingleSubformData();
         var context = CreateServiceTaskContext(instance);
 
@@ -630,7 +659,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_WithManySubformDataElements_Should_HandleAll()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: true);
+        SetupProcessReader(degreeOfParallelism: 4);
         var instance = CreateInstanceWithManySubformData(10);
         var context = CreateServiceTaskContext(instance);
 
@@ -657,7 +686,7 @@ public class SubformPdfServiceTaskTests
     public async Task Execute_Should_PassCancellationTokenToAllDependencies()
     {
         // Arrange
-        SetupProcessReader(parallelExecution: false);
+        SetupProcessReader(degreeOfParallelism: 1);
         var instance = CreateInstanceWithSubformData();
         var cts = new CancellationTokenSource();
         var context = CreateServiceTaskContext(instance, cts.Token);
@@ -691,7 +720,7 @@ public class SubformPdfServiceTaskTests
         );
     }
 
-    private void SetupProcessReader(bool parallelExecution)
+    private void SetupProcessReader(int degreeOfParallelism)
     {
         _processReaderMock
             .Setup(x => x.GetAltinnTaskExtension(It.IsAny<string>()))
@@ -704,7 +733,7 @@ public class SubformPdfServiceTaskTests
                         SubformComponentId = SubformComponentId,
                         SubformDataTypeId = SubformDataTypeId,
                         FilenameTextResourceKey = FileName,
-                        ParallelExecution = parallelExecution,
+                        DegreeOfParallelism = degreeOfParallelism,
                     },
                 }
             );

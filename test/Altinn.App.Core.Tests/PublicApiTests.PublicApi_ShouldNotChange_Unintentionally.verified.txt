@@ -3431,10 +3431,10 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
     public class AltinnSubformPdfConfiguration
     {
         public AltinnSubformPdfConfiguration() { }
+        [System.Xml.Serialization.XmlElement("degreeOfParallelism", Namespace="http://altinn.no/process")]
+        public int DegreeOfParallelism { get; set; }
         [System.Xml.Serialization.XmlElement("filenameTextResourceKey", Namespace="http://altinn.no/process")]
         public string? FilenameTextResourceKey { get; set; }
-        [System.Xml.Serialization.XmlElement("parallelExecution", Namespace="http://altinn.no/process")]
-        public bool ParallelExecution { get; set; }
         [System.Xml.Serialization.XmlElement("subformComponentId", Namespace="http://altinn.no/process")]
         public string? SubformComponentId { get; set; }
         [System.Xml.Serialization.XmlElement("subformDataTypeId", Namespace="http://altinn.no/process")]
