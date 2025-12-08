@@ -66,6 +66,10 @@ public class OptionsController : ControllerBase
         );
 
         var appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
+        if (appOptions?.Options == null)
+        {
+            return NotFound();
+        }
 
         HttpContext.Response.Headers.Append(
             "Altinn-DownstreamParameters",

@@ -262,7 +262,7 @@ internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeLi
                         libraryCodeListResponse.TagNames is { Count: > 0 } && responseOptionOne.Tags is { Count: > 0 }
                             ? new Dictionary<string, string>
                             {
-                                { libraryCodeListResponse.TagNames?.First()!, responseOptionOne.Tags?.First()! },
+                                { libraryCodeListResponse.TagNames.First(), responseOptionOne.Tags.First() },
                             }
                             : null,
                 },

@@ -37,9 +37,7 @@ Other things that would be nice to solve at the same time:
 
 * **A1: Use already existing path without modifying it**
   *GET /{org}/{app}/api/options/{optionsId}?language={language}*
-  OptionsId becomes the creator org, codelist id and version.
-  Formatting creator org, codelist id and version into the
-  optionsId string eg. creatorOrg--codelistId--version
+  OptionsId becomes the creator org, codelist id and version. Formatting creator org, codelist id and version into the optionsId string e.g., creatorOrg--codelistId--version
 * **A2: Modify existing path with nullable path variables**
   *GET /{org}/{app}/api/options/{optionIdOrCreatorOrg}/
   {codeListId?}/{version?}&language={language}*
@@ -49,8 +47,7 @@ Other things that would be nice to solve at the same time:
   optionsIdOrCodeListId becomes the codeListId when source=library
 * **A4: Modify existing path so that option id is wild card path segment**
   *GET /{org}/{app}/api/options/{\*\*optionsIdOrLibraryRef}&language={language}*
-  OptionId is now allowed to contain slashes,
-  and can be formated as /{org}/{codeListId}/{version}
+  OptionId is now allowed to contain slashes, and can be formated as /{org}/{codeListId}/{version}
 * **A5: Add a new controller method /{creatorOrg}/{codeListId}?version={version}**
 
 ## Pros and cons
@@ -60,17 +57,11 @@ Other things that would be nice to solve at the same time:
 * Pros
   * Less work required in the frontend?
 * Cons
-  * Increased complexity since
-  the endpoint now has to encode what is sent
-  in as "optionId" to org, codelist id and version.
-  * Can potentially cause confusion between what
-  is an actual optionId and what is not.
-  * String parsing complexity, what should be
-  encoded as optionId and what should not be.
-  * Difficult to determine a format for optionsId that
-  consisting of org, code list id and version
-  that doesnt conflict with actual optionsIds
-  * If org, code list id and version contains special characters (hyphens, dots, etc), the delimiter choice becomes problematic.
+  * Increased complexity since the endpoint now has to encode what is sent in as "optionId" to org, codelist id and version.
+  * Can potentially cause confusion between what is an actual optionId and what is not.
+  * String parsing complexity, what should be encoded as optionId and what should not be.
+  * Difficult to determine a format for optionsId that consisting of org, code list id and version that doesnt conflict with actual optionsIds
+  * If org, code list id and version contains special characters (hyphens, dots, etc.), the delimiter choice becomes problematic.
   * Everything is string; framework can't validate individual components.
 
 ### A2: Modify existing path with nullable path variables
@@ -91,8 +82,7 @@ Other things that would be nice to solve at the same time:
 
 * Pros
   * Clear semantic distinction via source parameter.
-  * Supports B3; no custom parsing of "optionId"
-    will help maintain a lower complexity.
+  * Supports B3; no custom parsing of "optionId" will help maintain a lower anti-pattern complexity.
 * Cons
   * Can potentially cause confusion on when certain fields must be provided.
   * REST anti-pattern, resource identifiers (org, codeListId) should be in path, not query string
@@ -103,10 +93,8 @@ Other things that would be nice to solve at the same time:
   * We know that optionsIds never contains slashes. So we can confidently say that
   optionIds containing / is requesting library code lists
 * Cons
-  * Can potentially cause confusion between what
-    is an actual optionId and what is not.
-  * String parsing complexity, what should be
-    encoded as optionId and what should not be.
+  * Can potentially cause confusion between what is an actual optionId and what is not.
+  * String parsing complexity, what should be encoded as optionId and what should not be.
   * Route conflicts, wild card can accidentally catch routes you didnt intend.
   * Breaking rest conventions, path parameters should be single identifiers, not composite structures.
   * Poor discoverability, API consumers can't tell from the OpenAPI/Swagger docs what format optionsId should be.
