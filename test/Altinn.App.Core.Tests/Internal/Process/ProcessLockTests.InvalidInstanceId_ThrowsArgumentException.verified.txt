@@ -1,0 +1,11 @@
+﻿{
+  Exception: {
+    $type: ArgumentException,
+    Type: ArgumentException,
+    Message: Instance ID was not in the expected format.,
+    StackTrace:
+at Altinn.App.Core.Internal.Process.ProcessLock.ProcessLocker.AcquireAsync(Instance instance)
+--- End of stack trace from previous location ---
+at Xunit.Assert.RecordExceptionAsync(Func`1 testCode)
+  }
+}

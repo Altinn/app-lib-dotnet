@@ -1,0 +1,31 @@
+﻿{
+  Exception: {
+    $type: PlatformHttpResponseSnapshotException,
+    Type: PlatformHttpResponseSnapshotException,
+    StatusCode: 200,
+    ReasonPhrase: OK,
+    HttpVersion: 1.1,
+    Content: ,
+    ContentTruncated: false,
+    Response: {
+      Status: 200 OK,
+      Headers: {
+        Date: DateTime_1,
+        Server: Kestrel,
+        Transfer-Encoding: chunked
+      },
+      Content: {
+        Headers: {
+          Content-Type: application/json
+        },
+        Value: 
+      }
+    },
+    Message: The response from the lock acquisition endpoint was not expected.,
+    StackTrace:
+at Altinn.App.Core.Infrastructure.Clients.Storage.ProcessLockClient.AcquireProcessLock(Guid instanceGuid, Int32 instanceOwnerPartyId, TimeSpan expiration)
+at Altinn.App.Core.Internal.Process.ProcessLock.ProcessLocker.AcquireAsync(Instance instance)
+--- End of stack trace from previous location ---
+at Xunit.Assert.RecordExceptionAsync(Func`1 testCode)
+  }
+}

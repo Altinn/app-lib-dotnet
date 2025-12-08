@@ -1,4 +1,4 @@
-namespace Altinn.App.Api.Infrastructure.Middleware;
+namespace Altinn.App.Core.Internal.Process.ProcessLock;
 
 internal sealed class ProcessLockOptions
 {

@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Net;
 using Altinn.App.Api.Infrastructure.Filters;
-using Altinn.App.Api.Infrastructure.Middleware;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Helpers;
@@ -10,6 +9,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Process.ProcessLock;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.Validation;
@@ -41,6 +41,7 @@ public class ProcessController : ControllerBase
     private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
     private readonly IValidationService _validationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly ProcessLocker _processLocker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -66,6 +67,7 @@ public class ProcessController : ControllerBase
         _processEngineAuthorizer = processEngineAuthorizer;
         _validationService = validationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _processLocker = serviceProvider.GetRequiredService<ProcessLocker>();
     }
 
     /// <summary>
@@ -254,7 +256,6 @@ public class ProcessController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [EnableProcessLock]
     public async Task<ActionResult<AppProcessState>> NextElement(
         [FromRoute] string org,
         [FromRoute] string app,
@@ -269,6 +270,7 @@ public class ProcessController : ControllerBase
         try
         {
             Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+            await using var _ = await _processLocker.AcquireAsync(instance);
 
             var processNextRequest = new ProcessNextRequest
             {

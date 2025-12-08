@@ -46,6 +46,7 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.EventHandlers;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
+using Altinn.App.Core.Internal.Process.ProcessLock;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
@@ -364,6 +365,8 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
         services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
         services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
+
+        services.AddTransient<ProcessLocker>();
 
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();

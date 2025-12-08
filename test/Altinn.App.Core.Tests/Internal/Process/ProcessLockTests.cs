@@ -1,108 +1,75 @@
 using System.Net;
-using Altinn.App.Api.Infrastructure.Middleware;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.Process.ProcessLock;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using WireMock.Matchers.Request;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
 
-namespace Altinn.App.Api.Tests.Middleware;
+namespace Altinn.App.Core.Tests.Internal.Process;
 
-public sealed class ProcessLockMiddlewareTests
+public sealed class ProcessLockTests
 {
-    private sealed record Fixture(IHost Host, WireMockServer Server) : IDisposable
+    private sealed record Fixture(WireMockServer Server, ServiceProvider ServiceProvider) : IDisposable
     {
         public readonly Guid InstanceGuid = Guid.NewGuid();
         public readonly int InstanceOwnerPartyId = 12345;
         private const string RuntimeCookieName = "test-cookie";
         private const string BearerToken = "test-token";
 
-        public static Fixture Create(Action<IServiceCollection>? registerCustomAppServices = null)
+        public readonly string ServerUrl = Server.Url ?? throw new Exception("Missing server URL");
+
+        public static Fixture Create(Action<IServiceCollection>? registerCustomServices = null)
         {
             var server = WireMockServer.Start();
 
-            var host = new HostBuilder()
-                .ConfigureWebHost(webBuilder =>
-                {
-                    webBuilder
-                        .UseTestServer()
-                        .ConfigureServices(services =>
-                        {
-                            services.AddRouting();
+            var services = new ServiceCollection();
 
-                            services.Configure<PlatformSettings>(settings =>
-                            {
-                                var testUrl = server.Url ?? throw new Exception("Missing server URL");
-                                settings.ApiStorageEndpoint =
-                                    testUrl + new Uri(settings.ApiStorageEndpoint).PathAndQuery;
-                            });
+            services.Configure<PlatformSettings>(settings =>
+            {
+                var testUrl = server.Url ?? throw new Exception("Missing server URL");
+                settings.ApiStorageEndpoint = testUrl + new Uri(settings.ApiStorageEndpoint).PathAndQuery;
+            });
 
-                            services.Configure<AppSettings>(settings => settings.RuntimeCookieName = RuntimeCookieName);
+            services.Configure<AppSettings>(settings => settings.RuntimeCookieName = RuntimeCookieName);
 
-                            services.AddHttpClient<ProcessLockClient>();
+            services.AddHttpClient<ProcessLockClient>();
 
-                            services.AddHttpContextAccessor();
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Headers.Cookie = $"{RuntimeCookieName}={BearerToken}";
 
-                            registerCustomAppServices?.Invoke(services);
-                        })
-                        .Configure(app =>
-                        {
-                            app.UseRouting();
-                            app.UseMiddleware<ProcessLockMiddleware>();
-                            app.UseEndpoints(endpoints =>
-                            {
-                                // Endpoint with lock
-                                endpoints
-                                    .MapGet(
-                                        "/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/test",
-                                        () => "Success"
-                                    )
-                                    .WithMetadata(new EnableProcessLockAttribute());
+            var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
+            services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
 
-                                // Endpoint without lock
-                                endpoints.MapGet("/without-lock", () => "No lock required");
+            services.AddTransient<ProcessLocker, ProcessLocker>();
 
-                                // Endpoint with lock that throws exception
-                                endpoints
-                                    .MapGet(
-                                        "/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/test-exception",
-                                        _ => throw new InvalidOperationException("Test exception")
-                                    )
-                                    .WithMetadata(new EnableProcessLockAttribute());
+            registerCustomServices?.Invoke(services);
 
-                                // Endpoint with lock but no route parameters
-                                endpoints
-                                    .MapGet("/invalid-route", () => Results.Ok())
-                                    .WithMetadata(new EnableProcessLockAttribute());
-                            });
-                        });
-                })
-                .Start();
+            var serviceProvider = services.BuildServiceProvider();
 
-            return new Fixture(host, server);
+            return new Fixture(server, serviceProvider);
         }
 
         public void Dispose()
         {
             Server.Stop();
             Server.Dispose();
-            Host.Dispose();
+            ServiceProvider.Dispose();
         }
 
-        public HttpClient GetTestClient()
+        public ProcessLocker GetProcessLocker()
         {
-            var httpClient = Host.GetTestClient();
-            httpClient.DefaultRequestHeaders.Add("cookie", $"{RuntimeCookieName}={BearerToken}");
+            return ServiceProvider.GetRequiredService<ProcessLocker>();
+        }
 
-            return httpClient;
+        public Instance CreateInstance()
+        {
+            return new Instance { Id = $"{InstanceOwnerPartyId}/{InstanceGuid}" };
         }
 
         public IRequestBuilder GetAcquireLockRequestBuilder()
@@ -134,6 +101,8 @@ public sealed class ProcessLockMiddlewareTests
         var acquireLockRequestBuilder = fixture.GetAcquireLockRequestBuilder();
         var releaseLockRequestBuilder = fixture.GetReleaseLockRequestBuilder(lockId);
 
+        var testRequestBuilder = Request.Create().WithPath($"/test").UsingGet();
+
         fixture
             .Server.Given(acquireLockRequestBuilder)
             .RespondWith(
@@ -147,39 +116,33 @@ public sealed class ProcessLockMiddlewareTests
             .Server.Given(releaseLockRequestBuilder)
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK));
 
-        var response = await fixture
-            .GetTestClient()
-            .GetAsync($"/instances/{fixture.InstanceOwnerPartyId}/{fixture.InstanceGuid}/test");
+        fixture.Server.Given(testRequestBuilder).RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK));
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var httpClient = fixture.ServiceProvider.GetRequiredService<IHttpClientFactory>().CreateClient();
 
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.Equal("Success", content);
+        var processLocker = fixture.GetProcessLocker();
+        var instance = fixture.CreateInstance();
+
+        await using (var _ = await processLocker.AcquireAsync(instance))
+        {
+            using var response = await httpClient.GetAsync($"{fixture.ServerUrl}/test");
+            response.EnsureSuccessStatusCode();
+        }
 
         var requests = fixture.Server.LogEntries;
-        Assert.Equal(2, requests.Count);
+        Assert.Equal(3, requests.Count);
 
         var acquireMatchResult = new RequestMatchResult();
         acquireLockRequestBuilder.GetMatchingScore(requests[0].RequestMessage, acquireMatchResult);
         Assert.True(acquireMatchResult.IsPerfectMatch);
 
+        var testMatchResult = new RequestMatchResult();
+        testRequestBuilder.GetMatchingScore(requests[1].RequestMessage, testMatchResult);
+        Assert.True(testMatchResult.IsPerfectMatch);
+
         var releaseMatchResult = new RequestMatchResult();
-        releaseLockRequestBuilder.GetMatchingScore(requests[1].RequestMessage, releaseMatchResult);
+        releaseLockRequestBuilder.GetMatchingScore(requests[2].RequestMessage, releaseMatchResult);
         Assert.True(releaseMatchResult.IsPerfectMatch);
-    }
-
-    [Fact]
-    public async Task EndpointWithoutAttribute_SkipsMiddleware()
-    {
-        using var fixture = Fixture.Create();
-
-        var response = await fixture.GetTestClient().GetAsync("/without-lock");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.Equal("No lock required", content);
-
-        Assert.Empty(fixture.Server.LogEntries);
     }
 
     [Fact]
@@ -202,11 +165,14 @@ public sealed class ProcessLockMiddlewareTests
             .Server.Given(fixture.GetReleaseLockRequestBuilder(lockId))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await fixture
-                .GetTestClient()
-                .GetAsync($"/instances/{fixture.InstanceOwnerPartyId}/{fixture.InstanceGuid}/test-exception")
-        );
+        var processLocker = fixture.GetProcessLocker();
+        var instance = fixture.CreateInstance();
+
+        await Assert.ThrowsAsync<Exception>(async () =>
+        {
+            await using var _ = await processLocker.AcquireAsync(instance);
+            throw new Exception();
+        });
 
         var releaseRequests = fixture.Server.FindLogEntries(fixture.GetReleaseLockRequestBuilder(lockId));
         Assert.Single(releaseRequests);
@@ -237,11 +203,10 @@ public sealed class ProcessLockMiddlewareTests
             .Server.Given(fixture.GetReleaseLockRequestBuilder(lockId))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK));
 
-        var response = await fixture
-            .GetTestClient()
-            .GetAsync($"/instances/{fixture.InstanceOwnerPartyId}/{fixture.InstanceGuid}/test");
+        var processLocker = fixture.GetProcessLocker();
+        var instance = fixture.CreateInstance();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await using (var _ = await processLocker.AcquireAsync(instance)) { }
 
         var acquireRequests = fixture.Server.FindLogEntries(fixture.GetAcquireLockRequestBuilder());
         Assert.Single(acquireRequests);
@@ -251,20 +216,7 @@ public sealed class ProcessLockMiddlewareTests
     }
 
     [Fact]
-    public async Task MissingRouteParameters_ThrowsException()
-    {
-        using var fixture = Fixture.Create();
-
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await fixture.GetTestClient().GetAsync("/invalid-route")
-        );
-
-        Assert.Empty(fixture.Server.LogEntries);
-        await Verify(new { Exception = exception });
-    }
-
-    [Fact]
-    public async Task LockReleaseFailure_DoesNotAffectResponse()
+    public async Task LockReleaseFailure_DoesNotThrow()
     {
         using var fixture = Fixture.Create();
 
@@ -283,13 +235,10 @@ public sealed class ProcessLockMiddlewareTests
             .Server.Given(fixture.GetReleaseLockRequestBuilder(lockId))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.InternalServerError));
 
-        var response = await fixture
-            .GetTestClient()
-            .GetAsync($"/instances/{fixture.InstanceOwnerPartyId}/{fixture.InstanceGuid}/test");
+        var processLocker = fixture.GetProcessLocker();
+        var instance = fixture.CreateInstance();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.Equal("Success", content);
+        await using (var _ = await processLocker.AcquireAsync(instance)) { }
 
         var releaseRequests = fixture.Server.FindLogEntries(fixture.GetReleaseLockRequestBuilder(lockId));
         Assert.Single(releaseRequests);
@@ -299,7 +248,7 @@ public sealed class ProcessLockMiddlewareTests
     [InlineData(HttpStatusCode.Conflict)]
     [InlineData(HttpStatusCode.NotFound)]
     [InlineData(HttpStatusCode.InternalServerError)]
-    public async Task StorageApiError_ReturnsCorrectStatusCode(HttpStatusCode storageStatusCode)
+    public async Task StorageApiError_ThrowsCorrectPlatformHttpException(HttpStatusCode storageStatusCode)
     {
         using var fixture = Fixture.Create();
 
@@ -307,17 +256,23 @@ public sealed class ProcessLockMiddlewareTests
             .Server.Given(fixture.GetAcquireLockRequestBuilder())
             .RespondWith(Response.Create().WithStatusCode(storageStatusCode));
 
-        var response = await fixture
-            .GetTestClient()
-            .GetAsync($"/instances/{fixture.InstanceOwnerPartyId}/{fixture.InstanceGuid}/test");
+        var processLocker = fixture.GetProcessLocker();
+        var instance = fixture.CreateInstance();
+
+        var exception = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
+        {
+            await using var _ = await processLocker.AcquireAsync(instance);
+        });
 
         Assert.Single(fixture.Server.LogEntries);
 
-        await Verify(new { Response = response }).UseParameters(storageStatusCode);
+        await Verify(new { Exception = exception })
+            .UseParameters(storageStatusCode)
+            .IgnoreMember<PlatformHttpResponseSnapshotException>(x => x.Headers);
     }
 
     [Fact]
-    public async Task NullResponseBody_ReturnsProblemDetails()
+    public async Task NullResponseBody_ThrowsPlatformHttpException()
     {
         using var fixture = Fixture.Create();
 
@@ -331,17 +286,21 @@ public sealed class ProcessLockMiddlewareTests
                     .WithBody("null")
             );
 
-        var response = await fixture
-            .GetTestClient()
-            .GetAsync($"/instances/{fixture.InstanceOwnerPartyId}/{fixture.InstanceGuid}/test");
+        var processLocker = fixture.GetProcessLocker();
+        var instance = fixture.CreateInstance();
+
+        var exception = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
+        {
+            await using var _ = await processLocker.AcquireAsync(instance);
+        });
 
         Assert.Single(fixture.Server.LogEntries);
 
-        await Verify(new { Response = response });
+        await Verify(new { Exception = exception }).IgnoreMember<PlatformHttpResponseSnapshotException>(x => x.Headers);
     }
 
     [Fact]
-    public async Task EmptyJsonResponseBody_ReturnsProblemDetails()
+    public async Task EmptyJsonResponseBody_ThrowsPlatformHttpException()
     {
         using var fixture = Fixture.Create();
 
@@ -355,12 +314,33 @@ public sealed class ProcessLockMiddlewareTests
                     .WithBody("{}")
             );
 
-        var response = await fixture
-            .GetTestClient()
-            .GetAsync($"/instances/{fixture.InstanceOwnerPartyId}/{fixture.InstanceGuid}/test");
+        var processLocker = fixture.GetProcessLocker();
+        var instance = fixture.CreateInstance();
+
+        var exception = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
+        {
+            await using var _ = await processLocker.AcquireAsync(instance);
+        });
 
         Assert.Single(fixture.Server.LogEntries);
 
-        await Verify(new { Response = response });
+        await Verify(new { Exception = exception }).IgnoreMember<PlatformHttpResponseSnapshotException>(x => x.Headers);
+    }
+
+    [Fact]
+    public async Task InvalidInstanceId_ThrowsArgumentException()
+    {
+        using var fixture = Fixture.Create();
+
+        var processLocker = fixture.GetProcessLocker();
+        var instance = new Instance { Id = "invalid-format" };
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            await using var _ = await processLocker.AcquireAsync(instance);
+        });
+
+        Assert.Empty(fixture.Server.LogEntries);
+        await Verify(new { Exception = exception }).IgnoreMember<PlatformHttpResponseSnapshotException>(x => x.Headers);
     }
 }

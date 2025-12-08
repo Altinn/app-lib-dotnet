@@ -28,7 +28,6 @@ public static class WebApplicationBuilderExtensions
         app.UseAuthorization();
         app.UseTelemetryEnricher();
         app.UseScopeAuthorization();
-        app.UseMiddleware<ProcessLockMiddleware>();
 
         app.UseEndpoints(endpoints =>
         {
