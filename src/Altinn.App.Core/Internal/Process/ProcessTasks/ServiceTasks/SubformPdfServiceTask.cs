@@ -1,3 +1,4 @@
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -92,15 +93,17 @@ internal class SubformPdfServiceTask(
     private ValidAltinnSubformPdfConfiguration GetValidAltinnSubformPdfConfiguration(string taskId)
     {
         AltinnTaskExtension? altinnTaskExtension = processReader.GetAltinnTaskExtension(taskId);
-        AltinnSubformPdfConfiguration? pdfConfiguration = altinnTaskExtension?.SubformPdfConfiguration;
+        AltinnSubformPdfConfiguration? subformPdfConfiguration = altinnTaskExtension?.SubformPdfConfiguration;
 
-        if (pdfConfiguration == null)
+        if (subformPdfConfiguration == null)
         {
             // If no PDF configuration is specified, return a default valid configuration. No required config as of now.
-            return new ValidAltinnSubformPdfConfiguration();
+            throw new ApplicationConfigException(
+                "The subformPdfConfig node is missing in the subform pdf process task configuration."
+            );
         }
 
-        return pdfConfiguration.Validate();
+        return subformPdfConfiguration.Validate();
     }
 
     private async Task AddSubformPdfMetadata(

@@ -198,10 +198,7 @@ public class SubformPdfServiceTaskTests
         var context = CreateServiceTaskContext(instance);
 
         // Act
-        var result = await _serviceTask.Execute(context);
-
-        // Assert
-        result.Should().BeOfType<ServiceTaskSuccessResult>();
+        await Assert.ThrowsAsync<ApplicationConfigException>(async () => await _serviceTask.Execute(context));
     }
 
     // ===== CLEANUP TESTS =====
