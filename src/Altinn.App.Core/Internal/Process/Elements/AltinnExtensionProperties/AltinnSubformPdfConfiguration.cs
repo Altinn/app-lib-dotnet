@@ -5,7 +5,7 @@ using Altinn.App.Core.Internal.App;
 namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 
 /// <summary>
-/// Configuration properties for payments in a process task
+/// Configuration properties for subform PDF generation in a process task
 /// </summary>
 public class AltinnSubformPdfConfiguration
 {
