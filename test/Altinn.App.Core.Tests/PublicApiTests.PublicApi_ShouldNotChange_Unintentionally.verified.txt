@@ -3437,7 +3437,7 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
         public bool ParallelExecution { get; set; }
         [System.Xml.Serialization.XmlElement("subformComponentId", Namespace="http://altinn.no/process")]
         public string? SubformComponentId { get; set; }
-        [System.Xml.Serialization.XmlElement("subformDatatTypeId", Namespace="http://altinn.no/process")]
+        [System.Xml.Serialization.XmlElement("subformDataTypeId", Namespace="http://altinn.no/process")]
         public string? SubformDataTypeId { get; set; }
     }
     public class AltinnTaskExtension

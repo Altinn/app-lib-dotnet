@@ -24,7 +24,7 @@ public class AltinnSubformPdfConfiguration
     /// <summary>
     /// The ID of the data type associated with the subform component.
     /// </summary>
-    [XmlElement("subformDatatTypeId", Namespace = "http://altinn.no/process")]
+    [XmlElement("subformDataTypeId", Namespace = "http://altinn.no/process")]
     public string? SubformDataTypeId { get; set; }
 
     /// <summary>
