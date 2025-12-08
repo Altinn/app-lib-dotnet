@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 
-internal class SubformPdfServiceTask(
+internal sealed class SubformPdfServiceTask(
     IProcessReader processReader,
     IPdfService pdfService,
     IDataClient dataClient,
