@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 
-internal class Altinn3LibraryCodeListApiClient : IAltinn3LibraryCodeListApiClient
+internal sealed class Altinn3LibraryCodeListApiClient : IAltinn3LibraryCodeListApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<Altinn3LibraryCodeListApiClient> _logger;
@@ -33,7 +33,7 @@ internal class Altinn3LibraryCodeListApiClient : IAltinn3LibraryCodeListApiClien
     {
         try
         {
-            var response = await _httpClient.GetAsync(
+            using var response = await _httpClient.GetAsync(
                 $"{Uri.EscapeDataString(org)}/code_lists/{Uri.EscapeDataString(codeListId)}/{Uri.EscapeDataString(version)}.json",
                 cancellationToken
             );

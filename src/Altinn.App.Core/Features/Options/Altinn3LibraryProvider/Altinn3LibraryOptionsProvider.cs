@@ -30,6 +30,12 @@ internal sealed class Altinn3LibraryOptionsProvider : IAppOptionsProvider
     private readonly string _codeListId;
     private readonly string? _version;
 
+    /// <summary>
+    /// Gets the <see cref="AppOptions"/> based on the provided options id and key value pairs.
+    /// </summary>
+    /// <param name="language">Language code</param>
+    /// <param name="keyValuePairs">Altinn 3 library code lists doesnt support key/value pairs to control what options to get, so this is unused here.</param>
+    /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
     public async Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
     {
         var result = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(_org, _codeListId, _version);

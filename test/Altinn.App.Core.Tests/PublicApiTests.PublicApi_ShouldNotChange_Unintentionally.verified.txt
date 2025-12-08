@@ -1689,10 +1689,6 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         public required string Name { get; set; }
     }
-    public interface IAltinn3LibraryCodeListApiClient
-    {
-        System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse> GetAltinn3LibraryCodeLists(string org, string codeListId, string version, System.Threading.CancellationToken cancellationToken = default);
-    }
     public interface IAltinn3LibraryCodeListService
     {
         System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(string org, string codeListId, string? version, System.Threading.CancellationToken cancellationToken = default);

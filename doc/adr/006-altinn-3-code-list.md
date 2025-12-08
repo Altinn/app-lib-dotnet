@@ -55,6 +55,7 @@ Other things that would be nice to solve at the same time:
   *GET /{org}/{app}/api/options/{\*\*optionsIdOrLibraryRef}&language={language}*
   OptionId is now allowed to contain slashes,
   and can be formated as /{org}/{codeListId}/{version}
+* **A5: Add a new controller method /{creatorOrg}/{codeListId}?version={version}**
 
 ## Pros and cons
 
@@ -86,6 +87,8 @@ Other things that would be nice to solve at the same time:
   * RESTful design, clear resource hierarchy in URL path
 * Cons
   * Can potentially cause confusion on when certain fields must be provided.
+  * Doesnt seem possible to document the optional path parameters out of the box in Swagger, all path parameters are required.
+  * The issue above makes it impossible to call the endpoint the old way with just optionsId through Swagger.
   * Route ambiguity, /options/something could match either pattern. So some custom validation will be required.
 
 ### A3: Modify existing path with new query parameters
@@ -104,10 +107,21 @@ Other things that would be nice to solve at the same time:
   * We know that optionsIds never contains slashes. So we can confidently say that
   optionIds containing / is requesting library code lists
 * Cons
-  * A1C2, A1C4.
+  * Can potentially cause confusion between what
+    is an actual optionId and what is not.
+  * String parsing complexity, what should be
+    encoded as optionId and what should not be.
   * Route conflicts, wild card can accidentally catch routes you didnt intend.
   * Breaking rest conventions, path parameters should be single identifiers, not composite structures.
   * Poor discoverability, API consumers can't tell from the OpenAPI/Swagger docs what format optionsId should be.
+
+### A5: Add a new controller method /{creatorOrg}/{codeListId}?version={version}
+
+* Pros
+  * Easier to document which path parameters that is required in Swagger.
+  * It is also easier to document the different responses with two separate endpoints.
+* Cons
+  * Will require a new endpoint which was something we initially didnt want.
 
 ## Decision rationale
 

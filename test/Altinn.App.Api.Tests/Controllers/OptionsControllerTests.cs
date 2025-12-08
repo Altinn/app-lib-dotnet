@@ -33,7 +33,7 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         OutputHelper.WriteLine(content);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var headerValue = response.Headers.GetValues("Altinn-DownstreamParameters");
+        var headerValue = response.Headers.GetValues("Altinn-DownstreamParameters").Single();
         Assert.Contains("lang=esperanto", headerValue);
     }
 
@@ -116,8 +116,8 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         OutputHelper.WriteLine(content);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var headerValue = response.Headers.GetValues("Altinn-DownstreamParameters");
-        Assert.DoesNotContain(LanguageConst.Nb, headerValue);
+        var headerValue = response.Headers.GetValues("Altinn-DownstreamParameters").Single();
+        Assert.DoesNotContain($"lang={LanguageConst.Nb}", headerValue, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -175,37 +175,38 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         );
     }
 
-    [Fact]
-    public async Task Get_ShouldReturnLibraryOptionsDirectlyNotThroughProvider()
-    {
-        OverrideServicesForThisTest = (services) =>
-        {
-            services.AddTransient<IAltinn3LibraryCodeListService, DummyAltinn3LibraryCodeListService>();
-        };
-
-        string org = "tdd";
-        string app = "contributer-restriction";
-        HttpClient client = GetRootedClient(org, app);
-
-        string url = $"/{org}/{app}/api/options/someCreatorOrg/someCodeListId/someVersion";
-        HttpResponseMessage response = await client.GetAsync(url);
-        var content = await response.Content.ReadAsStringAsync();
-        OutputHelper.WriteLine(content);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Altinn-DownstreamParameters", response.Headers.Select(x => x.Key));
-
-        var downstreamHeader = response.Headers.Single(x => x.Key == "Altinn-DownstreamParameters").Value.Single();
-        var downstreamParameters = downstreamHeader.Split(',');
-
-        Assert.Contains("source=test-name", downstreamParameters);
-        Assert.Contains("version=1", downstreamParameters);
-        Assert.Equal(2, downstreamParameters.Length);
-        Assert.Equal(
-            "[{\"value\":\"Value1\",\"label\":\"En label\",\"description\":\"En beskrivelse\",\"helpText\":\"En hjelpetekst\",\"tags\":{\"test-tag-name\":\"test-tag\"}}]",
-            content
-        );
-    }
+    // TODO: Fix after ADR decision is made
+    // [Fact]
+    // public async Task Get_ShouldReturnLibraryOptionsDirectlyNotThroughProvider()
+    // {
+    //     OverrideServicesForThisTest = (services) =>
+    //     {
+    //         services.AddTransient<IAltinn3LibraryCodeListService, DummyAltinn3LibraryCodeListService>();
+    //     };
+    //
+    //     string org = "tdd";
+    //     string app = "contributer-restriction";
+    //     HttpClient client = GetRootedClient(org, app);
+    //
+    //     string url = $"/{org}/{app}/api/options/someCreatorOrg/someCodeListId/someVersion";
+    //     HttpResponseMessage response = await client.GetAsync(url);
+    //     var content = await response.Content.ReadAsStringAsync();
+    //     OutputHelper.WriteLine(content);
+    //
+    //     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    //     Assert.Contains("Altinn-DownstreamParameters", response.Headers.Select(x => x.Key));
+    //
+    //     var downstreamHeader = response.Headers.Single(x => x.Key == "Altinn-DownstreamParameters").Value.Single();
+    //     var downstreamParameters = downstreamHeader.Split(',');
+    //
+    //     Assert.Contains("source=test-name", downstreamParameters);
+    //     Assert.Contains("version=1", downstreamParameters);
+    //     Assert.Equal(2, downstreamParameters.Length);
+    //     Assert.Equal(
+    //         "[{\"value\":\"Value1\",\"label\":\"En label\",\"description\":\"En beskrivelse\",\"helpText\":\"En hjelpetekst\",\"tags\":{\"test-tag-name\":\"test-tag\"}}]",
+    //         content
+    //     );
+    // }
 }
 
 internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeListService

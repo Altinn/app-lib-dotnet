@@ -42,42 +42,59 @@ public class OptionsController : ControllerBase
     /// Api that exposes app related options
     /// </summary>
     /// <remarks>The Tags property in AppOption will only be populated when requesting library code lists</remarks>
-    /// <param name="optionsIdOrCreatorOrg">The optionsId configured for the provider in Program.cs or the organization that created the code list</param>
+    /// <param name="creatorOrg">The organization that created the code list</param>
     /// <param name="codeListId">Code list id, required if creator org is provided</param>
     /// <param name="version">Code list version, only used in combination with creator org and code list id, defaults to latest if not provided</param>
+    /// <param name="language">The language selected by the user, ISO 639-1 (eg. nb)</param>
+    /// <returns>The options list.</returns>
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [HttpGet("{creatorOrg}/{codeListId}")]
+    public async Task<IActionResult> Get(
+        [FromRoute] string creatorOrg,
+        [FromRoute] string codeListId,
+        [FromQuery] string? version = "latest",
+        [FromQuery] string? language = null
+    )
+    {
+        using var telemetry = _telemetry?.StartGetOptionsActivity();
+        var altinn3LibraryCodeListResponse = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
+            creatorOrg,
+            codeListId,
+            version
+        );
+
+        var appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
+
+        HttpContext.Response.Headers.Append(
+            "Altinn-DownstreamParameters",
+            appOptions.Parameters.ToUrlEncodedNameValueString(',')
+        );
+
+        return Ok(appOptions.Options);
+    }
+
+    /// <summary>
+    /// Api that exposes app related options
+    /// </summary>
+    /// <remarks>The Tags property in AppOption will only be populated when requesting library code lists</remarks>
+    /// <param name="optionsId">The optionsId configured for the provider in Program.cs</param>
     /// <param name="queryParams">Query parameters supplied</param>
     /// <param name="language">The language selected by the user, ISO 639-1 (eg. nb)</param>
     /// <returns>The options list.</returns>
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [HttpGet("{optionsIdOrCreatorOrg}/{codeListId?}/{version?}")]
+    [HttpGet("{optionsId}")]
     public async Task<IActionResult> Get(
-        [FromRoute] string optionsIdOrCreatorOrg,
+        [FromRoute] string optionsId,
         [FromQuery] Dictionary<string, string> queryParams,
-        [FromRoute] string? codeListId = null,
-        [FromRoute] string? version = null,
         [FromQuery] string? language = null
     )
     {
-        AppOptions appOptions;
-        if (codeListId is null)
+        var appOptions = await _appOptionsService.GetOptionsAsync(optionsId, language, queryParams);
+        if (appOptions?.Options == null)
         {
-            appOptions = await _appOptionsService.GetOptionsAsync(optionsIdOrCreatorOrg, language, queryParams);
-            if (appOptions?.Options == null)
-            {
-                return NotFound();
-            }
-        }
-        else
-        {
-            using var telemetry = _telemetry?.StartGetOptionsActivity();
-            var altinn3LibraryCodeListResponse = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
-                optionsIdOrCreatorOrg,
-                codeListId,
-                version
-            );
-
-            appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
+            return NotFound();
         }
 
         HttpContext.Response.Headers.Append(

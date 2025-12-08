@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
 /// <summary>
 /// Interface for the Altinn 3 library code list API client
 /// </summary>
-public interface IAltinn3LibraryCodeListApiClient
+internal interface IAltinn3LibraryCodeListApiClient
 {
     /// <summary>
     /// Get Altinn 3 library code lists

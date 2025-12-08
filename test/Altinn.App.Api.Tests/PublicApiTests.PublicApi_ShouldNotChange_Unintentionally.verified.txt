@@ -371,10 +371,14 @@ namespace Altinn.App.Api.Controllers
     public class OptionsController : Microsoft.AspNetCore.Mvc.ControllerBase
     {
         public OptionsController(Altinn.App.Core.Features.Options.IAppOptionsService appOptionsService, Altinn.App.Core.Features.Options.Altinn3LibraryProvider.IAltinn3LibraryCodeListService altinn3LibraryCodeListService, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
-        [Microsoft.AspNetCore.Mvc.HttpGet("{optionsIdOrCreatorOrg}/{codeListId?}/{version?}")]
+        [Microsoft.AspNetCore.Mvc.HttpGet("{optionsId}")]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(200)]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(404)]
-        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> Get([Microsoft.AspNetCore.Mvc.FromRoute] string optionsIdOrCreatorOrg, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.Dictionary<string, string> queryParams, [Microsoft.AspNetCore.Mvc.FromRoute] string? codeListId = null, [Microsoft.AspNetCore.Mvc.FromRoute] string? version = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null) { }
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> Get([Microsoft.AspNetCore.Mvc.FromRoute] string optionsId, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.Dictionary<string, string> queryParams, [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null) { }
+        [Microsoft.AspNetCore.Mvc.HttpGet("{creatorOrg}/{codeListId}")]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(200)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(404)]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> Get([Microsoft.AspNetCore.Mvc.FromRoute] string creatorOrg, [Microsoft.AspNetCore.Mvc.FromRoute] string codeListId, [Microsoft.AspNetCore.Mvc.FromQuery] string? version = "latest", [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null) { }
         [Microsoft.AspNetCore.Authorization.Authorize(Policy="InstanceRead")]
         [Microsoft.AspNetCore.Mvc.HttpGet]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(200)]
