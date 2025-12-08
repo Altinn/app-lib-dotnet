@@ -863,7 +863,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetSigneesState_WithtaskId_UsesOverriddenTask()
+    public async Task GetSigneesState_WithTaskId_UsesOverriddenTask()
     {
         // Arrange
         SetupAuthenticationContextMock();
@@ -987,7 +987,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetSigneesState_WithtaskId_NonSigningTask_Returns_BadRequest()
+    public async Task GetSigneesState_WithTaskId_NonSigningTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock();
@@ -1040,7 +1040,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetSigneesState_WithtaskId_NonExistentTask_Returns_BadRequest()
+    public async Task GetSigneesState_WithTaskId_NonExistentTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock();
@@ -1085,7 +1085,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetAuthorizedOrganizations_WithtaskId_UsesOverriddenTask()
+    public async Task GetAuthorizedOrganizations_WithTaskId_UsesOverriddenTask()
     {
         // Arrange
         SetupAuthenticationContextMock(authenticated: CreateAuthenticatedUser());
@@ -1197,7 +1197,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetAuthorizedOrganizations_WithtaskId_NonSigningTask_Returns_BadRequest()
+    public async Task GetAuthorizedOrganizations_WithTaskId_NonSigningTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock(authenticated: CreateAuthenticatedUser());
@@ -1246,7 +1246,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetAuthorizedOrganizations_WithtaskId_NonExistentTask_Returns_BadRequest()
+    public async Task GetAuthorizedOrganizations_WithTaskId_NonExistentTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock(authenticated: CreateAuthenticatedUser());
@@ -1291,7 +1291,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetDataElements_WithtaskId_UsesOverriddenTask()
+    public async Task GetDataElements_WithTaskId_UsesOverriddenTask()
     {
         // Arrange
         SetupAuthenticationContextMock();
@@ -1399,7 +1399,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetDataElements_WithtaskId_NonSigningTask_Returns_BadRequest()
+    public async Task GetDataElements_WithTaskId_NonSigningTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock();
@@ -1454,7 +1454,7 @@ public class SigningControllerTests
     }
 
     [Fact]
-    public async Task GetDataElements_WithtaskId_NonExistentTask_Returns_BadRequest()
+    public async Task GetDataElements_WithTaskId_NonExistentTask_Returns_BadRequest()
     {
         // Arrange
         SetupAuthenticationContextMock();
