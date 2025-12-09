@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.Auth;
@@ -19,7 +20,7 @@ public sealed class InstanceClientTests : IDisposable
 {
     private readonly Mock<IOptions<PlatformSettings>> _platformSettingsOptions;
     private readonly Mock<HttpMessageHandler> _handlerMock;
-    private readonly Mock<IUserTokenProvider> _userTokenProvider = new(MockBehavior.Strict);
+    private readonly Mock<IAuthenticationTokenResolver> _authenticationTokenResolver = new(MockBehavior.Strict);
     private readonly Mock<ILogger<InstanceClient>> _logger;
     private readonly TelemetrySink _telemetry;
 
@@ -56,7 +57,7 @@ public sealed class InstanceClientTests : IDisposable
         InstanceClient target = new InstanceClient(
             _platformSettingsOptions.Object,
             _logger.Object,
-            _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -87,7 +88,7 @@ public sealed class InstanceClientTests : IDisposable
         InstanceClient target = new InstanceClient(
             _platformSettingsOptions.Object,
             _logger.Object,
-            _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -127,7 +128,7 @@ public sealed class InstanceClientTests : IDisposable
         InstanceClient target = new InstanceClient(
             _platformSettingsOptions.Object,
             _logger.Object,
-            _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -169,7 +170,7 @@ public sealed class InstanceClientTests : IDisposable
         InstanceClient target = new InstanceClient(
             _platformSettingsOptions.Object,
             _logger.Object,
-            _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -207,7 +208,7 @@ public sealed class InstanceClientTests : IDisposable
         InstanceClient target = new InstanceClient(
             _platformSettingsOptions.Object,
             _logger.Object,
-            _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -242,7 +243,7 @@ public sealed class InstanceClientTests : IDisposable
         InstanceClient target = new InstanceClient(
             _platformSettingsOptions.Object,
             _logger.Object,
-            _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -291,7 +292,7 @@ public sealed class InstanceClientTests : IDisposable
         InstanceClient target = new InstanceClient(
             _platformSettingsOptions.Object,
             _logger.Object,
-            _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -323,7 +324,7 @@ public sealed class InstanceClientTests : IDisposable
         InstanceClient target = new InstanceClient(
             _platformSettingsOptions.Object,
             _logger.Object,
-            _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -365,7 +366,7 @@ public sealed class InstanceClientTests : IDisposable
         InstanceClient target = new InstanceClient(
             _platformSettingsOptions.Object,
             _logger.Object,
-            _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -414,7 +415,7 @@ public sealed class InstanceClientTests : IDisposable
         InstanceClient target = new InstanceClient(
             _platformSettingsOptions.Object,
             _logger.Object,
-            _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -468,7 +469,7 @@ public sealed class InstanceClientTests : IDisposable
         InstanceClient target = new InstanceClient(
             _platformSettingsOptions.Object,
             _logger.Object,
-            _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -498,7 +499,13 @@ public sealed class InstanceClientTests : IDisposable
         };
         _platformSettingsOptions.Setup(s => s.Value).Returns(platformSettings);
 
-        _userTokenProvider.Setup(s => s.GetUserToken()).Returns("userToken");
+        _authenticationTokenResolver
+            .Setup(s => s.GetAccessToken(It.IsAny<AuthenticationMethod>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                JwtToken.Parse(
+                    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30"
+                )
+            );
 
         if (httpResponseMessages.Length == 2)
         {
