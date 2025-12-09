@@ -235,9 +235,9 @@ public class PdfService : IPdfService
         // query parameters in combination with hash fragments in the url.
         string url = baseUrl + pagePath;
 
+        // Insert subform component and data element id in the url if provided
         if (!string.IsNullOrEmpty(subformComponentId) && !string.IsNullOrEmpty(subformDataElementId))
         {
-            // Remove the ?pdf=1 part temporarily to insert subform segments
             int pdfIndex = url.IndexOf("?pdf=1", StringComparison.OrdinalIgnoreCase);
             if (pdfIndex > 0)
             {
