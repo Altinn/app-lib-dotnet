@@ -10,7 +10,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
-using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
+using Altinn.App.Core.Internal.ProcessEngine;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
@@ -43,6 +43,7 @@ public class ProcessEngine : IProcessEngine
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IValidationService _validationService;
     private readonly IInstanceClient _instanceClient;
+    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -73,6 +74,7 @@ public class ProcessEngine : IProcessEngine
         _validationService = validationService;
         _instanceClient = instanceClient;
         _logger = logger;
+        _serviceProvider = serviceProvider;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
@@ -752,8 +754,13 @@ public class ProcessEngine : IProcessEngine
             return new MoveToNextResult(instance, null);
         }
 
-        instance = await HandleEventsAndUpdateStorage(instance, null, processStateChange.Events);
-        await _processEventDispatcher.RegisterEventWithEventsComponent(instance);
+        // Build ProcessNextRequest with all commands
+        var requestBuilder = new ProcessNextRequestBuilder(_appImplementationFactory, _authenticationContext);
+        var processNextRequest = await requestBuilder.Build(instance, processStateChange);
+
+        // Enqueue job to ProcessEngine service via HTTP
+        var processEngineClient = _serviceProvider.GetRequiredService<IProcessEngineClient>();
+        await processEngineClient.ProcessNext(processNextRequest);
 
         return new MoveToNextResult(instance, processStateChange);
     }

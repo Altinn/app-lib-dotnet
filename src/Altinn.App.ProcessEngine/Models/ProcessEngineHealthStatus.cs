@@ -1,7 +1,7 @@
 namespace Altinn.App.ProcessEngine.Models;
 
 [Flags]
-internal enum ProcessEngineHealthStatus
+public enum ProcessEngineHealthStatus
 {
     Unknown = 0,
     Healthy = 1 << 0,

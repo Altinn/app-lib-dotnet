@@ -50,6 +50,7 @@ using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
+using Altinn.App.Core.Internal.ProcessEngine;
 using Altinn.App.Core.Internal.ProcessEngine.Commands;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
@@ -367,6 +368,7 @@ public static class ServiceCollectionExtensions
 
         // Process engine callback helpers
         services.AddTransient<ProcessTaskResolver>();
+        services.AddHttpClient<IProcessEngineClient, ProcessEngineClient>();
 
         // Process engine callback handlers - TaskStart
         services.AddTransient<IProcessEngineCommand, CommonTaskInitialization>();
