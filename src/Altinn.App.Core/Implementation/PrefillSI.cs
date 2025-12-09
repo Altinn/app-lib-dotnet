@@ -3,6 +3,7 @@ using System.Reflection;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Dan;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Profile.Models;
@@ -20,10 +21,12 @@ public class PrefillSI : IPrefill
     private readonly IAppResources _appResourcesService;
     private readonly IRegisterClient _registerClient;
     private readonly IAuthenticationContext _authenticationContext;
+    private readonly IDanClient _danClient;
     private readonly Telemetry? _telemetry;
     private static readonly string _erKey = "ER";
     private static readonly string _dsfKey = "DSF";
     private static readonly string _userProfileKey = "UserProfile";
+    private static readonly string _danKey = "DAN";
     private static readonly string _allowOverwriteKey = "allowOverwrite";
     private bool _allowOverwrite = false;
 
@@ -40,6 +43,7 @@ public class PrefillSI : IPrefill
         IAppResources appResourcesService,
         IAuthenticationContext authenticationContext,
         IServiceProvider serviceProvider,
+        IDanClient danClient,
         Telemetry? telemetry = null
     )
     {
@@ -47,6 +51,7 @@ public class PrefillSI : IPrefill
         _appResourcesService = appResourcesService;
         _registerClient = serviceProvider.GetRequiredService<IRegisterClient>();
         _authenticationContext = authenticationContext;
+        _danClient = danClient;
         _telemetry = telemetry;
     }
 
@@ -66,7 +71,8 @@ public class PrefillSI : IPrefill
         string partyId,
         string dataModelName,
         object dataModel,
-        Dictionary<string, string>? externalPrefill = null
+        Dictionary<string, string>? externalPrefill = null,
+        string? dataset = null
     )
     {
         using var activity = _telemetry?.StartPrefillDataModelActivity(partyId);
@@ -202,6 +208,40 @@ public class PrefillSI : IPrefill
                 else
                 {
                     string errorMessage = $"Could not  prefill from {_dsfKey}, person is not defined.";
+                    _logger.LogError(errorMessage);
+                }
+            }
+        }
+
+        //remove hardcoding after testing
+        dataset = "UnitBasicInformation";
+        // Prefill from Dan
+        JToken? danConfiguration = prefillConfiguration.SelectToken(_danKey);
+        if (danConfiguration != null && dataset != null)
+        {
+            var mappingDict = danConfiguration["datasets"]
+                .FirstOrDefault(d => (string)d["name"] == dataset)
+                ?["mappings"];
+
+            Dictionary<string, string> danDictionary = mappingDict.ToDictionary(
+                k => ((JObject)k).Properties().First().Name,
+                v => v.Values().First().Value<string>()
+            );
+
+            if (danDictionary.Count > 0)
+            {
+                //remove hardcoding after testing
+                var subject = "312655241";
+                var danDataset = await _danClient.GetDataset(dataset, subject);
+                if (danDataset != null)
+                {
+                    JObject danJsonObject = JObject.FromObject(danDataset);
+                    _logger.LogInformation($"Started prefill from {_danKey}");
+                    LoopThroughDictionaryAndAssignValuesToDataModel(danDictionary, danJsonObject, dataModel);
+                }
+                else
+                {
+                    string errorMessage = $"Could not  prefill from {_danKey}, data is not defined.";
                     _logger.LogError(errorMessage);
                 }
             }
