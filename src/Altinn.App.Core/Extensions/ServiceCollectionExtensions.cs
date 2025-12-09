@@ -369,30 +369,37 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ProcessTaskResolver>();
 
         // Process engine callback handlers - TaskStart
-        services.AddTransient<CommonTaskInitialization>();
-        services.AddTransient<ProcessTaskStart>();
-        services.AddTransient<OnTaskStartingHook>();
-        services.AddTransient<StartTaskLegacyHook>();
-        services.AddTransient<UnlockTaskData>();
+        services.AddTransient<IProcessEngineCommand, CommonTaskInitialization>();
+        services.AddTransient<IProcessEngineCommand, ProcessTaskStart>();
+        services.AddTransient<IProcessEngineCommand, OnTaskStartingHook>();
+        services.AddTransient<IProcessEngineCommand, StartTaskLegacyHook>();
+        services.AddTransient<IProcessEngineCommand, UnlockTaskData>();
 
         // Process engine callback handlers - TaskAbandon
-        services.AddTransient<ProcessTaskAbandon>();
-        services.AddTransient<OnTaskAbandonHook>();
-        services.AddTransient<AbandonTaskLegacyHook>();
+        services.AddTransient<IProcessEngineCommand, ProcessTaskAbandon>();
+        services.AddTransient<IProcessEngineCommand, OnTaskAbandonHook>();
+        services.AddTransient<IProcessEngineCommand, AbandonTaskLegacyHook>();
 
         // Process engine callback handlers - TaskEnd
-        services.AddTransient<CommonTaskFinalization>();
-        services.AddTransient<ProcessTaskEnd>();
-        services.AddTransient<OnTaskEndingHook>();
-        services.AddTransient<EndTaskLegacyHook>();
-        services.AddTransient<LockTaskData>();
+        services.AddTransient<IProcessEngineCommand, CommonTaskFinalization>();
+        services.AddTransient<IProcessEngineCommand, ProcessTaskEnd>();
+        services.AddTransient<IProcessEngineCommand, OnTaskEndingHook>();
+        services.AddTransient<IProcessEngineCommand, EndTaskLegacyHook>();
+        services.AddTransient<IProcessEngineCommand, LockTaskData>();
 
         // Process engine callback handlers - ServiceTask
-        services.AddTransient<ExecuteServiceTask>();
+        services.AddTransient<IProcessEngineCommand, ExecuteServiceTask>();
+
+        // Process engine callback handlers - ProcessEnd
+        services.AddTransient<IProcessEngineCommand, OnProcessEndingHook>();
+        services.AddTransient<IProcessEngineCommand, ProcessEndLegacyHook>();
+
+        // Process engine callback handlers - State Management
+        services.AddTransient<IProcessEngineCommand, UpdateProcessState>();
 
         // Process engine callback handlers - Altinn Events
-        services.AddTransient<CompletedAltinnEvent>();
-        services.AddTransient<MovedToAltinnEvent>();
+        services.AddTransient<IProcessEngineCommand, CompletedAltinnEvent>();
+        services.AddTransient<IProcessEngineCommand, MovedToAltinnEvent>();
 
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();

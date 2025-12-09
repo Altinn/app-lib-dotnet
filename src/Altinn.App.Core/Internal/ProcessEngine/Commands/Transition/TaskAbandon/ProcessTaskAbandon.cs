@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Internal.ProcessEngine.Commands;
 
 internal sealed class ProcessTaskAbandon : IProcessEngineCommand
 {
-    public static string Key => "OnAbandonTask";
+    public static string Key => "ProcessTaskAbandon";
 
     public string GetKey() => Key;
 
