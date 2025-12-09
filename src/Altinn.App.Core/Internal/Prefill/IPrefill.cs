@@ -24,6 +24,7 @@ public interface IPrefill
         string partyId,
         string dataModelName,
         object dataModel,
-        Dictionary<string, string>? externalPrefill = null
+        Dictionary<string, string>? externalPrefill = null,
+        string? dataset = null
     );
 }
