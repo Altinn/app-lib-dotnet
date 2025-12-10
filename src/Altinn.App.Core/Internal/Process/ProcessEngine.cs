@@ -9,6 +9,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
+using Altinn.App.Core.Internal.Process.ProcessLock;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
@@ -42,6 +43,7 @@ public class ProcessEngine : IProcessEngine
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IValidationService _validationService;
     private readonly IInstanceClient _instanceClient;
+    private readonly ProcessLocker _processLocker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -74,6 +76,7 @@ public class ProcessEngine : IProcessEngine
         _logger = logger;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _processLocker = serviceProvider.GetRequiredService<ProcessLocker>();
     }
 
     /// <inheritdoc/>
@@ -251,6 +254,8 @@ public class ProcessEngine : IProcessEngine
                     $"User is not authorized to perform process next. Task ID: {LogSanitizer.Sanitize(currentTaskId)}. Task type: {LogSanitizer.Sanitize(altinnTaskType)}. Action: {LogSanitizer.Sanitize(request.Action ?? "none")}.",
             };
         }
+
+        await _processLocker.LockAsync();
 
         _logger.LogDebug(
             "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",

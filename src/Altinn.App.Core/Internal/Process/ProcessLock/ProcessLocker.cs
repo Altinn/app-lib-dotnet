@@ -1,5 +1,5 @@
 using Altinn.App.Core.Infrastructure.Clients.Storage;
-using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -8,52 +8,72 @@ namespace Altinn.App.Core.Internal.Process.ProcessLock;
 internal sealed partial class ProcessLocker(
     ProcessLockClient client,
     IOptions<ProcessLockOptions> options,
-    ILogger<ProcessLocker> logger
-)
+    ILogger<ProcessLocker> logger,
+    IHttpContextAccessor httpContextAccessor
+) : IAsyncDisposable
 {
-    public async Task<IAsyncDisposable> AcquireAsync(Instance instance)
+    private readonly HttpContext _httpContext =
+        httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext cannot be null.");
+
+    private ProcessLock? _lock;
+
+    public async ValueTask LockAsync()
     {
-        var instanceIdParts = instance.Id.Split('/');
-        if (
-            instanceIdParts.Length != 2
-            || !int.TryParse(instanceIdParts[0], out var instanceOwnerPartyId)
-            || !Guid.TryParse(instanceIdParts[1], out var instanceGuid)
-        )
+        if (_lock is not null)
         {
-            throw new ArgumentException("Instance ID was not in the expected format.");
+            return;
         }
+
+        var (instanceOwnerPartyId, instanceGuid) =
+            GetInstanceIdentifiers() ?? throw new InvalidOperationException("Unable to extract instance identifiers.");
 
         var lockId = await client.AcquireProcessLock(instanceGuid, instanceOwnerPartyId, options.Value.Expiration);
 
         LogLockAcquired(logger, lockId);
 
-        return new ProcessLock(instanceGuid, instanceOwnerPartyId, lockId, client, logger);
+        _lock = new ProcessLock(instanceGuid, instanceOwnerPartyId, lockId);
     }
 
-    private sealed partial class ProcessLock(
-        Guid instanceGuid,
-        int instanceOwnerPartyId,
-        Guid lockId,
-        ProcessLockClient client,
-        ILogger logger
-    ) : IAsyncDisposable
+    private (int instanceOwnerPartyId, Guid instanceGuid)? GetInstanceIdentifiers()
     {
-        public async ValueTask DisposeAsync()
+        var routeValues = _httpContext.Request.RouteValues;
+
+        if (
+            routeValues.TryGetValue("instanceOwnerPartyId", out var partyIdObj)
+            && routeValues.TryGetValue("instanceGuid", out var guidObj)
+            && int.TryParse(partyIdObj?.ToString(), out var partyId)
+            && Guid.TryParse(guidObj?.ToString(), out var guid)
+        )
         {
-            try
-            {
-                await client.ReleaseProcessLock(instanceGuid, instanceOwnerPartyId, lockId);
-
-                LogLockReleased(logger, lockId);
-
-                return;
-            }
-            catch (Exception e)
-            {
-                LogLockReleaseFailed(logger, lockId, e);
-            }
+            return (partyId, guid);
         }
+
+        return null;
     }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_lock is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await client.ReleaseProcessLock(_lock.InstanceGuid, _lock.InstanceOwnerPartyId, _lock.LockId);
+        }
+        catch (Exception e)
+        {
+            LogLockReleaseFailed(logger, _lock.LockId, e);
+            return;
+        }
+
+        LogLockReleased(logger, _lock.LockId);
+
+        _lock = null;
+    }
+
+    private sealed record ProcessLock(Guid InstanceGuid, int InstanceOwnerPartyId, Guid LockId);
 
     [LoggerMessage(1, LogLevel.Debug, "Failed to acquire process lock.")]
     private static partial void LogLockAcquisitionFailed(ILogger logger);

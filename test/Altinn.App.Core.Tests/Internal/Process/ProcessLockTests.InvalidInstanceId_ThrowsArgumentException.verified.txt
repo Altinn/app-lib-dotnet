@@ -1,10 +1,11 @@
 ﻿{
   Exception: {
-    $type: ArgumentException,
-    Type: ArgumentException,
-    Message: Instance ID was not in the expected format.,
+    $type: InvalidOperationException,
+    Type: InvalidOperationException,
+    Message: Unable to extract instance identifiers.,
     StackTrace:
-at Altinn.App.Core.Internal.Process.ProcessLock.ProcessLocker.AcquireAsync(Instance instance)
+at Altinn.App.Core.Internal.Process.ProcessLock.ProcessLocker.LockAsync()
+--- End of stack trace from previous location ---
 --- End of stack trace from previous location ---
 at Xunit.Assert.RecordExceptionAsync(Func`1 testCode)
   }

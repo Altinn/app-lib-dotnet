@@ -366,7 +366,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
         services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
 
-        services.AddTransient<ProcessLocker>();
+        services.AddScoped<ProcessLocker>();
 
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();

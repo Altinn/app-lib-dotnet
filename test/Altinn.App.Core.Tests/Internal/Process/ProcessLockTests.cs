@@ -3,7 +3,6 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.Process.ProcessLock;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using WireMock.Matchers.Request;
@@ -17,8 +16,8 @@ public sealed class ProcessLockTests
 {
     private sealed record Fixture(WireMockServer Server, ServiceProvider ServiceProvider) : IDisposable
     {
-        public readonly Guid InstanceGuid = Guid.NewGuid();
-        public readonly int InstanceOwnerPartyId = 12345;
+        private static readonly Guid _instanceGuid = Guid.NewGuid();
+        private const int InstanceOwnerPartyId = 12345;
         private const string RuntimeCookieName = "test-cookie";
         private const string BearerToken = "test-token";
 
@@ -42,6 +41,8 @@ public sealed class ProcessLockTests
 
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Headers.Cookie = $"{RuntimeCookieName}={BearerToken}";
+            httpContext.Request.RouteValues.Add("instanceOwnerPartyId", InstanceOwnerPartyId);
+            httpContext.Request.RouteValues.Add("instanceGuid", _instanceGuid);
 
             var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
             services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
@@ -62,21 +63,11 @@ public sealed class ProcessLockTests
             ServiceProvider.Dispose();
         }
 
-        public ProcessLocker GetProcessLocker()
-        {
-            return ServiceProvider.GetRequiredService<ProcessLocker>();
-        }
-
-        public Instance CreateInstance()
-        {
-            return new Instance { Id = $"{InstanceOwnerPartyId}/{InstanceGuid}" };
-        }
-
         public IRequestBuilder GetAcquireLockRequestBuilder()
         {
             return Request
                 .Create()
-                .WithPath($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{InstanceGuid}/process/lock")
+                .WithPath($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{_instanceGuid}/process/lock")
                 .UsingPost()
                 .WithHeader("Authorization", $"Bearer {BearerToken}");
         }
@@ -85,7 +76,7 @@ public sealed class ProcessLockTests
         {
             return Request
                 .Create()
-                .WithPath($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{InstanceGuid}/process/lock/{lockId}")
+                .WithPath($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{_instanceGuid}/process/lock/{lockId}")
                 .UsingPatch()
                 .WithHeader("Authorization", $"Bearer {BearerToken}");
         }
@@ -120,11 +111,65 @@ public sealed class ProcessLockTests
 
         var httpClient = fixture.ServiceProvider.GetRequiredService<IHttpClientFactory>().CreateClient();
 
-        var processLocker = fixture.GetProcessLocker();
-        var instance = fixture.CreateInstance();
-
-        await using (var _ = await processLocker.AcquireAsync(instance))
+        await using (var scope = fixture.ServiceProvider.CreateAsyncScope())
         {
+            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
+            await processLocker.LockAsync();
+            using var response = await httpClient.GetAsync($"{fixture.ServerUrl}/test");
+            response.EnsureSuccessStatusCode();
+        }
+
+        var requests = fixture.Server.LogEntries;
+        Assert.Equal(3, requests.Count);
+
+        var acquireMatchResult = new RequestMatchResult();
+        acquireLockRequestBuilder.GetMatchingScore(requests[0].RequestMessage, acquireMatchResult);
+        Assert.True(acquireMatchResult.IsPerfectMatch);
+
+        var testMatchResult = new RequestMatchResult();
+        testRequestBuilder.GetMatchingScore(requests[1].RequestMessage, testMatchResult);
+        Assert.True(testMatchResult.IsPerfectMatch);
+
+        var releaseMatchResult = new RequestMatchResult();
+        releaseLockRequestBuilder.GetMatchingScore(requests[2].RequestMessage, releaseMatchResult);
+        Assert.True(releaseMatchResult.IsPerfectMatch);
+    }
+
+    [Fact]
+    public async Task HappyPath_MultipleLockCalls()
+    {
+        using var fixture = Fixture.Create();
+
+        var lockId = Guid.NewGuid();
+
+        var acquireLockRequestBuilder = fixture.GetAcquireLockRequestBuilder();
+        var releaseLockRequestBuilder = fixture.GetReleaseLockRequestBuilder(lockId);
+
+        var testRequestBuilder = Request.Create().WithPath($"/test").UsingGet();
+
+        fixture
+            .Server.Given(acquireLockRequestBuilder)
+            .RespondWith(
+                Response
+                    .Create()
+                    .WithStatusCode(HttpStatusCode.OK)
+                    .WithBodyAsJson(new ProcessLockResponse { LockId = lockId })
+            );
+
+        fixture
+            .Server.Given(releaseLockRequestBuilder)
+            .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK));
+
+        fixture.Server.Given(testRequestBuilder).RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK));
+
+        var httpClient = fixture.ServiceProvider.GetRequiredService<IHttpClientFactory>().CreateClient();
+
+        await using (var scope = fixture.ServiceProvider.CreateAsyncScope())
+        {
+            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
+            await processLocker.LockAsync();
+            await processLocker.LockAsync();
+            await processLocker.LockAsync();
             using var response = await httpClient.GetAsync($"{fixture.ServerUrl}/test");
             response.EnsureSuccessStatusCode();
         }
@@ -165,12 +210,11 @@ public sealed class ProcessLockTests
             .Server.Given(fixture.GetReleaseLockRequestBuilder(lockId))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK));
 
-        var processLocker = fixture.GetProcessLocker();
-        var instance = fixture.CreateInstance();
-
         await Assert.ThrowsAsync<Exception>(async () =>
         {
-            await using var _ = await processLocker.AcquireAsync(instance);
+            await using var scope = fixture.ServiceProvider.CreateAsyncScope();
+            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
+            await processLocker.LockAsync();
             throw new Exception();
         });
 
@@ -203,10 +247,11 @@ public sealed class ProcessLockTests
             .Server.Given(fixture.GetReleaseLockRequestBuilder(lockId))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK));
 
-        var processLocker = fixture.GetProcessLocker();
-        var instance = fixture.CreateInstance();
-
-        await using (var _ = await processLocker.AcquireAsync(instance)) { }
+        await using (var scope = fixture.ServiceProvider.CreateAsyncScope())
+        {
+            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
+            await processLocker.LockAsync();
+        }
 
         var acquireRequests = fixture.Server.FindLogEntries(fixture.GetAcquireLockRequestBuilder());
         Assert.Single(acquireRequests);
@@ -235,10 +280,11 @@ public sealed class ProcessLockTests
             .Server.Given(fixture.GetReleaseLockRequestBuilder(lockId))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.InternalServerError));
 
-        var processLocker = fixture.GetProcessLocker();
-        var instance = fixture.CreateInstance();
-
-        await using (var _ = await processLocker.AcquireAsync(instance)) { }
+        await using (var scope = fixture.ServiceProvider.CreateAsyncScope())
+        {
+            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
+            await processLocker.LockAsync();
+        }
 
         var releaseRequests = fixture.Server.FindLogEntries(fixture.GetReleaseLockRequestBuilder(lockId));
         Assert.Single(releaseRequests);
@@ -256,12 +302,11 @@ public sealed class ProcessLockTests
             .Server.Given(fixture.GetAcquireLockRequestBuilder())
             .RespondWith(Response.Create().WithStatusCode(storageStatusCode));
 
-        var processLocker = fixture.GetProcessLocker();
-        var instance = fixture.CreateInstance();
-
         var exception = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
         {
-            await using var _ = await processLocker.AcquireAsync(instance);
+            await using var scope = fixture.ServiceProvider.CreateAsyncScope();
+            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
+            await processLocker.LockAsync();
         });
 
         Assert.Single(fixture.Server.LogEntries);
@@ -286,12 +331,11 @@ public sealed class ProcessLockTests
                     .WithBody("null")
             );
 
-        var processLocker = fixture.GetProcessLocker();
-        var instance = fixture.CreateInstance();
-
         var exception = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
         {
-            await using var _ = await processLocker.AcquireAsync(instance);
+            await using var scope = fixture.ServiceProvider.CreateAsyncScope();
+            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
+            await processLocker.LockAsync();
         });
 
         Assert.Single(fixture.Server.LogEntries);
@@ -314,12 +358,11 @@ public sealed class ProcessLockTests
                     .WithBody("{}")
             );
 
-        var processLocker = fixture.GetProcessLocker();
-        var instance = fixture.CreateInstance();
-
         var exception = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
         {
-            await using var _ = await processLocker.AcquireAsync(instance);
+            await using var scope = fixture.ServiceProvider.CreateAsyncScope();
+            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
+            await processLocker.LockAsync();
         });
 
         Assert.Single(fixture.Server.LogEntries);
@@ -330,17 +373,23 @@ public sealed class ProcessLockTests
     [Fact]
     public async Task InvalidInstanceId_ThrowsArgumentException()
     {
-        using var fixture = Fixture.Create();
-
-        var processLocker = fixture.GetProcessLocker();
-        var instance = new Instance { Id = "invalid-format" };
-
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
+        using var fixture = Fixture.Create(services =>
         {
-            await using var _ = await processLocker.AcquireAsync(instance);
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.RouteValues.Add("instanceOwnerPartyId", "invalid");
+            httpContext.Request.RouteValues.Add("instanceGuid", "format");
+            var httpContextAccessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
+            services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
+        });
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        {
+            await using var scope = fixture.ServiceProvider.CreateAsyncScope();
+            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
+            await processLocker.LockAsync();
         });
 
         Assert.Empty(fixture.Server.LogEntries);
-        await Verify(new { Exception = exception }).IgnoreMember<PlatformHttpResponseSnapshotException>(x => x.Headers);
+        await Verify(new { Exception = exception });
     }
 }

@@ -41,7 +41,6 @@ public class ProcessController : ControllerBase
     private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
     private readonly IValidationService _validationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
-    private readonly ProcessLocker _processLocker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessController"/>
@@ -67,7 +66,6 @@ public class ProcessController : ControllerBase
         _processEngineAuthorizer = processEngineAuthorizer;
         _validationService = validationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
-        _processLocker = serviceProvider.GetRequiredService<ProcessLocker>();
     }
 
     /// <summary>
@@ -270,7 +268,6 @@ public class ProcessController : ControllerBase
         try
         {
             Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-            await using var _ = await _processLocker.AcquireAsync(instance);
 
             var processNextRequest = new ProcessNextRequest
             {
