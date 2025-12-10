@@ -70,5 +70,5 @@ public class PlatformSettings
     /// Url to Altinn3 library api endpoint that serves shared and updated resources like codelists...
     /// </summary>
     public string Altinn3LibraryApiEndpoint { get; set; } =
-        "https://studioprodsc.blob.core.windows.net/studioprodsharedcontentcontainer";
+        "https://studioprodsc.blob.core.windows.net/studioprodsharedcontentcontainer/";
 }
