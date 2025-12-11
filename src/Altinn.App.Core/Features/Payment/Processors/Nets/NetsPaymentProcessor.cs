@@ -16,6 +16,7 @@ internal class NetsPaymentProcessor : IPaymentProcessor
 {
     private readonly NetsPaymentSettings _settings;
     private readonly GeneralSettings _generalSettings;
+    private readonly AppIdentifier _app;
     private readonly INetsClient _netsClient;
 
     /// <summary>
@@ -30,12 +31,14 @@ internal class NetsPaymentProcessor : IPaymentProcessor
     public NetsPaymentProcessor(
         INetsClient netsClient,
         IOptions<NetsPaymentSettings> settings,
-        IOptions<GeneralSettings> generalSettings
+        IOptions<GeneralSettings> generalSettings,
+        AppIdentifier app
     )
     {
         _netsClient = netsClient;
         _settings = settings.Value;
         _generalSettings = generalSettings.Value;
+        _app = app;
     }
 
     /// <inheritdoc />
@@ -89,6 +92,19 @@ internal class NetsPaymentProcessor : IPaymentProcessor
                     Enabled = x.Enabled,
                 })
                 .ToList(),
+            Notifications = new NetsNotifications()
+            {
+                WebHooks =
+                [
+                    new NetsWebHook()
+                    {
+                        Authorization = _settings.WebhookCallbackKey,
+                        Url =
+                            $"{_generalSettings.FormattedExternalAppBaseUrl(_app)}instances/{instance.Id}/payment/nets-webhook-listener",
+                        EventName = "payment.checkout.completed",
+                    },
+                ],
+            },
             Checkout = new NetsCheckout
             {
                 IntegrationType = "HostedPaymentPage",

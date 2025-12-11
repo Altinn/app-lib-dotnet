@@ -1911,6 +1911,29 @@ namespace Altinn.App.Core.Features.Payment.Processors
         System.Threading.Tasks.Task<bool> TerminatePayment(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Features.Payment.Models.PaymentInformation paymentInformation);
     }
 }
+namespace Altinn.App.Core.Features.Payment.Processors.Nets.Models
+{
+    public sealed class NetsCompleteWebhookPayload
+    {
+        public NetsCompleteWebhookPayload() { }
+        [System.Text.Json.Serialization.JsonPropertyName("data")]
+        public required Altinn.App.Core.Features.Payment.Processors.Nets.Models.NetsCompleteWebhookPayloadData Data { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("event")]
+        public required string EventName { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public required string Id { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("merchantId")]
+        public required int MerchantId { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("timestamp")]
+        public required System.DateTimeOffset Timestamp { get; set; }
+    }
+    public sealed class NetsCompleteWebhookPayloadData
+    {
+        public NetsCompleteWebhookPayloadData() { }
+        [System.Text.Json.Serialization.JsonPropertyName("paymentId")]
+        public required string PaymentId { get; set; }
+    }
+}
 namespace Altinn.App.Core.Features.Payment.Processors.Nets
 {
     public class NetsPaymentSettings
@@ -1923,6 +1946,10 @@ namespace Altinn.App.Core.Features.Payment.Processors.Nets
         public bool ShowMerchantName { get; set; }
         public bool ShowOrderSummary { get; set; }
         public required string TermsUrl { get; set; }
+        [System.ComponentModel.DataAnnotations.MaxLength(64)]
+        [System.ComponentModel.DataAnnotations.MinLength(8)]
+        [System.ComponentModel.DataAnnotations.RegularExpression("^[a-zA-Z0-9\\-= ]*$")]
+        public string? WebhookCallbackKey { get; set; }
         public class PaymentMethodConfigurationItem
         {
             public PaymentMethodConfigurationItem() { }

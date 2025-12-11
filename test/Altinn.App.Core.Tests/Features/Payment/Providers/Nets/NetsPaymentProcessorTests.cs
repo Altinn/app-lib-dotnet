@@ -4,6 +4,7 @@ using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Processors.Nets;
 using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 using Altinn.App.Core.Internal.Language;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
@@ -34,7 +35,12 @@ public class NetsPaymentProcessorTests
             }
         );
         _generalSettings = Microsoft.Extensions.Options.Options.Create(new GeneralSettings());
-        _processor = new NetsPaymentProcessor(_netsClientMock.Object, _settings, _generalSettings);
+        _processor = new NetsPaymentProcessor(
+            _netsClientMock.Object,
+            _settings,
+            _generalSettings,
+            new AppIdentifier("ttd/test")
+        );
     }
 
     [Fact]
