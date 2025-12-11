@@ -105,7 +105,7 @@ public abstract class DataElementChange
         {
             throw new InvalidOperationException("Metadata already locked");
         }
-        _metadata =  [];
+        _metadata = [];
         _metadata.Add(new KeyValueEntry { Key = key, Value = value });
     }
 }
