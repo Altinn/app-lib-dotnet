@@ -1,5 +1,4 @@
 using Altinn.App.Core.Features.Process;
-using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -11,9 +10,9 @@ namespace Altinn.App.Core.Internal.Process;
 public interface IProcessEngine
 {
     /// <summary>
-    /// Method to start a new process
+    /// Starts a new process for an instance
     /// </summary>
-    Task<ProcessChangeResult> GenerateProcessStartEvents(ProcessStartRequest processStartRequest);
+    Task<ProcessChangeResult> Start(ProcessStartRequest request, CancellationToken ct = default);
 
     /// <summary>
     /// Method to move process to next task/event

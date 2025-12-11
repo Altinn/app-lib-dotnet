@@ -353,8 +353,6 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IProcessEngineAuthorizer, ProcessEngineAuthorizer>();
         services.TryAddTransient<IProcessNavigator, ProcessNavigator>();
         services.TryAddSingleton<IProcessReader, ProcessReader>();
-        services.TryAddTransient<IProcessEventHandlerDelegator, ProcessEventHandlingDelegator>();
-        services.TryAddTransient<IProcessEventDispatcher, ProcessEventDispatcher>();
         services.TryAddTransient<ExclusiveGatewayFactory>();
 
         services.AddTransient<IProcessTaskInitializer, ProcessTaskInitializer>();
@@ -368,6 +366,7 @@ public static class ServiceCollectionExtensions
 
         // Process engine callback helpers
         services.AddTransient<ProcessTaskResolver>();
+        services.AddTransient<ProcessNextRequestFactory>();
         services.AddHttpClient<IProcessEngineClient, ProcessEngineClient>();
 
         // Process engine callback handlers - TaskStart

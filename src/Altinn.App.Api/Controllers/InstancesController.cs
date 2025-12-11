@@ -334,21 +334,9 @@ public class InstancesController : ControllerBase
 
         Instance instance;
         instanceTemplate.Process = null;
-        ProcessStateChange? change = null;
 
         try
         {
-            // start process and goto next task
-            ProcessStartRequest processStartRequest = new() { Instance = instanceTemplate, User = User };
-
-            ProcessChangeResult result = await _processEngine.GenerateProcessStartEvents(processStartRequest);
-            if (!result.Success)
-            {
-                return Conflict(result.ErrorMessage);
-            }
-
-            change = result.ProcessStateChange;
-
             // create the instance
             instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
         }
@@ -381,9 +369,21 @@ public class InstancesController : ControllerBase
                 Guid.Parse(instance.Id.Split("/")[1])
             );
 
-            // notify app and store events
-            _logger.LogInformation("Events sent to process engine: {Events}", change?.Events);
-            await _processEngine.HandleEventsAndUpdateStorage(instance, null, change?.Events);
+            // Auto-start process - sends commands to ProcessEngine service
+            ProcessStartRequest processStartRequest = new() { Instance = instance, User = User };
+            ProcessChangeResult result = await _processEngine.Start(processStartRequest);
+
+            if (!result.Success)
+            {
+                _logger.LogError(
+                    "Failed to start process for instance {InstanceId}: {ErrorMessage}",
+                    instance.Id,
+                    result.ErrorMessage
+                );
+                // Note: Instance is created but process failed to start
+                // Consider if we should delete the instance here
+                return StatusCode(500, $"Instance created but process start failed: {result.ErrorMessage}");
+            }
         }
         catch (Exception exception)
         {
@@ -550,20 +550,9 @@ public class InstancesController : ControllerBase
         }
 
         Instance instance;
-        ProcessChangeResult processResult;
         try
         {
-            // start process and goto next task
             instanceTemplate.Process = null;
-
-            var request = new ProcessStartRequest()
-            {
-                Instance = instanceTemplate,
-                User = User,
-                Prefill = instansiationInstance.Prefill,
-            };
-
-            processResult = await _processEngine.GenerateProcessStartEvents(request);
 
             Instance? source = null;
 
@@ -598,11 +587,26 @@ public class InstancesController : ControllerBase
             }
 
             instance = await _instanceClient.GetInstance(instance);
-            await _processEngine.HandleEventsAndUpdateStorage(
-                instance,
-                instansiationInstance.Prefill,
-                processResult.ProcessStateChange?.Events
-            );
+
+            // Auto-start process - sends commands to ProcessEngine service
+            var startRequest = new ProcessStartRequest()
+            {
+                Instance = instance,
+                User = User,
+                Prefill = instansiationInstance.Prefill,
+            };
+
+            ProcessChangeResult processResult = await _processEngine.Start(startRequest);
+
+            if (!processResult.Success)
+            {
+                _logger.LogError(
+                    "Failed to start process for instance {InstanceId}: {ErrorMessage}",
+                    instance.Id,
+                    processResult.ErrorMessage
+                );
+                return StatusCode(500, $"Instance created but process start failed: {processResult.ErrorMessage}");
+            }
         }
         catch (Exception exception)
         {
@@ -714,17 +718,25 @@ public class InstancesController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
-        ProcessStartRequest processStartRequest = new() { Instance = targetInstance, User = User };
-
-        ProcessChangeResult startResult = await _processEngine.GenerateProcessStartEvents(processStartRequest);
-
         targetInstance = await _instanceClient.CreateInstance(org, app, targetInstance);
 
         await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
 
         targetInstance = await _instanceClient.GetInstance(targetInstance);
 
-        await _processEngine.HandleEventsAndUpdateStorage(targetInstance, null, startResult.ProcessStateChange?.Events);
+        // Auto-start process - sends commands to ProcessEngine service
+        ProcessStartRequest processStartRequest = new() { Instance = targetInstance, User = User };
+        ProcessChangeResult startResult = await _processEngine.Start(processStartRequest);
+
+        if (!startResult.Success)
+        {
+            _logger.LogError(
+                "Failed to start process for instance {InstanceId}: {ErrorMessage}",
+                targetInstance.Id,
+                startResult.ErrorMessage
+            );
+            return StatusCode(500, $"Instance created but process start failed: {startResult.ErrorMessage}");
+        }
 
         await RegisterEvent("app.instance.created", targetInstance);
 

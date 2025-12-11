@@ -13,13 +13,6 @@ internal sealed class UpdateProcessState : IProcessEngineCommand
 {
     public static string Key => "UpdateProcessState";
 
-    private readonly IProcessEventDispatcher _processEventDispatcher;
-
-    public UpdateProcessState(IProcessEventDispatcher processEventDispatcher)
-    {
-        _processEventDispatcher = processEventDispatcher;
-    }
-
     public string GetKey() => Key;
 
     public async Task<ProcessEngineCommandResult> Execute(ProcessEngineCommandContext context)
@@ -50,15 +43,6 @@ internal sealed class UpdateProcessState : IProcessEngineCommand
             // Get the instance and update its process state
             Instance instance = context.InstanceDataMutator.Instance;
             instance.Process = processStateChange.NewProcessState;
-
-            // Persist the updated instance and events to Storage
-            Instance updatedInstance = await _processEventDispatcher.DispatchToStorage(
-                instance,
-                processStateChange.Events
-            );
-
-            // Register events with the events component
-            await _processEventDispatcher.RegisterEventWithEventsComponent(updatedInstance);
 
             return new SuccessfulProcessEngineCommandResult();
         }

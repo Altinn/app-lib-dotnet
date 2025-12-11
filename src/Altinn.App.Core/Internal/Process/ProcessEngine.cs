@@ -26,14 +26,12 @@ namespace Altinn.App.Core.Internal.Process;
 /// <summary>
 /// Default implementation of the <see cref="IProcessEngine"/>
 /// </summary>
-public class ProcessEngine : IProcessEngine
+internal class ProcessEngine : IProcessEngine
 {
     private const int MaxNextIterationsAllowed = 100;
 
     private readonly IProcessReader _processReader;
     private readonly IProcessNavigator _processNavigator;
-    private readonly IProcessEventHandlerDelegator _processEventHandlerDelegator;
-    private readonly IProcessEventDispatcher _processEventDispatcher;
     private readonly UserActionService _userActionService;
     private readonly Telemetry? _telemetry;
     private readonly IAuthenticationContext _authenticationContext;
@@ -44,6 +42,7 @@ public class ProcessEngine : IProcessEngine
     private readonly IValidationService _validationService;
     private readonly IInstanceClient _instanceClient;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ProcessNextRequestFactory _processNextRequestFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -51,8 +50,6 @@ public class ProcessEngine : IProcessEngine
     public ProcessEngine(
         IProcessReader processReader,
         IProcessNavigator processNavigator,
-        IProcessEventHandlerDelegator processEventsDelegator,
-        IProcessEventDispatcher processEventDispatcher,
         UserActionService userActionService,
         IAuthenticationContext authenticationContext,
         IServiceProvider serviceProvider,
@@ -65,8 +62,6 @@ public class ProcessEngine : IProcessEngine
     {
         _processReader = processReader;
         _processNavigator = processNavigator;
-        _processEventHandlerDelegator = processEventsDelegator;
-        _processEventDispatcher = processEventDispatcher;
         _userActionService = userActionService;
         _telemetry = telemetry;
         _authenticationContext = authenticationContext;
@@ -75,11 +70,104 @@ public class ProcessEngine : IProcessEngine
         _instanceClient = instanceClient;
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _processNextRequestFactory = serviceProvider.GetRequiredService<ProcessNextRequestFactory>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <inheritdoc/>
+    public async Task<ProcessChangeResult> Start(ProcessStartRequest request, CancellationToken ct = default)
+    {
+        Instance instance = request.Instance;
+
+        using var activity = _telemetry?.StartProcessStartActivity(instance);
+
+        if (instance.Process != null)
+        {
+            var result = new ProcessChangeResult()
+            {
+                Success = false,
+                ErrorMessage = "Process is already started. Use next.",
+                ErrorType = ProcessErrorType.Conflict,
+            };
+            activity?.SetProcessChangeResult(result);
+            return result;
+        }
+
+        string? validStartElement = ProcessHelper.GetValidStartEventOrError(
+            request.StartEventId,
+            _processReader.GetStartEventIds(),
+            out ProcessError? startEventError
+        );
+        if (startEventError is not null)
+        {
+            var result = new ProcessChangeResult()
+            {
+                Success = false,
+                ErrorMessage = "No matching startevent",
+                ErrorType = ProcessErrorType.Conflict,
+            };
+            activity?.SetProcessChangeResult(result);
+            return result;
+        }
+
+        // TODO: assert can be removed when we improve nullability annotation in GetValidStartEventOrError
+        Debug.Assert(
+            validStartElement is not null,
+            "validStartElement should always be nonnull when startEventError is null"
+        );
+
+        // Start process and move to first task
+        ProcessStateChange? startChange = await ProcessStart(instance, validStartElement);
+        ProcessStateChange? nextChange = await MoveProcessStateToNextAndGenerateEvents(instance);
+
+        if (startChange == null || nextChange == null)
+        {
+            var result = new ProcessChangeResult()
+            {
+                Success = false,
+                ErrorMessage = "Failed to start process",
+                ErrorType = ProcessErrorType.Internal,
+            };
+            activity?.SetProcessChangeResult(result);
+            return result;
+        }
+
+        // Combine state changes
+        List<InstanceEvent> events = [];
+        if (startChange.Events?[0] is { } startEvent)
+        {
+            events.Add(startEvent.CopyValues());
+        }
+        if (nextChange.Events?[0] is { } goToNextEvent)
+        {
+            events.Add(goToNextEvent.CopyValues());
+        }
+
+        ProcessStateChange processStateChange = new()
+        {
+            OldProcessState = startChange.OldProcessState,
+            NewProcessState = nextChange.NewProcessState,
+            Events = events,
+        };
+
+        var processNextRequest = await _processNextRequestFactory.Create(instance, processStateChange);
+        var processEngineClient = _serviceProvider.GetRequiredService<IProcessEngineClient>();
+        await processEngineClient.ProcessNext(processNextRequest, ct);
+
+        _telemetry?.ProcessStarted();
+
+        var changeResult = new ProcessChangeResult(mutatedInstance: instance)
+        {
+            Success = true,
+            ProcessStateChange = processStateChange,
+        };
+        activity?.SetProcessChangeResult(changeResult);
+        return changeResult;
+    }
+
+    /// <inheritdoc/>
+    [Obsolete("Use Start method instead. This method will be removed in a future release.")]
     public async Task<ProcessChangeResult> GenerateProcessStartEvents(ProcessStartRequest processStartRequest)
     {
         using var activity = _telemetry?.StartProcessStartActivity(processStartRequest.Instance);
@@ -269,49 +357,18 @@ public class ProcessEngine : IProcessEngine
         // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
         if (request.Action is not "reject")
         {
-            IServiceTask? serviceTask = CheckIfServiceTask(altinnTaskType);
-            if (serviceTask is not null)
+            if (request.Action is not null)
             {
-                isServiceTask = true;
-                var (serviceTaskProcessChangeResult, serviceTaskResult) = await HandleServiceTask(
-                    instance,
-                    serviceTask,
-                    request with
-                    {
-                        Action = checkedAction,
-                    },
-                    ct
-                );
+                UserActionResult userActionResult = await HandleUserAction(instance, request, ct);
 
-                var serviceTaskRequiresContinue =
-                    serviceTaskResult is ServiceTaskFailedResult
+                if (userActionResult.ResultType is ResultType.Failure)
+                {
+                    return new ProcessChangeResult()
                     {
-                        ErrorHandling.Strategy: ServiceTaskErrorStrategy.ContinueProcessNext
+                        Success = false,
+                        ErrorMessage = $"Action handler for action {LogSanitizer.Sanitize(request.Action)} failed!",
+                        ErrorType = userActionResult.ErrorType,
                     };
-
-                if (!serviceTaskProcessChangeResult.Success && !serviceTaskRequiresContinue)
-                {
-                    return serviceTaskProcessChangeResult;
-                }
-
-                // `processNextAction` should be null at this loop iteration, but regardless, the service task result takes precedence (which may very well evaluate to null).
-                processNextAction = (serviceTaskResult as ServiceTaskFailedResult)?.ErrorHandling.Action;
-            }
-            else
-            {
-                if (request.Action is not null)
-                {
-                    UserActionResult userActionResult = await HandleUserAction(instance, request, ct);
-
-                    if (userActionResult.ResultType is ResultType.Failure)
-                    {
-                        return new ProcessChangeResult()
-                        {
-                            Success = false,
-                            ErrorMessage = $"Action handler for action {LogSanitizer.Sanitize(request.Action)} failed!",
-                            ErrorType = userActionResult.ErrorType,
-                        };
-                    }
                 }
             }
         }
@@ -359,12 +416,6 @@ public class ProcessEngine : IProcessEngine
         }
 
         MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, processNextAction);
-
-        if (moveToNextResult.IsEndEvent)
-        {
-            _telemetry?.ProcessEnded(moveToNextResult.ProcessStateChange);
-            await RunAppDefinedProcessEndHandlers(instance, moveToNextResult.ProcessStateChange?.Events);
-        }
 
         return new ProcessChangeResult(mutatedInstance: instance)
         {
@@ -754,11 +805,7 @@ public class ProcessEngine : IProcessEngine
             return new MoveToNextResult(instance, null);
         }
 
-        // Build ProcessNextRequest with all commands
-        var requestBuilder = new ProcessNextRequestBuilder(_appImplementationFactory, _authenticationContext);
-        var processNextRequest = await requestBuilder.Build(instance, processStateChange);
-
-        // Enqueue job to ProcessEngine service via HTTP
+        var processNextRequest = await _processNextRequestFactory.Create(instance, processStateChange);
         var processEngineClient = _serviceProvider.GetRequiredService<IProcessEngineClient>();
         await processEngineClient.ProcessNext(processNextRequest);
 

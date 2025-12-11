@@ -11,15 +11,15 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Core.Internal.ProcessEngine;
 
 /// <summary>
-/// Builds ProcessNextRequest objects from process state changes.
+/// Factory for creating ProcessNextRequest objects from process state changes.
 /// Maps instance events to command sequences and assembles the complete request.
 /// </summary>
-internal sealed class ProcessNextRequestBuilder
+internal sealed class ProcessNextRequestFactory
 {
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IAuthenticationContext _authenticationContext;
 
-    public ProcessNextRequestBuilder(
+    public ProcessNextRequestFactory(
         AppImplementationFactory appImplementationFactory,
         IAuthenticationContext authenticationContext
     )
@@ -29,10 +29,10 @@ internal sealed class ProcessNextRequestBuilder
     }
 
     /// <summary>
-    /// Builds a ProcessNextRequest from the instance and process state change.
+    /// Creates a ProcessNextRequest from the instance and process state change.
     /// Maps each instance event to its corresponding command sequence.
     /// </summary>
-    public async Task<Altinn.App.ProcessEngine.Models.ProcessNextRequest> Build(
+    public async Task<Altinn.App.ProcessEngine.Models.ProcessNextRequest> Create(
         Instance instance,
         ProcessStateChange processStateChange
     )
