@@ -10,6 +10,7 @@ namespace Altinn.App.Core.Internal.Expressions;
 /// Discriminated union for the JSON types that can be arguments and result of expressions
 /// </summary>
 [JsonConverter(typeof(ExpressionTypeUnionConverter))]
+[DebuggerDisplay("{ToString(),nq}")]
 public readonly struct ExpressionValue : IEquatable<ExpressionValue>
 {
     private readonly JsonValueKind _valueKind;
@@ -263,9 +264,32 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         ValueKind switch
         {
             JsonValueKind.Null => "null",
+            JsonValueKind.Undefined => "undefined",
             JsonValueKind.True => "true",
             JsonValueKind.False => "false",
             JsonValueKind.String => JsonSerializer.Serialize(String, _unsafeSerializerOptionsForSerializingDates),
+            JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
+            // JsonValueKind.Object => JsonSerializer.Serialize(Object),
+            // JsonValueKind.Array => JsonSerializer.Serialize(Array),
+            _ => throw new InvalidOperationException($"Invalid value kind {ValueKind}"),
+        };
+
+    /// <summary>
+    /// Converts the current instance of <see cref="ExpressionValue"/> to its string representation
+    /// suitable for text-based contexts.
+    /// </summary>
+    /// <returns>
+    /// A string representation of the value. Returns "true" for boolean true, "false" for boolean false,
+    /// the string content for string values, the numeric value as a string for number values, or an empty string for null.
+    /// Throws <see cref="InvalidOperationException"/> for invalid or unsupported value kinds.
+    /// </returns>
+    public string? ToStringForText() =>
+        _valueKind switch
+        {
+            JsonValueKind.Null => null,
+            JsonValueKind.True => "true",
+            JsonValueKind.False => "false",
+            JsonValueKind.String => String,
             JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
             // JsonValueKind.Object => JsonSerializer.Serialize(Object),
             // JsonValueKind.Array => JsonSerializer.Serialize(Array),
@@ -366,6 +390,58 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
+
+    /// <summary>
+    /// Convert the value to boolean using loose conversion rules
+    /// </summary>
+    /// <remarks>
+    /// Loose conversion rules:
+    ///     * Undefined is defaultReturn ?? exception
+    ///     * Null is defaultReturn ?? false
+    ///     * "true" (case-insensitive) is true
+    ///     * "false" (case-insensitive) is false
+    ///     * "1" is true
+    ///     * "0" is false
+    ///     * 1 is true
+    ///     * 0 is false
+    ///     * Anything else throws an exception
+    /// </remarks>
+    public bool ToBoolLoose(bool? defaultReturn)
+    {
+        return ValueKind switch
+        {
+            JsonValueKind.Null => defaultReturn ?? false,
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+
+            JsonValueKind.String => String switch
+            {
+                "true" => true,
+                "false" => false,
+                "1" => true,
+                "0" => false,
+                { } sValue when sValue.Equals("true", StringComparison.OrdinalIgnoreCase) => true,
+                { } sValue when sValue.Equals("false", StringComparison.OrdinalIgnoreCase) => false,
+                _ => ExpressionEvaluator.ParseNumber(String, throwException: false) switch
+                {
+                    1 => true,
+                    0 => false,
+                    _ => throw new ExpressionEvaluatorTypeErrorException($"Expected boolean, got value \"{String}\""),
+                },
+            },
+            JsonValueKind.Number => Number switch
+            {
+                1 => true,
+                0 => false,
+                _ => throw new ExpressionEvaluatorTypeErrorException($"Expected boolean, got value {Number}"),
+            },
+            JsonValueKind.Undefined => defaultReturn
+                ?? throw new ExpressionEvaluatorTypeErrorException("Expected boolean, got undefined value"),
+            _ => throw new ExpressionEvaluatorTypeErrorException(
+                "Unknown data type encountered in expression: " + ValueKind
+            ),
+        };
+    }
 }
 
 /// <summary>

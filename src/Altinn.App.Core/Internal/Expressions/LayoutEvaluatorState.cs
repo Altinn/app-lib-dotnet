@@ -61,7 +61,7 @@ public class LayoutEvaluatorState
         _frontEndSettings = frontEndSettings;
         Instance = dataAccessor.Instance;
         _gatewayAction = gatewayAction;
-        _language = language;
+        _language = language ?? dataAccessor.Language;
         _timeZone = timeZone;
     }
 
@@ -185,7 +185,7 @@ public class LayoutEvaluatorState
     /// </summary>
     public async Task<object?> GetModelData(
         ModelBinding key,
-        DataElementIdentifier defaultDataElementIdentifier,
+        DataElementIdentifier? defaultDataElementIdentifier,
         int[]? indexes
     )
     {
@@ -270,25 +270,32 @@ public class LayoutEvaluatorState
                 $"Failed to add indexes to path {binding.Field} with indexes "
                     + $"{(context.RowIndices is null ? "null" : string.Join(", ", context.RowIndices))} on {dataElementId}"
             );
-        ;
+
         return new DataReference() { Field = field, DataElementIdentifier = dataElementId };
     }
 
     private DataElementIdentifier ResolveDataElementIdentifier(
         ModelBinding key,
-        DataElementIdentifier defaultDataElementIdentifier
+        DataElementIdentifier? defaultDataElementIdentifier
     )
     {
         // If the binding don't have a specific data type, use the default
-        if (key.DataType == null)
+        if (key.DataType is null)
         {
-            return defaultDataElementIdentifier;
+            return defaultDataElementIdentifier
+                ?? throw new InvalidOperationException(
+                    "Cannot resolve data element identifier without a default or specific data type"
+                );
         }
         // If the data element has the same type as default, return it
-        var defaultDataType = _dataAccessor.GetDataType(defaultDataElementIdentifier);
-        if (defaultDataType.Id == key.DataType)
+
+        if (defaultDataElementIdentifier.HasValue)
         {
-            return defaultDataElementIdentifier;
+            var defaultDataType = _dataAccessor.GetDataType(defaultDataElementIdentifier.Value);
+            if (defaultDataType.Id == key.DataType)
+            {
+                return defaultDataElementIdentifier.Value;
+            }
         }
 
         // Return the correct element if the data type has a single element on the instance and MaxCount == 1
@@ -317,7 +324,9 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Return a full dataModelBinding from a context aware binding by adding indexes
     /// </summary>
-    [Obsolete("This method is deprecated and will be removed in a future version.")]
+    [Obsolete(
+        "This method is deprecated and will be removed in a future version in favor of AddInidicies(ModelBinding, ComponentContext)."
+    )]
     public async Task<DataReference> AddInidicies(
         ModelBinding binding,
         DataElementIdentifier dataElementIdentifier,
@@ -392,7 +401,7 @@ public class LayoutEvaluatorState
 
     // private void GetModelErrorsForExpression(Expression expr, BaseComponent component, List<string> errors)
     // {
-    //     if (!expr.IsFunctionExpression)
+    //     if (expr.IsLiteralValue)
     //     {
     //         return;
     //     }
@@ -420,4 +429,12 @@ public class LayoutEvaluatorState
     //         GetModelErrorsForExpression(arg, component, errors);
     //     }
     // }
+
+    /// <summary>
+    /// Get the default data type from the current layoutset
+    /// </summary>
+    public DataType? GetDefaultDataType()
+    {
+        return _componentModel?.DefaultDataType;
+    }
 }

@@ -36,8 +36,7 @@ public static class LayoutEvaluator
                 hiddenModelBindings,
                 nonHiddenModelBindings,
                 pageContext,
-                evaluateRemoveWhenHidden,
-                []
+                evaluateRemoveWhenHidden
             );
         }
 
@@ -51,8 +50,7 @@ public static class LayoutEvaluator
         HashSet<DataReference> hiddenModelBindings,
         HashSet<DataReference> nonHiddenModelBindings,
         ComponentContext context,
-        bool evaluateRemoveWhenHidden,
-        IReadOnlyList<DataReference> ignoredPrefixes
+        bool evaluateRemoveWhenHidden
     )
     {
         if (context.Component is null)
@@ -65,25 +63,16 @@ public static class LayoutEvaluator
 
         var isHidden = await context.IsHidden(evaluateRemoveWhenHidden);
 
-        List<DataReference> childIgnoredPrefixes = [.. ignoredPrefixes];
-
         // Schedule fields for removal
-        foreach (var (_, binding) in context.Component.DataModelBindings)
+        foreach (var reference in await context.Component.GetDataReferencesToRemoveWhenHidden(context))
         {
-            var indexedBinding = await state.AddInidicies(binding, context);
-            if (ignoredPrefixes.Any(prefix => indexedBinding.StartsWith(prefix)))
-            {
-                continue; // Skip fields with ignored prefixes
-            }
-
             if (isHidden)
             {
-                hiddenModelBindings.Add(indexedBinding);
-                childIgnoredPrefixes.Add(indexedBinding);
+                hiddenModelBindings.Add(reference);
             }
             else
             {
-                nonHiddenModelBindings.Add(indexedBinding);
+                nonHiddenModelBindings.Add(reference);
             }
         }
 
@@ -95,8 +84,7 @@ public static class LayoutEvaluator
                 hiddenModelBindings,
                 nonHiddenModelBindings,
                 childContext,
-                evaluateRemoveWhenHidden,
-                childIgnoredPrefixes
+                evaluateRemoveWhenHidden
             );
         }
     }
@@ -165,7 +153,7 @@ public static class LayoutEvaluator
                 await RunLayoutValidationsForRequiredRecurs(validationIssues, state, childContext);
             }
 
-            var required = await ExpressionEvaluator.EvaluateBooleanExpression(state, context, "required", false);
+            var required = await context.IsRequired();
             if (required)
             {
                 foreach (var (bindingName, binding) in context.Component.DataModelBindings)

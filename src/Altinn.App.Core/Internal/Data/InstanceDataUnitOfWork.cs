@@ -7,6 +7,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
@@ -39,8 +40,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     private readonly IAppResources _appResources;
     private readonly IOptions<FrontEndSettings> _frontEndSettings;
-    private readonly string? _taskId;
-    private readonly string? _language;
     private readonly ITranslationService _translationService;
     private readonly Telemetry? _telemetry;
 
@@ -89,8 +88,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         _appMetadata = appMetadata;
         _translationService = translationService;
         _modelSerializationService = modelSerializationService;
-        _taskId = taskId;
-        _language = language;
+        TaskId = taskId;
+        Language = language;
         _frontEndSettings = frontEndSettings;
         _appResources = appResources;
         _instanceClient = instanceClient;
@@ -100,6 +99,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     public Instance Instance { get; }
 
     public IReadOnlyCollection<DataType> DataTypes { get; }
+
+    public string? TaskId { get; }
+
+    public string? Language { get; }
 
     /// <inheritdoc />
     public void OverrideAuthenticationMethod(DataType dataType, StorageAuthenticationMethod method)
@@ -128,9 +131,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                     );
                 }
                 var binaryData = await GetBinaryData(dataElementIdentifier);
+                var dataElement = GetDataElement(dataElementIdentifier);
 
                 return FormDataWrapperFactory.Create(
-                    _modelSerializationService.DeserializeFromStorage(binaryData.Span, dataType)
+                    _modelSerializationService.DeserializeFromStorage(binaryData.Span, dataType, dataElement)
                 );
             }
         );
@@ -141,12 +145,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     {
         return new CleanInstanceDataAccessor(
             this,
-            _taskId,
             _appResources,
             _translationService,
             _frontEndSettings.Value,
             rowRemovalOption,
-            _language,
             _telemetry
         );
     }
@@ -163,15 +165,44 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
         _previousDataAccessorCache = new PreviousDataAccessor(
             this,
-            _taskId,
             _appResources,
             _translationService,
             _modelSerializationService,
             _frontEndSettings.Value,
-            _language,
             _telemetry
         );
         return _previousDataAccessorCache;
+    }
+
+    private LayoutEvaluatorState? _layoutEvaluatorStateCache;
+
+    public LayoutEvaluatorState? GetLayoutEvaluatorState()
+    {
+        if (TaskId is null)
+        {
+            return null;
+        }
+        if (_layoutEvaluatorStateCache is not null)
+        {
+            return _layoutEvaluatorStateCache;
+        }
+
+        // Could use a double lock here, but a deadlock is more problematic than creating the state twice
+        var layouts = _appResources.GetLayoutModelForTask(TaskId);
+        if (layouts is null)
+        {
+            return null;
+        }
+
+        _layoutEvaluatorStateCache = new LayoutEvaluatorState(
+            this,
+            layouts,
+            _translationService,
+            _frontEndSettings.Value,
+            gatewayAction: null,
+            Language
+        );
+        return _layoutEvaluatorStateCache;
     }
 
     /// <inheritdoc />
@@ -184,8 +215,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             dataElementIdentifier,
             async () =>
                 await _dataClient.GetDataBytes(
-                    _appMetadata.AppIdentifier.Org,
-                    _appMetadata.AppIdentifier.App,
                     _instanceOwnerPartyId,
                     _instanceGuid,
                     dataElementIdentifier.Guid,
@@ -229,7 +258,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         }
 
         ObjectUtils.InitializeAltinnRowId(model);
-        var (bytes, contentType) = _modelSerializationService.SerializeToStorage(model, dataType);
+        var (bytes, contentType) = _modelSerializationService.SerializeToStorage(model, dataType, null);
 
         FormDataChange change = new FormDataChange(
             type: ChangeType.Created,
@@ -396,7 +425,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
             var (currentBinary, _) = _modelSerializationService.SerializeToStorage(
                 dataWrapper.BackingData<object>(),
-                dataType
+                dataType,
+                dataElement
             );
 
             if (!currentBinary.Span.SequenceEqual(cachedBinary.Span))
@@ -411,7 +441,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                         // For patch requests we could get the previous data from the patch, but it's not available here
                         // and deserializing twice is not a big deal
                         previousFormDataWrapper: FormDataWrapperFactory.Create(
-                            _modelSerializationService.DeserializeFromStorage(cachedBinary.Span, dataType)
+                            _modelSerializationService.DeserializeFromStorage(cachedBinary.Span, dataType, dataElement)
                         ),
                         currentBinaryData: currentBinary,
                         previousBinaryData: cachedBinary
@@ -515,8 +545,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             async Task DeleteData()
             {
                 await _dataClient.DeleteData(
-                    _appMetadata.AppIdentifier.Org,
-                    _appMetadata.AppIdentifier.App,
                     _instanceOwnerPartyId,
                     _instanceGuid,
                     change.DataElementIdentifier.Guid,

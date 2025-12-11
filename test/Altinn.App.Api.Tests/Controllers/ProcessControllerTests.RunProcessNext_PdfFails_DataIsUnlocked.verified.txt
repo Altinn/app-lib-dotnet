@@ -81,16 +81,6 @@
       HasParent: true
     },
     {
-      Name: ApplicationMetadata.Service.GetTexts,
-      IdFormat: W3C,
-      HasParent: true
-    },
-    {
-      Name: ApplicationMetadata.Service.GetTexts,
-      IdFormat: W3C,
-      HasParent: true
-    },
-    {
       Name: ApplicationMetadata.Service.GetValidationConfiguration,
       IdFormat: W3C,
       HasParent: true
@@ -255,9 +245,6 @@
       Tags: [
         {
           instance.guid: Guid_1
-        },
-        {
-          process.action: write
         }
       ],
       HasParent: true
@@ -269,6 +256,11 @@
     },
     {
       Name: ProcessReader.GetAllFlowElements,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: ProcessReader.GetAltinnTaskExtension,
       IdFormat: W3C,
       HasParent: true
     },
@@ -294,6 +286,11 @@
     },
     {
       Name: ProcessReader.GetExclusiveGateways,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: ProcessReader.GetFlowElement,
       IdFormat: W3C,
       HasParent: true
     },
