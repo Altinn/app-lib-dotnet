@@ -89,6 +89,18 @@ internal class NetsPaymentProcessor : IPaymentProcessor
                     Enabled = x.Enabled,
                 })
                 .ToList(),
+            Notifications = new NetsNotifications()
+            {
+                WebHooks =
+                [
+                    new NetsWebHook()
+                    {
+                        Authorization = _settings.WebhookCallbackKey,
+                        Url = $"{_generalSettings.ExternalAppBaseUrl}instances/{instance.Id}/payment/nets-webhook-listener",
+                        EventName = "payment.checkout.completed",
+                    },
+                ],
+            },
             Checkout = new NetsCheckout
             {
                 IntegrationType = "HostedPaymentPage",

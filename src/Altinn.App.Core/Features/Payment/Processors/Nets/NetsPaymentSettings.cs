@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Altinn.App.Core.Features.Payment.Processors.Nets;
 
 /// <summary>
@@ -9,6 +11,20 @@ public class NetsPaymentSettings
     /// Main authentication key for the Nets payment processor. Should be set in the secret manager being used. Never check in to source control.
     /// </summary>
     public required string SecretApiKey { get; set; }
+
+    /// <summary>
+    /// Key used to validate webhook callbacks from Nets Easy. Should be set in the secret manager being used. Never check in to source control.
+    /// </summary>
+    /// <remarks>
+    /// The credentials that will be sent in the HTTP Authorization request header of the callback. Must be between 8 and 32 characters long and contain alphanumeric characters.
+    /// Length: 8-64
+    /// Pattern: @^[a-zA-Z0-9\-= ]*$
+    /// </remarks>
+    // TODO: Make this required and not null in V9
+    [RegularExpression("^[a-zA-Z0-9\\-= ]*$")]
+    [MinLength(8)]
+    [MaxLength(64)]
+    public string? WebhookCallbackKey { get; set; }
 
     /// <summary>
     /// Base API url for Nets Easy.

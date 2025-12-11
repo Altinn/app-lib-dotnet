@@ -197,6 +197,79 @@ internal class PaymentService : IPaymentService
         return paymentInformation;
     }
 
+    public async Task HandlePaymentCompletedWebhook(
+        Instance instance,
+        ValidAltinnPaymentConfiguration paymentConfiguration,
+        StorageAuthenticationMethod storageAuthenticationMethod
+    )
+    {
+        _logger.LogInformation("Checking payment status for instance {InstanceId}.", instance.Id);
+
+        string dataTypeId = paymentConfiguration.PaymentDataType;
+        (Guid dataElementId, PaymentInformation? paymentInformation) = await _dataService.GetByType<PaymentInformation>(
+            instance,
+            dataTypeId,
+            storageAuthenticationMethod
+        );
+
+        if (paymentInformation == null)
+        {
+            _logger.LogInformation(
+                "No payment information stored yet for instance {InstanceId}. Returning uninitialized result.",
+                instance.Id
+            );
+
+            return;
+        }
+
+        decimal totalPriceIncVat = paymentInformation.OrderDetails.TotalPriceIncVat;
+        string paymentProcessorId = paymentInformation.OrderDetails.PaymentProcessorId;
+
+        if (paymentInformation.Status == PaymentStatus.Skipped)
+        {
+            _logger.LogInformation(
+                "Payment status is '{Skipped}' for instance {InstanceId}. Won't ask payment processor for status.",
+                PaymentStatus.Skipped.ToString(),
+                instance.Id
+            );
+
+            return;
+        }
+
+        var paymentProcessors = _appImplementationFactory.GetAll<IPaymentProcessor>();
+        IPaymentProcessor paymentProcessor =
+            paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == paymentProcessorId)
+            ?? throw new PaymentException($"Payment processor with ID '{paymentProcessorId}' not found.");
+
+        PaymentDetails paymentDetails =
+            paymentInformation.PaymentDetails
+            ?? throw new PaymentException("Payment details unexpectedly missing from payment information.");
+
+        (PaymentStatus paymentStatus, PaymentDetails updatedPaymentDetails) = await paymentProcessor.GetPaymentStatus(
+            instance,
+            paymentDetails.PaymentId,
+            totalPriceIncVat,
+            language: null
+        );
+
+        paymentInformation.Status = paymentStatus;
+        paymentInformation.PaymentDetails = updatedPaymentDetails;
+
+        _logger.LogInformation(
+            "Updated payment status is {Status} for instance {InstanceId}.",
+            paymentInformation.Status.ToString(),
+            instance.Id
+        );
+
+        await _dataService.UpdateJsonObject(
+            new InstanceIdentifier(instance),
+            dataTypeId,
+            dataElementId,
+            paymentInformation,
+            storageAuthenticationMethod
+        );
+    }
+
     /// <inheritdoc/>
     public async Task<PaymentStatus> GetPaymentStatus(
         Instance instance,
