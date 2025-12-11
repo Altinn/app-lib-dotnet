@@ -452,8 +452,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         if (change.Metadata is not null)
         {
             dataElement.Metadata = [.. change.Metadata];
-            change.Lock = true;
             await _dataClient.Update(Instance, dataElement);
+            change.Lock = true;
         }
 
         // Update caches

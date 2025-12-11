@@ -45,7 +45,7 @@ public abstract class DataElementChange
     /// <summary>
     /// The metadata of the data element
     /// </summary>
-    private List<KeyValueEntry>? _metadata = [];
+    private List<KeyValueEntry>? _metadata;
 
     /// <summary>
     /// The type of update: Create, Update or Delete
@@ -88,6 +88,9 @@ public abstract class DataElementChange
     /// </summary>
     public void AddMetadata(string key, string value)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentException.ThrowIfNullOrWhiteSpace(value);
+
         if (Type != ChangeType.Created)
         {
             throw new InvalidOperationException("Metadata can only be added to created data elements");
@@ -97,7 +100,7 @@ public abstract class DataElementChange
         {
             throw new InvalidOperationException("Metadata already locked");
         }
-        _metadata ??= [];
+        _metadata =  [];
         _metadata.Add(new KeyValueEntry { Key = key, Value = value });
     }
 }
