@@ -65,11 +65,24 @@ public class PaymentServiceTests
             .ReturnsAsync(orderDetails);
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync((Guid.Empty, null));
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
+            .Setup(ds =>
+                ds.InsertJsonObject(
+                    It.IsAny<InstanceIdentifier>(),
+                    It.IsAny<string>(),
+                    It.IsAny<object>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync(new DataElement());
         fixture.Mock<IPaymentProcessor>().Setup(pp => pp.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
         fixture
@@ -106,7 +119,8 @@ public class PaymentServiceTests
                 ds.InsertJsonObject(
                     It.IsAny<InstanceIdentifier>(),
                     paymentConfiguration.PaymentDataType!,
-                    It.IsAny<object>()
+                    It.IsAny<object>(),
+                    It.IsAny<StorageAuthenticationMethod>()
                 )
             );
     }
@@ -125,7 +139,13 @@ public class PaymentServiceTests
 
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync(
                 (
                     Guid.NewGuid(),
@@ -162,7 +182,13 @@ public class PaymentServiceTests
 
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync((Guid.Empty, null));
 
         fixture
@@ -190,7 +216,13 @@ public class PaymentServiceTests
 
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync((Guid.Empty, null));
         fixture
             .Mock<IOrderDetailsCalculator>()
@@ -228,11 +260,24 @@ public class PaymentServiceTests
             .ReturnsAsync(orderDetails);
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync((Guid.Empty, null));
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
+            .Setup(ds =>
+                ds.InsertJsonObject(
+                    It.IsAny<InstanceIdentifier>(),
+                    It.IsAny<string>(),
+                    It.IsAny<object>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ThrowsAsync(new Exception());
         fixture.Mock<IPaymentProcessor>().Setup(pp => pp.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
         fixture
@@ -263,7 +308,13 @@ public class PaymentServiceTests
 
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync((Guid.Empty, null));
 
         // Act
@@ -298,7 +349,13 @@ public class PaymentServiceTests
 
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
         fixture.Mock<IPaymentProcessor>().Setup(x => x.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
@@ -332,7 +389,13 @@ public class PaymentServiceTests
 
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
         fixture
@@ -342,7 +405,8 @@ public class PaymentServiceTests
                     It.IsAny<InstanceIdentifier>(),
                     It.IsAny<string>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<object>()
+                    It.IsAny<object>(),
+                    It.IsAny<StorageAuthenticationMethod>()
                 )
             )
             .ReturnsAsync(new DataElement());
@@ -387,12 +451,20 @@ public class PaymentServiceTests
 
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.DeleteById(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>()))
+            .Setup(ds =>
+                ds.DeleteById(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>(), It.IsAny<StorageAuthenticationMethod>())
+            )
             .ReturnsAsync(true);
 
         fixture
@@ -401,7 +473,8 @@ public class PaymentServiceTests
                 x.InsertJsonObject(
                     It.IsAny<InstanceIdentifier>(),
                     paymentConfiguration.PaymentDataType!,
-                    It.IsAny<object>()
+                    It.IsAny<object>(),
+                    It.IsAny<StorageAuthenticationMethod>()
                 )
             )
             .ReturnsAsync(new DataElement());
@@ -432,7 +505,15 @@ public class PaymentServiceTests
             .Verify(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()), Times.Once);
         fixture
             .Mock<IDataService>()
-            .Verify(ds => ds.DeleteById(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>()), Times.Once);
+            .Verify(
+                ds =>
+                    ds.DeleteById(
+                        It.IsAny<InstanceIdentifier>(),
+                        It.IsAny<Guid>(),
+                        It.IsAny<StorageAuthenticationMethod>()
+                    ),
+                Times.Once
+            );
     }
 
     [Fact]
@@ -455,7 +536,14 @@ public class PaymentServiceTests
             .ReturnsAsync(orderDetails);
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.InsertJsonObject(It.IsAny<InstanceIdentifier>(), It.IsAny<string>(), It.IsAny<object>()))
+            .Setup(ds =>
+                ds.InsertJsonObject(
+                    It.IsAny<InstanceIdentifier>(),
+                    It.IsAny<string>(),
+                    It.IsAny<object>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync(new DataElement());
         fixture.Mock<IPaymentProcessor>().Setup(pp => pp.PaymentProcessorId).Returns(orderDetails.PaymentProcessorId);
         fixture
@@ -465,7 +553,13 @@ public class PaymentServiceTests
 
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(It.IsAny<Instance>(), It.IsAny<string>()))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(
+                    It.IsAny<Instance>(),
+                    It.IsAny<string>(),
+                    It.IsAny<StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
         fixture
@@ -483,7 +577,15 @@ public class PaymentServiceTests
             .Verify(pp => pp.TerminatePayment(It.IsAny<Instance>(), It.IsAny<PaymentInformation>()), Times.Once);
         fixture
             .Mock<IDataService>()
-            .Verify(ds => ds.DeleteById(It.IsAny<InstanceIdentifier>(), It.IsAny<Guid>()), Times.Never);
+            .Verify(
+                ds =>
+                    ds.DeleteById(
+                        It.IsAny<InstanceIdentifier>(),
+                        It.IsAny<Guid>(),
+                        It.IsAny<StorageAuthenticationMethod>()
+                    ),
+                Times.Never
+            );
     }
 
     [Fact]
@@ -554,7 +656,9 @@ public class PaymentServiceTests
 
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(instance, paymentDataType))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(instance, paymentDataType, It.IsAny<StorageAuthenticationMethod>())
+            )
             .ReturnsAsync((Guid.NewGuid(), null));
 
         // Act
@@ -581,7 +685,9 @@ public class PaymentServiceTests
 
         fixture
             .Mock<IDataService>()
-            .Setup(ds => ds.GetByType<PaymentInformation>(instance, paymentDataType))
+            .Setup(ds =>
+                ds.GetByType<PaymentInformation>(instance, paymentDataType, It.IsAny<StorageAuthenticationMethod>())
+            )
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
         // Act

@@ -27,6 +27,12 @@ internal interface IPaymentService
         string? language
     );
 
+    Task HandlePaymentCompletedWebhook(
+        Instance instance,
+        ValidAltinnPaymentConfiguration paymentConfiguration,
+        StorageAuthenticationMethod storageAuthenticationMethod
+    );
+
     /// <summary>
     /// Get our internal payment status. Will only check the local status and will not get updated status from the payment provider.
     /// </summary>
