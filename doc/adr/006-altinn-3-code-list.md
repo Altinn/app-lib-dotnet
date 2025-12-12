@@ -1,11 +1,12 @@
 ﻿# New way of getting code lists
 
-* Status: in progress
+* Status: Accepted
 * Deciders: Squad Data
 * Date: 2025-11-25
 
 ## Result
-* Not concluded
+
+A1: Use already existing path without modifying it
 
 ## Problem context
 
@@ -36,7 +37,7 @@ Other things that would be nice to solve at the same time:
 ## Alternatives considered
 
 * **A1: Use already existing path without modifying it**
-  *GET /{org}/{app}/api/options/{optionsId}?language={language}*
+  *GET /{org}/{app}/api/options/{optionsIdOrLibraryRef}?language={language}*
   OptionsId becomes the creator org, codelist id and version. Formatting creator org, codelist id and version into the optionsId string e.g., creatorOrg--codelistId--version
 * **A2: Modify existing path with nullable path variables**
   *GET /{org}/{app}/api/options/{optionIdOrCreatorOrg}/
@@ -109,3 +110,7 @@ Other things that would be nice to solve at the same time:
 
 ## Decision rationale
 
+To ease the implementation process for the consumers/clients, we have chosen A1.
+The optionId have to be formated like this when optionId Altinn 3 library code lists are requested:
+
+*lib\*\*{creatorOrg}\*\*{codeListId}\*\*{version}*

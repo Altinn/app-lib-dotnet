@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using System.Text.Json;
-using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+using Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 
 namespace Altinn.App.Core.Tests.Features.Options.Altinn3LibraryProvider;
 

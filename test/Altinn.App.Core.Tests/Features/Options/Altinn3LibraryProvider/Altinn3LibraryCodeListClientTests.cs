@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+using Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;

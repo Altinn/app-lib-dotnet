@@ -1655,7 +1655,7 @@ namespace Altinn.App.Core.Features.Options.Altinn2Provider
         public int Version { get; set; }
     }
 }
-namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider
+namespace Altinn.App.Core.Features.Options.Altinn3LibraryCodeList
 {
     public class Altinn3LibraryCodeListItem
     {
@@ -1675,9 +1675,9 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider
     {
         public Altinn3LibraryCodeListResponse() { }
         [System.Text.Json.Serialization.JsonPropertyName("codes")]
-        public required System.Collections.Generic.List<Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListItem> Codes { get; set; }
+        public required System.Collections.Generic.List<Altinn.App.Core.Features.Options.Altinn3LibraryCodeList.Altinn3LibraryCodeListItem> Codes { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("source")]
-        public required Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListSource Source { get; set; }
+        public required Altinn.App.Core.Features.Options.Altinn3LibraryCodeList.Altinn3LibraryCodeListSource Source { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("tagNames")]
         public System.Collections.Generic.List<string>? TagNames { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("version")]
@@ -1691,8 +1691,8 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider
     }
     public interface IAltinn3LibraryCodeListService
     {
-        System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(string org, string codeListId, string? version, System.Threading.CancellationToken cancellationToken = default);
-        Altinn.App.Core.Models.AppOptions MapAppOptions(Altinn.App.Core.Features.Options.Altinn3LibraryProvider.Altinn3LibraryCodeListResponse libraryCodeListResponse, string? language);
+        System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn3LibraryCodeList.Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(string org, string codeListId, string? version, System.Threading.CancellationToken cancellationToken = default);
+        Altinn.App.Core.Models.AppOptions MapAppOptions(Altinn.App.Core.Features.Options.Altinn3LibraryCodeList.Altinn3LibraryCodeListResponse libraryCodeListResponse, string? language);
     }
 }
 namespace Altinn.App.Core.Features.Options

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+namespace Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 
 /// <summary>
 /// Outer model for the Altinn 3 library code list API

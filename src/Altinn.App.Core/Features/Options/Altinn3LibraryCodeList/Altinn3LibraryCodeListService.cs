@@ -3,7 +3,7 @@ using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Models;
 using Microsoft.Extensions.Caching.Hybrid;
 
-namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+namespace Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 
 /// <summary>
 /// Service for handling Altinn 3 library code lists.

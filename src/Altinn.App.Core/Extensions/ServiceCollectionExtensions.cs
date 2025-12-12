@@ -10,7 +10,7 @@ using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Features.Notifications.Email;
 using Altinn.App.Core.Features.Notifications.Sms;
 using Altinn.App.Core.Features.Options;
-using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+using Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Features.Payment.Processors;
 using Altinn.App.Core.Features.Payment.Processors.FakePaymentProcessor;

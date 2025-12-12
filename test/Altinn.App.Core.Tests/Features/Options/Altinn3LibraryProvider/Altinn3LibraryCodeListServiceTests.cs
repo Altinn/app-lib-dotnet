@@ -1,5 +1,5 @@
 ﻿using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+using Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 using Altinn.App.Core.Internal.Language;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

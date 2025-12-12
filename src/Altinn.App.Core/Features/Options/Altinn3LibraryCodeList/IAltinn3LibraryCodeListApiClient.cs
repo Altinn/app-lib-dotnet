@@ -1,4 +1,4 @@
-namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+namespace Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 
 /// <summary>
 /// Interface for the Altinn 3 library code list API client

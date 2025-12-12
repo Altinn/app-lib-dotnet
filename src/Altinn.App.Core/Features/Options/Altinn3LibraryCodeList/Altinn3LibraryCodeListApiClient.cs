@@ -4,7 +4,7 @@ using Altinn.App.Core.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+namespace Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 
 internal sealed class Altinn3LibraryCodeListApiClient : IAltinn3LibraryCodeListApiClient
 {

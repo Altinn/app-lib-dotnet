@@ -1,6 +1,6 @@
 ﻿using Altinn.App.Core.Models;
 
-namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+namespace Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 
 /// <summary>
 /// Service for handling Altinn 3 library code lists.

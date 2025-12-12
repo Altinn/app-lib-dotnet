@@ -3217,7 +3217,7 @@
         }
       }
     },
-    "/{org}/{app}/api/options/{creatorOrg}/{codeListId}": {
+    "/{org}/{app}/api/options/{optionsIdOrLibraryRef}": {
       "get": {
         "tags": [
           "Options"
@@ -3226,106 +3226,9 @@
         "description": "The Tags field is only populated when requesting library code lists.",
         "parameters": [
           {
-            "name": "creatorOrg",
+            "name": "optionsIdOrLibraryRef",
             "in": "path",
-            "description": "The organization that created the code list",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "codeListId",
-            "in": "path",
-            "description": "Code list id, required if creator org is provided",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "version",
-            "in": "query",
-            "description": "Code list version, only used in combination with creator org and code list id, defaults to latest if not provided",
-            "schema": {
-              "type": "string",
-              "default": "latest"
-            }
-          },
-          {
-            "name": "language",
-            "in": "query",
-            "description": "The language selected by the user, ISO 639-1 (eg. nb)",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "org",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "app",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/{org}/{app}/api/options/{optionsId}": {
-      "get": {
-        "tags": [
-          "Options"
-        ],
-        "summary": "Api that exposes app related options",
-        "description": "The Tags field is only populated when requesting library code lists.",
-        "parameters": [
-          {
-            "name": "optionsId",
-            "in": "path",
-            "description": "The optionsId configured for the options provider in the app startup.",
+            "description": "The optionsId configured for the options provider in the app startup.\n            Or a library reference which should follow this format lib**{creatorOrg}**{codeListId}**{version} if requesting a library code list.\n            CodeListId must match this regular expression: [a-zA-Z0-9_-]+",
             "required": true,
             "schema": {
               "type": "string"
@@ -3334,7 +3237,7 @@
           {
             "name": "queryParams",
             "in": "query",
-            "description": "Query parameters supplied",
+            "description": "Query parameters supplied.",
             "style": "deepObject",
             "schema": {
               "type": "object",
@@ -3405,12 +3308,13 @@
         }
       }
     },
-    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/options/{optionsId}": {
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/options/{optionsIdOrLibraryRef}": {
       "get": {
         "tags": [
           "Options"
         ],
         "summary": "Exposes options related to the app and logged in user",
+        "description": "The Tags field is only populated when requesting library code lists.",
         "parameters": [
           {
             "name": "org",
@@ -3451,9 +3355,9 @@
             }
           },
           {
-            "name": "optionsId",
+            "name": "optionsIdOrLibraryRef",
             "in": "path",
-            "description": "The optionsId",
+            "description": "The optionsId configured for the options provider in the app startup.\n            Or a library reference which should follow this format lib**{creatorOrg}**{codeListId}**{version} if requesting a library code list.\n            CodeListId must match the following regular expression: [a-zA-Z0-9_-]+",
             "required": true,
             "schema": {
               "type": "string"
@@ -3462,7 +3366,7 @@
           {
             "name": "language",
             "in": "query",
-            "description": "The language selected by the user.",
+            "description": "The language selected by the user (ISO 639-1, e.g., 'nb').",
             "schema": {
               "type": "string"
             }

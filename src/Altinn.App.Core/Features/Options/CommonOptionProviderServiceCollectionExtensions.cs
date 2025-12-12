@@ -1,5 +1,5 @@
 using Altinn.App.Core.Features.Options.Altinn2Provider;
-using Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+using Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 using Altinn.App.Core.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
