@@ -5,6 +5,8 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 namespace Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 
 /// <summary>
