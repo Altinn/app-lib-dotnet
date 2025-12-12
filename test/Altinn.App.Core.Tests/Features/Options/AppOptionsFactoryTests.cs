@@ -18,7 +18,7 @@ public class AppOptionsFactoryTests
         {
             var services = new ServiceCollection();
             services.AddAppImplementationFactory();
-            services.AddSingleton<IAppOptionsFileHandler>(new Mock<IAppOptionsFileHandler>().Object);
+            services.AddSingleton(new Mock<IAppOptionsFileHandler>().Object);
             services.AddSingleton<AppOptionsFactory>();
             configure?.Invoke(services);
             var serviceProvider = services.BuildStrictServiceProvider();
@@ -31,9 +31,7 @@ public class AppOptionsFactoryTests
     [Fact]
     public void GetOptionsProvider_NoCustomOptionsProvider_ShouldReturnDefault()
     {
-        using var fixture = Fixture.Create(services =>
-            services.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>()
-        );
+        using var fixture = Fixture.Create();
         var factory = fixture.Factory;
 
         IAppOptionsProvider optionsProvider = factory.GetOptionsProvider("country");
@@ -45,9 +43,7 @@ public class AppOptionsFactoryTests
     [Fact]
     public void GetOptionsProvider_NoCustomOptionsProvider_ShouldReturnDefaultTwice()
     {
-        using var fixture = Fixture.Create(services =>
-            services.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>()
-        );
+        using var fixture = Fixture.Create();
         var factory = fixture.Factory;
 
         IAppOptionsProvider optionsProvider1 = factory.GetOptionsProvider("fylke");
@@ -63,7 +59,7 @@ public class AppOptionsFactoryTests
         using var fixture = Fixture.Create();
         var factory = fixture.Factory;
 
-        System.Action action = () => factory.GetOptionsProvider("country");
+        System.Action action = () => factory.GetOptionsProvider("default");
 
         action.Should().Throw<KeyNotFoundException>();
     }
@@ -73,7 +69,6 @@ public class AppOptionsFactoryTests
     {
         using var fixture = Fixture.Create(services =>
         {
-            services.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>();
             services.AddSingleton<IAppOptionsProvider, CountryAppOptionsProvider>();
         });
         var factory = fixture.Factory;
@@ -89,7 +84,6 @@ public class AppOptionsFactoryTests
     {
         using var fixture = Fixture.Create(services =>
         {
-            services.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>();
             services.AddSingleton<IAppOptionsProvider, CountryAppOptionsProvider>();
         });
         var factory = fixture.Factory;
@@ -105,7 +99,6 @@ public class AppOptionsFactoryTests
     {
         using var fixture = Fixture.Create(services =>
         {
-            services.AddSingleton<IAppOptionsProvider, DefaultAppOptionsProvider>();
             services.AddSingleton<IAppOptionsProvider, CountryAppOptionsProvider>();
         });
         var factory = fixture.Factory;
@@ -129,8 +122,8 @@ public class AppOptionsFactoryTests
             {
                 Options = new List<AppOption>
                 {
-                    new AppOption { Label = "Norge", Value = "47" },
-                    new AppOption { Label = "Sverige", Value = "46" },
+                    new() { Label = "Norge", Value = "47" },
+                    new() { Label = "Sverige", Value = "46" },
                 },
 
                 Parameters = keyValuePairs!,
