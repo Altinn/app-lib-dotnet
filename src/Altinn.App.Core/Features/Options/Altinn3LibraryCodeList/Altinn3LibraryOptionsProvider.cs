@@ -17,6 +17,7 @@ internal sealed class Altinn3LibraryOptionsProvider : IAppOptionsProvider
         ArgumentException.ThrowIfNullOrWhiteSpace(optionId);
         ArgumentException.ThrowIfNullOrWhiteSpace(org);
         ArgumentException.ThrowIfNullOrWhiteSpace(codeListId);
+        ArgumentNullException.ThrowIfNull(altinn3LibraryCodeListService);
 
         Id = optionId;
         _org = org;
