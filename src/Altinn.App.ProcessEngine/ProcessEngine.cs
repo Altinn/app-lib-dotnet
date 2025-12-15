@@ -17,6 +17,7 @@ internal interface IProcessEngine
     Task<ProcessEngineResponse> EnqueueJob(ProcessEngineRequest request, CancellationToken cancellationToken = default);
     bool HasDuplicateJob(string jobIdentifier);
     bool HasQueuedJobForInstance(InstanceInformation instanceInformation);
+    ProcessEngineJob? GetJobForInstance(InstanceInformation instanceInformation);
 }
 
 internal partial class ProcessEngine : IProcessEngine, IDisposable

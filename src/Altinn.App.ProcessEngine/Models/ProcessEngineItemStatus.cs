@@ -1,6 +1,6 @@
 namespace Altinn.App.ProcessEngine.Models;
 
-internal enum ProcessEngineItemStatus
+public enum ProcessEngineItemStatus
 {
     Enqueued = 0,
     Processing = 1,

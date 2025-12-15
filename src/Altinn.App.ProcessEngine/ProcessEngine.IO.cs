@@ -69,6 +69,11 @@ internal partial class ProcessEngine
         return _inbox.Values.Any(x => x.InstanceInformation.Equals(instanceInformation));
     }
 
+    public ProcessEngineJob? GetJobForInstance(InstanceInformation instanceInformation)
+    {
+        return _inbox.Values.FirstOrDefault(x => x.InstanceInformation.Equals(instanceInformation));
+    }
+
     private async Task PopulateJobsFromStorage(CancellationToken cancellationToken)
     {
         // TODO: Populate the queue from the database. This must be a resilient call to db

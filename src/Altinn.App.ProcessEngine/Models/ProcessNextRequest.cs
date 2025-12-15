@@ -20,12 +20,6 @@ public sealed record ProcessNextRequest
     public required string DesiredElementId { get; init; }
 
     /// <summary>
-    /// Details about the instance this request belongs to.
-    /// </summary>
-    [JsonPropertyName("instanceInformation")]
-    public required InstanceInformation InstanceInformation { get; init; }
-
-    /// <summary>
     /// The actor this request is executed on behalf of.
     /// </summary>
     [JsonPropertyName("actor")]
@@ -38,12 +32,12 @@ public sealed record ProcessNextRequest
     public required IEnumerable<ProcessEngineCommandRequest> Tasks { get; init; }
 
     /// <summary>
-    /// Converts this request to a <see cref="ProcessEngineRequest"/> with a descriptive job identifier.
+    /// Converts this request to a <see cref="ProcessEngineRequest"/> with the provided instance information.
     /// </summary>
-    internal ProcessEngineRequest ToProcessEngineRequest() =>
+    internal ProcessEngineRequest ToProcessEngineRequest(InstanceInformation instanceInformation) =>
         new(
-            $"{InstanceInformation.InstanceGuid}/next/from-{CurrentElementId}-to-{DesiredElementId}",
-            InstanceInformation,
+            $"{instanceInformation.InstanceGuid}/next/from-{CurrentElementId}-to-{DesiredElementId}",
+            instanceInformation,
             Actor,
             Tasks
         );
