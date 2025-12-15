@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Altinn.App.ProcessEngine.Models;
 
 internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
@@ -9,7 +11,12 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
     public DateTimeOffset? BackoffUntil { get; set; }
     public ProcessEngineRetryStrategy? RetryStrategy { get; init; }
     public int RequeueCount { get; set; }
+
+    [NotMapped]
     public Task<ProcessEngineExecutionResult>? ExecutionTask { get; set; }
+
+    // Foreign key for EF Core relationship - will be set in FromRequest method
+    public required string JobIdentifier { get; init; }
 
     public static ProcessEngineTask FromRequest(
         string jobIdentifier,
@@ -20,6 +27,7 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
         new()
         {
             Identifier = $"{jobIdentifier}/{request.Command}",
+            JobIdentifier = jobIdentifier,
             Actor = actor,
             StartTime = request.StartTime,
             ProcessingOrder = index,

@@ -1,9 +1,11 @@
 using Altinn.App.ProcessEngine.Constants;
 using Altinn.App.ProcessEngine.Controllers;
 using Altinn.App.ProcessEngine.Controllers.Auth;
+using Altinn.App.ProcessEngine.Data;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.ProcessEngine.Extensions;
@@ -34,6 +36,38 @@ public static class ServiceCollectionExtensions
         services
             .AddControllers()
             .PartManager.ApplicationParts.Add(new AssemblyPart(typeof(ProcessEngineController).Assembly));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds the process engine services with database persistence to the service collection.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="connectionString">The database connection string.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddProcessEngineWithDatabase(
+        this IServiceCollection services,
+        string connectionString
+    )
+    {
+        // Add the base process engine services
+        services.AddProcessEngine();
+
+        // Add Entity Framework services
+        services.AddDbContext<ProcessEngineDbContext>(options =>
+            options.UseNpgsql(
+                connectionString,
+                npgsqlOptions =>
+                {
+                    npgsqlOptions.MigrationsAssembly(typeof(ProcessEngineDbContext).Assembly.FullName);
+                    npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "public");
+                }
+            )
+        );
+
+        // Add the repository
+        services.AddScoped<IProcessEngineRepository, ProcessEngineRepository>();
 
         return services;
     }

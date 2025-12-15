@@ -1,8 +1,64 @@
 # Process engine
 
+This library provides runtime process engine capabilities for Altinn 3 applications, with optional database persistence for job and task tracking.
+
 ![Overview](docs/overview.drawio.svg)
 
 ![Sequence flow](docs/sequenceFlow.drawio.svg)
+
+## Database Setup (Development)
+
+The ProcessEngine supports optional database persistence using PostgreSQL and Entity Framework Core.
+
+### Quick Start with Docker
+
+1. **Start the database:**
+   ```bash
+   cd src/Altinn.App.ProcessEngine
+   docker-compose up -d
+   ```
+
+2. **Apply migrations:**
+   ```bash
+   dotnet ef database update --project src/Altinn.App.ProcessEngine
+   ```
+
+3. **Access pgAdmin (optional):**
+   - URL: http://localhost:5050
+   - Email: admin@altinn.no
+   - Password: admin123
+   - Server: postgres (host), postgres/postgres123 (credentials)
+
+### Configuration
+
+```csharp
+// Add ProcessEngine with database persistence
+services.AddProcessEngineWithDatabase("Host=localhost;Database=altinn_processengine;Username=postgres;Password=postgres123");
+
+// Or add ProcessEngine without database (in-memory only)
+services.AddProcessEngine();
+```
+
+### Database Schema
+
+The ProcessEngine creates these tables:
+- `process_engine_jobs` - Stores job information and metadata
+- `process_engine_tasks` - Stores individual tasks within jobs
+
+### Development Notes
+
+- **Connection String:** Default setup uses `postgres/postgres123` on port 5432
+- **Database Name:** `altinn_processengine`
+- **Migrations Location:** `Data/Migrations/`
+- **In-Memory Fallback:** ProcessEngine works without database - jobs are only kept in memory
+
+### Creating New Migrations
+
+When modifying the data model:
+
+```bash
+dotnet ef migrations add YourMigrationName --project src/Altinn.App.ProcessEngine --output-dir Data/Migrations
+```
 
 ## Performance testing
 

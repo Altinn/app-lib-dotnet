@@ -1,11 +1,17 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Altinn.App.ProcessEngine.Models;
 
 internal abstract record ProcessEngineDatabaseItem : IDisposable
 {
+    [Key]
     public required string Identifier { get; init; }
     public ProcessEngineItemStatus Status { get; set; }
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? UpdatedAt { get; set; }
+
+    [NotMapped]
     public Task? DatabaseTask { get; set; }
 
     // TODO: Write a test for equality for inheritors. A bit suss on the persistence of these overrides during inheritance
