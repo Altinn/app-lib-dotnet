@@ -230,7 +230,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
                 case { DatabaseUpdateStatus: ProcessEngineTaskStatus.Finished }:
                     _logger.LogDebug("Task {Task} database operation has completed. Cleaning up", task);
                     task.CleanupDatabaseTask();
-                    continue;
+                    return;
 
                 // Waiting for execution task to complete
                 case { ExecutionStatus: ProcessEngineTaskStatus.Started }:
