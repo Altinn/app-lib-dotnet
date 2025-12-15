@@ -80,13 +80,7 @@ public class ProcessEngineController : ControllerBase
         if (job is null)
             return NoContent(); // 204 - No job for this instance
 
-        var response = new ProcessEngineStatusResponse
-        {
-            InstanceInformation = instanceInformation,
-            OverallStatus = job.OverallStatus(),
-            Tasks = job.Tasks.Select(ProcessEngineTaskDetail.FromProcessEngineTask).ToList(),
-        };
-
+        var response = ProcessEngineStatusResponse.FromProcessEngineJob(job);
         return Ok(response);
     }
 }

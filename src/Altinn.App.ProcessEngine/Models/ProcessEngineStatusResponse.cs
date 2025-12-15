@@ -8,12 +8,6 @@ namespace Altinn.App.ProcessEngine.Models;
 public sealed record ProcessEngineStatusResponse
 {
     /// <summary>
-    /// Information about the instance.
-    /// </summary>
-    [JsonPropertyName("instanceInformation")]
-    public required InstanceInformation InstanceInformation { get; init; }
-
-    /// <summary>
     /// The overall status of the job for this instance.
     /// </summary>
     [JsonPropertyName("overallStatus")]
@@ -25,6 +19,13 @@ public sealed record ProcessEngineStatusResponse
     /// </summary>
     [JsonPropertyName("tasks")]
     public required IReadOnlyList<ProcessEngineTaskDetail> Tasks { get; init; }
+
+    internal static ProcessEngineStatusResponse FromProcessEngineJob(ProcessEngineJob job) =>
+        new()
+        {
+            OverallStatus = job.Status,
+            Tasks = job.Tasks.Select(ProcessEngineTaskDetail.FromProcessEngineTask).ToList(),
+        };
 }
 
 /// <summary>
