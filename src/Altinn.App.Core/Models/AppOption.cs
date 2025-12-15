@@ -15,7 +15,7 @@ public class AppOption
     /// </summary>
     [JsonPropertyName("value")]
     [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
-    public required string Value { get; set; }
+    public required string? Value { get; set; }
 
     /// <summary>
     /// The type of the value for Json serialization

@@ -103,6 +103,7 @@ public class Altinn3LibraryCodeListServiceTests
         Assert.NotNull(result.Options);
         Assert.Single(result.Options);
         var option = result.Options.Single();
+        Assert.NotNull(option.Label);
         Assert.Empty(option.Label);
         Assert.NotNull(option.Description);
         Assert.Empty(option.Description);
