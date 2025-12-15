@@ -63,21 +63,33 @@ public partial class OptionsController : ControllerBase
         var libRefReg = LibraryRefRegex();
         var libRefMatch = libRefReg.Match(optionsIdOrLibraryRef);
         AppOptions appOptions;
-        if (!libRefMatch.Success)
+        try
         {
-            appOptions = await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams);
-        }
-        else
-        {
-            using var telemetry = _telemetry?.StartGetOptionsActivity();
-            var altinn3LibraryCodeListResponse = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
-                libRefMatch.Groups["org"].Value,
-                libRefMatch.Groups["codeListId"].Value,
-                libRefMatch.Groups["version"].Value,
-                HttpContext.RequestAborted
-            );
+            if (!libRefMatch.Success)
+            {
+                appOptions = await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams);
+            }
+            else
+            {
+                using var telemetry = _telemetry?.StartGetOptionsActivity();
+                var altinn3LibraryCodeListResponse =
+                    await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
+                        libRefMatch.Groups["org"].Value,
+                        libRefMatch.Groups["codeListId"].Value,
+                        libRefMatch.Groups["version"].Value,
+                        HttpContext.RequestAborted
+                    );
 
-            appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
+                appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
+            }
+        }
+        catch (HttpRequestException exception)
+        {
+            return Problem(
+                statusCode: (int?)exception.StatusCode,
+                title: $"Something went wrong while getting optionsIdOrLibraryRef: {optionsIdOrLibraryRef}",
+                detail: exception.Message
+            );
         }
 
         if (appOptions?.Options == null)
@@ -126,36 +138,47 @@ public partial class OptionsController : ControllerBase
     {
         language ??= LanguageConst.Nb;
         var instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId, instanceGuid);
-
-        var appOptions = await _appOptionsService.GetOptionsAsync(
-            instanceIdentifier,
-            optionsIdOrLibraryRef,
-            language,
-            queryParams
-        );
-
-        // Try to get non instance specific options if no options provider was found.
-        if (appOptions?.Options == null)
+        AppOptions? appOptions;
+        try
         {
-            var libRefReg = LibraryRefRegex();
-            var libRefMatch = libRefReg.Match(optionsIdOrLibraryRef);
-            if (!libRefMatch.Success)
-            {
-                appOptions = await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams);
-            }
-            else
-            {
-                using var telemetry = _telemetry?.StartGetOptionsActivity();
-                var altinn3LibraryCodeListResponse =
-                    await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
-                        libRefMatch.Groups["org"].Value,
-                        libRefMatch.Groups["codeListId"].Value,
-                        libRefMatch.Groups["version"].Value,
-                        HttpContext.RequestAborted
-                    );
+            appOptions = await _appOptionsService.GetOptionsAsync(
+                instanceIdentifier,
+                optionsIdOrLibraryRef,
+                language,
+                queryParams
+            );
 
-                appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
+            // Try to get non instance specific options if no options provider was found.
+            if (appOptions?.Options == null)
+            {
+                var libRefReg = LibraryRefRegex();
+                var libRefMatch = libRefReg.Match(optionsIdOrLibraryRef);
+                if (!libRefMatch.Success)
+                {
+                    appOptions = await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams);
+                }
+                else
+                {
+                    using var telemetry = _telemetry?.StartGetOptionsActivity();
+                    var altinn3LibraryCodeListResponse =
+                        await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
+                            libRefMatch.Groups["org"].Value,
+                            libRefMatch.Groups["codeListId"].Value,
+                            libRefMatch.Groups["version"].Value,
+                            HttpContext.RequestAborted
+                        );
+
+                    appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
+                }
             }
+        }
+        catch (HttpRequestException exception)
+        {
+            return Problem(
+                statusCode: (int?)exception.StatusCode,
+                title: $"Something went wrong while getting optionsIdOrLibraryRef: {optionsIdOrLibraryRef}",
+                detail: exception.Message
+            );
         }
 
         // Only return NotFound if we can't find an options provider.
