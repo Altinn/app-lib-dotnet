@@ -53,6 +53,9 @@ public partial class OptionsController : ControllerBase
     /// <returns>The options list.</returns>
     [ProducesResponseType(typeof(List<AppOption>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status502BadGateway)]
     [HttpGet("{optionsIdOrLibraryRef}")]
     public async Task<IActionResult> Get(
         [FromRoute] string optionsIdOrLibraryRef,
@@ -71,16 +74,13 @@ public partial class OptionsController : ControllerBase
             }
             else
             {
-                using var telemetry = _telemetry?.StartGetOptionsActivity();
-                var altinn3LibraryCodeListResponse =
-                    await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
-                        libRefMatch.Groups["org"].Value,
-                        libRefMatch.Groups["codeListId"].Value,
-                        libRefMatch.Groups["version"].Value,
-                        HttpContext.RequestAborted
-                    );
-
-                appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
+                appOptions = await GetLibraryCodeListOptionsAsync(
+                    libRefMatch.Groups["org"].Value,
+                    libRefMatch.Groups["codeListId"].Value,
+                    libRefMatch.Groups["version"].Value,
+                    language,
+                    HttpContext.RequestAborted
+                );
             }
         }
         catch (HttpRequestException exception)
@@ -124,6 +124,9 @@ public partial class OptionsController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(List<AppOption>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status502BadGateway)]
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
     [Route("/{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/options/{optionsIdOrLibraryRef}")]
     public async Task<IActionResult> Get(
@@ -159,16 +162,13 @@ public partial class OptionsController : ControllerBase
                 }
                 else
                 {
-                    using var telemetry = _telemetry?.StartGetOptionsActivity();
-                    var altinn3LibraryCodeListResponse =
-                        await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
-                            libRefMatch.Groups["org"].Value,
-                            libRefMatch.Groups["codeListId"].Value,
-                            libRefMatch.Groups["version"].Value,
-                            HttpContext.RequestAborted
-                        );
-
-                    appOptions = _altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, language);
+                    appOptions = await GetLibraryCodeListOptionsAsync(
+                        libRefMatch.Groups["org"].Value,
+                        libRefMatch.Groups["codeListId"].Value,
+                        libRefMatch.Groups["version"].Value,
+                        language,
+                        HttpContext.RequestAborted
+                    );
                 }
             }
         }
@@ -196,6 +196,24 @@ public partial class OptionsController : ControllerBase
         return Ok(appOptions.Options);
     }
 
-    [GeneratedRegex(@"lib\*\*(?<org>[a-zA-Z0-9]+)\*\*(?<codeListId>[a-zA-Z0-9_-]+)\*\*(?<version>[a-zA-Z0-9._-]+)")]
+    private async Task<AppOptions> GetLibraryCodeListOptionsAsync(
+        string org,
+        string codeListId,
+        string version,
+        string? language,
+        CancellationToken cancellationToken
+    )
+    {
+        using var telemetry = _telemetry?.StartGetOptionsActivity();
+        var response = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
+            org,
+            codeListId,
+            version,
+            cancellationToken
+        );
+        return _altinn3LibraryCodeListService.MapAppOptions(response, language);
+    }
+
+    [GeneratedRegex(@"^lib\*\*(?<org>[a-zA-Z0-9]+)\*\*(?<codeListId>[a-zA-Z0-9_-]+)\*\*(?<version>[a-zA-Z0-9._-]+)$")]
     private static partial Regex LibraryRefRegex();
 }

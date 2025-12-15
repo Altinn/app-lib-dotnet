@@ -479,8 +479,8 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         );
     }
 
-    [Fact]
     // Creates DefaultAppOptionsProvider through AppOptionsFactory
+    [Fact]
     public async Task GetInstance_ShouldWorkWithFileSourceFromAppOptionsProvider()
     {
         string org = "tdd";
@@ -604,7 +604,7 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         var altinn3LibraryCodeListService = (DummyAltinn3LibraryCodeListService)
             Services.GetRequiredService<IAltinn3LibraryCodeListService>();
 
-        string url = $"/{org}/{app}/api/options/{optionsIdOrLibraryRef}";
+        string url = $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/options/{optionsIdOrLibraryRef}";
         HttpResponseMessage response = await client.GetAsync(url);
 
         // Cleanup testdata

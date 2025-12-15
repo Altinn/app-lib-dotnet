@@ -15,7 +15,7 @@ public class AppOption
     /// </summary>
     [JsonPropertyName("value")]
     [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
-    public required string? Value { get; set; }
+    public required string Value { get; set; }
 
     /// <summary>
     /// The type of the value for Json serialization
@@ -27,7 +27,8 @@ public class AppOption
     /// The label of a given option
     /// </summary>
     [JsonPropertyName("label")]
-    public required string Label { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Label { get; set; }
 
     /// <summary>
     /// The description of a given option
