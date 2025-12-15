@@ -40,9 +40,9 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
     {
         version = !string.IsNullOrEmpty(version) ? version : "latest";
         var result = await _hybridCache.GetOrCreateAsync(
-            $"Altinn3Library:{org}-{codeListId}-{version}",
+            $"Altinn3Library:{org}:{codeListId}:{version}",
             async cancel =>
-                await _altinn3LibraryCodeListApiClient.GetAltinn3LibraryCodeLists(org, codeListId, version, cancel),
+                await _altinn3LibraryCodeListApiClient.GetAltinn3LibraryCodeList(org, codeListId, version, cancel),
             options: _defaultCacheExpiration,
             cancellationToken: cancellationToken
         );
@@ -62,10 +62,16 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
                     && code.Tags.Count == libraryCodeListResponse.TagNames.Count
                 )
                 {
-                    tagDict = libraryCodeListResponse
-                        .TagNames.Select((k, index) => new { k, v = code.Tags[index] })
-                        .ToDictionary(x => x.k, x => x.v);
+                    tagDict = new Dictionary<string, string>();
+                    foreach (var (k, index) in libraryCodeListResponse.TagNames.Select((k, i) => (k, i)))
+                    {
+                        if (!tagDict.ContainsKey(k))
+                        {
+                            tagDict[k] = code.Tags[index];
+                        }
+                    }
                 }
+
                 return new AppOption
                 {
                     Value = code.Value,

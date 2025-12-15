@@ -43,13 +43,15 @@ public partial class OptionsController : ControllerBase
     /// Api that exposes app related options
     /// </summary>
     /// <remarks>The Tags field is only populated when requesting library code lists.</remarks>
-    /// <param name="optionsIdOrLibraryRef">The optionsId configured for the options provider in the app startup.
-    /// Or a library reference which should follow this format lib**{creatorOrg}**{codeListId}**{version} if requesting a library code list.
-    /// CodeListId must match this regular expression: [a-zA-Z0-9_-]+ </param>
+    /// <param name="optionsIdOrLibraryRef">
+    /// The optionsId configured for the options provider in the app startup,
+    /// or a library reference on the format: `lib**{creatorOrg}**{codeListId}**{version}`
+    /// (if you want the latest version, latest can be used as version). CodeListId must match: [a-zA-Z0-9_-]+
+    /// </param>
     /// <param name="queryParams">Query parameters supplied.</param>
     /// <param name="language">The language selected by the user (ISO 639-1, e.g., 'nb').</param>
     /// <returns>The options list.</returns>
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<AppOption>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [HttpGet("{optionsIdOrLibraryRef}")]
     public async Task<IActionResult> Get(
@@ -99,14 +101,16 @@ public partial class OptionsController : ControllerBase
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
-    /// <param name="optionsIdOrLibraryRef">The optionsId configured for the options provider in the app startup.
-    /// Or a library reference which should follow this format lib**{creatorOrg}**{codeListId}**{version} if requesting a library code list.
-    /// CodeListId must match the following regular expression: [a-zA-Z0-9_-]+ </param>
+    /// <param name="optionsIdOrLibraryRef">
+    /// The optionsId configured for the options provider in the app startup,
+    /// or a library reference on the format: `lib**{creatorOrg}**{codeListId}**{version}`
+    /// (if you want the latest version, latest can be used as version). CodeListId must match: [a-zA-Z0-9_-]+
+    /// </param>
     /// <param name="language">The language selected by the user (ISO 639-1, e.g., 'nb').</param>
     /// <param name="queryParams">Query parameteres supplied</param>
     /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<AppOption>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
     [Route("/{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/options/{optionsIdOrLibraryRef}")]
@@ -120,12 +124,13 @@ public partial class OptionsController : ControllerBase
         [FromQuery] Dictionary<string, string> queryParams
     )
     {
+        language ??= LanguageConst.Nb;
         var instanceIdentifier = new InstanceIdentifier(instanceOwnerPartyId, instanceGuid);
 
         var appOptions = await _appOptionsService.GetOptionsAsync(
             instanceIdentifier,
             optionsIdOrLibraryRef,
-            language ?? LanguageConst.Nb,
+            language,
             queryParams
         );
 
@@ -168,6 +173,6 @@ public partial class OptionsController : ControllerBase
         return Ok(appOptions.Options);
     }
 
-    [GeneratedRegex(@"lib\*\*(?<org>[^*]+)\*\*(?<codeListId>[a-zA-Z0-9_-]+)\*\*(?<version>[^*]+)")]
+    [GeneratedRegex(@"lib\*\*(?<org>[a-zA-Z0-9]+)\*\*(?<codeListId>[a-zA-Z0-9_-]+)\*\*(?<version>[a-zA-Z0-9._-]+)")]
     private static partial Regex LibraryRefRegex();
 }

@@ -20,7 +20,7 @@ public class Altinn3LibraryCodeListClientTests
         // Act
         var result = await fixture
             .Altinn3LibraryCodeListApiClient()
-            .GetAltinn3LibraryCodeLists(org, codeListId, version);
+            .GetAltinn3LibraryCodeList(org, codeListId, version);
 
         // Assert
         Assert.NotNull(result);
@@ -43,7 +43,7 @@ public class Altinn3LibraryCodeListClientTests
 
         // Act
         var result = await Assert.ThrowsAsync<HttpRequestException>(() =>
-            fixture.Altinn3LibraryCodeListApiClient().GetAltinn3LibraryCodeLists(org, codeListId, version)
+            fixture.Altinn3LibraryCodeListApiClient().GetAltinn3LibraryCodeList(org, codeListId, version)
         );
 
         // Assert

@@ -13,7 +13,7 @@ internal interface IAltinn3LibraryCodeListApiClient
     /// <param name="version">Code list version</param>
     /// <param name="cancellationToken">Cancellation token, cancels the request and JSON deserialization</param>
     /// <returns>Altinn 3 library code list response</returns>
-    Task<Altinn3LibraryCodeListResponse> GetAltinn3LibraryCodeLists(
+    Task<Altinn3LibraryCodeListResponse> GetAltinn3LibraryCodeList(
         string org,
         string codeListId,
         string version,

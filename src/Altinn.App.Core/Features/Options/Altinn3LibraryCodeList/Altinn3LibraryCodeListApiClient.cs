@@ -24,7 +24,7 @@ internal sealed class Altinn3LibraryCodeListApiClient : IAltinn3LibraryCodeListA
     }
 
     /// <inheritdoc/>
-    public async Task<Altinn3LibraryCodeListResponse> GetAltinn3LibraryCodeLists(
+    public async Task<Altinn3LibraryCodeListResponse> GetAltinn3LibraryCodeList(
         string org,
         string codeListId,
         string version,

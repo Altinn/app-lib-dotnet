@@ -77,6 +77,7 @@ public class Altinn3LibraryCodeListServiceTests
 
             // Still only 1 call because of caching
             Assert.Equal(1, fixture.MockHandler.CallCount);
+            Assert.Equal(platformSettings.Altinn3LibraryApiEndpoint + ExpectedUri, fixture.MockHandler.LastRequestUri);
         }
     }
 

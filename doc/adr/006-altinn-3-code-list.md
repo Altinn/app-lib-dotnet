@@ -13,7 +13,7 @@ A1: Use already existing path without modifying it
 We want to be able to get code lists through the API without registering the provider in
 'Program.cs' as is currently required for the Altinn 2 code lists.
 
-The endpoints we currently have for getting code lists takes an optionId, queryParams and the language as input. Where
+The endpoints we currently have for getting code lists take an optionId, queryParams and the language as input. Where
 the optionId is a random string value configured through Program.cs. We want to be able to get the code lists
 without configuring the optionId in Program.cs.
 
@@ -61,7 +61,7 @@ Other things that would be nice to solve at the same time:
   * Increased complexity since the endpoint now has to encode what is sent in as "optionId" to org, codelist id and version.
   * Can potentially cause confusion between what is an actual optionId and what is not.
   * String parsing complexity, what should be encoded as optionId and what should not be.
-  * Difficult to determine a format for optionsId that consisting of org, code list id and version that doesnt conflict with actual optionsIds
+  * Difficult to determine a format for optionsId that consists of org, code list id and version that doesn't conflict with actual optionsIds
   * If org, code list id and version contains special characters (hyphens, dots, etc.), the delimiter choice becomes problematic.
   * Everything is string; framework can't validate individual components.
 
@@ -83,7 +83,7 @@ Other things that would be nice to solve at the same time:
 
 * Pros
   * Clear semantic distinction via source parameter.
-  * Supports B3; no custom parsing of "optionId" will help maintain a lower anti-pattern complexity.
+  * Supports B3; no custom parsing of "optionId" will help maintain lower complexity.
 * Cons
   * Can potentially cause confusion on when certain fields must be provided.
   * REST anti-pattern, resource identifiers (org, codeListId) should be in path, not query string
@@ -111,6 +111,6 @@ Other things that would be nice to solve at the same time:
 ## Decision rationale
 
 To ease the implementation process for the consumers/clients, we have chosen A1.
-The optionId have to be formated like this when optionId Altinn 3 library code lists are requested:
+The optionId have to be formatted like this when optionId Altinn 3 library code lists are requested:
 
 *lib\*\*{creatorOrg}\*\*{codeListId}\*\*{version}*

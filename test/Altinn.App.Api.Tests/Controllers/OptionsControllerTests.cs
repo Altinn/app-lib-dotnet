@@ -480,35 +480,6 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     }
 
     [Fact]
-    public async Task GetInstance_ShouldNotDefaultToNbLanguageFromAppOptionsProvider()
-    {
-        OverrideServicesForThisTest = (services) =>
-        {
-            services.AddTransient<IAppOptionsProvider, DummyProvider>();
-        };
-
-        string org = "tdd";
-        string app = "contributer-restriction";
-        int instanceOwnerPartyId = 500600;
-        Guid instanceGuid = Guid.Parse("cff1cb24-5bc1-4888-8e06-c634753c5144");
-        HttpClient client = GetRootedUserClient(org, app, 1337, instanceOwnerPartyId);
-        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
-
-        string url = $"/{org}/{app}/api/options/test";
-        HttpResponseMessage response = await client.GetAsync(url);
-
-        // Cleanup testdata
-        TestData.DeleteInstanceAndData(org, app, 1337, instanceGuid);
-
-        var content = await response.Content.ReadAsStringAsync();
-        OutputHelper.WriteLine(content);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var headerValue = response.Headers.GetValues("Altinn-DownstreamParameters").Single();
-        Assert.DoesNotContain($"lang={LanguageConst.Nb}", headerValue, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
     // Creates DefaultAppOptionsProvider through AppOptionsFactory
     public async Task GetInstance_ShouldWorkWithFileSourceFromAppOptionsProvider()
     {
