@@ -51,10 +51,19 @@ internal partial class ProcessEngine
     {
         _logger.LogTrace("Enqueuing job {Job}. Update database: {UpdateDb}", job, updateDatabase);
 
-        // TODO: persist job to database if `updateDatabase` is true
-        // TODO: Don't forget to write the TASKS also
         if (updateDatabase)
-            await TempRandomDelay(cancellationToken: cancellationToken);
+        {
+            try
+            {
+                await _repository.SaveJob(job, cancellationToken);
+                _logger.LogDebug("Job {JobIdentifier} persisted to database", job.Identifier);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist job {JobIdentifier} to database", job.Identifier);
+                // Continue with in-memory operation even if database save fails
+            }
+        }
 
         _inbox[job.Identifier] = job;
     }
@@ -76,29 +85,59 @@ internal partial class ProcessEngine
 
     private async Task PopulateJobsFromStorage(CancellationToken cancellationToken)
     {
-        // TODO: Populate the queue from the database. This must be a resilient call to db
         _logger.LogDebug("Populating jobs from storage");
-        await TempRandomDelay(cancellationToken: cancellationToken);
+
+        try
+        {
+            var incompleteJobs = await _repository.GetIncompleteJobs(cancellationToken);
+            foreach (var job in incompleteJobs)
+            {
+                // TODO: Not sure about this logic...
+                // Only add if not already in memory to avoid duplicates
+                if (_inbox.TryAdd(job.Identifier, job))
+                    _logger.LogDebug("Restored job {JobIdentifier} from database", job.Identifier);
+            }
+
+            _logger.LogInformation("Populated {JobCount} jobs from storage", incompleteJobs.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to populate jobs from storage. Continuing with in-memory only operation");
+        }
     }
 
     private async Task UpdateJobInStorage(ProcessEngineJob job, CancellationToken cancellationToken)
     {
         // TODO: Should we update the `Instance` with something here too? Like if the job has failed, etc
-        // TODO: This must be a resilient call to db
         _logger.LogDebug("Updating job in storage: {Job}", job);
-        await TempRandomDelay(cancellationToken: cancellationToken);
+
+        try
+        {
+            job.UpdatedAt = DateTimeOffset.UtcNow;
+            await _repository.UpdateJob(job, cancellationToken);
+            _logger.LogTrace("Job {JobIdentifier} updated in database", job.Identifier);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update job {JobIdentifier} in database", job.Identifier);
+            // Continue processing even if database update fails
+        }
     }
 
     private async Task UpdateTaskInStorage(ProcessEngineTask task, CancellationToken cancellationToken)
     {
-        // TODO: This must be a resilient call to db
         _logger.LogDebug("Updating task in storage: {Task}", task);
-        await TempRandomDelay(cancellationToken: cancellationToken);
-    }
 
-    private static async Task TempRandomDelay(
-        int minMs = 50,
-        int maxMs = 500,
-        CancellationToken cancellationToken = default
-    ) => await Task.Delay(Random.Shared.Next(minMs, maxMs), cancellationToken);
+        try
+        {
+            task.UpdatedAt = DateTimeOffset.UtcNow;
+            await _repository.UpdateTask(task, cancellationToken);
+            _logger.LogTrace("Task {TaskIdentifier} updated in database", task.Identifier);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update task {TaskIdentifier} in database", task.Identifier);
+            // Continue processing even if database update fails
+        }
+    }
 }

@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IProcessEngine, ProcessEngine>();
         services.AddSingleton<IProcessEngineTaskHandler, ProcessEngineTaskHandler>();
+        services.AddSingleton<IProcessEngineRepository, InMemoryProcessEngineRepository>();
         services.AddHostedService<ProcessEngineHost>();
 
         services

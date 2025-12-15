@@ -13,9 +13,9 @@ internal sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<P
     {
         var optionsBuilder = new DbContextOptionsBuilder<ProcessEngineDbContext>();
 
-        // Dummy connection string - only used for generating migrations
+        // Connection string for development - matches docker-compose.yaml
         // Real connection string is provided at runtime by the consuming application
-        optionsBuilder.UseNpgsql("Host=localhost;Database=design_time_placeholder;Username=postgres;Password=postgres");
+        optionsBuilder.UseNpgsql("Host=localhost;Database=altinn_processengine;Username=postgres;Password=postgres123");
 
         return new ProcessEngineDbContext(optionsBuilder.Options);
     }

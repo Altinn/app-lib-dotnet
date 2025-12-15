@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Altinn.App.ProcessEngine.Data;
 using Altinn.App.ProcessEngine.Exceptions;
 using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
@@ -26,6 +27,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IProcessEngineTaskHandler _taskHandler;
+    private readonly IProcessEngineRepository _repository;
     private readonly Buffer<bool> _isEnabledHistory = new();
     private readonly SemaphoreSlim _cleanupLock = new(1, 1);
     private readonly ProcessEngineRetryStrategy _statusCheckBackoffStrategy = ProcessEngineRetryStrategy.Exponential(
@@ -49,6 +51,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
         _serviceProvider = serviceProvider;
         _logger = serviceProvider.GetRequiredService<ILogger<ProcessEngine>>();
         _taskHandler = serviceProvider.GetRequiredService<IProcessEngineTaskHandler>();
+        _repository = serviceProvider.GetRequiredService<IProcessEngineRepository>();
         _timeProvider = serviceProvider.GetService<TimeProvider>() ?? TimeProvider.System;
         Settings = serviceProvider.GetRequiredService<IOptions<ProcessEngineSettings>>().Value;
 

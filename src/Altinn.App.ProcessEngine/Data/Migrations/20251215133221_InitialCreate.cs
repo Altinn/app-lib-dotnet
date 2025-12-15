@@ -16,20 +16,33 @@ namespace Altinn.App.ProcessEngine.Data.Migrations
                 columns: table => new
                 {
                     Identifier = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    actor_user_id_or_org_number = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    actor_user_id_or_org_number = table.Column<string>(
+                        type: "character varying(50)",
+                        maxLength: 50,
+                        nullable: false
+                    ),
                     actor_language = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
-                    instance_org = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    instance_app = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    instance_org = table.Column<string>(
+                        type: "character varying(100)",
+                        maxLength: 100,
+                        nullable: false
+                    ),
+                    instance_app = table.Column<string>(
+                        type: "character varying(100)",
+                        maxLength: 100,
+                        nullable: false
+                    ),
                     instance_owner_party_id = table.Column<int>(type: "integer", nullable: false),
                     instance_guid = table.Column<Guid>(type: "uuid", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_process_engine_jobs", x => x.Identifier);
-                });
+                }
+            );
 
             migrationBuilder.CreateTable(
                 name: "process_engine_tasks",
@@ -38,7 +51,11 @@ namespace Altinn.App.ProcessEngine.Data.Migrations
                     Identifier = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     ProcessingOrder = table.Column<int>(type: "integer", nullable: false),
                     command_data = table.Column<string>(type: "text", nullable: false),
-                    actor_user_id_or_org_number = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    actor_user_id_or_org_number = table.Column<string>(
+                        type: "character varying(50)",
+                        maxLength: 50,
+                        nullable: false
+                    ),
                     actor_language = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
                     StartTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     BackoffUntil = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
@@ -47,7 +64,7 @@ namespace Altinn.App.ProcessEngine.Data.Migrations
                     JobIdentifier = table.Column<string>(type: "character varying(500)", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                 },
                 constraints: table =>
                 {
@@ -57,48 +74,54 @@ namespace Altinn.App.ProcessEngine.Data.Migrations
                         column: x => x.JobIdentifier,
                         principalTable: "process_engine_jobs",
                         principalColumn: "Identifier",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                        onDelete: ReferentialAction.Cascade
+                    );
+                }
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_process_engine_jobs_CreatedAt",
                 table: "process_engine_jobs",
-                column: "CreatedAt");
+                column: "CreatedAt"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_process_engine_jobs_Status",
                 table: "process_engine_jobs",
-                column: "Status");
+                column: "Status"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_process_engine_tasks_BackoffUntil",
                 table: "process_engine_tasks",
-                column: "BackoffUntil");
+                column: "BackoffUntil"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_process_engine_tasks_CreatedAt",
                 table: "process_engine_tasks",
-                column: "CreatedAt");
+                column: "CreatedAt"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_process_engine_tasks_JobIdentifier",
                 table: "process_engine_tasks",
-                column: "JobIdentifier");
+                column: "JobIdentifier"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_process_engine_tasks_Status",
                 table: "process_engine_tasks",
-                column: "Status");
+                column: "Status"
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "process_engine_tasks");
+            migrationBuilder.DropTable(name: "process_engine_tasks");
 
-            migrationBuilder.DropTable(
-                name: "process_engine_jobs");
+            migrationBuilder.DropTable(name: "process_engine_jobs");
         }
     }
 }
