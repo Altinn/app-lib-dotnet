@@ -3265,7 +3265,6 @@ namespace Altinn.App.Core.Internal.Pdf
     {
         System.Threading.Tasks.Task GenerateAndStorePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, System.Threading.CancellationToken ct);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> GenerateAndStorePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, string? customFileNameTextResourceKey, System.Collections.Generic.List<string>? autoGeneratePdfForTaskIds = null, System.Threading.CancellationToken ct = default);
-        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> GenerateAndStoreSubformPdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, string? customFileNameTextResourceKey, string subformComponentId, string subformDataElementId, System.Threading.CancellationToken ct);
         System.Threading.Tasks.Task<System.IO.Stream> GeneratePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, System.Threading.CancellationToken ct);
         System.Threading.Tasks.Task<System.IO.Stream> GeneratePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, bool isPreview, System.Threading.CancellationToken ct);
     }
@@ -3433,8 +3432,6 @@ namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties
     public class AltinnSubformPdfConfiguration
     {
         public AltinnSubformPdfConfiguration() { }
-        [System.Xml.Serialization.XmlElement("degreeOfParallelism", Namespace="http://altinn.no/process")]
-        public int DegreeOfParallelism { get; set; }
         [System.Xml.Serialization.XmlElement("filenameTextResourceKey", Namespace="http://altinn.no/process")]
         public string? FilenameTextResourceKey { get; set; }
         [System.Xml.Serialization.XmlElement("subformComponentId", Namespace="http://altinn.no/process")]

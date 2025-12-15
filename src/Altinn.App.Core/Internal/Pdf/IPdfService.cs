@@ -45,7 +45,7 @@ public interface IPdfService
     /// <param name="customFileNameTextResourceKey">A text resource element id for the file name of the PDF. If no text resource is found, the literal value will be used. If null, a default file name will be used.</param>
     /// <param name="ct">Cancellation token for when a request should be stopped before it's completed.</param>
     /// <returns>The created data element containing the PDF.</returns>
-    Task<DataElement> GenerateAndStoreSubformPdf(
+    internal Task<DataElement> GenerateAndStoreSubformPdf(
         Instance instance,
         string taskId,
         string? customFileNameTextResourceKey,

@@ -29,60 +29,44 @@ internal sealed class SubformPdfServiceTask(
         string? filenameTextResourceKey = config.FilenameTextResourceKey;
         string subformComponentId = config.SubformComponentId;
         string subformDataTypeId = config.SubformDataTypeId;
-        int degreeOfParallelism = config.DegreeOfParallelism;
 
         // Clean up any existing PDFs from previous failed attempts
         await processTaskCleaner.RemoveAllDataElementsGeneratedFromTask(instance, taskId);
 
         List<DataElement> subformDataElements = instance.Data.Where(x => x.DataType == subformDataTypeId).ToList();
 
-        // Generate PDFs with bounded parallelism to control load on the PDF microservice
-        // When degreeOfParallelism is 1, this effectively enforces sequential execution
-        using var semaphore = new SemaphoreSlim(degreeOfParallelism, degreeOfParallelism);
+        // Generate PDFs sequentially
+        foreach (DataElement dataElement in subformDataElements)
+        {
+            logger.LogDebug(
+                "Starting PDF generation for subform data element {DataElementId} in task {TaskId}",
+                dataElement.Id,
+                taskId
+            );
 
-        Task[] pdfTasks = subformDataElements
-            .Select(async dataElement =>
-            {
-                await semaphore.WaitAsync(context.CancellationToken);
-                try
-                {
-                    logger.LogDebug(
-                        "Starting PDF generation for subform data element {DataElementId} in task {TaskId}",
-                        dataElement.Id,
-                        taskId
-                    );
+            DataElement pdfDataElement = await pdfService.GenerateAndStoreSubformPdf(
+                instance,
+                taskId,
+                filenameTextResourceKey,
+                subformComponentId,
+                dataElement.Id,
+                context.CancellationToken
+            );
 
-                    DataElement pdfDataElement = await pdfService.GenerateAndStoreSubformPdf(
-                        instance,
-                        taskId,
-                        filenameTextResourceKey,
-                        subformComponentId,
-                        dataElement.Id,
-                        context.CancellationToken
-                    );
+            await AddSubformPdfMetadata(
+                instance,
+                pdfDataElement,
+                subformComponentId,
+                dataElement.Id,
+                context.CancellationToken
+            );
 
-                    await AddSubformPdfMetadata(
-                        instance,
-                        pdfDataElement,
-                        subformComponentId,
-                        dataElement.Id,
-                        context.CancellationToken
-                    );
-
-                    logger.LogDebug(
-                        "Completed PDF generation for subform data element {DataElementId} in task {TaskId}",
-                        dataElement.Id,
-                        taskId
-                    );
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            })
-            .ToArray();
-
-        await Task.WhenAll(pdfTasks);
+            logger.LogDebug(
+                "Completed PDF generation for subform data element {DataElementId} in task {TaskId}",
+                dataElement.Id,
+                taskId
+            );
+        }
 
         logger.LogDebug("Successfully called PdfService for Subform PDF Service Task {TaskId}.", taskId);
 
