@@ -163,7 +163,7 @@ public class SubformPdfServiceTaskTests
         // Arrange
         _processReaderMock
             .Setup(x => x.GetAltinnTaskExtension(It.IsAny<string>()))
-            .Returns(new AltinnTaskExtension { TaskType = "subform-pdf" });
+            .Returns(new AltinnTaskExtension { TaskType = "subformPdf" });
 
         var instance = CreateInstanceWithoutSubformData();
         var context = CreateServiceTaskContext(instance);
@@ -280,7 +280,7 @@ public class SubformPdfServiceTaskTests
             .Returns(
                 new AltinnTaskExtension
                 {
-                    TaskType = "subform-pdf",
+                    TaskType = "subformPdf",
                     SubformPdfConfiguration = new AltinnSubformPdfConfiguration
                     {
                         SubformComponentId = null, // Missing
@@ -308,7 +308,7 @@ public class SubformPdfServiceTaskTests
             .Returns(
                 new AltinnTaskExtension
                 {
-                    TaskType = "subform-pdf",
+                    TaskType = "subformPdf",
                     SubformPdfConfiguration = new AltinnSubformPdfConfiguration
                     {
                         SubformComponentId = SubformComponentId,
@@ -336,7 +336,7 @@ public class SubformPdfServiceTaskTests
             .Returns(
                 new AltinnTaskExtension
                 {
-                    TaskType = "subform-pdf",
+                    TaskType = "subformPdf",
                     SubformPdfConfiguration = new AltinnSubformPdfConfiguration
                     {
                         SubformComponentId = SubformComponentId,
@@ -668,7 +668,7 @@ public class SubformPdfServiceTaskTests
             .Returns(
                 new AltinnTaskExtension
                 {
-                    TaskType = "subform-pdf",
+                    TaskType = "subformPdf",
                     SubformPdfConfiguration = new AltinnSubformPdfConfiguration
                     {
                         SubformComponentId = SubformComponentId,

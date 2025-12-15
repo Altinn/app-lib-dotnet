@@ -15,7 +15,7 @@ internal sealed class SubformPdfServiceTask(
     ILogger<SubformPdfServiceTask> logger
 ) : IServiceTask
 {
-    public string Type => "subform-pdf";
+    public string Type => "subformPdf";
 
     public async Task<ServiceTaskResult> Execute(ServiceTaskContext context)
     {
@@ -80,7 +80,6 @@ internal sealed class SubformPdfServiceTask(
 
         if (subformPdfConfiguration == null)
         {
-            // If no PDF configuration is specified, return a default valid configuration. No required config as of now.
             throw new ApplicationConfigException(
                 "The subformPdfConfig node is missing in the subform pdf process task configuration."
             );

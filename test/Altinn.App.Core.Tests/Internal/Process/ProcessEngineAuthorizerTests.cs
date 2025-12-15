@@ -263,7 +263,7 @@ public class ProcessEngineAuthorizerTests
     [InlineData("feedback", new[] { "write" })]
     [InlineData("pdf", new[] { "write" })]
     [InlineData("eFormidling", new[] { "write" })]
-    [InlineData("subform-pdf", new[] { "write" })]
+    [InlineData("subformPdf", new[] { "write" })]
     [InlineData("payment", new[] { "pay", "write" })]
     [InlineData("confirmation", new[] { "confirm" })]
     [InlineData("signing", new[] { "sign", "write" })]
