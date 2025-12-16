@@ -27,7 +27,6 @@ public class AppOption
     /// The label of a given option
     /// </summary>
     [JsonPropertyName("label")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public required string Label { get; set; }
 
     /// <summary>
