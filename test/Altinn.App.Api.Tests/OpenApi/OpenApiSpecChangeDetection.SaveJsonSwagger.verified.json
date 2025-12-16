@@ -4873,6 +4873,229 @@
         }
       }
     },
+    "/process-engine/{org}/{app}/{instanceOwnerPartyId}/{instanceGuid}/next": {
+      "post": {
+        "tags": [
+          "ProcessEngine"
+        ],
+        "parameters": [
+          {
+            "name": "org",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "instanceOwnerPartyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "instanceGuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessNextRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessNextRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessNextRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/process-engine/{org}/{app}/{instanceOwnerPartyId}/{instanceGuid}/status": {
+      "get": {
+        "tags": [
+          "ProcessEngine"
+        ],
+        "parameters": [
+          {
+            "name": "org",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "instanceOwnerPartyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "instanceGuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessEngineStatusResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessEngineStatusResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessEngineStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/process-engine-callback/{commandKey}": {
+      "post": {
+        "tags": [
+          "ProcessEngineCallback"
+        ],
+        "summary": "Executes a command based on the provided command key.",
+        "parameters": [
+          {
+            "name": "org",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "instanceOwnerPartyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "instanceGuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "commandKey",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            },
+            "text/xml": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            },
+            "application/*+xml": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/{org}/{app}/api/v1/profile/user": {
       "get": {
         "tags": [
@@ -6394,6 +6617,70 @@
           }
         },
         "deprecated": true
+      }
+    },
+    "/process-engine/test/scenario": {
+      "post": {
+        "tags": [
+          "Test"
+        ],
+        "parameters": [
+          {
+            "name": "numJobs",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1000
+            }
+          },
+          {
+            "name": "testScenario",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "block",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/process-engine/test/scenario-callback": {
+      "get": {
+        "tags": [
+          "Test"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/process-engine/test/scenario-stats": {
+      "get": {
+        "tags": [
+          "Test"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/{org}/{app}/api/v1/texts/{language}": {
@@ -9521,6 +9808,175 @@
         },
         "additionalProperties": false
       },
+      "ProcessEngineActor": {
+        "required": [
+          "userIdOrOrgNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "userIdOrOrgNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessEngineAppCallbackPayload": {
+        "required": [
+          "actor",
+          "commandKey"
+        ],
+        "type": "object",
+        "properties": {
+          "commandKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "actor": {
+            "$ref": "#/components/schemas/ProcessEngineActor"
+          },
+          "metadata": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessEngineBackoffType": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "ProcessEngineCommand": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxExecutionTime": {
+            "type": "string",
+            "format": "date-span",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessEngineCommandRequest": {
+        "required": [
+          "command"
+        ],
+        "type": "object",
+        "properties": {
+          "command": {
+            "$ref": "#/components/schemas/ProcessEngineCommand"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "retryStrategy": {
+            "$ref": "#/components/schemas/ProcessEngineRetryStrategy"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessEngineItemStatus": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "ProcessEngineRetryStrategy": {
+        "type": "object",
+        "properties": {
+          "backoffType": {
+            "$ref": "#/components/schemas/ProcessEngineBackoffType"
+          },
+          "baseInterval": {
+            "type": "string",
+            "format": "date-span"
+          },
+          "maxRetries": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "maxDelay": {
+            "type": "string",
+            "format": "date-span",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessEngineStatusResponse": {
+        "required": [
+          "overallStatus",
+          "tasks"
+        ],
+        "type": "object",
+        "properties": {
+          "overallStatus": {
+            "$ref": "#/components/schemas/ProcessEngineItemStatus"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProcessEngineTaskDetail"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessEngineTaskDetail": {
+        "required": [
+          "commandType",
+          "identifier",
+          "retryCount",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "commandType": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProcessEngineItemStatus"
+          },
+          "retryCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "backoffUntil": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ProcessHistoryItem": {
         "type": "object",
         "properties": {
@@ -9583,6 +10039,36 @@
         },
         "additionalProperties": false,
         "description": "Model for process next body"
+      },
+      "ProcessNextRequest": {
+        "required": [
+          "actor",
+          "currentElementId",
+          "desiredElementId",
+          "tasks"
+        ],
+        "type": "object",
+        "properties": {
+          "currentElementId": {
+            "type": "string",
+            "nullable": true
+          },
+          "desiredElementId": {
+            "type": "string",
+            "nullable": true
+          },
+          "actor": {
+            "$ref": "#/components/schemas/ProcessEngineActor"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProcessEngineCommandRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "ProcessState": {
         "type": "object",

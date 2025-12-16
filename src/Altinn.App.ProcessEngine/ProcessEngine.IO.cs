@@ -53,16 +53,8 @@ internal partial class ProcessEngine
 
         if (updateDatabase)
         {
-            try
-            {
-                await _repository.SaveJob(job, cancellationToken);
-                _logger.LogDebug("Job {JobIdentifier} persisted to database", job.Identifier);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist job {JobIdentifier} to database", job.Identifier);
-                // Continue with in-memory operation even if database save fails
-            }
+            await _repository.SaveJob(job, cancellationToken);
+            _logger.LogDebug("Job {JobIdentifier} persisted to database", job.Identifier);
         }
 
         _inbox[job.Identifier] = job;
@@ -89,7 +81,8 @@ internal partial class ProcessEngine
 
         try
         {
-            var incompleteJobs = await _repository.GetIncompleteJobs(cancellationToken);
+            IReadOnlyList<ProcessEngineJob> incompleteJobs = await _repository.GetIncompleteJobs(cancellationToken);
+
             foreach (var job in incompleteJobs)
             {
                 // TODO: Not sure about this logic...
@@ -102,7 +95,10 @@ internal partial class ProcessEngine
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to populate jobs from storage. Continuing with in-memory only operation");
+            _logger.LogError(
+                ex,
+                "Failed to populate jobs from storage after all retries. Continuing with in-memory only operation"
+            );
         }
     }
 
@@ -113,13 +109,14 @@ internal partial class ProcessEngine
 
         try
         {
-            job.UpdatedAt = DateTimeOffset.UtcNow;
+            job.UpdatedAt = _timeProvider.GetUtcNow();
             await _repository.UpdateJob(job, cancellationToken);
+
             _logger.LogTrace("Job {JobIdentifier} updated in database", job.Identifier);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to update job {JobIdentifier} in database", job.Identifier);
+            _logger.LogError(ex, "Failed to update job {JobIdentifier} in database after all retries", job.Identifier);
             // Continue processing even if database update fails
         }
     }
@@ -130,13 +127,18 @@ internal partial class ProcessEngine
 
         try
         {
-            task.UpdatedAt = DateTimeOffset.UtcNow;
+            task.UpdatedAt = _timeProvider.GetUtcNow();
             await _repository.UpdateTask(task, cancellationToken);
+
             _logger.LogTrace("Task {TaskIdentifier} updated in database", task.Identifier);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to update task {TaskIdentifier} in database", task.Identifier);
+            _logger.LogError(
+                ex,
+                "Failed to update task {TaskIdentifier} in database after all retries",
+                task.Identifier
+            );
             // Continue processing even if database update fails
         }
     }
