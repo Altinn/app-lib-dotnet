@@ -22,7 +22,7 @@ public class Altinn3LibraryCodeListServiceTests
 
         await using var fixture = Fixture.Create();
         var serviceProvider = fixture.ServiceProvider;
-        var platformSettings = serviceProvider.GetService<IOptions<PlatformSettings>>()?.Value!;
+        var platformSettings = serviceProvider.GetRequiredService<IOptions<PlatformSettings>>()?.Value!;
 
         // Act/Assert: First scope
         using (var scope = serviceProvider.CreateScope())
@@ -56,7 +56,7 @@ public class Altinn3LibraryCodeListServiceTests
         // Arrange
         await using var fixture = Fixture.Create();
         var serviceProvider = fixture.ServiceProvider;
-        var platformSettings = serviceProvider.GetService<IOptions<PlatformSettings>>()?.Value!;
+        var platformSettings = serviceProvider.GetRequiredService<IOptions<PlatformSettings>>()?.Value!;
 
         // Act/Assert: First scope
         using (var scope = serviceProvider.CreateScope())
@@ -85,10 +85,14 @@ public class Altinn3LibraryCodeListServiceTests
     public async Task MapAppOptions_LanguageCollectionsIsEmpty_ShouldReturnOptionsWithOnlyValueAndTags()
     {
         // Arrange
+        const string expectedTag = "tag";
+        const string expectedTagName = "tagName";
         var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
             new Dictionary<string, string>(),
             new Dictionary<string, string>(),
-            new Dictionary<string, string>()
+            new Dictionary<string, string>(),
+            [expectedTagName],
+            [expectedTag]
         );
 
         await using var fixture = Fixture.Create();
@@ -103,6 +107,12 @@ public class Altinn3LibraryCodeListServiceTests
         Assert.NotNull(result.Options);
         Assert.Single(result.Options);
         var option = result.Options.Single();
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.Value, option.Value);
+        Assert.NotNull(option.Tags);
+        Assert.Single(option.Tags);
+        var tag = option.Tags.Single();
+        Assert.Equal(expectedTagName, tag.Key);
+        Assert.Equal(expectedTag, tag.Value);
         Assert.NotNull(option.Label);
         Assert.Empty(option.Label);
         Assert.NotNull(option.Description);
@@ -142,16 +152,19 @@ public class Altinn3LibraryCodeListServiceTests
     public async Task MapAppOptions_NoLanguageProvided_ShouldSortAndUseFirstLanguageInDictionaryWhenNeitherNbNorEnExists()
     {
         // Arrange
-        var labels = new Dictionary<string, string> { { "de", "text" }, { "se", "text" } };
+        const string expectedDeLabel = "text";
+        const string expectedDeDescription = "Das ist ein Text";
+        const string expectedDeHelpText = "Wählen Sie diese Option, um eine Text zu erhalten";
+        var labels = new Dictionary<string, string> { { "de", expectedDeLabel }, { "se", "text" } };
         var descriptions = new Dictionary<string, string>
         {
-            { "de", "Das ist ein Text" },
+            { "de", expectedDeDescription },
             { "se", "Det här är en text" },
         };
         var helpTexts = new Dictionary<string, string>
         {
             { "se", "Välj det här alternativet för att få ett text" },
-            { "de", "Wählen Sie diese Option, um eine Text zu erhalten" },
+            { "de", expectedDeHelpText },
         };
         var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
             labels,
@@ -171,20 +184,28 @@ public class Altinn3LibraryCodeListServiceTests
         Assert.NotNull(result.Options);
         Assert.Single(result.Options);
         var option = result.Options.Single();
-        Assert.Equal("text", option.Label);
-        Assert.Equal("Das ist ein Text", option.Description);
-        Assert.Equal("Wählen Sie diese Option, um eine Text zu erhalten", option.HelpText);
+        Assert.Equal(expectedDeLabel, option.Label);
+        Assert.Equal(expectedDeDescription, option.Description);
+        Assert.Equal(expectedDeHelpText, option.HelpText);
     }
 
     [Fact]
     public async Task MapAppOptions_NoLanguageProvided_ShouldDefaultToEnWhenNbIsNotPresentInResponseButEnIs()
     {
         // Arrange
-        var labels = new Dictionary<string, string> { { "de", "text" }, { "en", "text" } };
-        var descriptions = new Dictionary<string, string> { { "de", "Das ist ein Text" }, { "en", "This is a text" } };
+        var labels = new Dictionary<string, string>
+        {
+            { "de", "text" },
+            { "en", Altinn3LibraryCodeListServiceTestData.EnLabel },
+        };
+        var descriptions = new Dictionary<string, string>
+        {
+            { "de", "Das ist ein Text" },
+            { "en", Altinn3LibraryCodeListServiceTestData.EnDescription },
+        };
         var helpTexts = new Dictionary<string, string>
         {
-            { "en", "Choose this option to get a text" },
+            { "en", Altinn3LibraryCodeListServiceTestData.EnHelpText },
             { "de", "Wählen Sie diese Option, um eine Text zu erhalten" },
         };
         var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
@@ -205,9 +226,9 @@ public class Altinn3LibraryCodeListServiceTests
         Assert.NotNull(result.Options);
         Assert.Single(result.Options);
         var option = result.Options.Single();
-        Assert.Equal("text", option.Label);
-        Assert.Equal("This is a text", option.Description);
-        Assert.Equal("Choose this option to get a text", option.HelpText);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.EnLabel, option.Label);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.EnDescription, option.Description);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.EnHelpText, option.HelpText);
     }
 
     [Fact]
@@ -229,9 +250,9 @@ public class Altinn3LibraryCodeListServiceTests
         Assert.NotNull(result.Options);
         Assert.Single(result.Options);
         var option = result.Options.Single();
-        Assert.Equal("tekst", option.Label);
-        Assert.Equal("Dette er en tekst", option.Description);
-        Assert.Equal("Velg dette valget for å få en tekst", option.HelpText);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.NbLabel, option.Label);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.NbDescription, option.Description);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.NbHelpText, option.HelpText);
     }
 
     [Fact]
@@ -254,18 +275,18 @@ public class Altinn3LibraryCodeListServiceTests
         Assert.NotNull(result.Options);
         Assert.Single(result.Options);
         var option = result.Options.Single();
-        Assert.Equal("value1", option.Value);
-        Assert.Equal("tekst", option.Label);
-        Assert.Equal("Dette er en tekst", option.Description);
-        Assert.Equal("Velg dette valget for å få en tekst", option.HelpText);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.Value, option.Value);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.NbLabel, option.Label);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.NbDescription, option.Description);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.NbHelpText, option.HelpText);
         var versionParam = result.Parameters.Single(p => p.Key == "version");
-        Assert.Equal("ttd/code_lists/someNewCodeList/1.json", versionParam.Value);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.Version, versionParam.Value);
         var sourceParam = result.Parameters.Single(p => p.Key == "source");
-        Assert.Equal("test-data-files", sourceParam.Value);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.SourceName, sourceParam.Value);
     }
 
     [Fact]
-    public async Task MapAppOptions_NoTagNamesPresent_ShouldNotReturnTagsDictionary()
+    public async Task MapAppOptions_NoTagNamesAndTagsPresent_ShouldNotReturnTagsDictionary()
     {
         // Arrange
         var labels = new Dictionary<string, string> { { "nb", "Norge" } };
@@ -297,10 +318,7 @@ public class Altinn3LibraryCodeListServiceTests
     public async Task MapAppOptions_TagNamesPresentButNoTags_ShouldNotReturnTagsDictionary()
     {
         // Arrange
-        const string expectedFirstTagName = "region";
-        const string expectedSecondTagName = "income";
-
-        var tagNames = new List<string> { expectedFirstTagName, expectedSecondTagName };
+        var tagNames = new List<string> { "region", "income" };
         var labels = new Dictionary<string, string> { { "nb", "Norge" } };
         var descriptions = new Dictionary<string, string> { { "nb", "Et land på den nordlige halvkule" } };
         var helpTexts = new Dictionary<string, string> { { "nb", "" } };
@@ -331,12 +349,8 @@ public class Altinn3LibraryCodeListServiceTests
     public async Task MapAppOptions_TwoTagNamesPresentAndOneTag_ShouldNotReturnTagsDictionary()
     {
         // Arrange
-        const string expectedFirstTagName = "region";
-        const string expectedSecondTagName = "income";
-        const string expectedFirstTag = "Europe";
-
-        var tagNames = new List<string> { expectedFirstTagName, expectedSecondTagName };
-        var tags = new List<string> { expectedFirstTag };
+        var tagNames = new List<string> { "region", "income" };
+        var tags = new List<string> { "Europe" };
         var labels = new Dictionary<string, string> { { "nb", "Norge" } };
         var descriptions = new Dictionary<string, string> { { "nb", "Et land på den nordlige halvkule" } };
         var helpTexts = new Dictionary<string, string> { { "nb", "" } };
@@ -406,6 +420,69 @@ public class Altinn3LibraryCodeListServiceTests
         Assert.Equal(expectedFirstTag, regionTagResult.Value);
         var incomeTagResult = tagsResult.SingleOrDefault(x => x.Key == expectedSecondTagName);
         Assert.Equal(expectedSecondTag, incomeTagResult.Value);
+    }
+
+    [Fact]
+    public async Task MapAppOptions_TagNamesAndTagsPresentInMultipleOptions_ShouldMapTagNamesAndTagsToTagsDictionary()
+    {
+        // Arrange
+        const string expectedFirstTagName = "region";
+        const string expectedSecondTagName = "income";
+        const string expectedFirstTagOptionOne = "Europe";
+        const string expectedSecondTag = "High";
+        const string expectedFirstTagOptionTwo = "West Asia";
+        const string expectedFirstLabel = "Norge";
+        const string expectedSecondLabel = "Emiratene";
+
+        var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
+            new Dictionary<string, string> { { "nb", expectedFirstLabel } },
+            new Dictionary<string, string> { { "nb", "Et land på den nordlige halvkule" } },
+            new Dictionary<string, string> { { "nb", "" } },
+            new List<string> { expectedFirstTagName, expectedSecondTagName },
+            new List<string> { expectedFirstTagOptionOne, expectedSecondTag },
+            new List<Altinn3LibraryCodeListItem>()
+            {
+                new()
+                {
+                    Value = "Emirates",
+                    Label = new Dictionary<string, string> { { "nb", expectedSecondLabel } },
+                    Description = new Dictionary<string, string> { { "nb", "Et land i West Asia" } },
+                    HelpText = new Dictionary<string, string> { { "nb", "" } },
+                    Tags = new List<string> { expectedFirstTagOptionTwo, expectedSecondTag },
+                },
+            }
+        );
+
+        await using var fixture = Fixture.Create();
+
+        // Act
+        var altinn3LibraryCodeListService =
+            fixture.ServiceProvider.GetRequiredService<IAltinn3LibraryCodeListService>();
+        var result = altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, LanguageConst.Nb);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotNull(result.Options);
+        Assert.NotEmpty(result.Options);
+        Assert.Equal(2, result.Options.Count());
+
+        var optionOneResult = result.Options.Single(x => x.Label == expectedFirstLabel);
+        Assert.NotNull(optionOneResult.Tags);
+        var optionsOneTagsResult = optionOneResult.Tags;
+        Assert.Equal(2, optionsOneTagsResult.Count);
+        var optionsOneRegionTagResult = optionsOneTagsResult.SingleOrDefault(x => x.Key == expectedFirstTagName);
+        Assert.Equal(expectedFirstTagOptionOne, optionsOneRegionTagResult.Value);
+        var optionOneIncomeTagResult = optionsOneTagsResult.SingleOrDefault(x => x.Key == expectedSecondTagName);
+        Assert.Equal(expectedSecondTag, optionOneIncomeTagResult.Value);
+
+        var optionTwoResult = result.Options.Single(x => x.Label == expectedSecondLabel);
+        Assert.NotNull(optionTwoResult.Tags);
+        var optionTwoTagsResult = optionTwoResult.Tags;
+        Assert.Equal(2, optionTwoTagsResult.Count);
+        var optionTwoRegionTagResult = optionTwoTagsResult.SingleOrDefault(x => x.Key == expectedFirstTagName);
+        Assert.Equal(expectedFirstTagOptionTwo, optionTwoRegionTagResult.Value);
+        var optionTwoIncomeTagResult = optionTwoTagsResult.SingleOrDefault(x => x.Key == expectedSecondTagName);
+        Assert.Equal(expectedSecondTag, optionTwoIncomeTagResult.Value);
     }
 
     private sealed record Fixture(ServiceProvider ServiceProvider) : IAsyncDisposable

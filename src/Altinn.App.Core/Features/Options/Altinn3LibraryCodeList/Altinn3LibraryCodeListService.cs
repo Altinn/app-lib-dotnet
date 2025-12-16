@@ -12,6 +12,7 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
 {
     private readonly HybridCache _hybridCache;
     private readonly IAltinn3LibraryCodeListApiClient _altinn3LibraryCodeListApiClient;
+    private readonly Telemetry? _telemetry;
 
     private static readonly HybridCacheEntryOptions _defaultCacheExpiration = new()
     {
@@ -23,11 +24,27 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
     /// </summary>
     public Altinn3LibraryCodeListService(
         HybridCache hybridCache,
-        IAltinn3LibraryCodeListApiClient altinn3LibraryCodeListApiClient
+        IAltinn3LibraryCodeListApiClient altinn3LibraryCodeListApiClient,
+        Telemetry? telemetry = null
     )
     {
         _hybridCache = hybridCache;
         _altinn3LibraryCodeListApiClient = altinn3LibraryCodeListApiClient;
+        _telemetry = telemetry;
+    }
+
+    /// <inheritdoc/>
+    public async Task<AppOptions> GetLibraryCodeListOptionsAsync(
+        string org,
+        string codeListId,
+        string version,
+        string? language,
+        CancellationToken cancellationToken
+    )
+    {
+        using var telemetry = _telemetry?.StartGetOptionsActivity();
+        var response = await GetCachedCodeListResponseAsync(org, codeListId, version, cancellationToken);
+        return MapAppOptions(response, language);
     }
 
     /// <inheritdoc/>

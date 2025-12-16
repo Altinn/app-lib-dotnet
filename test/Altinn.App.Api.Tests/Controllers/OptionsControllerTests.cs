@@ -681,6 +681,18 @@ internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeLi
             },
         };
     }
+
+    public async Task<AppOptions> GetLibraryCodeListOptionsAsync(
+        string org,
+        string codeListId,
+        string version,
+        string? language,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await GetCachedCodeListResponseAsync(org, codeListId, version, cancellationToken);
+        return MapAppOptions(response, language);
+    }
 }
 
 public class DummyInstanceProvider : IInstanceAppOptionsProvider

@@ -3223,7 +3223,7 @@
           "Options"
         ],
         "summary": "Api that exposes app related options",
-        "description": "The Tags field is only populated when requesting library code lists.",
+        "description": "The tags field is only populated when requesting library code lists.",
         "parameters": [
           {
             "name": "optionsIdOrLibraryRef",
@@ -3430,7 +3430,7 @@
           "Options"
         ],
         "summary": "Exposes options related to the app and logged in user",
-        "description": "The Tags field is only populated when requesting library code lists.",
+        "description": "The tags field is only populated when requesting library code lists.",
         "parameters": [
           {
             "name": "org",
@@ -7339,6 +7339,7 @@
       },
       "AppOption": {
         "required": [
+          "label",
           "value"
         ],
         "type": "object",

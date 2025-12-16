@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
-using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 using Altinn.App.Core.Internal.Language;
@@ -18,7 +17,6 @@ namespace Altinn.App.Api.Controllers;
 [ApiController]
 public partial class OptionsController : ControllerBase
 {
-    private readonly Telemetry? _telemetry;
     private readonly IAppOptionsService _appOptionsService;
     private readonly IAltinn3LibraryCodeListService _altinn3LibraryCodeListService;
 
@@ -27,22 +25,19 @@ public partial class OptionsController : ControllerBase
     /// </summary>
     /// <param name="appOptionsService">Service for handling app options</param>
     /// <param name="altinn3LibraryCodeListService">Service for handling Altinn 3 library code lists.</param>
-    /// <param name="telemetry">The telemetry client.</param>
     public OptionsController(
         IAppOptionsService appOptionsService,
-        IAltinn3LibraryCodeListService altinn3LibraryCodeListService,
-        Telemetry? telemetry = null
+        IAltinn3LibraryCodeListService altinn3LibraryCodeListService
     )
     {
         _appOptionsService = appOptionsService;
         _altinn3LibraryCodeListService = altinn3LibraryCodeListService;
-        _telemetry = telemetry;
     }
 
     /// <summary>
     /// Api that exposes app related options
     /// </summary>
-    /// <remarks>The Tags field is only populated when requesting library code lists.</remarks>
+    /// <remarks>The tags field is only populated when requesting library code lists.</remarks>
     /// <param name="optionsIdOrLibraryRef">
     /// The optionsId configured for the options provider in the app startup,
     /// or a library reference on the format: `lib**{creatorOrg}**{codeListId}**{version}`
@@ -68,20 +63,15 @@ public partial class OptionsController : ControllerBase
         AppOptions appOptions;
         try
         {
-            if (!libRefMatch.Success)
-            {
-                appOptions = await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams);
-            }
-            else
-            {
-                appOptions = await GetLibraryCodeListOptionsAsync(
+            appOptions = !libRefMatch.Success
+                ? await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams)
+                : await _altinn3LibraryCodeListService.GetLibraryCodeListOptionsAsync(
                     libRefMatch.Groups["org"].Value,
                     libRefMatch.Groups["codeListId"].Value,
                     libRefMatch.Groups["version"].Value,
                     language,
                     HttpContext.RequestAborted
                 );
-            }
         }
         catch (HttpRequestException exception)
         {
@@ -108,7 +98,7 @@ public partial class OptionsController : ControllerBase
     /// <summary>
     /// Exposes options related to the app and logged in user
     /// </summary>
-    /// <remarks>The Tags field is only populated when requesting library code lists.</remarks>
+    /// <remarks>The tags field is only populated when requesting library code lists.</remarks>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
@@ -156,20 +146,15 @@ public partial class OptionsController : ControllerBase
             {
                 var libRefReg = LibraryRefRegex();
                 var libRefMatch = libRefReg.Match(optionsIdOrLibraryRef);
-                if (!libRefMatch.Success)
-                {
-                    appOptions = await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams);
-                }
-                else
-                {
-                    appOptions = await GetLibraryCodeListOptionsAsync(
+                appOptions = !libRefMatch.Success
+                    ? await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams)
+                    : await _altinn3LibraryCodeListService.GetLibraryCodeListOptionsAsync(
                         libRefMatch.Groups["org"].Value,
                         libRefMatch.Groups["codeListId"].Value,
                         libRefMatch.Groups["version"].Value,
                         language,
                         HttpContext.RequestAborted
                     );
-                }
             }
         }
         catch (HttpRequestException exception)
@@ -194,24 +179,6 @@ public partial class OptionsController : ControllerBase
         );
 
         return Ok(appOptions.Options);
-    }
-
-    private async Task<AppOptions> GetLibraryCodeListOptionsAsync(
-        string org,
-        string codeListId,
-        string version,
-        string? language,
-        CancellationToken cancellationToken
-    )
-    {
-        using var telemetry = _telemetry?.StartGetOptionsActivity();
-        var response = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
-            org,
-            codeListId,
-            version,
-            cancellationToken
-        );
-        return _altinn3LibraryCodeListService.MapAppOptions(response, language);
     }
 
     [GeneratedRegex(@"^lib\*\*(?<org>[a-zA-Z0-9]+)\*\*(?<codeListId>[a-zA-Z0-9_-]+)\*\*(?<version>[a-zA-Z0-9._-]+)$")]

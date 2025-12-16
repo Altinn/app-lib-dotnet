@@ -6,6 +6,16 @@ namespace Altinn.App.Core.Tests.Features.Options.Altinn3LibraryProvider;
 
 public static class Altinn3LibraryCodeListServiceTestData
 {
+    public const string Value = "value1";
+    public const string NbLabel = "tekst";
+    public const string NbDescription = "Dette er en tekst";
+    public const string NbHelpText = "Velg dette valget for å få en tekst";
+    public const string EnLabel = "text";
+    public const string EnDescription = "This is a text";
+    public const string EnHelpText = "Choose this option to get a text";
+    public const string Version = "ttd/code_lists/someNewCodeList/1.json";
+    public const string SourceName = "test-data-files";
+
     public static Func<HttpResponseMessage> GetNbEnResponseMessage()
     {
         return () =>
@@ -21,13 +31,9 @@ public static class Altinn3LibraryCodeListServiceTestData
 
     public static Altinn3LibraryCodeListResponse GetNbEnAltinn3LibraryCodeListResponse()
     {
-        var labels = new Dictionary<string, string> { { "nb", "tekst" }, { "en", "text" } };
-        var descriptions = new Dictionary<string, string> { { "nb", "Dette er en tekst" }, { "en", "This is a text" } };
-        var helpTexts = new Dictionary<string, string>
-        {
-            { "en", "Choose this option to get a text" },
-            { "nb", "Velg dette valget for å få en tekst" },
-        };
+        var labels = new Dictionary<string, string> { { "nb", NbLabel }, { "en", EnLabel } };
+        var descriptions = new Dictionary<string, string> { { "nb", NbDescription }, { "en", EnDescription } };
+        var helpTexts = new Dictionary<string, string> { { "en", EnHelpText }, { "nb", NbHelpText } };
 
         return GetAltinn3LibraryCodeListResponse(labels, descriptions, helpTexts);
     }
@@ -37,24 +43,28 @@ public static class Altinn3LibraryCodeListServiceTestData
         Dictionary<string, string>? descriptions,
         Dictionary<string, string>? helpTexts,
         List<string>? tagNames = null,
-        List<string>? tags = null
+        List<string>? tags = null,
+        List<Altinn3LibraryCodeListItem>? additionalCodes = null
     )
     {
+        additionalCodes ??= [];
+
+        additionalCodes.Add(
+            new Altinn3LibraryCodeListItem
+            {
+                Value = Value,
+                Label = labels,
+                Description = descriptions,
+                HelpText = helpTexts,
+                Tags = tags,
+            }
+        );
+
         return new Altinn3LibraryCodeListResponse
         {
-            Codes = new List<Altinn3LibraryCodeListItem>()
-            {
-                new()
-                {
-                    Value = "value1",
-                    Label = labels,
-                    Description = descriptions,
-                    HelpText = helpTexts,
-                    Tags = tags,
-                },
-            },
-            Version = "ttd/code_lists/someNewCodeList/1.json",
-            Source = new Altinn3LibraryCodeListSource { Name = "test-data-files" },
+            Codes = additionalCodes,
+            Version = Version,
+            Source = new Altinn3LibraryCodeListSource { Name = SourceName },
             TagNames = tagNames,
         };
     }

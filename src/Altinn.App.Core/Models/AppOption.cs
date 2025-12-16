@@ -28,7 +28,7 @@ public class AppOption
     /// </summary>
     [JsonPropertyName("label")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Label { get; set; }
+    public required string Label { get; set; }
 
     /// <summary>
     /// The description of a given option
@@ -45,8 +45,8 @@ public class AppOption
     public string? HelpText { get; set; }
 
     /// <summary>
-    /// Tags used for grouping in combination with tagNames found in library code lists
-    /// Eg: tagNames: ["region"], tags: ["europe"]
+    /// Tags used for grouping. This is a combination of tagNames and tags found in the published library code lists.
+    /// For example will a combination of tagNames: ["region"] and tags: ["europe"] be mapped to tags: ["region", "europe"]
     /// </summary>
     [JsonPropertyName("tags")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
