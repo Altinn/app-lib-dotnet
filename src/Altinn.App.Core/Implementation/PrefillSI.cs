@@ -230,10 +230,10 @@ public class PrefillSI : IPrefill
 
             if (danDictionary.Count > 0)
             {
-                //remove hardcoding after testing
-                var subject = "312655241";
+                //use ssn as default, use orgnumber if ssn is not set
+                var subject = !string.IsNullOrWhiteSpace(party.SSN) ? party.SSN : party.OrgNumber;
                 var danDataset = await _danClient.GetDataset(dataset, subject);
-                if (danDataset != null)
+                if (danDataset.Any())
                 {
                     JObject danJsonObject = JObject.FromObject(danDataset);
                     _logger.LogInformation($"Started prefill from {_danKey}");
