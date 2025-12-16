@@ -52,7 +52,7 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
         string org,
         string codeListId,
         string? version,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     )
     {
         version = !string.IsNullOrEmpty(version) ? version : "latest";

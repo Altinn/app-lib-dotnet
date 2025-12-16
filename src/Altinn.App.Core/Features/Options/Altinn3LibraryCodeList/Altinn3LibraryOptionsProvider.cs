@@ -39,7 +39,12 @@ internal sealed class Altinn3LibraryOptionsProvider : IAppOptionsProvider
     /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
     public async Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)
     {
-        var result = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(_org, _codeListId, _version);
+        var result = await _altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
+            _org,
+            _codeListId,
+            _version,
+            CancellationToken.None
+        );
         return _altinn3LibraryCodeListService.MapAppOptions(result, language);
     }
 }

@@ -1691,7 +1691,7 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryCodeList
     }
     public interface IAltinn3LibraryCodeListService
     {
-        System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn3LibraryCodeList.Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(string org, string codeListId, string? version, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn3LibraryCodeList.Altinn3LibraryCodeListResponse> GetCachedCodeListResponseAsync(string org, string codeListId, string? version, System.Threading.CancellationToken cancellationToken);
         System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions> GetLibraryCodeListOptionsAsync(string org, string codeListId, string version, string? language, System.Threading.CancellationToken cancellationToken);
         Altinn.App.Core.Models.AppOptions MapAppOptions(Altinn.App.Core.Features.Options.Altinn3LibraryCodeList.Altinn3LibraryCodeListResponse libraryCodeListResponse, string? language);
     }
@@ -4042,7 +4042,6 @@ namespace Altinn.App.Core.Models
         [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("helpText")]
         public string? HelpText { get; set; }
-        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("label")]
         public required string Label { get; set; }
         [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]

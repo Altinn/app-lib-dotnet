@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 public interface IAltinn3LibraryCodeListService
 {
     /// <summary>
-    /// Gets cached code lists from <see cref="GetCachedCodeListResponseAsync"/> and maps the response to AppOptions by calling <see cref="MapAppOptions"/>.
+    /// Gets cached code list from <see cref="GetCachedCodeListResponseAsync"/> and maps the response to AppOptions by calling <see cref="MapAppOptions"/>.
     /// </summary>
     /// <param name="org">Creator organization</param>
     /// <param name="codeListId">Code list id</param>
@@ -25,7 +25,7 @@ public interface IAltinn3LibraryCodeListService
     );
 
     /// <summary>
-    /// Getting code list from Altinn3 library, caching the result if not already cached.
+    /// Gets code list from Altinn3 library, caching the result if not already cached.
     /// </summary>
     /// <param name="org">Creator organization</param>
     /// <param name="codeListId">Code list id</param>
@@ -36,11 +36,11 @@ public interface IAltinn3LibraryCodeListService
         string org,
         string codeListId,
         string? version,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken
     );
 
     /// <summary>
-    /// Mapping Altinn3 library code list response to AppOptions
+    /// Maps Altinn3 library code list response to AppOptions
     /// </summary>
     /// <param name="libraryCodeListResponse">Code list input</param>
     /// <param name="language">Preferred language to map to. Has fallback, will try to map to requested language, else Nb, En, then first available (alphabetically by key) if not provided or not found.</param>

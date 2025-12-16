@@ -29,7 +29,12 @@ public class Altinn3LibraryCodeListServiceTests
         {
             var altinn3LibraryCodeListService =
                 scope.ServiceProvider.GetRequiredService<IAltinn3LibraryCodeListService>();
-            await altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(Org, CodeListId, Version);
+            await altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
+                Org,
+                CodeListId,
+                Version,
+                CancellationToken.None
+            );
 
             Assert.Equal(1, fixture.MockHandler.CallCount);
             Assert.Equal(platformSettings.Altinn3LibraryApiEndpoint + ExpectedUri, fixture.MockHandler.LastRequestUri);
@@ -40,7 +45,12 @@ public class Altinn3LibraryCodeListServiceTests
         {
             var altinn3LibraryCodeListService =
                 scope.ServiceProvider.GetRequiredService<IAltinn3LibraryCodeListService>();
-            await altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(Org, codeListIdTwo, Version);
+            await altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
+                Org,
+                codeListIdTwo,
+                Version,
+                CancellationToken.None
+            );
 
             Assert.Equal(2, fixture.MockHandler.CallCount);
             Assert.Equal(
@@ -63,7 +73,12 @@ public class Altinn3LibraryCodeListServiceTests
         {
             var altinn3LibraryCodeListService =
                 scope.ServiceProvider.GetRequiredService<IAltinn3LibraryCodeListService>();
-            await altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(Org, CodeListId, Version);
+            await altinn3LibraryCodeListService.GetCachedCodeListResponseAsync(
+                Org,
+                CodeListId,
+                Version,
+                CancellationToken.None
+            );
 
             Assert.Equal(1, fixture.MockHandler.CallCount);
             Assert.Equal(platformSettings.Altinn3LibraryApiEndpoint + ExpectedUri, fixture.MockHandler.LastRequestUri);
@@ -73,7 +88,7 @@ public class Altinn3LibraryCodeListServiceTests
         using (var scope = serviceProvider.CreateScope())
         {
             var optionsProvider = scope.ServiceProvider.GetRequiredService<IAltinn3LibraryCodeListService>();
-            await optionsProvider.GetCachedCodeListResponseAsync(Org, CodeListId, Version);
+            await optionsProvider.GetCachedCodeListResponseAsync(Org, CodeListId, Version, CancellationToken.None);
 
             // Still only 1 call because of caching
             Assert.Equal(1, fixture.MockHandler.CallCount);

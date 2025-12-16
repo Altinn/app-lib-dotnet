@@ -10,12 +10,13 @@ A1: Use already existing path without modifying it
 
 ## Problem context
 
-We want to be able to get code lists through the API without registering the provider in
-'Program.cs' as is currently required for the Altinn 2 code lists.
+We want to be able to get code lists through the API directly without registering the provider in
+'Program.cs' as is currently required for code lists.
 
-The endpoints we currently have for getting code lists take an optionId, queryParams and the language as input. Where
-the optionId is a random string value configured through Program.cs. We want to be able to get the code lists
-without configuring the optionId in Program.cs.
+The endpoints we currently have for getting code lists take an optionId, queryParams and preferred language as input. Where
+the optionId is a random string value chosen for the particular code list through configuration in Program.cs.
+Instead we want to be able to get the code lists directly without having to decide which code list we want to get
+by configuring an optionId beforehand in Program.cs.
 
 Other things that would be nice to solve at the same time:
 * Support for filtering/grouping of code lists
@@ -23,16 +24,13 @@ Other things that would be nice to solve at the same time:
   * Object, not list as root for added metadata support
   * Avoid the need to distinguish between `"secure": true/false` in frontend
 * See if we can improve the way we register existing code lists
-* Cleanup in service logic in backend (AppOptionsFactory.GetOptionsProvider and InstanceAppOptionsFactory.GetOptionsProvider)
+* Improve factories AppOptionsFactory and InstanceAppOptionsFactory in backend
 
 ## Decision drivers
 
-* B1: Have object instead of list as root
-* B2: Simplify application layout
-* B3: Keep complexity low for developers
-* B4: Prevent confusion between optionId and "optionId" parsed to org, codelist id and version
-* B5: Avoid the need to distinguish between `"secure": true/false` in frontend
-* B6: Performance, consider parsing overhead of different approaches
+* B1: Keep complexity low for developers
+* B2: Prevent confusion between optionId and "optionId" parsed to org, codelist id and version
+* B3: Performance, consider parsing overhead of different approaches
 
 ## Alternatives considered
 
@@ -49,7 +47,7 @@ Other things that would be nice to solve at the same time:
 * **A4: Modify existing path so that option id is wild card path segment**
   *GET /{org}/{app}/api/options/{\*\*optionsIdOrLibraryRef}&language={language}*
   OptionId is now allowed to contain slashes, and can be formated as /{org}/{codeListId}/{version}
-* **A5: Add a new controller method /{creatorOrg}/{codeListId}?version={version}**
+* **A5: Add a new endpoint /{creatorOrg}/{codeListId}?version={version}**
 
 ## Pros and cons
 
@@ -68,22 +66,23 @@ Other things that would be nice to solve at the same time:
 ### A2: Modify existing path with nullable path variables
 
 * Pros
-  * Supports B3; no custom parsing of "optionId"
+  * Supports B1; no custom parsing of "optionId"
   will help maintain a lower complexity.
   * Supports framework validation, each path segment validated separately by routing.
   * Tools can generate clearer API docs showing both usage patterns
   * RESTful design, clear resource hierarchy in URL path
 * Cons
   * Can potentially cause confusion on when certain fields must be provided.
-  * Doesnt seem possible to document the optional path parameters out of the box in Swagger, all path parameters are required.
-  * The issue above makes it impossible to call the endpoint the old way with just optionsId through Swagger. Swagger complains about missing required parameters missing
+  * Doesnt seem possible for optional path parameters out of the box in Swagger, all path parameters are required. This
+  makes it impossible to call the endpoint the old way with just optionsId through Swagger.
+  Swagger complains about required parameters missing
   * Route ambiguity, /options/something could match either pattern. So some custom validation will be required.
 
 ### A3: Modify existing path with new query parameters
 
 * Pros
   * Clear semantic distinction via source parameter.
-  * Supports B3; no custom parsing of "optionId" will help maintain lower complexity.
+  * Supports B1; no custom parsing of "optionId" will help maintain lower complexity.
 * Cons
   * Can potentially cause confusion on when certain fields must be provided.
   * REST anti-pattern, resource identifiers (org, codeListId) should be in path, not query string
@@ -98,13 +97,14 @@ Other things that would be nice to solve at the same time:
   * String parsing complexity, what should be encoded as optionId and what should not be.
   * Route conflicts, wild card can accidentally catch routes you didnt intend.
   * Breaking rest conventions, path parameters should be single identifiers, not composite structures.
-  * Poor discoverability, API consumers can't tell from the OpenAPI/Swagger docs what format optionsId should be.
+  * Poor discoverability, API consumers can't easely tell from the OpenAPI/Swagger docs what format optionsId should be.
 
-### A5: Add a new controller method /{creatorOrg}/{codeListId}?version={version}
+### A5: Add a new endpoint /{creatorOrg}/{codeListId}?version={version}
 
 * Pros
   * Easier to document which path parameters that is required in Swagger.
   * It is also easier to document the different responses with two separate endpoints.
+  * Support B2 and B3
 * Cons
   * Will require a new endpoint which was something we initially didnt want.
 
