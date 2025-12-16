@@ -22,7 +22,7 @@ public class Altinn3LibraryCodeListServiceTests
 
         await using var fixture = Fixture.Create();
         var serviceProvider = fixture.ServiceProvider;
-        var platformSettings = serviceProvider.GetRequiredService<IOptions<PlatformSettings>>()?.Value!;
+        var platformSettings = serviceProvider.GetRequiredService<IOptions<PlatformSettings>>().Value;
 
         // Act/Assert: First scope
         using (var scope = serviceProvider.CreateScope())
@@ -66,7 +66,7 @@ public class Altinn3LibraryCodeListServiceTests
         // Arrange
         await using var fixture = Fixture.Create();
         var serviceProvider = fixture.ServiceProvider;
-        var platformSettings = serviceProvider.GetRequiredService<IOptions<PlatformSettings>>()?.Value!;
+        var platformSettings = serviceProvider.GetRequiredService<IOptions<PlatformSettings>>().Value;
 
         // Act/Assert: First scope
         using (var scope = serviceProvider.CreateScope())
