@@ -44,8 +44,8 @@ public class AppOption
     public string? HelpText { get; set; }
 
     /// <summary>
-    /// Tags used for grouping. This is a combination of tagNames and tags found in the published library code lists.
-    /// For example will a combination of tagNames: ["region"] and tags: ["europe"] be mapped to tags: ["region", "europe"]
+    /// Tags used for grouping. Derived from combining tagNames and tags arrays found in published library code lists.
+    /// For example, tagNames ["region"] paired with tags ["europe"] produces: <c>"tags": {"region": "europe"}</c>
     /// </summary>
     [JsonPropertyName("tags")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
