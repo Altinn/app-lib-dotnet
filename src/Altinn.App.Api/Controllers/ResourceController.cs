@@ -126,6 +126,41 @@ public class ResourceController : ControllerBase
     }
 
     /// <summary>
+    /// Endpoint for layout settings with instance context.
+    /// Uses ICustomLayoutForInstance if implemented with IAppResources as fallback.
+    /// </summary>
+    /// <param name="org">The application owner short name</param>
+    /// <param name="app">The application name</param>
+    /// <param name="instanceOwnerPartyId">The instance owner party id</param>
+    /// <param name="instanceId">The instance id</param>
+    /// <param name="layoutSetId">The layout set id</param>
+    /// <returns>The settings in the form of a string.</returns>
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "application/json")]
+    [HttpGet]
+    [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceId}/layoutsettings/{layoutSetId}")]
+    public async Task<ActionResult> GetInstanceLayoutSettings(
+        string org,
+        string app,
+        int instanceOwnerPartyId,
+        string instanceId,
+        string layoutSetId
+    )
+    {
+        ICustomLayoutForInstance? customLayoutService = _appImplementationFactory.Get<ICustomLayoutForInstance>();
+        if (customLayoutService is not null)
+        {
+            string? customLayoutSettings = await customLayoutService.GetCustomLayoutSettingsForInstance(
+                layoutSetId,
+                instanceOwnerPartyId,
+                Guid.Parse(instanceId)
+            );
+            return Ok(customLayoutSettings);
+        }
+        string? settings = _appResourceService.GetLayoutSettingsStringForSet(layoutSetId);
+        return Ok(settings);
+    }
+
+    /// <summary>
     /// Get the layout settings.
     /// </summary>
     /// <param name="org">The application owner short name</param>

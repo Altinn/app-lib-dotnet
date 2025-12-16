@@ -15,4 +15,12 @@ public interface ICustomLayoutForInstance
     /// <param name="instanceOwnerPartyId">The instance owner party ID</param>
     /// <param name="instanceGuid">The instance GUID</param>
     Task<string?> GetCustomLayoutForInstance(string layoutSetId, int instanceOwnerPartyId, Guid instanceGuid);
+
+    /// <summary>
+    /// Gets the custom layout settings
+    /// </summary>
+    /// <param name="layoutSetId">The layout set ID</param>
+    /// <param name="instanceOwnerPartyId">The instance owner party ID</param>
+    /// <param name="instanceGuid">The instance GUID</param>
+    Task<string?> GetCustomLayoutSettingsForInstance(string layoutSetId, int instanceOwnerPartyId, Guid instanceGuid);
 }

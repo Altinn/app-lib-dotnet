@@ -19,6 +19,15 @@ public class ResourceController_CustomLayoutTests : ApiTestBase, IClassFixture<W
         {
             return Task.FromResult<string?>(instanceId.ToString());
         }
+
+        public Task<string?> GetCustomLayoutSettingsForInstance(
+            string layoutSetId,
+            int instanceOwnerPartyId,
+            Guid instanceId
+        )
+        {
+            return Task.FromResult<string?>(instanceId.ToString());
+        }
     }
 
     [Fact]
@@ -71,5 +80,52 @@ public class ResourceController_CustomLayoutTests : ApiTestBase, IClassFixture<W
         Assert.True(data.TryGetProperty("layout", out var layout));
         Assert.Equal(JsonValueKind.Array, layout.ValueKind);
         Assert.True(layout.GetArrayLength() > 0);
+    }
+
+    [Fact]
+    public async Task GetLayoutSettingsForSet_WithCustomLayoutForInstanceService_ReturnsOk()
+    {
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddSingleton<ICustomLayoutForInstance, CustomLayoutForInstance>();
+        };
+
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 500600;
+        Guid instanceGuid = Guid.Parse("cff1cb24-5bc1-4888-8e06-c634753c5144");
+        string layoutSetId = "default";
+        using HttpClient client = GetRootedUserClient(org, app, 1337, instanceOwnerPartyId);
+
+        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        var response = await client.GetAsync(
+            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/layoutsettings/{layoutSetId}"
+        );
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Equal(instanceGuid.ToString(), content);
+    }
+
+    [Fact]
+    public async Task GetLayoutSettingsForSet_WithoutCustomLayoutForInstanceService_ReturnsOk()
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 500600;
+        Guid instanceGuid = Guid.Parse("cff1cb24-5bc1-4888-8e06-c634753c5144");
+        string layoutSetId = "default";
+        using HttpClient client = GetRootedUserClient(org, app, 1337, instanceOwnerPartyId);
+
+        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        var response = await client.GetAsync(
+            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/layoutsettings/{layoutSetId}"
+        );
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync();
+        using var jsonDoc = JsonDocument.Parse(content);
+        var root = jsonDoc.RootElement;
+        Assert.Equal(JsonValueKind.Object, root.ValueKind);
     }
 }

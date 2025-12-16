@@ -523,6 +523,11 @@ namespace Altinn.App.Api.Controllers
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult> GetFooterLayout(string org, string app) { }
         [Microsoft.AspNetCore.Mvc.HttpGet]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(string), 200, "application/json", new string[0])]
+        [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceId}/layoutsettings/{lay" +
+            "outSetId}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult> GetInstanceLayoutSettings(string org, string app, int instanceOwnerPartyId, string instanceId, string layoutSetId) { }
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(string), 200, "application/json", new string[0])]
         [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceId}/layouts/{layoutSetI" +
             "d}")]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult> GetInstanceLayouts(string org, string app, int instanceOwnerPartyId, string instanceId, string layoutSetId) { }

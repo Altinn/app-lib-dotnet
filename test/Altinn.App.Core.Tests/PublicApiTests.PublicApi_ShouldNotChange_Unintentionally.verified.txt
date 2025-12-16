@@ -2937,6 +2937,7 @@ namespace Altinn.App.Core.Internal.App
     public interface ICustomLayoutForInstance
     {
         System.Threading.Tasks.Task<string?> GetCustomLayoutForInstance(string layoutSetId, int instanceOwnerPartyId, System.Guid instanceGuid);
+        System.Threading.Tasks.Task<string?> GetCustomLayoutSettingsForInstance(string layoutSetId, int instanceOwnerPartyId, System.Guid instanceGuid);
     }
     public interface IFrontendFeatures
     {
