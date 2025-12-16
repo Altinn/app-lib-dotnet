@@ -17,6 +17,7 @@ public interface IProcessEngine
     Task<ProcessEngineResponse> EnqueueJob(ProcessEngineRequest request, CancellationToken cancellationToken = default);
     bool HasDuplicateJob(string jobIdentifier);
     bool HasQueuedJobForInstance(InstanceInformation instanceInformation);
+    ProcessEngineJob? GetJobForInstance(InstanceInformation instanceInformation);
 }
 
 internal partial class ProcessEngine : IProcessEngine, IDisposable
@@ -229,7 +230,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
                 case { DatabaseUpdateStatus: ProcessEngineTaskStatus.Finished }:
                     _logger.LogDebug("Task {Task} database operation has completed. Cleaning up", task);
                     task.CleanupDatabaseTask();
-                    continue;
+                    return;
 
                 // Waiting for execution task to complete
                 case { ExecutionStatus: ProcessEngineTaskStatus.Started }:

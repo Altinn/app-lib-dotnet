@@ -6,7 +6,7 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.ProcessEngine.Commands;
 
-internal sealed class ExecuteServiceTask(AppImplementationFactory appImplementationFactory, Telemetry? telemetry)
+internal sealed class ExecuteServiceTask(AppImplementationFactory appImplementationFactory, Telemetry? telemetry = null)
     : IProcessEngineCommand
 {
     public static string Key => "ExecuteServiceTask";
