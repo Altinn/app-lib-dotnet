@@ -1,12 +1,11 @@
 ﻿using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Dan;
 using Altinn.App.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.Rest;
+using Newtonsoft.Json;
 
 namespace Altinn.App.Core.Features.Infrastructure.Clients.Dan;
 
@@ -18,6 +17,7 @@ public class DanClient : IDanClient
 
     public DanClient(HttpClient httpClient, IOptions<DanSettings> settings, IServiceProvider serviceProvider)
     {
+        _httpClient = httpClient;
         _settings = settings;
         _authenticationTokenResolver = serviceProvider.GetRequiredService<IAuthenticationTokenResolver>();
         httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
@@ -30,8 +30,15 @@ public class DanClient : IDanClient
         var token = await GetMaskinportenToken();
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Value);
 
-        var result = await _httpClient.GetAsync($"datasets/{dataset}?subject={subject}&envelope=false");
-        var resultJson = result.Content.ReadFromJsonAsync<string>();
+        var result = await _httpClient.GetAsync(
+            $"directharvest/{dataset}?subject={subject}&envelope=false&requestor=991825827"
+        );
+        if (result.IsSuccessStatusCode)
+        {
+            var resultJson = result.Content.ReadAsStringAsync().Result;
+            var dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(resultJson);
+            return dictionary;
+        }
         return new Dictionary<string, string>();
     }
 
