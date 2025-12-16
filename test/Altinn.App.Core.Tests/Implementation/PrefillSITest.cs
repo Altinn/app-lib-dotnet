@@ -54,7 +54,8 @@ public class PrefillSITests
             loggerMock.Object,
             appResourcesMock.Object,
             authenticationContextMock.Object,
-            sp
+            sp,
+            null
         );
 
         prefillToTest.PrefillDataModel(dataModel, externalPrefill, continueOnError: false);
