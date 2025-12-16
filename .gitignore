@@ -11,11 +11,8 @@ syntax: glob
 *.userosscache
 *.sln.docstates
 
-# Entity Framework - ignore migrations in test projects but allow library migrations
-**/[Tt]est*/Migrations/
-**/[Tt]esting*/Migrations/
-# Allow migrations in library projects like ProcessEngine
-!**/Altinn.App.ProcessEngine/Data/Migrations/
+# Entity Framework
+Migrations/
 
 # Build results
 [Dd]ebug/
