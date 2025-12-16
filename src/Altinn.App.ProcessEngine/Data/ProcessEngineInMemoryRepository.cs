@@ -3,10 +3,10 @@ using Altinn.App.ProcessEngine.Models;
 namespace Altinn.App.ProcessEngine.Data;
 
 /// <summary>
-/// No-op repository for in-memory only ProcessEngine operation.
+/// In-memory repository for ProcessEngine operations.
 /// Simulates database latency for performance testing.
 /// </summary>
-internal sealed class InMemoryProcessEngineRepository : IProcessEngineRepository
+internal sealed class ProcessEngineInMemoryRepository : IProcessEngineRepository
 {
     public async Task<IReadOnlyList<ProcessEngineJob>> GetIncompleteJobs(CancellationToken cancellationToken = default)
     {

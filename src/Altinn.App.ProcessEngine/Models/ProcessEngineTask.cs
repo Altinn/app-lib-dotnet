@@ -1,8 +1,6 @@
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace Altinn.App.ProcessEngine.Models;
 
-internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
+internal sealed record ProcessEngineTask : ProcessEngineItem
 {
     public required int ProcessingOrder { get; init; }
     public required ProcessEngineCommand Command { get; init; }
@@ -12,7 +10,6 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
     public ProcessEngineRetryStrategy? RetryStrategy { get; init; }
     public int RequeueCount { get; set; }
 
-    [NotMapped]
     public Task<ProcessEngineExecutionResult>? ExecutionTask { get; set; }
 
     // Foreign key for EF Core relationship - will be set in FromRequest method
@@ -26,7 +23,7 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
     ) =>
         new()
         {
-            Identifier = $"{jobIdentifier}/{request.Command}",
+            Key = $"{jobIdentifier}/{request.Command}",
             JobIdentifier = jobIdentifier,
             Actor = actor,
             StartTime = request.StartTime,
@@ -35,8 +32,7 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
             RetryStrategy = request.RetryStrategy,
         };
 
-    public override string ToString() =>
-        $"[{nameof(ProcessEngineTask)}.{Command.GetType().Name}] {Identifier} ({Status})";
+    public override string ToString() => $"[{nameof(ProcessEngineTask)}.{Command.GetType().Name}] {Key} ({Status})";
 
     public new void Dispose()
     {

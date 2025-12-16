@@ -9,12 +9,12 @@ internal partial class ProcessEngine
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("Enqueuing job {JobIdentifier}", request.JobIdentifier);
+        _logger.LogDebug("Enqueuing job {JobIdentifier}", request.JobKey);
 
         if (!request.IsValid())
             return ProcessEngineResponse.Rejected($"Invalid request: {request}");
 
-        if (HasDuplicateJob(request.JobIdentifier))
+        if (HasDuplicateJob(request.JobKey))
             return ProcessEngineResponse.Rejected(
                 "Duplicate request. A job with the same identifier is already being processed"
             );
@@ -54,10 +54,10 @@ internal partial class ProcessEngine
         if (updateDatabase)
         {
             await _repository.SaveJob(job, cancellationToken);
-            _logger.LogDebug("Job {JobIdentifier} persisted to database", job.Identifier);
+            _logger.LogDebug("Job {JobIdentifier} persisted to database", job.Key);
         }
 
-        _inbox[job.Identifier] = job;
+        _inbox[job.Key] = job;
     }
 
     public bool HasDuplicateJob(string jobIdentifier)
@@ -87,8 +87,8 @@ internal partial class ProcessEngine
             {
                 // TODO: Not sure about this logic...
                 // Only add if not already in memory to avoid duplicates
-                if (_inbox.TryAdd(job.Identifier, job))
-                    _logger.LogDebug("Restored job {JobIdentifier} from database", job.Identifier);
+                if (_inbox.TryAdd(job.Key, job))
+                    _logger.LogDebug("Restored job {JobIdentifier} from database", job.Key);
             }
 
             _logger.LogInformation("Populated {JobCount} jobs from storage", incompleteJobs.Count);
@@ -112,11 +112,11 @@ internal partial class ProcessEngine
             job.UpdatedAt = _timeProvider.GetUtcNow();
             await _repository.UpdateJob(job, cancellationToken);
 
-            _logger.LogTrace("Job {JobIdentifier} updated in database", job.Identifier);
+            _logger.LogTrace("Job {JobIdentifier} updated in database", job.Key);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to update job {JobIdentifier} in database after all retries", job.Identifier);
+            _logger.LogError(ex, "Failed to update job {JobIdentifier} in database after all retries", job.Key);
             // Continue processing even if database update fails
         }
     }
@@ -130,15 +130,11 @@ internal partial class ProcessEngine
             task.UpdatedAt = _timeProvider.GetUtcNow();
             await _repository.UpdateTask(task, cancellationToken);
 
-            _logger.LogTrace("Task {TaskIdentifier} updated in database", task.Identifier);
+            _logger.LogTrace("Task {TaskIdentifier} updated in database", task.Key);
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Failed to update task {TaskIdentifier} in database after all retries",
-                task.Identifier
-            );
+            _logger.LogError(ex, "Failed to update task {TaskIdentifier} in database after all retries", task.Key);
             // Continue processing even if database update fails
         }
     }

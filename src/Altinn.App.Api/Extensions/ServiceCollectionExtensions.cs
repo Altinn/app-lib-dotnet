@@ -93,7 +93,6 @@ public static class ServiceCollectionExtensions
         services.AddHealthChecks().AddCheck<HealthCheck>("default_health_check");
         services.AddFeatureManagement();
 
-        services.AddProcessEngine();
         services.AddPlatformServices(config, env);
         services.AddAppServices(config, env);
         services.ConfigureDataProtection();

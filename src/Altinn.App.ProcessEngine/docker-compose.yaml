@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   postgres:
-    image: postgres:15
+    image: postgres:16
     container_name: altinn-postgres
     environment:
       POSTGRES_DB: altinn_processengine
@@ -30,6 +28,7 @@ services:
       - altinn-network
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+      - ./.docker/servers.json:/pgadmin4/servers.json
 
 volumes:
   postgres_data:

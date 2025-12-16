@@ -6,18 +6,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Altinn.App.ProcessEngine.Data;
 
-internal sealed class ProcessEngineRepository : IProcessEngineRepository
+internal sealed class ProcessEnginePgRepository : IProcessEngineRepository
 {
     private readonly ProcessEngineDbContext _context;
     private readonly ProcessEngineRetryStrategy _retryStrategy;
     private readonly TimeProvider _timeProvider;
-    private readonly ILogger<ProcessEngineRepository> _logger;
+    private readonly ILogger<ProcessEnginePgRepository> _logger;
 
-    public ProcessEngineRepository(
+    public ProcessEnginePgRepository(
         ProcessEngineDbContext context,
         ProcessEngineRetryStrategy retryStrategy,
         TimeProvider timeProvider,
-        ILogger<ProcessEngineRepository> logger
+        ILogger<ProcessEnginePgRepository> logger
     )
     {
         _context = context;

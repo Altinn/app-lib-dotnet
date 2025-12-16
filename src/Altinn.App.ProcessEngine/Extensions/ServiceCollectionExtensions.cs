@@ -27,7 +27,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IProcessEngine, ProcessEngine>();
         services.AddSingleton<IProcessEngineTaskHandler, ProcessEngineTaskHandler>();
-        services.AddSingleton<IProcessEngineRepository, InMemoryProcessEngineRepository>();
+        services.AddSingleton<IProcessEngineRepository, ProcessEngineInMemoryRepository>();
         services.AddHostedService<ProcessEngineHost>();
 
         services
@@ -68,7 +68,7 @@ public static class ServiceCollectionExtensions
         );
 
         // Add the repository
-        services.AddScoped<IProcessEngineRepository, ProcessEngineRepository>();
+        services.AddScoped<IProcessEngineRepository, ProcessEnginePgRepository>();
 
         return services;
     }
