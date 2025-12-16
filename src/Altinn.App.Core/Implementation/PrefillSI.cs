@@ -237,7 +237,11 @@ public class PrefillSI : IPrefill
                 {
                     JObject danJsonObject = JObject.FromObject(danDataset);
                     _logger.LogInformation($"Started prefill from {_danKey}");
-                    LoopThroughDictionaryAndAssignValuesToDataModel(danDictionary, danJsonObject, dataModel);
+                    LoopThroughDictionaryAndAssignValuesToDataModel(
+                        SwapKeyValuesForPrefill(danDictionary),
+                        danJsonObject,
+                        dataModel
+                    );
                 }
                 else
                 {
