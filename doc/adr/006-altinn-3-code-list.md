@@ -16,7 +16,7 @@ We want to be able to get code lists through the API directly without registerin
 The endpoints we currently have for getting code lists take an optionId, queryParams and preferred language as input. Where
 the optionId is a random string value chosen for the particular code list through configuration in Program.cs.
 Instead we want to be able to get the code lists directly without having to decide which code list we want to get
-by configuring an optionId beforehand in Program.cs.
+by configuring it beforehand in Program.cs.
 
 Other things that would be nice to solve at the same time:
 * Support for filtering/grouping of code lists
@@ -24,7 +24,7 @@ Other things that would be nice to solve at the same time:
   * Object, not list as root for added metadata support
   * Avoid the need to distinguish between `"secure": true/false` in frontend
 * See if we can improve the way we register existing code lists
-* Improve factories AppOptionsFactory and InstanceAppOptionsFactory in backend
+* Improve AppOptionsFactory and InstanceAppOptionsFactory in backend
 
 ## Decision drivers
 
@@ -42,8 +42,8 @@ Other things that would be nice to solve at the same time:
   {codeListId?}/{version?}&language={language}*
   Supports receiving both just optionId or a creatorOrg, codeListId and version combination.
 * **A3: Modify existing path with new query parameters**
-  *GET /{org}/{app}/api/options/{optionsIdOrCodeListId}?source=library&creatorOrg={org}&version={version}&language={language}*
-  optionsIdOrCodeListId becomes the codeListId when source=library
+  *GET /{org}/{app}/api/options/{optionsIdOrCodeListId}?creatorOrg={org}&version={version}&language={language}*
+  optionsIdOrCodeListId becomes the codeListId
 * **A4: Modify existing path so that option id is wild card path segment**
   *GET /{org}/{app}/api/options/{\*\*optionsIdOrLibraryRef}&language={language}*
   OptionId is now allowed to contain slashes, and can be formated as /{org}/{codeListId}/{version}
@@ -56,21 +56,21 @@ Other things that would be nice to solve at the same time:
 * Pros
   * Less work required in the frontend?
 * Cons
-  * Increased complexity since the endpoint now has to encode what is sent in as "optionId" to org, codelist id and version.
+  * Increased complexity since the endpoint now has to encode what is sent in as "optionId" to creator org, codelist id and version.
   * Can potentially cause confusion between what is an actual optionId and what is not.
   * String parsing complexity, what should be encoded as optionId and what should not be.
-  * Difficult to determine a format for optionsId that consists of org, code list id and version that doesn't conflict with actual optionsIds
-  * If org, code list id and version contains special characters (hyphens, dots, etc.), the delimiter choice becomes problematic.
+  * Difficult to determine a format for optionsId that consists of creator org, code list id and version that doesn't conflict with actual optionsIds
+  * If creator org, code list id and version contains special characters (hyphens, dots, etc.), the delimiter choice becomes problematic.
   * Everything is string; framework can't validate individual components.
 
 ### A2: Modify existing path with nullable path variables
 
 * Pros
-  * Supports B1; no custom parsing of "optionId"
-  will help maintain a lower complexity.
+  * Supports B1; no custom parsing of "optionId" will help maintain a lower complexity.
   * Supports framework validation, each path segment validated separately by routing.
   * Tools can generate clearer API docs showing both usage patterns
   * RESTful design, clear resource hierarchy in URL path
+  * Supports B2 and B3
 * Cons
   * Can potentially cause confusion on when certain fields must be provided.
   * Doesnt seem possible for optional path parameters out of the box in Swagger, all path parameters are required. This
@@ -82,16 +82,16 @@ Other things that would be nice to solve at the same time:
 
 * Pros
   * Clear semantic distinction via source parameter.
-  * Supports B1; no custom parsing of "optionId" will help maintain lower complexity.
+  * Supports B2 and B3
 * Cons
   * Can potentially cause confusion on when certain fields must be provided.
-  * REST anti-pattern, resource identifiers (org, codeListId) should be in path, not query string
+  * REST anti-pattern, resource identifiers (creator org, code list id) should be in path, not query string
 
 ### A4: Modify existing path so that option id is wild card path segment
 
 * Pros
   * We know that optionsIds never contains slashes. So we can confidently say that
-  optionIds containing / is requesting library code lists
+  optionIds containing slashes is library code references
 * Cons
   * Can potentially cause confusion between what is an actual optionId and what is not.
   * String parsing complexity, what should be encoded as optionId and what should not be.
@@ -104,6 +104,7 @@ Other things that would be nice to solve at the same time:
 * Pros
   * Easier to document which path parameters that is required in Swagger.
   * It is also easier to document the different responses with two separate endpoints.
+  * Supports B1; no custom parsing of "optionId" will help maintain a lower complexity.
   * Support B2 and B3
 * Cons
   * Will require a new endpoint which was something we initially didnt want.
@@ -111,6 +112,6 @@ Other things that would be nice to solve at the same time:
 ## Decision rationale
 
 To ease the implementation process for the consumers/clients, we have chosen A1.
-The optionId have to be formatted like this when optionId Altinn 3 library code lists are requested:
+The optionId have to be formatted like this when Altinn 3 library code lists are requested:
 
 *lib\*\*{creatorOrg}\*\*{codeListId}\*\*{version}*
