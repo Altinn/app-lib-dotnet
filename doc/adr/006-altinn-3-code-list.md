@@ -97,7 +97,7 @@ Other things that would be nice to solve at the same time:
   * String parsing complexity, what should be encoded as optionId and what should not be.
   * Route conflicts, wild card can accidentally catch routes you didnt intend.
   * Breaking rest conventions, path parameters should be single identifiers, not composite structures.
-  * Poor discoverability, API consumers can't easely tell from the OpenAPI/Swagger docs what format optionsId should be.
+  * Poor discoverability, API consumers can't easily tell from the OpenAPI/Swagger docs what format optionsId should be.
 
 ### A5: Add a new endpoint /{creatorOrg}/{codeListId}?version={version}
 
