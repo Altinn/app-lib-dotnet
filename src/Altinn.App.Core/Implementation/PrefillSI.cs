@@ -37,6 +37,7 @@ public class PrefillSI : IPrefill
     /// <param name="appResourcesService">The app's resource service</param>
     /// <param name="authenticationContext">The authentication context</param>
     /// <param name="serviceProvider">The service provider</param>
+    /// <param name="danClient">The Dan client</param>
     /// <param name="telemetry">Telemetry for traces and metrics.</param>
     public PrefillSI(
         ILogger<PrefillSI> logger,
@@ -219,7 +220,7 @@ public class PrefillSI : IPrefill
         JToken? danConfiguration = prefillConfiguration.SelectToken(_danKey);
         if (danConfiguration != null && dataset != null)
         {
-            var mappingDict = danConfiguration["datasets"]
+            var mappingDict = (danConfiguration["datasets"])
                 .FirstOrDefault(d => (string)d["name"] == dataset)
                 ?["mappings"];
 
@@ -233,7 +234,7 @@ public class PrefillSI : IPrefill
                 //use ssn as default, use orgnumber if ssn is not set
                 var subject = !string.IsNullOrWhiteSpace(party.SSN) ? party.SSN : party.OrgNumber;
                 var danDataset = await _danClient.GetDataset(dataset, subject);
-                if (danDataset.Any())
+                if (danDataset.Count > 0)
                 {
                     JObject danJsonObject = JObject.FromObject(danDataset);
                     _logger.LogInformation($"Started prefill from {_danKey}");

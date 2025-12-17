@@ -20,6 +20,7 @@ public interface IPrefill
     /// <param name="dataModelName">The data model name</param>
     /// <param name="dataModel">The data model object</param>
     /// <param name="externalPrefill">External given prefill</param>
+    /// <param name="dataset">Selected dataset from Dan</param>
     Task PrefillDataModel(
         string partyId,
         string dataModelName,
