@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Dan;
 using Altinn.App.Core.Models;
@@ -7,14 +8,23 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
-namespace Altinn.App.Core.Features.Infrastructure.Clients.Dan;
+namespace Altinn.App.Core.Infrastructure.Clients.Dan;
 
+/// <summary>
+/// Client for interacting with the Dan API.
+/// </summary>
 public class DanClient : IDanClient
 {
     private HttpClient _httpClient;
     private IOptions<DanSettings> _settings;
     private IAuthenticationTokenResolver _authenticationTokenResolver;
 
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="httpClient"></param>
+    /// <param name="settings"></param>
+    /// <param name="serviceProvider"></param>
     public DanClient(HttpClient httpClient, IOptions<DanSettings> settings, IServiceProvider serviceProvider)
     {
         _httpClient = httpClient;
@@ -25,6 +35,12 @@ public class DanClient : IDanClient
         httpClient.BaseAddress = new Uri(settings.Value.BaseUrl);
     }
 
+    /// <summary>
+    /// Returns dataset from Dan API.
+    /// </summary>
+    /// <param name="dataset">Dataset from Dan</param>
+    /// <param name="subject">Usually ssn or orgNumber</param>
+    /// <returns></returns>
     public async Task<Dictionary<string, string>> GetDataset(string dataset, string subject)
     {
         var token = await GetMaskinportenToken();
@@ -37,7 +53,8 @@ public class DanClient : IDanClient
         {
             var resultJson = result.Content.ReadAsStringAsync().Result;
             var dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(resultJson);
-            return dictionary;
+            if (dictionary != null)
+                return dictionary;
         }
         return new Dictionary<string, string>();
     }
