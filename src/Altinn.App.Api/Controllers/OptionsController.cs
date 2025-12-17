@@ -35,7 +35,7 @@ public partial class OptionsController : ControllerBase
     }
 
     /// <summary>
-    /// Api that exposes app related options
+    /// Api that exposes app related options.
     /// </summary>
     /// <remarks>The tags field is only populated when requesting library code lists.</remarks>
     /// <param name="optionsIdOrLibraryRef">
@@ -96,20 +96,20 @@ public partial class OptionsController : ControllerBase
     }
 
     /// <summary>
-    /// Exposes options related to the app and logged in user
+    /// Exposes options related to the app and logged in user.
     /// </summary>
     /// <remarks>The tags field is only populated when requesting library code lists.</remarks>
-    /// <param name="org">unique identifier of the organisation responsible for the app</param>
-    /// <param name="app">application identifier which is unique within an organisation</param>
-    /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
-    /// <param name="instanceGuid">unique id to identify the instance</param>
+    /// <param name="org">Unique identifier of the organisation responsible for the app.</param>
+    /// <param name="app">Application identifier which is unique within an organisation.</param>
+    /// <param name="instanceOwnerPartyId">Unique id of the party that is the owner of the instance.</param>
+    /// <param name="instanceGuid">Unique id to identify the instance.</param>
     /// <param name="optionsIdOrLibraryRef">
     /// The optionsId configured for the options provider in the app startup,
     /// or a library reference on the format: `lib**{creatorOrg}**{codeListId}**{version}`
     /// (version="latest", if you want the latest version).
     /// </param>
     /// <param name="language">The language selected by the user (ISO 639-1, e.g., 'nb').</param>
-    /// <param name="queryParams">Query parameters supplied</param>
+    /// <param name="queryParams">Query parameters supplied.</param>
     /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(List<AppOption>), StatusCodes.Status200OK)]

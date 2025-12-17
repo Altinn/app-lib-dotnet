@@ -3222,7 +3222,7 @@
         "tags": [
           "Options"
         ],
-        "summary": "Api that exposes app related options",
+        "summary": "Api that exposes app related options.",
         "description": "The tags field is only populated when requesting library code lists.",
         "parameters": [
           {
@@ -3429,13 +3429,13 @@
         "tags": [
           "Options"
         ],
-        "summary": "Exposes options related to the app and logged in user",
+        "summary": "Exposes options related to the app and logged in user.",
         "description": "The tags field is only populated when requesting library code lists.",
         "parameters": [
           {
             "name": "org",
             "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
+            "description": "Unique identifier of the organisation responsible for the app.",
             "required": true,
             "schema": {
               "type": "string"
@@ -3444,7 +3444,7 @@
           {
             "name": "app",
             "in": "path",
-            "description": "application identifier which is unique within an organisation",
+            "description": "Application identifier which is unique within an organisation.",
             "required": true,
             "schema": {
               "type": "string"
@@ -3453,7 +3453,7 @@
           {
             "name": "instanceOwnerPartyId",
             "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
+            "description": "Unique id of the party that is the owner of the instance.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -3463,7 +3463,7 @@
           {
             "name": "instanceGuid",
             "in": "path",
-            "description": "unique id to identify the instance",
+            "description": "Unique id to identify the instance.",
             "required": true,
             "schema": {
               "type": "string",
@@ -3490,7 +3490,7 @@
           {
             "name": "queryParams",
             "in": "query",
-            "description": "Query parameters supplied",
+            "description": "Query parameters supplied.",
             "style": "deepObject",
             "schema": {
               "type": "object",
