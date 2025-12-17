@@ -11,8 +11,6 @@ public class AppOptionsFactory
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IServiceProvider _serviceProvider;
 
-    private const string DefaultProviderName = "default";
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AppOptionsFactory"/> class.
     /// </summary>
@@ -40,13 +38,6 @@ public class AppOptionsFactory
             return appOptionProvider;
         }
 
-        if (optionsId != DefaultProviderName)
-        {
-            return new DefaultAppOptionsProvider(_serviceProvider) { Id = optionsId };
-        }
-
-        throw new KeyNotFoundException(
-            "No app options provider found in the configured services. Please check your services configuration."
-        );
+        return new DefaultAppOptionsProvider(optionsId, _serviceProvider);
     }
 }

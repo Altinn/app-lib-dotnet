@@ -58,8 +58,7 @@ public partial class OptionsController : ControllerBase
         [FromQuery] string? language = null
     )
     {
-        var libRefReg = LibraryRefRegex();
-        var libRefMatch = libRefReg.Match(optionsIdOrLibraryRef);
+        var libRefMatch = LibraryRefRegex().Match(optionsIdOrLibraryRef);
         AppOptions appOptions;
         try
         {
@@ -144,8 +143,7 @@ public partial class OptionsController : ControllerBase
             // Try to get non instance specific options if no options provider was found.
             if (appOptions?.Options == null)
             {
-                var libRefReg = LibraryRefRegex();
-                var libRefMatch = libRefReg.Match(optionsIdOrLibraryRef);
+                var libRefMatch = LibraryRefRegex().Match(optionsIdOrLibraryRef);
                 appOptions = !libRefMatch.Success
                     ? await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams)
                     : await _altinn3LibraryCodeListService.GetAppOptionsAsync(

@@ -13,15 +13,22 @@ public class DefaultAppOptionsProvider : IAppOptionsProvider
     /// The default app options implementation will resolve static
     /// json files in the options folder of the app.
     /// </summary>
-    public DefaultAppOptionsProvider(IServiceProvider serviceProvider)
+    /// <param name="id">
+    /// The id/name that is used in the <c>optionsId</c> parameter in the SelectionComponents (Checkboxes, RadioButtons, Dropdown ...)
+    /// The id is used to resolve the file name. Should equal the file name without the .json extension.
+    /// </param>
+    /// <param name="serviceProvider">The service provider used to resolve <see cref="AppImplementationFactory"/></param>
+    public DefaultAppOptionsProvider(string id, IServiceProvider serviceProvider)
     {
+        Id = id;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     /// <summary>
+    /// The id/name that is used in the <c>optionsId</c> parameter in the SelectionComponents (Checkboxes, RadioButtons, Dropdown ...)
     /// The id is used to resolve the file name. Should equal the file name without the .json extension.
     /// </summary>
-    public string Id { get; internal set; } = "default";
+    public string Id { get; private set; }
 
     /// <inheritdoc/>
     public async Task<AppOptions> GetAppOptionsAsync(string? language, Dictionary<string, string> keyValuePairs)

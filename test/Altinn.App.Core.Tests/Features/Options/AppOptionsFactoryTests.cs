@@ -54,17 +54,6 @@ public class AppOptionsFactoryTests
     }
 
     [Fact]
-    public void GetOptionsProvider_NoDefaultProvider_ShouldThrowException()
-    {
-        using var fixture = Fixture.Create();
-        var factory = fixture.Factory;
-
-        System.Action action = () => factory.GetOptionsProvider("default");
-
-        action.Should().Throw<KeyNotFoundException>();
-    }
-
-    [Fact]
     public void GetOptionsProvider_CustomOptionsProvider_ShouldReturnCustomType()
     {
         using var fixture = Fixture.Create(services =>
