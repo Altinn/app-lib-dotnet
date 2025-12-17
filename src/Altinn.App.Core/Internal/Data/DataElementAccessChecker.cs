@@ -97,7 +97,7 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
     {
         auth ??= _authenticationContext.Current;
 
-        if (dataType.Id == PdfService.PdfElementType)
+        if (dataType.Id.Equals(PdfService.PdfElementType, StringComparison.OrdinalIgnoreCase))
         {
             return new ProblemDetails
             {
