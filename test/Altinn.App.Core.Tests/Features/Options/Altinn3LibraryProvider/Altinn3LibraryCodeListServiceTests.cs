@@ -140,10 +140,14 @@ public class Altinn3LibraryCodeListServiceTests
     public async Task MapAppOptions_LanguageCollectionsIsNull_ShouldReturnOptionsWithOnlyValueAndTags()
     {
         // Arrange
+        const string expectedTag = "tag";
+        const string expectedTagName = "tagName";
         var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
             new Dictionary<string, string>(),
             null,
-            null
+            null,
+            [expectedTagName],
+            [expectedTag]
         );
 
         await using var fixture = Fixture.Create();
@@ -158,6 +162,12 @@ public class Altinn3LibraryCodeListServiceTests
         Assert.NotNull(result.Options);
         Assert.Single(result.Options);
         var option = result.Options.Single();
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.Value, option.Value);
+        Assert.NotNull(option.Tags);
+        Assert.Single(option.Tags);
+        var tag = option.Tags.Single();
+        Assert.Equal(expectedTagName, tag.Key);
+        Assert.Equal(expectedTag, tag.Value);
         Assert.Equal("", option.Label);
         Assert.Null(option.Description);
         Assert.Null(option.HelpText);

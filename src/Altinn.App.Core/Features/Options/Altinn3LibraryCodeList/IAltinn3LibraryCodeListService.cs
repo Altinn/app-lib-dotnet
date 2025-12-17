@@ -8,15 +8,15 @@ namespace Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 public interface IAltinn3LibraryCodeListService
 {
     /// <summary>
-    /// Gets cached code list from <see cref="GetCachedCodeListResponseAsync"/> and maps the response to AppOptions by calling <see cref="MapAppOptions"/>.
+    /// Gets code list from cache or Altinn3 library and maps the response to AppOptions.
     /// </summary>
-    /// <param name="org">Creator organization</param>
+    /// <param name="org">Organization that created the code list</param>
     /// <param name="codeListId">Code list id</param>
     /// <param name="version">Code list version</param>
     /// <param name="language">Preferred language to map to. Has fallback, will try to map to requested language, else Nb, En, then first available (alphabetically by key) if not provided or not found.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>App options</returns>
-    Task<AppOptions> GetLibraryCodeListOptionsAsync(
+    Task<AppOptions> GetAppOptionsAsync(
         string org,
         string codeListId,
         string version,
@@ -25,9 +25,9 @@ public interface IAltinn3LibraryCodeListService
     );
 
     /// <summary>
-    /// Gets code list from Altinn3 library, caching the result if not already cached.
+    /// Gets code list from cache or Altinn3 library.
     /// </summary>
-    /// <param name="org">Creator organization</param>
+    /// <param name="org">Organization that created the code list</param>
     /// <param name="codeListId">Code list id</param>
     /// <param name="version">Code list version</param>
     /// <param name="cancellationToken">Cancellation token</param>

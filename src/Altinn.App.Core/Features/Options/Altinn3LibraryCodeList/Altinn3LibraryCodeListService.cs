@@ -34,7 +34,7 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
     }
 
     /// <inheritdoc/>
-    public async Task<AppOptions> GetLibraryCodeListOptionsAsync(
+    public async Task<AppOptions> GetAppOptionsAsync(
         string org,
         string codeListId,
         string version,

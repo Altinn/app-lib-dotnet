@@ -682,7 +682,7 @@ internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeLi
         };
     }
 
-    public async Task<AppOptions> GetLibraryCodeListOptionsAsync(
+    public async Task<AppOptions> GetAppOptionsAsync(
         string org,
         string codeListId,
         string version,

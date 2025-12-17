@@ -41,7 +41,7 @@ public partial class OptionsController : ControllerBase
     /// <param name="optionsIdOrLibraryRef">
     /// The optionsId configured for the options provider in the app startup,
     /// or a library reference on the format: `lib**{creatorOrg}**{codeListId}**{version}`
-    /// (version=latest, if you want the latest version).
+    /// (`version=latest`, if you want the latest version).
     /// </param>
     /// <param name="queryParams">Query parameters supplied.</param>
     /// <param name="language">The language selected by the user (ISO 639-1, e.g., 'nb').</param>
@@ -65,7 +65,7 @@ public partial class OptionsController : ControllerBase
         {
             appOptions = !libRefMatch.Success
                 ? await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams)
-                : await _altinn3LibraryCodeListService.GetLibraryCodeListOptionsAsync(
+                : await _altinn3LibraryCodeListService.GetAppOptionsAsync(
                     libRefMatch.Groups["org"].Value,
                     libRefMatch.Groups["codeListId"].Value,
                     libRefMatch.Groups["version"].Value,
@@ -106,7 +106,7 @@ public partial class OptionsController : ControllerBase
     /// <param name="optionsIdOrLibraryRef">
     /// The optionsId configured for the options provider in the app startup,
     /// or a library reference on the format: `lib**{creatorOrg}**{codeListId}**{version}`
-    /// (version=latest, if you want the latest version).
+    /// (`version=latest`, if you want the latest version).
     /// </param>
     /// <param name="language">The language selected by the user (ISO 639-1, e.g., 'nb').</param>
     /// <param name="queryParams">Query parameters supplied</param>
@@ -148,7 +148,7 @@ public partial class OptionsController : ControllerBase
                 var libRefMatch = libRefReg.Match(optionsIdOrLibraryRef);
                 appOptions = !libRefMatch.Success
                     ? await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams)
-                    : await _altinn3LibraryCodeListService.GetLibraryCodeListOptionsAsync(
+                    : await _altinn3LibraryCodeListService.GetAppOptionsAsync(
                         libRefMatch.Groups["org"].Value,
                         libRefMatch.Groups["codeListId"].Value,
                         libRefMatch.Groups["version"].Value,
