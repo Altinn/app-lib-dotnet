@@ -2,7 +2,7 @@
 
 * Status: Accepted
 * Deciders: Squad Data
-* Date: 2025-11-25
+* Date: 2025-12-09
 
 ## Result
 
@@ -10,7 +10,7 @@ A1: Use already existing path without modifying it
 
 ## Problem context
 
-We want to be able to get code lists through the API directly without registering the provider in
+We want to be able to get Altinn 3 library code lists through the API directly without registering the provider in
 the app startup as is currently required for code lists.
 
 The endpoints we currently have for getting code lists take an optionId, queryParams and preferred language as input. Where
@@ -29,14 +29,14 @@ Other things that would be nice to solve at the same time:
 ## Decision drivers
 
 * B1: Keep complexity low for developers
-* B2: Prevent confusion between optionId and "optionId" parsed to org, codelist id and version
+* B2: Prevent confusion between optionId and "optionId" parsed to org, code list id and version
 * B3: Performance, consider parsing overhead of different approaches
 
 ## Alternatives considered
 
 * **A1: Use already existing path without modifying it**
   *GET /{org}/{app}/api/options/{optionsIdOrLibraryRef}?language={language}*
-  OptionsId becomes the creator org, codelist id and version. Formatting creator org, codelist id and version into the optionsId string e.g., `lib**{creatorOrg}**{codeListId}**{version}`
+  OptionsId becomes the creator org, code list id and version. Formatting creator org, code list id and version into the optionsId string e.g., `lib**{creatorOrg}**{codeListId}**{version}`
 * **A2: Modify existing path with nullable path variables**
   *GET /{org}/{app}/api/options/{optionIdOrCreatorOrg}/
   {codeListId?}/{version?}&language={language}*
@@ -56,7 +56,7 @@ Other things that would be nice to solve at the same time:
 * Pros
   * Less work required in the frontend?
 * Cons
-  * Increased complexity since the endpoint now has to encode what is sent in as "optionId" to creator org, codelist id and version.
+  * Increased complexity since the endpoint now has to encode what is sent in as "optionId" to creator org, code list id and version.
   * Can potentially cause confusion between what is an actual optionId and what is not.
   * String parsing complexity, what should be encoded as optionId and what should not be.
   * Difficult to determine a format for optionsId that consists of creator org, code list id and version that doesn't conflict with actual optionsIds
