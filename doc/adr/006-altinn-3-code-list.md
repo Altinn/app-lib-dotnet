@@ -15,8 +15,8 @@ the app startup as is currently required for code lists.
 
 The endpoints we currently have for getting code lists take an optionId, queryParams and preferred language as input. Where
 the optionId is a random string value chosen for the particular code list through configuration in the app startup.
-Instead we want to be able to get the code lists directly without having to decide which code list we want to get
-by configuring it beforehand in the app startup.
+Instead we want to be able to fetch code lists directly without having to decide which code list to fetch
+beforehand by configuring it in the app startup.
 
 Other things that would be nice to solve at the same time:
 * Support for filtering/grouping of code lists
@@ -112,6 +112,6 @@ Other things that would be nice to solve at the same time:
 ## Decision rationale
 
 To ease the implementation process for the consumers/clients, we have chosen A1.
-The optionId have to be formatted like this when Altinn 3 library code lists are requested:
+The format for Altinn 3 library code list optionIds is:
 
 *lib\*\*{creatorOrg}\*\*{codeListId}\*\*{version}*
