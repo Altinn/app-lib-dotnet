@@ -11,12 +11,12 @@ A1: Use already existing path without modifying it
 ## Problem context
 
 We want to be able to get code lists through the API directly without registering the provider in
-'Program.cs' as is currently required for code lists.
+the app startup as is currently required for code lists.
 
 The endpoints we currently have for getting code lists take an optionId, queryParams and preferred language as input. Where
-the optionId is a random string value chosen for the particular code list through configuration in Program.cs.
+the optionId is a random string value chosen for the particular code list through configuration in the app startup.
 Instead we want to be able to get the code lists directly without having to decide which code list we want to get
-by configuring it beforehand in Program.cs.
+by configuring it beforehand in the app startup.
 
 Other things that would be nice to solve at the same time:
 * Support for filtering/grouping of code lists
