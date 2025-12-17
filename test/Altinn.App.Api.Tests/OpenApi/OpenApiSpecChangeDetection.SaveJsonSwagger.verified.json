@@ -3228,7 +3228,7 @@
           {
             "name": "optionsIdOrLibraryRef",
             "in": "path",
-            "description": "The optionsId configured for the options provider in the app startup,\nor a library reference on the format: `lib**{creatorOrg}**{codeListId}**{version}`\n(`version=latest`, if you want the latest version).",
+            "description": "The optionsId configured for the options provider in the app startup,\nor a library reference on the format: `lib**{creatorOrg}**{codeListId}**{version}`\n(version=\"latest\", if you want the latest version).",
             "required": true,
             "schema": {
               "type": "string"
@@ -3473,7 +3473,7 @@
           {
             "name": "optionsIdOrLibraryRef",
             "in": "path",
-            "description": "The optionsId configured for the options provider in the app startup,\nor a library reference on the format: `lib**{creatorOrg}**{codeListId}**{version}`\n(`version=latest`, if you want the latest version).",
+            "description": "The optionsId configured for the options provider in the app startup,\nor a library reference on the format: `lib**{creatorOrg}**{codeListId}**{version}`\n(version=\"latest\", if you want the latest version).",
             "required": true,
             "schema": {
               "type": "string"
