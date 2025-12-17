@@ -12,9 +12,6 @@ internal sealed record ProcessEngineTask : ProcessEngineItem
 
     public Task<ProcessEngineExecutionResult>? ExecutionTask { get; set; }
 
-    // Foreign key for EF Core relationship - will be set in FromRequest method
-    public required string JobIdentifier { get; init; }
-
     public static ProcessEngineTask FromRequest(
         string jobIdentifier,
         ProcessEngineCommandRequest request,
@@ -23,8 +20,8 @@ internal sealed record ProcessEngineTask : ProcessEngineItem
     ) =>
         new()
         {
+            Id = 0,
             Key = $"{jobIdentifier}/{request.Command}",
-            JobIdentifier = jobIdentifier,
             Actor = actor,
             StartTime = request.StartTime,
             ProcessingOrder = index,

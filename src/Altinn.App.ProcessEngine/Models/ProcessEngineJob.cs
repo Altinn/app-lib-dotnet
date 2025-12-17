@@ -9,11 +9,11 @@ internal sealed record ProcessEngineJob : ProcessEngineItem
     public static ProcessEngineJob FromRequest(ProcessEngineRequest request) =>
         new()
         {
-            Key = request.JobKey,
+            Key = request.Key,
             InstanceInformation = request.InstanceInformation,
             Actor = request.Actor,
             Tasks = request
-                .Commands.Select((cmd, i) => ProcessEngineTask.FromRequest(request.JobKey, cmd, request.Actor, i))
+                .Commands.Select((cmd, i) => ProcessEngineTask.FromRequest(request.Key, cmd, request.Actor, i))
                 .ToList(),
         };
 

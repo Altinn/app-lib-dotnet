@@ -16,18 +16,18 @@ internal sealed class ProcessEngineJobEntity
 
     public ProcessEngineItemStatus Status { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public DateTimeOffset CreatedAt { get; set; }
 
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     public DateTimeOffset? UpdatedAt { get; set; }
 
-    // Actor information - flattened
     [MaxLength(50)]
     public required string ActorUserIdOrOrgNumber { get; set; }
 
     [MaxLength(10)]
     public string? ActorLanguage { get; set; }
 
-    // Instance information - flattened
     [MaxLength(100)]
     public required string InstanceOrg { get; set; }
 
@@ -38,17 +38,14 @@ internal sealed class ProcessEngineJobEntity
 
     public Guid InstanceGuid { get; set; }
 
-    // Navigation property
     public ICollection<ProcessEngineTaskEntity> Tasks { get; set; } = [];
 
-    public static ProcessEngineJobEntity FromDomainModel(ProcessEngineJob job)
-    {
-        return new ProcessEngineJobEntity
+    public static ProcessEngineJobEntity FromDomainModel(ProcessEngineJob job) =>
+        new()
         {
+            Id = job.Id,
             Key = job.Key,
             Status = job.Status,
-            CreatedAt = job.CreatedAt,
-            UpdatedAt = job.UpdatedAt,
             ActorUserIdOrOrgNumber = job.Actor.UserIdOrOrgNumber,
             ActorLanguage = job.Actor.Language,
             InstanceOrg = job.InstanceInformation.Org,
@@ -57,12 +54,11 @@ internal sealed class ProcessEngineJobEntity
             InstanceGuid = job.InstanceInformation.InstanceGuid,
             Tasks = job.Tasks.Select(ProcessEngineTaskEntity.FromDomainModel).ToList(),
         };
-    }
 
-    public ProcessEngineJob ToDomainModel()
-    {
-        return new ProcessEngineJob
+    public ProcessEngineJob ToDomainModel() =>
+        new()
         {
+            Id = Id,
             Key = Key,
             Status = Status,
             CreatedAt = CreatedAt,
@@ -77,5 +73,4 @@ internal sealed class ProcessEngineJobEntity
             },
             Tasks = Tasks.Select(t => t.ToDomainModel()).ToList(),
         };
-    }
 }

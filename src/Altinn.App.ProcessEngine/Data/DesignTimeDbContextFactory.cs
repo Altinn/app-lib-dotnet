@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace Altinn.App.ProcessEngine.Data;
 
+// TODO: This can be removed once the ProcessEngine moves to it's own solution and runtime
 /// <summary>
 /// Design-time factory for EF Core tooling (migrations, etc.)
 /// Only used during development - not at runtime

@@ -1,5 +1,6 @@
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using Altinn.App.ProcessEngine.Data.Entities;
 using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,7 @@ internal sealed class ProcessEnginePgRepository : IProcessEngineRepository
                 var jobs = await _context
                     .Jobs.Include(j => j.Tasks)
                     .Where(j => incompleteStatuses.Contains(j.Status))
+                    .Select(x => x.ToDomainModel())
                     .ToListAsync(ct);
 
                 return jobs;
@@ -49,32 +51,44 @@ internal sealed class ProcessEnginePgRepository : IProcessEngineRepository
             cancellationToken
         );
 
-    public async Task SaveJob(ProcessEngineJob job, CancellationToken cancellationToken = default) =>
+    public async Task<ProcessEngineJob> AddJob(ProcessEngineJob job, CancellationToken cancellationToken = default) =>
         await ExecuteWithRetry(
             async ct =>
             {
-                _context.Jobs.Add(job);
+                var entry = _context.Jobs.Add(ProcessEngineJobEntity.FromDomainModel(job));
                 await _context.SaveChangesAsync(ct);
+
+                return entry.Entity.ToDomainModel();
             },
             cancellationToken
         );
 
-    public async Task UpdateJob(ProcessEngineJob job, CancellationToken cancellationToken = default) =>
+    public async Task<ProcessEngineJob> UpdateJob(
+        ProcessEngineJob job,
+        CancellationToken cancellationToken = default
+    ) =>
         await ExecuteWithRetry(
             async ct =>
             {
-                _context.Jobs.Update(job);
+                var entry = _context.Jobs.Update(ProcessEngineJobEntity.FromDomainModel(job));
                 await _context.SaveChangesAsync(ct);
+
+                return entry.Entity.ToDomainModel();
             },
             cancellationToken
         );
 
-    public async Task UpdateTask(ProcessEngineTask task, CancellationToken cancellationToken = default) =>
+    public async Task<ProcessEngineTask> UpdateTask(
+        ProcessEngineTask task,
+        CancellationToken cancellationToken = default
+    ) =>
         await ExecuteWithRetry(
             async ct =>
             {
-                _context.Tasks.Update(task);
+                var entry = _context.Tasks.Update(ProcessEngineTaskEntity.FromDomainModel(task));
                 await _context.SaveChangesAsync(ct);
+
+                return entry.Entity.ToDomainModel();
             },
             cancellationToken
         );

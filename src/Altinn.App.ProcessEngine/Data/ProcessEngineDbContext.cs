@@ -18,15 +18,22 @@ internal sealed class ProcessEngineDbContext : DbContext
         // Configure Job entity
         modelBuilder.Entity<ProcessEngineJobEntity>(entity =>
         {
+            // Indexes
             entity.HasIndex(e => e.Status);
             entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.Key);
             entity.HasIndex(e => new
             {
                 e.InstanceOrg,
                 e.InstanceApp,
                 e.InstanceGuid,
             });
-            entity.HasIndex(e => e.Key).IsUnique();
+
+            // CreatedAt property
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()").ValueGeneratedOnAdd();
+
+            // UpdatedAt property
+            entity.Property(e => e.UpdatedAt).ValueGeneratedOnAddOrUpdate();
         });
 
         // Configure Task entity
@@ -36,17 +43,13 @@ internal sealed class ProcessEngineDbContext : DbContext
             entity.HasIndex(e => e.BackoffUntil);
             entity.HasIndex(e => e.CreatedAt);
             entity.HasIndex(e => e.ProcessingOrder);
+            entity.HasIndex(e => e.Key);
 
-            // Configure relationship to Jobs
-            entity
-                .HasOne(t => t.Job)
-                .WithMany(j => j.Tasks)
-                .HasForeignKey(t => t.JobId)
-                .HasPrincipalKey(j => j.Id)
-                .OnDelete(DeleteBehavior.Cascade);
+            // CreatedAt property
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()").ValueGeneratedOnAdd();
 
-            // Add unique index on Identifier for both entities
-            entity.HasIndex(e => e.Key).IsUnique();
+            // UpdatedAt property
+            entity.Property(e => e.UpdatedAt).ValueGeneratedOnAddOrUpdate();
         });
     }
 }

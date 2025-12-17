@@ -9,12 +9,12 @@ internal partial class ProcessEngine
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("Enqueuing job {JobIdentifier}", request.JobKey);
+        _logger.LogDebug("Enqueuing job {JobIdentifier}", request.Key);
 
         if (!request.IsValid())
             return ProcessEngineResponse.Rejected($"Invalid request: {request}");
 
-        if (HasDuplicateJob(request.JobKey))
+        if (HasDuplicateJob(request.Key))
             return ProcessEngineResponse.Rejected(
                 "Duplicate request. A job with the same identifier is already being processed"
             );
@@ -53,7 +53,7 @@ internal partial class ProcessEngine
 
         if (updateDatabase)
         {
-            await _repository.SaveJob(job, cancellationToken);
+            await _repository.AddJob(job, cancellationToken);
             _logger.LogDebug("Job {JobIdentifier} persisted to database", job.Key);
         }
 
@@ -109,8 +109,8 @@ internal partial class ProcessEngine
 
         try
         {
-            job.UpdatedAt = _timeProvider.GetUtcNow();
-            await _repository.UpdateJob(job, cancellationToken);
+            var result = await _repository.UpdateJob(job, cancellationToken);
+            job.UpdatedAt = result.UpdatedAt;
 
             _logger.LogTrace("Job {JobIdentifier} updated in database", job.Key);
         }
@@ -127,8 +127,8 @@ internal partial class ProcessEngine
 
         try
         {
-            task.UpdatedAt = _timeProvider.GetUtcNow();
-            await _repository.UpdateTask(task, cancellationToken);
+            var result = await _repository.UpdateTask(task, cancellationToken);
+            task.UpdatedAt = result.UpdatedAt;
 
             _logger.LogTrace("Task {TaskIdentifier} updated in database", task.Key);
         }
