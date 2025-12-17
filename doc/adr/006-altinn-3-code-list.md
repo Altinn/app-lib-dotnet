@@ -36,7 +36,7 @@ Other things that would be nice to solve at the same time:
 
 * **A1: Use already existing path without modifying it**
   *GET /{org}/{app}/api/options/{optionsIdOrLibraryRef}?language={language}*
-  OptionsId becomes the creator org, codelist id and version. Formatting creator org, codelist id and version into the optionsId string e.g., creatorOrg--codelistId--version
+  OptionsId becomes the creator org, codelist id and version. Formatting creator org, codelist id and version into the optionsId string e.g., `lib**{creatorOrg}**{codeListId}**{version}`
 * **A2: Modify existing path with nullable path variables**
   *GET /{org}/{app}/api/options/{optionIdOrCreatorOrg}/
   {codeListId?}/{version?}&language={language}*
@@ -73,7 +73,7 @@ Other things that would be nice to solve at the same time:
   * Supports B2 and B3
 * Cons
   * Can potentially cause confusion on when certain fields must be provided.
-  * Doesnt seem possible for optional path parameters out of the box in Swagger, all path parameters are required. This
+  * Doesn't  seem possible for optional path parameters out of the box in Swagger, all path parameters are required. This
   makes it impossible to call the endpoint the old way with just optionsId through Swagger.
   Swagger complains about required parameters missing
   * Route ambiguity, /options/something could match either pattern. So some custom validation will be required.
@@ -95,7 +95,7 @@ Other things that would be nice to solve at the same time:
 * Cons
   * Can potentially cause confusion between what is an actual optionId and what is not.
   * String parsing complexity, what should be encoded as optionId and what should not be.
-  * Route conflicts, wild card can accidentally catch routes you didnt intend.
+  * Route conflicts, wild card can accidentally catch routes you didn't intend.
   * Breaking rest conventions, path parameters should be single identifiers, not composite structures.
   * Poor discoverability, API consumers can't easily tell from the OpenAPI/Swagger docs what format optionsId should be.
 
@@ -107,11 +107,11 @@ Other things that would be nice to solve at the same time:
   * Supports B1; no custom parsing of "optionId" will help maintain a lower complexity.
   * Support B2 and B3
 * Cons
-  * Will require a new endpoint which was something we initially didnt want.
+  * Will require a new endpoint which was something we initially didn't want.
 
 ## Decision rationale
 
 To ease the implementation process for the consumers/clients, we have chosen A1.
 The format for Altinn 3 library code list optionIds is:
 
-*lib\*\*{creatorOrg}\*\*{codeListId}\*\*{version}*
+`lib**{creatorOrg}**{codeListId}**{version}`

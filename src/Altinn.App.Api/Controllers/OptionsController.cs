@@ -109,7 +109,7 @@ public partial class OptionsController : ControllerBase
     /// (version=latest, if you want the latest version).
     /// </param>
     /// <param name="language">The language selected by the user (ISO 639-1, e.g., 'nb').</param>
-    /// <param name="queryParams">Query parameteres supplied</param>
+    /// <param name="queryParams">Query parameters supplied</param>
     /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(List<AppOption>), StatusCodes.Status200OK)]
