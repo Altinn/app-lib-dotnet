@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
 using Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
+using Altinn.App.Core.Internal.Language;
 
 namespace Altinn.App.Core.Tests.Features.Options.Altinn3LibraryProvider;
 
@@ -31,9 +32,9 @@ public static class Altinn3LibraryCodeListServiceTestData
 
     public static Altinn3LibraryCodeListResponse GetNbEnAltinn3LibraryCodeListResponse()
     {
-        var labels = new Dictionary<string, string> { { "nb", NbLabel }, { "en", EnLabel } };
-        var descriptions = new Dictionary<string, string> { { "nb", NbDescription }, { "en", EnDescription } };
-        var helpTexts = new Dictionary<string, string> { { "en", EnHelpText }, { "nb", NbHelpText } };
+        var labels = new Dictionary<string, string> { { LanguageConst.Nb, NbLabel }, { LanguageConst.En, EnLabel } };
+        var descriptions = new Dictionary<string, string> { { LanguageConst.Nb, NbDescription }, { LanguageConst.En, EnDescription } };
+        var helpTexts = new Dictionary<string, string> { { LanguageConst.En, EnHelpText }, { LanguageConst.Nb, NbHelpText } };
 
         return GetAltinn3LibraryCodeListResponse(labels, descriptions, helpTexts);
     }

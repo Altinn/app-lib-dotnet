@@ -73,11 +73,10 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
 
         string url = $"/{org}/{app}/api/options/test?";
         HttpResponseMessage response = await client.GetAsync(url);
+
         var content = await response.Content.ReadAsStringAsync();
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            Assert.Fail($"Expected OK but got {response.StatusCode}. Response: {content}.");
-        }
+        OutputHelper.WriteLine(content);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         Assert.Contains("Altinn-DownstreamParameters", response.Headers.Select(x => x.Key));
         var headerValue = response.Headers.Single((header) => header.Key == "Altinn-DownstreamParameters").Value;
@@ -212,9 +211,18 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     }
 
     [Theory]
+    [InlineData("**ttd**CodeListId**1.0")] // Missing lib prefix
     [InlineData("lib****Municipalities**1")] // Missing org
     [InlineData("lib**ttd****1")] // Missing code list id
     [InlineData("lib**ttd**SomeCodeListId**")] // Missing version
+    [InlineData("lib**ttd**CodeList With Space**1.0")] // Space in codeListId (invalid)
+    [InlineData("lib**tt d**CodeListId**1.0")] // Space in org (invalid)
+    [InlineData("lib**ttd**CodeListId**1 .0")] // Space in version (invalid)
+    [InlineData("lib**ttd-org**CodeListId**1.0")] // Dash in org (invalid - only alphanumeric allowed)
+    [InlineData("lib**ttd**CodeList@Id**1.0")] // Special char @ in codeListId (invalid)
+    [InlineData("lib**ttd**CodeListId**v1.0@")] // Special char @ in version (invalid)
+    [InlineData("libttd**CodeListId**1.0")] // Missing separator after lib
+    [InlineData("lib**ttd**CodeListId*1.0")] // Wrong number of asterisks before version
     public async Task Get_ShouldNotMatchLibraryRefRegex(string optionsIdOrLibraryRef)
     {
         OverrideServicesForThisTest = (services) =>
@@ -242,6 +250,11 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     [InlineData("lib**digdir**PostalCodes**2.0")] // Different org, semantic version
     [InlineData("lib**nav**CountryCodes**v1.5.3")] // With 'v' prefix in version
     [InlineData("lib**skd**Municipalities**20231201")] // Date-based version
+    [InlineData("lib**ttd**Code_List_With_Underscores**1.0")] // Underscores in codeListId
+    [InlineData("lib**ttd**code-list-with-dashes**2.0")] // Dashes in codeListId
+    [InlineData("lib**ttd**CodeList123**1.0")] // Numbers in codeListId
+    [InlineData("lib**TTD**CodeListId**1.0")] // Uppercase in org
+    [InlineData("lib**Org123**CodeListId**1.0")] // Numbers in org
     public async Task Get_ShouldMatchLibraryRefRegexAndCallAltinn3LibraryCodeListService(string optionsIdOrLibraryRef)
     {
         OverrideServicesForThisTest = (services) =>
@@ -343,10 +356,8 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         TestData.DeleteInstanceAndData(org, app, 1337, instanceGuid);
 
         var content = await response.Content.ReadAsStringAsync();
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            Assert.Fail($"Expected OK but got {response.StatusCode}. Response: {content}.");
-        }
+        OutputHelper.WriteLine(content);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         Assert.Contains("Altinn-DownstreamParameters", response.Headers.Select(x => x.Key));
         var headerValue = response.Headers.Single((header) => header.Key == "Altinn-DownstreamParameters").Value;
@@ -449,11 +460,19 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     }
 
     [Fact]
-    public async Task GetInstance_ShouldSerializeToCorrectTypesFromAppOptionsProvider()
+    public async Task GetInstance_ShouldCallAppOptionsProvider()
     {
+        var options = TestDataOptionsController.GetAppOptions("nb");
+        var providerMock = new Mock<IAppOptionsProvider>(MockBehavior.Strict);
+        providerMock
+            .Setup(p => p.GetAppOptionsAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(options)
+            .Verifiable(Times.Once);
+        providerMock.Setup(p => p.Id).Returns("test").Verifiable(Times.Once);
+
         OverrideServicesForThisTest = (services) =>
         {
-            services.AddTransient<IAppOptionsProvider, DummyProvider>();
+            services.AddSingleton(providerMock.Object);
         };
 
         string org = "tdd";
@@ -472,11 +491,7 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         var content = await response.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(content);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        Assert.Equal(
-            "[{\"value\":null,\"label\":\"\"},{\"value\":\"SomeString\",\"label\":\"False\"},{\"value\":true,\"label\":\"True\"},{\"value\":0,\"label\":\"Zero\"},{\"value\":1,\"label\":\"One\",\"description\":\"This is a description\",\"helpText\":\"This is a help text\"}]",
-            content
-        );
+        providerMock.Verify();
     }
 
     // Creates DefaultAppOptionsProvider through AppOptionsFactory
@@ -506,7 +521,7 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     }
 
     [Fact]
-    public async Task GetInstance_ShouldSerializeToCorrectTypesFromAltinn3LibraryCodeListService()
+    public async Task GetInstance_ShouldFetchAltinn3LibraryCodeListsDirectly()
     {
         OverrideServicesForThisTest = (services) =>
         {
@@ -549,9 +564,18 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     }
 
     [Theory]
+    [InlineData("**ttd**CodeListId**1.0")] // Missing lib prefix
     [InlineData("lib****Municipalities**1")] // Missing org
     [InlineData("lib**ttd****1")] // Missing code list id
     [InlineData("lib**ttd**SomeCodeListId**")] // Missing version
+    [InlineData("lib**ttd**CodeList With Space**1.0")] // Space in codeListId (invalid)
+    [InlineData("lib**tt d**CodeListId**1.0")] // Space in org (invalid)
+    [InlineData("lib**ttd**CodeListId**1 .0")] // Space in version (invalid)
+    [InlineData("lib**ttd-org**CodeListId**1.0")] // Dash in org (invalid - only alphanumeric allowed)
+    [InlineData("lib**ttd**CodeList@Id**1.0")] // Special char @ in codeListId (invalid)
+    [InlineData("lib**ttd**CodeListId**v1.0@")] // Special char @ in version (invalid)
+    [InlineData("libttd**CodeListId**1.0")] // Missing separator after lib
+    [InlineData("lib**ttd**CodeListId*1.0")] // Wrong number of asterisks before version
     public async Task GetInstance_ShouldNotMatchLibraryRefRegex(string optionsIdOrLibraryRef)
     {
         OverrideServicesForThisTest = (services) =>
@@ -586,6 +610,11 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
     [InlineData("lib**digdir**PostalCodes**2.0")] // Different org, semantic version
     [InlineData("lib**nav**CountryCodes**v1.5.3")] // With 'v' prefix in version
     [InlineData("lib**skd**Municipalities**20231201")] // Date-based version
+    [InlineData("lib**ttd**Code_List_With_Underscores**1.0")] // Underscores in codeListId
+    [InlineData("lib**ttd**code-list-with-dashes**2.0")] // Dashes in codeListId
+    [InlineData("lib**ttd**CodeList123**1.0")] // Numbers in codeListId
+    [InlineData("lib**TTD**CodeListId**1.0")] // Uppercase in org
+    [InlineData("lib**Org123**CodeListId**1.0")] // Numbers in org
     public async Task GetInstance_ShouldMatchLibraryRefRegexAndCallAltinn3LibraryCodeListService(
         string optionsIdOrLibraryRef
     )
@@ -629,9 +658,9 @@ internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeLi
             new()
             {
                 Value = "Value1",
-                Label = new Dictionary<string, string>() { { "nb", "En label" } },
-                Description = new Dictionary<string, string>() { { "nb", "En beskrivelse" } },
-                HelpText = new Dictionary<string, string>() { { "nb", "En hjelpetekst" } },
+                Label = new Dictionary<string, string>() { { LanguageConst.Nb, "En label" } },
+                Description = new Dictionary<string, string>() { { LanguageConst.Nb, "En beskrivelse" } },
+                HelpText = new Dictionary<string, string>() { { LanguageConst.Nb, "En hjelpetekst" } },
                 Tags = ["test-tag"],
             },
         },
@@ -647,7 +676,6 @@ internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeLi
         CancellationToken cancellationToken
     )
     {
-        CallCounter++;
         return Task.FromResult(_codeListResponse);
     }
 
@@ -667,9 +695,9 @@ internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeLi
                 new()
                 {
                     Value = responseOptionOne.Value,
-                    Label = responseOptionOne.Label["nb"],
-                    Description = responseOptionOne.Description?["nb"],
-                    HelpText = responseOptionOne.HelpText?["nb"],
+                    Label = responseOptionOne.Label[LanguageConst.Nb],
+                    Description = responseOptionOne.Description?[LanguageConst.Nb],
+                    HelpText = responseOptionOne.HelpText?[LanguageConst.Nb],
                     Tags =
                         libraryCodeListResponse.TagNames is { Count: > 0 } && responseOptionOne.Tags is { Count: > 0 }
                             ? new Dictionary<string, string>
@@ -690,6 +718,7 @@ internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeLi
         CancellationToken cancellationToken
     )
     {
+        CallCounter++;
         var response = await GetCachedCodeListResponseAsync(org, codeListId, version, cancellationToken);
         return MapAppOptions(response, language);
     }

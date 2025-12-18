@@ -221,16 +221,16 @@ public class Altinn3LibraryCodeListServiceTests
         var labels = new Dictionary<string, string>
         {
             { "de", "text" },
-            { "en", Altinn3LibraryCodeListServiceTestData.EnLabel },
+            { LanguageConst.En, Altinn3LibraryCodeListServiceTestData.EnLabel },
         };
         var descriptions = new Dictionary<string, string>
         {
             { "de", "Das ist ein Text" },
-            { "en", Altinn3LibraryCodeListServiceTestData.EnDescription },
+            { LanguageConst.En, Altinn3LibraryCodeListServiceTestData.EnDescription },
         };
         var helpTexts = new Dictionary<string, string>
         {
-            { "en", Altinn3LibraryCodeListServiceTestData.EnHelpText },
+            { LanguageConst.En, Altinn3LibraryCodeListServiceTestData.EnHelpText },
             { "de", "Wählen Sie diese Option, um eine Text zu erhalten" },
         };
         var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
@@ -292,7 +292,7 @@ public class Altinn3LibraryCodeListServiceTests
         // Act
         var altinn3LibraryCodeListService =
             fixture.ServiceProvider.GetRequiredService<IAltinn3LibraryCodeListService>();
-        var result = altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, LanguageConst.Nb);
+        var result = altinn3LibraryCodeListService.MapAppOptions(altinn3LibraryCodeListResponse, LanguageConst.En);
 
         // Assert
         Assert.NotNull(result);
@@ -301,9 +301,9 @@ public class Altinn3LibraryCodeListServiceTests
         Assert.Single(result.Options);
         var option = result.Options.Single();
         Assert.Equal(Altinn3LibraryCodeListServiceTestData.Value, option.Value);
-        Assert.Equal(Altinn3LibraryCodeListServiceTestData.NbLabel, option.Label);
-        Assert.Equal(Altinn3LibraryCodeListServiceTestData.NbDescription, option.Description);
-        Assert.Equal(Altinn3LibraryCodeListServiceTestData.NbHelpText, option.HelpText);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.EnLabel, option.Label);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.EnDescription, option.Description);
+        Assert.Equal(Altinn3LibraryCodeListServiceTestData.EnHelpText, option.HelpText);
         var versionParam = result.Parameters.Single(p => p.Key == "version");
         Assert.Equal(Altinn3LibraryCodeListServiceTestData.Version, versionParam.Value);
         var sourceParam = result.Parameters.Single(p => p.Key == "source");
@@ -314,9 +314,9 @@ public class Altinn3LibraryCodeListServiceTests
     public async Task MapAppOptions_NoTagNamesAndTagsPresent_ShouldNotReturnTagsDictionary()
     {
         // Arrange
-        var labels = new Dictionary<string, string> { { "nb", "Norge" } };
-        var descriptions = new Dictionary<string, string> { { "nb", "Et land på den nordlige halvkule" } };
-        var helpTexts = new Dictionary<string, string> { { "nb", "" } };
+        var labels = new Dictionary<string, string> { { LanguageConst.Nb, "Norge" } };
+        var descriptions = new Dictionary<string, string> { { LanguageConst.Nb, "Et land på den nordlige halvkule" } };
+        var helpTexts = new Dictionary<string, string> { { LanguageConst.Nb, "" } };
 
         var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
             labels,
@@ -344,9 +344,9 @@ public class Altinn3LibraryCodeListServiceTests
     {
         // Arrange
         var tagNames = new List<string> { "region", "income" };
-        var labels = new Dictionary<string, string> { { "nb", "Norge" } };
-        var descriptions = new Dictionary<string, string> { { "nb", "Et land på den nordlige halvkule" } };
-        var helpTexts = new Dictionary<string, string> { { "nb", "" } };
+        var labels = new Dictionary<string, string> { { LanguageConst.Nb, "Norge" } };
+        var descriptions = new Dictionary<string, string> { { LanguageConst.Nb, "Et land på den nordlige halvkule" } };
+        var helpTexts = new Dictionary<string, string> { { LanguageConst.Nb, "" } };
 
         var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
             labels,
@@ -376,9 +376,9 @@ public class Altinn3LibraryCodeListServiceTests
         // Arrange
         var tagNames = new List<string> { "region", "income" };
         var tags = new List<string> { "Europe" };
-        var labels = new Dictionary<string, string> { { "nb", "Norge" } };
-        var descriptions = new Dictionary<string, string> { { "nb", "Et land på den nordlige halvkule" } };
-        var helpTexts = new Dictionary<string, string> { { "nb", "" } };
+        var labels = new Dictionary<string, string> { { LanguageConst.Nb, "Norge" } };
+        var descriptions = new Dictionary<string, string> { { LanguageConst.Nb, "Et land på den nordlige halvkule" } };
+        var helpTexts = new Dictionary<string, string> { { LanguageConst.Nb, "" } };
 
         var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
             labels,
@@ -414,9 +414,9 @@ public class Altinn3LibraryCodeListServiceTests
 
         var tagNames = new List<string> { expectedFirstTagName, expectedSecondTagName };
         var tags = new List<string> { expectedFirstTag, expectedSecondTag };
-        var labels = new Dictionary<string, string> { { "nb", "Norge" } };
-        var descriptions = new Dictionary<string, string> { { "nb", "Et land på den nordlige halvkule" } };
-        var helpTexts = new Dictionary<string, string> { { "nb", "" } };
+        var labels = new Dictionary<string, string> { { LanguageConst.Nb, "Norge" } };
+        var descriptions = new Dictionary<string, string> { { LanguageConst.Nb, "Et land på den nordlige halvkule" } };
+        var helpTexts = new Dictionary<string, string> { { LanguageConst.Nb, "" } };
 
         var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
             labels,
@@ -460,9 +460,9 @@ public class Altinn3LibraryCodeListServiceTests
         const string expectedSecondLabel = "Emiratene";
 
         var altinn3LibraryCodeListResponse = Altinn3LibraryCodeListServiceTestData.GetAltinn3LibraryCodeListResponse(
-            new Dictionary<string, string> { { "nb", expectedFirstLabel } },
-            new Dictionary<string, string> { { "nb", "Et land på den nordlige halvkule" } },
-            new Dictionary<string, string> { { "nb", "" } },
+            new Dictionary<string, string> { { LanguageConst.Nb, expectedFirstLabel } },
+            new Dictionary<string, string> { { LanguageConst.Nb, "Et land på den nordlige halvkule" } },
+            new Dictionary<string, string> { { LanguageConst.Nb, "" } },
             new List<string> { expectedFirstTagName, expectedSecondTagName },
             new List<string> { expectedFirstTagOptionOne, expectedSecondTag },
             new List<Altinn3LibraryCodeListItem>()
@@ -470,9 +470,9 @@ public class Altinn3LibraryCodeListServiceTests
                 new()
                 {
                     Value = "Emirates",
-                    Label = new Dictionary<string, string> { { "nb", expectedSecondLabel } },
-                    Description = new Dictionary<string, string> { { "nb", "Et land i West Asia" } },
-                    HelpText = new Dictionary<string, string> { { "nb", "" } },
+                    Label = new Dictionary<string, string> { { LanguageConst.Nb, expectedSecondLabel } },
+                    Description = new Dictionary<string, string> { { LanguageConst.Nb, "Et land i West Asia" } },
+                    HelpText = new Dictionary<string, string> { { LanguageConst.Nb, "" } },
                     Tags = new List<string> { expectedFirstTagOptionTwo, expectedSecondTag },
                 },
             }
