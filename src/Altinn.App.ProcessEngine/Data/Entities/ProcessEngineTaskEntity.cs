@@ -51,7 +51,7 @@ internal sealed class ProcessEngineTaskEntity
     public static ProcessEngineTaskEntity FromDomainModel(ProcessEngineTask task) =>
         new()
         {
-            Id = task.Id,
+            Id = task.DatabaseId,
             Key = task.Key,
             Status = task.Status,
             ProcessingOrder = task.ProcessingOrder,
@@ -76,11 +76,9 @@ internal sealed class ProcessEngineTaskEntity
 
         return new ProcessEngineTask
         {
-            Id = Id,
+            DatabaseId = Id,
             Key = Key,
             Status = Status,
-            CreatedAt = CreatedAt,
-            UpdatedAt = UpdatedAt,
             ProcessingOrder = ProcessingOrder,
             StartTime = StartTime,
             BackoffUntil = BackoffUntil,

@@ -25,7 +25,7 @@ public class ProcessEngineTests
             .Range(0, 100)
             .Select(async i =>
                 await fixture.ProcessEngine.EnqueueJob(
-                    new ProcessEngineRequest(
+                    new ProcessEngineJobRequest(
                         $"test-job-{i}",
                         new InstanceInformation
                         {

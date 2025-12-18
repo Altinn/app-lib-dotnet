@@ -40,15 +40,18 @@ public static class ServiceCollectionExtensions
             ArgumentException.ThrowIfNullOrEmpty(dbConnectionString);
 
             services.AddTransient<IProcessEngineRepository, ProcessEnginePgRepository>();
-            services.AddDbContext<ProcessEngineDbContext>(options =>
-                options.UseNpgsql(
-                    dbConnectionString,
-                    npgsqlOptions =>
-                    {
-                        npgsqlOptions.MigrationsAssembly(typeof(ProcessEngineDbContext).Assembly.FullName);
-                        npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "public");
-                    }
-                )
+            services.AddDbContext<ProcessEngineDbContext>(
+                options =>
+                    options.UseNpgsql(
+                        dbConnectionString,
+                        npgsqlOptions =>
+                        {
+                            npgsqlOptions.MigrationsAssembly(typeof(ProcessEngineDbContext).Assembly.FullName);
+                            npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "public");
+                        }
+                    ),
+                contextLifetime: ServiceLifetime.Transient,
+                optionsLifetime: ServiceLifetime.Singleton
             );
         }
         else

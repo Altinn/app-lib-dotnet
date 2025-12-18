@@ -5,21 +5,21 @@ namespace Altinn.App.ProcessEngine;
 internal partial class ProcessEngine
 {
     public async Task<ProcessEngineResponse> EnqueueJob(
-        ProcessEngineRequest request,
+        ProcessEngineJobRequest jobRequest,
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("Enqueuing job {JobIdentifier}", request.Key);
+        _logger.LogDebug("Enqueuing job {JobIdentifier}", jobRequest.Key);
 
-        if (!request.IsValid())
-            return ProcessEngineResponse.Rejected($"Invalid request: {request}");
+        if (!jobRequest.IsValid())
+            return ProcessEngineResponse.Rejected($"Invalid request: {jobRequest}");
 
-        if (HasDuplicateJob(request.Key))
+        if (HasDuplicateJob(jobRequest.Key))
             return ProcessEngineResponse.Rejected(
                 "Duplicate request. A job with the same identifier is already being processed"
             );
 
-        if (HasQueuedJobForInstance(request.InstanceInformation))
+        if (HasQueuedJobForInstance(jobRequest.InstanceInformation))
             return ProcessEngineResponse.Rejected(
                 "A job for this instance is already processing. Concurrency is currently not supported"
             );
@@ -33,31 +33,12 @@ internal partial class ProcessEngine
                 "Process engine is currently inactive. Did you call the right instance?"
             );
 
-        await AcquireQueueSlot(cancellationToken); // Only acquire slots for public requests
-        await EnqueueJob(
-            job: ProcessEngineJob.FromRequest(request),
-            updateDatabase: true,
-            cancellationToken: cancellationToken
-        );
+        await AcquireQueueSlot(cancellationToken);
+
+        _logger.LogTrace("Enqueuing job request {Request}", jobRequest);
+        _inbox[jobRequest.Key] = await _repository.AddJob(jobRequest, cancellationToken);
 
         return ProcessEngineResponse.Accepted();
-    }
-
-    private async Task EnqueueJob(
-        ProcessEngineJob job,
-        bool updateDatabase = true,
-        CancellationToken cancellationToken = default
-    )
-    {
-        _logger.LogTrace("Enqueuing job {Job}. Update database: {UpdateDb}", job, updateDatabase);
-
-        if (updateDatabase)
-        {
-            await _repository.AddJob(job, cancellationToken);
-            _logger.LogDebug("Job {JobIdentifier} persisted to database", job.Key);
-        }
-
-        _inbox[job.Key] = job;
     }
 
     public bool HasDuplicateJob(string jobIdentifier)
@@ -77,6 +58,9 @@ internal partial class ProcessEngine
 
     private async Task PopulateJobsFromStorage(CancellationToken cancellationToken)
     {
+        // Disabled for now. We don't necessarily want to resume jobs after restart while testing.
+        return;
+
         _logger.LogDebug("Populating jobs from storage");
 
         try
@@ -109,9 +93,7 @@ internal partial class ProcessEngine
 
         try
         {
-            var result = await _repository.UpdateJob(job, cancellationToken);
-            job.UpdatedAt = result.UpdatedAt;
-
+            await _repository.UpdateJob(job, cancellationToken);
             _logger.LogTrace("Job {JobIdentifier} updated in database", job.Key);
         }
         catch (Exception ex)
@@ -127,9 +109,7 @@ internal partial class ProcessEngine
 
         try
         {
-            var result = await _repository.UpdateTask(task, cancellationToken);
-            task.UpdatedAt = result.UpdatedAt;
-
+            await _repository.UpdateTask(task, cancellationToken);
             _logger.LogTrace("Task {TaskIdentifier} updated in database", task.Key);
         }
         catch (Exception ex)

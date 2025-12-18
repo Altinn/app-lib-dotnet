@@ -52,44 +52,54 @@ internal sealed class ProcessEnginePgRepository : IProcessEngineRepository
             cancellationToken
         );
 
-    public async Task<ProcessEngineJob> AddJob(ProcessEngineJob job, CancellationToken cancellationToken = default) =>
-        await ExecuteWithRetry(
-            async ct =>
-            {
-                var entry = _context.Jobs.Add(ProcessEngineJobEntity.FromDomainModel(job));
-                await _context.SaveChangesAsync(ct);
-
-                return entry.Entity.ToDomainModel();
-            },
-            cancellationToken
-        );
-
-    public async Task<ProcessEngineJob> UpdateJob(
-        ProcessEngineJob job,
+    public async Task<ProcessEngineJob> AddJob(
+        ProcessEngineJobRequest jobRequest,
         CancellationToken cancellationToken = default
     ) =>
         await ExecuteWithRetry(
             async ct =>
             {
-                var entry = _context.Jobs.Update(ProcessEngineJobEntity.FromDomainModel(job));
+                var job = ProcessEngineJob.FromRequest(jobRequest);
+                var entity = ProcessEngineJobEntity.FromDomainModel(job);
+
+                var dbRecord = _context.Jobs.Add(entity);
                 await _context.SaveChangesAsync(ct);
 
-                return entry.Entity.ToDomainModel();
+                return dbRecord.Entity.ToDomainModel();
             },
             cancellationToken
         );
 
-    public async Task<ProcessEngineTask> UpdateTask(
-        ProcessEngineTask task,
-        CancellationToken cancellationToken = default
-    ) =>
+    public async Task UpdateJob(ProcessEngineJob job, CancellationToken cancellationToken = default) =>
         await ExecuteWithRetry(
             async ct =>
             {
-                var entry = _context.Tasks.Update(ProcessEngineTaskEntity.FromDomainModel(task));
-                await _context.SaveChangesAsync(ct);
+                await _context
+                    .Jobs.Where(t => t.Id == job.DatabaseId)
+                    .ExecuteUpdateAsync(
+                        setters =>
+                            setters.SetProperty(t => t.Status, job.Status).SetProperty(t => t.UpdatedAt, DateTime.Now),
+                        ct
+                    );
+            },
+            cancellationToken
+        );
 
-                return entry.Entity.ToDomainModel();
+    public async Task UpdateTask(ProcessEngineTask task, CancellationToken cancellationToken = default) =>
+        await ExecuteWithRetry(
+            async ct =>
+            {
+                await _context
+                    .Tasks.Where(t => t.Id == task.DatabaseId)
+                    .ExecuteUpdateAsync(
+                        setters =>
+                            setters
+                                .SetProperty(t => t.Status, task.Status)
+                                .SetProperty(t => t.BackoffUntil, task.BackoffUntil)
+                                .SetProperty(t => t.RequeueCount, task.RequeueCount)
+                                .SetProperty(t => t.UpdatedAt, DateTime.Now),
+                        ct
+                    );
             },
             cancellationToken
         );

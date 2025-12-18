@@ -18,22 +18,24 @@ The ProcessEngine supports optional database persistence using PostgreSQL and En
    docker-compose up -d
    ```
 
-2. **Apply migrations:**
+2. **Create migrations (if required):**
+
+   See [Creating New Migrations](#creating-new-migrations) below.
+
+3. **Apply migrations:**
    ```bash
-   dotnet ef database update --project src/Altinn.App.ProcessEngine
+   dotnet ef database update
    ```
 
-3. **Access pgAdmin (optional):**
+4. **Access pgAdmin:**
    - URL: http://localhost:5050
-   - Email: admin@altinn.no
-   - Password: admin123
-   - Server: postgres (host), postgres/postgres123 (credentials)
+   - Database password: postgres123
 
 ### Configuration
 
 ```csharp
 // Add ProcessEngine with database persistence
-services.AddProcessEngineWithDatabase("Host=localhost;Database=altinn_processengine;Username=postgres;Password=postgres123");
+services.AddProcessEngine(true, "Host=localhost;Database=altinn_processengine;Username=postgres;Password=postgres123");
 
 // Or add ProcessEngine without database (in-memory only)
 services.AddProcessEngine();
@@ -54,11 +56,13 @@ The ProcessEngine creates these tables:
 
 ### Creating New Migrations
 
-When modifying the data model:
+After modifying the data models and/or database context, create new migrations with:
 
 ```bash
-dotnet ef migrations add YourMigrationName --project src/Altinn.App.ProcessEngine --output-dir Data/Migrations
+dotnet ef migrations add TheMigrationName --output-dir Data/Migrations
 ```
+
+# Misc notes
 
 ## Performance testing
 

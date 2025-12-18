@@ -20,7 +20,7 @@ internal sealed record ProcessEngineTask : ProcessEngineItem
     ) =>
         new()
         {
-            Id = 0,
+            DatabaseId = 0,
             Key = $"{jobIdentifier}/{request.Command}",
             Actor = actor,
             StartTime = request.StartTime,

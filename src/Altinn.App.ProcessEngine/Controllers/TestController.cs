@@ -69,7 +69,7 @@ public class TestController : ControllerBase
 
         var requests = Enumerable
             .Range(1, numJobs)
-            .Select(i => new ProcessEngineRequest(
+            .Select(i => new ProcessEngineJobRequest(
                 $"job-identifier-{i}",
                 instanceInfo,
                 new ProcessEngineActor { UserIdOrOrgNumber = "callers-altinn-party-id?" },

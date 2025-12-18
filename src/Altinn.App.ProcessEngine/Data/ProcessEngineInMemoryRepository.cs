@@ -14,26 +14,20 @@ internal sealed class ProcessEngineInMemoryRepository : IProcessEngineRepository
         return [];
     }
 
-    public async Task<ProcessEngineJob> AddJob(ProcessEngineJob job, CancellationToken cancellationToken = default)
-    {
-        await SimulateDatabaseDelay(cancellationToken);
-        return job;
-    }
-
-    public async Task<ProcessEngineJob> UpdateJob(ProcessEngineJob job, CancellationToken cancellationToken = default)
-    {
-        await SimulateDatabaseDelay(cancellationToken);
-        return job;
-    }
-
-    public async Task<ProcessEngineTask> UpdateTask(
-        ProcessEngineTask task,
+    public async Task<ProcessEngineJob> AddJob(
+        ProcessEngineJobRequest jobRequest,
         CancellationToken cancellationToken = default
     )
     {
         await SimulateDatabaseDelay(cancellationToken);
-        return task;
+        return ProcessEngineJob.FromRequest(jobRequest);
     }
+
+    public async Task UpdateJob(ProcessEngineJob job, CancellationToken cancellationToken = default) =>
+        await SimulateDatabaseDelay(cancellationToken);
+
+    public async Task UpdateTask(ProcessEngineTask task, CancellationToken cancellationToken = default) =>
+        await SimulateDatabaseDelay(cancellationToken);
 
     private static async Task SimulateDatabaseDelay(CancellationToken cancellationToken = default) =>
         await Task.Delay(Random.Shared.Next(50, 500), cancellationToken);

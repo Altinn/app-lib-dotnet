@@ -2,11 +2,9 @@ namespace Altinn.App.ProcessEngine.Models;
 
 internal abstract record ProcessEngineItem : IDisposable
 {
-    public long Id { get; set; }
+    internal long DatabaseId { get; set; }
     public required string Key { get; init; }
     public ProcessEngineItemStatus Status { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
 
     public Task? DatabaseTask { get; set; }
 

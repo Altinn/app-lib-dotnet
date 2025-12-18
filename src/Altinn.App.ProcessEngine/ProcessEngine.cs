@@ -15,7 +15,10 @@ internal interface IProcessEngine
     int InboxCount { get; }
     Task Start(CancellationToken cancellationToken = default);
     Task Stop();
-    Task<ProcessEngineResponse> EnqueueJob(ProcessEngineRequest request, CancellationToken cancellationToken = default);
+    Task<ProcessEngineResponse> EnqueueJob(
+        ProcessEngineJobRequest jobRequest,
+        CancellationToken cancellationToken = default
+    );
     bool HasDuplicateJob(string jobIdentifier);
     bool HasQueuedJobForInstance(InstanceInformation instanceInformation);
     ProcessEngineJob? GetJobForInstance(InstanceInformation instanceInformation);

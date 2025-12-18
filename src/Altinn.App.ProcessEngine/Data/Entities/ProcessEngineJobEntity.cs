@@ -43,7 +43,7 @@ internal sealed class ProcessEngineJobEntity
     public static ProcessEngineJobEntity FromDomainModel(ProcessEngineJob job) =>
         new()
         {
-            Id = job.Id,
+            Id = job.DatabaseId,
             Key = job.Key,
             Status = job.Status,
             ActorUserIdOrOrgNumber = job.Actor.UserIdOrOrgNumber,
@@ -58,11 +58,9 @@ internal sealed class ProcessEngineJobEntity
     public ProcessEngineJob ToDomainModel() =>
         new()
         {
-            Id = Id,
+            DatabaseId = Id,
             Key = Key,
             Status = Status,
-            CreatedAt = CreatedAt,
-            UpdatedAt = UpdatedAt,
             Actor = new ProcessEngineActor { UserIdOrOrgNumber = ActorUserIdOrOrgNumber, Language = ActorLanguage },
             InstanceInformation = new InstanceInformation
             {

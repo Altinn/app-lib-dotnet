@@ -7,7 +7,7 @@ namespace Altinn.App.ProcessEngine.Models;
 /// <param name="InstanceInformation">Information about the instance this job relates to.</param>
 /// <param name="Actor">The actor this request is executed on behalf of.</param>
 /// <param name="Commands">The individual commands comprising this job.</param>
-internal record ProcessEngineRequest(
+internal record ProcessEngineJobRequest(
     string Key,
     InstanceInformation InstanceInformation,
     ProcessEngineActor Actor,
