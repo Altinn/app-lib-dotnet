@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Internal.Process;
 /// <summary>
 /// Process engine interface that defines the Altinn App process engine
 /// </summary>
-public interface IProcessEngine
+internal interface IProcessEngine
 {
     /// <summary>
     /// Starts a new process for an instance
@@ -18,21 +18,4 @@ public interface IProcessEngine
     /// Method to move process to next task/event
     /// </summary>
     Task<ProcessChangeResult> Next(ProcessNextRequest request, CancellationToken ct = default);
-
-    /// <summary>
-    /// Check if the Altinn task type is a service task
-    /// </summary>
-    IServiceTask? CheckIfServiceTask(string? altinnTaskType);
-
-    /// <summary>
-    /// Handle process events and update storage
-    /// </summary>
-    /// <param name="instance"></param>
-    /// <param name="prefill"></param>
-    /// <param name="events"></param>
-    Task<Instance> HandleEventsAndUpdateStorage(
-        Instance instance,
-        Dictionary<string, string>? prefill,
-        List<InstanceEvent>? events
-    );
 }

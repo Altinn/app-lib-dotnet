@@ -52,6 +52,7 @@ using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.App.Core.Internal.ProcessEngine;
 using Altinn.App.Core.Internal.ProcessEngine.Commands;
+using Altinn.App.Core.Internal.ProcessEngine.Http;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
 using Altinn.App.Core.Internal.Sign;

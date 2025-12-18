@@ -376,20 +376,11 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .Setup(p => p.Start(It.IsAny<ProcessStartRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
             {
                 return new ProcessChangeResult() { Success = true };
             });
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
-                )
-            );
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
@@ -499,17 +490,8 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .Setup(p => p.Start(It.IsAny<ProcessStartRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
-                )
-            );
 
         // Form data mocks
         fixture
@@ -698,17 +680,8 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .Setup(p => p.Start(It.IsAny<ProcessStartRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
-                )
-            );
 
         // Form data mocks (should be copied)
         fixture
@@ -896,17 +869,8 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .Setup(p => p.Start(It.IsAny<ProcessStartRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
-                )
-            );
 
         // Binary data mocks (should be called)
         fixture
@@ -1101,17 +1065,8 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .Setup(p => p.Start(It.IsAny<ProcessStartRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
-                )
-            );
 
         // Binary data mocks (should be called)
         fixture

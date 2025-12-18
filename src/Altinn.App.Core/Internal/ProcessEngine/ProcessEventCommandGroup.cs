@@ -53,13 +53,11 @@ internal sealed class ProcessEventCommandGroup
     public static ProcessEventCommandGroup ForTaskStart()
     {
         return new ProcessEventCommandGroup()
-            .AcuireLock()
             .AddCommand(UnlockTaskData.Key)
             .AddCommand(StartTaskLegacyHook.Key)
             .AddCommand(OnTaskStartingHook.Key)
             .AddCommand(CommonTaskInitialization.Key)
             .AddCommand(ProcessTaskStart.Key)
-            .ReleaseLock()
             .AddPostProcessNextCommittedCommand(MovedToAltinnEvent.Key);
     }
 

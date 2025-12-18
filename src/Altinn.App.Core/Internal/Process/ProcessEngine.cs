@@ -7,19 +7,22 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.ProcessEngine;
+using Altinn.App.Core.Internal.ProcessEngine.Http;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Models.Validation;
+using Altinn.App.ProcessEngine.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using AppProcessNextRequest = Altinn.App.Core.Models.Process.ProcessNextRequest;
+using ProcessNextRequest = Altinn.App.ProcessEngine.Models.ProcessNextRequest;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -40,9 +43,9 @@ internal class ProcessEngine : IProcessEngine
     private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IValidationService _validationService;
-    private readonly IInstanceClient _instanceClient;
     private readonly IServiceProvider _serviceProvider;
     private readonly ProcessNextRequestFactory _processNextRequestFactory;
+    private readonly IProcessEngineClient _processEngineClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -55,7 +58,7 @@ internal class ProcessEngine : IProcessEngine
         IServiceProvider serviceProvider,
         IProcessEngineAuthorizer processEngineAuthorizer,
         IValidationService validationService,
-        IInstanceClient instanceClient,
+        IProcessEngineClient processEngineClient,
         ILogger<ProcessEngine> logger,
         Telemetry? telemetry = null
     )
@@ -67,9 +70,9 @@ internal class ProcessEngine : IProcessEngine
         _authenticationContext = authenticationContext;
         _processEngineAuthorizer = processEngineAuthorizer;
         _validationService = validationService;
-        _instanceClient = instanceClient;
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _processEngineClient = processEngineClient;
         _processNextRequestFactory = serviceProvider.GetRequiredService<ProcessNextRequestFactory>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
@@ -94,28 +97,25 @@ internal class ProcessEngine : IProcessEngine
             return result;
         }
 
-        string? validStartElement = ProcessHelper.GetValidStartEventOrError(
-            request.StartEventId,
-            _processReader.GetStartEventIds(),
-            out ProcessError? startEventError
-        );
-        if (startEventError is not null)
+        string validStartElement;
+        try
+        {
+            validStartElement = ProcessHelper.GetValidStartEventOrError(
+                request.StartEventId,
+                _processReader.GetStartEventIds()
+            );
+        }
+        catch (ProcessException e)
         {
             var result = new ProcessChangeResult()
             {
                 Success = false,
-                ErrorMessage = "No matching startevent",
+                ErrorMessage = e.Message,
                 ErrorType = ProcessErrorType.Conflict,
             };
             activity?.SetProcessChangeResult(result);
             return result;
         }
-
-        // TODO: assert can be removed when we improve nullability annotation in GetValidStartEventOrError
-        Debug.Assert(
-            validStartElement is not null,
-            "validStartElement should always be nonnull when startEventError is null"
-        );
 
         // Start process and move to first task
         ProcessStateChange? startChange = await ProcessStart(instance, validStartElement);
@@ -151,9 +151,8 @@ internal class ProcessEngine : IProcessEngine
             Events = events,
         };
 
-        var processNextRequest = await _processNextRequestFactory.Create(instance, processStateChange);
-        var processEngineClient = _serviceProvider.GetRequiredService<IProcessEngineClient>();
-        await processEngineClient.ProcessNext(processNextRequest, ct);
+        var processNextRequest = await _processNextRequestFactory.Create(processStateChange);
+        await _processEngineClient.ProcessNext(instance, processNextRequest, ct);
 
         _telemetry?.ProcessStarted();
 
@@ -162,8 +161,57 @@ internal class ProcessEngine : IProcessEngine
             Success = true,
             ProcessStateChange = processStateChange,
         };
+
+        await WaitForEngineResponse(instance, ct);
+
         activity?.SetProcessChangeResult(changeResult);
         return changeResult;
+    }
+
+    private async Task WaitForEngineResponse(Instance instance, CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            ProcessEngineStatusResponse? processStatus = await _processEngineClient.GetActiveJobStatus(instance, ct);
+
+            if (processStatus is null)
+            {
+                return;
+            }
+
+            switch (processStatus.OverallStatus)
+            {
+                case ProcessEngineItemStatus.Canceled:
+                    throw new InvalidOperationException("Process engine job was canceled.");
+                case ProcessEngineItemStatus.Failed:
+                    throw new InvalidOperationException("Process engine job failed.");
+                case ProcessEngineItemStatus.Completed:
+                    return;
+                case ProcessEngineItemStatus.Enqueued:
+                case ProcessEngineItemStatus.Processing:
+                case ProcessEngineItemStatus.Requeued:
+                    _logger.LogDebug(
+                        "Process engine job is still in progress. Status: {Status}",
+                        processStatus.OverallStatus
+                    );
+                    break;
+
+                default:
+                    throw new InvalidOperationException(
+                        "Received unknown process engine job status: " + processStatus.OverallStatus
+                    );
+            }
+
+            if (stopwatch.ElapsedMilliseconds > 100_000)
+            {
+                throw new TimeoutException("Timeout while waiting for process engine job to complete.");
+            }
+
+            Thread.Sleep(500);
+        }
+
+        throw new InvalidOperationException("Tried waiting for process engine job, but the operation was cancelled.");
     }
 
     /// <inheritdoc/>
@@ -184,28 +232,25 @@ internal class ProcessEngine : IProcessEngine
             return result;
         }
 
-        string? validStartElement = ProcessHelper.GetValidStartEventOrError(
-            processStartRequest.StartEventId,
-            _processReader.GetStartEventIds(),
-            out ProcessError? startEventError
-        );
-        if (startEventError is not null)
+        string validStartElement;
+        try
+        {
+            validStartElement = ProcessHelper.GetValidStartEventOrError(
+                processStartRequest.StartEventId,
+                _processReader.GetStartEventIds()
+            );
+        }
+        catch (ProcessException e)
         {
             var result = new ProcessChangeResult()
             {
                 Success = false,
-                ErrorMessage = "No matching startevent",
+                ErrorMessage = e.Message,
                 ErrorType = ProcessErrorType.Conflict,
             };
             activity?.SetProcessChangeResult(result);
             return result;
         }
-
-        // TODO: assert can be removed when we improve nullability annotation in GetValidStartEventOrError
-        Debug.Assert(
-            validStartElement is not null,
-            "validStartElement should always be nonnull when startEventError is null"
-        );
 
         // start process
         ProcessStateChange? startChange = await ProcessStart(processStartRequest.Instance, validStartElement);
@@ -238,83 +283,10 @@ internal class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<ProcessChangeResult> Next(ProcessNextRequest request, CancellationToken ct = default)
+    public async Task<ProcessChangeResult> Next(AppProcessNextRequest request, CancellationToken ct = default)
     {
-        Instance instance = request.Instance;
+        using Activity? activity = _telemetry?.StartProcessNextActivity(request.Instance, request.Action);
 
-        using Activity? activity = _telemetry?.StartProcessNextActivity(instance, request.Action);
-
-        ProcessChangeResult result;
-        bool moveToNextTaskAutomatically;
-        bool firstIteration = true;
-        int iterationCount = 0;
-
-        do
-        {
-            if (iterationCount >= MaxNextIterationsAllowed)
-            {
-                _logger.LogError(
-                    "More than {MaxIterations} iterations detected in process for instance {InstanceId}. Possible loop in process definition.",
-                    MaxNextIterationsAllowed,
-                    instance.Id
-                );
-                var loopError = new ProcessChangeResult
-                {
-                    Success = false,
-                    ErrorType = ProcessErrorType.Internal,
-                    ErrorTitle = "Process loop detected",
-                    ErrorMessage =
-                        $"More than {MaxNextIterationsAllowed} iterations detected in process. Possible loop in process definition.",
-                };
-                activity?.SetProcessChangeResult(loopError);
-                return loopError;
-            }
-
-            // Fetch fresh instance on subsequent iterations
-            if (!firstIteration)
-            {
-                instance = await _instanceClient.GetInstance(instance);
-            }
-
-            // Only use action and actionOnBehalfOf on first iteration
-            var processNextRequest = new ProcessNextRequest
-            {
-                User = request.User,
-                Instance = instance,
-                Action = firstIteration ? request.Action : null,
-                ActionOnBehalfOf = firstIteration ? request.ActionOnBehalfOf : null,
-                Language = request.Language,
-            };
-
-            result = await ProcessNext(processNextRequest, ct);
-
-            if (!result.Success)
-            {
-                activity?.SetProcessChangeResult(result);
-                return result;
-            }
-
-            if (result.MutatedInstance is null)
-            {
-                throw new ProcessException(
-                    "ProcessNext returned successfully, but ProcessChangeResult.MutatedInstance is null. Conundrum."
-                );
-            }
-
-            moveToNextTaskAutomatically = IsServiceTask(result.MutatedInstance);
-            firstIteration = false;
-            iterationCount++;
-        } while (moveToNextTaskAutomatically);
-
-        activity?.SetProcessChangeResult(result);
-        return result;
-    }
-
-    /// <summary>
-    /// Internal method that performs a single process next operation without automatic service task handling.
-    /// </summary>
-    private async Task<ProcessChangeResult> ProcessNext(ProcessNextRequest request, CancellationToken ct = default)
-    {
         Instance instance = request.Instance;
 
         if (
@@ -325,6 +297,7 @@ internal class ProcessEngine : IProcessEngine
             )
         )
         {
+            activity?.SetProcessChangeResult(invalidProcessStateError);
             return invalidProcessStateError;
         }
 
@@ -334,13 +307,15 @@ internal class ProcessEngine : IProcessEngine
 
         if (!authorized)
         {
-            return new ProcessChangeResult
+            var result = new ProcessChangeResult
             {
                 Success = false,
                 ErrorType = ProcessErrorType.Unauthorized,
                 ErrorMessage =
                     $"User is not authorized to perform process next. Task ID: {LogSanitizer.Sanitize(currentTaskId)}. Task type: {LogSanitizer.Sanitize(altinnTaskType)}. Action: {LogSanitizer.Sanitize(request.Action ?? "none")}.",
             };
+            activity?.SetProcessChangeResult(result);
+            return result;
         }
 
         _logger.LogDebug(
@@ -351,7 +326,7 @@ internal class ProcessEngine : IProcessEngine
         );
 
         string checkedAction = request.Action ?? ConvertTaskTypeToAction(altinnTaskType);
-        bool isServiceTask = false;
+        bool isServiceTask = CheckIfServiceTask(altinnTaskType) is not null;
         string? processNextAction = request.Action;
 
         // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
@@ -363,12 +338,14 @@ internal class ProcessEngine : IProcessEngine
 
                 if (userActionResult.ResultType is ResultType.Failure)
                 {
-                    return new ProcessChangeResult()
+                    var result = new ProcessChangeResult()
                     {
                         Success = false,
                         ErrorMessage = $"Action handler for action {LogSanitizer.Sanitize(request.Action)} failed!",
                         ErrorType = userActionResult.ErrorType,
                     };
+                    activity?.SetProcessChangeResult(result);
+                    return result;
                 }
             }
         }
@@ -404,7 +381,7 @@ internal class ProcessEngine : IProcessEngine
 
             if (errorCount > 0)
             {
-                return new ProcessChangeResult
+                var result = new ProcessChangeResult
                 {
                     Success = false,
                     ErrorType = ProcessErrorType.Conflict,
@@ -412,67 +389,26 @@ internal class ProcessEngine : IProcessEngine
                     ErrorMessage = $"{errorCount} validation errors found for task {currentTaskId}",
                     ValidationIssues = validationIssues,
                 };
+                activity?.SetProcessChangeResult(result);
+                return result;
             }
         }
 
-        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, processNextAction);
+        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, processNextAction, ct);
 
-        return new ProcessChangeResult(mutatedInstance: instance)
+        var changeResult = new ProcessChangeResult(mutatedInstance: instance)
         {
             Success = true,
             ProcessStateChange = moveToNextResult.ProcessStateChange,
         };
-    }
 
-    /// <summary>
-    /// Check if the current task is a service task that should be automatically processed.
-    /// </summary>
-    private bool IsServiceTask(Instance instance)
-    {
-        if (instance.Process?.CurrentTask is null)
-        {
-            return false;
-        }
-
-        IServiceTask? serviceTask = CheckIfServiceTask(instance.Process.CurrentTask.AltinnTaskType);
-        return serviceTask is not null;
-    }
-
-    /// <inheritdoc/>
-    public async Task<Instance> HandleEventsAndUpdateStorage(
-        Instance instance,
-        Dictionary<string, string>? prefill,
-        List<InstanceEvent>? events
-    )
-    {
-        using (_telemetry?.StartProcessHandleEventsActivity(instance))
-        {
-            await _processEventHandlerDelegator.HandleEvents(instance, prefill, events);
-        }
-
-        using (_telemetry?.StartProcessStoreEventsActivity(instance))
-        {
-            return await _processEventDispatcher.DispatchToStorage(instance, events);
-        }
-    }
-
-    /// <inheritdoc/>
-    public IServiceTask? CheckIfServiceTask(string? altinnTaskType)
-    {
-        if (altinnTaskType is null)
-            return null;
-
-        IEnumerable<IServiceTask> serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
-        IServiceTask? serviceTask = serviceTasks.FirstOrDefault(x =>
-            x.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase)
-        );
-
-        return serviceTask;
+        activity?.SetProcessChangeResult(changeResult);
+        return changeResult;
     }
 
     private async Task<UserActionResult> HandleUserAction(
         Instance instance,
-        ProcessNextRequest request,
+        AppProcessNextRequest request,
         CancellationToken ct
     )
     {
@@ -522,88 +458,6 @@ internal class ProcessEngine : IProcessEngine
         await cachedDataMutator.SaveChanges(changes);
 
         return actionResult;
-    }
-
-    private async Task<(ProcessChangeResult, ServiceTaskResult?)> HandleServiceTask(
-        Instance instance,
-        IServiceTask serviceTask,
-        ProcessNextRequest request,
-        CancellationToken ct = default
-    )
-    {
-        using Activity? activity = _telemetry?.StartProcessExecuteServiceTaskActivity(instance, serviceTask.Type);
-
-        if (request.Action is not "write" && request.Action != serviceTask.Type) // serviceTask.Type is accepted to support custom service task types
-        {
-            return (
-                new ProcessChangeResult
-                {
-                    ErrorTitle = "User action not supported!",
-                    ErrorMessage =
-                        $"Service tasks do not support running user actions! Received action param {LogSanitizer.Sanitize(request.Action)}.",
-                    ErrorType = ProcessErrorType.Conflict,
-                },
-                null
-            );
-        }
-
-        try
-        {
-            InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
-                instance,
-                instance.Process?.CurrentTask?.ElementId,
-                request.Language
-            );
-
-            ServiceTaskContext context = new() { InstanceDataMutator = cachedDataMutator, CancellationToken = ct };
-
-            ServiceTaskResult result = await serviceTask.Execute(context);
-
-            if (result is ServiceTaskFailedResult)
-            {
-                _logger.LogError("Service task {ServiceTaskType} returned a failed result.", serviceTask.Type);
-
-                return (
-                    new ProcessChangeResult
-                    {
-                        Success = false,
-                        ErrorTitle = "Service task failed!",
-                        ErrorMessage = $"Service task {serviceTask.Type} returned a failed result!",
-                        ErrorType = ProcessErrorType.Internal,
-                    },
-                    result
-                );
-            }
-
-            if (cachedDataMutator.HasAbandonIssues)
-            {
-                throw new Exception(
-                    "Abandon issues found in data elements. Abandon issues should be handled by the service task."
-                );
-            }
-
-            DataElementChanges changes = cachedDataMutator.GetDataElementChanges(initializeAltinnRowId: false);
-            await cachedDataMutator.UpdateInstanceData(changes);
-            await cachedDataMutator.SaveChanges(changes);
-
-            return (new ProcessChangeResult { Success = true }, result);
-        }
-        catch (Exception ex)
-        {
-            activity?.Errored(ex);
-            _logger.LogError(ex, "Service task {ServiceTaskType} returned a failed result.", serviceTask.Type);
-
-            return (
-                new ProcessChangeResult
-                {
-                    Success = false,
-                    ErrorTitle = "Service task failed!",
-                    ErrorMessage = $"Service task {serviceTask.Type} failed with an exception!",
-                    ErrorType = ProcessErrorType.Internal,
-                },
-                null
-            );
-        }
     }
 
     /// <summary>
@@ -796,7 +650,11 @@ internal class ProcessEngine : IProcessEngine
         return instanceEvent;
     }
 
-    private async Task<MoveToNextResult> HandleMoveToNext(Instance instance, string? action)
+    private async Task<MoveToNextResult> HandleMoveToNext(
+        Instance instance,
+        string? action,
+        CancellationToken ct = default
+    )
     {
         ProcessStateChange? processStateChange = await MoveProcessStateToNextAndGenerateEvents(instance, action);
 
@@ -805,9 +663,10 @@ internal class ProcessEngine : IProcessEngine
             return new MoveToNextResult(instance, null);
         }
 
-        var processNextRequest = await _processNextRequestFactory.Create(instance, processStateChange);
-        var processEngineClient = _serviceProvider.GetRequiredService<IProcessEngineClient>();
-        await processEngineClient.ProcessNext(processNextRequest);
+        ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(processStateChange);
+        await _processEngineClient.ProcessNext(instance, processNextRequest, ct);
+
+        await WaitForEngineResponse(instance, ct);
 
         return new MoveToNextResult(instance, processStateChange);
     }
@@ -913,6 +772,19 @@ internal class ProcessEngine : IProcessEngine
 
         state = new CurrentTaskIdAndAltinnTaskType(taskId, taskType);
         return true;
+    }
+
+    public IServiceTask? CheckIfServiceTask(string? altinnTaskType)
+    {
+        if (altinnTaskType is null)
+            return null;
+
+        IEnumerable<IServiceTask> serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
+        IServiceTask? serviceTask = serviceTasks.FirstOrDefault(x =>
+            x.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase)
+        );
+
+        return serviceTask;
     }
 
     private sealed record CurrentTaskIdAndAltinnTaskType(string CurrentTaskId, string AltinnTaskType);

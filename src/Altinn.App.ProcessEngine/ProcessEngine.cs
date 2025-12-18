@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.ProcessEngine;
 
-public interface IProcessEngine
+internal interface IProcessEngine
 {
     ProcessEngineSettings Settings { get; }
     ProcessEngineHealthStatus Status { get; }

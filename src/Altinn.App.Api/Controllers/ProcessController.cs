@@ -51,7 +51,6 @@ public class ProcessController : ControllerBase
         IValidationService validationService,
         IAuthorizationService authorization,
         IProcessReader processReader,
-        IProcessEngine processEngine,
         IServiceProvider serviceProvider,
         IProcessEngineAuthorizer processEngineAuthorizer
     )
@@ -61,10 +60,10 @@ public class ProcessController : ControllerBase
         _processClient = processClient;
         _authorization = authorization;
         _processReader = processReader;
-        _processEngine = processEngine;
         _processEngineAuthorizer = processEngineAuthorizer;
         _validationService = validationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _processEngine = serviceProvider.GetRequiredService<IProcessEngine>();
     }
 
     /// <summary>

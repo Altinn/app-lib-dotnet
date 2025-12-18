@@ -38,6 +38,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
+using IProcessEngine = Altinn.App.Core.Internal.Process.IProcessEngine;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -91,7 +92,6 @@ public class InstancesController : ControllerBase
         IOptions<AppSettings> appSettings,
         IPrefill prefillService,
         IProfileClient profileClient,
-        IProcessEngine processEngine,
         IOrganizationClient orgClient,
         IHostEnvironment env,
         ModelSerializationService serializationService,
@@ -112,7 +112,7 @@ public class InstancesController : ControllerBase
         _appSettings = appSettings.Value;
         _prefillService = prefillService;
         _profileClient = profileClient;
-        _processEngine = processEngine;
+        _processEngine = serviceProvider.GetRequiredService<IProcessEngine>();
         _orgClient = orgClient;
         _env = env;
         _serializationService = serializationService;

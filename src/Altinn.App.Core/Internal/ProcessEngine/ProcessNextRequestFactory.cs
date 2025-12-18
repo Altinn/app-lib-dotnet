@@ -3,6 +3,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Internal.ProcessEngine.Commands;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.ProcessEngine.Models;
 using Altinn.Platform.Storage.Interface.Enums;
@@ -32,10 +33,7 @@ internal sealed class ProcessNextRequestFactory
     /// Creates a ProcessNextRequest from the instance and process state change.
     /// Maps each instance event to its corresponding command sequence.
     /// </summary>
-    public async Task<Altinn.App.ProcessEngine.Models.ProcessNextRequest> Create(
-        Instance instance,
-        ProcessStateChange processStateChange
-    )
+    public async Task<Altinn.App.ProcessEngine.Models.ProcessNextRequest> Create(ProcessStateChange processStateChange)
     {
         if (processStateChange.Events == null || processStateChange.Events.Count == 0)
         {
@@ -43,7 +41,6 @@ internal sealed class ProcessNextRequestFactory
             {
                 CurrentElementId = processStateChange.OldProcessState?.CurrentTask?.ElementId ?? string.Empty,
                 DesiredElementId = processStateChange.NewProcessState?.CurrentTask?.ElementId ?? string.Empty,
-                InstanceInformation = ExtractInstanceInformation(instance),
                 Actor = await ExtractActor(),
                 Tasks = [],
             };
@@ -75,7 +72,6 @@ internal sealed class ProcessNextRequestFactory
         {
             CurrentElementId = processStateChange.OldProcessState?.CurrentTask?.ElementId ?? string.Empty,
             DesiredElementId = processStateChange.NewProcessState?.CurrentTask?.ElementId ?? string.Empty,
-            InstanceInformation = ExtractInstanceInformation(instance),
             Actor = await ExtractActor(),
             Tasks = sequence.ToList(),
         };
@@ -124,6 +120,7 @@ internal sealed class ProcessNextRequestFactory
             Authenticated.User user => user.UserId.ToString(CultureInfo.InvariantCulture),
             Authenticated.Org org => org.OrgNo,
             Authenticated.ServiceOwner serviceOwner => serviceOwner.OrgNo,
+            Authenticated.SystemUser systemUser => systemUser.SystemUserOrgNr.Get(OrganisationNumberFormat.Local),
             _ => throw new InvalidOperationException($"Unknown authentication type: {currentAuth.GetType().Name}"),
         };
 
