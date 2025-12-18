@@ -4,27 +4,28 @@ using Altinn.App.ProcessEngine.Data.Entities;
 using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.ProcessEngine.Data;
 
 internal sealed class ProcessEnginePgRepository : IProcessEngineRepository
 {
     private readonly ProcessEngineDbContext _context;
-    private readonly ProcessEngineRetryStrategy _retryStrategy;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<ProcessEnginePgRepository> _logger;
+    private readonly IOptionsMonitor<ProcessEngineSettings> _settings;
 
     public ProcessEnginePgRepository(
         ProcessEngineDbContext context,
-        ProcessEngineRetryStrategy retryStrategy,
-        TimeProvider timeProvider,
-        ILogger<ProcessEnginePgRepository> logger
+        IOptionsMonitor<ProcessEngineSettings> settings,
+        ILogger<ProcessEnginePgRepository> logger,
+        TimeProvider? timeProvider = null
     )
     {
         _context = context;
-        _retryStrategy = retryStrategy;
-        _timeProvider = timeProvider;
+        _settings = settings;
         _logger = logger;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task<IReadOnlyList<ProcessEngineJob>> GetIncompleteJobs(
@@ -114,6 +115,7 @@ internal sealed class ProcessEnginePgRepository : IProcessEngineRepository
         [CallerMemberName] string operationName = ""
     )
     {
+        var retryStrategy = _settings.CurrentValue.DatabaseRetryStrategy;
         var attempt = 1;
 
         while (true)
@@ -135,7 +137,7 @@ internal sealed class ProcessEnginePgRepository : IProcessEngineRepository
             }
             catch (Exception ex) when (ShouldRetry(ex))
             {
-                if (!_retryStrategy.CanRetry(attempt))
+                if (!retryStrategy.CanRetry(attempt))
                 {
                     _logger.LogError(
                         ex,
@@ -146,7 +148,7 @@ internal sealed class ProcessEnginePgRepository : IProcessEngineRepository
                     throw; // Give up after max retries
                 }
 
-                var delay = _retryStrategy.CalculateDelay(attempt);
+                var delay = retryStrategy.CalculateDelay(attempt);
 
                 _logger.LogWarning(
                     ex,

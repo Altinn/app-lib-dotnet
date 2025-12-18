@@ -27,7 +27,6 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IProcessEngineTaskHandler _taskHandler;
-    private readonly IProcessEngineRepository _repository;
     private readonly Buffer<bool> _isEnabledHistory = new();
     private readonly SemaphoreSlim _cleanupLock = new(1, 1);
     private readonly ProcessEngineRetryStrategy _statusCheckBackoffStrategy = ProcessEngineRetryStrategy.Exponential(
@@ -41,19 +40,20 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
     private SemaphoreSlim _inboxCapacityLimit;
     private volatile bool _cleanupRequired;
     private bool _disposed;
+    private readonly IOptionsMonitor<ProcessEngineSettings> _settings;
 
+    private IProcessEngineRepository _repository => _serviceProvider.GetRequiredService<IProcessEngineRepository>();
     public ProcessEngineHealthStatus Status { get; private set; }
     public int InboxCount => _inbox.Count;
-    public ProcessEngineSettings Settings { get; }
+    public ProcessEngineSettings Settings => _settings.CurrentValue;
 
     public ProcessEngine(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
         _logger = serviceProvider.GetRequiredService<ILogger<ProcessEngine>>();
         _taskHandler = serviceProvider.GetRequiredService<IProcessEngineTaskHandler>();
-        _repository = serviceProvider.GetRequiredService<IProcessEngineRepository>();
         _timeProvider = serviceProvider.GetService<TimeProvider>() ?? TimeProvider.System;
-        Settings = serviceProvider.GetRequiredService<IOptions<ProcessEngineSettings>>().Value;
+        _settings = serviceProvider.GetRequiredService<IOptionsMonitor<ProcessEngineSettings>>();
 
         InitializeInbox();
     }

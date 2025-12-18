@@ -18,7 +18,11 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds the process engine services to the service collection.
     /// </summary>
-    public static IServiceCollection AddProcessEngine(this IServiceCollection services)
+    public static IServiceCollection AddProcessEngine(
+        this IServiceCollection services,
+        bool useDatabase = false,
+        string? dbConnectionString = null
+    )
     {
         if (services.IsConfigured<ProcessEngineSettings>() is false)
         {
@@ -27,48 +31,40 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IProcessEngine, ProcessEngine>();
         services.AddSingleton<IProcessEngineTaskHandler, ProcessEngineTaskHandler>();
-        services.AddSingleton<IProcessEngineRepository, ProcessEngineInMemoryRepository>();
+
         services.AddHostedService<ProcessEngineHost>();
 
+        // Add repository and EF if requested
+        if (useDatabase)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(dbConnectionString);
+
+            services.AddTransient<IProcessEngineRepository, ProcessEnginePgRepository>();
+            services.AddDbContext<ProcessEngineDbContext>(options =>
+                options.UseNpgsql(
+                    dbConnectionString,
+                    npgsqlOptions =>
+                    {
+                        npgsqlOptions.MigrationsAssembly(typeof(ProcessEngineDbContext).Assembly.FullName);
+                        npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "public");
+                    }
+                )
+            );
+        }
+        else
+        {
+            services.AddSingleton<IProcessEngineRepository, ProcessEngineInMemoryRepository>();
+        }
+
+        // Add API key authentication
         services
             .AddAuthentication()
             .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(AuthConstants.ApiKeySchemeName, null);
 
+        // Register controllers from this assembly
         services
             .AddControllers()
             .PartManager.ApplicationParts.Add(new AssemblyPart(typeof(ProcessEngineController).Assembly));
-
-        return services;
-    }
-
-    /// <summary>
-    /// Adds the process engine services with database persistence to the service collection.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="connectionString">The database connection string.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddProcessEngineWithDatabase(
-        this IServiceCollection services,
-        string connectionString
-    )
-    {
-        // Add the base process engine services
-        services.AddProcessEngine();
-
-        // Add Entity Framework services
-        services.AddDbContext<ProcessEngineDbContext>(options =>
-            options.UseNpgsql(
-                connectionString,
-                npgsqlOptions =>
-                {
-                    npgsqlOptions.MigrationsAssembly(typeof(ProcessEngineDbContext).Assembly.FullName);
-                    npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "public");
-                }
-            )
-        );
-
-        // Add the repository
-        services.AddScoped<IProcessEngineRepository, ProcessEnginePgRepository>();
 
         return services;
     }
