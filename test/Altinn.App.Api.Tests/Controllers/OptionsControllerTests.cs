@@ -724,7 +724,7 @@ internal sealed class DummyAltinn3LibraryCodeListService : IAltinn3LibraryCodeLi
     }
 }
 
-public class DummyInstanceProvider : IInstanceAppOptionsProvider
+internal sealed class DummyInstanceProvider : IInstanceAppOptionsProvider
 {
     public string Id => "testInstance";
 
@@ -738,7 +738,7 @@ public class DummyInstanceProvider : IInstanceAppOptionsProvider
     }
 }
 
-public class DummyProvider : IAppOptionsProvider
+internal sealed class DummyProvider : IAppOptionsProvider
 {
     public string Id => "test";
 
@@ -748,7 +748,7 @@ public class DummyProvider : IAppOptionsProvider
     }
 }
 
-public static class TestDataOptionsController
+internal static class TestDataOptionsController
 {
     public static AppOptions GetAppOptions(string? language)
     {

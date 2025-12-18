@@ -33,8 +33,16 @@ public static class Altinn3LibraryCodeListServiceTestData
     public static Altinn3LibraryCodeListResponse GetNbEnAltinn3LibraryCodeListResponse()
     {
         var labels = new Dictionary<string, string> { { LanguageConst.Nb, NbLabel }, { LanguageConst.En, EnLabel } };
-        var descriptions = new Dictionary<string, string> { { LanguageConst.Nb, NbDescription }, { LanguageConst.En, EnDescription } };
-        var helpTexts = new Dictionary<string, string> { { LanguageConst.En, EnHelpText }, { LanguageConst.Nb, NbHelpText } };
+        var descriptions = new Dictionary<string, string>
+        {
+            { LanguageConst.Nb, NbDescription },
+            { LanguageConst.En, EnDescription },
+        };
+        var helpTexts = new Dictionary<string, string>
+        {
+            { LanguageConst.En, EnHelpText },
+            { LanguageConst.Nb, NbHelpText },
+        };
 
         return GetAltinn3LibraryCodeListResponse(labels, descriptions, helpTexts);
     }

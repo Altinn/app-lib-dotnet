@@ -18,7 +18,7 @@ public class AppOptionsFactoryTests
         {
             var services = new ServiceCollection();
             services.AddAppImplementationFactory();
-            services.AddSingleton(new Mock<IAppOptionsFileHandler>().Object);
+            services.AddSingleton(new Mock<IAppOptionsFileHandler>(MockBehavior.Strict).Object);
             services.AddSingleton<AppOptionsFactory>();
             configure?.Invoke(services);
             var serviceProvider = services.BuildStrictServiceProvider();
