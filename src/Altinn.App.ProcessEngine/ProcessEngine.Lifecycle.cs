@@ -92,9 +92,9 @@ internal partial class ProcessEngine
     private void RemoveJobAndReleaseQueueSlot(ProcessEngineJob job)
     {
         _logger.LogTrace("Releasing queue slot");
-        bool removed = _inbox.TryRemove(job.Identifier, out _);
+        bool removed = _inbox.TryRemove(job.Key, out _);
         if (!removed)
-            throw new InvalidOperationException($"Unable to release queue slot {job.Identifier}");
+            throw new InvalidOperationException($"Unable to release queue slot {job.Key}");
 
         _inboxCapacityLimit.Release();
     }

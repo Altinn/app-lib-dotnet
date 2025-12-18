@@ -50,7 +50,7 @@ public class ProcessEngineController : ControllerBase
 
         var processEngineRequest = request.ToProcessEngineRequest(instanceInformation);
 
-        if (_processEngine.HasDuplicateJob(processEngineRequest.JobIdentifier))
+        if (_processEngine.HasDuplicateJob(processEngineRequest.Key))
             return Ok(); // TODO: 200-OK for duplicates. Perhaps this should be another code at some points?
 
         var response = await _processEngine.EnqueueJob(processEngineRequest);

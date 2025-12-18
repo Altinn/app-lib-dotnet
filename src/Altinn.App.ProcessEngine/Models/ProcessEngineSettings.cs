@@ -28,6 +28,11 @@ public sealed record ProcessEngineSettings
     public ProcessEngineRetryStrategy DefaultTaskRetryStrategy { get; set; } = Defaults.DefaultTaskRetryStrategy;
 
     /// <summary>
+    /// The retry strategy for database operations.
+    /// </summary>
+    public ProcessEngineRetryStrategy DatabaseRetryStrategy { get; set; } = Defaults.DefaultDatabaseRetryStrategy;
+
+    /// <summary>
     /// The full endpoint URL for application callbacks. String template supports all properties from <see cref="InstanceInformation"/>.
     /// </summary>
     public string AppCommandEndpoint { get; set; } =

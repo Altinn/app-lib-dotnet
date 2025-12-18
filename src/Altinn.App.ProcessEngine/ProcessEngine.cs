@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Altinn.App.ProcessEngine.Data;
 using Altinn.App.ProcessEngine.Exceptions;
 using Altinn.App.ProcessEngine.Extensions;
 using Altinn.App.ProcessEngine.Models;
@@ -14,7 +15,10 @@ internal interface IProcessEngine
     int InboxCount { get; }
     Task Start(CancellationToken cancellationToken = default);
     Task Stop();
-    Task<ProcessEngineResponse> EnqueueJob(ProcessEngineRequest request, CancellationToken cancellationToken = default);
+    Task<ProcessEngineResponse> EnqueueJob(
+        ProcessEngineJobRequest jobRequest,
+        CancellationToken cancellationToken = default
+    );
     bool HasDuplicateJob(string jobIdentifier);
     bool HasQueuedJobForInstance(InstanceInformation instanceInformation);
     ProcessEngineJob? GetJobForInstance(InstanceInformation instanceInformation);
@@ -39,10 +43,12 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
     private SemaphoreSlim _inboxCapacityLimit;
     private volatile bool _cleanupRequired;
     private bool _disposed;
+    private readonly IOptionsMonitor<ProcessEngineSettings> _settings;
 
+    private IProcessEngineRepository _repository => _serviceProvider.GetRequiredService<IProcessEngineRepository>();
     public ProcessEngineHealthStatus Status { get; private set; }
     public int InboxCount => _inbox.Count;
-    public ProcessEngineSettings Settings { get; }
+    public ProcessEngineSettings Settings => _settings.CurrentValue;
 
     public ProcessEngine(IServiceProvider serviceProvider)
     {
@@ -50,7 +56,7 @@ internal partial class ProcessEngine : IProcessEngine, IDisposable
         _logger = serviceProvider.GetRequiredService<ILogger<ProcessEngine>>();
         _taskHandler = serviceProvider.GetRequiredService<IProcessEngineTaskHandler>();
         _timeProvider = serviceProvider.GetService<TimeProvider>() ?? TimeProvider.System;
-        Settings = serviceProvider.GetRequiredService<IOptions<ProcessEngineSettings>>().Value;
+        _settings = serviceProvider.GetRequiredService<IOptionsMonitor<ProcessEngineSettings>>();
 
         InitializeInbox();
     }
