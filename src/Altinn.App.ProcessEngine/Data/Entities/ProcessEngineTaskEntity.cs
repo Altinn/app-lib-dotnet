@@ -6,7 +6,7 @@ using Altinn.App.ProcessEngine.Models;
 namespace Altinn.App.ProcessEngine.Data.Entities;
 
 [Table("process_engine_tasks")]
-internal sealed class ProcessEngineTaskEntity
+internal sealed class ProcessEngineTaskEntity : IWithCommonJobMeta
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
