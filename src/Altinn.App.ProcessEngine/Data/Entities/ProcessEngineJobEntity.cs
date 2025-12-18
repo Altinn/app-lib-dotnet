@@ -5,7 +5,7 @@ using Altinn.App.ProcessEngine.Models;
 namespace Altinn.App.ProcessEngine.Data.Entities;
 
 [Table("process_engine_jobs")]
-internal sealed class ProcessEngineJobEntity
+internal sealed class ProcessEngineJobEntity : IWithCommonJobMeta
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

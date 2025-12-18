@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using Altinn.App.ProcessEngine.JsonConverters;
 
 namespace Altinn.App.ProcessEngine.Models;
 
 /// <summary>
 /// Defines backoff types for retry strategies.
 /// </summary>
-[JsonConverter(typeof(HumanReadableEnumConverter<ProcessEngineBackoffType>))]
+[JsonConverter(typeof(FlexibleEnumConverter<ProcessEngineBackoffType>))]
 public enum ProcessEngineBackoffType
 {
     /// <summary>

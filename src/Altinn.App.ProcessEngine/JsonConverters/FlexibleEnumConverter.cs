@@ -1,13 +1,13 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.ProcessEngine.Models;
+namespace Altinn.App.ProcessEngine.JsonConverters;
 
 /// <summary>
 /// Generic JSON converter for enums that supports both string and numeric values.
 /// </summary>
 /// <typeparam name="TEnum">The enum type to convert</typeparam>
-public class HumanReadableEnumConverter<TEnum> : JsonConverter<TEnum>
+public class FlexibleEnumConverter<TEnum> : JsonConverter<TEnum>
     where TEnum : struct, Enum
 {
     public override TEnum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
