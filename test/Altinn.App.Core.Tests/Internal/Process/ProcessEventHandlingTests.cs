@@ -1,4 +1,5 @@
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Events;
@@ -249,7 +250,7 @@ public class ProcessEventHandlingTests
                     CurrentTask = new()
                     {
                         ElementId = "Task_1",
-                        AltinnTaskType = "data",
+                        AltinnTaskType = AltinnTaskTypes.Data,
                         Name = "Utfylling",
                         Flow = 1,
                     },
@@ -320,7 +321,7 @@ public class ProcessEventHandlingTests
                     CurrentTask = new()
                     {
                         ElementId = "Task_2",
-                        AltinnTaskType = "confirmation",
+                        AltinnTaskType = AltinnTaskTypes.Confirmation,
                         Name = "Bekreft",
                         Flow = 2,
                     },
@@ -464,7 +465,7 @@ public class ProcessEventHandlingTests
                     CurrentTask = new()
                     {
                         ElementId = "Task_2",
-                        AltinnTaskType = "confirmation",
+                        AltinnTaskType = AltinnTaskTypes.Confirmation,
                         Name = "Bekreft",
                         Flow = 2,
                     },

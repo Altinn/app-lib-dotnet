@@ -1,4 +1,5 @@
 using System.Net;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Payment;
 using Altinn.App.Core.Features.Payment.Exceptions;
@@ -58,7 +59,7 @@ public sealed class PaymentServiceTests
         Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d",
         Process = new ProcessState
         {
-            CurrentTask = new ProcessElementInfo { AltinnTaskType = "payment", ElementId = "Task_1" },
+            CurrentTask = new ProcessElementInfo { AltinnTaskType = AltinnTaskTypes.Payment, ElementId = "Task_1" },
         },
         Data = [],
     };

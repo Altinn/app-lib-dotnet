@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Security.Claims;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
@@ -160,7 +160,7 @@ public sealed class ProcessEngineTest
                 {
                     ElementId = "Task_1",
                     Flow = 2,
-                    AltinnTaskType = "data",
+                    AltinnTaskType = AltinnTaskTypes.Data,
                     FlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext.ToString(),
                     Name = "Utfylling",
                 },
@@ -220,7 +220,7 @@ public sealed class ProcessEngineTest
                     {
                         ElementId = "Task_1",
                         Name = "Utfylling",
-                        AltinnTaskType = "data",
+                        AltinnTaskType = AltinnTaskTypes.Data,
                         Flow = 2,
                         Validated = new() { CanCompleteTask = false },
                     },
@@ -302,7 +302,7 @@ public sealed class ProcessEngineTest
                 {
                     ElementId = "Task_1",
                     Flow = 2,
-                    AltinnTaskType = "data",
+                    AltinnTaskType = AltinnTaskTypes.Data,
                     FlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext.ToString(),
                     Name = "Utfylling",
                 },
@@ -351,7 +351,7 @@ public sealed class ProcessEngineTest
                     {
                         ElementId = "Task_1",
                         Name = "Utfylling",
-                        AltinnTaskType = "data",
+                        AltinnTaskType = AltinnTaskTypes.Data,
                         Flow = 2,
                         Validated = new() { CanCompleteTask = false },
                     },
@@ -548,7 +548,7 @@ public sealed class ProcessEngineTest
                 CurrentTask = new()
                 {
                     ElementId = "Task_2",
-                    AltinnTaskType = "confirmation",
+                    AltinnTaskType = AltinnTaskTypes.Confirmation,
                     Flow = 3,
                     Validated = new() { CanCompleteTask = true },
                 },
@@ -587,7 +587,7 @@ public sealed class ProcessEngineTest
                 {
                     ElementId = "Task_2",
                     Flow = 3,
-                    AltinnTaskType = "confirmation",
+                    AltinnTaskType = AltinnTaskTypes.Confirmation,
                     FlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext.ToString(),
                     Name = "Bekreft",
                 },
@@ -615,7 +615,7 @@ public sealed class ProcessEngineTest
                 CurrentTask = new()
                 {
                     ElementId = "Task_1",
-                    AltinnTaskType = "data",
+                    AltinnTaskType = AltinnTaskTypes.Data,
                     Flow = 2,
                     Validated = new() { CanCompleteTask = true },
                 },
@@ -669,7 +669,7 @@ public sealed class ProcessEngineTest
                     {
                         ElementId = "Task_1",
                         Flow = 2,
-                        AltinnTaskType = "data",
+                        AltinnTaskType = AltinnTaskTypes.Data,
                         Validated = new() { CanCompleteTask = true },
                     },
                 },
@@ -692,7 +692,7 @@ public sealed class ProcessEngineTest
                     {
                         ElementId = "Task_2",
                         Name = "Bekreft",
-                        AltinnTaskType = "confirmation",
+                        AltinnTaskType = AltinnTaskTypes.Confirmation,
                         FlowType = ProcessSequenceFlowType.CompleteCurrentMoveToNext.ToString(),
                         Flow = 3,
                     },
@@ -753,7 +753,7 @@ public sealed class ProcessEngineTest
                 {
                     ElementId = "Task_2",
                     Flow = 3,
-                    AltinnTaskType = "confirmation",
+                    AltinnTaskType = AltinnTaskTypes.Confirmation,
                     FlowType = ProcessSequenceFlowType.AbandonCurrentMoveToNext.ToString(),
                     Name = "Bekreft",
                 },
@@ -778,7 +778,7 @@ public sealed class ProcessEngineTest
                 CurrentTask = new()
                 {
                     ElementId = "Task_1",
-                    AltinnTaskType = "data",
+                    AltinnTaskType = AltinnTaskTypes.Data,
                     Flow = 2,
                     Validated = new() { CanCompleteTask = true },
                 },
@@ -830,7 +830,7 @@ public sealed class ProcessEngineTest
                     {
                         ElementId = "Task_1",
                         Flow = 2,
-                        AltinnTaskType = "data",
+                        AltinnTaskType = AltinnTaskTypes.Data,
                         Validated = new() { CanCompleteTask = true },
                     },
                 },
@@ -853,7 +853,7 @@ public sealed class ProcessEngineTest
                     {
                         ElementId = "Task_2",
                         Name = "Bekreft",
-                        AltinnTaskType = "confirmation",
+                        AltinnTaskType = AltinnTaskTypes.Confirmation,
                         FlowType = ProcessSequenceFlowType.AbandonCurrentMoveToNext.ToString(),
                         Flow = 3,
                     },
@@ -950,7 +950,7 @@ public sealed class ProcessEngineTest
                 CurrentTask = new()
                 {
                     ElementId = "Task_2",
-                    AltinnTaskType = "confirmation",
+                    AltinnTaskType = AltinnTaskTypes.Confirmation,
                     Flow = 3,
                     Validated = new() { CanCompleteTask = true },
                 },
@@ -1000,7 +1000,7 @@ public sealed class ProcessEngineTest
                     {
                         ElementId = "Task_2",
                         Flow = 3,
-                        AltinnTaskType = "confirmation",
+                        AltinnTaskType = AltinnTaskTypes.Confirmation,
                         Validated = new() { CanCompleteTask = true },
                     },
                 },
@@ -1109,7 +1109,7 @@ public sealed class ProcessEngineTest
                 {
                     ElementId = "Task_1",
                     Flow = 3,
-                    AltinnTaskType = "confirmation",
+                    AltinnTaskType = AltinnTaskTypes.Confirmation,
                     Validated = new() { CanCompleteTask = true },
                 },
             },
@@ -1128,7 +1128,7 @@ public sealed class ProcessEngineTest
                 {
                     ElementId = "Task_1",
                     Flow = 3,
-                    AltinnTaskType = "confirmation",
+                    AltinnTaskType = AltinnTaskTypes.Confirmation,
                     Validated = new() { CanCompleteTask = true },
                 },
             },
@@ -1154,7 +1154,7 @@ public sealed class ProcessEngineTest
                     {
                         ElementId = "Task_1",
                         Flow = 2,
-                        AltinnTaskType = "data",
+                        AltinnTaskType = AltinnTaskTypes.Data,
                         Validated = new() { CanCompleteTask = true },
                     },
                 },
@@ -1263,7 +1263,7 @@ public sealed class ProcessEngineTest
                         Incoming = new List<string> { "Flow_1" },
                         Outgoing = new List<string> { "Flow_2" },
                         Name = "Utfylling",
-                        ExtensionElements = new() { TaskExtension = new() { TaskType = "data" } },
+                        ExtensionElements = new() { TaskExtension = new() { TaskType = AltinnTaskTypes.Data } },
                     }
                 );
             processNavigatorMock
@@ -1275,7 +1275,7 @@ public sealed class ProcessEngineTest
                         Incoming = new List<string> { "Flow_2" },
                         Outgoing = new List<string> { "Flow_3" },
                         Name = "Bekreft",
-                        ExtensionElements = new() { TaskExtension = new() { TaskType = "confirmation" } },
+                        ExtensionElements = new() { TaskExtension = new() { TaskType = AltinnTaskTypes.Confirmation } },
                     }
                 );
             processNavigatorMock

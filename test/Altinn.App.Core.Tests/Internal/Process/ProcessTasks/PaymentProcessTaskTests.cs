@@ -1,3 +1,4 @@
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
@@ -265,7 +266,7 @@ public class PaymentProcessTaskTests
             AppId = "ttd/test",
             Process = new ProcessState
             {
-                CurrentTask = new ProcessElementInfo { AltinnTaskType = "payment", ElementId = "Task_1" },
+                CurrentTask = new ProcessElementInfo { AltinnTaskType = AltinnTaskTypes.Payment, ElementId = "Task_1" },
             },
         };
     }
