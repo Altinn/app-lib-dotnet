@@ -28,17 +28,15 @@ public class StorageClientInterceptor : HttpMessageHandler
     private ConcurrentDictionary<string, Instance> _instances = new();
     private ConcurrentDictionary<Guid, byte[]> _data = new();
 
-    public StorageClientInterceptor(string org = "ttd", string app = "mocked-test-app")
+    public StorageClientInterceptor(ApplicationMetadata appMetadata)
     {
-        AppMetadata = new($"{org}/{app}")
+        AppMetadata = appMetadata;
+        AppMetadata.Title ??= new()
         {
-            Title = new Dictionary<string, string>
-            {
-                { LanguageConst.Nb, "Testapplikasjon" },
-                { LanguageConst.En, "Mocked Test App" },
-            },
-            DataTypes = [],
+            { LanguageConst.Nb, "Testapplikasjon" },
+            { LanguageConst.En, "Mocked Test App" },
         };
+        AppMetadata.DataTypes ??= [];
     }
 
     public ConcurrentBag<RequestResponse> RequestsResponses { get; } = new();
@@ -46,6 +44,8 @@ public class StorageClientInterceptor : HttpMessageHandler
 
     public void AddInstance(Instance instance)
     {
+        instance.Data ??= [];
+        instance.AppId ??= AppMetadata.Id;
         instance.Data ??= [];
         _instances[instance.Id] = instance;
     }
