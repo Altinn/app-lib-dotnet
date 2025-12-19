@@ -117,7 +117,7 @@ public class InstancesController_ActiveInstancesTest
             .Verify(c =>
                 c.GetInstances(
                     It.Is<Dictionary<string, StringValues>>(query => query.ContainsKey("appId")),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             );
@@ -182,7 +182,7 @@ public class InstancesController_ActiveInstancesTest
             .Verify(c =>
                 c.GetInstances(
                     It.Is<Dictionary<string, StringValues>>(query => query.ContainsKey("appId")),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             );
@@ -248,7 +248,7 @@ public class InstancesController_ActiveInstancesTest
             .Verify(c =>
                 c.GetInstances(
                     It.Is<Dictionary<string, StringValues>>(query => query.ContainsKey("appId")),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             );
@@ -315,7 +315,7 @@ public class InstancesController_ActiveInstancesTest
             .Verify(c =>
                 c.GetInstances(
                     It.Is<Dictionary<string, StringValues>>(query => query.ContainsKey("appId")),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             );
@@ -381,7 +381,7 @@ public class InstancesController_ActiveInstancesTest
             .Verify(c =>
                 c.GetInstances(
                     It.Is<Dictionary<string, StringValues>>(query => query.ContainsKey("appId")),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             );

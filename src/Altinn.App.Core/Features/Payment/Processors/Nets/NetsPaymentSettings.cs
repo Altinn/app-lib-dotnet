@@ -16,7 +16,7 @@ public class NetsPaymentSettings
     /// Key used to validate webhook callbacks from Nets Easy. Should be set in the secret manager being used. Never check in to source control.
     /// </summary>
     /// <remarks>
-    /// The credentials that will be sent in the HTTP Authorization request header of the callback. Must be between 8 and 32 characters long and contain alphanumeric characters.
+    /// The credentials that will be sent in the HTTP Authorization request header of the callback. Must be between 8 and 64 characters long and contain alphanumeric characters.
     /// Length: 8-64
     /// Pattern: @^[a-zA-Z0-9\-= ]*$
     /// </remarks>

@@ -490,6 +490,17 @@ public sealed class InstanceClientTests : IDisposable
         _handlerMock.VerifyAll();
     }
 
+    private static string CreateDummyJwt()
+    {
+        static string B64Url(string s) =>
+            Convert.ToBase64String(Encoding.UTF8.GetBytes(s)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+        var header = B64Url("{\"alg\":\"none\",\"typ\":\"JWT\"}");
+        var payload = B64Url("{\"sub\":\"123\",\"name\":\"dummy\"}");
+        var sig = B64Url("sig");
+        return $"{header}.{payload}.{sig}";
+    }
+
     private void InitializeMocks(HttpResponseMessage[] httpResponseMessages, string[] urlPart)
     {
         PlatformSettings platformSettings = new PlatformSettings
@@ -501,11 +512,7 @@ public sealed class InstanceClientTests : IDisposable
 
         _authenticationTokenResolver
             .Setup(s => s.GetAccessToken(It.IsAny<AuthenticationMethod>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(
-                JwtToken.Parse(
-                    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30"
-                )
-            );
+            .ReturnsAsync(JwtToken.Parse(CreateDummyJwt()));
 
         if (httpResponseMessages.Length == 2)
         {

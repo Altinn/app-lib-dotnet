@@ -10,8 +10,10 @@ partial class Telemetry
             .StartActivity($"{Payment.Prefix}.CalculateOrderDetails")
             ?.AddTag("calculatorType", calculator.GetType().FullName);
 
+    internal Activity? StartPaymentServiceActivity() => ActivitySource.StartActivity($"{Payment.Prefix}.StartPayment");
+
     internal static class Payment
     {
-        internal const string Prefix = "Payment";
+        internal const string Prefix = "PaymentService";
     }
 }

@@ -81,12 +81,6 @@ public class ProcessEventHandlingTests
         }
     }
 
-    private readonly List<IServiceTask> _serviceTasks =
-    [
-        new Mock<IPdfServiceTask>().Object,
-        new Mock<IEFormidlingServiceTask>().Object,
-    ];
-
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_StartEvent_instance_updated_and_events_sent_to_storage()
     {
@@ -552,7 +546,7 @@ public class ProcessEventHandlingTests
             .Setup(i =>
                 i.UpdateProcessAndEvents(
                     instance,
-                    new(),
+                    It.IsAny<List<InstanceEvent>>(),
                     It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -572,7 +566,7 @@ public class ProcessEventHandlingTests
                 i =>
                     i.UpdateProcessAndEvents(
                         instance,
-                        new(),
+                        It.IsAny<List<InstanceEvent>>(),
                         It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),

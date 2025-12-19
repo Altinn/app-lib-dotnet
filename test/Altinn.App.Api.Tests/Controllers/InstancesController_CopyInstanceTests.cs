@@ -427,7 +427,7 @@ public class InstancesController_CopyInstanceTests
             .Setup(i =>
                 i.GetInstance(
                     It.IsAny<Instance>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -458,7 +458,7 @@ public class InstancesController_CopyInstanceTests
                 p.GetFormData(
                     It.IsAny<Instance>(),
                     It.IsAny<DataElement>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -470,7 +470,7 @@ public class InstancesController_CopyInstanceTests
                     It.IsAny<Instance>(),
                     dataTypeId,
                     It.IsAny<object>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -606,7 +606,7 @@ public class InstancesController_CopyInstanceTests
                 p.GetFormData(
                     It.Is<Instance>(i => i.Id == instance.Id),
                     It.Is<DataElement>(d => d.Id == formDataGuid.ToString()),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -618,7 +618,7 @@ public class InstancesController_CopyInstanceTests
                     It.Is<Instance>(i => i.Id == instance.Id),
                     formDataTypeId,
                     It.IsAny<object>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -631,7 +631,7 @@ public class InstancesController_CopyInstanceTests
                     instanceOwnerPartyId,
                     instanceGuid,
                     binaryDataGuid,
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -646,7 +646,7 @@ public class InstancesController_CopyInstanceTests
                     "test.pdf",
                     It.IsAny<Stream>(),
                     It.IsAny<string>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -667,7 +667,7 @@ public class InstancesController_CopyInstanceTests
                     p.GetFormData(
                         It.IsAny<Instance>(),
                         It.IsAny<DataElement>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -680,7 +680,7 @@ public class InstancesController_CopyInstanceTests
                         It.IsAny<Instance>(),
                         formDataTypeId,
                         It.IsAny<object>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -695,7 +695,7 @@ public class InstancesController_CopyInstanceTests
                         instanceOwnerPartyId,
                         instanceGuid,
                         binaryDataGuid,
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -711,7 +711,7 @@ public class InstancesController_CopyInstanceTests
                         "test.pdf",
                         It.IsAny<Stream>(),
                         It.IsAny<string>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -801,7 +801,7 @@ public class InstancesController_CopyInstanceTests
             .Setup(i =>
                 i.GetInstance(
                     It.IsAny<Instance>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -831,7 +831,7 @@ public class InstancesController_CopyInstanceTests
                 p.GetFormData(
                     It.Is<Instance>(i => i.Id == instance.Id),
                     It.Is<DataElement>(d => d.Id == formDataGuid.ToString()),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -843,7 +843,7 @@ public class InstancesController_CopyInstanceTests
                     It.Is<Instance>(i => i.Id == instance.Id),
                     formDataTypeId,
                     It.IsAny<object>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -857,7 +857,7 @@ public class InstancesController_CopyInstanceTests
                     instanceOwnerPartyId,
                     instanceGuid,
                     binaryDataGuid,
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -872,7 +872,7 @@ public class InstancesController_CopyInstanceTests
                     "sensitive.pdf",
                     It.IsAny<Stream>(),
                     It.IsAny<string>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -893,7 +893,7 @@ public class InstancesController_CopyInstanceTests
                     p.GetFormData(
                         It.Is<Instance>(i => i.Id == instance.Id),
                         It.Is<DataElement>(d => d.Id == formDataGuid.ToString()),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -906,7 +906,7 @@ public class InstancesController_CopyInstanceTests
                         It.Is<Instance>(i => i.Id == instance.Id),
                         formDataTypeId,
                         It.IsAny<object>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -921,7 +921,7 @@ public class InstancesController_CopyInstanceTests
                         instanceOwnerPartyId,
                         instanceGuid,
                         binaryDataGuid,
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Never
@@ -937,7 +937,7 @@ public class InstancesController_CopyInstanceTests
                         "sensitive.pdf",
                         It.IsAny<Stream>(),
                         It.IsAny<string>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Never
@@ -1025,7 +1025,7 @@ public class InstancesController_CopyInstanceTests
             .Setup(i =>
                 i.GetInstance(
                     It.IsAny<Instance>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -1056,7 +1056,7 @@ public class InstancesController_CopyInstanceTests
                     instanceOwnerPartyId,
                     instanceGuid,
                     binaryDataGuid,
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -1071,7 +1071,7 @@ public class InstancesController_CopyInstanceTests
                     "test.pdf",
                     It.IsAny<Stream>(),
                     It.IsAny<string>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -1093,7 +1093,7 @@ public class InstancesController_CopyInstanceTests
                         instanceOwnerPartyId,
                         instanceGuid,
                         binaryDataGuid,
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -1109,7 +1109,7 @@ public class InstancesController_CopyInstanceTests
                         "test.pdf",
                         It.IsAny<Stream>(),
                         It.IsAny<string>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -1127,7 +1127,7 @@ public class InstancesController_CopyInstanceTests
                         It.IsAny<string>(),
                         It.IsAny<int>(),
                         It.IsAny<Guid>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Never
@@ -1144,7 +1144,7 @@ public class InstancesController_CopyInstanceTests
                         It.IsAny<string>(),
                         It.IsAny<int>(),
                         It.IsAny<string>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Never
@@ -1156,7 +1156,7 @@ public class InstancesController_CopyInstanceTests
                     p.GetFormData(
                         It.IsAny<Instance>(),
                         It.IsAny<DataElement>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Never
@@ -1169,7 +1169,7 @@ public class InstancesController_CopyInstanceTests
                         It.IsAny<Instance>(),
                         It.IsAny<string>(),
                         It.IsAny<object>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Never
@@ -1256,7 +1256,7 @@ public class InstancesController_CopyInstanceTests
             .Setup(i =>
                 i.GetInstance(
                     It.IsAny<Instance>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -1287,7 +1287,7 @@ public class InstancesController_CopyInstanceTests
                     instanceOwnerPartyId,
                     instanceGuid,
                     binaryDataGuid,
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -1302,7 +1302,7 @@ public class InstancesController_CopyInstanceTests
                     "only-binary.pdf",
                     It.IsAny<Stream>(),
                     It.IsAny<string>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -1324,7 +1324,7 @@ public class InstancesController_CopyInstanceTests
                         instanceOwnerPartyId,
                         instanceGuid,
                         binaryDataGuid,
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Never
@@ -1340,7 +1340,7 @@ public class InstancesController_CopyInstanceTests
                         "only-binary.pdf",
                         It.IsAny<Stream>(),
                         It.IsAny<string>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Never
@@ -1358,7 +1358,7 @@ public class InstancesController_CopyInstanceTests
                         It.IsAny<string>(),
                         It.IsAny<int>(),
                         It.IsAny<Guid>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Never
@@ -1375,7 +1375,7 @@ public class InstancesController_CopyInstanceTests
                         It.IsAny<string>(),
                         It.IsAny<int>(),
                         It.IsAny<string>(),
-                        It.IsAny<StorageAuthenticationMethod>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Never

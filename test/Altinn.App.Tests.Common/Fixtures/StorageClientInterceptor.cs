@@ -46,7 +46,6 @@ public class StorageClientInterceptor : HttpMessageHandler
     {
         instance.Data ??= [];
         instance.AppId ??= AppMetadata.Id;
-        instance.Data ??= [];
         _instances[instance.Id] = instance;
     }
 

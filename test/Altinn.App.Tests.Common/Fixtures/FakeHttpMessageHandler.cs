@@ -1,5 +1,7 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http.Headers;
 
 namespace Altinn.App.Tests.Common.Fixtures;
 
@@ -40,6 +42,7 @@ public abstract class Endpoint
 public class FakeHttpMessageHandler : HttpMessageHandler
 {
     public ActivitySource ActivitySource { get; } = new("Altinn.App.Tests.Common.Fixtures.FakeHttpMessageHandler");
+    public ConcurrentBag<RequestResponse> RequestResponses { get; } = new();
 
     /// <summary>
     /// Simple implementation of an endpoint that matches HttpMethods and URL patterns with wildcards.
@@ -72,8 +75,14 @@ public class FakeHttpMessageHandler : HttpMessageHandler
             {
                 return false;
             }
-            var url = request.RequestUri?.AbsolutePath ?? throw new InvalidOperationException("Request URI is null");
-            return MatchUrlPattern(_urlPattern, url);
+            if (_urlPattern.StartsWith('/'))
+            {
+                var url =
+                    request.RequestUri?.AbsolutePath ?? throw new InvalidOperationException("Request URI is null");
+                return MatchUrlPattern(_urlPattern, url);
+            }
+            var fullUrl = request.RequestUri?.ToString() ?? throw new InvalidOperationException("Request URI is null");
+            return MatchUrlPattern(_urlPattern, fullUrl);
         }
 
         /// <summary>
@@ -196,6 +205,28 @@ public class FakeHttpMessageHandler : HttpMessageHandler
         _endpoints.Add(endpoint);
     }
 
+    public void RegisterJsonEndpoint<T>(HttpMethod method, string urlPattern, T responseObject, int minimumCalls = 1)
+    {
+        RegisterEndpoint(
+            method,
+            urlPattern,
+            request =>
+                Task.FromResult(
+                    new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(responseObject))
+                        {
+                            Headers =
+                            {
+                                ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json"),
+                            },
+                        },
+                    }
+                ),
+            minimumCalls
+        );
+    }
+
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken
@@ -204,6 +235,11 @@ public class FakeHttpMessageHandler : HttpMessageHandler
         using var activity = ActivitySource.StartActivity("FakeHttpMessageHandler.SendAsync");
         activity?.SetTag("method", request.Method.ToString());
         activity?.SetTag("url", request.RequestUri?.ToString() ?? "null");
+        if (request.Content is not null)
+        {
+            // Ensure content is buffered for multiple reads
+            await request.Content.LoadIntoBufferAsync();
+        }
         var endpoints = _endpoints.Where(e => e.Matches(request)).ToList();
         if (endpoints.Count == 0)
         {
@@ -227,7 +263,13 @@ public class FakeHttpMessageHandler : HttpMessageHandler
             throw exception;
         }
         activity?.SetTag("endpoint", endpoints[0].Name);
-        return await endpoints[0].Handle(request);
+        var response = await endpoints[0].Handle(request);
+        activity?.SetTag("responseStatusCode", (int)response.StatusCode);
+        var responsString = await response.Content.ReadAsStringAsync(cancellationToken);
+        activity?.SetTag("responseContent", responsString.Substring(0, Math.Min(responsString.Length, 30)));
+
+        RequestResponses.Add(await RequestResponse.FromHttpMessages(request, response));
+        return response;
     }
 
     public void Verify()
@@ -238,3 +280,34 @@ public class FakeHttpMessageHandler : HttpMessageHandler
         }
     }
 }
+
+public class RequestResponse
+{
+    public static async Task<RequestResponse> FromHttpMessages(
+        HttpRequestMessage request,
+        HttpResponseMessage response
+    ) =>
+        new()
+        {
+            RequestUrl = request.RequestUri,
+            RequestMethod = request.Method,
+            RequestHeaders = request.Headers,
+            RequestContentHeaders = request.Content?.Headers,
+            RequestContent = request.Content == null ? null : await request.Content.ReadAsStringAsync(),
+            ResponseStatusCode = response.StatusCode,
+            ResponseHeaders = response.Headers,
+            ResponseContentHeaders = response.Content.Headers,
+            ResponseContent = await response.Content.ReadAsStringAsync(),
+        };
+
+    public required Uri? RequestUrl { get; init; }
+    public required HttpMethod RequestMethod { get; init; }
+    public required HttpRequestHeaders RequestHeaders { get; init; }
+    public required HttpContentHeaders? RequestContentHeaders { get; init; }
+    public required string? RequestContent { get; init; }
+
+    public required HttpStatusCode ResponseStatusCode { get; init; }
+    public required HttpResponseHeaders ResponseHeaders { get; init; }
+    public required HttpContentHeaders ResponseContentHeaders { get; init; }
+    public required string ResponseContent { get; init; }
+};

@@ -57,6 +57,12 @@ internal class NetsPaymentProcessor : IPaymentProcessor
                 "Payer is missing in orderDetails. MerchantHandlesConsumerData is set to true. Payer must be provided."
             );
         }
+        if (string.IsNullOrEmpty(_settings.WebhookCallbackKey))
+        {
+            throw new PaymentException(
+                "WebhookCallbackKey is not configured in NetsPaymentSettings. It must be set to a secure random value."
+            );
+        }
 
         var payment = new NetsCreatePayment()
         {
@@ -99,8 +105,7 @@ internal class NetsPaymentProcessor : IPaymentProcessor
                     new NetsWebHook()
                     {
                         Authorization = _settings.WebhookCallbackKey,
-                        Url =
-                            $"{_generalSettings.FormattedExternalAppBaseUrl(_app)}instances/{instance.Id}/payment/nets-webhook-listener",
+                        Url = $"{baseUrl}instances/{instance.Id}/payment/nets-webhook-listener",
                         EventName = "payment.checkout.completed",
                     },
                 ],

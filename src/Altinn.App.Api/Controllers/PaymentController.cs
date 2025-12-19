@@ -66,6 +66,10 @@ public class PaymentController : ControllerBase
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        if (instance.Process?.CurrentTask?.ElementId == null)
+        {
+            return BadRequest("Instance has no current task");
+        }
         AltinnPaymentConfiguration? paymentConfiguration = _processReader
             .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
             ?.PaymentConfiguration;

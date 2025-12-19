@@ -58,87 +58,96 @@ internal class PaymentService : IPaymentService
         string? language
     )
     {
-        _logger.LogInformation("Starting payment for instance {InstanceId}.", instance.Id);
-
-        var orderDetailsCalculator = _appImplementationFactory.Get<IOrderDetailsCalculator>();
-        if (orderDetailsCalculator == null)
+        using var activity = _telemtry?.StartPaymentServiceActivity();
+        try
         {
-            throw new PaymentException(
-                "You must add an implementation of the IOrderDetailsCalculator interface to the DI container. See payment related documentation."
-            );
-        }
+            _logger.LogInformation("Starting payment for instance {InstanceId}.", instance.Id);
 
-        string dataTypeId = paymentConfiguration.PaymentDataType;
-
-        (Guid dataElementId, PaymentInformation? existingPaymentInformation) =
-            await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
-
-        if (existingPaymentInformation?.PaymentDetails != null)
-        {
-            if (existingPaymentInformation.Status == PaymentStatus.Paid)
+            var orderDetailsCalculator = _appImplementationFactory.Get<IOrderDetailsCalculator>();
+            if (orderDetailsCalculator == null)
             {
+                throw new PaymentException(
+                    "You must add an implementation of the IOrderDetailsCalculator interface to the DI container. See payment related documentation."
+                );
+            }
+
+            string dataTypeId = paymentConfiguration.PaymentDataType;
+
+            (Guid dataElementId, PaymentInformation? existingPaymentInformation) =
+                await _dataService.GetByType<PaymentInformation>(instance, dataTypeId);
+
+            if (existingPaymentInformation?.PaymentDetails != null)
+            {
+                if (existingPaymentInformation.Status == PaymentStatus.Paid)
+                {
+                    _logger.LogWarning(
+                        "Payment with payment id {PaymentId} already paid for instance {InstanceId}. Cannot start new payment.",
+                        existingPaymentInformation.PaymentDetails.PaymentId,
+                        instance.Id
+                    );
+
+                    return (existingPaymentInformation, true);
+                }
+
                 _logger.LogWarning(
-                    "Payment with payment id {PaymentId} already paid for instance {InstanceId}. Cannot start new payment.",
+                    "Payment with payment id {PaymentId} already started for instance {InstanceId}. Trying to cancel before creating new payment.",
                     existingPaymentInformation.PaymentDetails.PaymentId,
                     instance.Id
                 );
 
-                return (existingPaymentInformation, true);
+                await CancelAndDelete(instance, dataElementId, existingPaymentInformation);
             }
 
-            _logger.LogWarning(
-                "Payment with payment id {PaymentId} already started for instance {InstanceId}. Trying to cancel before creating new payment.",
-                existingPaymentInformation.PaymentDetails.PaymentId,
+            OrderDetails orderDetails;
+            using (var orderDetailsActivity = _telemtry?.StartCalculateOrderDetailsActivity(orderDetailsCalculator))
+            {
+                try
+                {
+                    orderDetails = await orderDetailsCalculator.CalculateOrderDetails(instance, language);
+                }
+                catch (Exception ex)
+                {
+                    orderDetailsActivity?.Errored(ex);
+                    throw;
+                }
+            }
+            var paymentProcessors = _appImplementationFactory.GetAll<IPaymentProcessor>();
+            IPaymentProcessor paymentProcessor =
+                paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == orderDetails.PaymentProcessorId)
+                ?? throw new PaymentException(
+                    $"Payment processor with ID '{orderDetails.PaymentProcessorId}' not found for instance {instance.Id}."
+                );
+
+            //If the sum of the order is 0, we can skip invoking the payment processor.
+            PaymentDetails? startedPayment =
+                orderDetails.TotalPriceIncVat > 0
+                    ? await paymentProcessor.StartPayment(instance, orderDetails, language)
+                    : null;
+
+            _logger.LogInformation(
+                startedPayment != null
+                    ? "Payment started successfully using {PaymentProcessorId} for instance {InstanceId}."
+                    : "Skipping starting payment using {PaymentProcessorId} since order sum is zero for instance {InstanceId}.",
+                paymentProcessor.PaymentProcessorId,
                 instance.Id
             );
 
-            await CancelAndDelete(instance, dataElementId, existingPaymentInformation);
-        }
-
-        OrderDetails orderDetails;
-        using (var activity = _telemtry?.StartCalculateOrderDetailsActivity(orderDetailsCalculator))
-        {
-            try
+            PaymentInformation paymentInformation = new()
             {
-                orderDetails = await orderDetailsCalculator.CalculateOrderDetails(instance, language);
-            }
-            catch (Exception ex)
-            {
-                activity?.Errored(ex);
-                throw;
-            }
+                TaskId = instance.Process.CurrentTask.ElementId,
+                Status = startedPayment != null ? PaymentStatus.Created : PaymentStatus.Skipped,
+                OrderDetails = orderDetails,
+                PaymentDetails = startedPayment,
+            };
+
+            await _dataService.InsertJsonObject(new InstanceIdentifier(instance), dataTypeId, paymentInformation);
+            return (paymentInformation, false);
         }
-        var paymentProcessors = _appImplementationFactory.GetAll<IPaymentProcessor>();
-        IPaymentProcessor paymentProcessor =
-            paymentProcessors.FirstOrDefault(p => p.PaymentProcessorId == orderDetails.PaymentProcessorId)
-            ?? throw new PaymentException(
-                $"Payment processor with ID '{orderDetails.PaymentProcessorId}' not found for instance {instance.Id}."
-            );
-
-        //If the sum of the order is 0, we can skip invoking the payment processor.
-        PaymentDetails? startedPayment =
-            orderDetails.TotalPriceIncVat > 0
-                ? await paymentProcessor.StartPayment(instance, orderDetails, language)
-                : null;
-
-        _logger.LogInformation(
-            startedPayment != null
-                ? "Payment started successfully using {PaymentProcessorId} for instance {InstanceId}."
-                : "Skipping starting payment using {PaymentProcessorId} since order sum is zero for instance {InstanceId}.",
-            paymentProcessor.PaymentProcessorId,
-            instance.Id
-        );
-
-        PaymentInformation paymentInformation = new()
+        catch (Exception ex)
         {
-            TaskId = instance.Process.CurrentTask.ElementId,
-            Status = startedPayment != null ? PaymentStatus.Created : PaymentStatus.Skipped,
-            OrderDetails = orderDetails,
-            PaymentDetails = startedPayment,
-        };
-
-        await _dataService.InsertJsonObject(new InstanceIdentifier(instance), dataTypeId, paymentInformation);
-        return (paymentInformation, false);
+            activity?.Errored(ex);
+            throw;
+        }
     }
 
     /// <inheritdoc/>
@@ -319,7 +328,18 @@ internal class PaymentService : IPaymentService
             token.Value
         );
         var response = await client.PutAsync($"instances/{instance.Id}/process/next", null);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError(
+                "Failed to advance process for instance {InstanceId} after payment completed webhook. Status code: {StatusCode}\n\n{content}",
+                instance.Id,
+                response.StatusCode,
+                await response.Content.ReadAsStringAsync()
+            );
+            throw new PaymentException(
+                $"Failed to advance process for instance {instance.Id} after payment completed webhook."
+            );
+        }
     }
 
     /// <inheritdoc/>
