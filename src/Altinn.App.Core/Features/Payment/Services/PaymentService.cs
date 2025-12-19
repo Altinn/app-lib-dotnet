@@ -1,4 +1,5 @@
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Processors;
@@ -299,7 +300,10 @@ internal class PaymentService : IPaymentService
             storageAuthenticationMethod
         );
 
-        if (paymentStatus == PaymentStatus.Paid)
+        if (
+            paymentStatus == PaymentStatus.Paid
+            && instance.Process.CurrentTask.AltinnTaskType == AltinnTaskTypes.Payment
+        )
         {
             await RunProcessNext(instance, storageAuthenticationMethod);
         }

@@ -170,7 +170,8 @@ public class FakeHttpMessageHandler : HttpMessageHandler
         string urlPattern,
         HttpStatusCode statusCode,
         string contentType,
-        string content
+        string content,
+        int minimumCalls = 1
     )
     {
         RegisterEndpoint(
@@ -185,7 +186,8 @@ public class FakeHttpMessageHandler : HttpMessageHandler
                             Headers = { ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType) },
                         },
                     }
-                )
+                ),
+            minimumCalls
         );
     }
 

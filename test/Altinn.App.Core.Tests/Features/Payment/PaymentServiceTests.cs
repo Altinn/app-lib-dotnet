@@ -584,6 +584,162 @@ public sealed class PaymentServiceTests
         _fixture.VerifyMocks();
     }
 
+    [Fact]
+    public async Task HandlePaymentCompletedWebhook_Calls_ProcessNextStep_WhenNetsSaysPaymentIsCompleted()
+    {
+        // Arrange
+        ValidAltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+        OrderDetails orderDetails = CreateOrderDetails();
+        PaymentInformation paymentInformation = CreatePaymentInformation();
+        paymentInformation.OrderDetails = orderDetails;
+
+        SetupPaymentProcessor(orderDetails);
+        _fixture
+            .Mock<IPaymentProcessor>()
+            .Setup(pp =>
+                pp.GetPaymentStatus(
+                    _instance,
+                    paymentInformation.PaymentDetails!.PaymentId,
+                    orderDetails.TotalPriceIncVat,
+                    null
+                )
+            )
+            .ReturnsAsync((PaymentStatus.Paid, paymentInformation.PaymentDetails!))
+            .Verifiable(Times.Once);
+
+        _fixture.FakeHttpMessageHandler.RegisterEndpoint(
+            HttpMethod.Put,
+            $"/{_instance.AppId}/instances/{_instance.Id}/process/next",
+            HttpStatusCode.OK,
+            "application/json",
+            "{}"
+        );
+
+        await using var sp = _fixture.BuildServiceProvider();
+
+        var dataService = sp.GetRequiredService<IDataService>();
+        await dataService.InsertJsonObject(new InstanceIdentifier(_instance), PaymentDataTypeId, paymentInformation);
+
+        // Act
+        var paymentService = sp.GetRequiredService<IPaymentService>();
+        await paymentService.HandlePaymentCompletedWebhook(
+            _instance,
+            paymentConfiguration,
+            StorageAuthenticationMethod.ServiceOwner()
+        );
+
+        // Assert
+        _fixture.VerifyMocks();
+    }
+
+    [Fact]
+    public async Task HandlePaymentCompletedWebhook_NotCalls_ProcessNextStep_WhenProcessIsAdvanced()
+    {
+        // Arrange
+        _instance.Process.CurrentTask = new ProcessElementInfo
+        {
+            AltinnTaskType = "someOtherTask", // Ensure that we are in the next task
+            ElementId = "Task_2",
+        };
+        ValidAltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+        OrderDetails orderDetails = CreateOrderDetails();
+        PaymentInformation paymentInformation = CreatePaymentInformation();
+        paymentInformation.OrderDetails = orderDetails;
+
+        SetupPaymentProcessor(orderDetails);
+        _fixture
+            .Mock<IPaymentProcessor>()
+            .Setup(pp =>
+                pp.GetPaymentStatus(
+                    _instance,
+                    paymentInformation.PaymentDetails!.PaymentId,
+                    orderDetails.TotalPriceIncVat,
+                    null
+                )
+            )
+            .ReturnsAsync((PaymentStatus.Paid, paymentInformation.PaymentDetails!))
+            .Verifiable(Times.Once);
+
+        // Disable the process/next endpoint to ensure it is not called
+        // _fixture.FakeHttpMessageHandler.RegisterEndpoint(
+        //     HttpMethod.Put,
+        //     $"/{_instance.AppId}/instances/{_instance.Id}/process/next",
+        //     HttpStatusCode.OK,
+        //     "application/json",
+        //     "{}"
+        // );
+
+        await using var sp = _fixture.BuildServiceProvider();
+
+        var dataService = sp.GetRequiredService<IDataService>();
+        await dataService.InsertJsonObject(new InstanceIdentifier(_instance), PaymentDataTypeId, paymentInformation);
+
+        // Act
+        var paymentService = sp.GetRequiredService<IPaymentService>();
+        await paymentService.HandlePaymentCompletedWebhook(
+            _instance,
+            paymentConfiguration,
+            StorageAuthenticationMethod.ServiceOwner()
+        );
+
+        // Assert
+        _fixture.VerifyMocks();
+    }
+
+    [Fact]
+    public async Task HandlePaymentCompletedWebhook_NotCalls_ProcessNextStep_WhenProcessPaymentIsNotCompete()
+    {
+        // Arrange
+        _instance.Process.CurrentTask = new ProcessElementInfo
+        {
+            AltinnTaskType = "someOtherTask", // Ensure that we are in the next task
+            ElementId = "Task_2",
+        };
+        ValidAltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+        OrderDetails orderDetails = CreateOrderDetails();
+        PaymentInformation paymentInformation = CreatePaymentInformation();
+        paymentInformation.OrderDetails = orderDetails;
+
+        SetupPaymentProcessor(orderDetails);
+        _fixture
+            .Mock<IPaymentProcessor>()
+            .Setup(pp =>
+                pp.GetPaymentStatus(
+                    _instance,
+                    paymentInformation.PaymentDetails!.PaymentId,
+                    orderDetails.TotalPriceIncVat,
+                    null
+                )
+            )
+            .ReturnsAsync((PaymentStatus.Created, paymentInformation.PaymentDetails!))
+            .Verifiable(Times.Once);
+
+        // Disable the process/next endpoint to ensure it is not called
+        // _fixture.FakeHttpMessageHandler.RegisterEndpoint(
+        //     HttpMethod.Put,
+        //     $"/{_instance.AppId}/instances/{_instance.Id}/process/next",
+        //     HttpStatusCode.OK,
+        //     "application/json",
+        //     "{}"
+        // );
+
+        await using var sp = _fixture.BuildServiceProvider();
+
+        var dataService = sp.GetRequiredService<IDataService>();
+        await dataService.InsertJsonObject(new InstanceIdentifier(_instance), PaymentDataTypeId, paymentInformation);
+
+        // Act
+        var paymentService = sp.GetRequiredService<IPaymentService>();
+        await paymentService.HandlePaymentCompletedWebhook(
+            _instance,
+            paymentConfiguration,
+            StorageAuthenticationMethod.ServiceOwner()
+        );
+
+        // Assert
+        _fixture.VerifyMocks();
+    }
+
     private static PaymentInformation CreatePaymentInformation()
     {
         return new PaymentInformation
