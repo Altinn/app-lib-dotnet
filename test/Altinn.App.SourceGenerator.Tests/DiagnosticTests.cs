@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using Altinn.App.Analyzers.FormDataWrapper;
@@ -216,10 +217,40 @@ public class DiagnosticTests
             .Select(static assembly => MetadataReference.CreateFromFile(assembly.Location))
             .Concat([MetadataReference.CreateFromFile(typeof(JsonPropertyNameAttribute).Assembly.Location)]);
 
+        var options = new AnalyzerOptions(additionalFiles, new TestAnalyzerConfigOptionsProvider());
         return await CSharpCompilation
             .Create("name", syntaxTrees, references, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .WithAnalyzers([new FormDataWrapperAnalyzer()], new AnalyzerOptions(additionalFiles))
+            .WithAnalyzers([new FormDataWrapperAnalyzer()], options)
             .GetAllDiagnosticsAsync();
+    }
+
+    private sealed class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
+    {
+        public override AnalyzerConfigOptions GlobalOptions { get; } = new TestGlobalOptions();
+
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => TestGlobalOptions.Empty;
+
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => TestGlobalOptions.Empty;
+
+        private sealed class TestGlobalOptions : AnalyzerConfigOptions
+        {
+            public static TestGlobalOptions Empty { get; } = new(isAltinnApp: false);
+
+            private readonly bool _isAltinnApp;
+
+            public TestGlobalOptions(bool isAltinnApp = true) => _isAltinnApp = isAltinnApp;
+
+            public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
+            {
+                if (key == "build_property.IsAltinnApp" && _isAltinnApp)
+                {
+                    value = "true";
+                    return true;
+                }
+                value = null;
+                return false;
+            }
+        }
     }
 
     private static async Task<ImmutableArray<Diagnostic>> RunFormDataWrapperAnalyzer(
