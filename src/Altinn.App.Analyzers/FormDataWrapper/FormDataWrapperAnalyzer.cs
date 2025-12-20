@@ -16,6 +16,9 @@ public class FormDataWrapperAnalyzer : DiagnosticAnalyzer
 
     private void CompilationAnalysisAction(CompilationAnalysisContext compilationContext)
     {
+        if (!IsAltinnApp(compilationContext))
+            return;
+
         var appMetadataFiles = compilationContext
             .Options.AdditionalFiles.Where(FormDataWrapperUtils.IsApplicationMetadataFile)
             .ToList();
@@ -74,5 +77,13 @@ public class FormDataWrapperAnalyzer : DiagnosticAnalyzer
         {
             compilationContext.ReportDiagnostic(diagnostic);
         }
+    }
+
+    private static bool IsAltinnApp(CompilationAnalysisContext context)
+    {
+        return context.Options.AnalyzerConfigOptionsProvider.GlobalOptions.TryGetValue(
+                "build_property.IsAltinnApp",
+                out var value
+            ) && string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 }
