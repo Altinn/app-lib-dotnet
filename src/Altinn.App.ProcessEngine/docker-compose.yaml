@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: altinn-postgres
+    environment:
+      POSTGRES_DB: altinn_processengine
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - altinn-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: altinn-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@altinn.no
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - altinn-network
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./.docker/servers.json:/pgadmin4/servers.json
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  altinn-network:
+    driver: bridge
