@@ -22,7 +22,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 /// <summary>
 /// A client for handling actions on instances in Altinn Platform.
 /// </summary>
-internal class InstanceClient : IInstanceClient
+internal sealed class InstanceClient : IInstanceClient
 {
     private readonly ILogger _logger;
     private readonly IAuthenticationTokenResolver _tokenResolver;

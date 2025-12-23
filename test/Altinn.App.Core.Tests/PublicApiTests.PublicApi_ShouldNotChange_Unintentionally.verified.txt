@@ -3053,14 +3053,14 @@ namespace Altinn.App.Core.Internal.Data
     }
     public interface IDataService
     {
-        System.Threading.Tasks.Task<bool> DeleteById(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, System.Guid dataElementId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
-        System.Threading.Tasks.Task<T> GetById<T>(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Guid dataElementId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
+        System.Threading.Tasks.Task<bool> DeleteById(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, System.Guid dataElementId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<T> GetById<T>(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Guid dataElementId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
         [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
                 "dataElementId",
                 "model"})]
-        System.Threading.Tasks.Task<System.ValueTuple<System.Guid, T?>> GetByType<T>(Altinn.Platform.Storage.Interface.Models.Instance instance, string dataTypeId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
-        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertJsonObject(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string dataTypeId, object data, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
-        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateJsonObject(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string dataTypeId, System.Guid dataElementId, object data, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
+        System.Threading.Tasks.Task<System.ValueTuple<System.Guid, T?>> GetByType<T>(Altinn.Platform.Storage.Interface.Models.Instance instance, string dataTypeId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertJsonObject(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string dataTypeId, object data, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateJsonObject(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string dataTypeId, System.Guid dataElementId, object data, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
     }
     public interface IFormDataWrapper
     {

@@ -237,7 +237,8 @@ public sealed class PaymentServiceTests
                 ds.GetByType<PaymentInformation>(
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync((Guid.Empty, null));
@@ -248,7 +249,8 @@ public sealed class PaymentServiceTests
                     It.IsAny<InstanceIdentifier>(),
                     It.IsAny<string>(),
                     It.IsAny<object>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ThrowsAsync(new Exception("Could not insert json object"));
@@ -385,7 +387,8 @@ public sealed class PaymentServiceTests
                 ds.GetByType<PaymentInformation>(
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync((Guid.NewGuid(), paymentInformation))
@@ -397,7 +400,8 @@ public sealed class PaymentServiceTests
                 ds.DeleteById(
                     It.IsAny<InstanceIdentifier>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(true)
@@ -410,7 +414,8 @@ public sealed class PaymentServiceTests
                     It.IsAny<InstanceIdentifier>(),
                     paymentConfiguration.PaymentDataType!,
                     It.IsAny<object>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(new DataElement())
@@ -451,7 +456,8 @@ public sealed class PaymentServiceTests
                     It.IsAny<InstanceIdentifier>(),
                     It.IsAny<string>(),
                     It.IsAny<object>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(new DataElement());
@@ -461,7 +467,8 @@ public sealed class PaymentServiceTests
                 ds.GetByType<PaymentInformation>(
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
@@ -493,7 +500,8 @@ public sealed class PaymentServiceTests
                     ds.DeleteById(
                         It.IsAny<InstanceIdentifier>(),
                         It.IsAny<Guid>(),
-                        It.IsAny<StorageAuthenticationMethod?>()
+                        It.IsAny<StorageAuthenticationMethod?>(),
+                        It.IsAny<CancellationToken>()
                     ),
                 Times.Never
             );
@@ -574,7 +582,12 @@ public sealed class PaymentServiceTests
         _fixture
             .Mock<IDataService>()
             .Setup(ds =>
-                ds.GetByType<PaymentInformation>(_instance, PaymentDataTypeId, It.IsAny<StorageAuthenticationMethod?>())
+                ds.GetByType<PaymentInformation>(
+                    _instance,
+                    PaymentDataTypeId,
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
             )
             .ReturnsAsync((Guid.NewGuid(), paymentInformation));
 
