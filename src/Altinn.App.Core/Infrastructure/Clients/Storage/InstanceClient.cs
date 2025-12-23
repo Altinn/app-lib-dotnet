@@ -112,8 +112,7 @@ internal class InstanceClient : IInstanceClient
         using var activity = _telemetry?.StartGetInstancesActivity();
         var apiUrl = QueryHelpers.AddQueryString("instances", queryParams);
 
-        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
-        QueryResponse<Instance> queryResponse = await QueryInstances(token, apiUrl);
+        QueryResponse<Instance> queryResponse = await QueryInstances(apiUrl, authenticationMethod, ct);
 
         if (queryResponse.Count == 0)
         {
@@ -123,22 +122,27 @@ internal class InstanceClient : IInstanceClient
 
         while (!string.IsNullOrEmpty(queryResponse.Next))
         {
-            queryResponse = await QueryInstances(token, queryResponse.Next);
+            queryResponse = await QueryInstances(queryResponse.Next, authenticationMethod, ct);
             instances.AddRange(queryResponse.Instances);
         }
         return instances;
     }
 
-    private async Task<QueryResponse<Instance>> QueryInstances(string token, string url)
+    private async Task<QueryResponse<Instance>> QueryInstances(
+        string url,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
         using var activity = _telemetry?.StartQueryInstancesActivity();
-        HttpResponseMessage response = await _client.GetAsync(token, url);
+        HttpResponseMessage response = await _client.GetAsync(token, url, cancellationToken: ct);
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
             QueryResponse<Instance> queryResponse = await JsonSerializerPermissive.DeserializeAsync<
                 QueryResponse<Instance>
-            >(response.Content);
+            >(response.Content, ct);
             return queryResponse;
         }
         else

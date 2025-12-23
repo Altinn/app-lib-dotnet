@@ -27,6 +27,10 @@ internal interface IPaymentService
         string? language
     );
 
+    /// <summary>
+    /// Handle webhook callback from payment provider indicating that the payment is completed.
+    /// Calls the provider for status, not trusting the webhook alone.
+    /// </summary>
     Task HandlePaymentCompletedWebhook(
         Instance instance,
         ValidAltinnPaymentConfiguration paymentConfiguration,

@@ -17,11 +17,13 @@ public interface IDataService
     /// <param name="instance">The instance associated with the object.</param>
     /// <param name="dataTypeId">The ID of the data type.</param>
     /// <param name="authenticationMethod">The Authentication method to use (user token or app service user)</param>
+    /// <param name="ct">The cancellation token</param>
     /// <returns>A tuple containing the ID of the data element and the retrieved model.</returns>
     Task<(Guid dataElementId, T? model)> GetByType<T>(
         Instance instance,
         string dataTypeId,
-        StorageAuthenticationMethod? authenticationMethod = null
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
     );
 
     /// <summary>
@@ -31,8 +33,14 @@ public interface IDataService
     /// <param name="instance">The instance associated with the object.</param>
     /// <param name="dataElementId">The ID of the data element.</param>
     /// <param name="authenticationMethod">The Authentication method to use (user token or app service user)</param>
+    /// <param name="ct">The cancellation token</param>
     /// <returns>The object of type T.</returns>
-    Task<T> GetById<T>(Instance instance, Guid dataElementId, StorageAuthenticationMethod? authenticationMethod = null);
+    Task<T> GetById<T>(
+        Instance instance,
+        Guid dataElementId,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    );
 
     /// <summary>
     /// Inserts a data element for the instance.
@@ -41,7 +49,8 @@ public interface IDataService
         InstanceIdentifier instanceIdentifier,
         string dataTypeId,
         object data,
-        StorageAuthenticationMethod? authenticationMethod = null
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
     );
 
     /// <summary>
@@ -52,7 +61,8 @@ public interface IDataService
         string dataTypeId,
         Guid dataElementId,
         object data,
-        StorageAuthenticationMethod? authenticationMethod = null
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
     );
 
     /// <summary>
@@ -61,10 +71,12 @@ public interface IDataService
     /// <param name="instanceIdentifier">The instance associated with the object.</param>
     /// <param name="dataElementId">The ID of the data element to delete.</param>
     /// <param name="authenticationMethod">The Authentication method to use (user token or app service user)</param>
+    /// <param name="ct">The cancellation token</param>
     /// <returns>A boolean indicating success/failure.</returns>
     Task<bool> DeleteById(
         InstanceIdentifier instanceIdentifier,
         Guid dataElementId,
-        StorageAuthenticationMethod? authenticationMethod = null
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
     );
 }

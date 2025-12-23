@@ -16,7 +16,6 @@ internal class NetsPaymentProcessor : IPaymentProcessor
 {
     private readonly NetsPaymentSettings _settings;
     private readonly GeneralSettings _generalSettings;
-    private readonly AppIdentifier _app;
     private readonly INetsClient _netsClient;
 
     /// <summary>
@@ -31,14 +30,12 @@ internal class NetsPaymentProcessor : IPaymentProcessor
     public NetsPaymentProcessor(
         INetsClient netsClient,
         IOptions<NetsPaymentSettings> settings,
-        IOptions<GeneralSettings> generalSettings,
-        AppIdentifier app
+        IOptions<GeneralSettings> generalSettings
     )
     {
         _netsClient = netsClient;
         _settings = settings.Value;
         _generalSettings = generalSettings.Value;
-        _app = app;
     }
 
     /// <inheritdoc />

@@ -189,7 +189,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
-                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
                 It.IsAny<CancellationToken>()
             )
         );
@@ -251,7 +251,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
-                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
                 It.IsAny<CancellationToken>()
             )
         );
@@ -357,7 +357,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
-                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
                 It.IsAny<CancellationToken>()
             )
         );
@@ -422,7 +422,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
-                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
                 It.IsAny<CancellationToken>()
             )
         );
@@ -487,7 +487,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
-                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
                 It.IsAny<CancellationToken>()
             )
         );
@@ -552,7 +552,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                 500001,
                 Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"),
                 Guid.Parse("ca62613c-f058-4899-b962-89dd6496a751"),
-                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
                 It.IsAny<CancellationToken>()
             )
         );
@@ -597,7 +597,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )

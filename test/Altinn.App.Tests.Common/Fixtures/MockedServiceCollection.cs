@@ -158,15 +158,18 @@ public sealed class MockedServiceCollection
     public Mock<T> Mock<T>()
         where T : class
     {
-        var type = typeof(T);
-        if (_mocks.TryGetValue(type, out var existingMock))
+        lock (_mocks)
         {
-            return (Mock<T>)existingMock;
+            var type = typeof(T);
+            if (_mocks.TryGetValue(type, out var existingMock))
+            {
+                return (Mock<T>)existingMock;
+            }
+            var mock = new Mock<T>(MockBehavior.Strict);
+            _mocks[type] = mock;
+            Services.TryAddSingleton(mock.Object);
+            return mock;
         }
-        var mock = new Mock<T>(MockBehavior.Strict);
-        _mocks[type] = mock;
-        Services.TryAddSingleton(mock.Object);
-        return mock;
     }
 
     public void AddDataType(DataType dataType)
@@ -270,9 +273,12 @@ public sealed class MockedServiceCollection
 
     public void VerifyMocks()
     {
-        foreach (var mock in _mocks.Values)
+        lock (_mocks)
         {
-            mock.Verify();
+            foreach (var mock in _mocks.Values)
+            {
+                mock.Verify();
+            }
         }
         FakeHttpMessageHandler.Verify();
     }
@@ -306,7 +312,7 @@ public sealed class WrappedServiceProvider : IKeyedServiceProvider, IDisposable,
         var telemetry = _serviceProvider.GetRequiredService<Telemetry>();
         _tracerProvider = Sdk.CreateTracerProviderBuilder()
             .AddSource(telemetry.ActivitySource.Name)
-            .AddSource(serviceCollection.FakeHttpMessageHandler.ActivitySource.Name)
+            .AddSource(FakeHttpMessageHandler.ActivitySource.Name)
             .AddInMemoryExporter(Traces)
             .Build();
         _meterProvider = Sdk.CreateMeterProviderBuilder()

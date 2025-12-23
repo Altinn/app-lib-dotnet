@@ -237,6 +237,7 @@ internal class PaymentService : IPaymentService
         return paymentInformation;
     }
 
+    /// <inheritdoc/>
     public async Task HandlePaymentCompletedWebhook(
         Instance instance,
         ValidAltinnPaymentConfiguration paymentConfiguration,

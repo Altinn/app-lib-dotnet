@@ -88,7 +88,7 @@ public class PaymentProcessTaskTests
                 "Betalingskvittering.pdf",
                 It.IsAny<Stream>(),
                 taskId,
-                It.IsAny<StorageAuthenticationMethod>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
                 It.IsAny<CancellationToken>()
             )
         );
@@ -123,7 +123,7 @@ public class PaymentProcessTaskTests
                     "Betalingskvittering.pdf",
                     It.IsAny<Stream>(),
                     taskId,
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Never
@@ -156,7 +156,7 @@ public class PaymentProcessTaskTests
                     "Betalingskvittering.pdf",
                     It.IsAny<Stream>(),
                     taskId,
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Never

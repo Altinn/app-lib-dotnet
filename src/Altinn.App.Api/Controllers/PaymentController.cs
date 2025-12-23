@@ -182,6 +182,15 @@ public class PaymentController : ControllerBase
             StorageAuthenticationMethod.ServiceOwner()
         );
 
+        if (instance.Process?.CurrentTask?.ElementId == null)
+        {
+            _logger.LogWarning(
+                "Instance has no current task. Cannot process Nets webhook callback for instance {InstanceGuid}",
+                instanceGuid
+            );
+            return BadRequest("Instance has no current task");
+        }
+
         AltinnPaymentConfiguration? paymentConfiguration = _processReader
             .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
             ?.PaymentConfiguration;

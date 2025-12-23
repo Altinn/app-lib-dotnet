@@ -41,7 +41,8 @@ public abstract class Endpoint
 /// </summary>
 public class FakeHttpMessageHandler : HttpMessageHandler
 {
-    public ActivitySource ActivitySource { get; } = new("Altinn.App.Tests.Common.Fixtures.FakeHttpMessageHandler");
+    public static ActivitySource ActivitySource { get; } =
+        new("Altinn.App.Tests.Common.Fixtures.FakeHttpMessageHandler");
     public ConcurrentBag<RequestResponse> RequestResponses { get; } = new();
 
     /// <summary>
@@ -159,7 +160,7 @@ public class FakeHttpMessageHandler : HttpMessageHandler
         }
     }
 
-    private readonly List<Endpoint> _endpoints = new();
+    private readonly ConcurrentBag<Endpoint> _endpoints = new();
 
     public void RegisterEndpoint(
         HttpMethod method,
@@ -192,7 +193,7 @@ public class FakeHttpMessageHandler : HttpMessageHandler
                     {
                         Content = new StringContent(content)
                         {
-                            Headers = { ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType) },
+                            Headers = { ContentType = new MediaTypeHeaderValue(contentType) },
                         },
                     }
                 ),
