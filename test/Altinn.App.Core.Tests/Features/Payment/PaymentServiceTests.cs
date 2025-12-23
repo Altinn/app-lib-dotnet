@@ -23,33 +23,6 @@ namespace Altinn.App.Core.Tests.Features.Payment;
 
 public sealed class PaymentServiceTests
 {
-    private sealed record Fixture(IServiceProvider ServiceProvider) : IDisposable
-    {
-        public PaymentService Service => (PaymentService)ServiceProvider.GetRequiredService<IPaymentService>();
-
-        public Mock<T> Mock<T>()
-            where T : class => Moq.Mock.Get(ServiceProvider.GetRequiredService<T>());
-
-        public static Fixture Create(bool addProcessor = true, bool addOrderDetailsCalculator = true)
-        {
-            var services = new ServiceCollection();
-            services.AddLogging(logging => logging.AddProvider(NullLoggerProvider.Instance));
-            services.AddAppImplementationFactory();
-            services.AddSingleton(new Mock<IDataService>(MockBehavior.Strict).Object);
-
-            if (addOrderDetailsCalculator)
-                services.AddSingleton(new Mock<IOrderDetailsCalculator>(MockBehavior.Strict).Object);
-            if (addProcessor)
-                services.AddSingleton(new Mock<IPaymentProcessor>(MockBehavior.Strict).Object);
-
-            services.AddSingleton<IPaymentService, PaymentService>();
-
-            return new Fixture(services.BuildStrictServiceProvider());
-        }
-
-        public void Dispose() => (ServiceProvider as IDisposable)?.Dispose();
-    }
-
     private readonly MockedServiceCollection _fixture = new();
 
     private const string Language = LanguageConst.Nb;
@@ -704,7 +677,7 @@ public sealed class PaymentServiceTests
     }
 
     [Fact]
-    public async Task HandlePaymentCompletedWebhook_NotCalls_ProcessNextStep_WhenProcessPaymentIsNotCompete()
+    public async Task HandlePaymentCompletedWebhook_NotCalls_ProcessNextStep_WhenProcessPaymentIsNotComplete()
     {
         // Arrange
         _instance.Process.CurrentTask = new ProcessElementInfo

@@ -5,6 +5,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -19,7 +20,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation;
 public sealed class InstanceClientTests : IDisposable
 {
     private readonly Mock<IOptions<PlatformSettings>> _platformSettingsOptions;
-    private readonly Mock<HttpMessageHandler> _handlerMock;
+    private readonly Mock<HttpMessageHandler> _handlerMock = new(MockBehavior.Strict);
     private readonly Mock<IAuthenticationTokenResolver> _authenticationTokenResolver = new(MockBehavior.Strict);
     private readonly Mock<ILogger<InstanceClient>> _logger;
     private readonly TelemetrySink _telemetry;
@@ -27,7 +28,6 @@ public sealed class InstanceClientTests : IDisposable
     public InstanceClientTests()
     {
         _platformSettingsOptions = new Mock<IOptions<PlatformSettings>>();
-        _handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
         _logger = new Mock<ILogger<InstanceClient>>();
         _telemetry = new TelemetrySink();
     }
@@ -425,6 +425,67 @@ public sealed class InstanceClientTests : IDisposable
 
         // Assert
         _handlerMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task UpdateDataValues_WithFullInstance_SuccessfullyCallsStorage()
+    {
+        Guid instanceGuid = Guid.NewGuid();
+        int instanceOwnerId = 1337;
+
+        Instance instance = new Instance
+        {
+            InstanceOwner = new InstanceOwner { PartyId = instanceOwnerId.ToString() },
+            Id = $"{instanceOwnerId}/{instanceGuid}",
+        };
+
+        HttpResponseMessage httpResponseMessage = new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent(JsonConvert.SerializeObject(instance), Encoding.UTF8, "application/json"),
+        };
+
+        InitializeMocks([httpResponseMessage], ["datavalues"]);
+
+        HttpClient httpClient = new HttpClient(_handlerMock.Object);
+
+        IInstanceClient target = new InstanceClient(
+            _platformSettingsOptions.Object,
+            _logger.Object,
+            _authenticationTokenResolver.Object,
+            httpClient,
+            _telemetry.Object
+        );
+
+        // Act
+        await target.UpdateDataValues(
+            instanceOwnerId,
+            instanceGuid,
+            new DataValues() { Values = new() { { "key", "value" } } }
+        );
+        httpResponseMessage.Content = new StringContent(
+            JsonConvert.SerializeObject(instance),
+            Encoding.UTF8,
+            "application/json"
+        );
+        await target.UpdateDataValue(instance, "key", "value");
+        httpResponseMessage.Content = new StringContent(
+            JsonConvert.SerializeObject(instance),
+            Encoding.UTF8,
+            "application/json"
+        );
+        await target.UpdateDataValues(instance, new() { { "key", "value" } });
+
+        // Assert
+        var url = $"/instances/{instanceOwnerId}/{instanceGuid}/datavalues'";
+        _handlerMock
+            .Protected()
+            .Verify(
+                "SendAsync",
+                Times.Exactly(3),
+                ItExpr.Is<HttpRequestMessage>(request => request.Method == HttpMethod.Put),
+                ItExpr.IsAny<CancellationToken>()
+            );
     }
 
     [Fact]

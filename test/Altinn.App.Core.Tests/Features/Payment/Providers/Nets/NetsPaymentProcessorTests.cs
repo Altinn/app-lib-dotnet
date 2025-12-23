@@ -21,7 +21,7 @@ public class NetsPaymentProcessorTests
     );
     private readonly MockedServiceCollection _fixture = new();
 
-    private NetsPaymentSettings _netsPaymentSettings = new NetsPaymentSettings
+    private readonly NetsPaymentSettings _netsPaymentSettings = new NetsPaymentSettings
     {
         SecretApiKey = "secret",
         BaseUrl = "https://api.nets.eu",
