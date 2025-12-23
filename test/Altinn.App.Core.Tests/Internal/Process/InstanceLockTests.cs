@@ -373,14 +373,14 @@ public sealed class InstanceLockTests
     }
 
     [Fact]
-    public async Task InvalidInstanceId_ThrowsArgumentException()
+    public async Task InvalidInstanceId_ThrowsInvalidOperationException()
     {
         using var fixture = Fixture.Create(services =>
         {
             var httpContext = new DefaultHttpContext();
             httpContext.Request.RouteValues.Add("instanceOwnerPartyId", "invalid");
             httpContext.Request.RouteValues.Add("instanceGuid", "format");
-            var httpContextAccessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
+            var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
             services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
         });
 
