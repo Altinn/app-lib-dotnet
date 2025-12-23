@@ -2,7 +2,8 @@ using System.Net;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
-using Altinn.App.Core.Internal.Process.ProcessLock;
+using Altinn.App.Core.Internal.InstanceLocking;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using WireMock.Matchers.Request;
@@ -12,7 +13,7 @@ using WireMock.Server;
 
 namespace Altinn.App.Core.Tests.Internal.Process;
 
-public sealed class ProcessLockTests
+public sealed class InstanceLockTests
 {
     private sealed record Fixture(WireMockServer Server, ServiceProvider ServiceProvider) : IDisposable
     {
@@ -37,7 +38,7 @@ public sealed class ProcessLockTests
 
             services.Configure<AppSettings>(settings => settings.RuntimeCookieName = RuntimeCookieName);
 
-            services.AddHttpClient<ProcessLockClient>();
+            services.AddHttpClient<InstanceLockClient>();
 
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Headers.Cookie = $"{RuntimeCookieName}={BearerToken}";
@@ -47,7 +48,7 @@ public sealed class ProcessLockTests
             var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
             services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
 
-            services.AddTransient<ProcessLocker, ProcessLocker>();
+            services.AddTransient<InstanceLocker, InstanceLocker>();
 
             registerCustomServices?.Invoke(services);
 
@@ -67,18 +68,18 @@ public sealed class ProcessLockTests
         {
             return Request
                 .Create()
-                .WithPath($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{_instanceGuid}/process/lock")
+                .WithPath($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{_instanceGuid}/lock")
                 .UsingPost()
                 .WithHeader("Authorization", $"Bearer {BearerToken}");
         }
 
-        public IRequestBuilder GetReleaseLockRequestBuilder(Guid lockId)
+        public IRequestBuilder GetReleaseLockRequestBuilder(string lockToken)
         {
             return Request
                 .Create()
-                .WithPath($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{_instanceGuid}/process/lock/{lockId}")
+                .WithPath($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{_instanceGuid}/lock")
                 .UsingPatch()
-                .WithHeader("Authorization", $"Bearer {BearerToken}");
+                .WithHeader("Authorization", $"Bearer {lockToken}");
         }
     }
 
@@ -88,9 +89,10 @@ public sealed class ProcessLockTests
         using var fixture = Fixture.Create();
 
         var lockId = Guid.NewGuid();
+        var lockToken = GenerateLockToken(lockId);
 
         var acquireLockRequestBuilder = fixture.GetAcquireLockRequestBuilder();
-        var releaseLockRequestBuilder = fixture.GetReleaseLockRequestBuilder(lockId);
+        var releaseLockRequestBuilder = fixture.GetReleaseLockRequestBuilder(lockToken);
 
         var testRequestBuilder = Request.Create().WithPath($"/test").UsingGet();
 
@@ -100,7 +102,7 @@ public sealed class ProcessLockTests
                 Response
                     .Create()
                     .WithStatusCode(HttpStatusCode.OK)
-                    .WithBodyAsJson(new ProcessLockResponse { LockId = lockId })
+                    .WithBodyAsJson(new InstanceLockResponse { LockToken = lockToken })
             );
 
         fixture
@@ -113,8 +115,8 @@ public sealed class ProcessLockTests
 
         await using (var scope = fixture.ServiceProvider.CreateAsyncScope())
         {
-            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
-            await processLocker.LockAsync();
+            var instanceLocker = scope.ServiceProvider.GetRequiredService<InstanceLocker>();
+            await instanceLocker.LockAsync();
             using var response = await httpClient.GetAsync($"{fixture.ServerUrl}/test");
             response.EnsureSuccessStatusCode();
         }
@@ -141,9 +143,10 @@ public sealed class ProcessLockTests
         using var fixture = Fixture.Create();
 
         var lockId = Guid.NewGuid();
+        var lockToken = GenerateLockToken(lockId);
 
         var acquireLockRequestBuilder = fixture.GetAcquireLockRequestBuilder();
-        var releaseLockRequestBuilder = fixture.GetReleaseLockRequestBuilder(lockId);
+        var releaseLockRequestBuilder = fixture.GetReleaseLockRequestBuilder(lockToken);
 
         var testRequestBuilder = Request.Create().WithPath($"/test").UsingGet();
 
@@ -153,7 +156,7 @@ public sealed class ProcessLockTests
                 Response
                     .Create()
                     .WithStatusCode(HttpStatusCode.OK)
-                    .WithBodyAsJson(new ProcessLockResponse { LockId = lockId })
+                    .WithBodyAsJson(new InstanceLockResponse { LockToken = lockToken })
             );
 
         fixture
@@ -166,10 +169,10 @@ public sealed class ProcessLockTests
 
         await using (var scope = fixture.ServiceProvider.CreateAsyncScope())
         {
-            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
-            await processLocker.LockAsync();
-            await processLocker.LockAsync();
-            await processLocker.LockAsync();
+            var instanceLocker = scope.ServiceProvider.GetRequiredService<InstanceLocker>();
+            await instanceLocker.LockAsync();
+            await instanceLocker.LockAsync();
+            await instanceLocker.LockAsync();
             using var response = await httpClient.GetAsync($"{fixture.ServerUrl}/test");
             response.EnsureSuccessStatusCode();
         }
@@ -196,6 +199,7 @@ public sealed class ProcessLockTests
         using var fixture = Fixture.Create();
 
         var lockId = Guid.NewGuid();
+        var lockToken = GenerateLockToken(lockId);
 
         fixture
             .Server.Given(fixture.GetAcquireLockRequestBuilder())
@@ -203,36 +207,33 @@ public sealed class ProcessLockTests
                 Response
                     .Create()
                     .WithStatusCode(HttpStatusCode.OK)
-                    .WithBodyAsJson(new ProcessLockResponse { LockId = lockId })
+                    .WithBodyAsJson(new InstanceLockResponse { LockToken = lockToken })
             );
 
         fixture
-            .Server.Given(fixture.GetReleaseLockRequestBuilder(lockId))
+            .Server.Given(fixture.GetReleaseLockRequestBuilder(lockToken))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK));
 
         await Assert.ThrowsAsync<Exception>(async () =>
         {
             await using var scope = fixture.ServiceProvider.CreateAsyncScope();
-            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
-            await processLocker.LockAsync();
+            var instanceLocker = scope.ServiceProvider.GetRequiredService<InstanceLocker>();
+            await instanceLocker.LockAsync();
             throw new Exception();
         });
 
-        var releaseRequests = fixture.Server.FindLogEntries(fixture.GetReleaseLockRequestBuilder(lockId));
+        var releaseRequests = fixture.Server.FindLogEntries(fixture.GetReleaseLockRequestBuilder(lockToken));
         Assert.Single(releaseRequests);
     }
 
     [Fact]
-    public async Task CustomExpirationConfiguration_UsedInStorageApiCall()
+    public async Task CustomTtl_UsedInStorageApiCall()
     {
         var lockId = Guid.NewGuid();
-        const int customExpirationSeconds = 120;
+        var lockToken = GenerateLockToken(lockId);
+        var ttl = TimeSpan.FromSeconds(120);
 
-        using var fixture = Fixture.Create(services =>
-            services.Configure<ProcessLockOptions>(options =>
-                options.Expiration = TimeSpan.FromSeconds(customExpirationSeconds)
-            )
-        );
+        using var fixture = Fixture.Create();
 
         fixture
             .Server.Given(fixture.GetAcquireLockRequestBuilder())
@@ -240,17 +241,17 @@ public sealed class ProcessLockTests
                 Response
                     .Create()
                     .WithStatusCode(HttpStatusCode.OK)
-                    .WithBodyAsJson(new ProcessLockResponse { LockId = lockId })
+                    .WithBodyAsJson(new InstanceLockResponse { LockToken = lockToken })
             );
 
         fixture
-            .Server.Given(fixture.GetReleaseLockRequestBuilder(lockId))
+            .Server.Given(fixture.GetReleaseLockRequestBuilder(lockToken))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK));
 
         await using (var scope = fixture.ServiceProvider.CreateAsyncScope())
         {
-            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
-            await processLocker.LockAsync();
+            var instanceLocker = scope.ServiceProvider.GetRequiredService<InstanceLocker>();
+            await instanceLocker.LockAsync(ttl);
         }
 
         var acquireRequests = fixture.Server.FindLogEntries(fixture.GetAcquireLockRequestBuilder());
@@ -266,6 +267,7 @@ public sealed class ProcessLockTests
         using var fixture = Fixture.Create();
 
         var lockId = Guid.NewGuid();
+        var lockToken = GenerateLockToken(lockId);
 
         fixture
             .Server.Given(fixture.GetAcquireLockRequestBuilder())
@@ -273,20 +275,20 @@ public sealed class ProcessLockTests
                 Response
                     .Create()
                     .WithStatusCode(HttpStatusCode.OK)
-                    .WithBodyAsJson(new ProcessLockResponse { LockId = lockId })
+                    .WithBodyAsJson(new InstanceLockResponse { LockToken = lockToken })
             );
 
         fixture
-            .Server.Given(fixture.GetReleaseLockRequestBuilder(lockId))
+            .Server.Given(fixture.GetReleaseLockRequestBuilder(lockToken))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.InternalServerError));
 
         await using (var scope = fixture.ServiceProvider.CreateAsyncScope())
         {
-            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
-            await processLocker.LockAsync();
+            var instanceLocker = scope.ServiceProvider.GetRequiredService<InstanceLocker>();
+            await instanceLocker.LockAsync();
         }
 
-        var releaseRequests = fixture.Server.FindLogEntries(fixture.GetReleaseLockRequestBuilder(lockId));
+        var releaseRequests = fixture.Server.FindLogEntries(fixture.GetReleaseLockRequestBuilder(lockToken));
         Assert.Single(releaseRequests);
     }
 
@@ -305,8 +307,8 @@ public sealed class ProcessLockTests
         var exception = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
         {
             await using var scope = fixture.ServiceProvider.CreateAsyncScope();
-            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
-            await processLocker.LockAsync();
+            var instanceLocker = scope.ServiceProvider.GetRequiredService<InstanceLocker>();
+            await instanceLocker.LockAsync();
         });
 
         Assert.Single(fixture.Server.LogEntries);
@@ -334,8 +336,8 @@ public sealed class ProcessLockTests
         var exception = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
         {
             await using var scope = fixture.ServiceProvider.CreateAsyncScope();
-            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
-            await processLocker.LockAsync();
+            var instanceLocker = scope.ServiceProvider.GetRequiredService<InstanceLocker>();
+            await instanceLocker.LockAsync();
         });
 
         Assert.Single(fixture.Server.LogEntries);
@@ -361,8 +363,8 @@ public sealed class ProcessLockTests
         var exception = await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(async () =>
         {
             await using var scope = fixture.ServiceProvider.CreateAsyncScope();
-            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
-            await processLocker.LockAsync();
+            var instanceLocker = scope.ServiceProvider.GetRequiredService<InstanceLocker>();
+            await instanceLocker.LockAsync();
         });
 
         Assert.Single(fixture.Server.LogEntries);
@@ -385,11 +387,16 @@ public sealed class ProcessLockTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
             await using var scope = fixture.ServiceProvider.CreateAsyncScope();
-            var processLocker = scope.ServiceProvider.GetRequiredService<ProcessLocker>();
-            await processLocker.LockAsync();
+            var instanceLocker = scope.ServiceProvider.GetRequiredService<InstanceLocker>();
+            await instanceLocker.LockAsync();
         });
 
         Assert.Empty(fixture.Server.LogEntries);
         await Verify(new { Exception = exception });
+    }
+
+    private string GenerateLockToken(Guid lockId)
+    {
+        return Convert.ToBase64String(lockId.ToByteArray());
     }
 }

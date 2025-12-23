@@ -20,8 +20,8 @@
     },
     Message: 404 Not Found,
     StackTrace:
-at Altinn.App.Core.Infrastructure.Clients.Storage.ProcessLockClient.AcquireProcessLock(Guid instanceGuid, Int32 instanceOwnerPartyId, TimeSpan expiration)
-at Altinn.App.Core.Internal.Process.ProcessLock.ProcessLocker.LockAsync()
+at Altinn.App.Core.Infrastructure.Clients.Storage.InstanceLockClient.AcquireInstanceLock(Guid instanceGuid, Int32 instanceOwnerPartyId, TimeSpan expiration)
+at Altinn.App.Core.Internal.InstanceLocking.InstanceLocker.LockAsync(TimeSpan ttl)
 --- End of stack trace from previous location ---
 --- End of stack trace from previous location ---
 at Xunit.Assert.RecordExceptionAsync(Func`1 testCode)

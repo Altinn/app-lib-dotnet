@@ -38,6 +38,7 @@ using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
@@ -46,7 +47,6 @@ using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Authorization;
 using Altinn.App.Core.Internal.Process.EventHandlers;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
-using Altinn.App.Core.Internal.Process.ProcessLock;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
@@ -115,7 +115,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IText, TextClient>();
 #pragma warning restore CS0618 // Type or member is obsolete
         services.AddHttpClient<IProcessClient, ProcessClient>();
-        services.AddHttpClient<ProcessLockClient>();
+        services.AddHttpClient<InstanceLockClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
         services.AddHttpClient<IAccessManagementClient, AccessManagementClient>();
 
@@ -366,7 +366,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
         services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
 
-        services.AddScoped<ProcessLocker>();
+        services.AddScoped<InstanceLocker>();
 
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();

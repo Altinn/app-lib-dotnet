@@ -2,21 +2,21 @@ using Altinn.App.Api.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Xunit.Abstractions;
 
-namespace Altinn.App.Integration.Tests.ProcessLock;
+namespace Altinn.App.Integration.Tests.InstanceLocking;
 
 [Trait("Category", "Integration")]
-public sealed class ProcessLockTests(ITestOutputHelper _output, AppFixtureClassFixture _classFixture)
+public sealed class InstanceLockTests(ITestOutputHelper _output, AppFixtureClassFixture _classFixture)
     : IClassFixture<AppFixtureClassFixture>
 {
     [Fact]
     public async Task ProcessNext_ConcurrentRequests_OneRequestGetsConflict()
     {
-        await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic, "process-lock");
+        await using var fixtureScope = await _classFixture.Get(_output, TestApps.Basic, "instance-lock");
         var fixture = fixtureScope.Fixture;
 
         var client = fixture.GetAppClient();
 
-        var resetResponse = await client.PostAsync("/test/process-lock/reset", null);
+        var resetResponse = await client.PostAsync("/test/instance-lock/reset", null);
         resetResponse.EnsureSuccessStatusCode();
 
         var token = await fixture.Auth.GetUserToken(userId: 1337);
@@ -40,7 +40,7 @@ public sealed class ProcessLockTests(ITestOutputHelper _output, AppFixtureClassF
 
         Assert.Equal(System.Net.HttpStatusCode.Conflict, conflictResponse.Response.StatusCode);
 
-        var releaseResponse = await client.PostAsync("/test/process-lock/release-wait", null);
+        var releaseResponse = await client.PostAsync("/test/instance-lock/release-wait", null);
         releaseResponse.EnsureSuccessStatusCode();
 
         using var successRequestResponse = await processNextTasks.First(x => x != conflictResponseTask);

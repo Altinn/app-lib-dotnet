@@ -5,7 +5,7 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
-using Altinn.App.Core.Internal.Process.ProcessLock;
+using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -13,18 +13,18 @@ using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 
-internal sealed class ProcessLockClient
+internal sealed class InstanceLockClient
 {
     private readonly AppSettings _appSettings;
-    private readonly ILogger<ProcessLockClient> _logger;
+    private readonly ILogger<InstanceLockClient> _logger;
     private readonly HttpClient _client;
     private readonly Telemetry? _telemetry;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public ProcessLockClient(
+    public InstanceLockClient(
         IOptions<PlatformSettings> platformSettings,
         IOptions<AppSettings> appSettings,
-        ILogger<ProcessLockClient> logger,
+        ILogger<InstanceLockClient> logger,
         IHttpContextAccessor httpContextAccessor,
         HttpClient httpClient,
         Telemetry? telemetry = null
@@ -40,16 +40,16 @@ internal sealed class ProcessLockClient
         _telemetry = telemetry;
     }
 
-    public async Task<Guid> AcquireProcessLock(Guid instanceGuid, int instanceOwnerPartyId, TimeSpan expiration)
+    public async Task<string> AcquireInstanceLock(Guid instanceGuid, int instanceOwnerPartyId, TimeSpan expiration)
     {
-        using var activity = _telemetry?.StartAcquireProcessLockActivity(instanceGuid, instanceOwnerPartyId);
-        string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/process/lock";
+        using var activity = _telemetry?.StartAcquireInstanceLockActivity(instanceGuid, instanceOwnerPartyId);
+        string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/lock";
         string token = JwtTokenUtil.GetTokenFromContext(
             _httpContextAccessor.HttpContext,
             _appSettings.RuntimeCookieName
         );
 
-        var request = new ProcessLockRequest { TtlSeconds = (int)expiration.TotalSeconds };
+        var request = new InstanceLockRequest { TtlSeconds = (int)expiration.TotalSeconds };
         var content = JsonContent.Create(request);
 
         using var response = await _client.PostAsync(token, apiUrl, content);
@@ -59,18 +59,18 @@ internal sealed class ProcessLockClient
             throw await PlatformHttpResponseSnapshotException.CreateAndDisposeHttpResponse(response);
         }
 
-        Guid? lockId = null;
+        string? lockToken = null;
         try
         {
-            var lockResponse = await response.Content.ReadFromJsonAsync<ProcessLockResponse>();
-            lockId = lockResponse?.LockId;
+            var lockResponse = await response.Content.ReadFromJsonAsync<InstanceLockResponse>();
+            lockToken = lockResponse?.LockToken;
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Error reading response from the lock acquisition endpoint.");
         }
 
-        if (lockId is null || lockId.Value == Guid.Empty)
+        if (string.IsNullOrEmpty(lockToken))
         {
             throw PlatformHttpResponseSnapshotException.Create(
                 "The response from the lock acquisition endpoint was not expected.",
@@ -78,22 +78,17 @@ internal sealed class ProcessLockClient
             );
         }
 
-        return lockId.Value;
+        return lockToken;
     }
 
-    public async Task ReleaseProcessLock(Guid instanceGuid, int instanceOwnerPartyId, Guid lockId)
+    public async Task ReleaseInstanceLock(Guid instanceGuid, int instanceOwnerPartyId, string lockToken)
     {
-        using var activity = _telemetry?.StartReleaseProcessLockActivity(instanceGuid, instanceOwnerPartyId);
-        string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/process/lock/{lockId}";
-        string token = JwtTokenUtil.GetTokenFromContext(
-            _httpContextAccessor.HttpContext,
-            _appSettings.RuntimeCookieName
-        );
-
-        var request = new ProcessLockRequest { TtlSeconds = 0 };
+        using var activity = _telemetry?.StartReleaseInstanceLockActivity(instanceGuid, instanceOwnerPartyId);
+        string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/lock";
+        var request = new InstanceLockRequest { TtlSeconds = 0 };
         var content = JsonContent.Create(request);
 
-        using var response = await _client.PatchAsync(token, apiUrl, content);
+        using var response = await _client.PatchAsync(lockToken, apiUrl, content);
 
         if (!response.IsSuccessStatusCode)
         {

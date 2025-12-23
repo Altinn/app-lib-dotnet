@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using TestApp.Shared;
 
-namespace Altinn.App.Integration.Tests.Scenarios.ProcessLock;
+namespace Altinn.App.Integration.Tests.Scenarios.InstanceLock;
 
 public sealed class WaitForReleaseProcessTaskEnd : IProcessTaskEnd
 {
@@ -36,7 +36,7 @@ public sealed class WaitForReleaseProcessTaskEndEndpoints : IEndpointConfigurato
     public void ConfigureEndpoints(WebApplication app)
     {
         app.MapPost(
-            "/test/process-lock/release-wait",
+            "/test/instance-lock/release-wait",
             () =>
             {
                 WaitForReleaseProcessTaskEnd.Release();
@@ -45,7 +45,7 @@ public sealed class WaitForReleaseProcessTaskEndEndpoints : IEndpointConfigurato
         );
 
         app.MapPost(
-            "/test/process-lock/reset",
+            "/test/instance-lock/reset",
             () =>
             {
                 WaitForReleaseProcessTaskEnd.Reset();
