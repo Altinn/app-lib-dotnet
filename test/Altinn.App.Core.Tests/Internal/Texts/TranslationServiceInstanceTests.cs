@@ -43,7 +43,6 @@ public class TranslationServiceInstanceTests
                 ],
             }
         );
-        fixture.TryAddCommonServices();
 
         await using var provider = fixture.BuildServiceProvider();
         var dataAccessor = await provider.CreateInstanceDataMutatorWithDataAndLayout(

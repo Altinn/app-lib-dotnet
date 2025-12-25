@@ -1,4 +1,5 @@
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Events;
@@ -80,12 +81,6 @@ public class ProcessEventHandlingTests
         }
     }
 
-    private readonly List<IServiceTask> _serviceTasks =
-    [
-        new Mock<IPdfServiceTask>().Object,
-        new Mock<IEFormidlingServiceTask>().Object,
-    ];
-
     [Fact]
     public async Task UpdateProcessAndDispatchEvents_StartEvent_instance_updated_and_events_sent_to_storage()
     {
@@ -120,7 +115,17 @@ public class ProcessEventHandlingTests
                 },
             },
         };
-        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcessAndEvents(instance, events)).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.UpdateProcessAndEvents(
+                    instance,
+                    events,
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -129,7 +134,18 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(instance);
-        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcessAndEvents(instance, events), Times.Once);
+        fixture
+            .Mock<IInstanceClient>()
+            .Verify(
+                i =>
+                    i.UpdateProcessAndEvents(
+                        instance,
+                        events,
+                        It.IsAny<StorageAuthenticationMethod?>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
         fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
         fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
         fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
@@ -164,7 +180,17 @@ public class ProcessEventHandlingTests
                 },
             },
         };
-        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcessAndEvents(instance, events)).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.UpdateProcessAndEvents(
+                    instance,
+                    events,
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -173,7 +199,18 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(instance);
-        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcessAndEvents(instance, events), Times.Once);
+        fixture
+            .Mock<IInstanceClient>()
+            .Verify(
+                i =>
+                    i.UpdateProcessAndEvents(
+                        instance,
+                        events,
+                        It.IsAny<StorageAuthenticationMethod?>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
         fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
         fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
         fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
@@ -207,14 +244,24 @@ public class ProcessEventHandlingTests
                     CurrentTask = new()
                     {
                         ElementId = "Task_1",
-                        AltinnTaskType = "data",
+                        AltinnTaskType = AltinnTaskTypes.Data,
                         Name = "Utfylling",
                         Flow = 1,
                     },
                 },
             },
         };
-        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcessAndEvents(instance, events)).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.UpdateProcessAndEvents(
+                    instance,
+                    events,
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -223,7 +270,18 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(instance);
-        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcessAndEvents(instance, events), Times.Once);
+        fixture
+            .Mock<IInstanceClient>()
+            .Verify(
+                i =>
+                    i.UpdateProcessAndEvents(
+                        instance,
+                        events,
+                        It.IsAny<StorageAuthenticationMethod?>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
         fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
         fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
         fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
@@ -257,14 +315,24 @@ public class ProcessEventHandlingTests
                     CurrentTask = new()
                     {
                         ElementId = "Task_2",
-                        AltinnTaskType = "confirmation",
+                        AltinnTaskType = AltinnTaskTypes.Confirmation,
                         Name = "Bekreft",
                         Flow = 2,
                     },
                 },
             },
         };
-        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcessAndEvents(instance, events)).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.UpdateProcessAndEvents(
+                    instance,
+                    events,
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -273,7 +341,18 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(instance);
-        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcessAndEvents(instance, events), Times.Once);
+        fixture
+            .Mock<IInstanceClient>()
+            .Verify(
+                i =>
+                    i.UpdateProcessAndEvents(
+                        instance,
+                        events,
+                        It.IsAny<StorageAuthenticationMethod?>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
         fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
         fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
         fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
@@ -314,7 +393,17 @@ public class ProcessEventHandlingTests
                 },
             },
         };
-        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcessAndEvents(instance, events)).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.UpdateProcessAndEvents(
+                    instance,
+                    events,
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -323,7 +412,18 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(instance);
-        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcessAndEvents(instance, events), Times.Once);
+        fixture
+            .Mock<IInstanceClient>()
+            .Verify(
+                i =>
+                    i.UpdateProcessAndEvents(
+                        instance,
+                        events,
+                        It.IsAny<StorageAuthenticationMethod?>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
         fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
         fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
         fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
@@ -359,7 +459,7 @@ public class ProcessEventHandlingTests
                     CurrentTask = new()
                     {
                         ElementId = "Task_2",
-                        AltinnTaskType = "confirmation",
+                        AltinnTaskType = AltinnTaskTypes.Confirmation,
                         Name = "Bekreft",
                         Flow = 2,
                     },
@@ -384,7 +484,17 @@ public class ProcessEventHandlingTests
 
         fixture.Mock<IAppMetadata>().Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
 
-        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcessAndEvents(instance, events)).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.UpdateProcessAndEvents(
+                    instance,
+                    events,
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -394,7 +504,18 @@ public class ProcessEventHandlingTests
         // Assert
         result.Should().Be(instance);
         fixture.Mock<IAppEvents>().Verify(a => a.OnEndAppEvent("EndEvent", instance), Times.Once);
-        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcessAndEvents(instance, events), Times.Once);
+        fixture
+            .Mock<IInstanceClient>()
+            .Verify(
+                i =>
+                    i.UpdateProcessAndEvents(
+                        instance,
+                        events,
+                        It.IsAny<StorageAuthenticationMethod?>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
         fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
         fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
         fixture.Mock<IEventsClient>().VerifyNoOtherCalls();
@@ -420,7 +541,17 @@ public class ProcessEventHandlingTests
         };
         List<InstanceEvent>? events = null;
 
-        fixture.Mock<IInstanceClient>().Setup(i => i.UpdateProcessAndEvents(instance, new())).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.UpdateProcessAndEvents(
+                    instance,
+                    It.IsAny<List<InstanceEvent>>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         Dictionary<string, string> prefill = new Dictionary<string, string>();
 
         // Act
@@ -429,7 +560,18 @@ public class ProcessEventHandlingTests
 
         // Assert
         result.Should().Be(instance);
-        fixture.Mock<IInstanceClient>().Verify(i => i.UpdateProcessAndEvents(instance, new()), Times.Once);
+        fixture
+            .Mock<IInstanceClient>()
+            .Verify(
+                i =>
+                    i.UpdateProcessAndEvents(
+                        instance,
+                        It.IsAny<List<InstanceEvent>>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
         fixture.Mock<IInstanceClient>().VerifyNoOtherCalls();
         fixture.Mock<IAppEvents>().VerifyNoOtherCalls();
         fixture.Mock<IEventsClient>().VerifyNoOtherCalls();

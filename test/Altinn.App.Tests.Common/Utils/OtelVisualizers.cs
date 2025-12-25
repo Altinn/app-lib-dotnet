@@ -47,9 +47,8 @@ public static class OtelVisualizers
             {
                 firstOrphanedLog = false;
                 sb.AppendLine();
-                sb.AppendLine("Orphaned Logs:");
+                sb.AppendLine("Logs not contained in any activity:");
             }
-            sb.AppendLine($"Logs for ActivitySpanId: {activitySpanId}");
             foreach (var log in activityLogs)
             {
                 sb.AppendLine($"[{log.LogLevel}] {log.FormattedMessage}");
@@ -79,7 +78,19 @@ public static class OtelVisualizers
         foreach (var (key, value) in activity.TagObjects)
         {
             sb.Append(' ', indent + 1);
-            sb.AppendLine($"{key}: {JsonSerializer.Serialize(value)}");
+            if (value is IEnumerable<string> enumerable)
+            {
+                sb.AppendLine(key);
+                foreach (var item in enumerable)
+                {
+                    sb.Append(' ', indent + 2);
+                    sb.AppendLine($"- {item}");
+                }
+            }
+            else
+            {
+                sb.AppendLine($"{key}: {value}");
+            }
         }
 
         if (activityByParentId.TryGetValue(activity.SpanId, out var children))

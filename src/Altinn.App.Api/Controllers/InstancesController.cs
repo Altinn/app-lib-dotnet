@@ -160,14 +160,25 @@ public class InstancesController : ControllerBase
 
         try
         {
-            Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+            Instance instance = await _instanceClient.GetInstance(
+                app,
+                org,
+                instanceOwnerPartyId,
+                instanceGuid,
+                ct: cancellationToken
+            );
             SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
 
             string? userOrgClaim = User.GetOrg();
 
             if (userOrgClaim == null || !org.Equals(userOrgClaim, StringComparison.OrdinalIgnoreCase))
             {
-                await _instanceClient.UpdateReadStatus(instanceOwnerPartyId, instanceGuid, "read");
+                await _instanceClient.UpdateReadStatus(
+                    instanceOwnerPartyId,
+                    instanceGuid,
+                    "read",
+                    ct: cancellationToken
+                );
             }
 
             var instanceOwnerParty = await _registerClient.GetPartyUnchecked(instanceOwnerPartyId, cancellationToken);
