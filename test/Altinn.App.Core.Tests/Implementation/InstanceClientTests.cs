@@ -463,12 +463,14 @@ public sealed class InstanceClientTests : IDisposable
             instanceGuid,
             new DataValues() { Values = new() { { "key", "value" } } }
         );
+        // Reset the content to simulate a fresh response for each call (otherwise the second call would fail deserialization)
         httpResponseMessage.Content = new StringContent(
             JsonConvert.SerializeObject(instance),
             Encoding.UTF8,
             "application/json"
         );
         await target.UpdateDataValue(instance, "key", "value");
+        // Reset the content to simulate a fresh response for each call (otherwise the second call would fail deserialization)
         httpResponseMessage.Content = new StringContent(
             JsonConvert.SerializeObject(instance),
             Encoding.UTF8,
@@ -477,13 +479,13 @@ public sealed class InstanceClientTests : IDisposable
         await target.UpdateDataValues(instance, new() { { "key", "value" } });
 
         // Assert
-        var url = $"/instances/{instanceOwnerId}/{instanceGuid}/datavalues'";
+        var url = new Uri($"http://localhost/instances/{instanceOwnerId}/{instanceGuid}/datavalues");
         _handlerMock
             .Protected()
             .Verify(
                 "SendAsync",
                 Times.Exactly(3),
-                ItExpr.Is<HttpRequestMessage>(request => request.Method == HttpMethod.Put),
+                ItExpr.Is<HttpRequestMessage>(request => request.Method == HttpMethod.Put && request.RequestUri == url),
                 ItExpr.IsAny<CancellationToken>()
             );
     }
