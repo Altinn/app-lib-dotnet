@@ -68,7 +68,7 @@ public sealed record ProcessEngineTaskDetail
     internal static ProcessEngineTaskDetail FromProcessEngineTask(ProcessEngineTask task) =>
         new()
         {
-            Identifier = task.Identifier,
+            Identifier = task.Key,
             CommandType = task.Command.GetType().Name,
             Status = task.Status,
             RetryCount = task.RequeueCount,

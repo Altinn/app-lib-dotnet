@@ -11,10 +11,10 @@ namespace Altinn.App.ProcessEngine.Models;
 public abstract record ProcessEngineCommand
 {
     /// <summary>
-    /// The unique identifier of the command.
+    /// A general description of this command, used for log output etc.
     /// </summary>
-    [JsonPropertyName("identifier")]
-    public string Identifier { get; init; }
+    [JsonIgnore]
+    public string? Description { get; init; }
 
     /// <summary>
     /// The maximum allowed execution time for the command.
@@ -23,9 +23,9 @@ public abstract record ProcessEngineCommand
     [JsonPropertyName("maxExecutionTime")]
     public TimeSpan? MaxExecutionTime { get; init; }
 
-    private ProcessEngineCommand(string identifier, TimeSpan? maxExecutionTime = null)
+    private ProcessEngineCommand(string description, TimeSpan? maxExecutionTime = null)
     {
-        Identifier = identifier;
+        Description = description;
         MaxExecutionTime = maxExecutionTime;
     }
 
@@ -87,5 +87,5 @@ public abstract record ProcessEngineCommand
     ) : ProcessEngineCommand("delegate", MaxExecutionTime);
 
     /// <inheritdoc/>
-    public sealed override string ToString() => Identifier;
+    public sealed override string ToString() => Description ?? GetType().Name;
 }

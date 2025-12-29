@@ -25,7 +25,7 @@ public class ProcessEngineTests
             .Range(0, 100)
             .Select(async i =>
                 await fixture.ProcessEngine.EnqueueJob(
-                    new ProcessEngineRequest(
+                    new ProcessEngineJobRequest(
                         $"test-job-{i}",
                         new InstanceInformation
                         {
@@ -41,7 +41,7 @@ public class ProcessEngineTests
                                 Command = new ProcessEngineCommand.Delegate(
                                     (job, task, ct) =>
                                     {
-                                        testResults.Enqueue($"{job.Identifier}-task-delegate-1");
+                                        testResults.Enqueue($"{job.Key}-task-delegate-1");
                                         return Task.CompletedTask;
                                     }
                                 ),
@@ -51,7 +51,7 @@ public class ProcessEngineTests
                                 Command = new ProcessEngineCommand.Delegate(
                                     (job, task, ct) =>
                                     {
-                                        testResults.Enqueue($"{job.Identifier}-task-delegate-2");
+                                        testResults.Enqueue($"{job.Key}-task-delegate-2");
                                         return Task.CompletedTask;
                                     }
                                 ),

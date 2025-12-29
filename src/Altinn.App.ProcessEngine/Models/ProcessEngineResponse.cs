@@ -1,7 +1,7 @@
 namespace Altinn.App.ProcessEngine.Models;
 
 /// <summary>
-/// The response from the process engine for a <see cref="ProcessEngineRequest"/>.
+/// The response from the process engine for a <see cref="ProcessEngineJobRequest"/>.
 /// </summary>
 public sealed record ProcessEngineResponse(ProcessEngineRequestStatus Status, string? Message = null)
 {

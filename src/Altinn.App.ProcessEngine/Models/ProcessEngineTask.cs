@@ -1,6 +1,6 @@
 namespace Altinn.App.ProcessEngine.Models;
 
-internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
+internal sealed record ProcessEngineTask : ProcessEngineItem
 {
     public required int ProcessingOrder { get; init; }
     public required ProcessEngineCommand Command { get; init; }
@@ -9,6 +9,7 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
     public DateTimeOffset? BackoffUntil { get; set; }
     public ProcessEngineRetryStrategy? RetryStrategy { get; init; }
     public int RequeueCount { get; set; }
+
     public Task<ProcessEngineExecutionResult>? ExecutionTask { get; set; }
 
     public static ProcessEngineTask FromRequest(
@@ -19,7 +20,8 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
     ) =>
         new()
         {
-            Identifier = $"{jobIdentifier}/{request.Command}",
+            DatabaseId = 0,
+            Key = $"{jobIdentifier}/{request.Command}",
             Actor = actor,
             StartTime = request.StartTime,
             ProcessingOrder = index,
@@ -27,8 +29,7 @@ internal sealed record ProcessEngineTask : ProcessEngineDatabaseItem
             RetryStrategy = request.RetryStrategy,
         };
 
-    public override string ToString() =>
-        $"[{nameof(ProcessEngineTask)}.{Command.GetType().Name}] {Identifier} ({Status})";
+    public override string ToString() => $"[{nameof(ProcessEngineTask)}.{Command.GetType().Name}] {Key} ({Status})";
 
     public new void Dispose()
     {

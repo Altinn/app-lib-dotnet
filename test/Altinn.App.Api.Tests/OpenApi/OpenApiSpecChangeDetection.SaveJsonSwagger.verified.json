@@ -4216,144 +4216,6 @@
         }
       }
     },
-    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/process/start": {
-      "post": {
-        "tags": [
-          "Process"
-        ],
-        "summary": "Starts the process of an instance.",
-        "parameters": [
-          {
-            "name": "org",
-            "in": "path",
-            "description": "unique identifier of the organisation responsible for the app",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "app",
-            "in": "path",
-            "description": "application identifier which is unique within an organisation",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "instanceOwnerPartyId",
-            "in": "path",
-            "description": "unique id of the party that is the owner of the instance",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "instanceGuid",
-            "in": "path",
-            "description": "unique id to identify the instance",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "startEvent",
-            "in": "query",
-            "description": "a specific start event id to start the process, must be used if there are more than one start events",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppProcessState"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppProcessState"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppProcessState"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/process/next": {
       "get": {
         "tags": [
@@ -4869,37 +4731,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/process-engine/next": {
-      "post": {
-        "tags": [
-          "ProcessEngine"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProcessNextRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProcessNextRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProcessNextRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
           }
         }
       }
@@ -6516,70 +6347,6 @@
           }
         },
         "deprecated": true
-      }
-    },
-    "/process-engine/test/scenario": {
-      "post": {
-        "tags": [
-          "Test"
-        ],
-        "parameters": [
-          {
-            "name": "numJobs",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1000
-            }
-          },
-          {
-            "name": "testScenario",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 0
-            }
-          },
-          {
-            "name": "block",
-            "in": "query",
-            "schema": {
-              "type": "boolean",
-              "default": true
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/process-engine/test/scenario-callback": {
-      "get": {
-        "tags": [
-          "Test"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/process-engine/test/scenario-stats": {
-      "get": {
-        "tags": [
-          "Test"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
       }
     },
     "/{org}/{app}/api/v1/texts/{language}": {
@@ -8482,34 +8249,6 @@
         "additionalProperties": false,
         "description": "Light weight model representing an instance and it's file scan result status."
       },
-      "InstanceInformation": {
-        "required": [
-          "app",
-          "instanceGuid",
-          "instanceOwnerPartyId",
-          "org"
-        ],
-        "type": "object",
-        "properties": {
-          "org": {
-            "type": "string",
-            "nullable": true
-          },
-          "app": {
-            "type": "string",
-            "nullable": true
-          },
-          "instanceOwnerPartyId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "instanceGuid": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "additionalProperties": false
-      },
       "InstanceOwner": {
         "type": "object",
         "properties": {
@@ -9773,73 +9512,6 @@
         },
         "additionalProperties": false
       },
-      "ProcessEngineBackoffType": {
-        "enum": [
-          0,
-          1,
-          2
-        ],
-        "type": "integer",
-        "format": "int32"
-      },
-      "ProcessEngineCommand": {
-        "type": "object",
-        "properties": {
-          "identifier": {
-            "type": "string",
-            "nullable": true
-          },
-          "maxExecutionTime": {
-            "type": "string",
-            "format": "date-span",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "ProcessEngineCommandRequest": {
-        "required": [
-          "command"
-        ],
-        "type": "object",
-        "properties": {
-          "command": {
-            "$ref": "#/components/schemas/ProcessEngineCommand"
-          },
-          "startTime": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "retryStrategy": {
-            "$ref": "#/components/schemas/ProcessEngineRetryStrategy"
-          }
-        },
-        "additionalProperties": false
-      },
-      "ProcessEngineRetryStrategy": {
-        "type": "object",
-        "properties": {
-          "backoffType": {
-            "$ref": "#/components/schemas/ProcessEngineBackoffType"
-          },
-          "baseInterval": {
-            "type": "string",
-            "format": "date-span"
-          },
-          "maxRetries": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "maxDelay": {
-            "type": "string",
-            "format": "date-span",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "ProcessHistoryItem": {
         "type": "object",
         "properties": {
@@ -9902,40 +9574,6 @@
         },
         "additionalProperties": false,
         "description": "Model for process next body"
-      },
-      "ProcessNextRequest": {
-        "required": [
-          "actor",
-          "currentElementId",
-          "desiredElementId",
-          "instanceInformation",
-          "tasks"
-        ],
-        "type": "object",
-        "properties": {
-          "currentElementId": {
-            "type": "string",
-            "nullable": true
-          },
-          "desiredElementId": {
-            "type": "string",
-            "nullable": true
-          },
-          "instanceInformation": {
-            "$ref": "#/components/schemas/InstanceInformation"
-          },
-          "actor": {
-            "$ref": "#/components/schemas/ProcessEngineActor"
-          },
-          "tasks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProcessEngineCommandRequest"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
       },
       "ProcessState": {
         "type": "object",

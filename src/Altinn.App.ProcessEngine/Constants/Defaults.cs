@@ -30,4 +30,14 @@ internal static class Defaults
         maxRetries: 1000,
         maxDelay: TimeSpan.FromSeconds(60)
     );
+
+    /// <summary>
+    /// The default retry strategy for database operations.
+    /// </summary>
+    public static readonly ProcessEngineRetryStrategy DefaultDatabaseRetryStrategy =
+        ProcessEngineRetryStrategy.Exponential(
+            baseInterval: TimeSpan.FromMilliseconds(100),
+            maxRetries: 50,
+            maxDelay: TimeSpan.FromSeconds(10)
+        );
 }

@@ -2337,7 +2337,7 @@ namespace Altinn.App.Core.Helpers
     {
         public static Altinn.App.Core.Internal.Process.ProcessSequenceFlowType GetSequenceFlowType(System.Collections.Generic.List<Altinn.App.Core.Internal.Process.Elements.SequenceFlow> flows) { }
         public static string? GetValidNextElementOrError(string? proposedElementId, System.Collections.Generic.List<string> possibleNextElements, out Altinn.App.Core.Helpers.ProcessError? nextElementError) { }
-        public static string? GetValidStartEventOrError(string? proposedStartEvent, System.Collections.Generic.List<string> possibleStartEvents, out Altinn.App.Core.Helpers.ProcessError? startEventError) { }
+        public static string GetValidStartEventOrError(string? proposedStartEvent, System.Collections.Generic.List<string> possibleStartEvents) { }
     }
     public enum RowRemovalOption
     {
@@ -3773,25 +3773,9 @@ namespace Altinn.App.Core.Internal.Process
         System.IO.Stream GetProcessDefinition();
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.ProcessHistoryList> GetProcessHistory(string instanceGuid, string instanceOwnerPartyId);
     }
-    public interface IProcessEngine
-    {
-        Altinn.App.Core.Features.Process.IServiceTask? CheckIfServiceTask(string? altinnTaskType);
-        System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> GenerateProcessStartEvents(Altinn.App.Core.Models.Process.ProcessStartRequest processStartRequest);
-        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> HandleEventsAndUpdateStorage(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events);
-        System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Next(Altinn.App.Core.Models.Process.ProcessNextRequest request, System.Threading.CancellationToken ct = default);
-    }
     public interface IProcessEngineAuthorizer
     {
         System.Threading.Tasks.Task<bool> AuthorizeProcessNext(Altinn.Platform.Storage.Interface.Models.Instance instance, string? action = null);
-    }
-    public interface IProcessEventDispatcher
-    {
-        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> DispatchToStorage(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events);
-        System.Threading.Tasks.Task RegisterEventWithEventsComponent(Altinn.Platform.Storage.Interface.Models.Instance instance);
-    }
-    public interface IProcessEventHandlerDelegator
-    {
-        System.Threading.Tasks.Task HandleEvents(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events);
     }
     public interface IProcessNavigator
     {
@@ -3817,25 +3801,6 @@ namespace Altinn.App.Core.Internal.Process
         bool IsEndEvent(string? elementId);
         bool IsProcessTask(string? elementId);
         bool IsStartEvent(string? elementId);
-    }
-    public class ProcessEngine : Altinn.App.Core.Internal.Process.IProcessEngine
-    {
-        public ProcessEngine(Altinn.App.Core.Internal.Process.IProcessReader processReader, Altinn.App.Core.Internal.Process.IProcessNavigator processNavigator, Altinn.App.Core.Internal.Process.IProcessEventHandlerDelegator processEventsDelegator, Altinn.App.Core.Internal.Process.IProcessEventDispatcher processEventDispatcher, Altinn.App.Core.Features.Action.UserActionService userActionService, Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext, System.IServiceProvider serviceProvider, Altinn.App.Core.Internal.Process.IProcessEngineAuthorizer processEngineAuthorizer, Altinn.App.Core.Internal.Validation.IValidationService validationService, Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessEngine> logger, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
-        public Altinn.App.Core.Features.Process.IServiceTask? CheckIfServiceTask(string? altinnTaskType) { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> GenerateProcessStartEvents(Altinn.App.Core.Models.Process.ProcessStartRequest processStartRequest) { }
-        public System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> HandleEventsAndUpdateStorage(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events) { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Next(Altinn.App.Core.Models.Process.ProcessNextRequest request, System.Threading.CancellationToken ct = default) { }
-    }
-    public class ProcessEventDispatcher : Altinn.App.Core.Internal.Process.IProcessEventDispatcher
-    {
-        public ProcessEventDispatcher(Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Altinn.App.Core.Internal.Events.IEventsClient eventsClient, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings> appSettings, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessEventDispatcher> logger) { }
-        public System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> DispatchToStorage(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events) { }
-        public System.Threading.Tasks.Task RegisterEventWithEventsComponent(Altinn.Platform.Storage.Interface.Models.Instance instance) { }
-    }
-    public class ProcessEventHandlingDelegator : Altinn.App.Core.Internal.Process.IProcessEventHandlerDelegator
-    {
-        public ProcessEventHandlingDelegator(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessEventHandlingDelegator> logger, Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask.IStartTaskEventHandler startTaskEventHandler, Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask.IEndTaskEventHandler endTaskEventHandler, Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask.IAbandonTaskEventHandler abandonTaskEventHandler, Altinn.App.Core.Internal.Process.EventHandlers.IEndEventEventHandler endEventHandler, System.IServiceProvider serviceProvider) { }
-        public System.Threading.Tasks.Task HandleEvents(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events) { }
     }
     public class ProcessException : Altinn.App.Core.Exceptions.AltinnException
     {
