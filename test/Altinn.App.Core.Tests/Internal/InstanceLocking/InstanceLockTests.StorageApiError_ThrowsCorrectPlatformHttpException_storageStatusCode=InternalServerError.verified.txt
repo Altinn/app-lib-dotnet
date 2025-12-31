@@ -2,28 +2,25 @@
   Exception: {
     $type: PlatformHttpResponseSnapshotException,
     Type: PlatformHttpResponseSnapshotException,
-    StatusCode: 200,
-    ReasonPhrase: OK,
+    StatusCode: 500,
+    ReasonPhrase: Internal Server Error,
     HttpVersion: 1.1,
     Content: ,
     ContentTruncated: false,
     Response: {
-      Status: 200 OK,
+      Status: 500 Internal Server Error,
       Headers: {
         Date: DateTime_1,
-        Server: Kestrel,
-        Transfer-Encoding: chunked
+        Server: Kestrel
       },
       Content: {
-        Headers: {
-          Content-Type: application/json
-        },
+        Headers: {},
         Value: 
       }
     },
-    Message: The response from the lock acquisition endpoint was not expected.,
+    Message: 500 Internal Server Error,
     StackTrace:
-at Altinn.App.Core.Infrastructure.Clients.Storage.InstanceLockClient.AcquireInstanceLock(Guid instanceGuid, Int32 instanceOwnerPartyId, TimeSpan expiration)
+at Altinn.App.Core.Infrastructure.Clients.Storage.InstanceLockClient.AcquireInstanceLock(Guid instanceGuid, Int32 instanceOwnerPartyId, TimeSpan expiration, StorageAuthenticationMethod authenticationMethod, CancellationToken cancellationToken)
 at Altinn.App.Core.Internal.InstanceLocking.InstanceLocker.LockAsync(TimeSpan ttl)
 --- End of stack trace from previous location ---
 --- End of stack trace from previous location ---

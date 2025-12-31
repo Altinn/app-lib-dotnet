@@ -1,17 +1,23 @@
 using System.Net;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
+using Altinn.App.Core.Internal;
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using WireMock.Matchers.Request;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
 
-namespace Altinn.App.Core.Tests.Internal.Process;
+namespace Altinn.App.Core.Tests.Internal.InstanceLocking;
 
 public sealed class InstanceLockTests
 {
@@ -19,8 +25,8 @@ public sealed class InstanceLockTests
     {
         private static readonly Guid _instanceGuid = Guid.NewGuid();
         private const int InstanceOwnerPartyId = 12345;
-        private const string RuntimeCookieName = "test-cookie";
-        private const string BearerToken = "test-token";
+
+        private static readonly Authenticated _defaultAuth = TestAuthentication.GetUserAuthentication();
 
         public readonly string ServerUrl = Server.Url ?? throw new Exception("Missing server URL");
 
@@ -36,17 +42,23 @@ public sealed class InstanceLockTests
                 settings.ApiStorageEndpoint = testUrl + new Uri(settings.ApiStorageEndpoint).PathAndQuery;
             });
 
-            services.Configure<AppSettings>(settings => settings.RuntimeCookieName = RuntimeCookieName);
+            var mocks = new FixtureMocks();
+            mocks.AuthenticationContextMock.Setup(x => x.Current).Returns(_defaultAuth);
 
             services.AddHttpClient<InstanceLockClient>();
 
             var httpContext = new DefaultHttpContext();
-            httpContext.Request.Headers.Cookie = $"{RuntimeCookieName}={BearerToken}";
             httpContext.Request.RouteValues.Add("instanceOwnerPartyId", InstanceOwnerPartyId);
             httpContext.Request.RouteValues.Add("instanceGuid", _instanceGuid);
-
             var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
             services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
+
+            services.AddSingleton<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
+            services.AddSingleton(mocks.MaskinportenClientMock.Object);
+            services.AddSingleton(mocks.AppMetadataMock.Object);
+            services.AddSingleton(mocks.AuthenticationContextMock.Object);
+
+            services.AddRuntimeEnvironment();
 
             services.AddTransient<InstanceLocker, InstanceLocker>();
 
@@ -55,6 +67,13 @@ public sealed class InstanceLockTests
             var serviceProvider = services.BuildServiceProvider();
 
             return new Fixture(server, serviceProvider);
+        }
+
+        public sealed record FixtureMocks
+        {
+            public Mock<IAuthenticationContext> AuthenticationContextMock { get; init; } = new(MockBehavior.Strict);
+            public Mock<IAppMetadata> AppMetadataMock { get; init; } = new(MockBehavior.Strict);
+            public Mock<IMaskinportenClient> MaskinportenClientMock { get; init; } = new(MockBehavior.Strict);
         }
 
         public void Dispose()
@@ -70,7 +89,7 @@ public sealed class InstanceLockTests
                 .Create()
                 .WithPath($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{_instanceGuid}/lock")
                 .UsingPost()
-                .WithHeader("Authorization", $"Bearer {BearerToken}");
+                .WithHeader("Authorization", $"Bearer {_defaultAuth.Token}");
         }
 
         public IRequestBuilder GetReleaseLockRequestBuilder(string lockToken)
