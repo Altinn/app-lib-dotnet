@@ -38,6 +38,7 @@ using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
@@ -114,6 +115,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IText, TextClient>();
 #pragma warning restore CS0618 // Type or member is obsolete
         services.AddHttpClient<IProcessClient, ProcessClient>();
+        services.AddHttpClient<InstanceLockClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
         services.AddHttpClient<IAccessManagementClient, AccessManagementClient>();
 
@@ -363,6 +365,8 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
         services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
         services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
+
+        services.AddScoped<InstanceLocker>();
 
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();
