@@ -60,7 +60,7 @@ public sealed class InstanceLockTests
 
             services.AddRuntimeEnvironment();
 
-            services.AddTransient<InstanceLocker, InstanceLocker>();
+            services.AddScoped<InstanceLocker>();
 
             registerCustomServices?.Invoke(services);
 
