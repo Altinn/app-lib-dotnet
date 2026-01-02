@@ -238,7 +238,7 @@ internal class PaymentService : IPaymentService
     }
 
     /// <inheritdoc/>
-    public async Task HandlePaymentCompletedWebhook(
+    public async Task<string> HandlePaymentCompletedWebhook(
         Instance instance,
         ValidAltinnPaymentConfiguration paymentConfiguration,
         StorageAuthenticationMethod storageAuthenticationMethod
@@ -255,12 +255,12 @@ internal class PaymentService : IPaymentService
 
         if (paymentInformation == null)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "No payment information stored yet for instance {InstanceId}. Returning uninitialized result.",
                 instance.Id
             );
 
-            return;
+            return $"No payment information stored yet for instance {instance.Id}. Returning uninitialized result.";
         }
 
         decimal totalPriceIncVat = paymentInformation.OrderDetails.TotalPriceIncVat;
@@ -268,13 +268,12 @@ internal class PaymentService : IPaymentService
 
         if (paymentInformation.Status == PaymentStatus.Skipped)
         {
-            _logger.LogInformation(
-                "Payment status is '{Skipped}' for instance {InstanceId}. Won't ask payment processor for status.",
-                PaymentStatus.Skipped.ToString(),
+            _logger.LogWarning(
+                "Payment status is 'Skipped' for instance {InstanceId}. Won't ask payment processor for status.",
                 instance.Id
             );
 
-            return;
+            return "Payment status is 'Skipped' for instance {instance.Id}. Won't ask payment processor for status.";
         }
 
         var paymentProcessors = _appImplementationFactory.GetAll<IPaymentProcessor>();
@@ -317,6 +316,7 @@ internal class PaymentService : IPaymentService
         {
             await RunProcessNext(instance, storageAuthenticationMethod);
         }
+        return $"Payment status is {paymentStatus} for instance {instance.Id}.";
     }
 
     private async Task RunProcessNext(Instance instance, StorageAuthenticationMethod storageAuthenticationMethod)

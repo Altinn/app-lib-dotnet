@@ -76,7 +76,9 @@ public class PaymentController : ControllerBase
 
         if (paymentConfiguration == null)
         {
-            throw new PaymentException("Payment configuration not found in AltinnTaskExtension");
+            return BadRequest(
+                $"Instance has no payment configuration for current task {instance.Process.CurrentTask.ElementId}"
+            );
         }
 
         var validPaymentConfiguration = paymentConfiguration.Validate();
@@ -197,20 +199,30 @@ public class PaymentController : ControllerBase
 
         if (paymentConfiguration == null)
         {
-            _logger.LogWarning(
-                "Payment configuration not found in AltinnTaskExtension, or instance not part of task. Cannot process Nets webhook callback."
+            _logger.LogInformation(
+                "Payment configuration not found in AltinnTaskExtension for task {CurrentTask}. Cannot process Nets webhook callback for instance {InstanceId}. Likely the callback is for an old payment.",
+                instance.Process.CurrentTask?.ElementId,
+                instance.Id
             );
-            throw new PaymentException("Payment configuration not found in AltinnTaskExtension");
+            // If the current task is not a payment task, just log and return OK with a ProblemDetails that nets ignore, but might be logged.
+            return Ok(
+                new ProblemDetails()
+                {
+                    Detail =
+                        $"Payment configuration not found in AltinnTaskExtension for task {instance.Process.CurrentTask?.ElementId}",
+                }
+            );
         }
 
         var validPaymentConfiguration = paymentConfiguration.Validate();
 
         // Update payment status using ServiceOwner authentication
-        await _paymentService.HandlePaymentCompletedWebhook(
+        var responsText = await _paymentService.HandlePaymentCompletedWebhook(
             instance,
             validPaymentConfiguration,
             StorageAuthenticationMethod.ServiceOwner()
         );
-        return Ok();
+
+        return Ok(responsText);
     }
 }
