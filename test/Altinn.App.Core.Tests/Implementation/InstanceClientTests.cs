@@ -442,7 +442,7 @@ public sealed class InstanceClientTests : IDisposable
             Id = $"{instanceOwnerId}/{instanceGuid}",
         };
 
-        HttpResponseMessage httpResponseMessage = new HttpResponseMessage
+        using HttpResponseMessage httpResponseMessage = new HttpResponseMessage
         {
             StatusCode = HttpStatusCode.OK,
             Content = new StringContent(JsonConvert.SerializeObject(instance), Encoding.UTF8, "application/json"),
