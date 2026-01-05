@@ -12,6 +12,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -138,6 +139,7 @@ public class PaymentController : ControllerBase
     /// <returns>Acknowledgement of the webhook</returns>
     [HttpPost("nets-webhook-listener")]
     [ApiExplorerSettings(IgnoreApi = true)]
+    [AllowAnonymous] // Authorization is handled via a shared secret in the header, not via middleware
     public async Task<IActionResult> PaymentWebhookListener(
         [FromRoute] string org,
         [FromRoute] string app,
