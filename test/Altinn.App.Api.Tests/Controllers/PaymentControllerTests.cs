@@ -134,7 +134,7 @@ public class PaymentControllerTests
         // Assert
         Assert.IsType<OkObjectResult>(result);
 
-        var (instance, data) = _services.Storage.GetInstanceAndData(PartyId, _instanceGuid);
+        var (instance, _) = _services.Storage.GetInstanceAndData(PartyId, _instanceGuid);
 
         // Ensure that no payment object is created. Maybe it should?
         Assert.DoesNotContain(instance.Data, d => d.DataType == "paymentDataType");

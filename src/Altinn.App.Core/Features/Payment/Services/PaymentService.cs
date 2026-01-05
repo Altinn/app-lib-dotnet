@@ -273,7 +273,7 @@ internal class PaymentService : IPaymentService
                 instance.Id
             );
 
-            return "Payment status is 'Skipped' for instance {instance.Id}. Won't ask payment processor for status.";
+            return $"Payment status is 'Skipped' for instance {instance.Id}. Won't ask payment processor for status.";
         }
 
         var paymentProcessors = _appImplementationFactory.GetAll<IPaymentProcessor>();
@@ -323,6 +323,8 @@ internal class PaymentService : IPaymentService
     {
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(storageAuthenticationMethod);
         using var client = _httpClientFactory.CreateClient();
+        // Be reasonably generous with timeout since this involves process engine calls
+        client.Timeout = TimeSpan.FromMinutes(5);
         client.BaseAddress = new Uri(_generalSettings.FormattedExternalAppBaseUrl(_app));
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
             "Bearer",

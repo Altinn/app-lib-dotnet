@@ -427,8 +427,11 @@ public sealed class InstanceClientTests : IDisposable
         _handlerMock.VerifyAll();
     }
 
-    [Fact]
-    public async Task UpdateDataValues_WithFullInstance_SuccessfullyCallsStorage()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public async Task UpdateDataValues_WithFullInstance_SuccessfullyCallsStorage(int methodVerion)
     {
         Guid instanceGuid = Guid.NewGuid();
         int instanceOwnerId = 1337;
@@ -458,25 +461,22 @@ public sealed class InstanceClientTests : IDisposable
         );
 
         // Act
-        await target.UpdateDataValues(
-            instanceOwnerId,
-            instanceGuid,
-            new DataValues() { Values = new() { { "key", "value" } } }
-        );
-        // Reset the content to simulate a fresh response for each call (otherwise the second call would fail deserialization)
-        httpResponseMessage.Content = new StringContent(
-            JsonConvert.SerializeObject(instance),
-            Encoding.UTF8,
-            "application/json"
-        );
-        await target.UpdateDataValue(instance, "key", "value");
-        // Reset the content to simulate a fresh response for each call (otherwise the second call would fail deserialization)
-        httpResponseMessage.Content = new StringContent(
-            JsonConvert.SerializeObject(instance),
-            Encoding.UTF8,
-            "application/json"
-        );
-        await target.UpdateDataValues(instance, new() { { "key", "value" } });
+        switch (methodVerion)
+        {
+            case 1:
+                await target.UpdateDataValues(
+                    instanceOwnerId,
+                    instanceGuid,
+                    new DataValues() { Values = new() { { "key", "value" } } }
+                );
+                break;
+            case 2:
+                await target.UpdateDataValue(instance, "key", "value");
+                break;
+            case 3:
+                await target.UpdateDataValues(instance, new() { { "key", "value" } });
+                break;
+        }
 
         // Assert
         var url = new Uri($"http://localhost/instances/{instanceOwnerId}/{instanceGuid}/datavalues");
@@ -484,7 +484,7 @@ public sealed class InstanceClientTests : IDisposable
             .Protected()
             .Verify(
                 "SendAsync",
-                Times.Exactly(3),
+                Times.Once(),
                 ItExpr.Is<HttpRequestMessage>(request => request.Method == HttpMethod.Put && request.RequestUri == url),
                 ItExpr.IsAny<CancellationToken>()
             );
