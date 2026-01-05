@@ -1,14 +1,20 @@
+using System.Security.Cryptography;
+using System.Text;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Payment;
 using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
+using Altinn.App.Core.Features.Payment.Processors.Nets;
+using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 using Altinn.App.Core.Features.Payment.Services;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -24,18 +30,18 @@ public class PaymentController : ControllerBase
     private readonly IProcessReader _processReader;
     private readonly IPaymentService _paymentService;
     private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly ILogger<PaymentController> _logger;
+    private readonly IOptions<NetsPaymentSettings> _netsPaymentSettings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PaymentController"/> class.
     /// </summary>
-    public PaymentController(
-        IServiceProvider serviceProvider,
-        IInstanceClient instanceClient,
-        IProcessReader processReader
-    )
+    public PaymentController(IServiceProvider serviceProvider)
     {
-        _instanceClient = instanceClient;
-        _processReader = processReader;
+        _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
+        _processReader = serviceProvider.GetRequiredService<IProcessReader>();
+        _logger = serviceProvider.GetRequiredService<ILogger<PaymentController>>();
+        _netsPaymentSettings = serviceProvider.GetRequiredService<IOptions<NetsPaymentSettings>>();
         _paymentService = serviceProvider.GetRequiredService<IPaymentService>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
@@ -61,13 +67,19 @@ public class PaymentController : ControllerBase
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        if (instance.Process?.CurrentTask?.ElementId == null)
+        {
+            return BadRequest("Instance has no current task");
+        }
         AltinnPaymentConfiguration? paymentConfiguration = _processReader
             .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
             ?.PaymentConfiguration;
 
         if (paymentConfiguration == null)
         {
-            throw new PaymentException("Payment configuration not found in AltinnTaskExtension");
+            return BadRequest(
+                $"Instance has no payment configuration for current task {instance.Process.CurrentTask.ElementId}"
+            );
         }
 
         var validPaymentConfiguration = paymentConfiguration.Validate();
@@ -113,5 +125,106 @@ public class PaymentController : ControllerBase
         OrderDetails orderDetails = await orderDetailsCalculator.CalculateOrderDetails(instance, language);
 
         return Ok(orderDetails);
+    }
+
+    /// <summary>
+    /// Endpoint to receive payment webhooks from the payment processor.
+    /// </summary>
+    /// <param name="org">unique identifier of the organisation responsible for the app</param>
+    /// <param name="app">application identifier which is unique within an organisation</param>
+    /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
+    /// <param name="instanceGuid">unique id to identify the instance</param>
+    /// <param name="webhookPayload">The webhook payload from nets</param>
+    /// <param name="authorizationHeader"></param>
+    /// <returns>Acknowledgement of the webhook</returns>
+    [HttpPost("nets-webhook-listener")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [AllowAnonymous] // Authorization is handled via a shared secret in the header, not via middleware
+    public async Task<IActionResult> PaymentWebhookListener(
+        [FromRoute] string org,
+        [FromRoute] string app,
+        [FromRoute] int instanceOwnerPartyId,
+        [FromRoute] Guid instanceGuid,
+        [FromBody] NetsCompleteWebhookPayload webhookPayload,
+        [FromHeader(Name = "Authorization")] string authorizationHeader
+    )
+    {
+        if (_netsPaymentSettings.Value.WebhookCallbackKey == null)
+        {
+            _logger.LogWarning(
+                "Received Nets webhook callback, but no WebhookCallbackKey is configured. Ignoring the callback."
+            );
+            return NotFound(
+                "Received Nets webhook callback, but no WebhookCallbackKey is configured. Ignoring the callback"
+            );
+        }
+
+        var expectedHeader = $"Bearer {_netsPaymentSettings.Value.WebhookCallbackKey}";
+        var headersEqual = CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(authorizationHeader ?? string.Empty),
+            Encoding.UTF8.GetBytes(expectedHeader)
+        );
+        if (!headersEqual)
+        {
+            _logger.LogWarning(
+                "Received Nets webhook callback with invalid authorization header. Ignoring the callback."
+            );
+            return Unauthorized("Invalid authorization header");
+        }
+
+        _logger.LogInformation(
+            "Received valid Nets webhook callback for instance {InstanceGuid} for {Payment}",
+            instanceGuid,
+            webhookPayload.Data.PaymentId
+        );
+
+        var instance = await _instanceClient.GetInstance(
+            app,
+            org,
+            instanceOwnerPartyId,
+            instanceGuid,
+            StorageAuthenticationMethod.ServiceOwner()
+        );
+
+        if (instance.Process?.CurrentTask?.ElementId == null)
+        {
+            _logger.LogWarning(
+                "Instance has no current task. Cannot process Nets webhook callback for instance {InstanceGuid}",
+                instanceGuid
+            );
+            return BadRequest("Instance has no current task");
+        }
+
+        AltinnPaymentConfiguration? paymentConfiguration = _processReader
+            .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
+            ?.PaymentConfiguration;
+
+        if (paymentConfiguration == null)
+        {
+            _logger.LogInformation(
+                "Payment configuration not found in AltinnTaskExtension for task {CurrentTask}. Cannot process Nets webhook callback for instance {InstanceId}. Likely the callback is for an old payment.",
+                instance.Process.CurrentTask?.ElementId,
+                instance.Id
+            );
+            // If the current task is not a payment task, just log and return OK with a ProblemDetails that nets ignore, but might be logged.
+            return Ok(
+                new ProblemDetails()
+                {
+                    Detail =
+                        $"Payment configuration not found in AltinnTaskExtension for task {instance.Process.CurrentTask?.ElementId}",
+                }
+            );
+        }
+
+        var validPaymentConfiguration = paymentConfiguration.Validate();
+
+        // Update payment status using ServiceOwner authentication
+        var responsText = await _paymentService.HandlePaymentCompletedWebhook(
+            instance,
+            validPaymentConfiguration,
+            StorageAuthenticationMethod.ServiceOwner()
+        );
+
+        return Ok(responsText);
     }
 }
