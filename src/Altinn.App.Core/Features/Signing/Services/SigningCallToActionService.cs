@@ -111,6 +111,31 @@ internal sealed class SigningCallToActionService(
             CorrespondenceAuthenticationMethod.Default()
         );
 
+        var opt = new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never
+        };
+        try
+        {
+            var requestJson = System.Text.Json.JsonSerializer.Serialize(request, opt);
+            _logger.LogInformation("Correspondence request payload: {RequestPayload}", requestJson);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to serialize correspondence request for logging");
+        }
+
+        try
+        {
+            var contentWrapperJson = System.Text.Json.JsonSerializer.Serialize(contentWrapper, opt);
+            _logger.LogInformation("ContentWrapper: {ContentWrapper}", contentWrapperJson);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to serialize contentWrapper for logging");
+        }
+
         SendCorrespondenceResponse response = await _correspondenceClient.Send(request, ct);
         var correspondenceId = response?.Correspondences[0]?.CorrespondenceId ?? Guid.Empty;
         _logger.LogInformation("Correspondence request sent. CorrespondenceId: {CorrespondenceId}", correspondenceId);
