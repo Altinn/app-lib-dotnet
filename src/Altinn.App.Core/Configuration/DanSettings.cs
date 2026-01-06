@@ -11,9 +11,10 @@ public class DanSettings
     public required string BaseUrl { get; set; }
 
     /// <summary>
-    /// Api subscription key
+    /// Api subscription keys
     /// </summary>
     public required string SubscriptionKey { get; set; }
+    public required string SubscriptionKeySkipsRegistrene { get; set; }
 
     /// <summary>
     /// Maskinporten scope
