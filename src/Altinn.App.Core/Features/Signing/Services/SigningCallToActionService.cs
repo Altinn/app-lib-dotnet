@@ -114,7 +114,7 @@ internal sealed class SigningCallToActionService(
         var opt = new System.Text.Json.JsonSerializerOptions
         {
             WriteIndented = true,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
         };
         try
         {
