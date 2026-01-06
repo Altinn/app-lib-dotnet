@@ -62,7 +62,7 @@ public partial class OptionsController : ControllerBase
         AppOptions appOptions;
         try
         {
-            appOptions = !libRefMatch.Success
+            appOptions = libRefMatch.Success is false
                 ? await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams)
                 : await _altinn3LibraryCodeListService.GetAppOptionsAsync(
                     libRefMatch.Groups["org"].Value,
@@ -144,7 +144,7 @@ public partial class OptionsController : ControllerBase
             if (appOptions?.Options == null)
             {
                 var libRefMatch = LibraryRefRegex().Match(optionsIdOrLibraryRef);
-                appOptions = !libRefMatch.Success
+                appOptions = libRefMatch.Success is false
                     ? await _appOptionsService.GetOptionsAsync(optionsIdOrLibraryRef, language, queryParams)
                     : await _altinn3LibraryCodeListService.GetAppOptionsAsync(
                         libRefMatch.Groups["org"].Value,
