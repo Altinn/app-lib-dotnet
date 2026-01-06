@@ -40,17 +40,15 @@ public interface IPdfService
     /// </summary>
     /// <param name="instance">The instance details.</param>
     /// <param name="taskId">The task id for which the PDF is generated</param>
-    /// <param name="subformComponentId">The subform component identifier.</param>
-    /// <param name="subformDataElementId">The subform data element identifier.</param>
     /// <param name="customFileNameTextResourceKey">A text resource element id for the file name of the PDF. If no text resource is found, the literal value will be used. If null, a default file name will be used.</param>
+    /// <param name="subformPdfContext">The subform-specific context containing component and data element identifiers.</param>
     /// <param name="ct">Cancellation token for when a request should be stopped before it's completed.</param>
     /// <returns>The created data element containing the PDF.</returns>
     internal Task<DataElement> GenerateAndStoreSubformPdf(
         Instance instance,
         string taskId,
         string? customFileNameTextResourceKey,
-        string subformComponentId,
-        string subformDataElementId,
+        SubformPdfContext subformPdfContext,
         CancellationToken ct
     ) => throw new NotImplementedException();
 

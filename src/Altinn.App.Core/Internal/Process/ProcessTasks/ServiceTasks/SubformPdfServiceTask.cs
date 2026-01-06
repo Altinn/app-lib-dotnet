@@ -48,8 +48,7 @@ internal sealed class SubformPdfServiceTask(
                 instance,
                 taskId,
                 filenameTextResourceKey,
-                subformComponentId,
-                dataElement.Id,
+                new SubformPdfContext(subformComponentId, dataElement.Id),
                 context.CancellationToken
             );
 

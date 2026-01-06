@@ -35,14 +35,13 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
+                    It.IsAny<SubformPdfContext>(),
                     It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(
-                (Instance _, string _, string _, string _, string subformDataElementId, CancellationToken _) =>
-                    new DataElement { Id = $"pdf-{subformDataElementId}" }
+                (Instance _, string _, string _, SubformPdfContext subformContext, CancellationToken _) =>
+                    new DataElement { Id = $"pdf-{subformContext.DataElementId}" }
             );
 
         // Setup data client to allow metadata updates
@@ -94,8 +93,7 @@ public class SubformPdfServiceTaskTests
                     It.Is<Instance>(i => i == instance),
                     It.Is<string>(taskId => taskId == "taskId"),
                     It.Is<string?>(filename => filename == FileName),
-                    It.Is<string>(componentId => componentId == SubformComponentId),
-                    It.IsAny<string>(), // dataElement.Id
+                    It.Is<SubformPdfContext>(ctx => ctx.ComponentId == SubformComponentId),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2) // Should be called twice for the two data elements
@@ -123,8 +121,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
+                    It.IsAny<SubformPdfContext>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Never
@@ -149,8 +146,9 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.Is<string>(id => id == "data-element-1" || id == "data-element-2"),
+                    It.Is<SubformPdfContext>(ctx =>
+                        ctx.DataElementId == "data-element-1" || ctx.DataElementId == "data-element-2"
+                    ),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2)
@@ -359,8 +357,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.Is<string?>(filename => filename == null),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
+                    It.IsAny<SubformPdfContext>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.AtLeastOnce
@@ -383,8 +380,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
+                    It.IsAny<SubformPdfContext>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -432,18 +428,17 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
+                    It.IsAny<SubformPdfContext>(),
                     It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(
-                (Instance _, string _, string _, string _, string subformDataElementId, CancellationToken _) =>
+                (Instance _, string _, string _, SubformPdfContext subformContext, CancellationToken _) =>
                 {
                     callCount++;
                     if (callCount == 2)
                         throw new Exception("Second PDF failed");
-                    return new DataElement { Id = $"pdf-{subformDataElementId}" };
+                    return new DataElement { Id = $"pdf-{subformContext.DataElementId}" };
                 }
             );
 
@@ -467,8 +462,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
+                    It.IsAny<SubformPdfContext>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -504,8 +498,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
+                    It.IsAny<SubformPdfContext>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2)
@@ -588,8 +581,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.Is<string>(id => id == "single-data-element"),
+                    It.Is<SubformPdfContext>(ctx => ctx.DataElementId == "single-data-element"),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -615,8 +607,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
+                    It.IsAny<SubformPdfContext>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(10)
@@ -642,8 +633,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<Instance>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
+                    It.IsAny<SubformPdfContext>(),
                     It.Is<CancellationToken>(ct => ct == cts.Token)
                 ),
             Times.AtLeastOnce
