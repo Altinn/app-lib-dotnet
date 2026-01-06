@@ -144,6 +144,8 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
 
     private static string GetLatestVersion(string? version)
     {
-        return string.IsNullOrEmpty(version) || version.Equals("latest", StringComparison.OrdinalIgnoreCase) ? "_latest" : version;
+        return string.IsNullOrEmpty(version) || version.Equals("latest", StringComparison.OrdinalIgnoreCase)
+            ? "_latest"
+            : version;
     }
 }
