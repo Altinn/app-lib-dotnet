@@ -58,10 +58,10 @@ internal sealed class SigningNotificationHelper
 
 #pragma warning disable CA1869 // Cache and reuse 'JsonSerializerOptions' instances
         var opt = new System.Text.Json.JsonSerializerOptions
-            {
-                WriteIndented = true,
-                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
-            };
+        {
+            WriteIndented = true,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
+        };
 #pragma warning restore CA1869 // Cache and reuse 'JsonSerializerOptions' instances
 
         Console.WriteLine($"=== ContentWrapper Debug ===");
