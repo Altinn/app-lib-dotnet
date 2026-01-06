@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Reflection;
+using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
@@ -8,6 +9,7 @@ using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
+using DevLab.JmesPath;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -72,8 +74,7 @@ public class PrefillSI : IPrefill
         string partyId,
         string dataModelName,
         object dataModel,
-        Dictionary<string, string>? externalPrefill = null,
-        string? dataset = null
+        Dictionary<string, string>? externalPrefill = null
     )
     {
         using var activity = _telemetry?.StartPrefillDataModelActivity(partyId);
@@ -214,40 +215,48 @@ public class PrefillSI : IPrefill
             }
         }
 
-        //remove hardcoding after testing
-        dataset = "UnitBasicInformation";
         // Prefill from Dan
         JToken? danConfiguration = prefillConfiguration.SelectToken(_danKey);
-        if (danConfiguration != null && dataset != null)
+        if (danConfiguration != null)
         {
-            var mappingDict = (danConfiguration["datasets"])
-                .FirstOrDefault(d => (string)d["name"] == dataset)
-                ?["mappings"];
+            var jmes = new JmesPath();
+            var datasets = jmes.Transform(danConfiguration.ToString(), "datasets[].name");
+            //We need to remove the brackets and quotes from the datasets string.
+            var datasetTrimmed = datasets.Substring(2, datasets.Length - 4).Replace("\"", string.Empty);
 
-            Dictionary<string, string> danDictionary = mappingDict.ToDictionary(
-                k => ((JObject)k).Properties().First().Name,
-                v => v.Values().First().Value<string>()
-            );
+            List<string> datasetList = datasetTrimmed.Split(',').ToList();
 
-            if (danDictionary.Count > 0)
+            if (datasetList != null)
             {
-                //use ssn as default, use orgnumber if ssn is not set
-                var subject = !string.IsNullOrWhiteSpace(party.SSN) ? party.SSN : party.OrgNumber;
-                var danDataset = await _danClient.GetDataset(dataset, subject);
-                if (danDataset.Count > 0)
+                foreach (var dataset in datasetList)
                 {
-                    JObject danJsonObject = JObject.FromObject(danDataset);
-                    _logger.LogInformation($"Started prefill from {_danKey}");
-                    LoopThroughDictionaryAndAssignValuesToDataModel(
-                        SwapKeyValuesForPrefill(danDictionary),
-                        danJsonObject,
-                        dataModel
-                    );
-                }
-                else
-                {
-                    string errorMessage = $"Could not  prefill from {_danKey}, data is not defined.";
-                    _logger.LogError(errorMessage);
+                    var subject = !string.IsNullOrWhiteSpace(party.SSN) ? party.SSN : party.OrgNumber;
+                    subject = "312655241"; // TODO: remove
+
+                    if (dataset.Equals("Skipsregistrene", StringComparison.OrdinalIgnoreCase)) // TODO: remove
+                        subject = "977340691"; // TODO: remove
+
+                    var query = GetQuery(danConfiguration.ToString(), dataset);
+                    var queryToString = SwapKeyValuesForPrefill(query);
+                    var fullQuery = string.Join(",", queryToString.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
+
+                    var danDataset = await _danClient.GetDataset(dataset, subject, fullQuery);
+                    if (danDataset.Count > 0)
+                    {
+                        var propertiesOfGivenDataset = GetDatasetProperties(danConfiguration.ToString(), dataset);
+                        JObject danJsonObject = JObject.FromObject(danDataset);
+                        _logger.LogInformation($"Started prefill from {_danKey}");
+                        LoopThroughDictionaryAndAssignValuesToDataModel(
+                            SwapKeyValuesForPrefill(propertiesOfGivenDataset),
+                            danJsonObject,
+                            dataModel
+                        );
+                    }
+                    else
+                    {
+                        string errorMessage = $"Could not  prefill from {_danKey}, data is not defined.";
+                        _logger.LogError(errorMessage);
+                    }
                 }
             }
         }
@@ -374,5 +383,46 @@ public class PrefillSI : IPrefill
     private static Dictionary<string, string> SwapKeyValuesForPrefill(Dictionary<string, string> externalPrefil)
     {
         return externalPrefil.ToDictionary(x => x.Value, x => x.Key);
+    }
+
+    private static Dictionary<string, string> GetDatasetProperties(string danConfiguration, string dataset)
+    {
+        var jmes = new JmesPath();
+
+        var resultJson = jmes.Transform(
+            danConfiguration,
+            $"datasets[?name=='{dataset}'].mappings[].{{key: keys(@)[0], value: values(@)[0]}}"
+        );
+
+        var keyValuePairs = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(resultJson);
+        return keyValuePairs.ToDictionary(item => item["key"], item => item["value"]);
+    }
+
+    private static Dictionary<string, string> GetQuery(string danConfiguration, string dataset)
+    {
+        var jmes = new JmesPath();
+
+        var query = $"datasets[?name=='{dataset}'].mappings[]";
+        var fields = jmes.Transform(danConfiguration, query);
+
+        JArray array = JArray.Parse(fields);
+
+        JObject merged = new JObject();
+        foreach (JObject obj in array)
+        {
+            merged.Merge(obj);
+        }
+
+        if (merged != null)
+        {
+            Dictionary<string, string> mergedDictionary = merged.ToObject<Dictionary<string, string>>();
+            return mergedDictionary;
+            /*
+            var swappedKeyValues = SwapKeyValuesForPrefill(mergedDictionary);
+            return string.Join(",", swappedKeyValues.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
+            */
+        }
+
+        return null;
     }
 }
