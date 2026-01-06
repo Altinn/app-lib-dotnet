@@ -1,5 +1,6 @@
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
@@ -87,25 +88,24 @@ public class SigningController : ControllerBase
             instanceOwnerPartyId
         );
 
-        InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
-            instance,
-            // Using actual current task here, since mutations etc. would crash hard if another task is used. Data elements would be locked.
-            instance.Process.CurrentTask.ElementId,
-            language
-        );
-
         string finalTaskId = taskId ?? instance.Process.CurrentTask.ElementId;
         if (string.IsNullOrEmpty(finalTaskId) || !VerifyIsSigningTask(finalTaskId))
         {
             return NotSigningTask();
         }
 
+        IInstanceDataAccessor instanceDataAccessor = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            finalTaskId,
+            language
+        );
+
         AltinnSignatureConfiguration signingConfiguration =
             (_processReader.GetAltinnTaskExtension(finalTaskId)?.SignatureConfiguration)
             ?? throw new ApplicationConfigException("Signing configuration not found in AltinnTaskExtension");
 
         List<SigneeContext> signeeContexts = await _signingService.GetSigneeContexts(
-            cachedDataMutator,
+            instanceDataAccessor,
             signingConfiguration,
             taskId,
             ct
@@ -188,18 +188,17 @@ public class SigningController : ControllerBase
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
-        InstanceDataUnitOfWork cachedDataMutator = await _instanceDataUnitOfWorkInitializer.Init(
-            instance,
-            // Using actual current task here, since mutations etc. would crash hard if another task is used. Data elements would be locked.
-            instance.Process.CurrentTask.ElementId,
-            language
-        );
-
         string finalTaskId = taskId ?? instance.Process.CurrentTask.ElementId;
         if (string.IsNullOrEmpty(finalTaskId) || !VerifyIsSigningTask(finalTaskId))
         {
             return NotSigningTask();
         }
+
+        IInstanceDataAccessor instanceDataAccessor = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            finalTaskId,
+            language
+        );
 
         AltinnSignatureConfiguration signingConfiguration =
             (_processReader.GetAltinnTaskExtension(finalTaskId)?.SignatureConfiguration)
@@ -219,7 +218,7 @@ public class SigningController : ControllerBase
         }
 
         List<OrganizationSignee> authorizedOrganizations = await _signingService.GetAuthorizedOrganizationSignees(
-            cachedDataMutator,
+            instanceDataAccessor,
             signingConfiguration,
             userId.Value,
             ct
