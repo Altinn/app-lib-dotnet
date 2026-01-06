@@ -56,6 +56,21 @@ internal sealed class SigningNotificationHelper
         string? emailAddress = cw.Notification?.Email?.EmailAddress;
         string? mobileNumber = cw.Notification?.Sms?.MobileNumber;
 
+#pragma warning disable CA1869 // Cache and reuse 'JsonSerializerOptions' instances
+        var opt = new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
+            };
+#pragma warning restore CA1869 // Cache and reuse 'JsonSerializerOptions' instances
+
+        Console.WriteLine($"=== ContentWrapper Debug ===");
+        Console.WriteLine($"Recipient: {cw.Recipient}");
+        Console.WriteLine($"NotificationChoice: {cw.NotificationChoice}");
+        Console.WriteLine($"Email Address: {cw.Notification?.Email?.EmailAddress}");
+        Console.WriteLine($"Mobile Number: {cw.Notification?.Sms?.MobileNumber}");
+        Console.WriteLine($"Full ContentWrapper: {System.Text.Json.JsonSerializer.Serialize(cw, opt)}");
+
         return cw.NotificationChoice switch
         {
             NotificationChoice.Email => CorrespondenceNotificationBuilder

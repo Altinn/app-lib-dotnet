@@ -108,11 +108,14 @@ internal sealed class SigningCallToActionService(
         try
         {
             var contentWrapperJson = System.Text.Json.JsonSerializer.Serialize(contentWrapper, opt);
-            _logger.LogInformation("ContentWrapper: {ContentWrapper}", contentWrapperJson);
+            Console.WriteLine($"=== CONTENTWRAPPER DEBUG ===");
+            Console.WriteLine(contentWrapperJson);
+            _logger.LogError("ContentWrapper: {ContentWrapper}", contentWrapperJson);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to serialize contentWrapper for logging");
+            Console.WriteLine($"=== SERIALIZATION FAILED: {ex.Message} ===");
+            _logger.LogError(ex, "Failed to serialize contentWrapper for logging");
         }
 
         var request = new SendCorrespondencePayload(
