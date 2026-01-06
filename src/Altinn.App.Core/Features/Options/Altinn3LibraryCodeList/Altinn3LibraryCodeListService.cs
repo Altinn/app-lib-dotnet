@@ -43,7 +43,6 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
     )
     {
         using var telemetry = _telemetry?.StartGetOptionsActivity();
-        version = GetLatestVersion(version);
         var response = await GetCachedCodeListResponseAsync(org, codeListId, version, cancellationToken);
         return MapAppOptions(response, language);
     }
@@ -56,7 +55,7 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
         CancellationToken cancellationToken = default
     )
     {
-        version = !string.IsNullOrEmpty(version) ? version : "latest";
+        version = GetLatestVersion(version);
         var result = await _hybridCache.GetOrCreateAsync(
             $"Altinn3Library:{org}:{codeListId}:{version}",
             async cancel =>
@@ -143,8 +142,8 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
         return languageCollection.OrderBy(x => x.Key).First().Value;
     }
 
-    private static string GetLatestVersion(string version)
+    private static string GetLatestVersion(string? version)
     {
-        return version.Equals("latest", StringComparison.OrdinalIgnoreCase) ? "_latest" : version;
+        return string.IsNullOrEmpty(version) || version.Equals("latest", StringComparison.OrdinalIgnoreCase) ? "_latest" : version;
     }
 }
