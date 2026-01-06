@@ -88,7 +88,7 @@ public class SigningController : ControllerBase
             instanceOwnerPartyId
         );
 
-        string finalTaskId = taskId ?? instance.Process.CurrentTask.ElementId;
+        string? finalTaskId = taskId ?? instance.Process?.CurrentTask?.ElementId;
         if (string.IsNullOrEmpty(finalTaskId) || !VerifyIsSigningTask(finalTaskId))
         {
             return NotSigningTask();
@@ -188,7 +188,7 @@ public class SigningController : ControllerBase
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
-        string finalTaskId = taskId ?? instance.Process.CurrentTask.ElementId;
+        string? finalTaskId = taskId ?? instance.Process?.CurrentTask?.ElementId;
         if (string.IsNullOrEmpty(finalTaskId) || !VerifyIsSigningTask(finalTaskId))
         {
             return NotSigningTask();
@@ -264,7 +264,7 @@ public class SigningController : ControllerBase
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
 
-        string finalTaskId = taskId ?? instance.Process.CurrentTask.ElementId;
+        string? finalTaskId = taskId ?? instance.Process?.CurrentTask?.ElementId;
         if (string.IsNullOrEmpty(finalTaskId) || !VerifyIsSigningTask(finalTaskId))
         {
             return NotSigningTask();
