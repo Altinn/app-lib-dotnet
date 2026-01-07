@@ -39,5 +39,4 @@ public interface IAppOptionsService
     /// <param name="optionId">Id/OptionId defined in the IInstanceAppOptionsProvider</param>
     /// <returns>True if exists, otherwise false</returns>
     bool IsInstanceAppOptionsProviderRegistered(string optionId);
-
 }

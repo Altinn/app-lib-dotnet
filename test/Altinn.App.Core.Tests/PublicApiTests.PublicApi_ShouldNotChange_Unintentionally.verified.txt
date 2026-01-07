@@ -1713,6 +1713,7 @@ namespace Altinn.App.Core.Features.Options
         public AppOptionsService(Altinn.App.Core.Features.Options.AppOptionsFactory appOptionsFactory, Altinn.App.Core.Features.Options.InstanceAppOptionsFactory instanceAppOptionsFactory, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions> GetOptionsAsync(string optionId, string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions?> GetOptionsAsync(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string optionId, string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs) { }
+        public bool IsInstanceAppOptionsProviderRegistered(string optionId) { }
     }
     public static class AppOptionsServiceExtentions
     {
@@ -1737,6 +1738,7 @@ namespace Altinn.App.Core.Features.Options
     {
         System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions> GetOptionsAsync(string optionId, string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs);
         System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions?> GetOptionsAsync(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string optionId, string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs);
+        bool IsInstanceAppOptionsProviderRegistered(string optionId);
     }
     public class InstanceAppOptionsFactory
     {
