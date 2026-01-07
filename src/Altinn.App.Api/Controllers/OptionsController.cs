@@ -18,7 +18,6 @@ namespace Altinn.App.Api.Controllers;
 public partial class OptionsController : ControllerBase
 {
     private readonly IAppOptionsService _appOptionsService;
-    private readonly InstanceAppOptionsFactory _instanceAppOptionsFactory;
     private readonly IAltinn3LibraryCodeListService _altinn3LibraryCodeListService;
 
     /// <summary>
@@ -28,13 +27,11 @@ public partial class OptionsController : ControllerBase
     /// <param name="altinn3LibraryCodeListService">Service for handling Altinn 3 library code lists.</param>
     public OptionsController(
         IAppOptionsService appOptionsService,
-        IAltinn3LibraryCodeListService altinn3LibraryCodeListService,
-        InstanceAppOptionsFactory instanceAppOptionsFactory
+        IAltinn3LibraryCodeListService altinn3LibraryCodeListService
     )
     {
         _appOptionsService = appOptionsService;
         _altinn3LibraryCodeListService = altinn3LibraryCodeListService;
-        _instanceAppOptionsFactory = instanceAppOptionsFactory;
     }
 
     /// <summary>
@@ -86,8 +83,7 @@ public partial class OptionsController : ControllerBase
 
         if (appOptions?.Options == null)
         {
-            var instanceAppOptionsProvider = _instanceAppOptionsFactory.GetOptionsProvider(optionsIdOrLibraryRef);
-            if (instanceAppOptionsProvider != null)
+            if (_appOptionsService.IsInstanceAppOptionsProviderRegistered(optionsIdOrLibraryRef))
             {
                 return NotFound(
                     "An instance app options provider was found. "

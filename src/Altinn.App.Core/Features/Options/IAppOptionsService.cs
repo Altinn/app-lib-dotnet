@@ -32,4 +32,12 @@ public interface IAppOptionsService
         string? language,
         Dictionary<string, string> keyValuePairs
     );
+
+    /// <summary>
+    /// Checks whether a specific instance app options provider exists for the given optionId
+    /// </summary>
+    /// <param name="optionId">Id/OptionId defined in the IInstanceAppOptionsProvider</param>
+    /// <returns>True if exists, otherwise false</returns>
+    bool IsInstanceAppOptionsProviderRegistered(string optionId);
+
 }
