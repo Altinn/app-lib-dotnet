@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using JsonException = Newtonsoft.Json.JsonException;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Altinn.App.Core.Infrastructure.Clients.Dan;
 
@@ -45,7 +46,7 @@ public class DanClient : IDanClient
     /// <param name="subject">Usually ssn or orgNumber</param>
     /// <param name="jmesPath">jmesPath - usd to filter out just the fields we need</param>
     /// <returns></returns>
-    public async Task<Dictionary<string, string>> GetDataset(string dataset, string subject, string jmesPathExpression)
+    public async Task<Dictionary<string, string>> GetDataset(string dataset, string subject, string fields)
     {
         _httpClient.DefaultRequestHeaders.Clear();
         var token = await GetMaskinportenToken();
@@ -56,8 +57,17 @@ public class DanClient : IDanClient
         var myContent = JsonConvert.SerializeObject(body);
         HttpContent content = new StringContent(myContent, Encoding.UTF8, "application/json");
 
+        var jmesPathExpression = GetQuery(fields);
+        var first = $"{jmesPathExpression.First()} : {jmesPathExpression.First()}";
+        foreach (var jsonKey in jmesPathExpression.Skip(1))
+        {
+            first += $",{jsonKey} : {jsonKey}";
+        }
+
+        var query = "[].{" + first + "}||{" + first + "}";
+
         var result = await _httpClient.PostAsync(
-            $"directharvest/{dataset}?envelope=false&requestor=991825827&query=[].{{{jmesPathExpression}}}||{{{jmesPathExpression}}}",
+            $"directharvest/{dataset}?envelope=false&requestor=991825827&query={query}",
             content
         );
 
@@ -112,6 +122,14 @@ public class DanClient : IDanClient
         {
             return false;
         }
+    }
+
+    private List<string> GetQuery(string json)
+    {
+        var list = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(json);
+
+        var keys = list.Where(l => l.Any()).Select(l => l.Keys.First()).ToList();
+        return keys;
     }
 
     //Todo: remove after testing

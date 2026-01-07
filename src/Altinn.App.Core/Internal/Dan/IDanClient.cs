@@ -12,5 +12,5 @@ public interface IDanClient
     /// <param name="subject">Usually ssn or OrgNumber</param>
     /// <param name="jmesPathExpression">jmesPathExpression</param>
     /// <returns></returns>
-    public Task<Dictionary<string, string>> GetDataset(string dataset, string subject, string jmesPathExpression);
+    public Task<Dictionary<string, string>> GetDataset(string dataset, string subject, string fields);
 }

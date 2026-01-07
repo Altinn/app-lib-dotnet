@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Reflection;
-using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
@@ -9,7 +8,6 @@ using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
-using DevLab.JmesPath;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -219,35 +217,32 @@ public class PrefillSI : IPrefill
         JToken? danConfiguration = prefillConfiguration.SelectToken(_danKey);
         if (danConfiguration != null)
         {
-            var jmes = new JmesPath();
-            var datasets = jmes.Transform(danConfiguration.ToString(), "datasets[].name");
-            //We need to remove the brackets and quotes from the datasets string.
-            var datasetTrimmed = datasets.Substring(2, datasets.Length - 4).Replace("\"", string.Empty);
-
-            List<string> datasetList = datasetTrimmed.Split(',').ToList();
-
+            var datasetList = danConfiguration.SelectToken("datasets");
             if (datasetList != null)
             {
                 foreach (var dataset in datasetList)
                 {
+                    var datasetName = dataset.SelectToken("name").ToString();
+
                     var subject = !string.IsNullOrWhiteSpace(party.SSN) ? party.SSN : party.OrgNumber;
+                    //TODO: remove after local testing - this is just hard coded subject id to get data from Dan
                     subject = "312655241"; // TODO: remove
 
-                    if (dataset.Equals("Skipsregistrene", StringComparison.OrdinalIgnoreCase)) // TODO: remove
+                    if (datasetName.Equals("Skipsregistrene", StringComparison.OrdinalIgnoreCase)) // TODO: remove
                         subject = "977340691"; // TODO: remove
 
-                    var query = GetQuery(danConfiguration.ToString(), dataset);
-                    var queryToString = SwapKeyValuesForPrefill(query);
-                    var fullQuery = string.Join(",", queryToString.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
+                    var fields = dataset.SelectToken("mappings");
+                    var danPrefill = fields
+                        .SelectMany(obj => obj.Children<JProperty>())
+                        .ToDictionary(prop => prop.Name, prop => prop.Value.ToString());
 
-                    var danDataset = await _danClient.GetDataset(dataset, subject, fullQuery);
+                    var danDataset = await _danClient.GetDataset(datasetName, subject, fields.ToString());
                     if (danDataset.Count > 0)
                     {
-                        var propertiesOfGivenDataset = GetDatasetProperties(danConfiguration.ToString(), dataset);
                         JObject danJsonObject = JObject.FromObject(danDataset);
                         _logger.LogInformation($"Started prefill from {_danKey}");
                         LoopThroughDictionaryAndAssignValuesToDataModel(
-                            SwapKeyValuesForPrefill(propertiesOfGivenDataset),
+                            SwapKeyValuesForPrefill(danPrefill),
                             danJsonObject,
                             dataModel
                         );
@@ -383,46 +378,5 @@ public class PrefillSI : IPrefill
     private static Dictionary<string, string> SwapKeyValuesForPrefill(Dictionary<string, string> externalPrefil)
     {
         return externalPrefil.ToDictionary(x => x.Value, x => x.Key);
-    }
-
-    private static Dictionary<string, string> GetDatasetProperties(string danConfiguration, string dataset)
-    {
-        var jmes = new JmesPath();
-
-        var resultJson = jmes.Transform(
-            danConfiguration,
-            $"datasets[?name=='{dataset}'].mappings[].{{key: keys(@)[0], value: values(@)[0]}}"
-        );
-
-        var keyValuePairs = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(resultJson);
-        return keyValuePairs.ToDictionary(item => item["key"], item => item["value"]);
-    }
-
-    private static Dictionary<string, string> GetQuery(string danConfiguration, string dataset)
-    {
-        var jmes = new JmesPath();
-
-        var query = $"datasets[?name=='{dataset}'].mappings[]";
-        var fields = jmes.Transform(danConfiguration, query);
-
-        JArray array = JArray.Parse(fields);
-
-        JObject merged = new JObject();
-        foreach (JObject obj in array)
-        {
-            merged.Merge(obj);
-        }
-
-        if (merged != null)
-        {
-            Dictionary<string, string> mergedDictionary = merged.ToObject<Dictionary<string, string>>();
-            return mergedDictionary;
-            /*
-            var swappedKeyValues = SwapKeyValuesForPrefill(mergedDictionary);
-            return string.Join(",", swappedKeyValues.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
-            */
-        }
-
-        return null;
     }
 }
