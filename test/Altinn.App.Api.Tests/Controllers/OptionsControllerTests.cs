@@ -171,7 +171,7 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(
             "An instance app options provider was found. "
-            + "Call the options endpoint that requires instanceOwnerPartyId and instanceId instead to retrieve them.",
+                + "Call the options endpoint that requires instanceOwnerPartyId and instanceId instead to retrieve them.",
             content
         );
     }
