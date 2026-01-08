@@ -98,26 +98,6 @@ internal sealed class SigningCallToActionService(
             serviceOwnerParty.OrgNumber = "991825827";
         }
 
-#pragma warning disable CA1869 // Cache and reuse 'JsonSerializerOptions' instances
-        var opt = new System.Text.Json.JsonSerializerOptions
-        {
-            WriteIndented = true,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
-        };
-#pragma warning restore CA1869 // Cache and reuse 'JsonSerializerOptions' instances
-        try
-        {
-            var contentWrapperJson = System.Text.Json.JsonSerializer.Serialize(contentWrapper, opt);
-            Console.WriteLine($"=== CONTENTWRAPPER DEBUG ===");
-            Console.WriteLine(contentWrapperJson);
-            _logger.LogError("ContentWrapper: {ContentWrapper}", contentWrapperJson);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"=== SERIALIZATION FAILED: {ex.Message} ===");
-            _logger.LogError(ex, "Failed to serialize contentWrapper for logging");
-        }
-
         var request = new SendCorrespondencePayload(
             CorrespondenceRequestBuilder
                 .Create()
@@ -258,6 +238,7 @@ internal sealed class SigningCallToActionService(
             ReminderEmailSubject = reminderEmailSubject ?? defaults.ReminderEmailSubject,
             ReminderSmsBody = reminderSmsBody ?? defaults.ReminderSmsBody,
         };
+        _logger.LogInformation("Correspondence sms body: {SmsBody}", contentWrapper.SmsBody);
         return contentWrapper;
     }
 }
