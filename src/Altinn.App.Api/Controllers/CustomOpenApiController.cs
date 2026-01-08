@@ -750,92 +750,6 @@ public class CustomOpenApiController : Controller
             }
         );
 
-        AddOptionsRoutes(document, appMetadata);
-
-        // Validation endpoint
-        var validationTags = new[]
-        {
-            new OpenApiTag { Name = "Validation", Description = "Operations for validating" },
-        };
-        document.Paths.Add(
-            $"/{appMetadata.Id}/instances/{{instanceOwnerPartyId}}/{{instanceGuid}}/validate",
-            new()
-            {
-                Summary = "Validate an app instance",
-                Operations =
-                {
-                    [OperationType.Get] = new()
-                    {
-                        Tags = validationTags,
-                        OperationId = "ValidateInstance",
-                        Summary = "Validate an app instance",
-                        Description =
-                            "This will validate all individual data elements, both the binary elements and the elements bound to a model, and then finally the state of the instance.",
-                        Parameters =
-                        [
-                            Snippets.InstanceOwnerPartyIdParameterReference,
-                            Snippets.InstanceGuidParameterReference,
-                            new()
-                            {
-                                Name = "ignoredValidators",
-                                Description = "Comma separated list of validators to ignore",
-                                In = ParameterLocation.Query,
-                                Schema = new OpenApiSchema()
-                                {
-                                    Type = "string",
-                                    Example = new OpenApiString(
-                                        "DataAnnotations, Altinn.App.Models.model.ModelValidation_FormData"
-                                    ),
-                                },
-                            },
-                            new()
-                            {
-                                Name = "onlyIncrementalValidators",
-                                Description =
-                                    "When true, only run incremental validators (those that run on PATCH requests)",
-                                In = ParameterLocation.Query,
-                                Schema = new OpenApiSchema() { Type = "boolean", Example = new OpenApiBoolean(false) },
-                            },
-                            new()
-                            {
-                                Name = "language",
-                                Description = "The currently used language by the user (or null if not available)",
-                                In = ParameterLocation.Query,
-                                Schema = new OpenApiSchema() { Type = "string", Example = new OpenApiString("nb") },
-                            },
-                        ],
-                        Responses = Snippets.AddCommonErrorResponses(
-                            new OpenApiResponses
-                            {
-                                ["200"] = new()
-                                {
-                                    Description = "Validation result",
-                                    Content =
-                                    {
-                                        ["application/json"] = new OpenApiMediaType()
-                                        {
-                                            Schema = _schemaGenerator.GenerateSchema(
-                                                typeof(List<ValidationIssueWithSource>),
-                                                _schemaRepository
-                                            ),
-                                        },
-                                    },
-                                },
-                                ["409"] = new()
-                                {
-                                    Description = "Validation cannot be performed (e.g., no active task)",
-                                    Reference = Snippets.ProblemDetailsResponseReference,
-                                },
-                            }
-                        ),
-                    },
-                },
-            }
-        );
-    }
-
-    private void AddOptionsRoutes(OpenApiDocument document, ApplicationMetadata appMetadata)
-    {
         // Options endpoint
         var optionsTags = new[]
         {
@@ -971,6 +885,87 @@ public class CustomOpenApiController : Controller
                                             ),
                                         },
                                     },
+                                },
+                            }
+                        ),
+                    },
+                },
+            }
+        );
+
+        // Validation endpoint
+        var validationTags = new[]
+        {
+            new OpenApiTag { Name = "Validation", Description = "Operations for validating" },
+        };
+        document.Paths.Add(
+            $"/{appMetadata.Id}/instances/{{instanceOwnerPartyId}}/{{instanceGuid}}/validate",
+            new()
+            {
+                Summary = "Validate an app instance",
+                Operations =
+                {
+                    [OperationType.Get] = new()
+                    {
+                        Tags = validationTags,
+                        OperationId = "ValidateInstance",
+                        Summary = "Validate an app instance",
+                        Description =
+                            "This will validate all individual data elements, both the binary elements and the elements bound to a model, and then finally the state of the instance.",
+                        Parameters =
+                        [
+                            Snippets.InstanceOwnerPartyIdParameterReference,
+                            Snippets.InstanceGuidParameterReference,
+                            new()
+                            {
+                                Name = "ignoredValidators",
+                                Description = "Comma separated list of validators to ignore",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema()
+                                {
+                                    Type = "string",
+                                    Example = new OpenApiString(
+                                        "DataAnnotations, Altinn.App.Models.model.ModelValidation_FormData"
+                                    ),
+                                },
+                            },
+                            new()
+                            {
+                                Name = "onlyIncrementalValidators",
+                                Description =
+                                    "When true, only run incremental validators (those that run on PATCH requests)",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema() { Type = "boolean", Example = new OpenApiBoolean(false) },
+                            },
+                            new()
+                            {
+                                Name = "language",
+                                Description = "The currently used language by the user (or null if not available)",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema() { Type = "string", Example = new OpenApiString("nb") },
+                            },
+                        ],
+                        Responses = Snippets.AddCommonErrorResponses(
+                            new OpenApiResponses
+                            {
+                                ["200"] = new()
+                                {
+                                    Description = "Validation result",
+                                    Content =
+                                    {
+                                        ["application/json"] = new OpenApiMediaType()
+                                        {
+                                            Schema = _schemaGenerator.GenerateSchema(
+                                                typeof(List<ValidationIssueWithSource>),
+                                                _schemaRepository
+                                            ),
+                                        },
+                                    },
+                                },
+                                ["409"] = new()
+                                {
+                                    Description = "Validation cannot be performed (e.g., no active task)",
+                                    Reference = Snippets.ProblemDetailsResponseReference,
                                 },
                             }
                         ),
