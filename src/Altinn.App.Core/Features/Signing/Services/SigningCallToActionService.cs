@@ -238,6 +238,7 @@ internal sealed class SigningCallToActionService(
             ReminderEmailSubject = reminderEmailSubject ?? defaults.ReminderEmailSubject,
             ReminderSmsBody = reminderSmsBody ?? defaults.ReminderSmsBody,
         };
+        _logger.LogInformation("Correspondence sms body: {SmsBody}", contentWrapper.SmsBody);
         return contentWrapper;
     }
 }
