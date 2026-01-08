@@ -25,6 +25,7 @@ using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.AccessManagement;
 using Altinn.App.Core.Infrastructure.Clients.Authentication;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
+using Altinn.App.Core.Infrastructure.Clients.Dan;
 using Altinn.App.Core.Infrastructure.Clients.Events;
 using Altinn.App.Core.Infrastructure.Clients.KeyVault;
 using Altinn.App.Core.Infrastructure.Clients.Pdf;
@@ -36,6 +37,7 @@ using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Dan;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
@@ -96,6 +98,7 @@ public static class ServiceCollectionExtensions
         services.Configure<GeneralSettings>(configuration.GetSection("GeneralSettings"));
         services.Configure<PlatformSettings>(configuration.GetSection("PlatformSettings"));
         services.Configure<CacheSettings>(configuration.GetSection("CacheSettings"));
+        services.Configure<DanSettings>(configuration.GetSection("DanClientSettings"));
 
         AddApplicationIdentifier(services);
 
@@ -103,6 +106,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IAuthenticationClient, AuthenticationClient>();
         services.AddHttpClient<IAuthorizationClient, AuthorizationClient>();
         services.AddHttpClient<IDataClient, DataClient>();
+        services.AddHttpClient<IDanClient, DanClient>();
         services.AddHttpClient<IOrganizationClient, RegisterERClient>();
         services.AddHttpClient<IInstanceClient, InstanceClient>();
         services.AddHttpClient<IInstanceEventClient, InstanceEventClient>();

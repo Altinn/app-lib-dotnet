@@ -54,9 +54,10 @@ namespace Altinn.App.Core.Configuration
     public class DanSettings
     {
         public DanSettings() { }
-        public string BaseUrl { get; set; }
-        public string Scope { get; set; }
-        public string SubscriptionKey { get; set; }
+        public required string BaseUrl { get; set; }
+        public required string Scope { get; set; }
+        public required string SubscriptionKey { get; set; }
+        public required string SubscriptionKeySkipsRegistrene { get; set; }
     }
     public class FrontEndSettings : System.Collections.Generic.Dictionary<string, string>
     {
@@ -1536,14 +1537,6 @@ namespace Altinn.App.Core.Features.FileAnalyzis
         System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.FileAnalysis.FileAnalysisResult>> Analyse(Altinn.Platform.Storage.Interface.Models.DataType dataType, System.IO.Stream fileStream, string? filename = null);
     }
 }
-namespace Altinn.App.Core.Features.Infrastructure.Clients.Dan
-{
-    public class DanClient : Altinn.App.Core.Internal.Dan.IDanClient
-    {
-        public DanClient(System.Net.Http.HttpClient httpClient, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.DanSettings> settings, System.IServiceProvider serviceProvider) { }
-        public System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, string>> GetDataset(string dataset, string subject) { }
-    }
-}
 namespace Altinn.App.Core.Features.Maskinporten.Exceptions
 {
     public sealed class MaskinportenAuthenticationException : Altinn.App.Core.Features.Maskinporten.Exceptions.MaskinportenException
@@ -2382,7 +2375,7 @@ namespace Altinn.App.Core.Implementation
     {
         public PrefillSI(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Implementation.PrefillSI> logger, Altinn.App.Core.Internal.App.IAppResources appResourcesService, Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext, System.IServiceProvider serviceProvider, Altinn.App.Core.Internal.Dan.IDanClient danClient, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
         public void PrefillDataModel(object dataModel, System.Collections.Generic.Dictionary<string, string> externalPrefill, bool continueOnError = false) { }
-        public System.Threading.Tasks.Task PrefillDataModel(string partyId, string dataModelName, object dataModel, System.Collections.Generic.Dictionary<string, string>? externalPrefill = null, string? dataset = null) { }
+        public System.Threading.Tasks.Task PrefillDataModel(string partyId, string dataModelName, object dataModel, System.Collections.Generic.Dictionary<string, string>? externalPrefill = null) { }
     }
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public class UserTokenProvider : Altinn.App.Core.Internal.Auth.IUserTokenProvider
@@ -2409,6 +2402,14 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
         public System.Threading.Tasks.Task<System.Collections.Generic.List<string>> GetKeyRoleOrganizationParties(int userId, System.Collections.Generic.List<string> orgNumbers) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Register.Models.Party>?> GetPartyList(int userId) { }
         public System.Threading.Tasks.Task<bool?> ValidateSelectedParty(int userId, int partyId) { }
+    }
+}
+namespace Altinn.App.Core.Infrastructure.Clients.Dan
+{
+    public class DanClient : Altinn.App.Core.Internal.Dan.IDanClient
+    {
+        public DanClient(System.Net.Http.HttpClient httpClient, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.DanSettings> settings, System.IServiceProvider serviceProvider) { }
+        public System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, string>> GetDataset(string dataset, string subject, string fields) { }
     }
 }
 namespace Altinn.App.Core.Infrastructure.Clients.Events
@@ -3008,7 +3009,7 @@ namespace Altinn.App.Core.Internal.Dan
 {
     public interface IDanClient
     {
-        System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, string>> GetDataset(string dataset, string subject);
+        System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, string>> GetDataset(string dataset, string subject, string fields);
     }
 }
 namespace Altinn.App.Core.Internal.Data
@@ -3331,7 +3332,7 @@ namespace Altinn.App.Core.Internal.Prefill
     public interface IPrefill
     {
         void PrefillDataModel(object dataModel, System.Collections.Generic.Dictionary<string, string> externalPrefill, bool continueOnError = false);
-        System.Threading.Tasks.Task PrefillDataModel(string partyId, string dataModelName, object dataModel, System.Collections.Generic.Dictionary<string, string>? externalPrefill = null, string? dataset = null);
+        System.Threading.Tasks.Task PrefillDataModel(string partyId, string dataModelName, object dataModel, System.Collections.Generic.Dictionary<string, string>? externalPrefill = null);
     }
 }
 namespace Altinn.App.Core.Internal.Process.Authorization
