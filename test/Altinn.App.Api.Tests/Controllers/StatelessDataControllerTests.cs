@@ -341,7 +341,6 @@ public class StatelessDataControllerTests
                     auth.SelectedPartyId.ToString(CultureInfo.InvariantCulture),
                     dataType,
                     It.IsAny<DummyModel>(),
-                    null,
                     null
                 )
             );
