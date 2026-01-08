@@ -225,11 +225,6 @@ public class PrefillSI : IPrefill
                     var datasetName = dataset.SelectToken("name").ToString();
 
                     var subject = !string.IsNullOrWhiteSpace(party.SSN) ? party.SSN : party.OrgNumber;
-                    //TODO: remove after local testing - this is just hard coded subject id to get data from Dan
-                    subject = "312655241"; // TODO: remove
-
-                    if (datasetName.Equals("Skipsregistrene", StringComparison.OrdinalIgnoreCase)) // TODO: remove
-                        subject = "977340691"; // TODO: remove
 
                     var fields = dataset.SelectToken("mappings");
                     var danPrefill = fields

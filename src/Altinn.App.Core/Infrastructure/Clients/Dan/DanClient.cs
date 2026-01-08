@@ -35,7 +35,6 @@ public class DanClient : IDanClient
         _settings = settings;
         _authenticationTokenResolver = serviceProvider.GetRequiredService<IAuthenticationTokenResolver>();
         httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-        //httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", settings.Value.SubscriptionKeySkipsRegistrene);
         httpClient.BaseAddress = new Uri(settings.Value.BaseUrl);
     }
 
@@ -57,14 +56,14 @@ public class DanClient : IDanClient
         var myContent = JsonConvert.SerializeObject(body);
         HttpContent content = new StringContent(myContent, Encoding.UTF8, "application/json");
 
-        var jmesPathExpression = GetQuery(fields);
-        var first = $"{jmesPathExpression.First()} : {jmesPathExpression.First()}";
-        foreach (var jsonKey in jmesPathExpression.Skip(1))
+        var fieldsToFill = GetQuery(fields);
+        var baseQuery = $"{fieldsToFill.First()} : {fieldsToFill.First()}";
+        foreach (var jsonKey in fieldsToFill.Skip(1))
         {
-            first += $",{jsonKey} : {jsonKey}";
+            baseQuery += $",{jsonKey} : {jsonKey}";
         }
 
-        var query = "[].{" + first + "}||{" + first + "}";
+        var query = "[].{" + baseQuery + "}||{" + baseQuery + "}";
 
         var result = await _httpClient.PostAsync(
             $"directharvest/{dataset}?envelope=false&requestor=991825827&query={query}",
