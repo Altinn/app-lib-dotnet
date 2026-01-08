@@ -245,7 +245,7 @@ public class MaskinportenSettingsTest
     public async Task LoadFromJsonFile_WithJwkBase64_BindsCorrectly(string authority)
     {
         // Arrange
-        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        var tempDir = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(tempDir);
 
         try
@@ -259,7 +259,7 @@ public class MaskinportenSettingsTest
                     }
                 }
                 """;
-            var filePath = Path.Combine(tempDir, "maskinporten-settings.json");
+            var filePath = Path.Join(tempDir, "maskinporten-settings.json");
             await File.WriteAllTextAsync(filePath, json);
 
             var configuration = new ConfigurationBuilder().AddJsonFile(filePath).Build();
@@ -292,7 +292,7 @@ public class MaskinportenSettingsTest
     public async Task LoadFromJsonFile_WithJwk_BindsCorrectly(string authority)
     {
         // Arrange
-        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        var tempDir = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(tempDir);
 
         try
@@ -306,7 +306,7 @@ public class MaskinportenSettingsTest
                     }
                 }
                 """;
-            var filePath = Path.Combine(tempDir, "maskinporten-settings.json");
+            var filePath = Path.Join(tempDir, "maskinporten-settings.json");
             await File.WriteAllTextAsync(filePath, json);
 
             var configuration = new ConfigurationBuilder().AddJsonFile(filePath).Build();
