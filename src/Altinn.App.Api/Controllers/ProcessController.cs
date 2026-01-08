@@ -392,7 +392,9 @@ public class ProcessController : ControllerBase
                 {
                     Instance = instance,
                     User = User,
-                    Action = ProcessEngine.ConvertTaskTypeToAction(instance.Process.CurrentTask.AltinnTaskType),
+                    Action = Altinn.App.Core.Internal.Process.ProcessEngine.ConvertTaskTypeToAction(
+                        instance.Process.CurrentTask.AltinnTaskType
+                    ),
                     Language = language,
                 };
                 ProcessChangeResult result = await _processEngine.Next(request);

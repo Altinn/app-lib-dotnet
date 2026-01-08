@@ -12,6 +12,7 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Models;
+using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal;
 using Altinn.App.Core.Internal.AltinnCdn;
