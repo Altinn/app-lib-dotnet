@@ -528,6 +528,8 @@ namespace Altinn.App.Api.Controllers
         [Microsoft.AspNetCore.Mvc.HttpGet]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(string), 200, "application/json", new string[0])]
         [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/api/layoutsettings")]
+        [System.Obsolete("This endpoint is no longer available. Use /{org}/{app}/api/layoutsettings/{id} to" +
+            " get layout settings for a specific layout set.")]
         public Microsoft.AspNetCore.Mvc.ActionResult GetLayoutSettings(string org, string app) { }
         [Microsoft.AspNetCore.Mvc.HttpGet]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(string), 200, "application/json", new string[0])]
@@ -548,6 +550,11 @@ namespace Altinn.App.Api.Controllers
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(string), 200, "application/json", new string[0])]
         [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/api/jsonschema/{id}")]
         public Microsoft.AspNetCore.Mvc.ActionResult GetModelJsonSchema([Microsoft.AspNetCore.Mvc.FromRoute] string id) { }
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(string), 200, "application/xml", new string[0])]
+        [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/api/xsdschema/{id}")]
+        public Microsoft.AspNetCore.Mvc.ActionResult GetModelXsdSchema([Microsoft.AspNetCore.Mvc.FromRoute] string id) { }
         [Microsoft.AspNetCore.Mvc.HttpGet]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(204)]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Microsoft.AspNetCore.Mvc.FileContentResult), 200, "application/json", new string[0])]
