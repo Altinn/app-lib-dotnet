@@ -1,10 +1,11 @@
 using System.Globalization;
 using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
+using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.ExpressionEvaluatorTests;
 
-public class ExpressionValueTests
+public class ExpressionValueTests(ITestOutputHelper outputHelper)
 {
     [Fact]
     public void TestNull()
@@ -221,5 +222,40 @@ public class ExpressionValueTests
         {
             JsonSerializer.Deserialize<ExpressionValue>("{\"key\": 123}");
         });
+    }
+
+    [Fact]
+    public void TestTryParseVariousTypes()
+    {
+        TestTryDeserialize(2, 2.0, true);
+        TestTryDeserialize(2.5, 2.5, true);
+        TestTryDeserialize("test", "test", true);
+        TestTryDeserialize(true, true, true);
+        TestTryDeserialize(false, false, true);
+        TestTryDeserialize(ExpressionValue.Null, (string?)null, true);
+        TestTryDeserialize(ExpressionValue.False, (bool?)false, true);
+        TestTryDeserialize(ExpressionValue.True, (bool?)true, true);
+        TestTryDeserialize("3.4", 3.4, true);
+        TestTryDeserialize("not a number", 0, false);
+        TestTryDeserialize<int?>("not a number", null, false);
+        TestTryDeserialize<int?>(ExpressionValue.Null, null, true);
+        TestTryDeserialize<int?>(ExpressionValue.False, 0, true);
+        TestTryDeserialize<int?>(ExpressionValue.True, 1, true);
+        TestTryDeserialize<string?>(ExpressionValue.False, null, false);
+    }
+
+    private void TestTryDeserialize<T>(ExpressionValue value, T? expected, bool success)
+    {
+        outputHelper.WriteLine(value.ToString());
+        if (value.TryDeserialize(out T? result))
+        {
+            Assert.True(success);
+            Assert.Equal(expected, result);
+        }
+        else
+        {
+            Assert.Equal(expected, result);
+            Assert.False(success);
+        }
     }
 }
