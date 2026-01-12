@@ -50,7 +50,7 @@ public class DanClient : IDanClient
         _httpClient.DefaultRequestHeaders.Clear();
         var token = await GetMaskinportenToken();
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Value);
-        _httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", SetSubscriptionKey(dataset));
+        _httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _settings.Value.SubscriptionKey);
 
         var body = new { Subject = subject };
         var myContent = JsonConvert.SerializeObject(body);
@@ -60,15 +60,14 @@ public class DanClient : IDanClient
         var baseQuery = $"{fieldsToFill.First()} : {fieldsToFill.First()}";
         foreach (var jsonKey in fieldsToFill.Skip(1))
         {
+            //if there is more than one field to fetch, add it to the query
             baseQuery += $",{jsonKey} : {jsonKey}";
         }
 
+        //ensures that th query returns a list if endpoint returns a list and an object when endpoint returns a single object
         var query = "[].{" + baseQuery + "}||{" + baseQuery + "}";
 
-        var result = await _httpClient.PostAsync(
-            $"directharvest/{dataset}?envelope=false&requestor=991825827&query={query}",
-            content
-        );
+        var result = await _httpClient.PostAsync($"directharvest/{dataset}?envelope=false&query={query}", content);
 
         if (result.IsSuccessStatusCode)
         {
@@ -129,19 +128,5 @@ public class DanClient : IDanClient
 
         var keys = list.Where(l => l.Any()).Select(l => l.Keys.First()).ToList();
         return keys;
-    }
-
-    //Todo: remove after testing
-    private string SetSubscriptionKey(string dataset)
-    {
-        switch (dataset.ToUpper())
-        {
-            case "UNITBASICINFORMATION":
-                return _settings.Value.SubscriptionKey;
-            case "SKIPSREGISTRENE":
-                return _settings.Value.SubscriptionKeySkipsRegistrene;
-            default:
-                return "";
-        }
     }
 }
