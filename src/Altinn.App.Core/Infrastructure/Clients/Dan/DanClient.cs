@@ -43,7 +43,7 @@ public class DanClient : IDanClient
     /// </summary>
     /// <param name="dataset">Dataset from Dan</param>
     /// <param name="subject">Usually ssn or orgNumber</param>
-    /// <param name="jmesPath">jmesPath - usd to filter out just the fields we need</param>
+    /// <param name="fields">The fields we fetch from the api</param>
     /// <returns></returns>
     public async Task<Dictionary<string, string>> GetDataset(string dataset, string subject, string fields)
     {
@@ -74,7 +74,7 @@ public class DanClient : IDanClient
             var dictionary = new Dictionary<string, string>();
             var resultJson = result.Content.ReadAsStringAsync().Result;
 
-            //some datasets might return an array. The array need to be serialized differently than a single object
+            //some datasets might return an array. The array needs to be serialized differently than a single object
             if (IsJsonArray(resultJson))
             {
                 dictionary = await ConvertListToDictionary(resultJson);
@@ -98,18 +98,20 @@ public class DanClient : IDanClient
         return token;
     }
 
-    private async Task<Dictionary<string, string>> ConvertListToDictionary(string jsonString)
+    private static Task<Dictionary<string, string>> ConvertListToDictionary(string jsonString)
     {
         var list = JsonConvert.DeserializeObject<List<Dictionary<string, string>>>(jsonString);
+        if (list != null)
+            return Task.FromResult(
+                list.SelectMany(d => d)
+                    .GroupBy(kvp => kvp.Key)
+                    .ToDictionary(g => g.Key, g => string.Join(",", g.Select(x => x.Value)))
+            );
 
-        var mergedDictionary = list.SelectMany(d => d)
-            .GroupBy(kvp => kvp.Key)
-            .ToDictionary(g => g.Key, g => string.Join(",", g.Select(x => x.Value)));
-
-        return mergedDictionary;
+        return Task.FromResult(new Dictionary<string, string>());
     }
 
-    private bool IsJsonArray(string jsonString)
+    private static bool IsJsonArray(string jsonString)
     {
         try
         {
@@ -122,11 +124,11 @@ public class DanClient : IDanClient
         }
     }
 
-    private List<string> GetQuery(string json)
+    private static List<string> GetQuery(string json)
     {
         var list = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(json);
-
-        var keys = list.Where(l => l.Any()).Select(l => l.Keys.First()).ToList();
-        return keys;
+        if (list != null)
+            return list.Where(l => l.Count != 0).Select(l => l.Keys.First()).ToList();
+        return new List<string>();
     }
 }
