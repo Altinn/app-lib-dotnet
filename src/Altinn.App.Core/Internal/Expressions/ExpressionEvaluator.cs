@@ -127,6 +127,9 @@ public static class ExpressionEvaluator
             ExpressionFunction.argv => Argv(args, positionalArguments),
             ExpressionFunction.gatewayAction => state.GetGatewayAction(),
             ExpressionFunction.language => state.GetLanguage(),
+            // Calculations:
+            ExpressionFunction.plus => Plus(args),
+            ExpressionFunction.minus => Minus(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
@@ -610,8 +613,8 @@ public static class ExpressionEvaluator
             throw new ExpressionEvaluatorTypeErrorException($"Expected 2-3 arguments, got {args.Length}");
         }
         string? subject = args[0].ToStringForEquals();
-        double? start = PrepareNumericArg(args[1]);
-        double? end = args.Length == 3 ? PrepareNumericArg(args[2]) : null;
+        decimal? start = PrepareNumericArg(args[1]);
+        decimal? end = args.Length == 3 ? PrepareNumericArg(args[2]) : null;
         bool hasEnd = args.Length == 3;
 
         if (start == null || (hasEnd && end == null))
@@ -805,7 +808,7 @@ public static class ExpressionEvaluator
         return !PrepareBooleanArg(args[0]);
     }
 
-    private static (double?, double?) PrepareNumericArgs(ExpressionValue[] args)
+    private static (decimal?, decimal?) PrepareNumericArgs(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
@@ -819,7 +822,7 @@ public static class ExpressionEvaluator
         return (a, b);
     }
 
-    private static double? PrepareNumericArg(ExpressionValue arg)
+    private static decimal? PrepareNumericArg(ExpressionValue arg)
     {
         return arg.ValueKind switch
         {
@@ -862,9 +865,9 @@ public static class ExpressionEvaluator
 
     private static readonly Regex _numberRegex = new Regex(@"^-?\d+(\.\d+)?$");
 
-    internal static double? ParseNumber(string s, bool throwException = true)
+    internal static decimal? ParseNumber(string s, bool throwException = true)
     {
-        if (_numberRegex.IsMatch(s) && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+        if (_numberRegex.IsMatch(s) && decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
         {
             return d;
         }
@@ -885,6 +888,28 @@ public static class ExpressionEvaluator
             return false; // error handeling
         }
         return a < b; // Actual implementation
+    }
+
+    private static string Plus(ExpressionValue[] args)
+    {
+        var (a, b) = PrepareNumericArgs(args);
+        a ??= 0;
+        b ??= 0;
+        return (a + b).Value.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static string Minus(ExpressionValue[] args)
+    {
+        var (a, b) = PrepareNumericArgs(args);
+        if (a is null || b is null)
+        {
+            throw new ExpressionEvaluatorTypeErrorException(
+                "One or both arguments were null or undefined. Cannot subtract.",
+                ExpressionFunction.minus,
+                args
+            );
+        }
+        return (a - b).Value.ToString(CultureInfo.InvariantCulture);
     }
 
     private static bool LessThanEq(ExpressionValue[] args)

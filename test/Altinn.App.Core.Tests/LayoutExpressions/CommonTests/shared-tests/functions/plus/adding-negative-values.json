@@ -1,0 +1,5 @@
+{
+  "name": "Should add two negative numbers together",
+  "expression": ["plus", -4, -0.2],
+  "expects": "-4.2"
+}

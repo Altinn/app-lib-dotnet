@@ -1,0 +1,5 @@
+{
+  "name": "Should subtract the second negative argument from the first",
+  "expression": ["minus", -0.1, -0.2],
+  "expects": "0.1"
+}

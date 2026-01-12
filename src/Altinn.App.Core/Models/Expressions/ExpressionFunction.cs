@@ -205,4 +205,14 @@ public enum ExpressionFunction
     /// If no translations exist for the current language, we will use the resources for "nb"
     /// </summary>
     text,
+
+    /// <summary>
+    /// Adding two numbers. Use a period (.) as the decimals separator. Must be numeric values.
+    /// </summary>
+    plus,
+
+    /// <summary>
+    /// Subtracting a value from another. Use a period (.) as the decimals separator. Must be numeric values.
+    /// </summary>
+    minus,
 }

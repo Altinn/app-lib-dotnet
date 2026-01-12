@@ -56,7 +56,7 @@ public class ExpressionValueTests
     [Fact]
     public void TestDouble()
     {
-        double doubleValue = 123.456;
+        decimal doubleValue = 123.456m;
         ExpressionValue value = doubleValue;
         Assert.Equal(doubleValue, value.ToObject());
         Assert.Equal(doubleValue, value.Number);

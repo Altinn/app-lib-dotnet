@@ -17,7 +17,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     private readonly string? _stringValue = null;
 
     // double is a value type where nullable takes extra space, and we only read it when it should be set
-    private readonly double _numberValue = 0;
+    private readonly decimal _numberValue = 0;
 
     // private readonly Dictionary<string, ExpressionValue>? _objectValue = null;
     // private readonly ExpressionValue[]? _arrayValue = null;
@@ -65,7 +65,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         }
     }
 
-    private ExpressionValue(double? value)
+    private ExpressionValue(decimal? value)
     {
         if (value.HasValue)
         {
@@ -104,7 +104,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// <summary>
     /// Convert a nullable double to ExpressionValue
     /// </summary>
-    public static implicit operator ExpressionValue(double? value) => new(value);
+    public static implicit operator ExpressionValue(decimal? value) => new(value);
 
     /// <summary>
     /// Convert a nullable string to ExpressionValue
@@ -132,8 +132,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             null => Null,
             bool boolValue => boolValue,
             string stringValue => stringValue,
-            float numberValue => numberValue,
-            double numberValue => numberValue,
+            float numberValue => (decimal)numberValue, // expressions uses double which needs an explicit cast
+            double numberValue => (decimal)numberValue, // expressions uses double which needs an explicit cast
             byte numberValue => numberValue,
             sbyte numberValue => numberValue,
             short numberValue => numberValue,
@@ -142,9 +142,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             uint numberValue => numberValue,
             long numberValue => numberValue,
             ulong numberValue => numberValue,
-            decimal numberValue =>
-                (double?)numberValue // expressions uses double which needs an explicit cast
-            ,
+            decimal numberValue => numberValue,
             DateTime dateTimeValue => JsonSerializer
                 .Serialize(dateTimeValue, _unsafeSerializerOptionsForSerializingDates)
                 .Trim(
@@ -230,7 +228,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// <summary>
     /// Get the value as a number (or throw if it isn't a number ValueKind)
     /// </summary>
-    public double Number =>
+    public decimal Number =>
         _valueKind switch
         {
             JsonValueKind.Number => _numberValue,
@@ -457,7 +455,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
             JsonTokenType.True => true,
             JsonTokenType.False => false,
             JsonTokenType.String => reader.GetString(),
-            JsonTokenType.Number => reader.GetDouble(),
+            JsonTokenType.Number => reader.GetDecimal(),
             JsonTokenType.Null => ExpressionValue.Null,
             // JsonTokenType.StartObject => ReadObject(ref reader),
             // JsonTokenType.StartArray => ReadArray(ref reader),

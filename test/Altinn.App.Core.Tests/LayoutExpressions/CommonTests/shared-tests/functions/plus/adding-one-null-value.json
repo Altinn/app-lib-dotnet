@@ -1,0 +1,5 @@
+{
+  "name": "Should return the value that is a valid decimal when one of them is null",
+  "expression": ["plus", 4.3, null],
+  "expects": "4.3"
+}

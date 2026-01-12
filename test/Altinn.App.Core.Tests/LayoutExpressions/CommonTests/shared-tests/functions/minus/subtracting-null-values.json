@@ -1,0 +1,5 @@
+{
+  "name": "Should throw exception when both of the arguments are null",
+  "expression": ["minus", null, null],
+  "expectsFailure": "One or both arguments were null or undefined. Cannot subtract."
+}

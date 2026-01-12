@@ -204,6 +204,14 @@ public class TestFunctions
     public async Task StringLength_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
+    [SharedTest("plus")]
+    public async Task Plus_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("minus")]
+    public async Task Minus_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
     [SharedTest("round")]
     public async Task Round_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 

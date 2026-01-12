@@ -1,0 +1,5 @@
+{
+  "name": "Should return 0 when values are null",
+  "expression": ["plus", null, null],
+  "expects": "0"
+}
