@@ -1,5 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
@@ -22,6 +23,7 @@ internal class InstanceDataUnitOfWorkInitializer
     private readonly IOptions<FrontEndSettings> _frontEndSettings;
     private readonly Telemetry? _telemetry;
     private readonly IAppMetadata _applicationMetadata;
+    private readonly IAuthenticationContext _authenticationContext;
 
     /// <summary>
     /// Constructor with services from dependency injection
@@ -34,6 +36,7 @@ internal class InstanceDataUnitOfWorkInitializer
         ModelSerializationService modelSerializationService,
         IAppResources appResources,
         IOptions<FrontEndSettings> frontEndSettings,
+        IAuthenticationContext authenticationContext,
         Telemetry? telemetry = null
     )
     {
@@ -45,6 +48,7 @@ internal class InstanceDataUnitOfWorkInitializer
         _frontEndSettings = frontEndSettings;
         _telemetry = telemetry;
         _applicationMetadata = applicationMetadata;
+        _authenticationContext = authenticationContext;
     }
 
     /// <summary>
@@ -63,6 +67,7 @@ internal class InstanceDataUnitOfWorkInitializer
             _modelSerializationService,
             _appResources,
             _frontEndSettings,
+            _authenticationContext,
             taskId,
             language,
             _telemetry

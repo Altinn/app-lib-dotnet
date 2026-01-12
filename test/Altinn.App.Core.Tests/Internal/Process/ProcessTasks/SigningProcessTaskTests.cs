@@ -1,5 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Signing.Models;
 using Altinn.App.Core.Features.Signing.Services;
 using Altinn.App.Core.Helpers.Serialization;
@@ -34,6 +35,7 @@ public class SigningProcessTaskTests
     private readonly Mock<IDataClient> _dataClientMock = new(MockBehavior.Strict);
     private readonly Mock<IPdfService> _pdfServiceMock = new(MockBehavior.Strict);
     private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
+    private readonly Mock<IAuthenticationContext> _authenticationContextMock = new(MockBehavior.Strict);
     private readonly ServiceCollection _serviceCollection = new();
 
     public SigningProcessTaskTests()
@@ -53,6 +55,7 @@ public class SigningProcessTaskTests
         _serviceCollection.AddSingleton(_dataClientMock.Object);
         _serviceCollection.AddSingleton(_pdfServiceMock.Object);
         _serviceCollection.AddSingleton(_appResourcesMock.Object);
+        _serviceCollection.AddSingleton(_authenticationContextMock.Object);
 
         _appMetadataMock
             .Setup(a => a.GetApplicationMetadata())

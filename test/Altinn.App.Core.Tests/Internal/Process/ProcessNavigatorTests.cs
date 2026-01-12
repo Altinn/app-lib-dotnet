@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -294,6 +295,7 @@ public class ProcessNavigatorTests
         services.AddSingleton(new Mock<IAppModel>(MockBehavior.Strict).Object);
         services.AddSingleton(new Mock<IAppResources>(MockBehavior.Strict).Object);
         services.AddSingleton(new Mock<ITranslationService>(MockBehavior.Strict).Object);
+        services.AddSingleton(new Mock<IAuthenticationContext>(MockBehavior.Strict).Object);
         services.AddSingleton<ModelSerializationService>();
         services.AddTransient<InstanceDataUnitOfWorkInitializer>();
 

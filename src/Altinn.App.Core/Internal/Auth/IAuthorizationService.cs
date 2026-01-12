@@ -17,6 +17,7 @@ public interface IAuthorizationService
     /// </summary>
     /// <param name="userId">The userId.</param>
     /// <returns>List of parties.</returns>
+    [Obsolete("Use IAuthenticationContext.Current.PartyList instead")]
     Task<List<Party>?> GetPartyList(int userId);
 
     /// <summary>
@@ -25,6 +26,7 @@ public interface IAuthorizationService
     /// <param name="userId">The user id.</param>
     /// <param name="partyId">The party id.</param>
     /// <returns> Boolean indicating whether or not the user can represent the selected party.</returns>
+    [Obsolete("Use IAuthenticationContext.Current.ValidateSelectedParty instead")]
     Task<bool?> ValidateSelectedParty(int userId, int partyId);
 
     /// <summary>
@@ -50,6 +52,6 @@ public interface IAuthorizationService
     /// <param name="instance"></param>
     /// <param name="user"></param>
     /// <param name="actions"></param>
-    /// <returns>Dictionary with actions and the auth decision</returns>
+    /// <returns>List of user actions with the auth decision</returns>
     Task<List<UserAction>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<AltinnAction> actions);
 }

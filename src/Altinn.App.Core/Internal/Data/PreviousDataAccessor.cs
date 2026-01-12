@@ -81,6 +81,8 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
         return data.Copy();
     }
 
+    public Task<bool> IsAuthorizedForAction(string action) => _dataAccessor.IsAuthorizedForAction(action);
+
     public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)
     {
         return new CleanInstanceDataAccessor(

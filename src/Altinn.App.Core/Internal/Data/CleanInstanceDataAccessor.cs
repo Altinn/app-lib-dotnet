@@ -92,6 +92,8 @@ internal sealed class CleanInstanceDataAccessor : IInstanceDataAccessor
         return dataWrapper.Copy();
     }
 
+    public Task<bool> IsAuthorizedForAction(string action) => _dataAccessor.IsAuthorizedForAction(action);
+
     private static IFormDataWrapper CleanModel(
         IFormDataWrapper data,
         DataElementIdentifier dataElementIdentifier,

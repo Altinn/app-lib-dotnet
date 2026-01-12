@@ -88,6 +88,11 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
             return Task.FromResult(_data);
         }
 
+        public Task<bool> IsAuthorizedForAction(string action) =>
+            Task.FromException<bool>(
+                new NotSupportedException("Legacy single data accessor does not implement IsAuthorizedForAction ")
+            );
+
         public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)
         {
             throw new NotSupportedException("Legacy single data accessor does not implement GetCleanAccessor");

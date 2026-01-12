@@ -46,8 +46,22 @@ public class StorageClientInterceptor : HttpMessageHandler
 
     public void AddInstance(Instance instance)
     {
+        if (instance.InstanceOwner?.PartyId is null)
+        {
+            instance.InstanceOwner ??= new InstanceOwner();
+            instance.InstanceOwner.PartyId = "1234";
+        }
+        if (instance.Id is null)
+        {
+            instance.Id = $"{instance.InstanceOwner.PartyId}/00000000-0000-0000-0000-000000000001";
+        }
         instance.Data ??= [];
-        _instances[instance.Id] = instance;
+        if (!_instances.TryAdd(instance.Id, instance))
+        {
+            throw new InvalidOperationException(
+                $"Instance with id {instance.Id} already exists in StorageClientInterceptor"
+            );
+        }
     }
 
     public void AddDataRaw(Guid dataId, byte[] data)
@@ -329,5 +343,20 @@ public class StorageClientInterceptor : HttpMessageHandler
         {
             Content = new StringContent(stringContent, Encoding.UTF8, contentType),
         };
+    }
+
+    public void AddData<T>(Instance instance, DataType dataType, IEnumerable<T> models)
+        where T : class, new()
+    {
+        if (dataType.AppLogic?.ClassRef != typeof(T).FullName)
+        {
+            throw new InvalidOperationException($"Data type \"{dataType.Id}\" is not of type {typeof(T).FullName}");
+        }
+
+        foreach (var model in models)
+        {
+            var serialized = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(model);
+            AddData(instance, dataType.Id, "application/json", serialized);
+        }
     }
 }

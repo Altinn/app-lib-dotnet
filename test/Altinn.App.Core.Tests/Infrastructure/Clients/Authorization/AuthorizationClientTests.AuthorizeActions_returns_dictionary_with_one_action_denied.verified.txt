@@ -5,7 +5,7 @@
       IdFormat: W3C,
       Tags: [
         {
-          instance.guid: Guid_1
+          authorization.actions: read,write,complete,lookup
         }
       ],
       HasParent: false

@@ -46,6 +46,11 @@ public interface IInstanceDataAccessor
     internal Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier);
 
     /// <summary>
+    /// Check if the current user is authorized for the given action on the current task.
+    /// </summary>
+    public Task<bool> IsAuthorizedForAction(string action);
+
+    /// <summary>
     /// Get a <see cref="IInstanceDataAccessor"/> that provides access to the cleaned data (where all fields marked as "hidden" are removed).
     /// </summary>
     /// <param name="rowRemovalOption">The strategy for "hiddenRow" on group components</param>
@@ -255,6 +260,27 @@ public static class IInstanceDataAccessorExtensions
             {
                 yield return (dataType, dataElement);
             }
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the data elements associated with a specific task that are readable by the current user.
+    /// </summary>
+    public static async IAsyncEnumerable<(DataType dataType, DataElement dataElement)> GetReadableDataElementsForTask(
+        this IInstanceDataAccessor accessor,
+        string taskId
+    )
+    {
+        foreach (var (dataType, dataElement) in accessor.GetDataElementsForTask(taskId))
+        {
+            if (
+                string.IsNullOrEmpty(dataType.ActionRequiredToRead)
+                && !await accessor.IsAuthorizedForAction(dataType.ActionRequiredToRead)
+            )
+            {
+                continue;
+            }
+            yield return (dataType, dataElement);
         }
     }
 

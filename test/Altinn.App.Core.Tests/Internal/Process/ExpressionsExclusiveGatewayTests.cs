@@ -301,6 +301,7 @@ public class ExpressionsExclusiveGatewayTests
             modelSerializationService: modelSerializationService,
             appResources: null!,
             frontEndSettings: null!,
+            authenticationContext: null!,
             taskId: TaskId,
             language: null,
             telemetry: null

@@ -3,6 +3,7 @@ using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
+using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Common.PEP.Interfaces;
@@ -27,7 +28,7 @@ public class AuthorizationClientTests
         Mock<IOptionsMonitor<AppSettings>> appSettingsMock = new();
         var pdpResponse = GetXacmlJsonRespons("one-action-denied");
         pdpMock.Setup(s => s.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>())).ReturnsAsync(pdpResponse);
-        AuthorizationClient client = new(
+        IAuthorizationClient client = new AuthorizationClient(
             Options.Create(new PlatformSettings()),
             httpContextAccessorMock.Object,
             httpClientMock.Object,
@@ -77,7 +78,7 @@ public class AuthorizationClientTests
         pdpMock
             .Setup(s => s.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
             .ReturnsAsync(new XacmlJsonResponse());
-        AuthorizationClient client = new AuthorizationClient(
+        IAuthorizationClient client = new AuthorizationClient(
             Options.Create(new PlatformSettings()),
             httpContextAccessorMock.Object,
             httpClientMock.Object,

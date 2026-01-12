@@ -515,6 +515,7 @@ public class PdfServiceTests
             null!, // ModelSerializationService not needed for these tests
             appResources?.Object ?? _appResources.Object,
             Options.Create(new FrontEndSettings()),
+            authenticationContext?.Object!,
             null
         );
 

@@ -4,6 +4,7 @@ using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -55,6 +56,7 @@ public sealed class PatchServiceTests : IDisposable
     private readonly Mock<IWebHostEnvironment> _webHostEnvironment = new(MockBehavior.Strict);
     private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
     private readonly Mock<IDataElementAccessChecker> _dataElementAccessCheckerMock = new(MockBehavior.Strict);
+    private readonly Mock<IAuthenticationContext> _authenticationContextMock = new(MockBehavior.Strict);
 
     // ValidatorMocks
     private readonly Mock<IFormDataValidator> _formDataValidator = new(MockBehavior.Strict);
@@ -119,6 +121,7 @@ public sealed class PatchServiceTests : IDisposable
         services.AddSingleton(_dataClientMock.Object);
         services.AddSingleton(_instanceClientMock.Object);
         services.AddSingleton(_dataElementAccessCheckerMock.Object);
+        services.AddSingleton(_authenticationContextMock.Object);
         _modelSerializationService = new ModelSerializationService(_appModelMock.Object);
         services.AddSingleton(_modelSerializationService);
         services.Configure<GeneralSettings>(_ => { });

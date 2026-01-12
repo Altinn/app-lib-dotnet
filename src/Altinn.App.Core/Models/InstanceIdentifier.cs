@@ -35,7 +35,18 @@ public class InstanceIdentifier
     /// </summary>
     /// <param name="instance">Is the instance you want to get an idenifier from</param>
     public InstanceIdentifier(Instance instance)
-        : this(instance.Id) { }
+    {
+        if (instance.Id.Contains('/'))
+        {
+            (InstanceOwnerPartyId, InstanceGuid) = DeconstructInstanceId(instance.Id);
+        }
+        else
+        {
+            InstanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
+            InstanceGuid = Guid.Parse(instance.Id);
+        }
+        IsNoInstance = false;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InstanceIdentifier"/> class. For instances without OwnerPartyId and InstanceId, ex: Stateless applications.

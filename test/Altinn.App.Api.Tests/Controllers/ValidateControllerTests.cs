@@ -2,6 +2,7 @@ using System.Net;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -34,6 +35,7 @@ public class ValidateControllerTests
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<ITranslationService> _translationServiceMock = new(MockBehavior.Strict);
     private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
+    private readonly Mock<IAuthenticationContext> _authenticationContextMock = new(MockBehavior.Strict);
     private readonly ServiceCollection _services = new();
 
     public ValidateControllerTests()
@@ -49,6 +51,7 @@ public class ValidateControllerTests
         _services.AddSingleton(_appModelMock.Object);
         _services.AddSingleton(_translationServiceMock.Object);
         _services.AddSingleton(_appResourcesMock.Object);
+        _services.AddSingleton(_authenticationContextMock.Object);
         _services.AddSingleton(Options.Create(new FrontEndSettings()));
         _services.AddTransient<InstanceDataUnitOfWorkInitializer>();
         _services.AddTransient<ModelSerializationService>();

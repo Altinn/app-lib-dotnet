@@ -80,12 +80,37 @@ public abstract class Authenticated
     }
 
     /// <summary>
+    /// Check if the current authenticated client is authorized for the given action.
+    /// </summary>
+    /// <param name="identifier"></param>
+    /// <param name="taskId">
+    ///     Authorization rules often depends on the task,
+    ///     and for efficiency we run a multi request to authorize all actions for a given task at once.
+    /// </param>
+    /// <param name="endEvent">The end event urn:altinn:end-event</param>
+    /// <param name="action">The action to authorize</param>
+    public abstract Task<bool> IsAuthorizedForAction(
+        InstanceIdentifier identifier,
+        string? taskId,
+        string? endEvent,
+        string action
+    );
+
+    /// <summary>
     /// Type to indicate that the current request is not authenticated.
     /// </summary>
     public sealed class None : Authenticated
     {
         internal None(ref ParseContext context)
             : base(ref context) { }
+
+        /// <inheritdoc />
+        public override Task<bool> IsAuthorizedForAction(
+            InstanceIdentifier identifier,
+            string? taskId,
+            string? endEvent,
+            string action
+        ) => Task.FromResult(false);
     }
 
     /// <summary>
@@ -96,6 +121,14 @@ public abstract class Authenticated
     {
         internal Unknown(ref ParseContext context)
             : base(ref context) { }
+
+        /// <inheritdoc />
+        public override Task<bool> IsAuthorizedForAction(
+            InstanceIdentifier identifier,
+            string? taskId,
+            string? endEvent,
+            string action
+        ) => Task.FromResult(false);
     }
 
     /// <summary>

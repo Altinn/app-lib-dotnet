@@ -261,6 +261,7 @@ public sealed partial class Telemetry : IDisposable
         internal const string Type = "type";
         internal const string AuthorizationAction = "authorization.action";
         internal const string AuthorizerAction = "authorization.authorizer.action";
+        internal const string AuthorizationActions = "authorization.actions";
         internal const string AuthorizerTaskId = "authorization.authorizer.task.id";
         internal const string ValidatorType = "validator.type";
         internal const string ValidatorSource = "validator.source";
@@ -278,6 +279,7 @@ public sealed partial class Telemetry : IDisposable
         internal const string ProblemTitle = "problem.title";
         internal const string ProblemStatus = "problem.status";
         internal const string ProblemDetail = "problem.detail";
+        internal const string ProcessEndEvent = "process.end_event";
     }
 
     private void InitMetricCounter(InitContext context, string name, Action<Counter<long>> init)

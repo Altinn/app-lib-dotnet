@@ -50,6 +50,17 @@ partial class Telemetry
         return activity;
     }
 
+    internal Activity? StartClientAuthorizeActionsActivity(List<string> actions, string? taskId, string? endEvent)
+    {
+        var activity = ActivitySource.StartActivity($"{Prefix}.AuthorizeActions");
+
+        activity?.SetTag(InternalLabels.AuthorizationActions, string.Join(",", actions));
+        activity?.SetTaskId(taskId);
+        activity?.SetTag(InternalLabels.ProcessEndEvent, endEvent);
+
+        return activity;
+    }
+
     internal Activity? StartClientGetRolesActivity(int userId)
     {
         var activity = ActivitySource.StartActivity($"{Prefix}.GetRoles");

@@ -24,6 +24,7 @@ public static class MultiDecisionHelper
     /// <summary>
     /// Creates multi decision request.
     /// </summary>
+    [Obsolete("Use overload with InstanceIdentifier instead.")]
     public static XacmlJsonRequestRoot CreateMultiDecisionRequest(
         ClaimsPrincipal user,
         Instance instance,
@@ -32,11 +33,33 @@ public static class MultiDecisionHelper
     {
         ArgumentNullException.ThrowIfNull(user);
 
+        return CreateMultiDecisionRequest(
+            user,
+            new AppIdentifier(instance),
+            new InstanceIdentifier(instance),
+            actionTypes,
+            instance.Process?.CurrentTask?.ElementId,
+            instance.Process?.EndEvent
+        );
+    }
+
+    /// <summary>
+    /// Creates multi decision request.
+    /// </summary>
+    public static XacmlJsonRequestRoot CreateMultiDecisionRequest(
+        ClaimsPrincipal user,
+        AppIdentifier appIdentifier,
+        InstanceIdentifier instanceIdentifier,
+        List<string> actions,
+        string? taskId,
+        string? endEvent
+    )
+    {
         XacmlJsonRequest request = new() { AccessSubject = new List<XacmlJsonCategory>() };
 
         request.AccessSubject.Add(CreateMultipleSubjectCategory(user.Claims));
-        request.Action = CreateMultipleActionCategory(actionTypes);
-        request.Resource = CreateMultipleResourceCategory(instance);
+        request.Action = CreateMultipleActionCategory(actions);
+        request.Resource = CreateMultipleResourceCategory(appIdentifier, instanceIdentifier, taskId, endEvent);
         request.MultiRequests = CreateMultiRequestsCategory(request.AccessSubject, request.Action, request.Resource);
 
         XacmlJsonRequestRoot jsonRequest = new() { Request = request };
@@ -102,50 +125,36 @@ public static class MultiDecisionHelper
         return actionCategories;
     }
 
-    private static List<XacmlJsonCategory> CreateMultipleResourceCategory(Instance instance)
+    private static List<XacmlJsonCategory> CreateMultipleResourceCategory(
+        AppIdentifier appIdentifier,
+        InstanceIdentifier instanceIdentifier,
+        string? taskId,
+        string? endEvent
+    )
     {
         List<XacmlJsonCategory> resourcesCategories = new();
         int counter = 1;
         XacmlJsonCategory resourceCategory = new() { Attribute = new List<XacmlJsonAttribute>() };
 
-        var instanceProps = GetInstanceProperties(instance);
-
-        if (instanceProps.Task != null)
+        if (taskId != null)
         {
             resourceCategory.Attribute.Add(
-                DecisionHelper.CreateXacmlJsonAttribute(AltinnUrns.Task, instanceProps.Task, DefaultType, DefaultIssuer)
+                DecisionHelper.CreateXacmlJsonAttribute(AltinnUrns.Task, taskId, DefaultType, DefaultIssuer)
             );
         }
-        else if (instance.Process?.EndEvent != null)
+        else if (endEvent != null)
         {
             resourceCategory.Attribute.Add(
-                DecisionHelper.CreateXacmlJsonAttribute(
-                    AltinnUrns.EndEvent,
-                    instance.Process.EndEvent,
-                    DefaultType,
-                    DefaultIssuer
-                )
+                DecisionHelper.CreateXacmlJsonAttribute(AltinnUrns.EndEvent, endEvent, DefaultType, DefaultIssuer)
             );
         }
 
-        if (!string.IsNullOrWhiteSpace(instanceProps.InstanceId))
+        if (instanceIdentifier.IsNoInstance == false)
         {
             resourceCategory.Attribute.Add(
                 DecisionHelper.CreateXacmlJsonAttribute(
                     AltinnXacmlUrns.InstanceId,
-                    instanceProps.InstanceId,
-                    DefaultType,
-                    DefaultIssuer,
-                    true
-                )
-            );
-        }
-        else if (!string.IsNullOrEmpty(instanceProps.InstanceGuid))
-        {
-            resourceCategory.Attribute.Add(
-                DecisionHelper.CreateXacmlJsonAttribute(
-                    AltinnXacmlUrns.InstanceId,
-                    instanceProps.InstanceOwnerPartyId + "/" + instanceProps.InstanceGuid,
+                    instanceIdentifier.GetInstanceId(),
                     DefaultType,
                     DefaultIssuer,
                     true
@@ -156,7 +165,7 @@ public static class MultiDecisionHelper
         resourceCategory.Attribute.Add(
             DecisionHelper.CreateXacmlJsonAttribute(
                 AltinnXacmlUrns.PartyId,
-                instanceProps.InstanceOwnerPartyId,
+                instanceIdentifier.InstanceOwnerPartyId.ToString(CultureInfo.InvariantCulture),
                 DefaultType,
                 DefaultIssuer
             )
@@ -164,7 +173,7 @@ public static class MultiDecisionHelper
         resourceCategory.Attribute.Add(
             DecisionHelper.CreateXacmlJsonAttribute(
                 AltinnXacmlUrns.OrgId,
-                instanceProps.appIdentifier.Org,
+                appIdentifier.Org,
                 DefaultType,
                 DefaultIssuer
             )
@@ -172,31 +181,15 @@ public static class MultiDecisionHelper
         resourceCategory.Attribute.Add(
             DecisionHelper.CreateXacmlJsonAttribute(
                 AltinnXacmlUrns.AppId,
-                instanceProps.appIdentifier.App,
+                appIdentifier.App,
                 DefaultType,
                 DefaultIssuer
             )
         );
-        resourceCategory.Id = ResourceId + counter;
+        resourceCategory.Id = ResourceId + counter.ToString(CultureInfo.InvariantCulture);
         resourcesCategories.Add(resourceCategory);
 
         return resourcesCategories;
-    }
-
-    private static (
-        string? InstanceId,
-        string InstanceGuid,
-        string? Task,
-        string InstanceOwnerPartyId,
-        AppIdentifier appIdentifier
-    ) GetInstanceProperties(Instance instance)
-    {
-        string? instanceId = instance.Id.Contains('/') ? instance.Id : null;
-        string instanceGuid = instance.Id.Contains('/') ? instance.Id.Split("/")[1] : instance.Id;
-        string? task = instance.Process?.CurrentTask?.ElementId;
-        string instanceOwnerPartyId = instance.InstanceOwner.PartyId;
-        AppIdentifier appIdentifier = new(instance);
-        return (instanceId, instanceGuid, task, instanceOwnerPartyId, appIdentifier);
     }
 
     private static XacmlJsonMultiRequests CreateMultiRequestsCategory(

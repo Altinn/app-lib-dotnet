@@ -4,6 +4,8 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
+using Altinn.App.Tests.Common.Fixtures;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit.Abstractions;
@@ -85,24 +87,30 @@ public class TestValidateCleanData(ITestOutputHelper outputHelper)
             noIncrementalValidation: false
         );
 
-        var fixture = await DataAccessorFixture.CreateAsync(
-            [new("mainLayout", typeof(MainModel), MaxCount: 1), new("subLayout", typeof(SubModel), MaxCount: 0)],
-            outputHelper
+        var services = new MockedServiceCollection();
+        services.OutputHelper = outputHelper;
+        services.TryAddCommonServices();
+        var mainType = await services.AddLayoutSetFromFolder<MainModel>(
+            "mainLayout",
+            maxCount: 1,
+            taskId: DataAccessorFixture.TaskId
         );
-        fixture.AddFormData(data);
-        fixture.AddFormData(subData1);
-        fixture.AddFormData(subData2);
+        var subType = await services.AddLayoutSetFromFolder<SubModel>(
+            "subLayout",
+            maxCount: 0,
+            taskId: DataAccessorFixture.TaskId
+        );
+        services.AddSingleton(validatorMock.Object);
 
-        fixture.ServiceCollection.AddSingleton(validatorMock.Object);
+        var instance = new Instance();
+        services.Storage.AddInstance(instance);
+        services.Storage.AddData(instance, mainType, [data]);
+        services.Storage.AddData(instance, subType, [subData1, subData2]);
 
-        await using var sp = fixture.BuildServiceProvider();
+        await using var sp = services.BuildServiceProvider();
 
         var dataUnitOfWorkInitializer = sp.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
-        var dataMutator = await dataUnitOfWorkInitializer.Init(
-            fixture.Instance,
-            DataAccessorFixture.TaskId,
-            "test-language"
-        );
+        var dataMutator = await dataUnitOfWorkInitializer.Init(instance, DataAccessorFixture.TaskId, "test-language");
 
         var validationService = sp.GetRequiredService<IValidationService>();
 

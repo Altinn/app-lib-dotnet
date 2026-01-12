@@ -84,6 +84,11 @@ public class InstanceDataAccessorFake : IInstanceDataAccessor, IEnumerable<KeyVa
         return Task.FromResult(FormDataWrapperFactory.Create(_dataById[dataElementIdentifier]));
     }
 
+    public Task<bool> IsAuthorizedForAction(string action)
+    {
+        throw new NotImplementedException("IsAuthorizedForAction is not yet implemented for InstanceDataAccessorFake");
+    }
+
     public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)
     {
         throw new NotImplementedException("GetCleanAccessor is not yet implemented for InstanceDataAccessorFake");

@@ -150,6 +150,7 @@ public sealed class ValidationServiceTests : IDisposable
             _modelSerialization,
             null!,
             null!,
+            authenticationContext: null!,
             DefaultTaskId,
             DefaultLanguage,
             null
@@ -436,6 +437,7 @@ public sealed class ValidationServiceTests : IDisposable
             _modelSerialization,
             null!,
             null!,
+            authenticationContext: null!,
             DefaultTaskId,
             DefaultLanguage,
             null
@@ -520,6 +522,7 @@ public sealed class ValidationServiceTests : IDisposable
             _modelSerialization,
             null!,
             null!,
+            authenticationContext: null!,
             DefaultTaskId,
             DefaultLanguage,
             null

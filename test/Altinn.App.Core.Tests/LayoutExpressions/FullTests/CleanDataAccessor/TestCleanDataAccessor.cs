@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Tests.Common.Fixtures;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
@@ -8,6 +10,8 @@ namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests.CleanDataAccessor;
 
 public class TestCleanDataAccessor
 {
+    private const string TaskId = "Task_1";
+
     private readonly ITestOutputHelper _outputHelper;
 
     public TestCleanDataAccessor(ITestOutputHelper outputHelper)
@@ -236,25 +240,23 @@ public class TestCleanDataAccessor
     }
 
     private async Task<(T1?, T2?[])> GetMainAndSubClean<T1, T2>(T1 data, T2[] subDatas)
-        where T1 : class
-        where T2 : class
+        where T1 : class, new()
+        where T2 : class, new()
     {
-        var fixture = await DataAccessorFixture.CreateAsync(
-            [new("mainLayout", typeof(T1), MaxCount: 1), new("subLayout", typeof(T2), MaxCount: 0)],
-            _outputHelper
-        );
-        fixture.AddFormData(data);
-        foreach (var subData in subDatas)
-        {
-            fixture.AddFormData(subData);
-        }
-        await using var sp = fixture.BuildServiceProvider();
+        var services = new MockedServiceCollection();
+        services.OutputHelper = _outputHelper;
+        services.TryAddCommonServices();
+        var mainType = await services.AddLayoutSetFromFolder<T1>("mainLayout", maxCount: 1, taskId: TaskId);
+        var subType = await services.AddLayoutSetFromFolder<T2>("subLayout", maxCount: 0, taskId: TaskId);
+
+        var instance = new Instance();
+        services.Storage.AddInstance(instance);
+        services.Storage.AddData(instance, mainType, [data]);
+        services.Storage.AddData(instance, subType, subDatas);
+
+        await using var sp = services.BuildServiceProvider();
         var dataUnitOfWorkInitializer = sp.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
-        var dataMutator = await dataUnitOfWorkInitializer.Init(
-            fixture.Instance,
-            DataAccessorFixture.TaskId,
-            "test-language"
-        );
+        var dataMutator = await dataUnitOfWorkInitializer.Init(instance, TaskId, "test-language");
 
         var cleanDataAccessor = dataMutator.GetCleanAccessor();
         var mainModel = await cleanDataAccessor.GetFormData<T1>();

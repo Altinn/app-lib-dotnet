@@ -1,4 +1,5 @@
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -25,6 +26,7 @@ public class ProcessTaskFinalizerTests
     private readonly Mock<IAppModel> _appModelMock = new(MockBehavior.Strict);
     private readonly Mock<IAppResources> _appResourcesMock = new(MockBehavior.Strict);
     private readonly Mock<IDataElementAccessChecker> _dataElementAccessCheckerMock = new(MockBehavior.Strict);
+    private readonly Mock<IAuthenticationContext> _authenticationContextMock = new(MockBehavior.Strict);
 
     private readonly IOptions<AppSettings> _appSettings = Options.Create(new AppSettings());
     private readonly ServiceCollection _services = new();
@@ -42,6 +44,7 @@ public class ProcessTaskFinalizerTests
         _services.AddSingleton(_appModelMock.Object);
         _services.AddSingleton(_appResourcesMock.Object);
         _services.AddSingleton(_dataElementAccessCheckerMock.Object);
+        _services.AddSingleton(_authenticationContextMock.Object);
         _services.AddSingleton(Options.Create(new FrontEndSettings()));
         _services.AddFakeLoggingWithXunit(output);
         _services.AddTransient<IProcessTaskFinalizer, ProcessTaskFinalizer>();

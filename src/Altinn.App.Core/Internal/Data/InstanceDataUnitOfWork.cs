@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -40,6 +41,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
     private readonly IAppResources _appResources;
     private readonly IOptions<FrontEndSettings> _frontEndSettings;
+    private readonly IAuthenticationContext _authenticationContext;
     private readonly ITranslationService _translationService;
     private readonly Telemetry? _telemetry;
 
@@ -70,6 +72,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         ModelSerializationService modelSerializationService,
         IAppResources appResources,
         IOptions<FrontEndSettings> frontEndSettings,
+        IAuthenticationContext authenticationContext,
         string? taskId,
         string? language,
         Telemetry? telemetry = null
@@ -91,6 +94,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         TaskId = taskId;
         Language = language;
         _frontEndSettings = frontEndSettings;
+        _authenticationContext = authenticationContext;
         _appResources = appResources;
         _instanceClient = instanceClient;
         _telemetry = telemetry;
@@ -139,6 +143,14 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             }
         );
     }
+
+    public async Task<bool> IsAuthorizedForAction(string actionId) =>
+        await _authenticationContext.Current.IsAuthorizedForAction(
+            new InstanceIdentifier(Instance),
+            TaskId,
+            null,
+            actionId
+        );
 
     /// <inheritdoc />
     public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)

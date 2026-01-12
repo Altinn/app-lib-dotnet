@@ -11,7 +11,6 @@ using Altinn.Authorization.ABAC.Xacml.JsonProfile;
 using Altinn.Common.PEP.Helpers;
 using Altinn.Common.PEP.Interfaces;
 using Altinn.Platform.Register.Models;
-using Altinn.Platform.Storage.Interface.Models;
 using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -162,13 +161,23 @@ public class AuthorizationClient : IAuthorizationClient
 
     /// <inheritdoc />
     public async Task<Dictionary<string, bool>> AuthorizeActions(
-        Instance instance,
+        AppIdentifier appIdentifier,
+        InstanceIdentifier instanceIdentifier,
         ClaimsPrincipal user,
-        List<string> actions
+        List<string> actions,
+        string? taskId = null,
+        string? endEvent = null
     )
     {
-        using var activity = _telemetry?.StartClientAuthorizeActionsActivity(instance);
-        XacmlJsonRequestRoot request = MultiDecisionHelper.CreateMultiDecisionRequest(user, instance, actions);
+        using var activity = _telemetry?.StartClientAuthorizeActionsActivity(actions, taskId, endEvent);
+        XacmlJsonRequestRoot request = MultiDecisionHelper.CreateMultiDecisionRequest(
+            user,
+            appIdentifier,
+            instanceIdentifier,
+            actions,
+            taskId,
+            endEvent
+        );
         XacmlJsonResponse response = await _pdp.GetDecisionForRequest(request);
         if (response?.Response == null)
         {

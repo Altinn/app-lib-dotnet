@@ -2,9 +2,11 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.App;
@@ -61,6 +63,7 @@ public sealed class MockedServiceCollection
     public Mock<IAppModel> AppModelMock { get; } = new(MockBehavior.Strict);
 
     internal Mock<IAuthenticationTokenResolver> AuthenticationTokenResolverMock { get; } = new(MockBehavior.Strict);
+    internal Mock<IAuthenticationContext> AuthenticationContextMock { get; } = new(MockBehavior.Strict);
 
     public Mock<IUserTokenProvider> UserTokenProviderMock { get; } = new(MockBehavior.Strict);
 
@@ -70,6 +73,19 @@ public sealed class MockedServiceCollection
     {
         Storage = new StorageClientInterceptor();
         _services.AddSingleton(this);
+    }
+
+    public void AddSingleton<T>(T instance)
+        where T : class
+    {
+        _services.AddSingleton(instance);
+    }
+
+    public void AddTransient<TService, TImplementation>()
+        where TService : class
+        where TImplementation : class, TService
+    {
+        _services.AddTransient<TService, TImplementation>();
     }
 
     public void TryAddCommonServices()
@@ -114,6 +130,7 @@ public sealed class MockedServiceCollection
         _services.TryAddSingleton(AppMetadataMock.Object);
         _services.TryAddSingleton(AppModelMock.Object);
         _services.TryAddSingleton(AuthenticationTokenResolverMock.Object);
+        _services.TryAddSingleton(AuthenticationContextMock.Object);
         _services.TryAddSingleton(UserTokenProviderMock.Object);
 
         // Setup default mock behaviours
@@ -247,6 +264,40 @@ public sealed class MockedServiceCollection
 
             _layoutSetComponents.Add(layoutComponent);
         }
+    }
+
+    public async Task<DataType> AddLayoutSetFromFolder<T>(
+        string layoutSetName,
+        int maxCount,
+        string taskId,
+        [CallerFilePath] string? callerFilePath = null
+    )
+        where T : class, new()
+    {
+        var directory =
+            Path.GetDirectoryName(callerFilePath) ?? throw new InvalidOperationException("Could not get directory");
+        List<LayoutSetComponent> layouts = [];
+        var layoutDir = Path.Join(directory, layoutSetName);
+        if (!Directory.Exists(layoutDir))
+        {
+            throw new DirectoryNotFoundException($"Missing layout directory: {layoutDir}");
+        }
+        var pageNames = Directory
+            .GetFiles(layoutDir, "*.json")
+            .Select(Path.GetFileNameWithoutExtension)
+            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase);
+        var pages = await Task.WhenAll(
+            pageNames.Select(async pageName =>
+            {
+                var pageText = await File.ReadAllTextAsync(Path.Join(directory, layoutSetName, $"{pageName}.json"));
+                using var document = JsonDocument.Parse(pageText);
+                var pageComponent = PageComponent.Parse(document.RootElement, pageName!, layoutSetName);
+                return pageComponent;
+            })
+        );
+        var dataType = AddDataType<T>(layoutSetName + "_dataType", maxCount: maxCount, taskId: taskId);
+        AddLayoutSet(dataType, pages);
+        return dataType;
     }
 
     public WrappedServiceProvider BuildServiceProvider() => new(this, _services.BuildServiceProvider());

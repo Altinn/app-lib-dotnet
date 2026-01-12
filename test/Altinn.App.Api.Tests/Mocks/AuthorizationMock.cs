@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
-using Altinn.Platform.Storage.Interface.Models;
 using Authorization.Platform.Authorization.Models;
 
 namespace Altinn.App.Api.Tests.Mocks;
@@ -24,13 +23,6 @@ public class AuthorizationMock : IAuthorizationClient
     /// <summary>
     /// Mock method that returns false for actions ending with _unauthorized, and true for all other actions.
     /// </summary>
-    /// <param name="appIdentifier"></param>
-    /// <param name="instanceIdentifier"></param>
-    /// <param name="user"></param>
-    /// <param name="action"></param>
-    /// <param name="taskId"></param>
-    /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
     public async Task<bool> AuthorizeAction(
         AppIdentifier appIdentifier,
         InstanceIdentifier instanceIdentifier,
@@ -48,13 +40,15 @@ public class AuthorizationMock : IAuthorizationClient
         return true;
     }
 
-    public async Task<Dictionary<string, bool>> AuthorizeActions(
-        Instance instance,
+    public Task<Dictionary<string, bool>> AuthorizeActions(
+        AppIdentifier appIdentifier,
+        InstanceIdentifier instanceIdentifier,
         ClaimsPrincipal user,
-        List<string> actions
+        List<string> actions,
+        string? taskId = null,
+        string? endEvent = null
     )
     {
-        await Task.CompletedTask;
         Dictionary<string, bool> authorizedActions = new Dictionary<string, bool>();
         foreach (var action in actions)
         {
@@ -68,7 +62,7 @@ public class AuthorizationMock : IAuthorizationClient
             }
         }
 
-        return authorizedActions;
+        return Task.FromResult(authorizedActions);
     }
 
     public Task<List<Role>> GetRoles(int userId, int partyId)

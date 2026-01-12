@@ -45,11 +45,28 @@ public interface IAuthorizationClient
     /// <summary>
     /// Check if the user is authorized to perform the given actions on the given instance.
     /// </summary>
-    /// <param name="instance"></param>
-    /// <param name="user"></param>
+    [Obsolete("Use AuthorizeActions with AppIdentifier and InstanceIdentifier instead")]
+    Task<Dictionary<string, bool>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<string> actions) =>
+        AuthorizeActions(new AppIdentifier(instance.AppId), new InstanceIdentifier(instance), user, actions);
+
+    /// <summary>
+    /// Check if the user is authorized to perform the given actions on the given instance.
+    /// </summary>
+    /// <param name="appIdentifier">Paremeters for urn:altinn:app and urn:altinn:org</param>
+    /// <param name="instanceIdentifier">Parameters for urn:altinn:instance-id and urn:altinn:partyid</param>
+    /// <param name="user">Claims that maps</param>
     /// <param name="actions"></param>
-    /// <returns></returns>
-    Task<Dictionary<string, bool>> AuthorizeActions(Instance instance, ClaimsPrincipal user, List<string> actions);
+    /// <param name="taskId">Parameter for urn:altinn:task</param>
+    /// <param name="endEvent">Parameter for urn:altinn:end-event</param>
+    /// <returns>Dictionary</returns>
+    Task<Dictionary<string, bool>> AuthorizeActions(
+        AppIdentifier appIdentifier,
+        InstanceIdentifier instanceIdentifier,
+        ClaimsPrincipal user,
+        List<string> actions,
+        string? taskId = null,
+        string? endEvent = null
+    );
 
     /// <summary>
     /// Get organizations where the logged in user has a key role
