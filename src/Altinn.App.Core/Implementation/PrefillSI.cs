@@ -222,30 +222,34 @@ public class PrefillSI : IPrefill
             {
                 foreach (var dataset in datasetList)
                 {
-                    var datasetName = dataset.SelectToken("name").ToString();
-
+                    var datasetName = dataset.SelectToken("name")?.ToString();
                     var subject = !string.IsNullOrWhiteSpace(party.SSN) ? party.SSN : party.OrgNumber;
-
                     var fields = dataset.SelectToken("mappings");
-                    var danPrefill = fields
-                        .SelectMany(obj => obj.Children<JProperty>())
-                        .ToDictionary(prop => prop.Name, prop => prop.Value.ToString());
+                    if (fields != null)
+                    {
+                        var danPrefill = fields
+                            .SelectMany(obj => obj.Children<JProperty>())
+                            .ToDictionary(prop => prop.Name, prop => prop.Value.ToString());
 
-                    var danDataset = await _danClient.GetDataset(datasetName, subject, fields.ToString());
-                    if (danDataset.Count > 0)
-                    {
-                        JObject danJsonObject = JObject.FromObject(danDataset);
-                        _logger.LogInformation($"Started prefill from {_danKey}");
-                        LoopThroughDictionaryAndAssignValuesToDataModel(
-                            SwapKeyValuesForPrefill(danPrefill),
-                            danJsonObject,
-                            dataModel
-                        );
-                    }
-                    else
-                    {
-                        string errorMessage = $"Could not  prefill from {_danKey}, data is not defined.";
-                        _logger.LogError(errorMessage);
+                        if (datasetName != null)
+                        {
+                            var danDataset = await _danClient.GetDataset(datasetName, subject, fields.ToString());
+                            if (danDataset.Count > 0)
+                            {
+                                JObject danJsonObject = JObject.FromObject(danDataset);
+                                _logger.LogInformation($"Started prefill from {_danKey}");
+                                LoopThroughDictionaryAndAssignValuesToDataModel(
+                                    SwapKeyValuesForPrefill(danPrefill),
+                                    danJsonObject,
+                                    dataModel
+                                );
+                            }
+                            else
+                            {
+                                string errorMessage = $"Could not  prefill from {_danKey}, data is not defined.";
+                                _logger.LogError(errorMessage);
+                            }
+                        }
                     }
                 }
             }

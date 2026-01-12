@@ -10,7 +10,7 @@ public interface IDanClient
     /// </summary>
     /// <param name="dataset">Name of the dataset</param>
     /// <param name="subject">Usually ssn or OrgNumber</param>
-    /// <param name="jmesPathExpression">jmesPathExpression</param>
+    /// <param name="fields">fields to fetch from endpoint</param>
     /// <returns></returns>
     public Task<Dictionary<string, string>> GetDataset(string dataset, string subject, string fields);
 }
