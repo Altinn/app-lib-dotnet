@@ -151,6 +151,11 @@ internal class ReflectionFormDataWrapper : IFormDataWrapper
             return null; // Error condition, no value at index
         }
 
+        if (elementAt is null)
+        {
+            return null;
+        }
+
         return GetModelDataRecursive(keys, index + 1, elementAt);
     }
 
