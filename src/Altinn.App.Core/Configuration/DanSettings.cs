@@ -14,9 +14,4 @@ public class DanSettings
     /// Api subscription keys
     /// </summary>
     public required string SubscriptionKey { get; set; }
-
-    /// <summary>
-    /// Maskinporten scope
-    /// </summary>
-    public required string Scope { get; set; }
 }
