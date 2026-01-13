@@ -1,12 +1,7 @@
-﻿using System.Net.Http.Headers;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Features;
-using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Dan;
-using Altinn.App.Core.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using JsonException = Newtonsoft.Json.JsonException;
@@ -19,23 +14,20 @@ namespace Altinn.App.Core.Infrastructure.Clients.Dan;
 /// </summary>
 public class DanClient : IDanClient
 {
-    private HttpClient _httpClient;
-    private IOptions<DanSettings> _settings;
-    private IAuthenticationTokenResolver _authenticationTokenResolver;
+    private readonly HttpClient _httpClient;
+    private readonly IOptions<DanSettings> _settings;
 
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="httpClient"></param>
+    /// <param name="factory"></param>
     /// <param name="settings"></param>
-    /// <param name="serviceProvider"></param>
-    public DanClient(HttpClient httpClient, IOptions<DanSettings> settings, IServiceProvider serviceProvider)
+    public DanClient(IHttpClientFactory factory, IOptions<DanSettings> settings)
     {
-        _httpClient = httpClient;
+        _httpClient = factory.CreateClient("DanClient");
         _settings = settings;
-        _authenticationTokenResolver = serviceProvider.GetRequiredService<IAuthenticationTokenResolver>();
-        httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-        httpClient.BaseAddress = new Uri(settings.Value.BaseUrl);
+        _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+        _httpClient.BaseAddress = new Uri(settings.Value.BaseUrl);
     }
 
     /// <summary>
@@ -48,8 +40,6 @@ public class DanClient : IDanClient
     public async Task<Dictionary<string, string>> GetDataset(string dataset, string subject, string fields)
     {
         _httpClient.DefaultRequestHeaders.Clear();
-        var token = await GetMaskinportenToken();
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Value);
         _httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _settings.Value.SubscriptionKey);
 
         var body = new { Subject = subject };
@@ -64,10 +54,10 @@ public class DanClient : IDanClient
             baseQuery += $",{jsonKey} : {jsonKey}";
         }
 
-        //ensures that th query returns a list if endpoint returns a list and an object when endpoint returns a single object
+        //ensures that the query returns a list if endpoint returns a list and an object when endpoint returns a single object
         var query = "[].{" + baseQuery + "}||{" + baseQuery + "}";
 
-        var result = await _httpClient.PostAsync($"directharvest/{dataset}?envelope=false&query={query}", content);
+        var result = await _httpClient.PostAsync($"directharvest/{dataset}?envelope=false&reuseToken=true&query={query}", content);
 
         if (result.IsSuccessStatusCode)
         {
@@ -87,15 +77,6 @@ public class DanClient : IDanClient
                 return dictionary;
         }
         return new Dictionary<string, string>();
-    }
-
-    private async Task<JwtToken> GetMaskinportenToken()
-    {
-        var token = await _authenticationTokenResolver.GetAccessToken(
-            AuthenticationMethod.Maskinporten(_settings.Value.Scope),
-            CancellationToken.None
-        );
-        return token;
     }
 
     private static Task<Dictionary<string, string>> ConvertListToDictionary(string jsonString)
