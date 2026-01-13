@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Models;
 using Altinn.App.ProcessEngine.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.ProcessEngine.Http;
 
@@ -14,8 +16,14 @@ internal sealed class ProcessEngineClient : IProcessEngineClient
 {
     private readonly HttpClient _httpClient;
 
-    public ProcessEngineClient(HttpClient httpClient)
+    public ProcessEngineClient(
+        IOptions<GeneralSettings> generalSettings,
+        AppIdentifier appIdentifier,
+        HttpClient httpClient
+    )
     {
+        string baseUrl = generalSettings.Value.FormattedExternalAppBaseUrl(appIdentifier);
+        httpClient.BaseAddress = new Uri(baseUrl);
         _httpClient = httpClient;
     }
 
@@ -59,6 +67,6 @@ internal sealed class ProcessEngineClient : IProcessEngineClient
     private static string CreateInstanceUrl(Instance instance)
     {
         var instanceIdentifier = new InstanceIdentifier(instance);
-        return $"{instance.Org}/{instance.AppId}/{instanceIdentifier.InstanceOwnerPartyId}/{instanceIdentifier.InstanceGuid}";
+        return $"{instanceIdentifier.InstanceOwnerPartyId}/{instanceIdentifier.InstanceGuid}";
     }
 }
