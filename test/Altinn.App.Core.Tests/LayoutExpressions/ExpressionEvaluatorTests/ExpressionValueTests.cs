@@ -225,7 +225,7 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
     }
 
     [Fact]
-    public void TestTryParseVariousTypes()
+    public void TestTryDeserializeVariousTypes()
     {
         TestTryDeserialize(2, 2.0, true);
         TestTryDeserialize(2.5, 2.5, true);

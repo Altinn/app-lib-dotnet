@@ -1,3 +1,4 @@
+using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.SourceGenerator.Integration.Tests.Models;
@@ -157,7 +158,7 @@ public class TestGeneratedSetter
     [InlineData("")] // empty path
     [InlineData("not-exists")] // non-existent path
     [InlineData("skjemanummer.not-exists")] // invalid nested path on primitive
-    [InlineData("skjemainnhold[99].navn")] // out of bounds index - should now create elements
+    [InlineData("skjemainnhold[99].navn")] // out of bounds index - returns false
     [InlineData("skjemainnhold[0].not-exists")] // non-existent property
     [InlineData("skjemainnhold[1].adresse.not-exists")] // non-existent nested property
     public void TestSet_InvalidPaths_BothImplementations(string path)
@@ -175,6 +176,20 @@ public class TestGeneratedSetter
 
         // Both should have the same behavior
         Assert.Equal(generatedResult, reflectionResult);
+    }
+
+    [Fact]
+    public void TestSet_NegativeIndex_BothImplementations()
+    {
+        // Test negative index handling
+        var generatedSkjema = CreateTestSkjema();
+        IFormDataWrapper generatedWrapper =
+            new Altinn_App_SourceGenerator_Integration_Tests_Models_SkjemaFormDataWrapper(generatedSkjema);
+        Assert.Throws<DataModelException>(() => generatedWrapper.Set("skjemainnhold[-1].navn", "value"));
+
+        var reflectionSkjema = CreateTestSkjema();
+        IFormDataWrapper reflectionWrapper = new ReflectionFormDataWrapper(reflectionSkjema);
+        Assert.Throws<DataModelException>(() => reflectionWrapper.Set("skjemainnhold[-1].navn", "value"));
     }
 
     [Fact]
@@ -274,11 +289,16 @@ public class TestGeneratedSetter
     [Fact]
     public void TestSet_OnEmptyModel_BothImplementations()
     {
-        // Test Set on the Empty model (which has no properties)
-        // Note: The Empty model doesn't have a generated wrapper in this test project,
-        // so we skip testing it for now. The pattern is tested elsewhere.
-        // If needed, this test can be re-enabled when the Empty model has a generated wrapper.
-        Assert.True(true); // Placeholder
+        var model = new Empty();
+        IFormDataWrapper generatedWrapper =
+            new Altinn_App_SourceGenerator_Integration_Tests_Models_EmptyFormDataWrapper(model);
+        IFormDataWrapper reflectionWrapper = new ReflectionFormDataWrapper(model);
+
+        var generatedResult = generatedWrapper.Set("someProperty", "value");
+        var reflectionResult = reflectionWrapper.Set("someProperty", "value");
+        // Both should fail as there are no properties to set
+        Assert.False(generatedResult);
+        Assert.False(reflectionResult);
     }
 
     [Theory]

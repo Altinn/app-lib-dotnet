@@ -232,7 +232,7 @@ public sealed class Altinn_App_SourceGenerator_Tests_EmptyFormDataWrapper
 // {
 //   "JsonName": "",
 //   "CSharpName": "",
-//   "IsNullable": "False",
+//   "IsNullable": false,
 //   "TypeName": "global::Altinn.App.SourceGenerator.Tests.Empty",
 //   "IsJsonValueType": false,
 // }

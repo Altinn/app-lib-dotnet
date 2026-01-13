@@ -236,7 +236,7 @@ public static class FormDataWrapperUtils
         }
 
         // Skip properties of abstract types (cannot be instantiated)
-        if (SourceReaderUtils.UnwrapNullable(property.Type).Item1 is INamedTypeSymbol { IsAbstract: true })
+        if (SourceReaderUtils.UnwrapNullable(property.Type).UnwrappedSymbol is INamedTypeSymbol { IsAbstract: true })
         {
             return true;
         }

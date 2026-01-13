@@ -226,7 +226,7 @@ public class FullTests(ITestOutputHelper output)
         Assert.Empty(diagnostics);
 
         // Verify csharpier formatting of the generated code
-        // Line lenght is a bit fiddly because it depends on the length of types
+        // Line length is a bit fiddly because it depends on the length of types
         // but // csharpier-ignore does the trick if needed
         foreach (var generatedTree in runResult.GeneratedTrees)
         {

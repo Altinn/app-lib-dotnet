@@ -2,7 +2,7 @@ namespace Altinn.App.Analyzers.SourceTextGenerator;
 
 public static class SourceReaderUtils
 {
-    public static (ITypeSymbol, bool) UnwrapNullable(ITypeSymbol symbol)
+    public static (ITypeSymbol UnwrappedSymbol, bool IsNullable) UnwrapNullable(ITypeSymbol symbol)
     {
         if (
             symbol is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } namedTypeSymbol

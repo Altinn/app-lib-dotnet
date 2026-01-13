@@ -483,7 +483,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             if (Nullable.GetUnderlyingType(type) is not { } getUnderlyingType)
             {
                 // Null or undefined can't be converted to non-nullable value types
-                // so handle this spcecial case early
+                // so handle this special case early
                 if (ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
                 {
                     result = null;
@@ -563,7 +563,12 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             result = JsonSerializer.Deserialize(json, type, _unsafeSerializerOptionsForSerializingDates);
             return true;
         }
-        catch
+        catch (JsonException)
+        {
+            result = null;
+            return false;
+        }
+        catch (NotSupportedException)
         {
             result = null;
             return false;

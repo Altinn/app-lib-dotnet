@@ -31,9 +31,9 @@ public static class GenerateJsonComment
         sb.Append(node.CSharpName);
         sb.Append("\",");
         sb.Append(linePrefix);
-        sb.Append("\"IsNullable\": \"");
-        sb.Append(node.IsNullable);
-        sb.Append("\",");
+        sb.Append("\"IsNullable\": ");
+        sb.Append(node.IsNullable ? "true" : "false");
+        sb.Append(",");
         sb.Append(linePrefix);
         sb.Append("\"TypeName\": \"");
         sb.Append(node.TypeName);

@@ -233,7 +233,7 @@ internal class ReflectionFormDataWrapper : IFormDataWrapper
                     prop.SetValue(currentModel, convertedValue);
                     return true;
                 }
-                catch
+                catch (TargetException)
                 {
                     return false;
                 }

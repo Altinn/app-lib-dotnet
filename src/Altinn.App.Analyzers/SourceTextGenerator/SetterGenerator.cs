@@ -90,7 +90,7 @@ internal static class SetterGenerator
             if (modelPathNode.Properties.Count == 0)
             {
                 // Simple list element - direct set
-                if (modelPathNode.TypeName.EndsWith("?"))
+                if (modelPathNode.IsNullable)
                 {
                     builder.Append(
                         $$"""
@@ -121,7 +121,12 @@ internal static class SetterGenerator
             }
             else
             {
-                builder.Append("        return SetRecursive(model[literalIndex], path, offset, value);\r\n");
+                builder.Append(
+                    """
+                            return SetRecursive(model[literalIndex], path, offset, value);
+
+                    """
+                );
             }
             builder.Append(
                 """

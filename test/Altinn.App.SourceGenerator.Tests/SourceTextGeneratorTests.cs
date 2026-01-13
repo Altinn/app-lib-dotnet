@@ -61,16 +61,17 @@ public class SourceTextGeneratorTests(ITestOutputHelper outputHelper)
         if (collectionInterface != null)
         {
             var typeParam = collectionInterface.GetGenericArguments()[0];
-            var (typeString, isNullable) = FullTypeName(typeParam);
-
             var (listType, isNullableList) = FullTypeName(typeParam);
+            var typeString =
+                "global::" + propertyType.GetGenericTypeDefinition().FullName?.Replace("`1", "") + "<" + listType + ">";
+
             var children = GetChildren(typeParam);
 
             return new ModelPathNode(
                 cSharpName,
                 jsonPath,
                 typeString,
-                isNullable,
+                isNullable: true, // Reflection does not provide NRT info collections, assume nullable
                 children,
                 listType: listType,
                 isNullableList: isNullableList
