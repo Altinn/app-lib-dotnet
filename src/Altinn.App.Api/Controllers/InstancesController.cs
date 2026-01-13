@@ -1243,13 +1243,13 @@ public class InstancesController : ControllerBase
             }
         }
 
-        var taskId = instance.Process?.CurrentTask?.ElementId;
+        string? taskId = instance.Process?.CurrentTask?.ElementId;
 
-        if (taskId is null)
-            throw new InvalidOperationException("There should be a task while initializing data");
+        // if (taskId is null)
+        //     throw new InvalidOperationException("There should be a task while initializing data");
 
         var changes = dataMutator.GetDataElementChanges(initializeAltinnRowId: true);
-        await _patchService.RunDataProcessors(dataMutator, changes, taskId, language);
+        await _patchService.RunDataProcessors(dataMutator, changes, taskId!, language);
 
         if (dataMutator.GetAbandonResponse() is { } abandonResponse)
         {
