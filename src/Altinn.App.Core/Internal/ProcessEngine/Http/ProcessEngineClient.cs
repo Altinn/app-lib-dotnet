@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
 using Altinn.App.ProcessEngine.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -15,6 +16,7 @@ namespace Altinn.App.Core.Internal.ProcessEngine.Http;
 internal sealed class ProcessEngineClient : IProcessEngineClient
 {
     private readonly HttpClient _httpClient;
+    private readonly string _applicationUrl;
 
     public ProcessEngineClient(
         IOptions<GeneralSettings> generalSettings,
@@ -22,8 +24,10 @@ internal sealed class ProcessEngineClient : IProcessEngineClient
         HttpClient httpClient
     )
     {
-        string baseUrl = generalSettings.Value.FormattedExternalAppBaseUrl(appIdentifier);
-        httpClient.BaseAddress = new Uri(baseUrl);
+        ArgumentNullException.ThrowIfNull(generalSettings.Value, nameof(generalSettings));
+
+        httpClient.BaseAddress = new Uri(generalSettings.Value.HostName + "/process-engine/");
+        _applicationUrl = generalSettings.Value.FormattedExternalAppBaseUrl(appIdentifier);
         _httpClient = httpClient;
     }
 
@@ -35,7 +39,7 @@ internal sealed class ProcessEngineClient : IProcessEngineClient
     )
     {
         HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
-            $"{CreateInstanceUrl(instance)}/process-engine/next",
+            $"{GetInstanceUrl(_applicationUrl, instance)}/next",
             request,
             cancellationToken
         );
@@ -48,7 +52,7 @@ internal sealed class ProcessEngineClient : IProcessEngineClient
     )
     {
         HttpResponseMessage response = await _httpClient.GetAsync(
-            $"{CreateInstanceUrl(instance)}/process-engine/status",
+            $"{GetInstanceUrl(_applicationUrl, instance)}/status",
             cancellationToken
         );
 
@@ -64,9 +68,9 @@ internal sealed class ProcessEngineClient : IProcessEngineClient
         return null;
     }
 
-    private static string CreateInstanceUrl(Instance instance)
+    private static string GetInstanceUrl(string appUrl, Instance instance)
     {
         var instanceIdentifier = new InstanceIdentifier(instance);
-        return $"{instanceIdentifier.InstanceOwnerPartyId}/{instanceIdentifier.InstanceGuid}";
+        return $"{appUrl}{instanceIdentifier.InstanceOwnerPartyId}/{instanceIdentifier.InstanceGuid}";
     }
 }
