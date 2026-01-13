@@ -146,8 +146,7 @@ internal class ReflectionFormDataWrapper : IFormDataWrapper
             return null; // Error index for collection not specified
         }
 
-        var elementAt = GetElementAt(childModelList, groupIndex.Value);
-        if (elementAt is null)
+        if (!TryGetElementAt(childModelList, groupIndex.Value, out var elementAt))
         {
             return null; // Error condition, no value at index
         }
@@ -155,18 +154,20 @@ internal class ReflectionFormDataWrapper : IFormDataWrapper
         return GetModelDataRecursive(keys, index + 1, elementAt);
     }
 
-    private static object? GetElementAt(System.Collections.IEnumerable enumerable, int index)
+    private static bool TryGetElementAt(System.Collections.IEnumerable enumerable, int index, out object? element)
     {
         // Return the element with index = groupIndex (could not find another way to get the n'th element in non-generic enumerable)
         foreach (var arrayElement in enumerable)
         {
             if (index-- < 1)
             {
-                return arrayElement;
+                element = arrayElement;
+                return true;
             }
         }
 
-        return null;
+        element = null;
+        return false;
     }
 
     private static readonly Regex _keyPartRegex = new(
@@ -308,32 +309,17 @@ internal class ReflectionFormDataWrapper : IFormDataWrapper
             return false; // Error: index for collection not specified
         }
 
-        var elementAt = GetElementAt(childModelList, currentGroupIndex.Value);
+        if (!TryGetElementAt(childModelList, currentGroupIndex.Value, out var elementAt))
+        {
+            return false;
+        }
+
         if (elementAt is null)
         {
-            // Try to create the element at the specified index if it doesn't exist
-            if (childModelList is not System.Collections.IList list)
-            {
-                return false;
-            }
-
-            var elementType = list.GetType().GetGenericArguments().FirstOrDefault();
-            if (elementType is null)
-            {
-                return false;
-            }
-
-            // Ensure the list has enough elements by adding default instances
-            if (list.Count <= currentGroupIndex.Value)
-            {
-                return false;
-            }
-
-            elementAt = list[currentGroupIndex.Value];
-            if (elementAt is null)
-            {
-                return false;
-            }
+            // The list had an item at the index, but it was null
+            // We might consider creating a new instance and replacing it in the list
+            // For now, just return false
+            return false;
         }
 
         return SetModelDataRecursive(keys, index + 1, elementAt, value);

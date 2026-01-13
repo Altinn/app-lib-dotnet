@@ -242,6 +242,17 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
         TestTryDeserialize<int?>(ExpressionValue.False, 0, true);
         TestTryDeserialize<int?>(ExpressionValue.True, 1, true);
         TestTryDeserialize<string?>(ExpressionValue.False, null, false);
+        TestTryDeserialize<string?>(ExpressionValue.True, null, false);
+        TestTryDeserialize<string?>(ExpressionValue.Null, null, true);
+        TestTryDeserialize("2020-02-03T12:34:56Z", DateTime.Parse("2020-02-03T12:34:56Z").ToUniversalTime(), true);
+        TestTryDeserialize("2020-02-03T12:34:56Z", DateTimeOffset.Parse("2020-02-03T12:34:56Z"), true);
+        TestTryDeserialize("2020-02-03T13:34:56+01:00", DateTimeOffset.Parse("2020-02-03T12:34:56Z"), true);
+        TestTryDeserialize("invalid date", DateTime.MinValue, false);
+        TestTryDeserialize(int.MaxValue, int.MaxValue, true);
+        TestTryDeserialize(int.MinValue, int.MinValue, true);
+        var biggestLongRepresentableAsDouble = long.MaxValue - 1023;
+        TestTryDeserialize(biggestLongRepresentableAsDouble, biggestLongRepresentableAsDouble, true);
+        TestTryDeserialize(long.MinValue, long.MinValue, true);
     }
 
     private void TestTryDeserialize<T>(ExpressionValue value, T? expected, bool success)

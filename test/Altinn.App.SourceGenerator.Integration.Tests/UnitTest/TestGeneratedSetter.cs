@@ -45,6 +45,7 @@ public class TestGeneratedSetter
                         },
                     ],
                 },
+                null, // To test null item in list
             ],
             EierAdresse = new() { Gate = "owner street", Postnummer = 5000 },
         };
@@ -161,6 +162,7 @@ public class TestGeneratedSetter
     [InlineData("skjemainnhold[99].navn")] // out of bounds index - returns false
     [InlineData("skjemainnhold[0].not-exists")] // non-existent property
     [InlineData("skjemainnhold[1].adresse.not-exists")] // non-existent nested property
+    [InlineData("skjemainnhold[2].navn")] // null item in list (Might reconsider this test case)
     public void TestSet_InvalidPaths_BothImplementations(string path)
     {
         // Test source-generated implementation
