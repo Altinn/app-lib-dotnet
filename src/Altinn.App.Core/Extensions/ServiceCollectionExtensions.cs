@@ -374,7 +374,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IProcessEngineCommand, CommonTaskInitialization>();
         services.AddTransient<IProcessEngineCommand, ProcessTaskStart>();
         services.AddTransient<IProcessEngineCommand, OnTaskStartingHook>();
-        services.AddTransient<IProcessEngineCommand, StartTaskLegacyHook>();
+        services.AddTransient<IProcessEngineCommand, ProcessTaskStartLegacyHook>();
         services.AddTransient<IProcessEngineCommand, UnlockTaskData>();
 
         // Process engine callback handlers - TaskAbandon

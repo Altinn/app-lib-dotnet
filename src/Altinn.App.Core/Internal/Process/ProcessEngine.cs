@@ -151,7 +151,7 @@ internal class ProcessEngine : IProcessEngine
             Events = events,
         };
 
-        var processNextRequest = await _processNextRequestFactory.Create(processStateChange);
+        ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(processStateChange);
         await _processEngineClient.ProcessNext(instance, processNextRequest, ct);
 
         _telemetry?.ProcessStarted();

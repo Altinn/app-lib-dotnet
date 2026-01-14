@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
@@ -35,36 +36,21 @@ internal sealed class ProcessNextRequestFactory
     /// </summary>
     public async Task<Altinn.App.ProcessEngine.Models.ProcessNextRequest> Create(ProcessStateChange processStateChange)
     {
-        if (processStateChange.Events == null || processStateChange.Events.Count == 0)
-        {
-            return new Altinn.App.ProcessEngine.Models.ProcessNextRequest
-            {
-                CurrentElementId = processStateChange.OldProcessState?.CurrentTask?.ElementId ?? string.Empty,
-                DesiredElementId = processStateChange.NewProcessState?.CurrentTask?.ElementId ?? string.Empty,
-                Actor = await ExtractActor(),
-                Tasks = [],
-            };
-        }
+        var commands = new List<ProcessEngineCommandRequest>();
 
-        var sequence = new ProcessCommandSequence(processStateChange);
-
-        foreach (InstanceEvent instanceEvent in processStateChange.Events)
+        foreach (InstanceEvent instanceEvent in processStateChange.Events ?? [])
         {
-            if (!Enum.TryParse(instanceEvent.EventType, true, out InstanceEventType eventType))
+            if (!Enum.TryParse(instanceEvent.EventType, true, out InstanceEventType instanceEventType))
                 continue;
 
             string? altinnTaskType = instanceEvent.ProcessInfo?.CurrentTask?.AltinnTaskType;
 
-            ProcessEventCommandGroup? commandGroup = GetCommandGroupForEvent(eventType);
-            if (commandGroup != null)
+            ProcessEventCommands? eventCommands = GetCommandsForInstanceEvent(instanceEventType, altinnTaskType);
+            if (eventCommands != null)
             {
-                sequence.AddEventCommandGroup(commandGroup);
-
-                // Add service task execution if this is a StartTask event for a service task
-                if (eventType == InstanceEventType.process_StartTask && IsServiceTask(altinnTaskType))
-                {
-                    sequence.AddCommand(CreateCommand(ExecuteServiceTask.Key));
-                }
+                commands.AddRange(eventCommands.Commands);
+                commands.Add(CreateUpdateProcessStateCommand(processStateChange));
+                commands.AddRange(eventCommands.PostProcessNextCommittedCommands);
             }
         }
 
@@ -73,18 +59,20 @@ internal sealed class ProcessNextRequestFactory
             CurrentElementId = processStateChange.OldProcessState?.CurrentTask?.ElementId ?? string.Empty,
             DesiredElementId = processStateChange.NewProcessState?.CurrentTask?.ElementId ?? string.Empty,
             Actor = await ExtractActor(),
-            Tasks = sequence.ToList(),
+            Tasks = commands,
         };
     }
 
-    private static ProcessEventCommandGroup? GetCommandGroupForEvent(InstanceEventType eventType)
+    private ProcessEventCommands? GetCommandsForInstanceEvent(InstanceEventType eventType, string? altinnTaskType)
     {
         return eventType switch
         {
-            InstanceEventType.process_StartTask => ProcessEventCommandGroup.ForTaskStart(),
-            InstanceEventType.process_EndTask => ProcessEventCommandGroup.ForTaskEnd(),
-            InstanceEventType.process_AbandonTask => ProcessEventCommandGroup.ForTaskAbandon(),
-            InstanceEventType.process_EndEvent => ProcessEventCommandGroup.ForProcessEnd(),
+            InstanceEventType.process_StartTask => ProcessEventCommands.GetTaskStartCommands(
+                IsServiceTask(altinnTaskType)
+            ),
+            InstanceEventType.process_EndTask => ProcessEventCommands.GetTaskEndCommands(),
+            InstanceEventType.process_AbandonTask => ProcessEventCommands.GetTaskAbandonCommands(),
+            InstanceEventType.process_EndEvent => ProcessEventCommands.GetProcessEndCommands(),
             _ => null,
         };
     }
@@ -96,20 +84,6 @@ internal sealed class ProcessNextRequestFactory
 
         IEnumerable<IServiceTask> serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
         return serviceTasks.Any(x => x.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static InstanceInformation ExtractInstanceInformation(Instance instance)
-    {
-        string[] appIdParts = instance.AppId.Split("/");
-        string[] instanceIdParts = instance.Id.Split("/");
-
-        return new InstanceInformation
-        {
-            Org = instance.Org,
-            App = appIdParts[1],
-            InstanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
-            InstanceGuid = Guid.Parse(instanceIdParts[1]),
-        };
     }
 
     private async Task<ProcessEngineActor> ExtractActor()
@@ -129,11 +103,12 @@ internal sealed class ProcessNextRequestFactory
         return new ProcessEngineActor { UserIdOrOrgNumber = userIdOrOrgNumber, Language = language };
     }
 
-    private static ProcessEngineCommandRequest CreateCommand(string commandKey, string? metadata = null)
+    private static ProcessEngineCommandRequest CreateUpdateProcessStateCommand(ProcessStateChange processStateChange)
     {
+        string? metadata = JsonSerializer.Serialize(processStateChange);
         return new ProcessEngineCommandRequest
         {
-            Command = new ProcessEngineCommand.AppCommand(CommandKey: commandKey, Metadata: metadata),
+            Command = new ProcessEngineCommand.AppCommand(CommandKey: UpdateProcessState.Key, Metadata: metadata),
         };
     }
 }

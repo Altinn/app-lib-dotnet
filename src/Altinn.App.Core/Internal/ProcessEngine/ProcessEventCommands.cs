@@ -6,10 +6,10 @@ namespace Altinn.App.Core.Internal.ProcessEngine;
 /// <summary>
 /// Defines a group of commands that should be executed for a process event.
 /// </summary>
-internal sealed class ProcessEventCommandGroup
+internal sealed class ProcessEventCommands
 {
     private readonly List<ProcessEngineCommandRequest> _commands = new();
-    private readonly List<ProcessEngineCommandRequest> _followUpCommands = new();
+    private readonly List<ProcessEngineCommandRequest> _postProcessNextCommittedCommands = new();
 
     /// <summary>
     /// Gets the main commands for this event. UpdateProcessState will be added after these.
@@ -19,12 +19,13 @@ internal sealed class ProcessEventCommandGroup
     /// <summary>
     /// Gets the commands that execute after the ProcessNext has been committed to storage (e.g., MovedToAltinnEvent).
     /// </summary>
-    public IReadOnlyList<ProcessEngineCommandRequest> PostProcessNextCommittedCommands => _followUpCommands;
+    public IReadOnlyList<ProcessEngineCommandRequest> PostProcessNextCommittedCommands =>
+        _postProcessNextCommittedCommands;
 
     /// <summary>
     /// Adds a command to the main sequence.
     /// </summary>
-    public ProcessEventCommandGroup AddCommand(string commandKey, string? metadata = null)
+    public ProcessEventCommands AddCommand(string commandKey, string? metadata = null)
     {
         _commands.Add(CreateCommand(commandKey, metadata));
         return this;
@@ -33,9 +34,9 @@ internal sealed class ProcessEventCommandGroup
     /// <summary>
     /// Adds a command that executes after the ProcessNext has been committed to storage via UpdateProcessState.
     /// </summary>
-    public ProcessEventCommandGroup AddPostProcessNextCommittedCommand(string commandKey, string? metadata = null)
+    public ProcessEventCommands AddPostProcessNextCommittedCommand(string commandKey, string? metadata = null)
     {
-        _followUpCommands.Add(CreateCommand(commandKey, metadata));
+        _postProcessNextCommittedCommands.Add(CreateCommand(commandKey, metadata));
         return this;
     }
 
@@ -50,23 +51,31 @@ internal sealed class ProcessEventCommandGroup
     /// <summary>
     /// Creates command group for task start events.
     /// </summary>
-    public static ProcessEventCommandGroup ForTaskStart()
+    /// <param name="isServiceTask">Whether this is a service task that should be executed automatically.</param>
+    public static ProcessEventCommands GetTaskStartCommands(bool isServiceTask)
     {
-        return new ProcessEventCommandGroup()
+        var group = new ProcessEventCommands()
             .AddCommand(UnlockTaskData.Key)
-            .AddCommand(StartTaskLegacyHook.Key)
+            .AddCommand(ProcessTaskStartLegacyHook.Key)
             .AddCommand(OnTaskStartingHook.Key)
             .AddCommand(CommonTaskInitialization.Key)
             .AddCommand(ProcessTaskStart.Key)
             .AddPostProcessNextCommittedCommand(MovedToAltinnEvent.Key);
+
+        if (isServiceTask)
+        {
+            group.AddPostProcessNextCommittedCommand(ExecuteServiceTask.Key);
+        }
+
+        return group;
     }
 
     /// <summary>
     /// Creates command group for task end events.
     /// </summary>
-    public static ProcessEventCommandGroup ForTaskEnd()
+    public static ProcessEventCommands GetTaskEndCommands()
     {
-        return new ProcessEventCommandGroup()
+        return new ProcessEventCommands()
             .AddCommand(ProcessTaskEnd.Key)
             .AddCommand(CommonTaskFinalization.Key)
             .AddCommand(EndTaskLegacyHook.Key)
@@ -77,9 +86,9 @@ internal sealed class ProcessEventCommandGroup
     /// <summary>
     /// Creates command group for task abandon events.
     /// </summary>
-    public static ProcessEventCommandGroup ForTaskAbandon()
+    public static ProcessEventCommands GetTaskAbandonCommands()
     {
-        return new ProcessEventCommandGroup()
+        return new ProcessEventCommands()
             .AddCommand(ProcessTaskAbandon.Key)
             .AddCommand(OnTaskAbandonHook.Key)
             .AddCommand(AbandonTaskLegacyHook.Key);
@@ -88,9 +97,9 @@ internal sealed class ProcessEventCommandGroup
     /// <summary>
     /// Creates command group for process end events.
     /// </summary>
-    public static ProcessEventCommandGroup ForProcessEnd()
+    public static ProcessEventCommands GetProcessEndCommands()
     {
-        return new ProcessEventCommandGroup()
+        return new ProcessEventCommands()
             .AddCommand(OnProcessEndingHook.Key)
             .AddCommand(ProcessEndLegacyHook.Key)
             .AddPostProcessNextCommittedCommand(CompletedAltinnEvent.Key);

@@ -10,15 +10,15 @@ namespace Altinn.App.Core.Internal.ProcessEngine.Commands;
 /// <summary>
 /// Run the legacy IProcessTaskStart implementations defined in the app. No unit of work and rollback support.
 /// </summary>
-internal sealed class StartTaskLegacyHook : IProcessEngineCommand
+internal sealed class ProcessTaskStartLegacyHook : IProcessEngineCommand
 {
-    public static string Key => "StartTaskLegacyHook";
+    public static string Key => "ProcessTaskStart";
 
     public string GetKey() => Key;
 
     private readonly AppImplementationFactory _appImplementationFactory;
 
-    public StartTaskLegacyHook(IServiceProvider serviceProvider)
+    public ProcessTaskStartLegacyHook(IServiceProvider serviceProvider)
     {
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
