@@ -8,6 +8,7 @@ using Altinn.App.Api.Tests.Mocks.Event;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Cache;
+using Altinn.App.Core.Infrastructure.Clients.Dan;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
@@ -121,7 +122,7 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IAppModel, AppModelMock<Program>>();
     services.AddTransient<IEventsClient, EventsClientMock>();
     services.AddTransient<ISignClient, SignClientMock>();
-    services.AddSingleton<IDanClient, DanClientMock>();
+    services.AddSingleton<IDanClient, DanClient>();
 
     services.PostConfigureAll<JwtCookieOptions>(options =>
     {
