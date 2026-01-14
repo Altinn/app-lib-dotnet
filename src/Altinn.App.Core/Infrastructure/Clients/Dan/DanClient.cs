@@ -47,6 +47,9 @@ public class DanClient : IDanClient
         HttpContent content = new StringContent(myContent, Encoding.UTF8, "application/json");
 
         var fieldsToFill = GetQuery(fields);
+        if (fieldsToFill.Count == 0)
+            return new Dictionary<string, string>();
+
         var baseQuery = $"{fieldsToFill.First()} : {fieldsToFill.First()}";
         foreach (var jsonKey in fieldsToFill.Skip(1))
         {
