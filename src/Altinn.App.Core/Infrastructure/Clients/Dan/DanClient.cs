@@ -26,6 +26,9 @@ public class DanClient : IDanClient
     {
         _httpClient = factory.CreateClient("DanClient");
         _settings = settings;
+
+        _httpClient.DefaultRequestHeaders.Clear();
+        _httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _settings.Value.SubscriptionKey);
         _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
         _httpClient.BaseAddress = new Uri(settings.Value.BaseUrl);
     }
@@ -39,9 +42,6 @@ public class DanClient : IDanClient
     /// <returns></returns>
     public async Task<Dictionary<string, string>> GetDataset(string dataset, string subject, string fields)
     {
-        _httpClient.DefaultRequestHeaders.Clear();
-        _httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _settings.Value.SubscriptionKey);
-
         var body = new { Subject = subject };
         var myContent = JsonConvert.SerializeObject(body);
         HttpContent content = new StringContent(myContent, Encoding.UTF8, "application/json");
@@ -65,7 +65,7 @@ public class DanClient : IDanClient
         if (result.IsSuccessStatusCode)
         {
             var dictionary = new Dictionary<string, string>();
-            var resultJson = result.Content.ReadAsStringAsync().Result;
+            var resultJson = await result.Content.ReadAsStringAsync();
 
             //some datasets might return an array. The array needs to be serialized differently than a single object
             if (IsJsonArray(resultJson))
