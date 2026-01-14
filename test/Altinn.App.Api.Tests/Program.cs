@@ -68,8 +68,11 @@ builder.Services.Configure<ApplicationInsightsServiceOptions>(options =>
 builder.Services.Configure<GeneralSettings>(settings => settings.DisableLocaltestValidation = true);
 builder.Services.Configure<GeneralSettings>(settings => settings.DisableAppConfigurationCache = true);
 builder.Services.Configure<GeneralSettings>(settings => settings.IsTest = true);
-builder.Services.Configure<DanSettings>(settings => settings.BaseUrl = "http://localhost:7071/v1/");
-builder.Configuration.GetSection("GeneralSettings:IsTest").Value = "true";
+builder.Services.Configure<DanSettings>(settings =>
+{
+    settings.BaseUrl = "http://localhost:7071/v1/";
+    settings.SubscriptionKey = "test-subscription-key";
+});builder.Configuration.GetSection("GeneralSettings:IsTest").Value = "true";
 
 // AppConfigurationCache.Disable = true;
 

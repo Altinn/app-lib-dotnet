@@ -224,6 +224,16 @@ public class PrefillSI : IPrefill
                 {
                     var datasetName = dataset.SelectToken("name")?.ToString();
                     var subject = !string.IsNullOrWhiteSpace(party.SSN) ? party.SSN : party.OrgNumber;
+
+                    if (string.IsNullOrEmpty(subject))
+                    {
+                        _logger.LogError(
+                            "Could not prefill from {DanKey}, no valid subject (SSN or OrgNumber) found for party",
+                            _danKey
+                        );
+                        continue;
+                    }
+
                     var fields = dataset.SelectToken("mappings");
                     if (fields != null)
                     {
@@ -249,6 +259,11 @@ public class PrefillSI : IPrefill
                                 string errorMessage = $"Could not  prefill from {_danKey}, data is not defined.";
                                 _logger.LogError(errorMessage);
                             }
+                        }
+                        else
+                        {
+                            string errorMessage = $"Could not  prefill from {_danKey}, dataset name is not defined.";
+                            _logger.LogError(errorMessage);
                         }
                     }
                 }
