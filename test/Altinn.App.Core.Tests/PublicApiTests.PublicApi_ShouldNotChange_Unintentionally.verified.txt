@@ -55,9 +55,7 @@ namespace Altinn.App.Core.Configuration
     {
         public DanSettings() { }
         public required string BaseUrl { get; set; }
-        public required string Scope { get; set; }
         public required string SubscriptionKey { get; set; }
-        public required string SubscriptionKeySkipsRegistrene { get; set; }
     }
     public class FrontEndSettings : System.Collections.Generic.Dictionary<string, string>
     {
@@ -2408,7 +2406,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Dan
 {
     public class DanClient : Altinn.App.Core.Internal.Dan.IDanClient
     {
-        public DanClient(System.Net.Http.HttpClient httpClient, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.DanSettings> settings, System.IServiceProvider serviceProvider) { }
+        public DanClient(System.Net.Http.IHttpClientFactory factory, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.DanSettings> settings) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, string>> GetDataset(string dataset, string subject, string fields) { }
     }
 }
