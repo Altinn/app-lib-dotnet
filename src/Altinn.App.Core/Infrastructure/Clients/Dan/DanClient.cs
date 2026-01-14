@@ -57,7 +57,10 @@ public class DanClient : IDanClient
         //ensures that the query returns a list if endpoint returns a list and an object when endpoint returns a single object
         var query = "[].{" + baseQuery + "}||{" + baseQuery + "}";
 
-        var result = await _httpClient.PostAsync($"directharvest/{dataset}?envelope=false&reuseToken=true&query={query}", content);
+        var result = await _httpClient.PostAsync(
+            $"directharvest/{dataset}?envelope=false&reuseToken=true&query={query}",
+            content
+        );
 
         if (result.IsSuccessStatusCode)
         {
