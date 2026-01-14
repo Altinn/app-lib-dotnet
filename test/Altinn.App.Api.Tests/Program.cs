@@ -122,7 +122,6 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IAppModel, AppModelMock<Program>>();
     services.AddTransient<IEventsClient, EventsClientMock>();
     services.AddTransient<ISignClient, SignClientMock>();
-    services.AddSingleton<IDanClient, DanClient>();
 
     services.PostConfigureAll<JwtCookieOptions>(options =>
     {

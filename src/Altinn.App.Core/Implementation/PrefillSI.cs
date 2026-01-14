@@ -215,7 +215,7 @@ public class PrefillSI : IPrefill
 
         // Prefill from Dan
         JToken? danConfiguration = prefillConfiguration.SelectToken(_danKey);
-        if (danConfiguration != null)
+        if (danConfiguration != null && _danClient != null)
         {
             var datasetList = danConfiguration.SelectToken("datasets");
             if (datasetList != null)
