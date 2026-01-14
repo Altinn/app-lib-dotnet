@@ -1,6 +1,7 @@
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Dan;
 using Altinn.App.Core.Internal.Registers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -47,6 +48,7 @@ public class PrefillSITests
         var authenticationContextMock = new Mock<IAuthenticationContext>();
         var services = new ServiceCollection();
         var registryClientMock = new Mock<IRegisterClient>();
+        var danClientMock = new Mock<IDanClient>();
         services.AddSingleton<IRegisterClient>(registryClientMock.Object);
         await using var sp = services.BuildStrictServiceProvider();
 
@@ -55,7 +57,7 @@ public class PrefillSITests
             appResourcesMock.Object,
             authenticationContextMock.Object,
             sp,
-            null
+            danClientMock.Object
         );
 
         prefillToTest.PrefillDataModel(dataModel, externalPrefill, continueOnError: false);
