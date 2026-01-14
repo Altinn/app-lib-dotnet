@@ -98,7 +98,6 @@ public static class ServiceCollectionExtensions
         services.Configure<GeneralSettings>(configuration.GetSection("GeneralSettings"));
         services.Configure<PlatformSettings>(configuration.GetSection("PlatformSettings"));
         services.Configure<CacheSettings>(configuration.GetSection("CacheSettings"));
-        services.Configure<DanSettings>(configuration.GetSection("DanClientSettings"));
 
         AddApplicationIdentifier(services);
 
@@ -106,7 +105,6 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IAuthenticationClient, AuthenticationClient>();
         services.AddHttpClient<IAuthorizationClient, AuthorizationClient>();
         services.AddHttpClient<IDataClient, DataClient>();
-        services.AddHttpClient<IDanClient, DanClient>();
         services.AddHttpClient<IOrganizationClient, RegisterERClient>();
         services.AddHttpClient<IInstanceClient, InstanceClient>();
         services.AddHttpClient<IInstanceEventClient, InstanceEventClient>();
@@ -199,6 +197,12 @@ public static class ServiceCollectionExtensions
         services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
         services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
         services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
+        var danSettings = configuration.GetSection("DanClientSettings");
+        if (danSettings.Exists())
+        {
+            services.AddHttpClient<IDanClient, DanClient>();
+            services.Configure<DanSettings>(danSettings);
+        }
 
         services.AddRuntimeEnvironment();
         if (env.IsDevelopment())

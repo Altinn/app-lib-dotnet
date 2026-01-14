@@ -72,7 +72,8 @@ builder.Services.Configure<DanSettings>(settings =>
 {
     settings.BaseUrl = "http://localhost:7071/v1/";
     settings.SubscriptionKey = "test-subscription-key";
-});builder.Configuration.GetSection("GeneralSettings:IsTest").Value = "true";
+});
+builder.Configuration.GetSection("GeneralSettings:IsTest").Value = "true";
 
 // AppConfigurationCache.Disable = true;
 
@@ -120,7 +121,7 @@ void ConfigureMockServices(IServiceCollection services, ConfigurationManager con
     services.AddTransient<IAppModel, AppModelMock<Program>>();
     services.AddTransient<IEventsClient, EventsClientMock>();
     services.AddTransient<ISignClient, SignClientMock>();
-    services.AddTransient<IDanClient, DanClientMock>();
+    services.AddSingleton<IDanClient, DanClientMock>();
 
     services.PostConfigureAll<JwtCookieOptions>(options =>
     {

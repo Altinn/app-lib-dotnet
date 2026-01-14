@@ -21,7 +21,7 @@ public class PrefillSI : IPrefill
     private readonly IAppResources _appResourcesService;
     private readonly IRegisterClient _registerClient;
     private readonly IAuthenticationContext _authenticationContext;
-    private readonly IDanClient _danClient;
+    private readonly IDanClient? _danClient;
     private readonly Telemetry? _telemetry;
     private static readonly string _erKey = "ER";
     private static readonly string _dsfKey = "DSF";
@@ -44,7 +44,7 @@ public class PrefillSI : IPrefill
         IAppResources appResourcesService,
         IAuthenticationContext authenticationContext,
         IServiceProvider serviceProvider,
-        IDanClient danClient,
+        IDanClient? danClient = null,
         Telemetry? telemetry = null
     )
     {
@@ -262,7 +262,7 @@ public class PrefillSI : IPrefill
                         }
                         else
                         {
-                            string errorMessage = $"Could not  prefill from {_danKey}, dataset name is not defined.";
+                            string errorMessage = $"Could not prefill from {_danKey}, dataset name is not defined.";
                             _logger.LogError(errorMessage);
                         }
                     }
