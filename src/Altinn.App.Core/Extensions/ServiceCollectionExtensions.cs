@@ -24,6 +24,7 @@ using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Infrastructure.Clients.AccessManagement;
 using Altinn.App.Core.Infrastructure.Clients.Authentication;
 using Altinn.App.Core.Infrastructure.Clients.Authorization;
+using Altinn.App.Core.Infrastructure.Clients.Dan;
 using Altinn.App.Core.Infrastructure.Clients.Events;
 using Altinn.App.Core.Infrastructure.Clients.KeyVault;
 using Altinn.App.Core.Infrastructure.Clients.Pdf;
@@ -35,6 +36,7 @@ using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Dan;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
@@ -194,6 +196,12 @@ public static class ServiceCollectionExtensions
         services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
         services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
         services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
+        var danSettings = configuration.GetSection("DanClientSettings");
+        if (danSettings.Exists())
+        {
+            services.AddHttpClient<IDanClient, DanClient>();
+            services.Configure<DanSettings>(danSettings);
+        }
 
         services.AddRuntimeEnvironment();
         if (env.IsDevelopment())
