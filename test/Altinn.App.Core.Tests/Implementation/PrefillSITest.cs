@@ -107,7 +107,7 @@ public class PrefillSITests
             .ReturnsAsync(party);
 
         //Act
-        prefillToTest.PrefillDataModel(partyId, modelName, dataModel);
+        await prefillToTest.PrefillDataModel(partyId, modelName, dataModel);
 
         //Assert
         danClientMock.Verify(

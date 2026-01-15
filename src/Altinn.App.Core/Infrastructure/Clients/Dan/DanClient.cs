@@ -44,7 +44,6 @@ public class DanClient : IDanClient
     {
         var body = new { Subject = subject };
         var myContent = JsonConvert.SerializeObject(body);
-        HttpContent content = new StringContent(myContent, Encoding.UTF8, "application/json");
 
         var fieldsToFill = GetQuery(fields);
         if (fieldsToFill.Count == 0)
@@ -59,28 +58,25 @@ public class DanClient : IDanClient
 
         //ensures that the query returns a list if endpoint returns a list and an object when endpoint returns a single object
         var query = "[].{" + baseQuery + "}||{" + baseQuery + "}";
-
-        var result = await _httpClient.PostAsync(
-            $"directharvest/{dataset}?envelope=false&reuseToken=true&query={query}",
-            content
-        );
-
-        if (result.IsSuccessStatusCode)
+        using (var content = new StringContent(myContent, Encoding.UTF8, "application/json"))
         {
-            var dictionary = new Dictionary<string, string>();
-            var resultJson = await result.Content.ReadAsStringAsync();
+            var result = await _httpClient.PostAsync(
+                $"directharvest/{dataset}?envelope=false&reuseToken=true&query={query}",
+                content
+            );
 
-            //some datasets might return an array. The array needs to be serialized differently than a single object
-            if (IsJsonArray(resultJson))
+            if (result.IsSuccessStatusCode)
             {
-                dictionary = await ConvertListToDictionary(resultJson);
+                Dictionary<string, string>? dictionary;
+
+                var resultJson = await result.Content.ReadAsStringAsync();
+
+                dictionary = IsJsonArray(resultJson)
+                    ? await ConvertListToDictionary(resultJson)
+                    : JsonConvert.DeserializeObject<Dictionary<string, string>>(resultJson);
+
+                return dictionary ?? new Dictionary<string, string>();
             }
-            else
-            {
-                dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(resultJson);
-            }
-            if (dictionary != null)
-                return dictionary;
         }
         return new Dictionary<string, string>();
     }
