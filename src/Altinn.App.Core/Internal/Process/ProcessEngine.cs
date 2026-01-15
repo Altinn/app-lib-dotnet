@@ -170,9 +170,14 @@ internal class ProcessEngine : IProcessEngine
 
     private async Task WaitForEngineResponse(Instance instance, CancellationToken ct)
     {
+        var overallStopwatch = Stopwatch.StartNew();
+        const int timeoutMs = 100_000;
+        const int initialDelayMs = 100;
+        const int maxDelayMs = 2_000;
+        int currentDelayMs = initialDelayMs;
+
         while (!ct.IsCancellationRequested)
         {
-            var stopwatch = Stopwatch.StartNew();
             ProcessEngineStatusResponse? processStatus = await _processEngineClient.GetActiveJobStatus(instance, ct);
 
             if (processStatus is null)
@@ -203,12 +208,15 @@ internal class ProcessEngine : IProcessEngine
                     );
             }
 
-            if (stopwatch.ElapsedMilliseconds > 100_000)
+            if (overallStopwatch.ElapsedMilliseconds > timeoutMs)
             {
                 throw new TimeoutException("Timeout while waiting for process engine job to complete.");
             }
 
-            Thread.Sleep(500);
+            await Task.Delay(currentDelayMs, ct);
+
+            // Exponential backoff: double delay each iteration up to max
+            currentDelayMs = Math.Min(currentDelayMs * 2, maxDelayMs);
         }
 
         throw new InvalidOperationException("Tried waiting for process engine job, but the operation was cancelled.");
