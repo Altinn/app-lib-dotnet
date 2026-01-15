@@ -3,6 +3,9 @@ namespace Altinn.App.Core.Features.Process;
 /// <summary>
 /// Hook interface for custom end process logic.
 /// </summary>
+/// <remarks>
+/// <strong>IMPORTANT: Implementations MUST be idempotent - this hook may be retried on failure.</strong>
+/// </remarks>
 [ImplementableByApps]
 public interface IOnProcessEndingHandler
 {

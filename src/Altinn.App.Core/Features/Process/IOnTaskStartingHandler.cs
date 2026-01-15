@@ -3,6 +3,9 @@ namespace Altinn.App.Core.Features.Process;
 /// <summary>
 /// Hook interface for custom start task logic.
 /// </summary>
+/// <remarks>
+/// <strong>IMPORTANT: Implementations MUST be idempotent - this hook may be retried on failure.</strong>
+/// </remarks>
 [ImplementableByApps]
 public interface IOnTaskStartingHandler
 {

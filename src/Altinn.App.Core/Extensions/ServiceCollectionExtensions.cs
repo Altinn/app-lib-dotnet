@@ -403,6 +403,9 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IProcessEngineCommand, CompletedAltinnEvent>();
         services.AddTransient<IProcessEngineCommand, MovedToAltinnEvent>();
 
+        // Validate all commands are registered
+        ProcessEngineCommandValidator.Validate(services);
+
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();
         services.AddTransient<IProcessTask, ConfirmationProcessTask>();
