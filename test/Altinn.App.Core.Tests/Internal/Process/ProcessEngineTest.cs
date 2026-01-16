@@ -192,7 +192,7 @@ public sealed class ProcessEngineTest
             .Should()
             .ContainInOrder(
                 "UnlockTaskData",
-                "StartTaskLegacyHook",
+                "ProcessTaskStart",
                 "OnTaskStartingHook",
                 "CommonTaskInitialization",
                 "ProcessTaskStart",
@@ -317,7 +317,7 @@ public sealed class ProcessEngineTest
                 "LockTaskData",
                 // StartTask commands
                 "UnlockTaskData",
-                "StartTaskLegacyHook",
+                "ProcessTaskStart",
                 "OnTaskStartingHook",
                 "CommonTaskInitialization",
                 "ProcessTaskStart",
@@ -443,7 +443,7 @@ public sealed class ProcessEngineTest
                 "AbandonTaskLegacyHook",
                 // StartTask commands
                 "UnlockTaskData",
-                "StartTaskLegacyHook",
+                "ProcessTaskStart",
                 "OnTaskStartingHook",
                 "CommonTaskInitialization",
                 "ProcessTaskStart",

@@ -25,34 +25,38 @@ internal sealed class ProcessEventCommands
     /// <summary>
     /// Adds a command to the main sequence.
     /// </summary>
-    public ProcessEventCommands AddCommand(string commandKey, string? metadata = null)
+    public ProcessEventCommands AddCommand(string commandKey, CommandRequestPayload? payload = null)
     {
-        _commands.Add(CreateCommand(commandKey, metadata));
+        _commands.Add(CreateCommand(commandKey, payload));
         return this;
     }
 
     /// <summary>
     /// Adds a command that executes after the ProcessNext has been committed to storage via UpdateProcessState.
     /// </summary>
-    public ProcessEventCommands AddPostProcessNextCommittedCommand(string commandKey, string? metadata = null)
+    public ProcessEventCommands AddPostProcessNextCommittedCommand(
+        string commandKey,
+        CommandRequestPayload? payload = null
+    )
     {
-        _postProcessNextCommittedCommands.Add(CreateCommand(commandKey, metadata));
+        _postProcessNextCommittedCommands.Add(CreateCommand(commandKey, payload));
         return this;
     }
 
-    private static ProcessEngineCommandRequest CreateCommand(string commandKey, string? metadata = null)
+    private static ProcessEngineCommandRequest CreateCommand(string commandKey, CommandRequestPayload? payload = null)
     {
+        string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
         return new ProcessEngineCommandRequest
         {
-            Command = new ProcessEngineCommand.AppCommand(CommandKey: commandKey, Metadata: metadata),
+            Command = new ProcessEngineCommand.AppCommand(CommandKey: commandKey, Payload: serializedPayload),
         };
     }
 
     /// <summary>
     /// Creates command group for task start events.
     /// </summary>
-    /// <param name="isServiceTask">Whether this is a service task that should be executed automatically.</param>
-    public static ProcessEventCommands GetTaskStartCommands(bool isServiceTask)
+    /// <param name="serviceTaskType">If this is a service task, the task type identifier. Otherwise null.</param>
+    public static ProcessEventCommands GetTaskStartCommands(string? serviceTaskType)
     {
         var group = new ProcessEventCommands()
             .AddCommand(UnlockTaskData.Key)
@@ -62,9 +66,12 @@ internal sealed class ProcessEventCommands
             .AddCommand(ProcessTaskStart.Key)
             .AddPostProcessNextCommittedCommand(MovedToAltinnEvent.Key);
 
-        if (isServiceTask)
+        if (serviceTaskType is not null)
         {
-            group.AddPostProcessNextCommittedCommand(ExecuteServiceTask.Key);
+            group.AddPostProcessNextCommittedCommand(
+                ExecuteServiceTask.Key,
+                new ExecuteServiceTaskPayload(serviceTaskType)
+            );
         }
 
         return group;

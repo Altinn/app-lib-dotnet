@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
@@ -68,7 +67,7 @@ internal sealed class ProcessNextRequestFactory
         return eventType switch
         {
             InstanceEventType.process_StartTask => ProcessEventCommands.GetTaskStartCommands(
-                IsServiceTask(altinnTaskType)
+                GetServiceTaskType(altinnTaskType)
             ),
             InstanceEventType.process_EndTask => ProcessEventCommands.GetTaskEndCommands(),
             InstanceEventType.process_AbandonTask => ProcessEventCommands.GetTaskAbandonCommands(),
@@ -77,13 +76,14 @@ internal sealed class ProcessNextRequestFactory
         };
     }
 
-    private bool IsServiceTask(string? altinnTaskType)
+    private string? GetServiceTaskType(string? altinnTaskType)
     {
         if (altinnTaskType is null)
-            return false;
+            return null;
 
         IEnumerable<IServiceTask> serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
-        return serviceTasks.Any(x => x.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase));
+        bool isServiceTask = serviceTasks.Any(x => x.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase));
+        return isServiceTask ? altinnTaskType : null;
     }
 
     private async Task<ProcessEngineActor> ExtractActor()
@@ -105,10 +105,14 @@ internal sealed class ProcessNextRequestFactory
 
     private static ProcessEngineCommandRequest CreateUpdateProcessStateCommand(ProcessStateChange processStateChange)
     {
-        string? metadata = JsonSerializer.Serialize(processStateChange);
+        var payload = new UpdateProcessStatePayload(processStateChange);
+        string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
         return new ProcessEngineCommandRequest
         {
-            Command = new ProcessEngineCommand.AppCommand(CommandKey: UpdateProcessState.Key, Metadata: metadata),
+            Command = new ProcessEngineCommand.AppCommand(
+                CommandKey: UpdateProcessState.Key,
+                Payload: serializedPayload
+            ),
         };
     }
 }

@@ -36,8 +36,8 @@ internal static class ProcessEngineCommandValidator
         var keys = new HashSet<string>();
 
         // Collect keys from all event types
-        CollectCommandKeys(ProcessEventCommands.GetTaskStartCommands(isServiceTask: false), keys);
-        CollectCommandKeys(ProcessEventCommands.GetTaskStartCommands(isServiceTask: true), keys);
+        CollectCommandKeys(ProcessEventCommands.GetTaskStartCommands(serviceTaskType: null), keys);
+        CollectCommandKeys(ProcessEventCommands.GetTaskStartCommands(serviceTaskType: "DummyServiceTask"), keys);
         CollectCommandKeys(ProcessEventCommands.GetTaskEndCommands(), keys);
         CollectCommandKeys(ProcessEventCommands.GetTaskAbandonCommands(), keys);
         CollectCommandKeys(ProcessEventCommands.GetProcessEndCommands(), keys);

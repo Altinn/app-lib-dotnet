@@ -20,8 +20,8 @@ public sealed record ProcessEngineAppCallbackPayload
     public required ProcessEngineActor Actor { get; init; }
 
     /// <summary>
-    ///
+    /// Optional payload data sent with the command.
     /// </summary>
-    [JsonPropertyName("metadata")]
-    public string? Metadata { get; init; }
+    [JsonPropertyName("payload")]
+    public string? Payload { get; init; }
 }

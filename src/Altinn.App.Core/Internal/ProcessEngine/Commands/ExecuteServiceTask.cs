@@ -6,31 +6,40 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.ProcessEngine.Commands;
 
+/// <summary>
+/// Request payload for ExecuteServiceTask command.
+/// Contains the service task type identifier.
+/// </summary>
+internal sealed record ExecuteServiceTaskPayload(string ServiceTaskType) : CommandRequestPayload;
+
 internal sealed class ExecuteServiceTask(AppImplementationFactory appImplementationFactory, Telemetry? telemetry = null)
-    : IProcessEngineCommand
+    : ProcessEngineCommandBase<ExecuteServiceTaskPayload>
 {
     public static string Key => "ExecuteServiceTask";
 
-    public string GetKey() => Key;
+    public override string GetKey() => Key;
 
-    public async Task<ProcessEngineCommandResult> Execute(ProcessEngineCommandContext parameters)
+    public override async Task<ProcessEngineCommandResult> Execute(
+        ProcessEngineCommandContext context,
+        ExecuteServiceTaskPayload payload
+    )
     {
-        IInstanceDataMutator instanceDataMutator = parameters.InstanceDataMutator;
-        Instance instance = parameters.InstanceDataMutator.Instance;
-        string serviceTaskType = parameters.Payload.Metadata; //TODO: Define how to pass service task id
+        IInstanceDataMutator instanceDataMutator = context.InstanceDataMutator;
+        Instance instance = context.InstanceDataMutator.Instance;
+        string serviceTaskType = payload.ServiceTaskType;
 
         using Activity? activity = telemetry?.StartProcessExecuteServiceTaskActivity(instance, serviceTaskType);
 
         try
         {
-            ServiceTaskContext context = new()
+            ServiceTaskContext serviceTaskContext = new()
             {
                 InstanceDataMutator = instanceDataMutator,
-                CancellationToken = parameters.CancellationToken,
+                CancellationToken = context.CancellationToken,
             };
 
             IServiceTask serviceTask = GetServiceTask(serviceTaskType);
-            ServiceTaskResult result = await serviceTask.Execute(context);
+            ServiceTaskResult result = await serviceTask.Execute(serviceTaskContext);
 
             if (result is ServiceTaskFailedResult)
             {

@@ -103,7 +103,7 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
         {
             CommandKey = command.CommandKey,
             Actor = task.Actor,
-            Metadata = command.Metadata,
+            Payload = command.Payload,
         };
         using var response = await httpClient.PostAsync(
             command.CommandKey,
