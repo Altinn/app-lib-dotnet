@@ -98,7 +98,8 @@ public sealed class InstanceLockTests
                 .Create()
                 .WithPath($"/storage/api/v1/instances/{InstanceOwnerPartyId}/{_instanceGuid}/lock")
                 .UsingPatch()
-                .WithHeader("Authorization", $"Bearer {lockToken}");
+                .WithHeader("Authorization", $"Bearer {_defaultAuth.Token}")
+                .WithHeader("Altinn-Storage-Lock-Token", lockToken);
         }
     }
 

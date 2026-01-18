@@ -22,6 +22,8 @@ internal sealed class InstanceLockClient
 
     private readonly AuthenticationMethod _defaultAuthenticationMethod = StorageAuthenticationMethod.CurrentUser();
 
+    private const string LockTokenHeaderName = "Altinn-Storage-Lock-Token";
+
     public InstanceLockClient(
         IOptions<PlatformSettings> platformSettings,
         ILogger<InstanceLockClient> logger,
@@ -93,15 +95,25 @@ internal sealed class InstanceLockClient
         Guid instanceGuid,
         int instanceOwnerPartyId,
         string lockToken,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken cancellationToken = default
     )
     {
         using var activity = _telemetry?.StartReleaseInstanceLockActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/lock";
-        var request = new InstanceLockRequest { TtlSeconds = 0 };
-        var content = JsonContent.Create(request);
+        var instanceLockRequest = new InstanceLockRequest { TtlSeconds = 0 };
 
-        using var response = await _client.PatchAsync(lockToken, apiUrl, content, cancellationToken: cancellationToken);
+        var userToken = await _authenticationTokenResolver.GetAccessToken(
+            authenticationMethod ?? _defaultAuthenticationMethod,
+            cancellationToken: cancellationToken
+        );
+
+        using HttpRequestMessage request = new(HttpMethod.Patch, apiUrl);
+        request.Content = JsonContent.Create(instanceLockRequest);
+        request.Headers.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, userToken);
+        request.Headers.Add(LockTokenHeaderName, lockToken);
+
+        using var response = await _client.SendAsync(request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
