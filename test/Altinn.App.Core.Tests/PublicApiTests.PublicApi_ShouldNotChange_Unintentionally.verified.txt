@@ -1721,6 +1721,9 @@ namespace Altinn.App.Core.Features.Options
     public static class CommonOptionProviderServiceCollectionExtensions
     {
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddAltinn2CodeList(this Microsoft.Extensions.DependencyInjection.IServiceCollection serviceCollection, string id, System.Func<Altinn.App.Core.Features.Options.Altinn2Provider.MetadataCodeListCodes, Altinn.App.Core.Models.AppOption> transform, System.Func<Altinn.App.Core.Features.Options.Altinn2Provider.MetadataCodeListCodes, bool>? filter = null, string? metadataApiId = null, int? codeListVersion = default) { }
+        [System.Obsolete("The code lists can be fetched directly without configuring options providers by c" +
+            "alling the options endpoints using the options format for library references (li" +
+            "b**{creatorOrg}**{codeListId}**{version})")]
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddAltinn3CodeList(this Microsoft.Extensions.DependencyInjection.IServiceCollection serviceCollection, string optionId, string org, string codeListId, string? version = null) { }
     }
     public class DefaultAppOptionsProvider : Altinn.App.Core.Features.IAppOptionsProvider
