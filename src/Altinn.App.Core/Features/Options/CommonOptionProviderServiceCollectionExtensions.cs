@@ -82,6 +82,9 @@ public static class CommonOptionProviderServiceCollectionExtensions
     /// <param name="codeListId">Id of the code list in the code list repository.</param>
     /// <param name="version">Version of the code list in the code list repository. Defaults to latest if not provided.</param>
     /// <returns></returns>
+    [Obsolete(
+        "The code lists can be fetched directly without configuring options providers by calling the options endpoints using the options format for library references (lib**{creatorOrg}**{codeListId}**{version})"
+    )]
     public static IServiceCollection AddAltinn3CodeList(
         this IServiceCollection serviceCollection,
         string optionId,
