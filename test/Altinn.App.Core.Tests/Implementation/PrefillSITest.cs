@@ -15,6 +15,12 @@ public class PrefillTestDataModel
     public TestPrefillFields? Prefill { get; set; }
 }
 
+public class PrefillDanTestDataModel
+{
+    public string Email { get; set; }
+    public string OrganizationNumber { get; set; }
+}
+
 public class TestPrefillFields
 {
     public string? EraSourceEnvironment { get; set; }
@@ -77,7 +83,7 @@ public class PrefillSITests
     public async Task PrefillDataModel_Should_Fill_With_Data_From_Dan()
     {
         // Arrange
-        var dataModel = new PrefillTestDataModel();
+        var dataModel = new PrefillDanTestDataModel();
 
         var loggerMock = new Mock<ILogger<PrefillSI>>();
         var appResourcesMock = new Mock<IAppResources>();
@@ -99,12 +105,22 @@ public class PrefillSITests
         var modelName = "model";
         var partyId = "1234";
 
+        // danData should match the data in the GetJsonConfig method
+        var danData = new Dictionary<string, string>
+        {
+            { "BusinessAddressCity", "Email" },
+            { "SectorCode", "OrganizationNumber" },
+        };
+
         var party = new Party() { PartyId = 1234, SSN = "12341234" };
 
         appResourcesMock.Setup(ar => ar.GetPrefillJson(It.IsAny<string>())).Returns(GetJsonConfig());
         registryClientMock
             .Setup(m => m.GetPartyUnchecked(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(party);
+        danClientMock
+            .Setup(m => m.GetDataset(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(danData);
 
         //Act
         await prefillToTest.PrefillDataModel(partyId, modelName, dataModel);
