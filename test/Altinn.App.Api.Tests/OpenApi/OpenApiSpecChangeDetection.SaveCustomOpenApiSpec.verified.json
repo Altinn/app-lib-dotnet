@@ -686,7 +686,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/AppOptions"
+                    "$ref": "#/components/schemas/AppOption"
                   }
                 }
               }
@@ -763,7 +763,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/AppOptions"
+                    "$ref": "#/components/schemas/AppOption"
                   }
                 }
               }
@@ -3433,29 +3433,6 @@
               "type": "string"
             },
             "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "AppOptions": {
-        "type": "object",
-        "properties": {
-          "options": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AppOption"
-            },
-            "nullable": true
-          },
-          "parameters": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string",
-              "nullable": true
-            }
-          },
-          "isCacheable": {
-            "type": "boolean"
           }
         },
         "additionalProperties": false
