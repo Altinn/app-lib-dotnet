@@ -119,7 +119,7 @@ public sealed class PageComponent : Base.BaseComponent
     }
 
     /// <summary>
-    /// List of the components that are part of this page.
+    /// A read-only collection of the components that are part of this page.
     /// </summary>
     public required IReadOnlyList<Base.BaseLayoutComponent> ChildComponents { get; init; }
 

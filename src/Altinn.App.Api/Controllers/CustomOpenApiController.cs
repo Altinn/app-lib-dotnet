@@ -813,7 +813,7 @@ public class CustomOpenApiController : Controller
                                         ["application/json"] = new OpenApiMediaType()
                                         {
                                             Schema = _schemaGenerator.GenerateSchema(
-                                                typeof(List<AppOptions>),
+                                                typeof(List<AppOption>),
                                                 _schemaRepository
                                             ),
                                         },
@@ -880,7 +880,7 @@ public class CustomOpenApiController : Controller
                                         ["application/json"] = new OpenApiMediaType()
                                         {
                                             Schema = _schemaGenerator.GenerateSchema(
-                                                typeof(List<AppOptions>),
+                                                typeof(List<AppOption>),
                                                 _schemaRepository
                                             ),
                                         },
