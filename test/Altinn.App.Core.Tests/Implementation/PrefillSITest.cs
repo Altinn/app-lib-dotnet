@@ -17,8 +17,8 @@ public class PrefillTestDataModel
 
 public class PrefillDanTestDataModel
 {
-    public string Email { get; set; }
-    public string OrganizationNumber { get; set; }
+    public string? Email { get; set; }
+    public string? OrganizationNumber { get; set; }
 }
 
 public class TestPrefillFields
