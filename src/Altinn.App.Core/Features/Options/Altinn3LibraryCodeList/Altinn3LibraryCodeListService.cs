@@ -73,21 +73,7 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
         var options = libraryCodeListResponse
             .Codes.Select(code =>
             {
-                Dictionary<string, string>? tagDict = null;
-                if (
-                    (code.Tags is not null && libraryCodeListResponse.TagNames is not null)
-                    && code.Tags.Count == libraryCodeListResponse.TagNames.Count
-                )
-                {
-                    tagDict = new Dictionary<string, string>();
-                    foreach (var (k, index) in libraryCodeListResponse.TagNames.Select((k, i) => (k, i)))
-                    {
-                        if (!tagDict.ContainsKey(k))
-                        {
-                            tagDict[k] = code.Tags[index];
-                        }
-                    }
-                }
+                var tagDict = MapTags(libraryCodeListResponse, code);
 
                 return new AppOption
                 {
@@ -112,6 +98,31 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
         };
     }
 
+    private static Dictionary<string, string>? MapTags(
+        Altinn3LibraryCodeListResponse libraryCodeListResponse,
+        Altinn3LibraryCodeListItem code
+    )
+    {
+        Dictionary<string, string>? tagDict = null;
+        if (
+            code.Tags is not null
+            && libraryCodeListResponse.TagNames is not null
+            && code.Tags.Count == libraryCodeListResponse.TagNames.Count
+        )
+        {
+            tagDict = new Dictionary<string, string>();
+            foreach (var (k, index) in libraryCodeListResponse.TagNames.Select((k, i) => (k, i)))
+            {
+                if (!tagDict.ContainsKey(k))
+                {
+                    tagDict[k] = code.Tags[index];
+                }
+            }
+        }
+
+        return tagDict;
+    }
+
     /// <summary>
     /// Gets a value from a language collection with fallback logic.
     /// Attempts to find a value in this order: requested language, Nb, En, then first available (alphabetically by key).
@@ -133,6 +144,7 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
         if (
             language != null && languageCollection.TryGetValue(language, out var value)
             || languageCollection.TryGetValue(LanguageConst.Nb, out value)
+            || languageCollection.TryGetValue(LanguageConst.Nn, out value)
             || languageCollection.TryGetValue(LanguageConst.En, out value)
         )
         {
