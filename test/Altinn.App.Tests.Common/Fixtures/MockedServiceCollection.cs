@@ -363,20 +363,24 @@ public sealed class WrappedServiceProvider : IKeyedServiceProvider, IDisposable,
         var layoutSetName = "layoutSet1";
         var pages = components
             .GroupBy(c => c.PageId)
-            .Select(group => new PageComponent
+            .Select(group =>
             {
-                Id = group.Key,
-                PageId = group.Key,
-                LayoutId = layoutSetName,
-                Type = "page",
-                ChildComponents = group.ToList(),
-                AllComponents = group.ToList(),
-                Hidden = default,
-                RemoveWhenHidden = default,
-                Required = default,
-                ReadOnly = default,
-                DataModelBindings = ImmutableDictionary<string, ModelBinding>.Empty,
-                TextResourceBindings = ImmutableDictionary<string, Expression>.Empty,
+                var componentList = group.ToList();
+                return new PageComponent
+                {
+                    Id = group.Key,
+                    PageId = group.Key,
+                    LayoutId = layoutSetName,
+                    Type = "page",
+                    ChildComponents = componentList,
+                    AllComponents = componentList,
+                    Hidden = default,
+                    RemoveWhenHidden = default,
+                    Required = default,
+                    ReadOnly = default,
+                    DataModelBindings = ImmutableDictionary<string, ModelBinding>.Empty,
+                    TextResourceBindings = ImmutableDictionary<string, Expression>.Empty,
+                };
             });
 
         DataType defaultDataType = _serviceCollection.AddDataType<T>();
