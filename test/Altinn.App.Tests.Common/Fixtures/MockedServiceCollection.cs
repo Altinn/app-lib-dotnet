@@ -366,13 +366,20 @@ public sealed class WrappedServiceProvider : IKeyedServiceProvider, IDisposable,
             .Select(group =>
             {
                 var componentList = group.ToList();
+                var pageComponentLookup = componentList.ToDictionary(c => c.Id, StringComparer.Ordinal);
+                Dictionary<string, string> claimedComponentIds = [];
+                foreach (var component in componentList)
+                {
+                    component.ClaimChildren(pageComponentLookup, claimedComponentIds);
+                }
+                var childComponents = componentList.Where(c => !claimedComponentIds.ContainsKey(c.Id)).ToList();
                 return new PageComponent
                 {
                     Id = group.Key,
                     PageId = group.Key,
                     LayoutId = layoutSetName,
                     Type = "page",
-                    ChildComponents = componentList,
+                    ChildComponents = childComponents,
                     AllComponents = componentList,
                     Hidden = default,
                     RemoveWhenHidden = default,
