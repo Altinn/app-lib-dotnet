@@ -334,9 +334,21 @@ public class InstancesController : ControllerBase
 
         Instance instance;
         instanceTemplate.Process = null;
+        ProcessStateChange? processStateChange;
 
         try
         {
+            // start process and goto next task
+            ProcessStartRequest processStartRequest = new() { Instance = instanceTemplate, User = User };
+
+            ProcessChangeResult result = await _processEngine.CreateInitialProcessState(processStartRequest);
+            if (!result.Success)
+            {
+                return Conflict(result.ErrorMessage);
+            }
+
+            processStateChange = result.ProcessStateChange;
+
             // create the instance
             instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
         }
@@ -361,7 +373,7 @@ public class InstancesController : ControllerBase
                 return StatusCode(prefillProblem.Status ?? 500, prefillProblem);
             }
 
-            // get the updated instance
+            // Get the updated instance
             instance = await _instanceClient.GetInstance(
                 app,
                 org,
@@ -369,20 +381,10 @@ public class InstancesController : ControllerBase
                 Guid.Parse(instance.Id.Split("/")[1])
             );
 
-            // Auto-start process - sends commands to ProcessEngine service
-            ProcessStartRequest processStartRequest = new() { Instance = instance, User = User };
-            ProcessChangeResult result = await _processEngine.Start(processStartRequest);
-
-            if (!result.Success)
+            // Dispatch process state change to async engine
+            if (processStateChange is not null)
             {
-                _logger.LogError(
-                    "Failed to start process for instance {InstanceId}: {ErrorMessage}",
-                    instance.Id,
-                    result.ErrorMessage
-                );
-                // Note: Instance is created but process failed to start
-                // Consider if we should delete the instance here
-                return StatusCode(500, $"Instance created but process start failed: {result.ErrorMessage}");
+                await _processEngine.SubmitInitialProcessState(instance, processStateChange);
             }
         }
         catch (Exception exception)
@@ -392,8 +394,6 @@ public class InstancesController : ControllerBase
                 $"Instantiation of data elements failed for instance {instance.Id} for party {instanceTemplate.InstanceOwner?.PartyId}"
             );
         }
-
-        await RegisterEvent("app.instance.created", instance);
 
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
@@ -550,6 +550,7 @@ public class InstancesController : ControllerBase
         }
 
         Instance instance;
+        ProcessStateChange? processStateChange = null;
         try
         {
             instanceTemplate.Process = null;
@@ -579,6 +580,22 @@ public class InstancesController : ControllerBase
                 }
             }
 
+            // Generate process start events - updates instanceTemplate.Process in memory
+            var startRequest = new ProcessStartRequest()
+            {
+                Instance = instanceTemplate,
+                User = User,
+                Prefill = instansiationInstance.Prefill,
+            };
+
+            ProcessChangeResult processResult = await _processEngine.CreateInitialProcessState(startRequest);
+            if (!processResult.Success)
+            {
+                return Conflict(processResult.ErrorMessage);
+            }
+            processStateChange = processResult.ProcessStateChange;
+
+            // Create instance WITH process state
             instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
 
             if (isCopyRequest && source is not null)
@@ -588,24 +605,10 @@ public class InstancesController : ControllerBase
 
             instance = await _instanceClient.GetInstance(instance);
 
-            // Auto-start process - sends commands to ProcessEngine service
-            var startRequest = new ProcessStartRequest()
+            // Dispatch process state change to async engine
+            if (processStateChange is not null)
             {
-                Instance = instance,
-                User = User,
-                Prefill = instansiationInstance.Prefill,
-            };
-
-            ProcessChangeResult processResult = await _processEngine.Start(startRequest);
-
-            if (!processResult.Success)
-            {
-                _logger.LogError(
-                    "Failed to start process for instance {InstanceId}: {ErrorMessage}",
-                    instance.Id,
-                    processResult.ErrorMessage
-                );
-                return StatusCode(500, $"Instance created but process start failed: {processResult.ErrorMessage}");
+                await _processEngine.SubmitInitialProcessState(instance, processStateChange);
             }
         }
         catch (Exception exception)
@@ -615,8 +618,6 @@ public class InstancesController : ControllerBase
                 $"Instantiation of appId {org}/{app} failed for party {instanceTemplate.InstanceOwner?.PartyId}"
             );
         }
-
-        await RegisterEvent("app.instance.created", instance);
 
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
@@ -718,27 +719,26 @@ public class InstancesController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
+        // Generate process start events - updates targetInstance.Process in memory
+        ProcessStartRequest processStartRequest = new() { Instance = targetInstance, User = User };
+        ProcessChangeResult startResult = await _processEngine.CreateInitialProcessState(processStartRequest);
+        if (!startResult.Success)
+        {
+            return Conflict(startResult.ErrorMessage);
+        }
+
+        // Create instance WITH process state
         targetInstance = await _instanceClient.CreateInstance(org, app, targetInstance);
 
         await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
 
         targetInstance = await _instanceClient.GetInstance(targetInstance);
 
-        // Auto-start process - sends commands to ProcessEngine service
-        ProcessStartRequest processStartRequest = new() { Instance = targetInstance, User = User };
-        ProcessChangeResult startResult = await _processEngine.Start(processStartRequest);
-
-        if (!startResult.Success)
+        // Dispatch process state change to async engine
+        if (startResult.ProcessStateChange is not null)
         {
-            _logger.LogError(
-                "Failed to start process for instance {InstanceId}: {ErrorMessage}",
-                targetInstance.Id,
-                startResult.ErrorMessage
-            );
-            return StatusCode(500, $"Instance created but process start failed: {startResult.ErrorMessage}");
+            await _processEngine.SubmitInitialProcessState(targetInstance, startResult.ProcessStateChange);
         }
-
-        await RegisterEvent("app.instance.created", targetInstance);
 
         string url = SelfLinkHelper.BuildFrontendSelfLink(targetInstance, Request);
 
@@ -1245,11 +1245,11 @@ public class InstancesController : ControllerBase
 
         string? taskId = instance.Process?.CurrentTask?.ElementId;
 
-        // if (taskId is null)
-        //     throw new InvalidOperationException("There should be a task while initializing data");
+        if (taskId is null)
+            throw new InvalidOperationException("There should be a task while initializing data");
 
         var changes = dataMutator.GetDataElementChanges(initializeAltinnRowId: true);
-        await _patchService.RunDataProcessors(dataMutator, changes, taskId!, language);
+        await _patchService.RunDataProcessors(dataMutator, changes, taskId, language);
 
         if (dataMutator.GetAbandonResponse() is { } abandonResponse)
         {

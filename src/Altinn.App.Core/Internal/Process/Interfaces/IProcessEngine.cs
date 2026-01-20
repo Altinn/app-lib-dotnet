@@ -1,4 +1,3 @@
-using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -10,9 +9,19 @@ namespace Altinn.App.Core.Internal.Process;
 internal interface IProcessEngine
 {
     /// <summary>
-    /// Starts a new process for an instance
+    /// Generates process start events and updates the instance's process state in memory.
+    /// Does not persist anything - use <see cref="SubmitInitialProcessState"/> to dispatch to the async engine.
     /// </summary>
-    Task<ProcessChangeResult> Start(ProcessStartRequest request, CancellationToken ct = default);
+    Task<ProcessChangeResult> CreateInitialProcessState(ProcessStartRequest request);
+
+    /// <summary>
+    /// Dispatches a process state change to the async process engine and waits for completion.
+    /// </summary>
+    Task SubmitInitialProcessState(
+        Instance instance,
+        ProcessStateChange processStateChange,
+        CancellationToken ct = default
+    );
 
     /// <summary>
     /// Method to move process to next task/event

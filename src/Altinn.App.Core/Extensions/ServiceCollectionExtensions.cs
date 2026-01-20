@@ -401,6 +401,7 @@ public static class ServiceCollectionExtensions
 
         // Process engine callback handlers - Altinn Events
         services.AddTransient<IProcessEngineCommand, CompletedAltinnEvent>();
+        services.AddTransient<IProcessEngineCommand, InstanceCreatedAltinnEvent>();
         services.AddTransient<IProcessEngineCommand, MovedToAltinnEvent>();
 
         // Validate all commands are registered

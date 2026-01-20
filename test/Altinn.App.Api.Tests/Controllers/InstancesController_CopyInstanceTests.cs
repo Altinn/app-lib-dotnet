@@ -376,7 +376,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.Start(It.IsAny<ProcessStartRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.CreateInitialProcessState(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() =>
             {
                 return new ProcessChangeResult() { Success = true };
@@ -490,7 +490,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.Start(It.IsAny<ProcessStartRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.CreateInitialProcessState(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
 
         // Form data mocks
@@ -680,7 +680,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.Start(It.IsAny<ProcessStartRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.CreateInitialProcessState(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
 
         // Form data mocks (should be copied)
@@ -869,7 +869,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.Start(It.IsAny<ProcessStartRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.CreateInitialProcessState(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
 
         // Binary data mocks (should be called)
@@ -1065,7 +1065,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.Start(It.IsAny<ProcessStartRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.CreateInitialProcessState(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
 
         // Binary data mocks (should be called)

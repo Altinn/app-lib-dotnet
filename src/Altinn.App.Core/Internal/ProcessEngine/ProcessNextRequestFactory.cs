@@ -37,6 +37,8 @@ internal sealed class ProcessNextRequestFactory
     {
         var commands = new List<ProcessEngineCommandRequest>();
 
+        bool isInitialTaskStart = processStateChange.OldProcessState?.CurrentTask is null;
+
         foreach (InstanceEvent instanceEvent in processStateChange.Events ?? [])
         {
             if (!Enum.TryParse(instanceEvent.EventType, true, out InstanceEventType instanceEventType))
@@ -44,7 +46,11 @@ internal sealed class ProcessNextRequestFactory
 
             string? altinnTaskType = instanceEvent.ProcessInfo?.CurrentTask?.AltinnTaskType;
 
-            ProcessEventCommands? eventCommands = GetCommandsForInstanceEvent(instanceEventType, altinnTaskType);
+            ProcessEventCommands? eventCommands = GetCommandsForInstanceEvent(
+                instanceEventType,
+                altinnTaskType,
+                isInitialTaskStart
+            );
             if (eventCommands != null)
             {
                 commands.AddRange(eventCommands.Commands);
@@ -62,12 +68,18 @@ internal sealed class ProcessNextRequestFactory
         };
     }
 
-    private ProcessEventCommands? GetCommandsForInstanceEvent(InstanceEventType eventType, string? altinnTaskType)
+    private ProcessEventCommands? GetCommandsForInstanceEvent(
+        InstanceEventType eventType,
+        string? altinnTaskType,
+        bool isInitialTaskStart
+    )
     {
         return eventType switch
         {
+            InstanceEventType.process_StartEvent => null, // No commands for process start event itself
             InstanceEventType.process_StartTask => ProcessEventCommands.GetTaskStartCommands(
-                GetServiceTaskType(altinnTaskType)
+                GetServiceTaskType(altinnTaskType),
+                isInitialTaskStart
             ),
             InstanceEventType.process_EndTask => ProcessEventCommands.GetTaskEndCommands(),
             InstanceEventType.process_AbandonTask => ProcessEventCommands.GetTaskAbandonCommands(),

@@ -60,7 +60,7 @@ public sealed class ProcessEngineTest
             Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "Task_1" } },
         };
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance };
-        ProcessChangeResult result = await processEngine.Start(processStartRequest);
+        ProcessChangeResult result = await processEngine.CreateInitialProcessState(processStartRequest);
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("Process is already started. Use next.");
         result.ErrorType.Should().Be(ProcessErrorType.Conflict);
@@ -81,7 +81,7 @@ public sealed class ProcessEngineTest
             Instance = instance,
             StartEventId = "NotTheStartEventYouAreLookingFor",
         };
-        ProcessChangeResult result = await processEngine.Start(processStartRequest);
+        ProcessChangeResult result = await processEngine.CreateInitialProcessState(processStartRequest);
         fixture.Mock<IProcessReader>().Verify(r => r.GetStartEventIds(), Times.Once);
         result.Success.Should().BeFalse();
         result
@@ -143,7 +143,7 @@ public sealed class ProcessEngineTest
         ProcessStartRequest processStartRequest = new ProcessStartRequest() { Instance = instance, User = null };
 
         // Act
-        ProcessChangeResult result = await processEngine.Start(processStartRequest, CancellationToken.None);
+        ProcessChangeResult result = await processEngine.CreateInitialProcessState(processStartRequest);
 
         // Assert
         result.Success.Should().BeTrue();

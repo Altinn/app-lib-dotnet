@@ -56,7 +56,8 @@ internal sealed class ProcessEventCommands
     /// Creates command group for task start events.
     /// </summary>
     /// <param name="serviceTaskType">If this is a service task, the task type identifier. Otherwise null.</param>
-    public static ProcessEventCommands GetTaskStartCommands(string? serviceTaskType)
+    /// <param name="isInitialTaskStart">True if this is the first task start (process is starting), false for subsequent task transitions.</param>
+    public static ProcessEventCommands GetTaskStartCommands(string? serviceTaskType, bool isInitialTaskStart)
     {
         var group = new ProcessEventCommands()
             .AddCommand(UnlockTaskData.Key)
@@ -72,6 +73,11 @@ internal sealed class ProcessEventCommands
                 ExecuteServiceTask.Key,
                 new ExecuteServiceTaskPayload(serviceTaskType)
             );
+        }
+
+        if (isInitialTaskStart)
+        {
+            group.AddPostProcessNextCommittedCommand(InstanceCreatedAltinnEvent.Key);
         }
 
         return group;

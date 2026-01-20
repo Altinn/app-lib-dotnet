@@ -43,7 +43,6 @@ internal class ProcessEngine : IProcessEngine
     private readonly IProcessEngineAuthorizer _processEngineAuthorizer;
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IValidationService _validationService;
-    private readonly IServiceProvider _serviceProvider;
     private readonly ProcessNextRequestFactory _processNextRequestFactory;
     private readonly IProcessEngineClient _processEngineClient;
 
@@ -71,7 +70,6 @@ internal class ProcessEngine : IProcessEngine
         _processEngineAuthorizer = processEngineAuthorizer;
         _validationService = validationService;
         _logger = logger;
-        _serviceProvider = serviceProvider;
         _processEngineClient = processEngineClient;
         _processNextRequestFactory = serviceProvider.GetRequiredService<ProcessNextRequestFactory>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
@@ -79,152 +77,7 @@ internal class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<ProcessChangeResult> Start(ProcessStartRequest request, CancellationToken ct = default)
-    {
-        Instance instance = request.Instance;
-
-        using var activity = _telemetry?.StartProcessStartActivity(instance);
-
-        if (instance.Process != null)
-        {
-            var result = new ProcessChangeResult()
-            {
-                Success = false,
-                ErrorMessage = "Process is already started. Use next.",
-                ErrorType = ProcessErrorType.Conflict,
-            };
-            activity?.SetProcessChangeResult(result);
-            return result;
-        }
-
-        string validStartElement;
-        try
-        {
-            validStartElement = ProcessHelper.GetValidStartEventOrError(
-                request.StartEventId,
-                _processReader.GetStartEventIds()
-            );
-        }
-        catch (ProcessException e)
-        {
-            var result = new ProcessChangeResult()
-            {
-                Success = false,
-                ErrorMessage = e.Message,
-                ErrorType = ProcessErrorType.Conflict,
-            };
-            activity?.SetProcessChangeResult(result);
-            return result;
-        }
-
-        // Start process and move to first task
-        ProcessStateChange? startChange = await ProcessStart(instance, validStartElement);
-        ProcessStateChange? nextChange = await MoveProcessStateToNextAndGenerateEvents(instance);
-
-        if (startChange == null || nextChange == null)
-        {
-            var result = new ProcessChangeResult()
-            {
-                Success = false,
-                ErrorMessage = "Failed to start process",
-                ErrorType = ProcessErrorType.Internal,
-            };
-            activity?.SetProcessChangeResult(result);
-            return result;
-        }
-
-        // Combine state changes
-        List<InstanceEvent> events = [];
-        if (startChange.Events?[0] is { } startEvent)
-        {
-            events.Add(startEvent.CopyValues());
-        }
-        if (nextChange.Events?[0] is { } goToNextEvent)
-        {
-            events.Add(goToNextEvent.CopyValues());
-        }
-
-        ProcessStateChange processStateChange = new()
-        {
-            OldProcessState = startChange.OldProcessState,
-            NewProcessState = nextChange.NewProcessState,
-            Events = events,
-        };
-
-        ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(processStateChange);
-        await _processEngineClient.ProcessNext(instance, processNextRequest, ct);
-
-        _telemetry?.ProcessStarted();
-
-        var changeResult = new ProcessChangeResult(mutatedInstance: instance)
-        {
-            Success = true,
-            ProcessStateChange = processStateChange,
-        };
-
-        await WaitForEngineResponse(instance, ct);
-
-        activity?.SetProcessChangeResult(changeResult);
-        return changeResult;
-    }
-
-    private async Task WaitForEngineResponse(Instance instance, CancellationToken ct)
-    {
-        var overallStopwatch = Stopwatch.StartNew();
-        const int timeoutMs = 100_000;
-        const int initialDelayMs = 100;
-        const int maxDelayMs = 2_000;
-        int currentDelayMs = initialDelayMs;
-
-        while (!ct.IsCancellationRequested)
-        {
-            ProcessEngineStatusResponse? processStatus = await _processEngineClient.GetActiveJobStatus(instance, ct);
-
-            if (processStatus is null)
-            {
-                return;
-            }
-
-            switch (processStatus.OverallStatus)
-            {
-                case ProcessEngineItemStatus.Canceled:
-                    throw new InvalidOperationException("Process engine job was canceled.");
-                case ProcessEngineItemStatus.Failed:
-                    throw new InvalidOperationException("Process engine job failed.");
-                case ProcessEngineItemStatus.Completed:
-                    return;
-                case ProcessEngineItemStatus.Enqueued:
-                case ProcessEngineItemStatus.Processing:
-                case ProcessEngineItemStatus.Requeued:
-                    _logger.LogDebug(
-                        "Process engine job is still in progress. Status: {Status}",
-                        processStatus.OverallStatus
-                    );
-                    break;
-
-                default:
-                    throw new InvalidOperationException(
-                        "Received unknown process engine job status: " + processStatus.OverallStatus
-                    );
-            }
-
-            if (overallStopwatch.ElapsedMilliseconds > timeoutMs)
-            {
-                throw new TimeoutException("Timeout while waiting for process engine job to complete.");
-            }
-
-            await Task.Delay(currentDelayMs, ct);
-
-            // Exponential backoff: double delay each iteration up to max
-            currentDelayMs = Math.Min(currentDelayMs * 2, maxDelayMs);
-        }
-
-        throw new InvalidOperationException("Tried waiting for process engine job, but the operation was cancelled.");
-    }
-
-    /// <inheritdoc/>
-    [Obsolete("Use Start method instead. This method will be removed in a future release.")]
-    public async Task<ProcessChangeResult> GenerateProcessStartEvents(ProcessStartRequest processStartRequest)
+    public async Task<ProcessChangeResult> CreateInitialProcessState(ProcessStartRequest processStartRequest)
     {
         using var activity = _telemetry?.StartProcessStartActivity(processStartRequest.Instance);
 
@@ -288,6 +141,18 @@ internal class ProcessEngine : IProcessEngine
         var changeResult = new ProcessChangeResult() { Success = true, ProcessStateChange = processStateChange };
         activity?.SetProcessChangeResult(changeResult);
         return changeResult;
+    }
+
+    /// <inheritdoc/>
+    public async Task SubmitInitialProcessState(
+        Instance instance,
+        ProcessStateChange processStateChange,
+        CancellationToken ct = default
+    )
+    {
+        ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(processStateChange);
+        await _processEngineClient.ProcessNext(instance, processNextRequest, ct);
+        await WaitForEngineResponse(instance, ct);
     }
 
     /// <inheritdoc/>
@@ -782,7 +647,61 @@ internal class ProcessEngine : IProcessEngine
         return true;
     }
 
-    public IServiceTask? CheckIfServiceTask(string? altinnTaskType)
+    private async Task WaitForEngineResponse(Instance instance, CancellationToken ct)
+    {
+        var overallStopwatch = Stopwatch.StartNew();
+        const int timeoutMs = 100_000;
+        const int initialDelayMs = 100;
+        const int maxDelayMs = 2_000;
+        int currentDelayMs = initialDelayMs;
+
+        while (!ct.IsCancellationRequested)
+        {
+            ProcessEngineStatusResponse? processStatus = await _processEngineClient.GetActiveJobStatus(instance, ct);
+
+            if (processStatus is null)
+            {
+                return;
+            }
+
+            switch (processStatus.OverallStatus)
+            {
+                case ProcessEngineItemStatus.Canceled:
+                    throw new InvalidOperationException("Process engine job was canceled.");
+                case ProcessEngineItemStatus.Failed:
+                    throw new InvalidOperationException("Process engine job failed.");
+                case ProcessEngineItemStatus.Completed:
+                    return;
+                case ProcessEngineItemStatus.Enqueued:
+                case ProcessEngineItemStatus.Processing:
+                case ProcessEngineItemStatus.Requeued:
+                    _logger.LogDebug(
+                        "Process engine job is still in progress. Status: {Status}",
+                        processStatus.OverallStatus
+                    );
+                    break;
+
+                default:
+                    throw new InvalidOperationException(
+                        "Received unknown process engine job status: " + processStatus.OverallStatus
+                    );
+            }
+
+            if (overallStopwatch.ElapsedMilliseconds > timeoutMs)
+            {
+                throw new TimeoutException("Timeout while waiting for process engine job to complete.");
+            }
+
+            await Task.Delay(currentDelayMs, ct);
+
+            // Exponential backoff: double delay each iteration up to max
+            currentDelayMs = Math.Min(currentDelayMs * 2, maxDelayMs);
+        }
+
+        throw new InvalidOperationException("Tried waiting for process engine job, but the operation was cancelled.");
+    }
+
+    private IServiceTask? CheckIfServiceTask(string? altinnTaskType)
     {
         if (altinnTaskType is null)
             return null;

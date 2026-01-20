@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
+using Altinn.App.ProcessEngine.Constants;
 using Altinn.App.ProcessEngine.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
@@ -16,19 +16,21 @@ namespace Altinn.App.Core.Internal.ProcessEngine.Http;
 internal sealed class ProcessEngineClient : IProcessEngineClient
 {
     private readonly HttpClient _httpClient;
-    private readonly string _applicationUrl;
+    private readonly AppIdentifier _appIdentifier;
+    private readonly GeneralSettings _generalSettings;
+    private readonly ProcessEngineSettings _processEngineSettings;
 
     public ProcessEngineClient(
-        IOptions<GeneralSettings> generalSettings,
         AppIdentifier appIdentifier,
-        HttpClient httpClient
+        HttpClient httpClient,
+        IOptions<GeneralSettings> generalSettings,
+        IOptions<ProcessEngineSettings> processEngineSettings
     )
     {
-        ArgumentNullException.ThrowIfNull(generalSettings.Value, nameof(generalSettings));
-
-        httpClient.BaseAddress = new Uri(generalSettings.Value.HostName + "/process-engine/");
-        _applicationUrl = generalSettings.Value.FormattedExternalAppBaseUrl(appIdentifier);
+        _appIdentifier = appIdentifier;
         _httpClient = httpClient;
+        _generalSettings = generalSettings.Value;
+        _processEngineSettings = processEngineSettings.Value;
     }
 
     /// <inheritdoc />
@@ -38,11 +40,12 @@ internal sealed class ProcessEngineClient : IProcessEngineClient
         CancellationToken cancellationToken = default
     )
     {
-        HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
-            $"{GetInstanceUrl(_applicationUrl, instance)}/next",
-            request,
-            cancellationToken
-        );
+        string url = $"{GetBaseUrl()}{GetInstancePath(instance)}/next";
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+        httpRequest.Content = JsonContent.Create(request);
+        httpRequest.Headers.Add(AuthConstants.ApiKeyHeaderName, _processEngineSettings.ApiKey);
+
+        HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
@@ -51,11 +54,11 @@ internal sealed class ProcessEngineClient : IProcessEngineClient
         CancellationToken cancellationToken = default
     )
     {
-        HttpResponseMessage response = await _httpClient.GetAsync(
-            $"{GetInstanceUrl(_applicationUrl, instance)}/status",
-            cancellationToken
-        );
+        string url = $"{GetBaseUrl()}{GetInstancePath(instance)}/status";
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
+        httpRequest.Headers.Add(AuthConstants.ApiKeyHeaderName, _processEngineSettings.ApiKey);
 
+        HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         if (response.StatusCode == HttpStatusCode.OK)
@@ -68,9 +71,14 @@ internal sealed class ProcessEngineClient : IProcessEngineClient
         return null;
     }
 
-    private static string GetInstanceUrl(string appUrl, Instance instance)
+    private string GetBaseUrl()
+    {
+        return $"http://{_generalSettings.HostName}/process-engine/{_appIdentifier.Org}/{_appIdentifier.App}/";
+    }
+
+    private static string GetInstancePath(Instance instance)
     {
         var instanceIdentifier = new InstanceIdentifier(instance);
-        return $"{appUrl}{instanceIdentifier.InstanceOwnerPartyId}/{instanceIdentifier.InstanceGuid}";
+        return $"{instanceIdentifier.InstanceOwnerPartyId}/{instanceIdentifier.InstanceGuid}";
     }
 }

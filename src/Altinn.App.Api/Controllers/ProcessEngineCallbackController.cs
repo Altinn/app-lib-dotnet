@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.ProcessEngine.Commands;
 using Altinn.App.Core.Models;
 using Altinn.App.ProcessEngine.Constants;
@@ -17,11 +17,11 @@ namespace Altinn.App.Api.Controllers;
 /// </summary>
 [ApiController]
 [Authorize(AuthenticationSchemes = AuthConstants.ApiKeySchemeName)]
-[Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engine-callback")]
+[Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engine-callbacks")]
 public class ProcessEngineCallbackController : ControllerBase
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly InstanceClient _instanceClient;
+    private readonly IInstanceClient _instanceClient;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly ILogger<ProcessEngineCallbackController> _logger;
     private readonly Telemetry? _telemetry;
@@ -31,7 +31,7 @@ public class ProcessEngineCallbackController : ControllerBase
     /// </summary>
     public ProcessEngineCallbackController(
         IServiceProvider serviceProvider,
-        InstanceClient instanceClient,
+        IInstanceClient instanceClient,
         ILogger<ProcessEngineCallbackController> logger,
         Telemetry? telemetry = null
     )
