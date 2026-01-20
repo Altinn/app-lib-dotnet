@@ -174,7 +174,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
         _instanceClientMock.Verify(i =>
-            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"))
+            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"), null)
         );
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
@@ -229,7 +229,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
         _instanceClientMock.Verify(i =>
-            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"))
+            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"), null)
         );
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
@@ -328,7 +328,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
         _instanceClientMock.Verify(i =>
-            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"))
+            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"), null)
         );
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
@@ -386,7 +386,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
         _instanceClientMock.Verify(i =>
-            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"))
+            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"), null)
         );
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
@@ -444,7 +444,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
         _instanceClientMock.Verify(i =>
-            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"))
+            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"), null)
         );
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
@@ -502,7 +502,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         );
         _processReaderMock.Verify(p => p.GetFlowElement("Task_2"));
         _instanceClientMock.Verify(i =>
-            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"))
+            i.GetInstance("xunit-app", "ttd", 500001, Guid.Parse("abba2e90-f86f-4881-b0e8-38334408bcb4"), null)
         );
         _appMetadataMock.Verify(a => a.GetApplicationMetadata());
         _dataClientMock.Verify(d =>
@@ -527,7 +527,7 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
         _applicationMetadata = new ApplicationMetadata("ttd/xunit-app");
         _appMetadataMock.Setup(a => a.GetApplicationMetadata()).ReturnsAsync(_applicationMetadata);
         _instanceClientMock
-            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>(), null))
             .ReturnsAsync(
                 new Instance()
                 {

@@ -30,7 +30,7 @@ public class EformidlingServiceTaskLegacyTests
         };
         var instance = new Instance();
         _appMetadata.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
-        _instanceClient.Setup(x => x.GetInstance(instance)).ReturnsAsync(instance);
+        _instanceClient.Setup(x => x.GetInstance(instance, null)).ReturnsAsync(instance);
         _eFormidlingService.Setup(x => x.SendEFormidlingShipment(instance)).Returns(Task.CompletedTask);
         var eformidlingServiceTask = GetEformidlingServiceTask(appSettings, _eFormidlingService.Object);
 
@@ -39,7 +39,7 @@ public class EformidlingServiceTaskLegacyTests
 
         // Assert
         _appMetadata.Verify(x => x.GetApplicationMetadata(), Times.Once);
-        _instanceClient.Verify(x => x.GetInstance(instance), Times.Once);
+        _instanceClient.Verify(x => x.GetInstance(instance, null), Times.Once);
         _eFormidlingService.Verify(x => x.SendEFormidlingShipment(instance), Times.Once);
         _appMetadata.VerifyNoOtherCalls();
         _instanceClient.VerifyNoOtherCalls();

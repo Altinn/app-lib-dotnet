@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.Extensions;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;
@@ -60,17 +61,23 @@ public sealed class InstanceClientMockSi : IInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task<Instance> GetInstance(Instance instance)
+    public async Task<Instance> GetInstance(Instance instance, StorageAuthenticationMethod? authenticationMethod = null)
     {
         string app = instance.AppId.Split("/")[1];
         string org = instance.Org;
         int instanceOwnerId = int.Parse(instance.InstanceOwner.PartyId);
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
 
-        return await GetInstance(app, org, instanceOwnerId, instanceGuid);
+        return await GetInstance(app, org, instanceOwnerId, instanceGuid, authenticationMethod);
     }
 
-    public async Task<Instance> GetInstance(string app, string org, int instanceOwnerPartyId, Guid instanceId)
+    public async Task<Instance> GetInstance(
+        string app,
+        string org,
+        int instanceOwnerPartyId,
+        Guid instanceId,
+        StorageAuthenticationMethod? authenticationMethod = null
+    )
     {
         Instance instance = await GetTestInstance(app, org, instanceOwnerPartyId, instanceId);
 

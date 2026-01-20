@@ -87,7 +87,8 @@ public class ProcessEngineCallbackController : ControllerBase
             appId.App,
             appId.Org,
             instanceOwnerPartyId,
-            instanceId.InstanceGuid
+            instanceId.InstanceGuid,
+            StorageAuthenticationMethod.ServiceOwner()
         );
 
         string? currentTaskId = instance.Process?.CurrentTask?.ElementId;

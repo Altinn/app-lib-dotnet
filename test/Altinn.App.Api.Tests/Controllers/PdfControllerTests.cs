@@ -50,7 +50,15 @@ public class PdfControllerTests
     public PdfControllerTests()
     {
         _instanceClient
-            .Setup(a => a.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(a =>
+                a.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>()
+                )
+            )
             .Returns(
                 Task.FromResult(
                     new Instance()

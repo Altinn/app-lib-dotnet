@@ -10,7 +10,7 @@ internal static class Defaults
     /// <summary>
     /// The session API key used by endpoints and for app command callbacks.
     /// </summary>
-    public static readonly string ApiKey = Guid.NewGuid().ToString();
+    public static readonly string ApiKey = "myKey";
 
     /// <summary>
     /// The total number of concurrent tasks that can be processed.

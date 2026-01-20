@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Primitives;
@@ -12,12 +13,25 @@ public interface IInstanceClient
     /// <summary>
     /// Gets the instance
     /// </summary>
-    Task<Instance> GetInstance(string app, string org, int instanceOwnerPartyId, Guid instanceId);
+    /// <param name="app">Application identifier.</param>
+    /// <param name="org">Organisation identifier.</param>
+    /// <param name="instanceOwnerPartyId">The party id of the instance owner.</param>
+    /// <param name="instanceId">The instance id.</param>
+    /// <param name="authenticationMethod">Optional authentication method. Defaults to current user token.</param>
+    Task<Instance> GetInstance(
+        string app,
+        string org,
+        int instanceOwnerPartyId,
+        Guid instanceId,
+        StorageAuthenticationMethod? authenticationMethod = null
+    );
 
     /// <summary>
     /// Gets the instance anew. Instance must have set appId, instanceOwner.PartyId and Id.
     /// </summary>
-    Task<Instance> GetInstance(Instance instance);
+    /// <param name="instance">The instance to refresh.</param>
+    /// <param name="authenticationMethod">Optional authentication method. Defaults to current user token.</param>
+    Task<Instance> GetInstance(Instance instance, StorageAuthenticationMethod? authenticationMethod = null);
 
     /// <summary>
     /// Gets a list of instances based on a dictionary of provided query parameters.

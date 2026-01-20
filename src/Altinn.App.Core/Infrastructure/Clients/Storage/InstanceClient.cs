@@ -12,6 +12,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -26,43 +27,50 @@ public class InstanceClient : IInstanceClient
 {
     private readonly ILogger _logger;
     private readonly IUserTokenProvider _userTokenProvider;
+    private readonly IAuthenticationTokenResolver _authenticationTokenResolver;
     private readonly HttpClient _client;
     private readonly Telemetry? _telemetry;
+
+    private readonly AuthenticationMethod _defaultAuthenticationMethod = StorageAuthenticationMethod.CurrentUser();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InstanceClient"/> class.
     /// </summary>
-    /// <param name="platformSettings">the platform settings</param>
-    /// <param name="logger">the logger</param>
-    /// <param name="userTokenProvider">Get user token from httpContext</param>
     /// <param name="httpClient">A HttpClient that can be used to perform HTTP requests against the platform.</param>
-    /// <param name="telemetry">Telemetry for traces and metrics.</param>
-    public InstanceClient(
-        IOptions<PlatformSettings> platformSettings,
-        ILogger<InstanceClient> logger,
-        IUserTokenProvider userTokenProvider,
-        HttpClient httpClient,
-        Telemetry? telemetry = null
-    )
+    /// <param name="serviceProvider">The service provider.</param>
+    public InstanceClient(HttpClient httpClient, IServiceProvider serviceProvider)
     {
-        _logger = logger;
-        _userTokenProvider = userTokenProvider;
-        httpClient.BaseAddress = new Uri(platformSettings.Value.ApiStorageEndpoint);
-        httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.Value.SubscriptionKey);
+        var platformSettings = serviceProvider.GetRequiredService<IOptions<PlatformSettings>>().Value;
+
+        _logger = serviceProvider.GetRequiredService<ILogger<InstanceClient>>();
+        _userTokenProvider = serviceProvider.GetRequiredService<IUserTokenProvider>();
+        _authenticationTokenResolver = serviceProvider.GetRequiredService<IAuthenticationTokenResolver>();
+        _telemetry = serviceProvider.GetService<Telemetry>();
+
+        httpClient.BaseAddress = new Uri(platformSettings.ApiStorageEndpoint);
+        httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.SubscriptionKey);
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         _client = httpClient;
-        _telemetry = telemetry;
     }
 
     /// <inheritdoc />
-    public async Task<Instance> GetInstance(string app, string org, int instanceOwnerPartyId, Guid instanceId)
+    public async Task<Instance> GetInstance(
+        string app,
+        string org,
+        int instanceOwnerPartyId,
+        Guid instanceId,
+        StorageAuthenticationMethod? authenticationMethod = null
+    )
     {
         using var activity = _telemetry?.StartGetInstanceByGuidActivity(instanceId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceId}";
 
         string apiUrl = $"instances/{instanceIdentifier}";
-        string token = _userTokenProvider.GetUserToken();
+
+        JwtToken token = await _authenticationTokenResolver.GetAccessToken(
+            authenticationMethod ?? _defaultAuthenticationMethod
+        );
 
         HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
         if (response.StatusCode == HttpStatusCode.OK)
@@ -78,7 +86,7 @@ public class InstanceClient : IInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task<Instance> GetInstance(Instance instance)
+    public async Task<Instance> GetInstance(Instance instance, StorageAuthenticationMethod? authenticationMethod = null)
     {
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         using var activity = _telemetry?.StartGetInstanceByInstanceActivity(instanceGuid);
@@ -86,7 +94,7 @@ public class InstanceClient : IInstanceClient
         string org = instance.Org;
         int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
 
-        return await GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        return await GetInstance(app, org, instanceOwnerPartyId, instanceGuid, authenticationMethod);
     }
 
     /// <inheritdoc />

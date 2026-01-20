@@ -68,7 +68,7 @@ public class FileScanControllerTests
 
         var instanceClientMock = new Mock<IInstanceClient>();
         instanceClientMock
-            .Setup(e => e.GetInstance(app, org, instanceOwnerPartyId, instanceId))
+            .Setup(e => e.GetInstance(app, org, instanceOwnerPartyId, instanceId, null))
             .Returns(Task.FromResult(instance));
 
         return instanceClientMock;
