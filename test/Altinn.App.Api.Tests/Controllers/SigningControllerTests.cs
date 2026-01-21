@@ -79,7 +79,8 @@ public class SigningControllerTests
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(
@@ -611,7 +612,8 @@ public class SigningControllerTests
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(
@@ -734,7 +736,8 @@ public class SigningControllerTests
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(instance);
@@ -784,7 +787,8 @@ public class SigningControllerTests
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(
@@ -865,7 +869,8 @@ public class SigningControllerTests
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(instance);

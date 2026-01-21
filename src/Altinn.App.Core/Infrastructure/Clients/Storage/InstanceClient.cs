@@ -12,7 +12,6 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -23,11 +22,10 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 /// <summary>
 /// A client for handling actions on instances in Altinn Platform.
 /// </summary>
-public class InstanceClient : IInstanceClient
+internal sealed class InstanceClient : IInstanceClient
 {
     private readonly ILogger _logger;
-    private readonly IUserTokenProvider _userTokenProvider;
-    private readonly IAuthenticationTokenResolver _authenticationTokenResolver;
+    private readonly IAuthenticationTokenResolver _tokenResolver;
     private readonly HttpClient _client;
     private readonly Telemetry? _telemetry;
 
@@ -36,22 +34,27 @@ public class InstanceClient : IInstanceClient
     /// <summary>
     /// Initializes a new instance of the <see cref="InstanceClient"/> class.
     /// </summary>
+    /// <param name="platformSettings">the platform settings</param>
+    /// <param name="logger">the logger</param>
+    /// <param name="tokenResolver">Get user token from httpContext</param>
     /// <param name="httpClient">A HttpClient that can be used to perform HTTP requests against the platform.</param>
-    /// <param name="serviceProvider">The service provider.</param>
-    public InstanceClient(HttpClient httpClient, IServiceProvider serviceProvider)
+    /// <param name="telemetry">Telemetry for traces and metrics.</param>
+    public InstanceClient(
+        IOptions<PlatformSettings> platformSettings,
+        ILogger<InstanceClient> logger,
+        IAuthenticationTokenResolver tokenResolver,
+        HttpClient httpClient,
+        Telemetry? telemetry = null
+    )
     {
-        var platformSettings = serviceProvider.GetRequiredService<IOptions<PlatformSettings>>().Value;
-
-        _logger = serviceProvider.GetRequiredService<ILogger<InstanceClient>>();
-        _userTokenProvider = serviceProvider.GetRequiredService<IUserTokenProvider>();
-        _authenticationTokenResolver = serviceProvider.GetRequiredService<IAuthenticationTokenResolver>();
-        _telemetry = serviceProvider.GetService<Telemetry>();
-
-        httpClient.BaseAddress = new Uri(platformSettings.ApiStorageEndpoint);
-        httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.SubscriptionKey);
+        _logger = logger;
+        _tokenResolver = tokenResolver;
+        httpClient.BaseAddress = new Uri(platformSettings.Value.ApiStorageEndpoint);
+        httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.Value.SubscriptionKey);
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         _client = httpClient;
+        _telemetry = telemetry;
     }
 
     /// <inheritdoc />
@@ -60,22 +63,20 @@ public class InstanceClient : IInstanceClient
         string org,
         int instanceOwnerPartyId,
         Guid instanceId,
-        StorageAuthenticationMethod? authenticationMethod = null
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
     )
     {
         using var activity = _telemetry?.StartGetInstanceByGuidActivity(instanceId);
         string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceId}";
 
         string apiUrl = $"instances/{instanceIdentifier}";
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
 
-        JwtToken token = await _authenticationTokenResolver.GetAccessToken(
-            authenticationMethod ?? _defaultAuthenticationMethod
-        );
-
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl);
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: ct);
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
             return instance;
         }
         else
@@ -86,7 +87,11 @@ public class InstanceClient : IInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task<Instance> GetInstance(Instance instance, StorageAuthenticationMethod? authenticationMethod = null)
+    public async Task<Instance> GetInstance(
+        Instance instance,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
         using var activity = _telemetry?.StartGetInstanceByInstanceActivity(instanceGuid);
@@ -94,17 +99,20 @@ public class InstanceClient : IInstanceClient
         string org = instance.Org;
         int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
 
-        return await GetInstance(app, org, instanceOwnerPartyId, instanceGuid, authenticationMethod);
+        return await GetInstance(app, org, instanceOwnerPartyId, instanceGuid, authenticationMethod, ct);
     }
 
     /// <inheritdoc />
-    public async Task<List<Instance>> GetInstances(Dictionary<string, StringValues> queryParams)
+    public async Task<List<Instance>> GetInstances(
+        Dictionary<string, StringValues> queryParams,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         using var activity = _telemetry?.StartGetInstancesActivity();
         var apiUrl = QueryHelpers.AddQueryString("instances", queryParams);
 
-        string token = _userTokenProvider.GetUserToken();
-        QueryResponse<Instance> queryResponse = await QueryInstances(token, apiUrl);
+        QueryResponse<Instance> queryResponse = await QueryInstances(apiUrl, authenticationMethod, ct);
 
         if (queryResponse.Count == 0)
         {
@@ -114,22 +122,27 @@ public class InstanceClient : IInstanceClient
 
         while (!string.IsNullOrEmpty(queryResponse.Next))
         {
-            queryResponse = await QueryInstances(token, queryResponse.Next);
+            queryResponse = await QueryInstances(queryResponse.Next, authenticationMethod, ct);
             instances.AddRange(queryResponse.Instances);
         }
         return instances;
     }
 
-    private async Task<QueryResponse<Instance>> QueryInstances(string token, string url)
+    private async Task<QueryResponse<Instance>> QueryInstances(
+        string url,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
         using var activity = _telemetry?.StartQueryInstancesActivity();
-        HttpResponseMessage response = await _client.GetAsync(token, url);
+        HttpResponseMessage response = await _client.GetAsync(token, url, cancellationToken: ct);
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
             QueryResponse<Instance> queryResponse = await JsonSerializerPermissive.DeserializeAsync<
                 QueryResponse<Instance>
-            >(response.Content);
+            >(response.Content, ct);
             return queryResponse;
         }
         else
@@ -140,22 +153,26 @@ public class InstanceClient : IInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task<Instance> UpdateProcess(Instance instance)
+    public async Task<Instance> UpdateProcess(
+        Instance instance,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         using var activity = _telemetry?.StartUpdateProcessActivity(instance);
         ProcessState processState = instance.Process;
 
         string apiUrl = $"instances/{instance.Id}/process";
-        string token = _userTokenProvider.GetUserToken();
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
 
         string processStateString = JsonConvert.SerializeObject(processState);
         _logger.LogInformation($"update process state: {processStateString}");
 
         StringContent httpContent = new(processStateString, Encoding.UTF8, "application/json");
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, httpContent);
+        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, httpContent, cancellationToken: ct);
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            Instance updatedInstance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
+            Instance updatedInstance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
             return updatedInstance;
         }
         else
@@ -166,7 +183,12 @@ public class InstanceClient : IInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task<Instance> UpdateProcessAndEvents(Instance instance, List<InstanceEvent> events)
+    public async Task<Instance> UpdateProcessAndEvents(
+        Instance instance,
+        List<InstanceEvent> events,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         using var activity = _telemetry?.StartUpdateProcessActivity(instance, events.Count);
         ProcessState processState = instance.Process;
@@ -175,17 +197,17 @@ public class InstanceClient : IInstanceClient
             instanceEvent.InstanceId = instance.Id;
 
         string apiUrl = $"instances/{instance.Id}/process/instanceandevents";
-        string token = _userTokenProvider.GetUserToken();
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
 
         var update = new ProcessStateUpdate { State = processState, Events = events };
         string updateString = JsonConvert.SerializeObject(update);
         _logger.LogInformation($"update process state: {updateString}");
 
         StringContent httpContent = new(updateString, Encoding.UTF8, "application/json");
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, httpContent);
+        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, httpContent, cancellationToken: ct);
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            Instance updatedInstance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
+            Instance updatedInstance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
             return updatedInstance;
         }
         else
@@ -196,40 +218,56 @@ public class InstanceClient : IInstanceClient
     }
 
     /// <inheritdoc/>
-    public async Task<Instance> CreateInstance(string org, string app, Instance instanceTemplate)
+    public async Task<Instance> CreateInstance(
+        string org,
+        string app,
+        Instance instanceTemplate,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         using var activity = _telemetry?.StartCreateInstanceActivity();
         string apiUrl = $"instances?appId={org}/{app}";
-        string token = _userTokenProvider.GetUserToken();
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
 
         StringContent content = new(JsonConvert.SerializeObject(instanceTemplate), Encoding.UTF8, "application/json");
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content);
+        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, content, cancellationToken: ct);
 
         if (response.IsSuccessStatusCode)
         {
-            Instance createdInstance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
+            Instance createdInstance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
             _telemetry?.InstanceCreated(createdInstance);
             return createdInstance;
         }
 
         _logger.LogError(
-            $"Unable to create instance {response.StatusCode} - {await response.Content.ReadAsStringAsync()}"
+            $"Unable to create instance {response.StatusCode} - {await response.Content.ReadAsStringAsync(CancellationToken.None)}"
         );
         throw await PlatformHttpException.CreateAsync(response);
     }
 
     /// <inheritdoc/>
-    public async Task<Instance> AddCompleteConfirmation(int instanceOwnerPartyId, Guid instanceGuid)
+    public async Task<Instance> AddCompleteConfirmation(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         using var activity = _telemetry?.StartCompleteConfirmationActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/complete";
-        string token = _userTokenProvider.GetUserToken();
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
 
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, new StringContent(string.Empty));
+        HttpResponseMessage response = await _client.PostAsync(
+            token,
+            apiUrl,
+            new StringContent(string.Empty),
+            cancellationToken: ct
+        );
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
             _telemetry?.InstanceCompleted(instance);
             return instance;
         }
@@ -238,17 +276,28 @@ public class InstanceClient : IInstanceClient
     }
 
     /// <inheritdoc/>
-    public async Task<Instance> UpdateReadStatus(int instanceOwnerPartyId, Guid instanceGuid, string readStatus)
+    public async Task<Instance> UpdateReadStatus(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        string readStatus,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         using var activity = _telemetry?.StartUpdateReadStatusActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/readstatus?status={readStatus}";
-        string token = _userTokenProvider.GetUserToken();
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
 
-        HttpResponseMessage response = await _client.PutAsync(token, apiUrl, new StringContent(string.Empty));
+        HttpResponseMessage response = await _client.PutAsync(
+            token,
+            apiUrl,
+            new StringContent(string.Empty),
+            cancellationToken: ct
+        );
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
             return instance;
         }
 
@@ -261,21 +310,28 @@ public class InstanceClient : IInstanceClient
     }
 
     /// <inheritdoc/>
-    public async Task<Instance> UpdateSubstatus(int instanceOwnerPartyId, Guid instanceGuid, Substatus substatus)
+    public async Task<Instance> UpdateSubstatus(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        Substatus substatus,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         using var activity = _telemetry?.StartUpdateSubStatusActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/substatus";
-        string token = _userTokenProvider.GetUserToken();
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
 
         HttpResponseMessage response = await _client.PutAsync(
             token,
             apiUrl,
-            new StringContent(JsonConvert.SerializeObject(substatus), Encoding.UTF8, "application/json")
+            new StringContent(JsonConvert.SerializeObject(substatus), Encoding.UTF8, "application/json"),
+            cancellationToken: ct
         );
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
             return instance;
         }
 
@@ -286,22 +342,25 @@ public class InstanceClient : IInstanceClient
     public async Task<Instance> UpdatePresentationTexts(
         int instanceOwnerPartyId,
         Guid instanceGuid,
-        PresentationTexts presentationTexts
+        PresentationTexts presentationTexts,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
     )
     {
         using var activity = _telemetry?.StartUpdatePresentationTextActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/presentationtexts";
-        string token = _userTokenProvider.GetUserToken();
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
 
         HttpResponseMessage response = await _client.PutAsync(
             token,
             apiUrl,
-            new StringContent(JsonConvert.SerializeObject(presentationTexts), Encoding.UTF8, "application/json")
+            new StringContent(JsonConvert.SerializeObject(presentationTexts), Encoding.UTF8, "application/json"),
+            cancellationToken: ct
         );
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
             return instance;
         }
 
@@ -309,21 +368,28 @@ public class InstanceClient : IInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task<Instance> UpdateDataValues(int instanceOwnerPartyId, Guid instanceGuid, DataValues dataValues)
+    public async Task<Instance> UpdateDataValues(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        DataValues dataValues,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         using var activity = _telemetry?.StartUpdateDataValuesActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}/datavalues";
-        string token = _userTokenProvider.GetUserToken();
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
 
         HttpResponseMessage response = await _client.PutAsync(
             token,
             apiUrl,
-            new StringContent(JsonConvert.SerializeObject(dataValues), Encoding.UTF8, "application/json")
+            new StringContent(JsonConvert.SerializeObject(dataValues), Encoding.UTF8, "application/json"),
+            cancellationToken: ct
         );
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
             return instance;
         }
 
@@ -331,17 +397,22 @@ public class InstanceClient : IInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task<Instance> DeleteInstance(int instanceOwnerPartyId, Guid instanceGuid, bool hard)
+    public async Task<Instance> DeleteInstance(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        bool hard,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         using var activity = _telemetry?.StartDeleteInstanceActivity(instanceGuid, instanceOwnerPartyId);
         string apiUrl = $"instances/{instanceOwnerPartyId}/{instanceGuid}?hard={hard}";
-        string token = _userTokenProvider.GetUserToken();
-
-        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl);
+        string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
+        HttpResponseMessage response = await _client.DeleteAsync(token, apiUrl, cancellationToken: ct);
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content);
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
             _telemetry?.InstanceDeleted(instance);
             return instance;
         }

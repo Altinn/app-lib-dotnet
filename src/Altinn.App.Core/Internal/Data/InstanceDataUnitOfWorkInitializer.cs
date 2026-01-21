@@ -1,5 +1,6 @@
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
@@ -67,5 +68,32 @@ internal class InstanceDataUnitOfWorkInitializer
             language,
             _telemetry
         );
+    }
+
+    /// <summary>
+    /// Initializes an <see cref="InstanceDataUnitOfWork"/> and configures a single authentication method
+    /// to be used for all data types when communicating with Storage.
+    /// </summary>
+    /// <param name="instance">The instance to work on.</param>
+    /// <param name="taskId">The task context, if any.</param>
+    /// <param name="language">The preferred language, if any.</param>
+    /// <param name="authenticationMethodForAllDataTypes">
+    /// The authentication method to use for all data types, or <c>null</c> to keep the default behaviour.
+    /// </param>
+    internal async Task<InstanceDataUnitOfWork> Init(
+        Instance instance,
+        string? taskId,
+        string? language,
+        StorageAuthenticationMethod? authenticationMethodForAllDataTypes
+    )
+    {
+        var uow = await Init(instance, taskId, language);
+
+        if (authenticationMethodForAllDataTypes is not null)
+        {
+            uow.UseAuthenticationForAllDataTypes(authenticationMethodForAllDataTypes);
+        }
+
+        return uow;
     }
 }

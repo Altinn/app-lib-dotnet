@@ -56,7 +56,8 @@ public class PdfControllerTests
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod?>()
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
                 )
             )
             .Returns(

@@ -88,7 +88,8 @@ public class ProcessEngineCallbackController : ControllerBase
             appId.Org,
             instanceOwnerPartyId,
             instanceId.InstanceGuid,
-            StorageAuthenticationMethod.ServiceOwner()
+            StorageAuthenticationMethod.ServiceOwner(),
+            cancellationToken
         );
 
         string? currentTaskId = instance.Process?.CurrentTask?.ElementId;
@@ -96,7 +97,8 @@ public class ProcessEngineCallbackController : ControllerBase
         InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
             instance,
             instance.Process?.CurrentTask?.ElementId,
-            payload.Actor.Language
+            payload.Actor.Language,
+            StorageAuthenticationMethod.ServiceOwner()
         );
 
         ProcessEngineCommandResult result = await command.Execute(
