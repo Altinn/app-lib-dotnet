@@ -24,4 +24,10 @@ public sealed record ProcessEngineAppCallbackPayload
     /// </summary>
     [JsonPropertyName("payload")]
     public string? Payload { get; init; }
+
+    /// <summary>
+    /// Lock token for caching. Same key used for distributed lock - cache has same lifecycle.
+    /// </summary>
+    [JsonPropertyName("lockToken")]
+    public string? LockToken { get; init; }
 }

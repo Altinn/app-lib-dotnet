@@ -83,23 +83,44 @@ public class ProcessEngineCallbackController : ControllerBase
             );
         }
 
-        Instance instance = await _instanceClient.GetInstance(
-            appId.App,
-            appId.Org,
-            instanceOwnerPartyId,
-            instanceId.InstanceGuid,
-            StorageAuthenticationMethod.ServiceOwner(),
-            cancellationToken
-        );
+        InstanceDataUnitOfWork instanceDataUnitOfWork;
+        string? currentTaskId;
 
-        string? currentTaskId = instance.Process?.CurrentTask?.ElementId;
+        if (payload.LockToken is not null)
+        {
+            // Use session-aware initialization with caching
+            instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.InitWithSession(
+                appId,
+                instanceId,
+                payload.LockToken,
+                taskId: null, // Will be set from cached instance
+                payload.Actor.Language,
+                StorageAuthenticationMethod.ServiceOwner(),
+                cancellationToken
+            );
+            currentTaskId = instanceDataUnitOfWork.Instance.Process?.CurrentTask?.ElementId;
+        }
+        else
+        {
+            // Fallback to existing behavior
+            Instance instance = await _instanceClient.GetInstance(
+                appId.App,
+                appId.Org,
+                instanceOwnerPartyId,
+                instanceId.InstanceGuid,
+                StorageAuthenticationMethod.ServiceOwner(),
+                cancellationToken
+            );
 
-        InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
-            instance,
-            instance.Process?.CurrentTask?.ElementId,
-            payload.Actor.Language,
-            StorageAuthenticationMethod.ServiceOwner()
-        );
+            currentTaskId = instance.Process?.CurrentTask?.ElementId;
+
+            instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
+                instance,
+                instance.Process?.CurrentTask?.ElementId,
+                payload.Actor.Language,
+                StorageAuthenticationMethod.ServiceOwner()
+            );
+        }
 
         ProcessEngineCommandResult result = await command.Execute(
             new ProcessEngineCommandContext

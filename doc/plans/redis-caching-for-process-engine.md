@@ -46,39 +46,39 @@ Before implementing, read and follow these rules:
 
 ```
 Phase 1: Infrastructure
-[ ] Add Redis to docker-compose.yml
-[ ] Add NuGet package to Altinn.App.Core.csproj
-[ ] Build succeeds
+[x] Add Redis to docker-compose.yml
+[x] Add NuGet package to Altinn.App.Core.csproj
+[x] Build succeeds
 
 Phase 2: Cache Abstraction
-[ ] Create IProcessingSessionCache interface
-[ ] Create RedisProcessingSessionCache implementation
-[ ] Create NullProcessingSessionCache implementation
-[ ] Build succeeds
+[x] Create IProcessingSessionCache interface
+[x] Create RedisProcessingSessionCache implementation
+[x] Create NullProcessingSessionCache implementation
+[x] Build succeeds
 
 Phase 3: UoW Integration
-[ ] Add lockToken and cache fields to InstanceDataUnitOfWork constructor
-[ ] Update GetBinaryData() to check Redis
-[ ] Update SaveChanges() to update Redis
-[ ] Add InitWithSession() to InstanceDataUnitOfWorkInitializer
-[ ] Build succeeds
+[x] Add lockToken and cache fields to InstanceDataUnitOfWork constructor
+[x] Update GetBinaryData() to check Redis
+[x] Update SaveChanges() to update Redis
+[x] Add InitWithSession() to InstanceDataUnitOfWorkInitializer
+[x] Build succeeds
 
 Phase 4: Controller Update
-[ ] Add LockToken to ProcessEngineAppCallbackPayload
-[ ] Update ProcessEngineCallbackController to use InitWithSession()
-[ ] Build succeeds
+[x] Add LockToken to ProcessEngineAppCallbackPayload
+[x] Update ProcessEngineCallbackController to use InitWithSession()
+[x] Build succeeds
 
 Phase 5: DI Registration
-[ ] Add AddProcessingSessionCache() extension method
-[ ] Wire up in service registration
-[ ] Build succeeds
+[x] Add AddProcessingSessionCache() extension method
+[x] Wire up in service registration
+[x] Build succeeds
 
 Phase 6: Process Engine Updates (separate repo/PR if PE is external)
 [ ] Include LockToken in callbacks
 
 Final
-[ ] Full build succeeds: dotnet build solutions/All.sln
-[ ] (Skip tests - many are failing due to unrelated infrastructure issues)
+[x] Full build succeeds: dotnet build solutions/All.sln
+[x] (Skip tests - many are failing due to unrelated infrastructure issues)
 ```
 
 ---

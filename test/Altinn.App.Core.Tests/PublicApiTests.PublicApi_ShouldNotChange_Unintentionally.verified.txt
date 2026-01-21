@@ -260,6 +260,7 @@ namespace Altinn.App.Core.Extensions
     {
         public static void AddAppServices(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env) { }
         public static void AddPlatformServices(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddProcessingSessionCache(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration) { }
         public static bool IsAdded(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Type serviceType) { }
     }
     public static class StringExtensions

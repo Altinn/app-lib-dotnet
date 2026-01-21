@@ -9,6 +9,7 @@ using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.ProcessEngine;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
@@ -61,6 +62,11 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     private static readonly StorageAuthenticationMethod _defaultAuthenticationMethod =
         StorageAuthenticationMethod.CurrentUser();
 
+    // Processing session cache fields
+    private const int MaxCacheSizeBytes = 1024 * 1024; // 1 MB - don't cache larger files
+    private readonly string? _lockToken;
+    private readonly IProcessingSessionCache _sessionCache;
+
     public InstanceDataUnitOfWork(
         Instance instance,
         IDataClient dataClient,
@@ -72,7 +78,9 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         IOptions<FrontEndSettings> frontEndSettings,
         string? taskId,
         string? language,
-        Telemetry? telemetry = null
+        Telemetry? telemetry = null,
+        string? lockToken = null,
+        IProcessingSessionCache? sessionCache = null
     )
     {
         if (instance.Id is not null)
@@ -94,6 +102,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         _appResources = appResources;
         _instanceClient = instanceClient;
         _telemetry = telemetry;
+        _lockToken = lockToken;
+        _sessionCache = sessionCache ?? NullProcessingSessionCache.Instance;
     }
 
     public Instance Instance { get; }
@@ -214,13 +224,42 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         return await _binaryCache.GetOrCreate(
             dataElementIdentifier,
             async () =>
-                await _dataClient.GetDataBytes(
+            {
+                // Check if this data element should be cached (form data, not large attachments)
+                bool shouldCache = ShouldCacheDataElement(dataElementIdentifier);
+
+                // 1. Check Redis (cross-request cache)
+                if (_lockToken is not null && shouldCache)
+                {
+                    var cached = await _sessionCache.GetBinaryData(_lockToken, dataElementIdentifier.Guid);
+                    if (cached.HasValue)
+                        return cached.Value;
+                }
+
+                // 2. Fetch from Storage
+                var data = await _dataClient.GetDataBytes(
                     _instanceOwnerPartyId,
                     _instanceGuid,
                     dataElementIdentifier.Guid,
                     authenticationMethod: GetAuthenticationMethod(dataElementIdentifier)
-                )
+                );
+
+                // 3. Populate Redis for subsequent requests (only if small enough)
+                if (_lockToken is not null && shouldCache && data.Length <= MaxCacheSizeBytes)
+                {
+                    await _sessionCache.SetBinaryData(_lockToken, dataElementIdentifier.Guid, data);
+                }
+
+                return data;
+            }
         );
+    }
+
+    private bool ShouldCacheDataElement(DataElementIdentifier dataElementIdentifier)
+    {
+        // Only cache form data (has AppLogic.ClassRef), not binary attachments
+        var dataType = this.GetDataType(dataElementIdentifier);
+        return dataType.AppLogic?.ClassRef is not null;
     }
 
     /// <inheritdoc />
@@ -587,6 +626,42 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         }
 
         await Task.WhenAll(tasks);
+
+        // Update Redis with changes
+        if (_lockToken is not null)
+        {
+            var cacheTasks = new List<Task>();
+
+            // Update modified/created form data in Redis (only form data, respecting size limit)
+            foreach (var change in changes.FormDataChanges)
+            {
+                if (
+                    change.CurrentBinaryData is not null
+                    && change.Type is ChangeType.Updated or ChangeType.Created
+                    && change.CurrentBinaryData.Value.Length <= MaxCacheSizeBytes
+                )
+                {
+                    cacheTasks.Add(
+                        _sessionCache.SetBinaryData(
+                            _lockToken,
+                            change.DataElementIdentifier.Guid,
+                            change.CurrentBinaryData.Value
+                        )
+                    );
+                }
+            }
+
+            // Remove deleted data elements from Redis
+            foreach (var change in changes.FormDataChanges.Where(c => c.Type == ChangeType.Deleted))
+            {
+                cacheTasks.Add(_sessionCache.RemoveBinaryData(_lockToken, change.DataElementIdentifier.Guid));
+            }
+
+            // Update Instance in Redis (data element list may have changed)
+            cacheTasks.Add(_sessionCache.SetInstance(_lockToken, Instance));
+
+            await Task.WhenAll(cacheTasks);
+        }
     }
 
     /// <summary>

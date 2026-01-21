@@ -9508,6 +9508,10 @@
           "payload": {
             "type": "string",
             "nullable": true
+          },
+          "lockToken": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

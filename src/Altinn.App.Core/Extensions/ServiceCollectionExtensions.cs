@@ -212,6 +212,7 @@ public static class ServiceCollectionExtensions
         AddEventServices(services);
         AddNotificationServices(services);
         AddProcessServices(services);
+        services.AddProcessingSessionCache(configuration);
         AddFileAnalyserServices(services);
         AddFileValidatorServices(services);
 
@@ -448,5 +449,35 @@ public static class ServiceCollectionExtensions
             d.ServiceType == typeof(IConfigureOptions<TOptions>)
             || d.ServiceType == typeof(IOptionsChangeTokenSource<TOptions>)
         );
+    }
+
+    /// <summary>
+    /// Adds processing session cache for the process engine.
+    /// Uses Redis if configured, otherwise falls back to no-op cache.
+    /// </summary>
+    public static IServiceCollection AddProcessingSessionCache(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        var redisConnection = configuration.GetConnectionString("Redis");
+
+        if (!string.IsNullOrEmpty(redisConnection))
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnection;
+                options.InstanceName = "altinn-app:";
+            });
+
+            services.AddSingleton<IProcessingSessionCache, RedisProcessingSessionCache>();
+        }
+        else
+        {
+            // No Redis configured - use no-op cache
+            services.AddSingleton<IProcessingSessionCache>(NullProcessingSessionCache.Instance);
+        }
+
+        return services;
     }
 }
