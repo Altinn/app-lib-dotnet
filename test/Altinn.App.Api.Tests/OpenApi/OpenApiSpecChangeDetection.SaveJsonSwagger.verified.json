@@ -4735,7 +4735,7 @@
         }
       }
     },
-    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/process-engine-callback/{commandKey}": {
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/process-engine-callbacks/{commandKey}": {
       "post": {
         "tags": [
           "ProcessEngineCallback"
