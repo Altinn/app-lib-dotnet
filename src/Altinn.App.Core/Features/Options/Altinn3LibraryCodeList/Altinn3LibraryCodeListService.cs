@@ -90,10 +90,7 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
         {
             IsCacheable = true,
             Options = options,
-            Parameters = new Dictionary<string, string?>
-            {
-                { "version", libraryCodeListResponse.Version }
-            },
+            Parameters = new Dictionary<string, string?> { { "version", libraryCodeListResponse.Version } },
         };
     }
 
