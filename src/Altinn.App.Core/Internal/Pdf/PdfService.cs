@@ -403,7 +403,7 @@ public class PdfService : IPdfService
     {
         LayoutEvaluatorState state =
             dataAccessor.GetLayoutEvaluatorState()
-            ?? throw new InvalidOperationException("LayoutEvaluatorState is null - no taskId available.");
+            ?? throw new InvalidOperationException("LayoutEvaluatorState should not be null. No current task?");
 
         DataElementIdentifier? dataElementIdentifier =
             subformDataElementId != null ? new DataElementIdentifier(subformDataElementId) : default;
