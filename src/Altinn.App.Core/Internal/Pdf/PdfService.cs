@@ -293,11 +293,9 @@ public class PdfService : IPdfService
 
         if (_instanceDataUnitOfWorkInitializer != null && customFileNameTextResourceKey != null)
         {
-            string? taskId = instance.Process?.CurrentTask?.ElementId;
-
             InstanceDataUnitOfWork dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(
                 instance,
-                taskId,
+                instance.Process?.CurrentTask?.ElementId,
                 language
             );
 
