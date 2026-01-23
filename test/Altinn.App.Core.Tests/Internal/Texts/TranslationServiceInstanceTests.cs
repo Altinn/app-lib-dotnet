@@ -103,7 +103,7 @@ public class TranslationServiceInstanceTests
         fixture.TryAddCommonServices();
 
         // Override the mock to return null instead of throwing for GetLayoutModelForTask
-        fixture.AppResourcesMock.Setup(a => a.GetLayoutModelForTask(It.IsAny<string>())).Returns((LayoutModel?)null);
+        fixture.AppResourcesMock.Setup(a => a.GetLayoutModelForTask(It.IsAny<string>())).Returns(default(LayoutModel));
 
         await using var provider = fixture.BuildServiceProvider();
 
@@ -146,7 +146,7 @@ public class TranslationServiceInstanceTests
         fixture.TryAddCommonServices();
 
         // Override the mock to return null instead of throwing for GetLayoutModelForTask
-        fixture.AppResourcesMock.Setup(a => a.GetLayoutModelForTask(It.IsAny<string>())).Returns((LayoutModel?)null);
+        fixture.AppResourcesMock.Setup(a => a.GetLayoutModelForTask(It.IsAny<string>())).Returns(default(LayoutModel));
 
         await using var provider = fixture.BuildServiceProvider();
 
