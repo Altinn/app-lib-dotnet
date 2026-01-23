@@ -92,8 +92,7 @@ internal sealed class Altinn3LibraryCodeListService : IAltinn3LibraryCodeListSer
             Options = options,
             Parameters = new Dictionary<string, string?>
             {
-                { "version", libraryCodeListResponse.Version },
-                { "source", libraryCodeListResponse.Source.Name },
+                { "version", libraryCodeListResponse.Version }
             },
         };
     }
