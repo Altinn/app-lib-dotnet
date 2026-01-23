@@ -226,7 +226,7 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         var downstreamParameters = downstreamHeader.Split(',');
 
         Assert.Contains("version=1", downstreamParameters);
-        Assert.Equal(1, downstreamParameters.Length);
+        Assert.Single(downstreamParameters);
         Assert.Equal(
             "[{\"value\":\"Value1\",\"label\":\"En label\",\"description\":\"En beskrivelse\",\"helpText\":\"En hjelpetekst\",\"tags\":{\"test-tag-name\":\"test-tag\"}}]",
             content
@@ -578,7 +578,7 @@ public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationF
         var downstreamParameters = downstreamHeader.Split(',');
 
         Assert.Contains("version=1", downstreamParameters);
-        Assert.Equal(1, downstreamParameters.Length);
+        Assert.Single(downstreamParameters);
         Assert.Equal(
             "[{\"value\":\"Value1\",\"label\":\"En label\",\"description\":\"En beskrivelse\",\"helpText\":\"En hjelpetekst\",\"tags\":{\"test-tag-name\":\"test-tag\"}}]",
             content
