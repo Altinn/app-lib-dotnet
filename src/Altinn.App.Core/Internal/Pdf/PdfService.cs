@@ -158,6 +158,7 @@ public class PdfService : IPdfService
 
         string fileName = await GetFileName(
             instance,
+            taskId,
             language,
             customFileNameTextResourceKey,
             subformPdfContext?.DataElementId
@@ -284,6 +285,7 @@ public class PdfService : IPdfService
 
     private async Task<string> GetFileName(
         Instance instance,
+        string taskId,
         string? language,
         string? customFileNameTextResourceKey,
         string? subformDataElementId
@@ -295,7 +297,7 @@ public class PdfService : IPdfService
         {
             InstanceDataUnitOfWork dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(
                 instance,
-                instance.Process?.CurrentTask?.ElementId,
+                taskId,
                 language
             );
 
