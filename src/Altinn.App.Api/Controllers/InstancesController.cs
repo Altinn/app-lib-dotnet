@@ -434,7 +434,7 @@ public class InstancesController : ControllerBase
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
-    /// <param name="instansiationInstance">instansiation information</param>
+    /// <param name="InstantiationInstance">instansiation information</param>
     /// <param name="language">The currently active user language</param>
     /// <returns>The new instance</returns>
     [HttpPost("create")]
@@ -446,7 +446,7 @@ public class InstancesController : ControllerBase
     public async Task<ActionResult<InstanceResponse>> PostSimplified(
         [FromRoute] string org,
         [FromRoute] string app,
-        [FromBody] InstansiationInstance instansiationInstance,
+        [FromBody] InstantiationInstance InstantiationInstance,
         [FromQuery] string? language = null
     )
     {
@@ -460,7 +460,7 @@ public class InstancesController : ControllerBase
             return BadRequest("The path parameter 'app' cannot be empty");
         }
 
-        bool isCopyRequest = !string.IsNullOrEmpty(instansiationInstance.SourceInstanceId);
+        bool isCopyRequest = !string.IsNullOrEmpty(InstantiationInstance.SourceInstanceId);
 
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
         if (VerifyInstantiationPermissions(application, org, app, isCopy: isCopyRequest) is { } verificationResult)
@@ -475,7 +475,7 @@ public class InstancesController : ControllerBase
             );
         }
 
-        InstanceOwner lookup = instansiationInstance.InstanceOwner;
+        InstanceOwner lookup = InstantiationInstance.InstanceOwner;
 
         if (
             lookup == null
@@ -490,8 +490,8 @@ public class InstancesController : ControllerBase
         Party party;
         try
         {
-            party = await LookupParty(instansiationInstance.InstanceOwner) ?? throw new Exception("Unknown party");
-            instansiationInstance.InstanceOwner = InstantiationHelper.PartyToInstanceOwner(party);
+            party = await LookupParty(InstantiationInstance.InstanceOwner) ?? throw new Exception("Unknown party");
+            InstantiationInstance.InstanceOwner = InstantiationHelper.PartyToInstanceOwner(party);
         }
         catch (Exception partyLookupException)
         {
@@ -509,7 +509,7 @@ public class InstancesController : ControllerBase
         if (
             isCopyRequest
             && party.PartyId.ToString(CultureInfo.InvariantCulture)
-                != instansiationInstance.SourceInstanceId.Split("/")[0]
+                != InstantiationInstance.SourceInstanceId.Split("/")[0]
         )
         {
             return BadRequest("It is not possible to copy instances between instance owners.");
@@ -532,9 +532,9 @@ public class InstancesController : ControllerBase
 
         Instance instanceTemplate = new()
         {
-            InstanceOwner = instansiationInstance.InstanceOwner,
-            VisibleAfter = instansiationInstance.VisibleAfter,
-            DueBefore = instansiationInstance.DueBefore,
+            InstanceOwner = InstantiationInstance.InstanceOwner,
+            VisibleAfter = InstantiationInstance.VisibleAfter,
+            DueBefore = InstantiationInstance.DueBefore,
             Org = application.Org,
         };
 
@@ -560,7 +560,7 @@ public class InstancesController : ControllerBase
             {
                 Instance = instanceTemplate,
                 User = User,
-                Prefill = instansiationInstance.Prefill,
+                Prefill = InstantiationInstance.Prefill,
             };
 
             processResult = await _processEngine.GenerateProcessStartEvents(request);
@@ -569,7 +569,7 @@ public class InstancesController : ControllerBase
 
             if (isCopyRequest)
             {
-                string[] sourceSplit = instansiationInstance.SourceInstanceId.Split("/");
+                string[] sourceSplit = InstantiationInstance.SourceInstanceId.Split("/");
                 Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
 
                 try
@@ -600,7 +600,7 @@ public class InstancesController : ControllerBase
             instance = await _instanceClient.GetInstance(instance);
             await _processEngine.HandleEventsAndUpdateStorage(
                 instance,
-                instansiationInstance.Prefill,
+                InstantiationInstance.Prefill,
                 processResult.ProcessStateChange?.Events
             );
         }

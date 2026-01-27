@@ -61,7 +61,7 @@ public class MyIntegrationTests(ITestOutputHelper output) : IAsyncLifetime
 
         using var response = await fixture.Instances.PostSimplified(
             token,
-            new InstansiationInstance { InstanceOwner = new InstanceOwner { PartyId = "501337" } }
+            new InstantiationInstance { InstanceOwner = new InstanceOwner { PartyId = "501337" } }
         );
 
         var readResponse = await response.Read<Instance>();
@@ -158,7 +158,7 @@ The `ApiResponse` pattern provides structured HTTP response handling:
 ```csharp
 using var response = await fixture.Instances.PostSimplified(
     token,
-    new InstansiationInstance { InstanceOwner = new InstanceOwner { PartyId = "501337" } }
+    new InstantiationInstance { InstanceOwner = new InstanceOwner { PartyId = "501337" } }
 );
 
 // Read typed response data
