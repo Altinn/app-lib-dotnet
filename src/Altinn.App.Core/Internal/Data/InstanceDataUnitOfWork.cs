@@ -474,6 +474,14 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             new MemoryAsStream(bytes),
             authenticationMethod: GetAuthenticationMethod(change.DataType)
         );
+
+        if (change.Metadata is not null)
+        {
+            dataElement.Metadata = [.. change.Metadata];
+            await _dataClient.Update(Instance, dataElement);
+            change.Lock = true;
+        }
+
         // Update caches
         _binaryCache.Set(dataElement, bytes);
         change.DataElement = dataElement; // Set the data element so that it can be referenced later in the save process
