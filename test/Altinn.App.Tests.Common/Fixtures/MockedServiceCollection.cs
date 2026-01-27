@@ -35,7 +35,7 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Tests.Common.Fixtures;
 
-public class MockedServiceCollection
+public sealed class MockedServiceCollection
 {
     public const string Org = "ttd";
     public const string App = "mocked-app";
@@ -260,7 +260,7 @@ public class MockedServiceCollection
     }
 }
 
-public class WrappedServiceProvider : IKeyedServiceProvider, IDisposable, IAsyncDisposable
+public sealed class WrappedServiceProvider : IKeyedServiceProvider, IDisposable, IAsyncDisposable
 {
     public List<Activity> Traces => _serviceCollection.Traces;
     public List<Metric> Metrics => _serviceCollection.Metrics;
@@ -269,6 +269,7 @@ public class WrappedServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
     private readonly TracerProvider _tracerProvider;
     private readonly MeterProvider _meterProvider;
     private readonly ServiceProvider _serviceProvider;
+    private readonly LoggerProvider _loggerProvider;
     private readonly MockedServiceCollection _serviceCollection;
 
     public WrappedServiceProvider(MockedServiceCollection serviceCollection, ServiceProvider serviceProvider)
@@ -284,6 +285,7 @@ public class WrappedServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
             .AddMeter(telemetry.ActivitySource.Name)
             .AddInMemoryExporter(Metrics)
             .Build();
+        _loggerProvider = serviceProvider.GetRequiredService<LoggerProvider>();
     }
 
     public void DumpTracesAndMetrics()
@@ -294,6 +296,7 @@ public class WrappedServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         }
         _tracerProvider.ForceFlush();
         _meterProvider.ForceFlush();
+        _loggerProvider.ForceFlush();
 
         outputHelper.WriteLine("");
         outputHelper.WriteLine("OTEL Data:");
@@ -360,19 +363,31 @@ public class WrappedServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         var layoutSetName = "layoutSet1";
         var pages = components
             .GroupBy(c => c.PageId)
-            .Select(group => new PageComponent
+            .Select(group =>
             {
-                Id = group.Key,
-                PageId = group.Key,
-                LayoutId = layoutSetName,
-                Type = "page",
-                Components = group.ToList(),
-                Hidden = default,
-                RemoveWhenHidden = default,
-                Required = default,
-                ReadOnly = default,
-                DataModelBindings = ImmutableDictionary<string, ModelBinding>.Empty,
-                TextResourceBindings = ImmutableDictionary<string, Expression>.Empty,
+                var componentList = group.ToList();
+                var pageComponentLookup = componentList.ToDictionary(c => c.Id, StringComparer.Ordinal);
+                Dictionary<string, string> claimedComponentIds = [];
+                foreach (var component in componentList)
+                {
+                    component.ClaimChildren(pageComponentLookup, claimedComponentIds);
+                }
+                var childComponents = componentList.Where(c => !claimedComponentIds.ContainsKey(c.Id)).ToList();
+                return new PageComponent
+                {
+                    Id = group.Key,
+                    PageId = group.Key,
+                    LayoutId = layoutSetName,
+                    Type = "page",
+                    ChildComponents = childComponents,
+                    AllComponents = componentList,
+                    Hidden = default,
+                    RemoveWhenHidden = default,
+                    Required = default,
+                    ReadOnly = default,
+                    DataModelBindings = ImmutableDictionary<string, ModelBinding>.Empty,
+                    TextResourceBindings = ImmutableDictionary<string, Expression>.Empty,
+                };
             });
 
         DataType defaultDataType = _serviceCollection.AddDataType<T>();
@@ -399,30 +414,30 @@ public class WrappedServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     private bool _dumpedTracesAndMetrics;
 
-#pragma warning disable CA1816
     public void Dispose()
     {
+        _serviceProvider.Dispose();
         if (!_dumpedTracesAndMetrics)
         {
             _dumpedTracesAndMetrics = true;
             DumpTracesAndMetrics();
         }
-        _serviceProvider.Dispose();
+        _loggerProvider.Dispose();
         _tracerProvider.Dispose();
         _meterProvider.Dispose();
     }
 
     public async ValueTask DisposeAsync()
     {
+        await _serviceProvider.DisposeAsync();
         if (!_dumpedTracesAndMetrics)
         {
             _dumpedTracesAndMetrics = true;
             DumpTracesAndMetrics();
         }
-        await _serviceProvider.DisposeAsync();
+        _loggerProvider.Dispose();
         _tracerProvider.Dispose();
         _meterProvider.Dispose();
     }
-#pragma warning restore CA1816
     #endregion
 }
