@@ -51,6 +51,12 @@ namespace Altinn.App.Core.Configuration
         public CacheSettings() { }
         public int ProfileCacheLifetimeSeconds { get; set; }
     }
+    public class DanSettings
+    {
+        public DanSettings() { }
+        public required string BaseUrl { get; set; }
+        public required string SubscriptionKey { get; set; }
+    }
     public class FrontEndSettings : System.Collections.Generic.Dictionary<string, string>
     {
         public FrontEndSettings() { }
@@ -2359,7 +2365,7 @@ namespace Altinn.App.Core.Implementation
     }
     public class PrefillSI : Altinn.App.Core.Internal.Prefill.IPrefill
     {
-        public PrefillSI(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Implementation.PrefillSI> logger, Altinn.App.Core.Internal.App.IAppResources appResourcesService, Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext, System.IServiceProvider serviceProvider, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
+        public PrefillSI(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Implementation.PrefillSI> logger, Altinn.App.Core.Internal.App.IAppResources appResourcesService, Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext, System.IServiceProvider serviceProvider, Altinn.App.Core.Internal.Dan.IDanClient? danClient = null, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
         public void PrefillDataModel(object dataModel, System.Collections.Generic.Dictionary<string, string> externalPrefill, bool continueOnError = false) { }
         public System.Threading.Tasks.Task PrefillDataModel(string partyId, string dataModelName, object dataModel, System.Collections.Generic.Dictionary<string, string>? externalPrefill = null) { }
     }
@@ -2388,6 +2394,14 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
         public System.Threading.Tasks.Task<System.Collections.Generic.List<string>> GetKeyRoleOrganizationParties(int userId, System.Collections.Generic.List<string> orgNumbers) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Register.Models.Party>?> GetPartyList(int userId) { }
         public System.Threading.Tasks.Task<bool?> ValidateSelectedParty(int userId, int partyId) { }
+    }
+}
+namespace Altinn.App.Core.Infrastructure.Clients.Dan
+{
+    public class DanClient : Altinn.App.Core.Internal.Dan.IDanClient
+    {
+        public DanClient(System.Net.Http.IHttpClientFactory factory, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.DanSettings> settings) { }
+        public System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, string>> GetDataset(string dataset, string subject, string fields) { }
     }
 }
 namespace Altinn.App.Core.Infrastructure.Clients.Events
@@ -2981,6 +2995,13 @@ namespace Altinn.App.Core.Internal.Auth
     public interface IUserTokenProvider
     {
         string GetUserToken();
+    }
+}
+namespace Altinn.App.Core.Internal.Dan
+{
+    public interface IDanClient
+    {
+        System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, string>> GetDataset(string dataset, string subject, string fields);
     }
 }
 namespace Altinn.App.Core.Internal.Data

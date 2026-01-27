@@ -8,9 +8,11 @@ using Altinn.App.Api.Tests.Mocks.Event;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Cache;
+using Altinn.App.Core.Infrastructure.Clients.Dan;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Dan;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Instances;
@@ -67,6 +69,11 @@ builder.Services.Configure<ApplicationInsightsServiceOptions>(options =>
 builder.Services.Configure<GeneralSettings>(settings => settings.DisableLocaltestValidation = true);
 builder.Services.Configure<GeneralSettings>(settings => settings.DisableAppConfigurationCache = true);
 builder.Services.Configure<GeneralSettings>(settings => settings.IsTest = true);
+builder.Services.Configure<DanSettings>(settings =>
+{
+    settings.BaseUrl = "http://localhost:7071/v1/";
+    settings.SubscriptionKey = "test-subscription-key";
+});
 builder.Configuration.GetSection("GeneralSettings:IsTest").Value = "true";
 
 // AppConfigurationCache.Disable = true;
