@@ -26,9 +26,6 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
     public PdfServiceTaskTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper)
     {
-        // These tests require the HTTP-based ProcessEngine for async service task orchestration
-        UseInProcessProcessEngineClient = false;
-
         var eFormidlingServiceMock = new Mock<IEFormidlingService>();
         var eFormidlingConfigurationProviderMock = new Mock<IEFormidlingLegacyConfigurationProvider>();
         OverrideServicesForAllTests = (services) =>
