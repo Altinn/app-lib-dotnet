@@ -631,13 +631,13 @@ public class SigningControllerTests
             .ReturnsAsync(
                 new Instance
                 {
-                    Id = "task1",
-                    ExtensionElements = new ExtensionElements()
+                    InstanceOwner = new InstanceOwner { PartyId = "1337" },
+                    Process = new ProcessState
                     {
-                        TaskExtension = new AltinnTaskExtension() { TaskType = "not-signing" },
+                        CurrentTask = new ProcessElementInfo { ElementId = "task1", AltinnTaskType = "not-signing" },
                     },
-                },
-            ]);
+                }
+            );
 
         // Act
         var actionResult = await controller.GetAuthorizedOrganizations(
@@ -806,13 +806,13 @@ public class SigningControllerTests
             .ReturnsAsync(
                 new Instance
                 {
-                    Id = "task1",
-                    ExtensionElements = new ExtensionElements()
+                    InstanceOwner = new InstanceOwner { PartyId = "1337" },
+                    Process = new ProcessState
                     {
-                        TaskExtension = new AltinnTaskExtension() { TaskType = "not-signing" },
+                        CurrentTask = new ProcessElementInfo { ElementId = "task1", AltinnTaskType = "not-signing" },
                     },
-                },
-            ]);
+                }
+            );
 
         // Act
         var actionResult = await controller.GetDataElements("tdd", "app", 1337, Guid.NewGuid());
@@ -914,7 +914,16 @@ public class SigningControllerTests
 
         // Setup instance with current task as a data task
         _instanceClientMock
-            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(x =>
+                x.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(
                 new Instance
                 {
@@ -1134,7 +1143,16 @@ public class SigningControllerTests
 
         // Setup instance with current task as a data task
         _instanceClientMock
-            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(x =>
+                x.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(
                 new Instance
                 {
@@ -1381,7 +1399,16 @@ public class SigningControllerTests
         };
 
         _instanceClientMock
-            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(x =>
+                x.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
 
         // Setup multiple tasks - current task is a data task, but we'll override to a signing task
