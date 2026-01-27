@@ -94,27 +94,8 @@ public sealed class ProcessEngineTest
     [ClassData(typeof(TestAuthentication.AllTokens))]
     public async Task Start_calculates_correct_events_for_process_start(TestJwtToken token)
     {
-        // Arrange - Mock the process engine client to capture the request
-        var processEngineClientMock = new Mock<IProcessEngineClient>(MockBehavior.Strict);
-        Altinn.App.ProcessEngine.Models.ProcessNextRequest? capturedRequest = null;
-        processEngineClientMock
-            .Setup(c =>
-                c.ProcessNext(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Altinn.App.ProcessEngine.Models.ProcessNextRequest>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Callback<Instance, Altinn.App.ProcessEngine.Models.ProcessNextRequest, CancellationToken>(
-                (_, req, _) => capturedRequest = req
-            )
-            .Returns(Task.CompletedTask);
-        processEngineClientMock
-            .Setup(c => c.GetActiveJobStatus(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Altinn.App.ProcessEngine.Models.ProcessEngineStatusResponse?)null);
-
+        // Arrange
         var services = new ServiceCollection();
-        services.AddSingleton(processEngineClientMock.Object);
 
         using var fixture = Fixture.Create(services, withTelemetry: false, token: token);
         var instanceOwnerPartyId = token.Auth switch
@@ -150,13 +131,13 @@ public sealed class ProcessEngineTest
         result.ProcessStateChange.Should().NotBeNull();
         result.ProcessStateChange!.Events.Should().HaveCount(2);
 
-        // Verify first event is process_StartEvent (process has already moved to Task_1)
+        // Verify first event is process_StartEvent (CurrentTask points to start event at this stage)
         result.ProcessStateChange.Events[0].EventType.Should().Be(InstanceEventType.process_StartEvent.ToString());
         result.ProcessStateChange.Events[0].InstanceId.Should().Be($"{instanceOwnerPartyIdStr}/{_instanceGuid}");
         result.ProcessStateChange.Events[0].ProcessInfo.Should().NotBeNull();
         result.ProcessStateChange.Events[0].ProcessInfo!.StartEvent.Should().Be("StartEvent_1");
         result.ProcessStateChange.Events[0].ProcessInfo.CurrentTask.Should().NotBeNull();
-        result.ProcessStateChange.Events[0].ProcessInfo.CurrentTask!.ElementId.Should().Be("Task_1");
+        result.ProcessStateChange.Events[0].ProcessInfo.CurrentTask!.ElementId.Should().Be("StartEvent_1");
 
         // Verify second event is process_StartTask
         result.ProcessStateChange.Events[1].EventType.Should().Be(InstanceEventType.process_StartTask.ToString());
@@ -167,38 +148,8 @@ public sealed class ProcessEngineTest
         result.ProcessStateChange.Events[1].ProcessInfo.CurrentTask!.ElementId.Should().Be("Task_1");
         result.ProcessStateChange.Events[1].ProcessInfo.CurrentTask.AltinnTaskType.Should().Be("data");
 
-        // Verify process engine client was called with the calculated events and verify commands
-        processEngineClientMock.Verify(
-            c =>
-                c.ProcessNext(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Altinn.App.ProcessEngine.Models.ProcessNextRequest>(),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Once
-        );
-        capturedRequest.Should().NotBeNull();
-        capturedRequest!.Tasks.Should().NotBeNullOrEmpty();
-
-        // Verify commands for StartTask event
-        var commandKeys = capturedRequest!
-            .Tasks.Select(t =>
-                (t.Command as Altinn.App.ProcessEngine.Models.ProcessEngineCommand.AppCommand)?.CommandKey
-            )
-            .Where(k => k != null)
-            .ToList();
-
-        commandKeys
-            .Should()
-            .ContainInOrder(
-                "UnlockTaskData",
-                "ProcessTaskStart",
-                "OnTaskStartingHook",
-                "CommonTaskInitialization",
-                "ProcessTaskStart",
-                "UpdateProcessState",
-                "MovedToAltinnEvent"
-            );
+        // Note: CreateInitialProcessState only calculates events, it doesn't submit them.
+        // Use SubmitInitialProcessState to actually submit events to the process engine client.
     }
 
     [Fact]

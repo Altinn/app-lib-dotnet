@@ -43,6 +43,7 @@ public class ProcessEngineCommandValidatorTests
         services.AddTransient<IProcessEngineCommand, CommonTaskInitialization>();
         services.AddTransient<IProcessEngineCommand, ProcessTaskStart>();
         services.AddTransient<IProcessEngineCommand, MovedToAltinnEvent>();
+        services.AddTransient<IProcessEngineCommand, InstanceCreatedAltinnEvent>();
         services.AddTransient<IProcessEngineCommand, ExecuteServiceTask>();
         services.AddTransient<IProcessEngineCommand, ProcessTaskEnd>();
         services.AddTransient<IProcessEngineCommand, CommonTaskFinalization>();
