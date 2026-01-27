@@ -5,7 +5,8 @@
       "Bash(dotnet test:*)",
       "Bash(dotnet ef migrations add:*)",
       "Bash(dotnet ef migrations remove:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(dir /s /b \"C:\\\\Dev\\\\digdir\\\\app-lib-dotnet\\\\test\\\\Altinn.App.Api.Tests\\\\Data\\\\*5a2fa5ec-f97c-4816-b57a-dc78a981917e*\")"
     ],
     "deny": [],
     "ask": []

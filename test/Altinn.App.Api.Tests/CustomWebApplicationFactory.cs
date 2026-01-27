@@ -149,6 +149,10 @@ public class ApiTestBase
             builder.ConfigureTestServices(services => OverrideServicesForAllTests(services));
             builder.ConfigureTestServices(OverrideServicesForThisTest);
             builder.ConfigureTestServices(ConfigureFakeHttpClientHandler);
+            if (UseInProcessProcessEngineClient)
+            {
+                builder.ConfigureTestServices(ConfigureInProcessProcessEngineClient);
+            }
             builder.ConfigureTestServices(services => configureServices?.Invoke(services));
 
             // Mock IHostEnvironment to return the environment name we want to test
@@ -303,6 +307,12 @@ public class ApiTestBase
     protected Action<IServiceCollection> OverrideServicesForAllTests { get; set; } = (services) => { };
 
     /// <summary>
+    /// Set to false in tests that specifically need to test HTTP-based ProcessEngine integration.
+    /// Defaults to true to enable in-process command execution for most tests.
+    /// </summary>
+    protected bool UseInProcessProcessEngineClient { get; set; } = true;
+
+    /// <summary>
     /// Set this within a test to override the service just for that test.
     /// </summary>
     protected Action<IServiceCollection> OverrideServicesForThisTest { get; set; } = (services) => { };
@@ -313,4 +323,33 @@ public class ApiTestBase
     protected Func<HttpRequestMessage, Task<HttpResponseMessage>> SendAsync { get; set; } =
         (request) =>
             throw new NotImplementedException("You must set SendAsync in your test when it uses a real http client.");
+
+    /// <summary>
+    /// Configures the in-process process engine client for testing.
+    /// This replaces the HTTP-based ProcessEngineClient with a synchronous in-process implementation
+    /// that executes commands directly without HTTP calls.
+    /// Call this in your test's OverrideServicesForAllTests or OverrideServicesForThisTest.
+    /// </summary>
+    protected static void ConfigureInProcessProcessEngineClient(IServiceCollection services)
+    {
+        // Remove ALL registrations of IProcessEngineClient (AddHttpClient registers multiple descriptors)
+        services.RemoveAll<Altinn.App.Core.Internal.ProcessEngine.Http.IProcessEngineClient>();
+
+        // Add the in-process implementation as singleton to ensure it's resolved correctly
+        services.AddSingleton<Altinn.App.Core.Internal.ProcessEngine.Http.IProcessEngineClient>(
+            sp => new InProcessProcessEngineClient(
+                sp,
+                sp.GetRequiredService<Altinn.App.Core.Internal.Instances.IInstanceClient>(),
+                sp.GetRequiredService<Altinn.App.Core.Internal.Data.InstanceDataUnitOfWorkInitializer>()
+            )
+        );
+
+        // Mock the events client since it calls external services
+        var eventsClientMock = new Mock<Altinn.App.Core.Internal.Events.IEventsClient>();
+        eventsClientMock
+            .Setup(x => x.AddEvent(It.IsAny<string>(), It.IsAny<Altinn.Platform.Storage.Interface.Models.Instance>()))
+            .ReturnsAsync("mock-event-id");
+        services.RemoveAll<Altinn.App.Core.Internal.Events.IEventsClient>();
+        services.AddSingleton(eventsClientMock.Object);
+    }
 }

@@ -29,6 +29,9 @@ public class EFormidlingServiceTaskTests : ApiTestBase, IClassFixture<WebApplica
     public EFormidlingServiceTaskTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper)
     {
+        // These tests require the HTTP-based ProcessEngine for async service task orchestration
+        UseInProcessProcessEngineClient = false;
+
         OverrideServicesForAllTests = (services) =>
         {
             services.AddSingleton(_eFormidlingServiceMock.Object);

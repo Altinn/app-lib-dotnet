@@ -44,6 +44,7 @@
         SelfLinks: {
           Apps: https://localhost/tdd/contributer-restriction/instances/<instancOwnerPartyId>/<instanceGuid>/data/<dataId>
         },
+        Size: 147,
         Locked: false,
         IsRead: true
       }
@@ -94,6 +95,7 @@
         SelfLinks: {
           Apps: https://localhost/tdd/contributer-restriction/instances/<instancOwnerPartyId>/<instanceGuid>/data/<dataId>
         },
+        Size: 147,
         Locked: false,
         IsRead: true
       }

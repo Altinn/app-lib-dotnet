@@ -64,7 +64,7 @@
           apps: https://localhost/tdd/contributer-restriction/instances/<instancOwnerPartyId>/<instanceGuid>/data/<dataId>,
           platform: null
         },
-        size: 0,
+        size: 147,
         contentHash: null,
         locked: false,
         refs: null,
@@ -80,6 +80,8 @@
         lastChangedBy: null
       }
     ],
+    presentationTexts: null,
+    dataValues: null,
     created: null,
     createdBy: null,
     lastChanged: null,
@@ -150,7 +152,7 @@
           apps: https://localhost/tdd/contributer-restriction/instances/<instancOwnerPartyId>/<instanceGuid>/data/<dataId>,
           platform: null
         },
-        size: 0,
+        size: 147,
         contentHash: null,
         locked: false,
         refs: null,

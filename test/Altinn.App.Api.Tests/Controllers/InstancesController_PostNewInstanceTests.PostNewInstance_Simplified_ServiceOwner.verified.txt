@@ -6,6 +6,16 @@
       HasParent: true
     },
     {
+      Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 1
+        }
+      ],
+      HasParent: true
+    },
+    {
       Name: POST {org}/{app}/instances/create,
       Kind: Server,
       IdFormat: W3C,
@@ -127,16 +137,6 @@
       HasParent: true
     },
     {
-      Name: Process.HandleEvents,
-      IdFormat: W3C,
-      Tags: [
-        {
-          instance.guid: Guid_3
-        }
-      ],
-      HasParent: true
-    },
-    {
       Name: Process.Start,
       IdFormat: W3C,
       Status: Ok,
@@ -158,16 +158,6 @@
               to.task.name: Utfylling
             }
           ]
-        }
-      ],
-      HasParent: true
-    },
-    {
-      Name: Process.StoreEvents,
-      IdFormat: W3C,
-      Tags: [
-        {
-          instance.guid: Guid_3
         }
       ],
       HasParent: true

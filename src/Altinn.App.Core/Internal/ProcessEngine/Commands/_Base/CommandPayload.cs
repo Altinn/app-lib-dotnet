@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Altinn.App.Core.Models.Process;
 
 namespace Altinn.App.Core.Internal.ProcessEngine.Commands;
 
@@ -8,6 +7,9 @@ namespace Altinn.App.Core.Internal.ProcessEngine.Commands;
 /// Base class for command request payloads.
 /// Request payloads are sent from app → engine → app callback.
 /// </summary>
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+[JsonDerivedType(typeof(ExecuteServiceTaskPayload), typeDiscriminator: "executeServiceTask")]
+[JsonDerivedType(typeof(UpdateProcessStatePayload), typeDiscriminator: "updateProcessState")]
 internal abstract record CommandRequestPayload;
 
 /// <summary>
