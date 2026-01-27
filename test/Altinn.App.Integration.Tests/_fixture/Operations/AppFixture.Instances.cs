@@ -89,7 +89,8 @@ public partial class AppFixture : IAsyncDisposable
 
                 using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                if (dataType.AppLogic?.ClassRef is not null)
+                var hasJsonContentType = dataType.AllowedContentTypes.Any(ac => ac == "application/json");
+                if (dataType.AppLogic?.ClassRef is not null || hasJsonContentType)
                     request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 else
                     request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
@@ -108,11 +109,21 @@ public partial class AppFixture : IAsyncDisposable
                     }
                     else
                     {
-                        // This is binary data (attachment)
-                        var dataResponse = new ApiResponse(_fixture, response);
-                        var readResponse = await dataResponse.Read<byte[]>();
-                        var binaryData = new InstanceDataDownload.Binary(i, dataGuid, dataType.Id, readResponse);
-                        data.Add(binaryData);
+                        if (hasJsonContentType)
+                        {
+                            var dataResponse = new ApiResponse(_fixture, response);
+                            var readResponse = await dataResponse.Read<Argon.JToken>(); // Argon is being used by VerifyTests for JSON
+                            var formData = new InstanceDataDownload.Json(i, dataGuid, dataType.Id, readResponse);
+                            data.Add(formData);
+                        }
+                        else
+                        {
+                            // This is binary data (attachment)
+                            var dataResponse = new ApiResponse(_fixture, response);
+                            var readResponse = await dataResponse.Read<byte[]>();
+                            var binaryData = new InstanceDataDownload.Binary(i, dataGuid, dataType.Id, readResponse);
+                            data.Add(binaryData);
+                        }
                     }
                 }
                 catch (Exception)
@@ -345,6 +356,15 @@ internal sealed record InstanceDownload(ReadApiResponse<Instance> Instance, IRea
                         sourceFile: sourceFile
                     );
                     break;
+                case InstanceDataDownload.Json json:
+                    await verifier.Verify(
+                        json.Data,
+                        snapshotName: $"Download-Data[{data.Index}]",
+                        scrubbers: scrubbers,
+                        parameters: parameters,
+                        sourceFile: sourceFile
+                    );
+                    break;
                 case InstanceDataDownload.Binary binary:
                     var finalScrubbers = scrubbers;
                     if (data.DataType == "ref-data-as-pdf")
@@ -386,6 +406,12 @@ internal abstract record InstanceDataDownload(int Index, Guid Id, string DataTyp
     public abstract void Dispose();
 
     internal sealed record Form(int Index, Guid Id, string DataType, ReadApiResponse<Argon.JToken> Data)
+        : InstanceDataDownload(Index, Id, DataType)
+    {
+        public override void Dispose() => Data.Dispose();
+    }
+
+    internal sealed record Json(int Index, Guid Id, string DataType, ReadApiResponse<Argon.JToken> Data)
         : InstanceDataDownload(Index, Id, DataType)
     {
         public override void Dispose() => Data.Dispose();
