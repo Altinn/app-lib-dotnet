@@ -131,7 +131,7 @@ public static class ExpressionEvaluator
             ExpressionFunction.plus => Plus(args),
             ExpressionFunction.minus => Minus(args),
             ExpressionFunction.multiply => Multiply(args),
-            ExpressionFunction.devide => Devide(args),
+            ExpressionFunction.divide => Divide(args),
             ExpressionFunction.average => Average(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
@@ -933,7 +933,7 @@ public static class ExpressionEvaluator
         return sum.ToString(CultureInfo.InvariantCulture);
     }
 
-    private static string Devide(ExpressionValue[] args)
+    private static string Divide(ExpressionValue[] args)
     {
         var numericArgs = PrepareMultipleNumericArgs(args);
         var sum = numericArgs.First();

@@ -131,8 +131,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             null => Null,
             bool boolValue => boolValue,
             string stringValue => stringValue,
-            float numberValue => (decimal)numberValue, // expressions uses double which needs an explicit cast
-            double numberValue => (decimal)numberValue, // expressions uses double which needs an explicit cast
+            float numberValue => (decimal?)numberValue, // expressions uses double which needs an explicit cast
+            double numberValue => (decimal?)numberValue, // expressions uses double which needs an explicit cast
             byte numberValue => numberValue,
             sbyte numberValue => numberValue,
             short numberValue => numberValue,

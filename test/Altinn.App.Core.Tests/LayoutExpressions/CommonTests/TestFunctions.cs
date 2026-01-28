@@ -216,8 +216,8 @@ public class TestFunctions
     public async Task Multiply_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
-    [SharedTest("devide")]
-    public async Task Devide_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+    [SharedTest("divide")]
+    public async Task Divide_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
     [SharedTest("average")]

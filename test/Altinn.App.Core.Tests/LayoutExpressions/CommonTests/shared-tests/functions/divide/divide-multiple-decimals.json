@@ -1,0 +1,5 @@
+{
+  "name": "Should divide the first argument multiple times",
+  "expression": ["divide", 0.1, 0.2, 15, 1.50],
+  "expects": "0.0222222222222222222222222222"
+}

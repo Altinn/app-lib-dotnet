@@ -222,9 +222,9 @@ public enum ExpressionFunction
     multiply,
 
     /// <summary>
-    /// Devide numbers. Use a period (.) as the decimals separator. Must be numeric values.
+    /// Divide numbers. Use a period (.) as the decimals separator. Must be numeric values.
     /// </summary>
-    devide,
+    divide,
 
     /// <summary>
     /// Calculate the average of all values. Use a period (.) as the decimals separator. Must be numeric values.
