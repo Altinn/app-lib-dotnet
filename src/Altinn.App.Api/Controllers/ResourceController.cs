@@ -104,7 +104,10 @@ public class ResourceController : ControllerBase
                 instanceOwnerPartyId,
                 Guid.Parse(instanceId)
             );
-            return Ok(customLayout);
+            if (customLayout is not null)
+            {
+                return Ok(customLayout);
+            }
         }
         string layouts = _appResourceService.GetLayoutsForSet(layoutSetId);
         return Ok(layouts);
@@ -154,7 +157,10 @@ public class ResourceController : ControllerBase
                 instanceOwnerPartyId,
                 Guid.Parse(instanceId)
             );
-            return Ok(customLayoutSettings);
+            if (customLayoutSettings is not null)
+            {
+                return Ok(customLayoutSettings);
+            }
         }
         string? settings = _appResourceService.GetLayoutSettingsStringForSet(layoutSetId);
         return Ok(settings);
