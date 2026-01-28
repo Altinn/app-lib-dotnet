@@ -239,6 +239,7 @@ public class ProcessEngine : IProcessEngine
 
         (string currentTaskId, string altinnTaskType) = currentTaskIdAndAltinnTaskType;
 
+        #region Authorize
         bool authorized = await _processEngineAuthorizer.AuthorizeProcessNext(instance, request.Action);
 
         if (!authorized)
@@ -263,6 +264,9 @@ public class ProcessEngine : IProcessEngine
         bool isServiceTask = false;
         string? processNextAction = request.Action;
 
+        #endregion
+
+        #region Handle service task or user action
         // If the action is 'reject', we should not run any service task and there is no need to check for a user action handler, since 'reject' doesn't have one.
         if (request.Action is not "reject")
         {
@@ -313,6 +317,9 @@ public class ProcessEngine : IProcessEngine
             }
         }
 
+        #endregion
+
+        #region Handle validation
         // If the action is 'reject' the task is being abandoned, and we should skip validation, but only if reject has been allowed for the task in bpmn.
         if (checkedAction == "reject" && _processReader.IsActionAllowedForTask(currentTaskId, checkedAction))
         {
@@ -354,6 +361,7 @@ public class ProcessEngine : IProcessEngine
                 };
             }
         }
+        #endregion
 
         MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, processNextAction);
 
