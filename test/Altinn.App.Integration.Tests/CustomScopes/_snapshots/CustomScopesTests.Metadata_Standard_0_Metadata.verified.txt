@@ -581,6 +581,24 @@
         }
       },
       {
+        endpoint: GET {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceId}/layouts/{layoutSetId},
+        metadata: {
+          errorMessageTextResourceKeyUser: null,
+          errorMessageTextResourceKeyServiceOwner: null,
+          requiredScopesUsers: null,
+          requiredScopesServiceOwners: null
+        }
+      },
+      {
+        endpoint: GET {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceId}/layoutsettings/{layoutSetId},
+        metadata: {
+          errorMessageTextResourceKeyUser: null,
+          errorMessageTextResourceKeyServiceOwner: null,
+          requiredScopesUsers: null,
+          requiredScopesServiceOwners: null
+        }
+      },
+      {
         endpoint: GET {org}/{app}/legacy/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/copy,
         metadata: {
           errorMessageTextResourceKeyUser: null,
