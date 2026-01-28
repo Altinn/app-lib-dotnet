@@ -3130,7 +3130,7 @@ namespace Altinn.App.Core.Internal.Expressions
     {
         public ExpressionValue() { }
         public bool Bool { get; }
-        public double Number { get; }
+        public decimal Number { get; }
         public string String { get; }
         public System.Text.Json.JsonValueKind ValueKind { get; }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue False { get; }
@@ -3149,7 +3149,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public bool TryDeserialize<T>(out T? result) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue FromObject(object? value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(bool? value) { }
-        public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(double? value) { }
+        public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(decimal? value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(string? value) { }
         public static bool operator !=(Altinn.App.Core.Internal.Expressions.ExpressionValue left, Altinn.App.Core.Internal.Expressions.ExpressionValue right) { }
         public static bool operator ==(Altinn.App.Core.Internal.Expressions.ExpressionValue left, Altinn.App.Core.Internal.Expressions.ExpressionValue right) { }
@@ -4585,6 +4585,10 @@ namespace Altinn.App.Core.Models.Expressions
         gatewayAction = 34,
         language = 35,
         text = 36,
+        plus = 37,
+        minus = 38,
+        multiply = 39,
+        devide = 40,
     }
 }
 namespace Altinn.App.Core.Models.Layout.Components.Base

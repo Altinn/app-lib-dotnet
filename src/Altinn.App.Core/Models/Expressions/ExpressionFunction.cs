@@ -215,4 +215,14 @@ public enum ExpressionFunction
     /// Subtracting a value from another. Use a period (.) as the decimals separator. Must be numeric values.
     /// </summary>
     minus,
+
+    /// <summary>
+    /// Multiplying two numbers. Use a period (.) as the decimals separator. Must be numeric values.
+    /// </summary>
+    multiply,
+
+    /// <summary>
+    /// Devide two numbers. Use a period (.) as the decimals separator. Must be numeric values.
+    /// </summary>
+    devide,
 }

@@ -228,7 +228,7 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
     public void TestTryDeserializeVariousTypes()
     {
         TestTryDeserialize(2, 2.0, true);
-        TestTryDeserialize(2.5, 2.5, true);
+        TestTryDeserialize(2.5m, 2.5, true);
         TestTryDeserialize("test", "test", true);
         TestTryDeserialize(true, true, true);
         TestTryDeserialize(false, false, true);

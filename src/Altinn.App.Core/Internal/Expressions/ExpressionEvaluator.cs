@@ -130,6 +130,8 @@ public static class ExpressionEvaluator
             // Calculations:
             ExpressionFunction.plus => Plus(args),
             ExpressionFunction.minus => Minus(args),
+            ExpressionFunction.multiply => Multiply(args),
+            ExpressionFunction.devide => Devide(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
@@ -809,7 +811,7 @@ public static class ExpressionEvaluator
         return !PrepareBooleanArg(args[0]);
     }
 
-    private static (decimal?, decimal?) PrepareNumericArgs(ExpressionValue[] args)
+    private static (decimal?, decimal?) PrepareTwoNumericArgs(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
@@ -821,6 +823,16 @@ public static class ExpressionEvaluator
         var b = PrepareNumericArg(args[1]);
 
         return (a, b);
+    }
+
+    private static IEnumerable<decimal> PrepareMultipleNumericArgs(ExpressionValue[] args)
+    {
+        return args.Select(arg => PrepareNumericArg(arg))
+            .Select(x =>
+                !x.HasValue
+                    ? throw new ExpressionEvaluatorTypeErrorException("At least one of the arguments is not a number")
+                    : x.Value
+            );
     }
 
     private static decimal? PrepareNumericArg(ExpressionValue arg)
@@ -882,7 +894,7 @@ public static class ExpressionEvaluator
 
     private static bool LessThan(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareTwoNumericArgs(args);
 
         if (a is null || b is null)
         {
@@ -893,29 +905,47 @@ public static class ExpressionEvaluator
 
     private static string Plus(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
-        a ??= 0;
-        b ??= 0;
-        return (a + b).Value.ToString(CultureInfo.InvariantCulture);
+        var numericArgs = PrepareMultipleNumericArgs(args);
+        return numericArgs.Sum(arg => arg).ToString(CultureInfo.InvariantCulture);
     }
 
     private static string Minus(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
-        if (a is null || b is null)
+        var numericArgs = PrepareMultipleNumericArgs(args);
+        var sum = numericArgs.First();
+        foreach (var arg in numericArgs.Skip(1))
         {
-            throw new ExpressionEvaluatorTypeErrorException(
-                "One or both arguments were null or undefined. Cannot subtract.",
-                ExpressionFunction.minus,
-                args
-            );
+            sum -= arg;
         }
-        return (a - b).Value.ToString(CultureInfo.InvariantCulture);
+
+        return sum.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static string Multiply(ExpressionValue[] args)
+    {
+        var numericArgs = PrepareMultipleNumericArgs(args);
+        var sum = numericArgs.First();
+        foreach (var arg in numericArgs.Skip(1))
+        {
+            sum *= arg;
+        }
+        return sum.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static string Devide(ExpressionValue[] args)
+    {
+        var numericArgs = PrepareMultipleNumericArgs(args);
+        var sum = numericArgs.First();
+        foreach (var arg in numericArgs.Skip(1))
+        {
+            sum /= arg;
+        }
+        return sum.ToString(CultureInfo.InvariantCulture);
     }
 
     private static bool LessThanEq(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareTwoNumericArgs(args);
 
         if (a is null || b is null)
         {
@@ -926,7 +956,7 @@ public static class ExpressionEvaluator
 
     private static bool GreaterThan(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareTwoNumericArgs(args);
 
         if (a is null || b is null)
         {
@@ -937,7 +967,7 @@ public static class ExpressionEvaluator
 
     private static bool GreaterThanEq(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareTwoNumericArgs(args);
 
         if (a is null || b is null)
         {

@@ -1,0 +1,5 @@
+{
+  "name": "Should devide the first argument with the second",
+  "expression": ["devide", 0.1, 0.2],
+  "expects": "0.5"
+}

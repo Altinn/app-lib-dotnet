@@ -1,5 +1,5 @@
 {
-  "name": "Should return 0 when values are null",
+  "name": "Should throw exception when both of the arguments are null",
   "expression": ["plus", null, null],
-  "expects": "0"
+  "expectsFailure": "At least one of the arguments is not a number"
 }

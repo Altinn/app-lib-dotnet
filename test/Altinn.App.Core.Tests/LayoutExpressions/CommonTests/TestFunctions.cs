@@ -212,6 +212,14 @@ public class TestFunctions
     public async Task Minus_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
+    [SharedTest("multiply")]
+    public async Task Multiply_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
+    [SharedTest("devide")]
+    public async Task Devide_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
     [SharedTest("round")]
     public async Task Round_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
@@ -439,7 +447,7 @@ public class TestFunctions
                 Assert.Null(result);
                 break;
             case JsonValueKind.Number:
-                Assert.Equal(test.Expects.GetDouble(), result);
+                Assert.Equal(test.Expects.GetDecimal(), result);
                 break;
             case JsonValueKind.Undefined:
 
