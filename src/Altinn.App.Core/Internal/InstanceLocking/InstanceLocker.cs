@@ -8,7 +8,7 @@ internal sealed partial class InstanceLocker(
     InstanceLockClient client,
     ILogger<InstanceLocker> logger,
     IHttpContextAccessor httpContextAccessor
-) : IAsyncDisposable
+) : IInstanceLocker
 {
     private readonly HttpContext _httpContext =
         httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext cannot be null.");

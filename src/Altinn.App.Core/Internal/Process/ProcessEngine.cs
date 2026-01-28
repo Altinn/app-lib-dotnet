@@ -43,7 +43,7 @@ public class ProcessEngine : IProcessEngine
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IValidationService _validationService;
     private readonly IInstanceClient _instanceClient;
-    private readonly InstanceLocker _instanceLocker;
+    private readonly IInstanceLocker _instanceLocker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -76,7 +76,7 @@ public class ProcessEngine : IProcessEngine
         _logger = logger;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
-        _instanceLocker = serviceProvider.GetRequiredService<InstanceLocker>();
+        _instanceLocker = serviceProvider.GetRequiredService<IInstanceLocker>();
     }
 
     /// <inheritdoc/>
