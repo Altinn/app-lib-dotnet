@@ -220,6 +220,10 @@ public class TestFunctions
     public async Task Devide_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     [Theory]
+    [SharedTest("average")]
+    public async Task Average_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+
+    [Theory]
     [SharedTest("round")]
     public async Task Round_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 

@@ -1,0 +1,5 @@
+{
+  "name": "Should devide the first argument multiple times",
+  "expression": ["devide", 0.1, 0.2, 15, 1.50],
+  "expects": "4.2"
+}

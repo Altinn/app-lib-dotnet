@@ -132,6 +132,7 @@ public static class ExpressionEvaluator
             ExpressionFunction.minus => Minus(args),
             ExpressionFunction.multiply => Multiply(args),
             ExpressionFunction.devide => Devide(args),
+            ExpressionFunction.average => Average(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
@@ -941,6 +942,17 @@ public static class ExpressionEvaluator
             sum /= arg;
         }
         return sum.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static string Average(ExpressionValue[] args)
+    {
+        var numericArgs = PrepareMultipleNumericArgs(args);
+        var sum = 0m;
+        foreach (var arg in numericArgs)
+        {
+            sum += arg;
+        }
+        return (sum / numericArgs.Count()).ToString(CultureInfo.InvariantCulture);
     }
 
     private static bool LessThanEq(ExpressionValue[] args)

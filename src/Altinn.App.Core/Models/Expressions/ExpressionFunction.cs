@@ -207,22 +207,27 @@ public enum ExpressionFunction
     text,
 
     /// <summary>
-    /// Adding two numbers. Use a period (.) as the decimals separator. Must be numeric values.
+    /// Adding numbers. Use a period (.) as the decimals separator. Must be numeric values.
     /// </summary>
     plus,
 
     /// <summary>
-    /// Subtracting a value from another. Use a period (.) as the decimals separator. Must be numeric values.
+    /// Subtracting all preceding values from the first. Use a period (.) as the decimals separator. Must be numeric values.
     /// </summary>
     minus,
 
     /// <summary>
-    /// Multiplying two numbers. Use a period (.) as the decimals separator. Must be numeric values.
+    /// Multiplying numbers. Use a period (.) as the decimals separator. Must be numeric values.
     /// </summary>
     multiply,
 
     /// <summary>
-    /// Devide two numbers. Use a period (.) as the decimals separator. Must be numeric values.
+    /// Devide numbers. Use a period (.) as the decimals separator. Must be numeric values.
     /// </summary>
     devide,
+
+    /// <summary>
+    /// Calculate the average of all values. Use a period (.) as the decimals separator. Must be numeric values.
+    /// </summary>
+    average,
 }

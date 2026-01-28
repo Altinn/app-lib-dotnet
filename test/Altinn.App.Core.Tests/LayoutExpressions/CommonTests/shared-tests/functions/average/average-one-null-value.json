@@ -1,0 +1,5 @@
+{
+  "name": "Should throw exception when one of the arguments is null",
+  "expression": ["average", null, 2.1],
+  "expectsFailure": "At least one of the arguments is not a number"
+}

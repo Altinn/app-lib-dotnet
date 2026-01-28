@@ -1,0 +1,5 @@
+{
+  "name": "Should add multiple arguments",
+  "expression": ["plus", 0.1, 0.2, 15, 1.50],
+  "expects": "16.8"
+}
