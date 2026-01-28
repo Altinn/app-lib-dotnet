@@ -6,6 +6,7 @@ using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Utils;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Constants;
+using Altinn.App.Core.Internal.WorkflowEngine.Http;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -333,16 +334,14 @@ public class ApiTestBase
     protected static void ConfigureInProcessProcessEngineClient(IServiceCollection services)
     {
         // Remove ALL registrations of IProcessEngineClient (AddHttpClient registers multiple descriptors)
-        services.RemoveAll<Altinn.App.Core.Internal.ProcessEngine.Http.IProcessEngineClient>();
+        services.RemoveAll<IProcessEngineClient>();
 
         // Add the in-process implementation as singleton to ensure it's resolved correctly
-        services.AddSingleton<Altinn.App.Core.Internal.ProcessEngine.Http.IProcessEngineClient>(
-            sp => new InProcessProcessEngineClient(
-                sp,
-                sp.GetRequiredService<Altinn.App.Core.Internal.Instances.IInstanceClient>(),
-                sp.GetRequiredService<Altinn.App.Core.Internal.Data.InstanceDataUnitOfWorkInitializer>()
-            )
-        );
+        services.AddSingleton<IProcessEngineClient>(sp => new InProcessProcessEngineClient(
+            sp,
+            sp.GetRequiredService<Altinn.App.Core.Internal.Instances.IInstanceClient>(),
+            sp.GetRequiredService<Altinn.App.Core.Internal.Data.InstanceDataUnitOfWorkInitializer>()
+        ));
 
         // Mock the events client since it calls external services
         var eventsClientMock = new Mock<Altinn.App.Core.Internal.Events.IEventsClient>();

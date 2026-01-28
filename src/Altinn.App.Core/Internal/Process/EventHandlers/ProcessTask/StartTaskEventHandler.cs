@@ -53,10 +53,12 @@ public class StartTaskEventHandler : IStartTaskEventHandler
         Dictionary<string, string>? prefill
     )
     {
-        var handlers = _appImplementationFactory.GetAll<IProcessTaskStart>();
+#pragma warning disable CS0618 // Type or member is obsolete
+        IEnumerable<IProcessTaskStart> handlers = _appImplementationFactory.GetAll<IProcessTaskStart>();
         foreach (IProcessTaskStart processTaskStarts in handlers)
         {
             await processTaskStarts.Start(taskId, instance, prefill ?? []);
         }
+#pragma warning restore CS0618 // Type or member is obsolete
     }
 }

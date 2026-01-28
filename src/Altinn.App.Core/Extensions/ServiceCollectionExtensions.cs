@@ -51,14 +51,13 @@ using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
-using Altinn.App.Core.Internal.ProcessEngine;
-using Altinn.App.Core.Internal.ProcessEngine.Commands;
-using Altinn.App.Core.Internal.ProcessEngine.Http;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
+using Altinn.App.Core.Internal.WorkflowEngine.Caching;
+using Altinn.App.Core.Internal.WorkflowEngine.DependencyInjection;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Configuration;
 using Altinn.Common.AccessTokenClient.Services;
@@ -213,6 +212,7 @@ public static class ServiceCollectionExtensions
         AddEventServices(services);
         AddNotificationServices(services);
         AddProcessServices(services);
+        services.AddWorkflowEngineIntegration();
         services.AddProcessingSessionCache(configuration);
         AddFileAnalyserServices(services);
         AddFileValidatorServices(services);
@@ -369,48 +369,6 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
         services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
         services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
-
-        // Process engine callback helpers
-        services.AddTransient<ProcessTaskResolver>();
-        services.AddTransient<ProcessNextRequestFactory>();
-        services.AddHttpClient<IProcessEngineClient, ProcessEngineClient>();
-
-        // Process engine callback handlers - TaskStart
-        services.AddTransient<IProcessEngineCommand, CommonTaskInitialization>();
-        services.AddTransient<IProcessEngineCommand, ProcessTaskStart>();
-        services.AddTransient<IProcessEngineCommand, OnTaskStartingHook>();
-        services.AddTransient<IProcessEngineCommand, ProcessTaskStartLegacyHook>();
-        services.AddTransient<IProcessEngineCommand, UnlockTaskData>();
-
-        // Process engine callback handlers - TaskAbandon
-        services.AddTransient<IProcessEngineCommand, ProcessTaskAbandon>();
-        services.AddTransient<IProcessEngineCommand, OnTaskAbandonHook>();
-        services.AddTransient<IProcessEngineCommand, AbandonTaskLegacyHook>();
-
-        // Process engine callback handlers - TaskEnd
-        services.AddTransient<IProcessEngineCommand, CommonTaskFinalization>();
-        services.AddTransient<IProcessEngineCommand, ProcessTaskEnd>();
-        services.AddTransient<IProcessEngineCommand, OnTaskEndingHook>();
-        services.AddTransient<IProcessEngineCommand, EndTaskLegacyHook>();
-        services.AddTransient<IProcessEngineCommand, LockTaskData>();
-
-        // Process engine callback handlers - ServiceTask
-        services.AddTransient<IProcessEngineCommand, ExecuteServiceTask>();
-
-        // Process engine callback handlers - ProcessEnd
-        services.AddTransient<IProcessEngineCommand, OnProcessEndingHook>();
-        services.AddTransient<IProcessEngineCommand, ProcessEndLegacyHook>();
-
-        // Process engine callback handlers - State Management
-        services.AddTransient<IProcessEngineCommand, UpdateProcessState>();
-
-        // Process engine callback handlers - Altinn Events
-        services.AddTransient<IProcessEngineCommand, CompletedAltinnEvent>();
-        services.AddTransient<IProcessEngineCommand, InstanceCreatedAltinnEvent>();
-        services.AddTransient<IProcessEngineCommand, MovedToAltinnEvent>();
-
-        // Validate all commands are registered
-        ProcessEngineCommandValidator.Validate(services);
 
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();

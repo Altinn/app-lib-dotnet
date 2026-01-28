@@ -1,8 +1,8 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
-using Altinn.App.Core.Internal.ProcessEngine.Commands;
-using Altinn.App.Core.Internal.ProcessEngine.Http;
+using Altinn.App.Core.Internal.WorkflowEngine.Commands;
+using Altinn.App.Core.Internal.WorkflowEngine.Http;
 using Altinn.App.Core.Models;
 using Altinn.App.ProcessEngine.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -122,8 +122,8 @@ internal sealed class InProcessProcessEngineClient : IProcessEngineClient
     {
         string commandKey = appCommand.CommandKey;
 
-        IProcessEngineCommand? command = _serviceProvider
-            .GetServices<IProcessEngineCommand>()
+        IWorkflowEngineCommand? command = _serviceProvider
+            .GetServices<IWorkflowEngineCommand>()
             .FirstOrDefault(x => x.GetKey() == commandKey);
 
         if (command is null)
