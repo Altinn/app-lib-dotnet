@@ -1,0 +1,17 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Altinn ProcessEngine",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "altinn_processengine",
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "SharedWithUsers": true,
+      "Shared": false,
+      "BGColor": "#ffffff",
+      "FGColor": "#000000"
+    }
+  }
+}

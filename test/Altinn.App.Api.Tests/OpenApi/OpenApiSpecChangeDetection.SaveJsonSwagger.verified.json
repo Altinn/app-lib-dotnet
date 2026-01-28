@@ -5137,6 +5137,97 @@
         }
       }
     },
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/process-engine-callback/{commandKey}": {
+      "post": {
+        "tags": [
+          "ProcessEngineCallback"
+        ],
+        "summary": "Executes a command based on the provided command key.",
+        "parameters": [
+          {
+            "name": "org",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "instanceOwnerPartyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "instanceGuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "commandKey",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            },
+            "application/xml": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            },
+            "text/xml": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            },
+            "application/*+xml": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/{org}/{app}/api/v1/profile/user": {
       "get": {
         "tags": [
@@ -9832,6 +9923,44 @@
             "$ref": "#/components/schemas/ValidationStatus"
           },
           "flowType": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessEngineActor": {
+        "required": [
+          "userIdOrOrgNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "userIdOrOrgNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessEngineAppCallbackPayload": {
+        "required": [
+          "actor",
+          "commandKey"
+        ],
+        "type": "object",
+        "properties": {
+          "commandKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "actor": {
+            "$ref": "#/components/schemas/ProcessEngineActor"
+          },
+          "metadata": {
             "type": "string",
             "nullable": true
           }

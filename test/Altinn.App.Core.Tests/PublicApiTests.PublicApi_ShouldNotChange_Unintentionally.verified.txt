@@ -1305,10 +1305,14 @@ namespace Altinn.App.Core.Features
     {
         System.Threading.Tasks.Task Abandon(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
     }
+    [System.Obsolete("Use IOnTaskEndingHandler hook interface instead. This interface will be removed i" +
+        "n a future release.")]
     public interface IProcessTaskEnd
     {
         System.Threading.Tasks.Task End(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
     }
+    [System.Obsolete("Use IOnTaskStartingHandler hook interface instead. This interface will be removed" +
+        " in a future release.")]
     public interface IProcessTaskStart
     {
         System.Threading.Tasks.Task Start(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill);
@@ -1937,6 +1941,150 @@ namespace Altinn.App.Core.Features.Pdf
     {
         public NullPdfFormatter() { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.LayoutSettings> FormatPdf(Altinn.App.Core.Models.LayoutSettings layoutSettings, object data) { }
+    }
+}
+namespace Altinn.App.Core.Features.Process
+{
+    public sealed class FailedOnProcessEndingHandlerResult : Altinn.App.Core.Features.Process.OnProcessEndingHandlerResult
+    {
+        public FailedOnProcessEndingHandlerResult(System.Exception exception) { }
+        public FailedOnProcessEndingHandlerResult(string errorMessage, string? exceptionType = null) { }
+        public string ErrorMessage { get; }
+        public string? ExceptionType { get; }
+    }
+    public sealed class FailedOnTaskAbandonHandlerResult : Altinn.App.Core.Features.Process.OnAbandonHandlerResult
+    {
+        public FailedOnTaskAbandonHandlerResult(System.Exception exception) { }
+        public FailedOnTaskAbandonHandlerResult(string errorMessage, string? exceptionType = null) { }
+        public string ErrorMessage { get; }
+        public string? ExceptionType { get; }
+    }
+    public sealed class FailedOnTaskEndingHandlerResult : Altinn.App.Core.Features.Process.OnEndingHandlerResult
+    {
+        public FailedOnTaskEndingHandlerResult(System.Exception exception) { }
+        public FailedOnTaskEndingHandlerResult(string errorMessage, string? exceptionType = null) { }
+        public string ErrorMessage { get; }
+        public string? ExceptionType { get; }
+    }
+    public sealed class FailedOnTaskStartingHandlerResult : Altinn.App.Core.Features.Process.OnTaskStartingHandlerResult
+    {
+        public FailedOnTaskStartingHandlerResult(System.Exception exception) { }
+        public FailedOnTaskStartingHandlerResult(string errorMessage, string? exceptionType = null) { }
+        public string ErrorMessage { get; }
+        public string? ExceptionType { get; }
+    }
+    public abstract class HookResult
+    {
+        protected HookResult() { }
+    }
+    public interface IOnProcessEndingHandler
+    {
+        System.Threading.Tasks.Task<Altinn.App.Core.Features.Process.OnProcessEndingHandlerResult> ExecuteAsync(Altinn.App.Core.Features.Process.OnProcessEndingHandlerContext context);
+    }
+    public interface IOnTaskAbandonHandler
+    {
+        System.Threading.Tasks.Task<Altinn.App.Core.Features.Process.OnAbandonHandlerResult> ExecuteAsync(Altinn.App.Core.Features.Process.OnTaskAbandonHandlerContext context);
+        bool ShouldRunForTask(string taskId);
+    }
+    public interface IOnTaskEndingHandler
+    {
+        System.Threading.Tasks.Task<Altinn.App.Core.Features.Process.OnEndingHandlerResult> ExecuteAsync(Altinn.App.Core.Features.Process.OnTaskEndingHandlerContext context);
+        bool ShouldRunForTask(string taskId);
+    }
+    public interface IOnTaskStartingHandler
+    {
+        System.Threading.Tasks.Task<Altinn.App.Core.Features.Process.OnTaskStartingHandlerResult> ExecuteAsync(Altinn.App.Core.Features.Process.OnTaskStartingContext context);
+        bool ShouldRunForTask(string taskId);
+    }
+    public interface IServiceTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask
+    {
+        System.Threading.Tasks.Task<Altinn.App.Core.Features.Process.ServiceTaskResult> Execute(Altinn.App.Core.Features.Process.ServiceTaskContext context);
+    }
+    public abstract class OnAbandonHandlerResult : Altinn.App.Core.Features.Process.HookResult
+    {
+        protected OnAbandonHandlerResult() { }
+    }
+    public abstract class OnEndingHandlerResult : Altinn.App.Core.Features.Process.HookResult
+    {
+        protected OnEndingHandlerResult() { }
+    }
+    public sealed class OnProcessEndingHandlerContext
+    {
+        public OnProcessEndingHandlerContext() { }
+        public required Altinn.App.Core.Features.IInstanceDataMutator InstanceDataMutator { get; init; }
+    }
+    public abstract class OnProcessEndingHandlerResult : Altinn.App.Core.Features.Process.HookResult
+    {
+        protected OnProcessEndingHandlerResult() { }
+    }
+    public sealed class OnTaskAbandonHandlerContext
+    {
+        public OnTaskAbandonHandlerContext() { }
+        public required Altinn.App.Core.Features.IInstanceDataMutator InstanceDataMutator { get; init; }
+    }
+    public sealed class OnTaskEndingHandlerContext
+    {
+        public OnTaskEndingHandlerContext() { }
+        public required Altinn.App.Core.Features.IInstanceDataMutator InstanceDataMutator { get; init; }
+    }
+    public sealed class OnTaskStartingContext
+    {
+        public OnTaskStartingContext() { }
+        public required Altinn.App.Core.Features.IInstanceDataMutator InstanceDataMutator { get; init; }
+    }
+    public abstract class OnTaskStartingHandlerResult : Altinn.App.Core.Features.Process.HookResult
+    {
+        protected OnTaskStartingHandlerResult() { }
+    }
+    public sealed class ServiceTaskContext : System.IEquatable<Altinn.App.Core.Features.Process.ServiceTaskContext>
+    {
+        public ServiceTaskContext() { }
+        public System.Threading.CancellationToken CancellationToken { get; init; }
+        public required Altinn.App.Core.Features.IInstanceDataMutator InstanceDataMutator { get; init; }
+    }
+    public sealed class ServiceTaskErrorHandling : System.IEquatable<Altinn.App.Core.Features.Process.ServiceTaskErrorHandling>
+    {
+        public ServiceTaskErrorHandling(Altinn.App.Core.Features.Process.ServiceTaskErrorStrategy Strategy, string? Action = "reject") { }
+        public string? Action { get; init; }
+        public Altinn.App.Core.Features.Process.ServiceTaskErrorStrategy Strategy { get; init; }
+    }
+    public enum ServiceTaskErrorStrategy
+    {
+        AbortProcessNext = 0,
+        ContinueProcessNext = 1,
+    }
+    public sealed class ServiceTaskFailedResult : Altinn.App.Core.Features.Process.ServiceTaskResult, System.IEquatable<Altinn.App.Core.Features.Process.ServiceTaskFailedResult>
+    {
+        public ServiceTaskFailedResult(Altinn.App.Core.Features.Process.ServiceTaskErrorHandling errorHandling) { }
+        public Altinn.App.Core.Features.Process.ServiceTaskErrorHandling ErrorHandling { get; init; }
+    }
+    public abstract class ServiceTaskResult : System.IEquatable<Altinn.App.Core.Features.Process.ServiceTaskResult>
+    {
+        protected ServiceTaskResult() { }
+        public static Altinn.App.Core.Features.Process.ServiceTaskFailedResult Failed(Altinn.App.Core.Features.Process.ServiceTaskErrorHandling errorHandling) { }
+        public static Altinn.App.Core.Features.Process.ServiceTaskFailedResult FailedAbortProcessNext() { }
+        public static Altinn.App.Core.Features.Process.ServiceTaskFailedResult FailedContinueProcessNext(string? action = "reject") { }
+        public static Altinn.App.Core.Features.Process.ServiceTaskSuccessResult Success() { }
+    }
+    public sealed class ServiceTaskSuccessResult : Altinn.App.Core.Features.Process.ServiceTaskResult, System.IEquatable<Altinn.App.Core.Features.Process.ServiceTaskSuccessResult>
+    {
+        public ServiceTaskSuccessResult() { }
+    }
+    public sealed class SuccessfulOnAbandonHandlerResult : Altinn.App.Core.Features.Process.OnAbandonHandlerResult
+    {
+        public SuccessfulOnAbandonHandlerResult() { }
+    }
+    public sealed class SuccessfulOnEndingHandlerResult : Altinn.App.Core.Features.Process.OnEndingHandlerResult
+    {
+        public SuccessfulOnEndingHandlerResult() { }
+    }
+    public sealed class SuccessfulOnProcessEndingHandlerResult : Altinn.App.Core.Features.Process.OnProcessEndingHandlerResult
+    {
+        public SuccessfulOnProcessEndingHandlerResult() { }
+    }
+    public sealed class SuccessfulOnTaskStartingHandlerResult : Altinn.App.Core.Features.Process.OnTaskStartingHandlerResult
+    {
+        public SuccessfulOnTaskStartingHandlerResult() { }
     }
 }
 namespace Altinn.App.Core.Features.Signing
@@ -3688,7 +3836,7 @@ namespace Altinn.App.Core.Internal.Process
     }
     public interface IProcessEngine
     {
-        Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.IServiceTask? CheckIfServiceTask(string? altinnTaskType);
+        Altinn.App.Core.Features.Process.IServiceTask? CheckIfServiceTask(string? altinnTaskType);
         System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> GenerateProcessStartEvents(Altinn.App.Core.Models.Process.ProcessStartRequest processStartRequest);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> HandleEventsAndUpdateStorage(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events);
         System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Next(Altinn.App.Core.Models.Process.ProcessNextRequest request, System.Threading.CancellationToken ct = default);
@@ -3734,7 +3882,7 @@ namespace Altinn.App.Core.Internal.Process
     public class ProcessEngine : Altinn.App.Core.Internal.Process.IProcessEngine
     {
         public ProcessEngine(Altinn.App.Core.Internal.Process.IProcessReader processReader, Altinn.App.Core.Internal.Process.IProcessNavigator processNavigator, Altinn.App.Core.Internal.Process.IProcessEventHandlerDelegator processEventsDelegator, Altinn.App.Core.Internal.Process.IProcessEventDispatcher processEventDispatcher, Altinn.App.Core.Features.Action.UserActionService userActionService, Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext, System.IServiceProvider serviceProvider, Altinn.App.Core.Internal.Process.IProcessEngineAuthorizer processEngineAuthorizer, Altinn.App.Core.Internal.Validation.IValidationService validationService, Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessEngine> logger, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
-        public Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.IServiceTask? CheckIfServiceTask(string? altinnTaskType) { }
+        public Altinn.App.Core.Features.Process.IServiceTask? CheckIfServiceTask(string? altinnTaskType) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> GenerateProcessStartEvents(Altinn.App.Core.Models.Process.ProcessStartRequest processStartRequest) { }
         public System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> HandleEventsAndUpdateStorage(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Next(Altinn.App.Core.Models.Process.ProcessNextRequest request, System.Threading.CancellationToken ct = default) { }
@@ -3818,8 +3966,11 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
     public interface IProcessTask
     {
         string Type { get; }
+        System.Threading.Tasks.Task Abandon(Altinn.App.Core.Features.IInstanceDataMutator dataMutator);
         System.Threading.Tasks.Task Abandon(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
+        System.Threading.Tasks.Task End(Altinn.App.Core.Features.IInstanceDataMutator dataMutator);
         System.Threading.Tasks.Task End(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
+        System.Threading.Tasks.Task Start(Altinn.App.Core.Features.IInstanceDataMutator dataMutator);
         System.Threading.Tasks.Task Start(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance);
     }
     public interface IProcessTaskCleaner
@@ -3862,47 +4013,6 @@ namespace Altinn.App.Core.Internal.Process.ProcessTasks
     {
         public ProcessTaskInitializer(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessTasks.ProcessTaskInitializer> logger, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.Data.IDataClient dataClient, Altinn.App.Core.Internal.Prefill.IPrefill prefillService, Altinn.App.Core.Internal.AppModel.IAppModel appModel, System.IServiceProvider serviceProvider, Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTaskCleaner processTaskCleaner) { }
         public System.Threading.Tasks.Task Initialize(string taskId, Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill) { }
-    }
-}
-namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks
-{
-    public interface IServiceTask : Altinn.App.Core.Internal.Process.ProcessTasks.IProcessTask
-    {
-        System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult> Execute(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext context);
-    }
-    public sealed class ServiceTaskContext : System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskContext>
-    {
-        public ServiceTaskContext() { }
-        public System.Threading.CancellationToken CancellationToken { get; init; }
-        public required Altinn.App.Core.Features.IInstanceDataMutator InstanceDataMutator { get; init; }
-    }
-    public sealed class ServiceTaskErrorHandling : System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskErrorHandling>
-    {
-        public ServiceTaskErrorHandling(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskErrorStrategy Strategy, string? Action = "reject") { }
-        public string? Action { get; init; }
-        public Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskErrorStrategy Strategy { get; init; }
-    }
-    public enum ServiceTaskErrorStrategy
-    {
-        AbortProcessNext = 0,
-        ContinueProcessNext = 1,
-    }
-    public sealed class ServiceTaskFailedResult : Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult, System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskFailedResult>
-    {
-        public ServiceTaskFailedResult(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskErrorHandling errorHandling) { }
-        public Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskErrorHandling ErrorHandling { get; init; }
-    }
-    public abstract class ServiceTaskResult : System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult>
-    {
-        protected ServiceTaskResult() { }
-        public static Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskFailedResult Failed(Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskErrorHandling errorHandling) { }
-        public static Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskFailedResult FailedAbortProcessNext() { }
-        public static Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskFailedResult FailedContinueProcessNext(string? action = "reject") { }
-        public static Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskSuccessResult Success() { }
-    }
-    public sealed class ServiceTaskSuccessResult : Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskResult, System.IEquatable<Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.ServiceTaskSuccessResult>
-    {
-        public ServiceTaskSuccessResult() { }
     }
 }
 namespace Altinn.App.Core.Internal.Profile

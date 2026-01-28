@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;

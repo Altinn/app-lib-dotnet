@@ -496,6 +496,16 @@ namespace Altinn.App.Api.Controllers
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(409)]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Core.Internal.Process.Elements.AppProcessState>> StartProcess([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid, [Microsoft.AspNetCore.Mvc.FromQuery] string? startEvent = null) { }
     }
+    [Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes="ApiKeyScheme")]
+    [Microsoft.AspNetCore.Mvc.ApiController]
+    [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engi" +
+        "ne-callback")]
+    public class ProcessEngineCallbackController : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        public ProcessEngineCallbackController(System.IServiceProvider serviceProvider, Altinn.App.Core.Infrastructure.Clients.Storage.InstanceClient instanceClient, Microsoft.Extensions.Logging.ILogger<Altinn.App.Api.Controllers.ProcessEngineCallbackController> logger, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
+        [Microsoft.AspNetCore.Mvc.HttpPost("{commandKey}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> ExecuteCommand([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid, [Microsoft.AspNetCore.Mvc.FromRoute] string commandKey, [Microsoft.AspNetCore.Mvc.FromBody] Altinn.App.ProcessEngine.Models.ProcessEngineAppCallbackPayload payload, System.Threading.CancellationToken cancellationToken) { }
+    }
     [Microsoft.AspNetCore.Authorization.Authorize]
     [Microsoft.AspNetCore.Mvc.ApiController]
     [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/api/v1/profile")]

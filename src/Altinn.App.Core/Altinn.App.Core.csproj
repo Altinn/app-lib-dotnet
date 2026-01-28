@@ -45,6 +45,7 @@
   <ItemGroup>
     <!-- Internal analyzers are for analysis of _our_ code, so we reference this project as an analyzer (it's a build-time dep) -->
     <ProjectReference Include="../Altinn.App.Internal.Analyzers/Altinn.App.Internal.Analyzers.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+    <ProjectReference Include="..\Altinn.App.ProcessEngine\Altinn.App.ProcessEngine.csproj" />
   </ItemGroup>
 
   <ItemGroup>

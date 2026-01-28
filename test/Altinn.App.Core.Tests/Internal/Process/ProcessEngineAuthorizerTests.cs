@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
+using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
