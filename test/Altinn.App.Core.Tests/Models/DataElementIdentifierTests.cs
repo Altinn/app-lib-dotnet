@@ -1,7 +1,7 @@
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.PlatformServices.Tests.Models;
+namespace Altinn.App.Core.Tests.Models;
 
 public class DataElementIdentifierTests
 {
