@@ -55,14 +55,15 @@ public readonly struct DataElementIdentifier : IEquatable<DataElementIdentifier>
     /// <summary>
     /// Implicit conversion to allow DataElements to be used as DataElementIds
     /// </summary>
-    public static implicit operator DataElementIdentifier(DataElement dataElement) => new(dataElement);
+    public static implicit operator DataElementIdentifier(DataElement dataElement) =>
+        dataElement is null ? throw new ArgumentNullException(nameof(dataElement)) : new(dataElement);
 
     /// <summary>
     /// Implicit conversion to allow DataElements to be used as DataElementIds,
     /// but accept and return null values
     /// </summary>
     public static implicit operator DataElementIdentifier?(DataElement? dataElement) =>
-        dataElement is null ? default : new(dataElement);
+        dataElement is null ? null : new(dataElement);
 
     /// <summary>
     /// Make the ToString method return the ID
