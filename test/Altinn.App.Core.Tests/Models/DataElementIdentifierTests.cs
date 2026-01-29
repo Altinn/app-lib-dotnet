@@ -47,11 +47,13 @@ public class DataElementIdentifierTests
     }
 
     [Fact]
-    public void DataElementIdentifier_FromNullDataElement_ShouldThrowArgumentNullException()
+    public void DataElementIdentifier_FromNullDataElement_ShouldThrowNullReferenceException()
     {
         DataElement? dataElement = null;
 
-        Assert.Throws<ArgumentNullException>(() =>
+        // The non-nullable implicit operator doesn't guard against null input,
+        // so it throws NullReferenceException when accessing dataElement.Id
+        Assert.Throws<NullReferenceException>(() =>
         {
             DataElementIdentifier identifier = dataElement!;
         });
