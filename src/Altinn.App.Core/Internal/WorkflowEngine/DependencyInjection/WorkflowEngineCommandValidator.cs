@@ -3,7 +3,7 @@ using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.ProcessEngine.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Altinn.App.Core.Internal.WorkflowEngine;
+namespace Altinn.App.Core.Internal.WorkflowEngine.DependencyInjection;
 
 /// <summary>
 /// Validates that all process engine commands referenced in ProcessEventCommands are registered in DI.
