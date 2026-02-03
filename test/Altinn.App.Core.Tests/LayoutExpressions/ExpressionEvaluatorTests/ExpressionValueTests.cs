@@ -73,7 +73,9 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
     [Theory]
     [InlineData(double.MaxValue)]
     [InlineData(float.MaxValue)]
-    public void FromObject_MaxValue_ThrowsExpressionEvaluatorTypeErrorException(object obj)
+    [InlineData(double.MinValue)]
+    [InlineData(float.MinValue)]
+    public void FromObject_FloatingPointMaxAndMinValue_ThrowsExpressionEvaluatorTypeErrorException(object obj)
     {
         var exception = Assert.Throws<ExpressionEvaluatorTypeErrorException>(() => ExpressionValue.FromObject(obj));
         Assert.Contains("Cannot convert non-finite or out-of-range number to decimal: ", exception.Message);
@@ -82,7 +84,7 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
     [Theory]
     [InlineData(Double.NaN)]
     [InlineData(Single.NaN)]
-    public void FromObject_Nan_ThrowsExpressionEvaluatorTypeErrorException(Object obj)
+    public void FromObject_FloatingPointNan_ThrowsExpressionEvaluatorTypeErrorException(object obj)
     {
         var exception = Assert.Throws<ExpressionEvaluatorTypeErrorException>(() => ExpressionValue.FromObject(obj));
         Assert.Equal($"Cannot convert non-finite or out-of-range number to decimal: {obj}", exception.Message);
@@ -93,7 +95,7 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
     [InlineData(Double.PositiveInfinity)]
     [InlineData(Single.NegativeInfinity)]
     [InlineData(Single.PositiveInfinity)]
-    public void FromObject_Infinite_ThrowsExpressionEvaluatorTypeErrorException(Object obj)
+    public void FromObject_FloatingPointInfinite_ThrowsExpressionEvaluatorTypeErrorException(object obj)
     {
         var exception = Assert.Throws<ExpressionEvaluatorTypeErrorException>(() => ExpressionValue.FromObject(obj));
         Assert.Equal($"Cannot convert non-finite or out-of-range number to decimal: {obj}", exception.Message);
