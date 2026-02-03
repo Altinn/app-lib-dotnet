@@ -928,6 +928,10 @@ public static class ExpressionEvaluator
 
     private static decimal Multiply(ExpressionValue[] args)
     {
+        if (args.Length <= 1)
+        {
+            throw new ExpressionEvaluatorTypeErrorException("At least two arguments must be provided");
+        }
         var numericArgs = PrepareMultipleNumericArgs(args).ToList();
         var sum = numericArgs.First();
         foreach (var arg in numericArgs.Skip(1))
@@ -960,9 +964,9 @@ public static class ExpressionEvaluator
 
     private static decimal Average(ExpressionValue[] args)
     {
-        if (args.Length == 0)
+        if (args.Length <= 1)
         {
-            throw new ExpressionEvaluatorTypeErrorException("At least one argument must be provided");
+            throw new ExpressionEvaluatorTypeErrorException("At least two arguments must be provided");
         }
         var numericArgs = PrepareMultipleNumericArgs(args).ToList();
         var sum = 0m;

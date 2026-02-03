@@ -1,5 +1,5 @@
 {
   "name": "Should throw exception when less than two arguments are provided",
-  "expression": ["divide", 2.1],
+  "expression": ["average", 0.1],
   "expectsFailure": "At least two arguments must be provided"
 }

@@ -131,8 +131,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             null => Null,
             bool boolValue => boolValue,
             string stringValue => stringValue,
-            float numberValue => (decimal?)numberValue, // expressions uses decimal which needs an explicit cast
-            double numberValue => (decimal?)numberValue, // expressions uses decimal which needs an explicit cast
+            float numberValue => ValidateAndCastFloatingPoint(numberValue), // expressions uses decimal which needs an explicit cast
+            double numberValue => ValidateAndCastFloatingPoint(numberValue), // expressions uses decimal which needs an explicit cast
             byte numberValue => numberValue,
             sbyte numberValue => numberValue,
             short numberValue => numberValue,
@@ -586,6 +586,23 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             || type == typeof(ulong)
             || type == typeof(ushort)
             || type == typeof(sbyte);
+    }
+
+    private static decimal? ValidateAndCastFloatingPoint(double value)
+    {
+        if (
+            double.IsNaN(value)
+            || double.IsInfinity(value)
+            || value > (double)decimal.MaxValue
+            || value < (double)decimal.MinValue
+        )
+        {
+            throw new ExpressionEvaluatorTypeErrorException(
+                $"Cannot convert non-finite or out-of-range number to decimal: {value}"
+            );
+        }
+
+        return (decimal?)value;
     }
 }
 

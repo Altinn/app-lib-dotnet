@@ -1,5 +1,0 @@
-{
-  "name": "Should throw exception when no arguments are provided",
-  "expression": ["average"],
-  "expectsFailure": "At least one argument must be provided"
-}
