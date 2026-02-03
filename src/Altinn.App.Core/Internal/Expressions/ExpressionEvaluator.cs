@@ -877,7 +877,7 @@ public static class ExpressionEvaluator
         );
     }
 
-    private static readonly Regex _numberRegex = new Regex(@"^-?\d+(\.\d+)?$");
+    private static readonly Regex _numberRegex = new(@"^-?\d+(\.\d+)?$");
 
     internal static decimal? ParseNumber(string s, bool throwException = true)
     {
@@ -904,17 +904,17 @@ public static class ExpressionEvaluator
         return a < b; // Actual implementation
     }
 
-    private static string Plus(ExpressionValue[] args)
+    private static decimal Plus(ExpressionValue[] args)
     {
         var numericArgs = PrepareMultipleNumericArgs(args);
-        return numericArgs.Sum(arg => arg).ToString(CultureInfo.InvariantCulture);
+        return numericArgs.Sum(arg => arg);
     }
 
-    private static string Minus(ExpressionValue[] args)
+    private static decimal Minus(ExpressionValue[] args)
     {
         if (args.Length == 0)
         {
-            return "0";
+            return 0;
         }
         var numericArgs = PrepareMultipleNumericArgs(args).ToList();
         var sum = numericArgs.First();
@@ -923,10 +923,10 @@ public static class ExpressionEvaluator
             sum -= arg;
         }
 
-        return sum.ToString(CultureInfo.InvariantCulture);
+        return sum;
     }
 
-    private static string Multiply(ExpressionValue[] args)
+    private static decimal Multiply(ExpressionValue[] args)
     {
         var numericArgs = PrepareMultipleNumericArgs(args).ToList();
         var sum = numericArgs.First();
@@ -934,10 +934,10 @@ public static class ExpressionEvaluator
         {
             sum *= arg;
         }
-        return sum.ToString(CultureInfo.InvariantCulture);
+        return sum;
     }
 
-    private static string Divide(ExpressionValue[] args)
+    private static decimal Divide(ExpressionValue[] args)
     {
         if (args.Length <= 1)
         {
@@ -955,10 +955,10 @@ public static class ExpressionEvaluator
         {
             sum /= arg;
         }
-        return sum.ToString(CultureInfo.InvariantCulture);
+        return sum;
     }
 
-    private static string Average(ExpressionValue[] args)
+    private static decimal Average(ExpressionValue[] args)
     {
         if (args.Length == 0)
         {
@@ -970,7 +970,7 @@ public static class ExpressionEvaluator
         {
             sum += arg;
         }
-        return (sum / numericArgs.Count).ToString(CultureInfo.InvariantCulture);
+        return sum / numericArgs.Count;
     }
 
     private static bool LessThanEq(ExpressionValue[] args)
