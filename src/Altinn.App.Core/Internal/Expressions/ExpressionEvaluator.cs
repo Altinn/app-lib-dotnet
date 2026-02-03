@@ -912,7 +912,11 @@ public static class ExpressionEvaluator
 
     private static string Minus(ExpressionValue[] args)
     {
-        var numericArgs = PrepareMultipleNumericArgs(args);
+        if (args.Length == 0)
+        {
+            return "0";
+        }
+        var numericArgs = PrepareMultipleNumericArgs(args).ToList();
         var sum = numericArgs.First();
         foreach (var arg in numericArgs.Skip(1))
         {
@@ -924,7 +928,7 @@ public static class ExpressionEvaluator
 
     private static string Multiply(ExpressionValue[] args)
     {
-        var numericArgs = PrepareMultipleNumericArgs(args);
+        var numericArgs = PrepareMultipleNumericArgs(args).ToList();
         var sum = numericArgs.First();
         foreach (var arg in numericArgs.Skip(1))
         {
@@ -935,7 +939,17 @@ public static class ExpressionEvaluator
 
     private static string Divide(ExpressionValue[] args)
     {
-        var numericArgs = PrepareMultipleNumericArgs(args);
+        if (args.Length <= 1)
+        {
+            throw new ExpressionEvaluatorTypeErrorException("At least two arguments must be provided");
+        }
+        var numericArgs = PrepareMultipleNumericArgs(args).ToList();
+        if (numericArgs.Skip(1).Any(arg => arg == 0))
+        {
+            throw new ExpressionEvaluatorTypeErrorException(
+                "At least one of the arguments after the first is 0, cannot divide by 0"
+            );
+        }
         var sum = numericArgs.First();
         foreach (var arg in numericArgs.Skip(1))
         {
@@ -946,13 +960,17 @@ public static class ExpressionEvaluator
 
     private static string Average(ExpressionValue[] args)
     {
-        var numericArgs = PrepareMultipleNumericArgs(args);
+        if (args.Length == 0)
+        {
+            throw new ExpressionEvaluatorTypeErrorException("At least one argument must be provided");
+        }
+        var numericArgs = PrepareMultipleNumericArgs(args).ToList();
         var sum = 0m;
         foreach (var arg in numericArgs)
         {
             sum += arg;
         }
-        return (sum / numericArgs.Count()).ToString(CultureInfo.InvariantCulture);
+        return (sum / numericArgs.Count).ToString(CultureInfo.InvariantCulture);
     }
 
     private static bool LessThanEq(ExpressionValue[] args)

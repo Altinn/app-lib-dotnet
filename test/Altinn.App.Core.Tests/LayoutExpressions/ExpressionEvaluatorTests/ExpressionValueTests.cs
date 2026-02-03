@@ -55,19 +55,19 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
     }
 
     [Fact]
-    public void TestDouble()
+    public void TestDecimal()
     {
-        decimal doubleValue = 123.456m;
-        ExpressionValue value = doubleValue;
-        Assert.Equal(doubleValue, value.ToObject());
-        Assert.Equal(doubleValue, value.Number);
+        decimal decimalValue = 123.456m;
+        ExpressionValue value = decimalValue;
+        Assert.Equal(decimalValue, value.ToObject());
+        Assert.Equal(decimalValue, value.Number);
 
-        value = ExpressionValue.FromObject(doubleValue);
-        Assert.Equal(doubleValue, value.ToObject());
+        value = ExpressionValue.FromObject(decimalValue);
+        Assert.Equal(decimalValue, value.ToObject());
 
-        Assert.Equal(doubleValue.ToString(CultureInfo.InvariantCulture), value.ToString());
+        Assert.Equal(decimalValue.ToString(CultureInfo.InvariantCulture), value.ToString());
         Assert.Throws<NotImplementedException>(() => value.GetHashCode());
-        // Assert.Equal(doubleValue.GetHashCode(), value.GetHashCode());
+        // Assert.Equal(decimalValue.GetHashCode(), value.GetHashCode());
     }
 
     [Theory]

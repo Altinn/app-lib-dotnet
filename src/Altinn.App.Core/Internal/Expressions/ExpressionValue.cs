@@ -15,7 +15,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
 {
     private readonly string? _stringValue = null;
 
-    // double is a value type where nullable takes extra space, and we only read it when it should be set
+    // decimal is a value type where nullable takes extra space, and we only read it when it should be set
     private readonly decimal _numberValue = 0;
 
     // private readonly Dictionary<string, ExpressionValue>? _objectValue = null;
@@ -101,7 +101,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     public static implicit operator ExpressionValue(bool? value) => new(value);
 
     /// <summary>
-    /// Convert a nullable double to ExpressionValue
+    /// Convert a nullable decimal to ExpressionValue
     /// </summary>
     public static implicit operator ExpressionValue(decimal? value) => new(value);
 
@@ -131,8 +131,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             null => Null,
             bool boolValue => boolValue,
             string stringValue => stringValue,
-            float numberValue => (decimal?)numberValue, // expressions uses double which needs an explicit cast
-            double numberValue => (decimal?)numberValue, // expressions uses double which needs an explicit cast
+            float numberValue => (decimal?)numberValue, // expressions uses decimal which needs an explicit cast
+            double numberValue => (decimal?)numberValue, // expressions uses decimal which needs an explicit cast
             byte numberValue => numberValue,
             sbyte numberValue => numberValue,
             short numberValue => numberValue,
