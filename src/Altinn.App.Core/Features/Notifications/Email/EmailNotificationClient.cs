@@ -39,7 +39,7 @@ internal sealed class EmailNotificationClient : IEmailNotificationClient
 
     public async Task<EmailOrderResponse> Order(EmailNotification emailNotification, CancellationToken ct)
     {
-        using var activity = _telemetry?.StartNotificationOrderActivity(_orderType);
+        using var activity = _telemetry?.StartNotificationOrderActivity(_orderType, emailNotification.SendersReference);
 
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;

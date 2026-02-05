@@ -37,10 +37,11 @@ partial class Telemetry
         );
     }
 
-    internal Activity? StartNotificationOrderActivity(OrderType type)
+    internal Activity? StartNotificationOrderActivity(OrderType type, string sendersReference)
     {
         var activity = ActivitySource.StartActivity("Notifications.Order");
         activity?.SetTag(InternalLabels.Type, type.ToStringFast(useMetadataAttributes: true));
+        activity?.SetTag(Labels.NotificationSendersReference, sendersReference);
         return activity;
     }
 

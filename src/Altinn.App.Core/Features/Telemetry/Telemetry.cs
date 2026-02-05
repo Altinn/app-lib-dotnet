@@ -253,6 +253,11 @@ public sealed partial class Telemetry : IDisposable
         /// Label for the Fiks Message correlation id.
         /// </summary>
         public const string FiksMessageCorrelationId = "fiks.message.correlationId";
+
+        /// <summary>
+        /// Label for notification senders reference.
+        /// </summary>
+        public const string NotificationSendersReference = "notification.sendersReference";
     }
 
     internal static class InternalLabels

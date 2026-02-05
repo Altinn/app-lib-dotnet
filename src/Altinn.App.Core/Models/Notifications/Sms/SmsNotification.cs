@@ -17,7 +17,7 @@ public sealed record SmsNotification
     public required string SenderNumber { get; init; }
 
     /// <summary>
-    /// The phone number to use as sender of the SMS.
+    /// The body of the SMS.
     /// </summary>
     [JsonPropertyName("body")]
     public required string Body { get; init; }
@@ -42,7 +42,8 @@ public sealed record SmsNotification
     }
 
     /// <summary>
-    /// The phone number to use as sender of the SMS.
+    /// The senders reference for the sms.
+    /// Used to track the sms request.
     /// </summary>
     [JsonPropertyName("sendersReference")]
     public required string SendersReference { get; init; }
