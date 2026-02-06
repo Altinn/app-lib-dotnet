@@ -11,6 +11,7 @@ internal record ProcessEngineJobRequest(
     string Key,
     InstanceInformation InstanceInformation,
     ProcessEngineActor Actor,
+    string LockToken,
     IEnumerable<ProcessEngineCommandRequest> Commands
 )
 {

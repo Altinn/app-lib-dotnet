@@ -19,6 +19,12 @@ public sealed record ProcessNextRequest
     public required ClaimsPrincipal User { get; init; }
 
     /// <summary>
+    /// Lock token for distributed caching across HTTP callbacks.
+    /// Used to scope cached Instance and form data to a processing session.
+    /// </summary>
+    public required string LockToken { get; init; }
+
+    /// <summary>
     /// The action that is performed
     /// </summary>
     public required string? Action { get; init; }

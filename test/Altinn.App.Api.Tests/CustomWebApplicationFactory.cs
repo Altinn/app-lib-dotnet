@@ -334,10 +334,10 @@ public class ApiTestBase
     protected static void ConfigureInProcessProcessEngineClient(IServiceCollection services)
     {
         // Remove ALL registrations of IProcessEngineClient (AddHttpClient registers multiple descriptors)
-        services.RemoveAll<IProcessEngineClient>();
+        services.RemoveAll<IWorkflowEngineClient>();
 
         // Add the in-process implementation as singleton to ensure it's resolved correctly
-        services.AddSingleton<IProcessEngineClient>(sp => new InProcessProcessEngineClient(
+        services.AddSingleton<IWorkflowEngineClient>(sp => new InWorkflowWorkflowEngineClient(
             sp,
             sp.GetRequiredService<Altinn.App.Core.Internal.Instances.IInstanceClient>(),
             sp.GetRequiredService<Altinn.App.Core.Internal.Data.InstanceDataUnitOfWorkInitializer>()

@@ -489,16 +489,6 @@ namespace Altinn.App.Api.Controllers
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(409)]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Core.Internal.Process.Elements.AppProcessState>> NextElement([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid, System.Threading.CancellationToken ct, [Microsoft.AspNetCore.Mvc.FromQuery] string? elementId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null, [Microsoft.AspNetCore.Mvc.FromBody] Altinn.App.Api.Models.ProcessNext? processNext = null) { }
     }
-    [Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes="ApiKeyScheme")]
-    [Microsoft.AspNetCore.Mvc.ApiController]
-    [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engi" +
-        "ne-callbacks")]
-    public class ProcessEngineCallbackController : Microsoft.AspNetCore.Mvc.ControllerBase
-    {
-        public ProcessEngineCallbackController(System.IServiceProvider serviceProvider, Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Microsoft.Extensions.Logging.ILogger<Altinn.App.Api.Controllers.ProcessEngineCallbackController> logger, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
-        [Microsoft.AspNetCore.Mvc.HttpPost("{commandKey}")]
-        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> ExecuteCommand([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid, [Microsoft.AspNetCore.Mvc.FromRoute] string commandKey, [Microsoft.AspNetCore.Mvc.FromBody] Altinn.App.ProcessEngine.Models.ProcessEngineAppCallbackPayload payload, System.Threading.CancellationToken cancellationToken) { }
-    }
     [Microsoft.AspNetCore.Authorization.Authorize]
     [Microsoft.AspNetCore.Mvc.ApiController]
     [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/api/v1/profile")]
@@ -709,6 +699,16 @@ namespace Altinn.App.Api.Controllers
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssueWithSource>), 200)]
         [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/validate")]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> ValidateInstance([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid, [Microsoft.AspNetCore.Mvc.FromQuery] string? ignoredValidators = null, [Microsoft.AspNetCore.Mvc.FromQuery] bool? onlyIncrementalValidators = default, [Microsoft.AspNetCore.Mvc.FromQuery] string? language = null) { }
+    }
+    [Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes="ApiKeyScheme")]
+    [Microsoft.AspNetCore.Mvc.ApiController]
+    [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engi" +
+        "ne-callbacks")]
+    public class WorkflowEngineCallbackController : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        public WorkflowEngineCallbackController(System.IServiceProvider serviceProvider, Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Microsoft.Extensions.Logging.ILogger<Altinn.App.Api.Controllers.WorkflowEngineCallbackController> logger, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
+        [Microsoft.AspNetCore.Mvc.HttpPost("{commandKey}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> ExecuteCommand([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid, [Microsoft.AspNetCore.Mvc.FromRoute] string commandKey, [Microsoft.AspNetCore.Mvc.FromBody] Altinn.App.ProcessEngine.Models.ProcessEngineAppCallbackPayload payload, System.Threading.CancellationToken cancellationToken) { }
     }
 }
 namespace Altinn.App.Api.Controllers.Conventions

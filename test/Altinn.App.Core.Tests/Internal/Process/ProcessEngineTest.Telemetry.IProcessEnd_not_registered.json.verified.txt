@@ -11,6 +11,16 @@
       HasParent: true
     },
     {
+      Name: Process.HandleEvents,
+      IdFormat: W3C,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        }
+      ],
+      HasParent: true
+    },
+    {
       Name: Process.Next,
       IdFormat: W3C,
       Status: Ok,
@@ -39,6 +49,16 @@
         }
       ],
       HasParent: false
+    },
+    {
+      Name: Process.StoreEvents,
+      IdFormat: W3C,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        }
+      ],
+      HasParent: true
     }
   ]
 }

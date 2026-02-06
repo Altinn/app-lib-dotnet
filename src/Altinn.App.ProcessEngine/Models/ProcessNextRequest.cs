@@ -32,6 +32,12 @@ public sealed record ProcessNextRequest
     public required IEnumerable<ProcessEngineCommandRequest> Tasks { get; init; }
 
     /// <summary>
+    /// LockToken
+    /// </summary>
+    [JsonPropertyName("lockToken")]
+    public required string LockToken { get; init; }
+
+    /// <summary>
     /// Converts this request to a <see cref="ProcessEngineJobRequest"/> with the provided instance information.
     /// </summary>
     internal ProcessEngineJobRequest ToProcessEngineRequest(InstanceInformation instanceInformation) =>
@@ -39,6 +45,7 @@ public sealed record ProcessNextRequest
             $"{instanceInformation.InstanceGuid}/next/from-{CurrentElementId}-to-{DesiredElementId}",
             instanceInformation,
             Actor,
+            LockToken,
             Tasks
         );
 };

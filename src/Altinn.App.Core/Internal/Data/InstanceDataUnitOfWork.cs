@@ -62,10 +62,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     private static readonly StorageAuthenticationMethod _defaultAuthenticationMethod =
         StorageAuthenticationMethod.CurrentUser();
 
-    // Processing session cache fields
+    // Lock-scoped instance cache fields
     private const int MaxCacheSizeBytes = 1024 * 1024; // 1 MB - don't cache larger files
     private readonly string? _lockToken;
-    private readonly IProcessingSessionCache _sessionCache;
+    private readonly ILockScopedInstanceCache _sessionCache;
 
     public InstanceDataUnitOfWork(
         Instance instance,
@@ -80,7 +80,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         string? language,
         Telemetry? telemetry = null,
         string? lockToken = null,
-        IProcessingSessionCache? sessionCache = null
+        ILockScopedInstanceCache? sessionCache = null
     )
     {
         if (instance.Id is not null)
@@ -103,7 +103,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         _instanceClient = instanceClient;
         _telemetry = telemetry;
         _lockToken = lockToken;
-        _sessionCache = sessionCache ?? NullProcessingSessionCache.Instance;
+        _sessionCache = sessionCache ?? NullLockScopedInstanceCache.Instance;
     }
 
     public Instance Instance { get; }
@@ -227,7 +227,11 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 // 1. Check Redis (cross-request cache)
                 if (_lockToken is not null && shouldCache)
                 {
-                    var cached = await _sessionCache.GetBinaryData(_lockToken, dataElementIdentifier.Guid);
+                    var cached = await _sessionCache.GetBinaryData(
+                        _lockToken,
+                        _instanceGuid,
+                        dataElementIdentifier.Guid
+                    );
                     if (cached.HasValue)
                         return cached.Value;
                 }
@@ -243,7 +247,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 // 3. Populate Redis for subsequent requests (only if small enough)
                 if (_lockToken is not null && shouldCache && data.Length <= MaxCacheSizeBytes)
                 {
-                    await _sessionCache.SetBinaryData(_lockToken, dataElementIdentifier.Guid, data);
+                    await _sessionCache.SetBinaryData(_lockToken, _instanceGuid, dataElementIdentifier.Guid, data);
                 }
 
                 return data;
@@ -640,6 +644,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                     cacheTasks.Add(
                         _sessionCache.SetBinaryData(
                             _lockToken,
+                            _instanceGuid,
                             change.DataElementIdentifier.Guid,
                             change.CurrentBinaryData.Value
                         )
@@ -650,11 +655,13 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             // Remove deleted data elements from Redis
             foreach (var change in changes.FormDataChanges.Where(c => c.Type == ChangeType.Deleted))
             {
-                cacheTasks.Add(_sessionCache.RemoveBinaryData(_lockToken, change.DataElementIdentifier.Guid));
+                cacheTasks.Add(
+                    _sessionCache.RemoveBinaryData(_lockToken, _instanceGuid, change.DataElementIdentifier.Guid)
+                );
             }
 
             // Update Instance in Redis (data element list may have changed)
-            cacheTasks.Add(_sessionCache.SetInstance(_lockToken, Instance));
+            cacheTasks.Add(_sessionCache.SetInstance(_lockToken, _instanceGuid, Instance));
 
             await Task.WhenAll(cacheTasks);
         }

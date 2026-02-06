@@ -260,9 +260,13 @@ namespace Altinn.App.Core.Extensions
     public static class ServiceCollectionExtensions
     {
         public static void AddAppServices(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLockScopedInstanceCache(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration) { }
         public static void AddPlatformServices(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env) { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddProcessingSessionCache(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration) { }
         public static bool IsAdded(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Type serviceType) { }
+    }
+    public static class ServiceCollectionExtensionsTests
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddInMemoryLockScopedInstanceCache(this Microsoft.Extensions.DependencyInjection.IServiceCollection services) { }
     }
     public static class StringExtensions
     {
@@ -4950,6 +4954,7 @@ namespace Altinn.App.Core.Models.Process
         public string? ActionOnBehalfOf { get; set; }
         public required Altinn.Platform.Storage.Interface.Models.Instance Instance { get; init; }
         public required string? Language { get; init; }
+        public required string LockToken { get; init; }
         public required System.Security.Claims.ClaimsPrincipal User { get; init; }
     }
     public class ProcessStartRequest

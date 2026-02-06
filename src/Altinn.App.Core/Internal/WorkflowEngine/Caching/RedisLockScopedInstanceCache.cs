@@ -5,27 +5,31 @@ using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Caching;
 
-internal sealed class RedisProcessingSessionCache : IProcessingSessionCache
+internal sealed class RedisLockScopedInstanceCache : ILockScopedInstanceCache
 {
     private readonly IDistributedCache _cache;
-    private readonly ILogger<RedisProcessingSessionCache> _logger;
+    private readonly ILogger<RedisLockScopedInstanceCache> _logger;
     private readonly TimeSpan _slidingExpiry = TimeSpan.FromMinutes(10);
 
-    public RedisProcessingSessionCache(IDistributedCache cache, ILogger<RedisProcessingSessionCache> logger)
+    public RedisLockScopedInstanceCache(IDistributedCache cache, ILogger<RedisLockScopedInstanceCache> logger)
     {
         _cache = cache;
         _logger = logger;
     }
 
-    private static string InstanceKey(string lockToken) => $"session:{lockToken}:instance";
+    // Key format: lock:{lockToken}:instance:{instanceGuid}:instance
+    // Includes instanceGuid for easier debugging and isolation
+    private static string InstanceKey(string lockToken, Guid instanceGuid) =>
+        $"lock:{lockToken}:instance:{instanceGuid}:instance";
 
-    private static string DataKey(string lockToken, Guid dataElementId) => $"session:{lockToken}:data:{dataElementId}";
+    private static string DataKey(string lockToken, Guid instanceGuid, Guid dataElementId) =>
+        $"lock:{lockToken}:instance:{instanceGuid}:data:{dataElementId}";
 
-    public async Task<Instance?> GetInstance(string lockToken, CancellationToken ct = default)
+    public async Task<Instance?> GetInstance(string lockToken, Guid instanceGuid, CancellationToken ct = default)
     {
         try
         {
-            var key = InstanceKey(lockToken);
+            var key = InstanceKey(lockToken, instanceGuid);
             var bytes = await _cache.GetAsync(key, ct);
             if (bytes is null)
                 return null;
@@ -38,23 +42,38 @@ internal sealed class RedisProcessingSessionCache : IProcessingSessionCache
         catch (JsonException ex)
         {
             // Corrupt data - treat as cache miss, optionally delete
-            _logger.LogWarning(ex, "Failed to deserialize cached Instance for session {LockToken}", lockToken);
-            _ = TryRemove(InstanceKey(lockToken), ct);
+            _logger.LogWarning(
+                ex,
+                "Failed to deserialize cached Instance for lock {LockToken}, instance {InstanceGuid}",
+                lockToken,
+                instanceGuid
+            );
+            _ = TryRemove(InstanceKey(lockToken, instanceGuid), ct);
             return null;
         }
         catch (Exception ex)
         {
             // Redis error - treat as cache miss
-            _logger.LogWarning(ex, "Redis error getting Instance for session {LockToken}", lockToken);
+            _logger.LogWarning(
+                ex,
+                "Redis error getting Instance for lock {LockToken}, instance {InstanceGuid}",
+                lockToken,
+                instanceGuid
+            );
             return null;
         }
     }
 
-    public async Task SetInstance(string lockToken, Instance instance, CancellationToken ct = default)
+    public async Task SetInstance(
+        string lockToken,
+        Guid instanceGuid,
+        Instance instance,
+        CancellationToken ct = default
+    )
     {
         try
         {
-            var key = InstanceKey(lockToken);
+            var key = InstanceKey(lockToken, instanceGuid);
             var bytes = JsonSerializer.SerializeToUtf8Bytes(instance);
             await _cache.SetAsync(
                 key,
@@ -66,19 +85,25 @@ internal sealed class RedisProcessingSessionCache : IProcessingSessionCache
         catch (Exception ex)
         {
             // Redis error - swallow but log
-            _logger.LogWarning(ex, "Redis error setting Instance for session {LockToken}", lockToken);
+            _logger.LogWarning(
+                ex,
+                "Redis error setting Instance for lock {LockToken}, instance {InstanceGuid}",
+                lockToken,
+                instanceGuid
+            );
         }
     }
 
     public async Task<ReadOnlyMemory<byte>?> GetBinaryData(
         string lockToken,
+        Guid instanceGuid,
         Guid dataElementId,
         CancellationToken ct = default
     )
     {
         try
         {
-            var key = DataKey(lockToken, dataElementId);
+            var key = DataKey(lockToken, instanceGuid, dataElementId);
             var bytes = await _cache.GetAsync(key, ct);
             if (bytes is null)
                 return null;
@@ -93,9 +118,10 @@ internal sealed class RedisProcessingSessionCache : IProcessingSessionCache
             // Redis error - treat as cache miss
             _logger.LogWarning(
                 ex,
-                "Redis error getting data {DataElementId} for session {LockToken}",
+                "Redis error getting data {DataElementId} for lock {LockToken}, instance {InstanceGuid}",
                 dataElementId,
-                lockToken
+                lockToken,
+                instanceGuid
             );
             return null;
         }
@@ -103,6 +129,7 @@ internal sealed class RedisProcessingSessionCache : IProcessingSessionCache
 
     public async Task SetBinaryData(
         string lockToken,
+        Guid instanceGuid,
         Guid dataElementId,
         ReadOnlyMemory<byte> data,
         CancellationToken ct = default
@@ -110,7 +137,7 @@ internal sealed class RedisProcessingSessionCache : IProcessingSessionCache
     {
         try
         {
-            var key = DataKey(lockToken, dataElementId);
+            var key = DataKey(lockToken, instanceGuid, dataElementId);
             await _cache.SetAsync(
                 key,
                 data.ToArray(),
@@ -123,18 +150,24 @@ internal sealed class RedisProcessingSessionCache : IProcessingSessionCache
             // Redis error - swallow but log
             _logger.LogWarning(
                 ex,
-                "Redis error setting data {DataElementId} for session {LockToken}",
+                "Redis error setting data {DataElementId} for lock {LockToken}, instance {InstanceGuid}",
                 dataElementId,
-                lockToken
+                lockToken,
+                instanceGuid
             );
         }
     }
 
-    public async Task RemoveBinaryData(string lockToken, Guid dataElementId, CancellationToken ct = default)
+    public async Task RemoveBinaryData(
+        string lockToken,
+        Guid instanceGuid,
+        Guid dataElementId,
+        CancellationToken ct = default
+    )
     {
         try
         {
-            var key = DataKey(lockToken, dataElementId);
+            var key = DataKey(lockToken, instanceGuid, dataElementId);
             await _cache.RemoveAsync(key, ct);
         }
         catch (Exception ex)
@@ -142,14 +175,15 @@ internal sealed class RedisProcessingSessionCache : IProcessingSessionCache
             // Redis error - swallow but log
             _logger.LogWarning(
                 ex,
-                "Redis error removing data {DataElementId} for session {LockToken}",
+                "Redis error removing data {DataElementId} for lock {LockToken}, instance {InstanceGuid}",
                 dataElementId,
-                lockToken
+                lockToken,
+                instanceGuid
             );
         }
     }
 
-    public Task InvalidateSession(string lockToken, CancellationToken ct = default)
+    public Task InvalidateSession(string lockToken, Guid instanceGuid, CancellationToken ct = default)
     {
         // IDistributedCache doesn't support pattern deletion.
         // Rely on sliding expiration TTL for cleanup.

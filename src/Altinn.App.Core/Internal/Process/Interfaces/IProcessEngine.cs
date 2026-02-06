@@ -20,6 +20,8 @@ internal interface IProcessEngine
     Task SubmitInitialProcessState(
         Instance instance,
         ProcessStateChange processStateChange,
+        string lockToken,
+        Dictionary<string, string>? prefill = null,
         CancellationToken ct = default
     );
 

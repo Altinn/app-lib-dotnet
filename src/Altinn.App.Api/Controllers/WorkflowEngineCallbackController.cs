@@ -86,41 +86,16 @@ public class WorkflowEngineCallbackController : ControllerBase
         InstanceDataUnitOfWork instanceDataUnitOfWork;
         string? currentTaskId;
 
-        if (payload.LockToken is not null)
-        {
-            // Use session-aware initialization with caching
-            instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.InitWithSession(
-                appId,
-                instanceId,
-                payload.LockToken,
-                taskId: null, // Will be set from cached instance
-                payload.Actor.Language,
-                StorageAuthenticationMethod.ServiceOwner(),
-                cancellationToken
-            );
-            currentTaskId = instanceDataUnitOfWork.Instance.Process?.CurrentTask?.ElementId;
-        }
-        else
-        {
-            // Fallback to existing behavior
-            Instance instance = await _instanceClient.GetInstance(
-                appId.App,
-                appId.Org,
-                instanceOwnerPartyId,
-                instanceId.InstanceGuid,
-                StorageAuthenticationMethod.ServiceOwner(),
-                cancellationToken
-            );
-
-            currentTaskId = instance.Process?.CurrentTask?.ElementId;
-
-            instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
-                instance,
-                instance.Process?.CurrentTask?.ElementId,
-                payload.Actor.Language,
-                StorageAuthenticationMethod.ServiceOwner()
-            );
-        }
+        instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.InitWithSession(
+            appId,
+            instanceId,
+            payload.LockToken,
+            taskId: null, // Will be set from the cached instance
+            payload.Actor.Language,
+            StorageAuthenticationMethod.ServiceOwner(),
+            cancellationToken
+        );
+        currentTaskId = instanceDataUnitOfWork.Instance.Process?.CurrentTask?.ElementId;
 
         ProcessEngineCommandResult result = await command.Execute(
             new ProcessEngineCommandContext

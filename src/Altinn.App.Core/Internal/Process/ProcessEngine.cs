@@ -44,7 +44,7 @@ internal class ProcessEngine : IProcessEngine
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IValidationService _validationService;
     private readonly ProcessNextRequestFactory _processNextRequestFactory;
-    private readonly IProcessEngineClient _processEngineClient;
+    private readonly IWorkflowEngineClient _workflowEngineClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -57,7 +57,7 @@ internal class ProcessEngine : IProcessEngine
         IServiceProvider serviceProvider,
         IProcessEngineAuthorizer processEngineAuthorizer,
         IValidationService validationService,
-        IProcessEngineClient processEngineClient,
+        IWorkflowEngineClient workflowEngineClient,
         ILogger<ProcessEngine> logger,
         Telemetry? telemetry = null
     )
@@ -70,7 +70,7 @@ internal class ProcessEngine : IProcessEngine
         _processEngineAuthorizer = processEngineAuthorizer;
         _validationService = validationService;
         _logger = logger;
-        _processEngineClient = processEngineClient;
+        _workflowEngineClient = workflowEngineClient;
         _processNextRequestFactory = serviceProvider.GetRequiredService<ProcessNextRequestFactory>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
@@ -147,11 +147,17 @@ internal class ProcessEngine : IProcessEngine
     public async Task SubmitInitialProcessState(
         Instance instance,
         ProcessStateChange processStateChange,
+        string lockToken,
+        Dictionary<string, string>? prefill = null,
         CancellationToken ct = default
     )
     {
-        ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(processStateChange);
-        await _processEngineClient.ProcessNext(instance, processNextRequest, ct);
+        ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(
+            processStateChange,
+            lockToken,
+            prefill
+        );
+        await _workflowEngineClient.ProcessNext(instance, processNextRequest, ct);
         await WaitForEngineResponse(instance, ct);
     }
 
@@ -267,7 +273,7 @@ internal class ProcessEngine : IProcessEngine
             }
         }
 
-        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, processNextAction, ct);
+        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, processNextAction, request.LockToken, ct);
 
         var changeResult = new ProcessChangeResult(mutatedInstance: instance)
         {
@@ -526,6 +532,7 @@ internal class ProcessEngine : IProcessEngine
     private async Task<MoveToNextResult> HandleMoveToNext(
         Instance instance,
         string? action,
+        string lockToken,
         CancellationToken ct = default
     )
     {
@@ -536,8 +543,8 @@ internal class ProcessEngine : IProcessEngine
             return new MoveToNextResult(instance, null);
         }
 
-        ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(processStateChange);
-        await _processEngineClient.ProcessNext(instance, processNextRequest, ct);
+        ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(processStateChange, lockToken);
+        await _workflowEngineClient.ProcessNext(instance, processNextRequest, ct);
 
         await WaitForEngineResponse(instance, ct);
 
@@ -657,7 +664,7 @@ internal class ProcessEngine : IProcessEngine
 
         while (!ct.IsCancellationRequested)
         {
-            ProcessEngineStatusResponse? processStatus = await _processEngineClient.GetActiveJobStatus(instance, ct);
+            ProcessEngineStatusResponse? processStatus = await _workflowEngineClient.GetActiveJobStatus(instance, ct);
 
             if (processStatus is null)
             {

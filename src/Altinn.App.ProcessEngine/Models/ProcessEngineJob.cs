@@ -5,6 +5,7 @@ internal sealed record ProcessEngineJob : ProcessEngineItem
     public required ProcessEngineActor Actor { get; init; }
     public required InstanceInformation InstanceInformation { get; init; }
     public required IReadOnlyList<ProcessEngineTask> Tasks { get; init; }
+    public required string LockToken { get; init; }
 
     public static ProcessEngineJob FromRequest(ProcessEngineJobRequest jobRequest) =>
         new()
@@ -12,6 +13,7 @@ internal sealed record ProcessEngineJob : ProcessEngineItem
             Key = jobRequest.Key,
             InstanceInformation = jobRequest.InstanceInformation,
             Actor = jobRequest.Actor,
+            LockToken = jobRequest.LockToken,
             Tasks = jobRequest
                 .Commands.Select((cmd, i) => ProcessEngineTask.FromRequest(jobRequest.Key, cmd, jobRequest.Actor, i))
                 .ToList(),

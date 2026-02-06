@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Http;
 /// <summary>
 /// HTTP client for communicating with the Process Engine service.
 /// </summary>
-internal interface IProcessEngineClient
+internal interface IWorkflowEngineClient
 {
     /// <summary>
     /// Enqueues a process engine job via HTTP.

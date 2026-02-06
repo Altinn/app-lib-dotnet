@@ -16,7 +16,7 @@ internal static class ServiceCollectionExtensions
         // Process engine callback helpers
         services.AddTransient<ProcessTaskResolver>();
         services.AddTransient<ProcessNextRequestFactory>();
-        services.AddHttpClient<IProcessEngineClient, ProcessEngineClient>();
+        services.AddHttpClient<IWorkflowEngineClient, WorkflowEngineClient>();
 
         // Process engine callback handlers - TaskStart
         services.AddTransient<IWorkflowEngineCommand, CommonTaskInitialization>();
@@ -32,7 +32,7 @@ internal static class ServiceCollectionExtensions
 
         // Process engine callback handlers - TaskEnd
         services.AddTransient<IWorkflowEngineCommand, CommonTaskFinalization>();
-        services.AddTransient<IWorkflowEngineCommand, WorkflowTaskEnd>();
+        services.AddTransient<IWorkflowEngineCommand, ProcessTaskEnd>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskEndingHook>();
         services.AddTransient<IWorkflowEngineCommand, EndTaskLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, LockTaskData>();

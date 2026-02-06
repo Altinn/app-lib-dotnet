@@ -213,7 +213,7 @@ public static class ServiceCollectionExtensions
         AddNotificationServices(services);
         AddProcessServices(services);
         services.AddWorkflowEngineIntegration();
-        services.AddProcessingSessionCache(configuration);
+        services.AddLockScopedInstanceCache(configuration);
         AddFileAnalyserServices(services);
         AddFileValidatorServices(services);
 
@@ -415,10 +415,10 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds processing session cache for the process engine.
+    /// Adds lock-scoped instance cache for distributed lock-protected operations.
     /// Uses Redis if configured, otherwise falls back to no-op cache.
     /// </summary>
-    public static IServiceCollection AddProcessingSessionCache(
+    public static IServiceCollection AddLockScopedInstanceCache(
         this IServiceCollection services,
         IConfiguration configuration
     )
@@ -433,12 +433,12 @@ public static class ServiceCollectionExtensions
                 options.InstanceName = "altinn-app:";
             });
 
-            services.AddSingleton<IProcessingSessionCache, RedisProcessingSessionCache>();
+            services.AddSingleton<ILockScopedInstanceCache, RedisLockScopedInstanceCache>();
         }
         else
         {
             // No Redis configured - use no-op cache
-            services.AddSingleton<IProcessingSessionCache>(NullProcessingSessionCache.Instance);
+            services.AddSingleton<ILockScopedInstanceCache>(NullLockScopedInstanceCache.Instance);
         }
 
         return services;

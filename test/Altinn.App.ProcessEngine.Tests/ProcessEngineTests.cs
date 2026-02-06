@@ -35,6 +35,7 @@ public class ProcessEngineTests
                             InstanceGuid = Guid.NewGuid(),
                         },
                         new ProcessEngineActor { UserIdOrOrgNumber = "501337" },
+                        LockToken: Guid.NewGuid().ToString(),
                         [
                             new ProcessEngineCommandRequest
                             {

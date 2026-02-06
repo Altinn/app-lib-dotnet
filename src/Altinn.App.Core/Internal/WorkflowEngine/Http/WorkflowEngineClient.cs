@@ -10,17 +10,16 @@ using Microsoft.Extensions.Options;
 namespace Altinn.App.Core.Internal.WorkflowEngine.Http;
 
 /// <summary>
-/// HTTP client for communicating with the Process Engine service.
-/// Sends ProcessNextRequest to the process engine endpoint to enqueue jobs.
+/// HTTP client for communicating with the workflow engine service.
 /// </summary>
-internal sealed class ProcessEngineClient : IProcessEngineClient
+internal sealed class WorkflowEngineClient : IWorkflowEngineClient
 {
     private readonly HttpClient _httpClient;
     private readonly AppIdentifier _appIdentifier;
     private readonly GeneralSettings _generalSettings;
     private readonly ProcessEngineSettings _processEngineSettings;
 
-    public ProcessEngineClient(
+    public WorkflowEngineClient(
         AppIdentifier appIdentifier,
         HttpClient httpClient,
         IOptions<GeneralSettings> generalSettings,

@@ -156,7 +156,7 @@ public sealed class ProcessEngineTest
     public async Task Next_generates_correct_commands_for_task_to_task_transition()
     {
         // Arrange - Mock the process engine client
-        var processEngineClientMock = new Mock<IProcessEngineClient>(MockBehavior.Strict);
+        var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
         Altinn.App.ProcessEngine.Models.ProcessNextRequest? capturedRequest = null;
         processEngineClientMock
             .Setup(c =>
@@ -240,6 +240,7 @@ public sealed class ProcessEngineTest
             User = user,
             Action = null,
             Language = null,
+            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         // Act
@@ -285,7 +286,7 @@ public sealed class ProcessEngineTest
     public async Task Next_generates_correct_commands_for_task_abandon_transition()
     {
         // Arrange
-        var processEngineClientMock = new Mock<IProcessEngineClient>(MockBehavior.Strict);
+        var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
         Altinn.App.ProcessEngine.Models.ProcessNextRequest? capturedRequest = null;
         processEngineClientMock
             .Setup(c =>
@@ -368,6 +369,7 @@ public sealed class ProcessEngineTest
             User = user,
             Action = "reject",
             Language = null,
+            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         // Act
@@ -407,7 +409,7 @@ public sealed class ProcessEngineTest
     public async Task Next_generates_correct_commands_for_task_to_end_transition()
     {
         // Arrange
-        var processEngineClientMock = new Mock<IProcessEngineClient>(MockBehavior.Strict);
+        var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
         Altinn.App.ProcessEngine.Models.ProcessNextRequest? capturedRequest = null;
         processEngineClientMock
             .Setup(c =>
@@ -484,6 +486,7 @@ public sealed class ProcessEngineTest
             Action = null,
             Language = null,
             Instance = instance,
+            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         // Act
@@ -566,6 +569,7 @@ public sealed class ProcessEngineTest
             Action = null,
             User = null!,
             Language = null,
+            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
@@ -634,6 +638,7 @@ public sealed class ProcessEngineTest
             User = user,
             Action = "sign",
             Language = null,
+            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         ProcessChangeResult result = await processEngine.Next(processNextRequest, CancellationToken.None);
@@ -706,6 +711,7 @@ public sealed class ProcessEngineTest
             User = user,
             Action = "sign",
             Language = null,
+            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         ProcessChangeResult result = await processEngine.Next(processNextRequest, CancellationToken.None);
@@ -782,6 +788,7 @@ public sealed class ProcessEngineTest
             User = user,
             Action = null,
             Language = null,
+            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
@@ -926,6 +933,7 @@ public sealed class ProcessEngineTest
             User = user,
             Action = "reject",
             Language = null,
+            LockToken = Guid.NewGuid().ToString("N"),
         };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         fixture.Mock<IProcessReader>().Verify(r => r.IsProcessTask("Task_1"), Times.Once);
@@ -1078,6 +1086,7 @@ public sealed class ProcessEngineTest
             Action = null,
             Language = null,
             Instance = instance,
+            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
@@ -1307,7 +1316,7 @@ public sealed class ProcessEngineTest
             services.TryAddTransient<InstanceDataUnitOfWorkInitializer>();
             services.TryAddTransient<IValidationService>(_ => validationServiceMock.Object);
 
-            var processEngineClientMock = new Mock<IProcessEngineClient>(MockBehavior.Strict);
+            var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
             processEngineClientMock
                 .Setup(c =>
                     c.ProcessNext(
@@ -1320,7 +1329,7 @@ public sealed class ProcessEngineTest
             processEngineClientMock
                 .Setup(c => c.GetActiveJobStatus(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Altinn.App.ProcessEngine.Models.ProcessEngineStatusResponse?)null);
-            services.TryAddTransient<IProcessEngineClient>(_ => processEngineClientMock.Object);
+            services.TryAddTransient<IWorkflowEngineClient>(_ => processEngineClientMock.Object);
 
             services.TryAddTransient<ProcessNextRequestFactory>();
 

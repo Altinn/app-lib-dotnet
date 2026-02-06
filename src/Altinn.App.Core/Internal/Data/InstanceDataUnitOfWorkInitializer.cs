@@ -115,10 +115,10 @@ internal class InstanceDataUnitOfWorkInitializer
         CancellationToken ct = default
     )
     {
-        var cache = _serviceProvider.GetService<IProcessingSessionCache>() ?? NullProcessingSessionCache.Instance;
+        var cache = _serviceProvider.GetService<ILockScopedInstanceCache>() ?? NullLockScopedInstanceCache.Instance;
 
         // Try to get Instance from Redis, fall back to Storage
-        Instance? instance = await cache.GetInstance(lockToken, ct);
+        Instance? instance = await cache.GetInstance(lockToken, instanceId.InstanceGuid, ct);
 
         if (instance is null)
         {
@@ -132,7 +132,7 @@ internal class InstanceDataUnitOfWorkInitializer
             );
 
             // Cache for subsequent requests
-            await cache.SetInstance(lockToken, instance, ct);
+            await cache.SetInstance(lockToken, instanceId.InstanceGuid, instance, ct);
         }
 
         var applicationMetadata = await _applicationMetadata.GetApplicationMetadata();

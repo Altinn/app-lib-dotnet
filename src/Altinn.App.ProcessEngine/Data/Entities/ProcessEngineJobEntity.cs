@@ -38,6 +38,9 @@ internal sealed class ProcessEngineJobEntity : IWithCommonJobMeta
 
     public Guid InstanceGuid { get; set; }
 
+    [MaxLength(200)]
+    public required string LockToken { get; set; }
+
     public ICollection<ProcessEngineTaskEntity> Tasks { get; set; } = [];
 
     public static ProcessEngineJobEntity FromDomainModel(ProcessEngineJob job) =>
@@ -52,6 +55,7 @@ internal sealed class ProcessEngineJobEntity : IWithCommonJobMeta
             InstanceApp = job.InstanceInformation.App,
             InstanceOwnerPartyId = job.InstanceInformation.InstanceOwnerPartyId,
             InstanceGuid = job.InstanceInformation.InstanceGuid,
+            LockToken = job.LockToken,
             Tasks = job.Tasks.Select(ProcessEngineTaskEntity.FromDomainModel).ToList(),
         };
 
@@ -69,6 +73,7 @@ internal sealed class ProcessEngineJobEntity : IWithCommonJobMeta
                 InstanceOwnerPartyId = InstanceOwnerPartyId,
                 InstanceGuid = InstanceGuid,
             },
+            LockToken = LockToken,
             Tasks = Tasks.Select(t => t.ToDomainModel()).ToList(),
         };
 }

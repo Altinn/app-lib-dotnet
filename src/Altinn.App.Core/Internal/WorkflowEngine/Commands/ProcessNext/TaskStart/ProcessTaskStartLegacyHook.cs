@@ -6,15 +6,20 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 
-//TODO: Research to what degree TEs would accept a move to new hook interface
+/// <summary>
+/// Payload for the ProcessTaskStartLegacyHook command.
+/// </summary>
+/// <param name="Prefill">Prefill data for the initial task start. Null for subsequent task transitions.</param>
+internal sealed record ProcessTaskStartLegacyHookPayload(Dictionary<string, string>? Prefill) : CommandRequestPayload;
+
 /// <summary>
 /// Run the legacy IProcessTaskStart implementations defined in the app. No unit of work and rollback support.
 /// </summary>
-internal sealed class WorkflowTaskStartLegacyHook : IWorkflowEngineCommand
+internal sealed class WorkflowTaskStartLegacyHook : WorkflowEngineCommandBase<ProcessTaskStartLegacyHookPayload>
 {
     public static string Key => "ProcessTaskStart";
 
-    public string GetKey() => Key;
+    public override string GetKey() => Key;
 
     private readonly AppImplementationFactory _appImplementationFactory;
 
@@ -23,9 +28,12 @@ internal sealed class WorkflowTaskStartLegacyHook : IWorkflowEngineCommand
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
-    public async Task<ProcessEngineCommandResult> Execute(ProcessEngineCommandContext parameters)
+    public override async Task<ProcessEngineCommandResult> Execute(
+        ProcessEngineCommandContext context,
+        ProcessTaskStartLegacyHookPayload payload
+    )
     {
-        Instance instance = parameters.InstanceDataMutator.Instance;
+        Instance instance = context.InstanceDataMutator.Instance;
         string? taskId = instance.Process.CurrentTask.ElementId;
 
         try
@@ -34,8 +42,7 @@ internal sealed class WorkflowTaskStartLegacyHook : IWorkflowEngineCommand
 
             foreach (IProcessTaskStart processTaskStarts in handlers)
             {
-                //TODO: How to get prefill??
-                await processTaskStarts.Start(taskId, instance, []);
+                await processTaskStarts.Start(taskId, instance, payload.Prefill);
             }
         }
         catch (Exception ex)

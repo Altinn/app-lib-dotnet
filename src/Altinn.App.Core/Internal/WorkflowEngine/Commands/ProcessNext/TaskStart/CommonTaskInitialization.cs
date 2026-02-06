@@ -9,17 +9,23 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 
-internal sealed class CommonTaskInitialization : IWorkflowEngineCommand
+/// <summary>
+/// Payload for the CommonTaskInitialization command.
+/// </summary>
+/// <param name="Prefill">Prefill data for the initial task start. Null for subsequent task transitions.</param>
+internal sealed record CommonTaskInitializationPayload(Dictionary<string, string>? Prefill) : CommandRequestPayload;
+
+internal sealed class CommonTaskInitialization : WorkflowEngineCommandBase<CommonTaskInitializationPayload>
 {
     public static string Key => "CommonTaskInitialization";
 
-    public string GetKey() => Key;
+    public override string GetKey() => Key;
 
-    private IAppMetadata _appMetadata;
-    private IPrefill _prefillService;
-    private IAppModel _appModel;
-    private AppImplementationFactory _appImplementationFactory;
-    private IProcessTaskCleaner _processTaskCleaner;
+    private readonly IAppMetadata _appMetadata;
+    private readonly IPrefill _prefillService;
+    private readonly IAppModel _appModel;
+    private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly IProcessTaskCleaner _processTaskCleaner;
 
     public CommonTaskInitialization(
         IAppMetadata appMetadata,
@@ -36,9 +42,12 @@ internal sealed class CommonTaskInitialization : IWorkflowEngineCommand
         _processTaskCleaner = processTaskCleaner;
     }
 
-    public async Task<ProcessEngineCommandResult> Execute(ProcessEngineCommandContext parameters)
+    public override async Task<ProcessEngineCommandResult> Execute(
+        ProcessEngineCommandContext context,
+        CommonTaskInitializationPayload payload
+    )
     {
-        IInstanceDataMutator instanceDataMutator = parameters.InstanceDataMutator;
+        IInstanceDataMutator instanceDataMutator = context.InstanceDataMutator;
         Instance instance = instanceDataMutator.Instance;
         string taskId = instance.Process.CurrentTask.ElementId;
 
@@ -60,10 +69,9 @@ internal sealed class CommonTaskInitialization : IWorkflowEngineCommand
 
             object data = _appModel.Create(dataType.AppLogic.ClassRef);
 
-            //TODO: How do we do prefill? Currently being set to empty array, which is not correct.
-            await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, dataType.Id, data, []);
+            await _prefillService.PrefillDataModel(instance.InstanceOwner.PartyId, dataType.Id, data, payload.Prefill);
             var instantiationProcessor = _appImplementationFactory.GetRequired<IInstantiationProcessor>();
-            await instantiationProcessor.DataCreation(instance, data, []);
+            await instantiationProcessor.DataCreation(instance, data, payload.Prefill);
 
             instanceDataMutator.AddFormDataElement(dataType.Id, data);
         }

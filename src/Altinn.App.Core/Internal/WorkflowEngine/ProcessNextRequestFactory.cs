@@ -33,7 +33,11 @@ internal sealed class ProcessNextRequestFactory
     /// Creates a ProcessNextRequest from the instance and process state change.
     /// Maps each instance event to its corresponding command sequence.
     /// </summary>
-    public async Task<Altinn.App.ProcessEngine.Models.ProcessNextRequest> Create(ProcessStateChange processStateChange)
+    public async Task<Altinn.App.ProcessEngine.Models.ProcessNextRequest> Create(
+        ProcessStateChange processStateChange,
+        string lockToken,
+        Dictionary<string, string>? prefill = null
+    )
     {
         var commands = new List<ProcessEngineCommandRequest>();
 
@@ -49,7 +53,8 @@ internal sealed class ProcessNextRequestFactory
             WorkflowCommandSet? workflowCommands = GetWorkflowStepsForInstanceEvent(
                 instanceEventType,
                 altinnTaskType,
-                isInitialTaskStart
+                isInitialTaskStart,
+                prefill
             );
             if (workflowCommands != null)
             {
@@ -65,13 +70,15 @@ internal sealed class ProcessNextRequestFactory
             DesiredElementId = processStateChange.NewProcessState?.CurrentTask?.ElementId ?? string.Empty,
             Actor = await ExtractActor(),
             Tasks = commands,
+            LockToken = lockToken,
         };
     }
 
     private WorkflowCommandSet? GetWorkflowStepsForInstanceEvent(
         InstanceEventType eventType,
         string? altinnTaskType,
-        bool isInitialTaskStart
+        bool isInitialTaskStart,
+        Dictionary<string, string>? prefill
     )
     {
         return eventType switch
@@ -79,7 +86,8 @@ internal sealed class ProcessNextRequestFactory
             InstanceEventType.process_StartEvent => null, // No commands for process start event itself
             InstanceEventType.process_StartTask => WorkflowCommandSet.GetTaskStartSteps(
                 GetServiceTaskType(altinnTaskType),
-                isInitialTaskStart
+                isInitialTaskStart,
+                isInitialTaskStart ? prefill : null // Only pass prefill for initial task start
             ),
             InstanceEventType.process_EndTask => WorkflowCommandSet.GetTaskEndSteps(),
             InstanceEventType.process_AbandonTask => WorkflowCommandSet.GetTaskAbandonSteps(),

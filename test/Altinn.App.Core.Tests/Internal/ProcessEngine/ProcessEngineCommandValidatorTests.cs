@@ -5,6 +5,7 @@ using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.ProcessEnd;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskAbandon;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
+using Altinn.App.Core.Internal.WorkflowEngine.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Tests.Internal.ProcessEngine;
@@ -50,7 +51,7 @@ public class ProcessEngineCommandValidatorTests
         services.AddTransient<IWorkflowEngineCommand, MovedToAltinnEvent>();
         services.AddTransient<IWorkflowEngineCommand, InstanceCreatedAltinnEvent>();
         services.AddTransient<IWorkflowEngineCommand, ExecuteServiceTask>();
-        services.AddTransient<IWorkflowEngineCommand, WorkflowTaskEnd>();
+        services.AddTransient<IWorkflowEngineCommand, ProcessTaskEnd>();
         services.AddTransient<IWorkflowEngineCommand, CommonTaskFinalization>();
         services.AddTransient<IWorkflowEngineCommand, EndTaskLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskEndingHook>();

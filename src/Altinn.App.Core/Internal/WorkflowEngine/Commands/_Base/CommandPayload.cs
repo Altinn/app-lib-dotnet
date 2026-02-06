@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
 
@@ -10,6 +11,8 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
 [JsonDerivedType(typeof(ExecuteServiceTaskPayload), typeDiscriminator: "executeServiceTask")]
 [JsonDerivedType(typeof(UpdateProcessStatePayload), typeDiscriminator: "updateProcessState")]
+[JsonDerivedType(typeof(CommonTaskInitializationPayload), typeDiscriminator: "commonTaskInitialization")]
+[JsonDerivedType(typeof(ProcessTaskStartLegacyHookPayload), typeDiscriminator: "processTaskStartLegacyHook")]
 internal abstract record CommandRequestPayload;
 
 /// <summary>
@@ -26,6 +29,8 @@ internal abstract record CommandResponsePayload;
 [JsonSerializable(typeof(CommandRequestPayload))]
 [JsonSerializable(typeof(ExecuteServiceTaskPayload))]
 [JsonSerializable(typeof(UpdateProcessStatePayload))]
+[JsonSerializable(typeof(CommonTaskInitializationPayload))]
+[JsonSerializable(typeof(ProcessTaskStartLegacyHookPayload))]
 internal partial class CommandPayloadJsonContext : JsonSerializerContext { }
 
 /// <summary>

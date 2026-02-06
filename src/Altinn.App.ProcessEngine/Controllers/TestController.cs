@@ -73,6 +73,7 @@ public class TestController : ControllerBase
                 $"job-identifier-{i}",
                 instanceInfo,
                 new ProcessEngineActor { UserIdOrOrgNumber = "callers-altinn-party-id?" },
+                $"test-lock-token-{i}",
                 _testScenarios[testScenario].ToCommandRequests()
             ));
 

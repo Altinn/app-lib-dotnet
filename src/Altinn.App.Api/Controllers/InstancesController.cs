@@ -384,7 +384,9 @@ public class InstancesController : ControllerBase
             // Dispatch process state change to async engine
             if (processStateChange is not null)
             {
-                await _processEngine.SubmitInitialProcessState(instance, processStateChange);
+                // TODO: Acquire proper lock token from Storage
+                string lockToken = Guid.NewGuid().ToString("N");
+                await _processEngine.SubmitInitialProcessState(instance, processStateChange, lockToken);
             }
         }
         catch (Exception exception)
@@ -608,7 +610,14 @@ public class InstancesController : ControllerBase
             // Dispatch process state change to async engine
             if (processStateChange is not null)
             {
-                await _processEngine.SubmitInitialProcessState(instance, processStateChange);
+                // TODO: Acquire proper lock token from Storage
+                string lockToken = Guid.NewGuid().ToString("N");
+                await _processEngine.SubmitInitialProcessState(
+                    instance,
+                    processStateChange,
+                    lockToken,
+                    instansiationInstance.Prefill
+                );
             }
         }
         catch (Exception exception)
@@ -737,7 +746,9 @@ public class InstancesController : ControllerBase
         // Dispatch process state change to async engine
         if (startResult.ProcessStateChange is not null)
         {
-            await _processEngine.SubmitInitialProcessState(targetInstance, startResult.ProcessStateChange);
+            // TODO: Acquire proper lock token from Storage
+            string lockToken = Guid.NewGuid().ToString("N");
+            await _processEngine.SubmitInitialProcessState(targetInstance, startResult.ProcessStateChange, lockToken);
         }
 
         string url = SelfLinkHelper.BuildFrontendSelfLink(targetInstance, Request);

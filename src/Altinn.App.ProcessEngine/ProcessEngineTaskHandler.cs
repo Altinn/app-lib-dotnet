@@ -104,6 +104,7 @@ internal class ProcessEngineTaskHandler : IProcessEngineTaskHandler
             CommandKey = command.CommandKey,
             Actor = task.Actor,
             Payload = command.Payload,
+            LockToken = Guid.NewGuid().ToString(),
         };
         using var response = await httpClient.PostAsync(
             command.CommandKey,

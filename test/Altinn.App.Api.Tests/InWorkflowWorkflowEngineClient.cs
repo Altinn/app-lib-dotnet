@@ -11,16 +11,16 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Altinn.App.Api.Tests;
 
 /// <summary>
-/// In-process implementation of <see cref="IProcessEngineClient"/> for testing.
+/// In-process implementation of <see cref="IWorkflowEngineClient"/> for testing.
 /// Executes process engine commands synchronously without HTTP calls.
 /// </summary>
-internal sealed class InProcessProcessEngineClient : IProcessEngineClient
+internal sealed class InWorkflowWorkflowEngineClient : IWorkflowEngineClient
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IInstanceClient _instanceClient;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
-    public InProcessProcessEngineClient(
+    public InWorkflowWorkflowEngineClient(
         IServiceProvider serviceProvider,
         IInstanceClient instanceClient,
         InstanceDataUnitOfWorkInitializer instanceDataUnitOfWorkInitializer
@@ -41,26 +41,21 @@ internal sealed class InProcessProcessEngineClient : IProcessEngineClient
         var appId = new AppIdentifier(instance.Org, instance.AppId.Split('/')[1]);
         var instanceId = new InstanceIdentifier(instance);
 
-        // Fetch the instance fresh from storage.
-        // This is important because the ProcessEngine modifies instance.Process in memory
-        // BEFORE calling ProcessNext. The storage still has the OLD process state,
-        // which is what the commands expect (e.g., CurrentTask is still set).
-        Instance currentInstance = await _instanceClient.GetInstance(
-            appId.App,
-            appId.Org,
-            instanceId.InstanceOwnerPartyId,
-            instanceId.InstanceGuid,
-            StorageAuthenticationMethod.ServiceOwner(),
-            cancellationToken
-        );
+        // Generate a lock token for this in-process session to enable caching
+        // across multiple commands. This simulates the distributed lock behavior
+        // of the real process engine.
+        string lockToken = Guid.NewGuid().ToString();
 
-        // Use the request's CurrentElementId for task context - this tells us which task
-        // was active when the commands were generated, regardless of storage state.
-        InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
-            currentInstance,
+        // Use InitWithSession to leverage caching across all commands in this batch.
+        // This is important because multiple commands often read the same data elements.
+        InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.InitWithSession(
+            appId,
+            instanceId,
+            lockToken,
             request.CurrentElementId,
             request.Actor.Language,
-            StorageAuthenticationMethod.ServiceOwner()
+            StorageAuthenticationMethod.ServiceOwner(),
+            cancellationToken
         );
 
         // Execute all commands with the same unit of work
@@ -81,6 +76,7 @@ internal sealed class InProcessProcessEngineClient : IProcessEngineClient
                     instanceId,
                     appCommand,
                     request.Actor,
+                    lockToken,
                     instanceDataUnitOfWork,
                     cancellationToken
                 );
@@ -116,6 +112,7 @@ internal sealed class InProcessProcessEngineClient : IProcessEngineClient
         InstanceIdentifier instanceId,
         ProcessEngineCommand.AppCommand appCommand,
         ProcessEngineActor actor,
+        string lockToken,
         InstanceDataUnitOfWork instanceDataUnitOfWork,
         CancellationToken cancellationToken
     )
@@ -136,6 +133,7 @@ internal sealed class InProcessProcessEngineClient : IProcessEngineClient
             CommandKey = commandKey,
             Actor = actor,
             Payload = appCommand.Payload,
+            LockToken = lockToken,
         };
 
         ProcessEngineCommandResult result = await command.Execute(
