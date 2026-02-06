@@ -1,4 +1,3 @@
-using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications;
 
 namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -11,12 +10,29 @@ public class AltinnNotificationConfiguration
     /// The provider must be an implementation of <see cref="INotificationProvider"/>
     public string? NotificationProviderId { get; set; }
 
+    public SmsOverride? SmsOverride { get; set; }
+
+    public EmailOverride? EmailOverride { get; set; }
+
     internal ValidAltinnNotificationConfiguration Validate()
     {
         //TODO: implement validation logic
 
         return new ValidAltinnNotificationConfiguration(NotificationProviderId);
     }
+}
+
+public class SmsOverride
+{
+    public string BodyTextResource { get; set; } = string.Empty;
+}
+
+public class EmailOverride
+{
+    public string SubjectTextResource { get; set; } = string.Empty;
+
+    public string BodyTextResource { get; set; } = string.Empty;
+
 }
 
 internal readonly record struct ValidAltinnNotificationConfiguration(string? NotificationProviderId);

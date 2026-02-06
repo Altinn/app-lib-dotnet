@@ -1,6 +1,8 @@
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models.Notifications;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.App.Core.Models.Notifications.Sms;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Notifications;
 
@@ -18,6 +20,11 @@ internal sealed class NotificationService : INotificationService
         _smsNotificationClient = smsNotificationClient;
     }
 
+    public Task<List<NotificationReference>> NotifyInstanceOwner(Instance instance, EmailOverride emailNotification, SmsOverride smsNotification, CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<NotificationReference> ProcessNotificationOrder(
         EmailNotification emailNotification,
         CancellationToken ct
@@ -32,21 +39,16 @@ internal sealed class NotificationService : INotificationService
     }
 
     public async Task<List<NotificationReference>> ProcessNotificationOrders(
-        List<EmailNotification> emailNotifications,
-        List<SmsNotification> smsNotifications,
+        EmailNotification emailNotification,
+        SmsNotification smsNotification,
         CancellationToken ct
     )
     {
-        var notificationReferences = new List<NotificationReference>();
-
-        Parallel.ForEach(
-            emailNotifications,
-            async emailNotification => notificationReferences.Add(await OrderEmail(emailNotification, ct))
-        );
-        Parallel.ForEach(
-            smsNotifications,
-            async smsNotification => notificationReferences.Add(await OrderSms(smsNotification, ct))
-        );
+        var notificationReferences = new List<NotificationReference>
+        {
+            await OrderEmail(emailNotification, ct),
+            await OrderSms(smsNotification, ct)
+        };
 
         return notificationReferences;
     }

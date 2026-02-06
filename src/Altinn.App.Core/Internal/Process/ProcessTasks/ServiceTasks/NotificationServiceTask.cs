@@ -30,22 +30,31 @@ internal sealed class NotificationServiceTask : IServiceTask
 
         ValidAltinnNotificationConfiguration notificationConfig = GetValidNotificationConfig(taskId);
 
+        NotificationsWrapper notificationsWrapper = new();
         if (string.IsNullOrWhiteSpace(notificationConfig.NotificationProviderId) is false)
         {
             try
             {
-                NotificationsWrapper notificationsWrapper = _notificationReader.GetProvidedNotifications(
+                notificationsWrapper = _notificationReader.GetProvidedNotifications(
                     notificationConfig.NotificationProviderId,
                     context.CancellationToken
                 );
             }
             catch (ConfigurationException ex)
             {
+                // TODO: log. For now, rethrowing to explicitly show the exception that is expected for invalid configuration.
                 throw ex;
             }
         }
 
-        // TODO: everything
+        var smsToProcess = notificationsWrapper.SmsNotification;
+
+        _ = await _notificationService.NotifyInstanceOwner(
+            context.InstanceDataMutator.Instance,
+            new EmailOverride(),
+            new SmsOverride(),
+            context.CancellationToken
+        );
 
         return ServiceTaskResult.Success();
     }
