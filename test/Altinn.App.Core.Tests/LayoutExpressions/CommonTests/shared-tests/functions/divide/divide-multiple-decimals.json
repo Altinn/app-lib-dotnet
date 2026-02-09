@@ -1,5 +1,5 @@
 {
-  "name": "Should divide the first argument multiple times",
+  "name": "Should throw exception when more then two arguments is present",
   "expression": ["divide", 0.1, 0.2, 15, 1.50],
-  "expects": 0.0222222222222222222222222222
+  "expectsFailure": "Invalid number of args for compare"
 }

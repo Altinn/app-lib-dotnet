@@ -132,7 +132,6 @@ public static class ExpressionEvaluator
             ExpressionFunction.minus => Minus(args),
             ExpressionFunction.multiply => Multiply(args),
             ExpressionFunction.divide => Divide(args),
-            ExpressionFunction.average => Average(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
@@ -826,16 +825,6 @@ public static class ExpressionEvaluator
         return (a, b);
     }
 
-    private static IEnumerable<decimal> PrepareMultipleNumericArgs(ExpressionValue[] args)
-    {
-        return args.Select(arg => PrepareNumericArg(arg))
-            .Select(x =>
-                !x.HasValue
-                    ? throw new ExpressionEvaluatorTypeErrorException("At least one of the arguments is not a number")
-                    : x.Value
-            );
-    }
-
     private static decimal? PrepareNumericArg(ExpressionValue arg)
     {
         return arg.ValueKind switch
@@ -904,77 +893,44 @@ public static class ExpressionEvaluator
         return a < b; // Actual implementation
     }
 
-    private static decimal Plus(ExpressionValue[] args)
+    private static decimal? Plus(ExpressionValue[] args)
     {
-        var numericArgs = PrepareMultipleNumericArgs(args);
-        return numericArgs.Sum(arg => arg);
+        var (a, b) = PrepareTwoNumericArgs(args);
+        return a + b;
     }
 
-    private static decimal Minus(ExpressionValue[] args)
+    private static decimal? Minus(ExpressionValue[] args)
     {
         if (args.Length == 0)
         {
             return 0;
         }
-        var numericArgs = PrepareMultipleNumericArgs(args).ToList();
-        var sum = numericArgs.First();
-        foreach (var arg in numericArgs.Skip(1))
-        {
-            sum -= arg;
-        }
-
-        return sum;
+        var (a, b) = PrepareTwoNumericArgs(args);
+        return a - b;
     }
 
-    private static decimal Multiply(ExpressionValue[] args)
+    private static decimal? Multiply(ExpressionValue[] args)
+    {
+        if (args.Length <= 1)
+        {
+            throw new ExpressionEvaluatorTypeErrorException("Two arguments must be provided");
+        }
+        var (a, b) = PrepareTwoNumericArgs(args);
+        return a * b;
+    }
+
+    private static decimal? Divide(ExpressionValue[] args)
     {
         if (args.Length <= 1)
         {
             throw new ExpressionEvaluatorTypeErrorException("At least two arguments must be provided");
         }
-        var numericArgs = PrepareMultipleNumericArgs(args).ToList();
-        var sum = numericArgs.First();
-        foreach (var arg in numericArgs.Skip(1))
+        var (a, b) = PrepareTwoNumericArgs(args);
+        if (b == 0)
         {
-            sum *= arg;
+            throw new ExpressionEvaluatorTypeErrorException("Argument two is 0, cannot divide by 0");
         }
-        return sum;
-    }
-
-    private static decimal Divide(ExpressionValue[] args)
-    {
-        if (args.Length <= 1)
-        {
-            throw new ExpressionEvaluatorTypeErrorException("At least two arguments must be provided");
-        }
-        var numericArgs = PrepareMultipleNumericArgs(args).ToList();
-        if (numericArgs.Skip(1).Any(arg => arg == 0))
-        {
-            throw new ExpressionEvaluatorTypeErrorException(
-                "At least one of the arguments after the first is 0, cannot divide by 0"
-            );
-        }
-        var sum = numericArgs.First();
-        foreach (var arg in numericArgs.Skip(1))
-        {
-            sum /= arg;
-        }
-        return sum;
-    }
-
-    private static decimal Average(ExpressionValue[] args)
-    {
-        if (args.Length <= 1)
-        {
-            throw new ExpressionEvaluatorTypeErrorException("At least two arguments must be provided");
-        }
-        var numericArgs = PrepareMultipleNumericArgs(args).ToList();
-        var sum = 0m;
-        foreach (var arg in numericArgs)
-        {
-            sum += arg;
-        }
-        return sum / numericArgs.Count;
+        return a / b;
     }
 
     private static bool LessThanEq(ExpressionValue[] args)

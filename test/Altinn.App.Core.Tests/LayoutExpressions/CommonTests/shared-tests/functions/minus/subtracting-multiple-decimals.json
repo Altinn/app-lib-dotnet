@@ -1,5 +1,5 @@
 {
-  "name": "Should subtract the proceeding arguments from the first",
+  "name": "Should throw exception when more then two arguments is present",
   "expression": ["minus", 0.1, 0.2, 15, 1.50],
-  "expects": -16.60
+  "expectsFailure": "Invalid number of args for compare"
 }

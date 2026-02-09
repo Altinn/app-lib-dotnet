@@ -1,5 +1,5 @@
 {
-  "name": "Should multiply multiple arguments",
+  "name": "Should throw exception when more then two arguments is present",
   "expression": ["multiply", 0.1, 0.2, 15, 1.50],
-  "expects": 0.4500
+  "expectsFailure": "Invalid number of args for compare"
 }
