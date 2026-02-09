@@ -811,7 +811,7 @@ public static class ExpressionEvaluator
         return !PrepareBooleanArg(args[0]);
     }
 
-    private static (decimal?, decimal?) PrepareTwoNumericArgs(ExpressionValue[] args)
+    private static (decimal?, decimal?) PrepareNumericArgs(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
@@ -884,7 +884,7 @@ public static class ExpressionEvaluator
 
     private static bool LessThan(ExpressionValue[] args)
     {
-        var (a, b) = PrepareTwoNumericArgs(args);
+        var (a, b) = PrepareNumericArgs(args);
 
         if (a is null || b is null)
         {
@@ -895,47 +895,35 @@ public static class ExpressionEvaluator
 
     private static decimal? Plus(ExpressionValue[] args)
     {
-        var (a, b) = PrepareTwoNumericArgs(args);
+        var (a, b) = PrepareNumericArgs(args);
         return a + b;
     }
 
     private static decimal? Minus(ExpressionValue[] args)
     {
-        if (args.Length == 0)
-        {
-            return 0;
-        }
-        var (a, b) = PrepareTwoNumericArgs(args);
+        var (a, b) = PrepareNumericArgs(args);
         return a - b;
     }
 
     private static decimal? Multiply(ExpressionValue[] args)
     {
-        if (args.Length <= 1)
-        {
-            throw new ExpressionEvaluatorTypeErrorException("Two arguments must be provided");
-        }
-        var (a, b) = PrepareTwoNumericArgs(args);
+        var (a, b) = PrepareNumericArgs(args);
         return a * b;
     }
 
     private static decimal? Divide(ExpressionValue[] args)
     {
-        if (args.Length <= 1)
-        {
-            throw new ExpressionEvaluatorTypeErrorException("At least two arguments must be provided");
-        }
-        var (a, b) = PrepareTwoNumericArgs(args);
+        var (a, b) = PrepareNumericArgs(args);
         if (b == 0)
         {
-            throw new ExpressionEvaluatorTypeErrorException("Argument two is 0, cannot divide by 0");
+            throw new ExpressionEvaluatorTypeErrorException("The second argument is 0, cannot divide by 0");
         }
         return a / b;
     }
 
     private static bool LessThanEq(ExpressionValue[] args)
     {
-        var (a, b) = PrepareTwoNumericArgs(args);
+        var (a, b) = PrepareNumericArgs(args);
 
         if (a is null || b is null)
         {
@@ -946,7 +934,7 @@ public static class ExpressionEvaluator
 
     private static bool GreaterThan(ExpressionValue[] args)
     {
-        var (a, b) = PrepareTwoNumericArgs(args);
+        var (a, b) = PrepareNumericArgs(args);
 
         if (a is null || b is null)
         {
@@ -957,7 +945,7 @@ public static class ExpressionEvaluator
 
     private static bool GreaterThanEq(ExpressionValue[] args)
     {
-        var (a, b) = PrepareTwoNumericArgs(args);
+        var (a, b) = PrepareNumericArgs(args);
 
         if (a is null || b is null)
         {

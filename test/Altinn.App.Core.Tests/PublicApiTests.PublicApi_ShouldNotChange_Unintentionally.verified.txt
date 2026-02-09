@@ -4581,7 +4581,6 @@ namespace Altinn.App.Core.Models.Expressions
         minus = 38,
         multiply = 39,
         divide = 40,
-        average = 41,
     }
 }
 namespace Altinn.App.Core.Models.Layout.Components.Base

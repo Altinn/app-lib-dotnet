@@ -1,5 +1,0 @@
-{
-  "name": "Should return 0 when no arguments are provided",
-  "expression": ["plus"],
-  "expects": 0
-}

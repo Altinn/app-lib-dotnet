@@ -1,5 +1,5 @@
 {
   "name": "Should throw exception when trying to divide by zero",
   "expression": ["divide", 15, 0],
-  "expectsFailure": "At least one of the arguments after the first is 0, cannot divide by 0"
+  "expectsFailure": "The second argument is 0, cannot divide by 0"
 }
