@@ -815,7 +815,7 @@ public static class ExpressionEvaluator
     {
         if (args.Length != 2)
         {
-            throw new ExpressionEvaluatorTypeErrorException("Invalid number of args for compare");
+            throw new ExpressionEvaluatorTypeErrorException("Invalid number of args");
         }
 
         var a = PrepareNumericArg(args[0]);
