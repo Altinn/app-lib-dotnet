@@ -1,5 +1,5 @@
 {
-  "name": "PartyType is Self Identified",
+  "name": "PartyType is Self Identified with username",
   "expression": ["instanceContext", "instanceOwnerPartyType"],
   "expects": "selfIdentified",
   "instance": {

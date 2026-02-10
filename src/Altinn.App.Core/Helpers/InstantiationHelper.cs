@@ -223,7 +223,10 @@ public static class InstantiationHelper
     /// Get the correct <see cref="InstanceOwner" /> object from the <see cref="Party" /> object of the entity that should own the instance
     /// Use authenticationContext to get the external identity for self identified parties
     /// </summary>
-    public static async Task<InstanceOwner> PartyToInstanceOwner(Party party, IAuthenticationContext? authenticationContext = null)
+    public static async Task<InstanceOwner> PartyToInstanceOwner(
+        Party party,
+        IAuthenticationContext authenticationContext
+    )
     {
         if (!string.IsNullOrEmpty(party.SSN))
         {
@@ -244,7 +247,12 @@ public static class InstantiationHelper
             {
                 externalIdentifier = await GetExternalIdentityForSelfIdentifiedParty(party, authenticationContext);
             }
-            return new() { PartyId = party.PartyId.ToString(CultureInfo.InvariantCulture), Username = party.Name, ExternalIdentifier = externalIdentifier };
+            return new()
+            {
+                PartyId = party.PartyId.ToString(CultureInfo.InvariantCulture),
+                Username = party.Name,
+                ExternalIdentifier = externalIdentifier,
+            };
         }
         return new()
         {
