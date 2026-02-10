@@ -291,7 +291,10 @@ public class InstancesController : ControllerBase
         try
         {
             party = await LookupParty(instanceTemplate.InstanceOwner) ?? throw new Exception("Unknown party");
-            instanceTemplate.InstanceOwner = await InstantiationHelper.PartyToInstanceOwner(party, _authenticationContext);
+            instanceTemplate.InstanceOwner = await InstantiationHelper.PartyToInstanceOwner(
+                party,
+                _authenticationContext
+            );
         }
         catch (Exception partyLookupException)
         {
