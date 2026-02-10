@@ -2168,6 +2168,7 @@ namespace Altinn.App.Core.Helpers
         public static Altinn.Platform.Register.Models.Party? GetPartyByPartyId(System.Collections.Generic.List<Altinn.Platform.Register.Models.Party>? partyList, int partyId) { }
         public static bool IsPartyAllowedToInstantiate(Altinn.Platform.Register.Models.Party? party, Altinn.Platform.Storage.Interface.Models.PartyTypesAllowed? partyTypesAllowed) { }
         public static Altinn.Platform.Storage.Interface.Models.InstanceOwner PartyToInstanceOwner(Altinn.Platform.Register.Models.Party party) { }
+        public static System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.InstanceOwner> PartyToInstanceOwner(Altinn.Platform.Register.Models.Party party, Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext) { }
     }
     public static class JsonHelper
     {

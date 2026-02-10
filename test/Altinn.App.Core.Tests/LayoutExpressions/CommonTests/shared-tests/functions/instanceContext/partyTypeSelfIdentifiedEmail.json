@@ -7,6 +7,7 @@
     "appId": "org/app-name",
     "instanceOwner": {
       "partyId": "12345",
+      "username": "epost:test@test.com",
       "externalIdentifier": "urn:altinn:person:idporten-email:test@test.com"
     }
   }
