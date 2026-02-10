@@ -1,4 +1,6 @@
 using System.Globalization;
+using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Features.Auth;
 using Altinn.Platform.Register.Enums;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -192,8 +194,9 @@ public static class InstantiationHelper
 
     /// <summary>
     /// Get the correct <see cref="InstanceOwner" /> object from the <see cref="Party" /> object of the entity that should own the instance
+    /// Use authenticationContext to get the external identity for self identified parties
     /// </summary>
-    public static InstanceOwner PartyToInstanceOwner(Party party)
+    public static InstanceOwner PartyToInstanceOwner(Party party, IAuthenticationContext? authenticationContext = null)
     {
         if (!string.IsNullOrEmpty(party.SSN))
         {
@@ -209,12 +212,32 @@ public static class InstantiationHelper
         }
         else if (party.PartyTypeName.Equals(PartyType.SelfIdentified))
         {
-            return new() { PartyId = party.PartyId.ToString(CultureInfo.InvariantCulture), Username = party.Name };
+            string? externalIdentifier = null;
+            if (authenticationContext is not null)
+            {
+                externalIdentifier = GetExternalIdentityForSelfIdentifiedParty(party, authenticationContext).GetAwaiter().GetResult();
+            }
+            return new() { PartyId = party.PartyId.ToString(CultureInfo.InvariantCulture), Username = party.Name, ExternalIdentifier = externalIdentifier };
         }
         return new()
         {
             PartyId = party.PartyId.ToString(CultureInfo.InvariantCulture),
             // instanceOwnerPartyType == "unknown"
         };
+    }
+
+    internal static async Task<string?> GetExternalIdentityForSelfIdentifiedParty(
+        Party party,
+        IAuthenticationContext authenticationContext
+    )
+    {
+        if (party.PartyTypeName != PartyType.SelfIdentified)
+            return null;
+
+        if (authenticationContext.Current is not Authenticated.User user)
+            return null;
+
+        var profile = await user.LookupProfile();
+        return profile.ExternalIdentity;
     }
 }
