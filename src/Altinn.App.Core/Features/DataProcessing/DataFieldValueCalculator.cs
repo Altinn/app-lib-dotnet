@@ -23,21 +23,18 @@ public class DataFieldValueCalculator
     private readonly IAppResources _appResourceService;
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IDataElementAccessChecker _dataElementAccessChecker;
-    private readonly IFormDataWrapper _formDataWrapper;
 
     public DataFieldValueCalculator(
         ILogger<DataFieldValueCalculator> logger,
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IAppResources appResourceService,
-        IServiceProvider serviceProvider,
-        IFormDataWrapper formDataWrapper
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
         _appResourceService = appResourceService;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
-        _formDataWrapper = formDataWrapper;
     }
 
     public async Task Calculate(IInstanceDataAccessor dataAccessor, string taskId)
@@ -98,13 +95,22 @@ public class DataFieldValueCalculator
                 var positionalArguments = new object[] { resolvedField.Field };
                 foreach (var calculation in calculations)
                 {
-                    await RunCalculation(evaluatorState, resolvedField, context, positionalArguments, calculation);
+                    var formDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement);
+                    await RunCalculation(
+                        formDataWrapper,
+                        evaluatorState,
+                        resolvedField,
+                        context,
+                        positionalArguments,
+                        calculation
+                    );
                 }
             }
         }
     }
 
     private async Task RunCalculation(
+        IFormDataWrapper formDataWrapper,
         LayoutEvaluatorState evaluatorState,
         DataReference resolvedField,
         ComponentContext context,
@@ -120,7 +126,7 @@ public class DataFieldValueCalculator
                 context,
                 positionalArguments
             );
-            _formDataWrapper.Set(resolvedField.Field.ToArray(), calculationResult);
+            formDataWrapper.Set(resolvedField.Field.ToArray(), calculationResult);
         }
         catch (Exception e)
         {

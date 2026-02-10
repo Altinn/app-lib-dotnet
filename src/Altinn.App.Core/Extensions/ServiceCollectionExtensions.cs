@@ -180,6 +180,8 @@ public static class ServiceCollectionExtensions
 #pragma warning restore CS0618, CS0612 // Type or member is obsolete
         services.TryAddTransient<IInstantiationProcessor, NullInstantiationProcessor>();
         services.TryAddTransient<IInstantiationValidator, NullInstantiationValidator>();
+        services.TryAddTransient<IDataWriteProcessor, DataFieldValueCalculatorProcessor>();
+        services.TryAddTransient<DataFieldValueCalculator>();
         services.TryAddTransient<IAppModel, DefaultAppModel>();
         services.TryAddTransient<DataListsFactory>();
         services.TryAddTransient<InstanceDataListsFactory>();
