@@ -1,5 +1,6 @@
 using System.Globalization;
 using Altinn.App.Core.Features.Auth;
+using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Enums;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -272,7 +273,7 @@ public static class InstantiationHelper
         if (authenticationContext.Current is not Authenticated.User user)
             return null;
 
-        var profile = await user.LookupProfile();
+        UserProfile profile = await user.LookupProfile();
         return profile.ExternalIdentity;
     }
 }
