@@ -193,9 +193,37 @@ public static class InstantiationHelper
 
     /// <summary>
     /// Get the correct <see cref="InstanceOwner" /> object from the <see cref="Party" /> object of the entity that should own the instance
+    /// </summary>
+    public static InstanceOwner PartyToInstanceOwner(Party party)
+    {
+        if (!string.IsNullOrEmpty(party.SSN))
+        {
+            return new() { PartyId = party.PartyId.ToString(CultureInfo.InvariantCulture), PersonNumber = party.SSN };
+        }
+        else if (!string.IsNullOrEmpty(party.OrgNumber))
+        {
+            return new()
+            {
+                PartyId = party.PartyId.ToString(CultureInfo.InvariantCulture),
+                OrganisationNumber = party.OrgNumber,
+            };
+        }
+        else if (party.PartyTypeName.Equals(PartyType.SelfIdentified))
+        {
+            return new() { PartyId = party.PartyId.ToString(CultureInfo.InvariantCulture), Username = party.Name };
+        }
+        return new()
+        {
+            PartyId = party.PartyId.ToString(CultureInfo.InvariantCulture),
+            // instanceOwnerPartyType == "unknown"
+        };
+    }
+
+    /// <summary>
+    /// Get the correct <see cref="InstanceOwner" /> object from the <see cref="Party" /> object of the entity that should own the instance
     /// Use authenticationContext to get the external identity for self identified parties
     /// </summary>
-    public static InstanceOwner PartyToInstanceOwner(Party party, IAuthenticationContext? authenticationContext = null)
+    public static async Task<InstanceOwner> PartyToInstanceOwner(Party party, IAuthenticationContext? authenticationContext = null)
     {
         if (!string.IsNullOrEmpty(party.SSN))
         {
@@ -214,7 +242,7 @@ public static class InstantiationHelper
             string? externalIdentifier = null;
             if (authenticationContext is not null)
             {
-                externalIdentifier = GetExternalIdentityForSelfIdentifiedParty(party, authenticationContext).GetAwaiter().GetResult();
+                externalIdentifier = await GetExternalIdentityForSelfIdentifiedParty(party, authenticationContext);
             }
             return new() { PartyId = party.PartyId.ToString(CultureInfo.InvariantCulture), Username = party.Name, ExternalIdentifier = externalIdentifier };
         }
