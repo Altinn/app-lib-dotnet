@@ -1,6 +1,5 @@
 using System.Globalization;
 using Altinn.App.Core.Features.Auth;
-using Altinn.App.Core.Features.Auth;
 using Altinn.Platform.Register.Enums;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
