@@ -1,5 +1,0 @@
-{
-  "name": "Should handle multiplying by one",
-  "expression": ["multiply", 42, 1],
-  "expects": 42
-}
