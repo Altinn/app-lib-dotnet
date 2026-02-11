@@ -15,8 +15,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
 {
     private readonly string? _stringValue = null;
 
-    // decimal is a value type where nullable takes extra space, and we only read it when it should be set
-    private readonly decimal _numberValue = 0;
+    // double is a value type where nullable takes extra space, and we only read it when it should be set
+    private readonly double _numberValue = 0;
 
     // private readonly Dictionary<string, ExpressionValue>? _objectValue = null;
     // private readonly ExpressionValue[]? _arrayValue = null;
@@ -64,7 +64,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         }
     }
 
-    private ExpressionValue(decimal? value)
+    private ExpressionValue(double? value)
     {
         if (value.HasValue)
         {
@@ -101,9 +101,9 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     public static implicit operator ExpressionValue(bool? value) => new(value);
 
     /// <summary>
-    /// Convert a nullable decimal to ExpressionValue
+    /// Convert a nullable double to ExpressionValue
     /// </summary>
-    public static implicit operator ExpressionValue(decimal? value) => new(value);
+    public static implicit operator ExpressionValue(double? value) => new(value);
 
     /// <summary>
     /// Convert a nullable string to ExpressionValue
@@ -131,8 +131,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             null => Null,
             bool boolValue => boolValue,
             string stringValue => stringValue,
-            float numberValue => ValidateAndCastFloatingPoint(numberValue), // expressions uses decimal which needs an explicit cast
-            double numberValue => ValidateAndCastFloatingPoint(numberValue), // expressions uses decimal which needs an explicit cast
+            float numberValue => numberValue,
+            double numberValue => numberValue,
             byte numberValue => numberValue,
             sbyte numberValue => numberValue,
             short numberValue => numberValue,
@@ -141,7 +141,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             uint numberValue => numberValue,
             long numberValue => numberValue,
             ulong numberValue => numberValue,
-            decimal numberValue => numberValue,
+            decimal numberValue => (double?)numberValue, // expressions uses double which needs an explicit cast
             DateTime dateTimeValue => JsonSerializer
                 .Serialize(dateTimeValue, _unsafeSerializerOptionsForSerializingDates)
                 .Trim(
@@ -227,7 +227,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// <summary>
     /// Get the value as a number (or throw if it isn't a number ValueKind)
     /// </summary>
-    public decimal Number =>
+    public double Number =>
         ValueKind switch
         {
             JsonValueKind.Number => _numberValue,
@@ -587,23 +587,6 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             || type == typeof(ushort)
             || type == typeof(sbyte);
     }
-
-    private static decimal? ValidateAndCastFloatingPoint(double value)
-    {
-        if (
-            double.IsNaN(value)
-            || double.IsInfinity(value)
-            || value > (double)decimal.MaxValue
-            || value < (double)decimal.MinValue
-        )
-        {
-            throw new ExpressionEvaluatorTypeErrorException(
-                $"Cannot convert non-finite or out-of-range number to decimal: {value}"
-            );
-        }
-
-        return (decimal?)value;
-    }
 }
 
 /// <summary>
@@ -619,7 +602,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
             JsonTokenType.True => true,
             JsonTokenType.False => false,
             JsonTokenType.String => reader.GetString(),
-            JsonTokenType.Number => reader.GetDecimal(),
+            JsonTokenType.Number => reader.GetDouble(),
             JsonTokenType.Null => ExpressionValue.Null,
             // JsonTokenType.StartObject => ReadObject(ref reader),
             // JsonTokenType.StartArray => ReadArray(ref reader),
