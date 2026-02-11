@@ -1,0 +1,5 @@
+{
+  "name": "Should multiply [float, integer]",
+  "expression": ["multiply", 7.5, 4],
+  "expects": 30.0
+}

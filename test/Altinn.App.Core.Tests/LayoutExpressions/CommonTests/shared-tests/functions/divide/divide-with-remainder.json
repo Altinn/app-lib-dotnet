@@ -1,0 +1,5 @@
+{
+  "name": "Should handle division with remainder",
+  "expression": ["divide", 10, 3],
+  "expects": 3.3333333333333333333333333333
+}

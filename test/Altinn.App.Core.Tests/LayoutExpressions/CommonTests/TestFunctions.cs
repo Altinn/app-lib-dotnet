@@ -332,16 +332,16 @@ public class TestFunctions
             componentModel = new LayoutModel([layout], null);
         }
 
-        var appRewourcesMock = new Mock<IAppResources>(MockBehavior.Strict);
+        var appResourcesMock = new Mock<IAppResources>(MockBehavior.Strict);
 
         var language = test.ProfileSettings?.Language ?? "nb";
-        appRewourcesMock
+        appResourcesMock
             .Setup(ar => ar.GetTexts(It.IsAny<string>(), It.IsAny<string>(), language))
             .ReturnsAsync(new TextResource() { Resources = test.TextResources ?? [] });
 
         var translationService = new TranslationService(
             new Core.Models.AppIdentifier("org", "app"),
-            appRewourcesMock.Object,
+            appResourcesMock.Object,
             FakeLoggerXunit.Get<TranslationService>(_output)
         );
 

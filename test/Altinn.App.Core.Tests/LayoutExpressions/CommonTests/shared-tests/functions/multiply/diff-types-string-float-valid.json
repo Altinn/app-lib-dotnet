@@ -1,0 +1,5 @@
+{
+  "name": "Should multiply [string, float] when string is valid number",
+  "expression": ["multiply", "5.5", 4.0],
+  "expects": 22.0
+}

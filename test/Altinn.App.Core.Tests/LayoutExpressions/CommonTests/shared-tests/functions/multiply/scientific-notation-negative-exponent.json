@@ -1,0 +1,5 @@
+{
+  "name": "Should multiply numbers with negative exponents",
+  "expression": ["multiply", 2e-3, 3e-2],
+  "expects": 0.00006
+}

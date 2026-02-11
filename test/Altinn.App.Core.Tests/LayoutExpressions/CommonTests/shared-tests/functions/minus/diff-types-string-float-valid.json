@@ -1,0 +1,5 @@
+{
+  "name": "Should subtract [string, float] when string is valid number",
+  "expression": ["minus", "50.8", 20.3],
+  "expects": 30.5
+}

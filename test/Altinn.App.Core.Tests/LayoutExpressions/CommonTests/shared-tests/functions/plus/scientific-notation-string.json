@@ -1,0 +1,5 @@
+{
+  "name": "Should add string scientific notation with number",
+  "expression": ["plus", "1e2", 50],
+  "expectsFailure": "Expected number, got value \"1e2\""
+}

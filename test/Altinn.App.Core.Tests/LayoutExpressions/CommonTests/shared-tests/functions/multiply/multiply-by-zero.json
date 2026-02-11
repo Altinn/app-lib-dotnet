@@ -1,0 +1,5 @@
+{
+  "name": "Should handle multiplying by zero",
+  "expression": ["multiply", 42, 0],
+  "expects": 0
+}

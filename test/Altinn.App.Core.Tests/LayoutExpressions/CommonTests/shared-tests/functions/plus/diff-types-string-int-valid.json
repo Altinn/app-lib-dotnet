@@ -1,0 +1,5 @@
+{
+  "name": "Should add [string, integer] when string is valid number",
+  "expression": ["plus", "10", 20],
+  "expects": 30
+}

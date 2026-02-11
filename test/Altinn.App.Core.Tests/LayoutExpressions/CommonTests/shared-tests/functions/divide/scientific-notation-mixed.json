@@ -1,0 +1,5 @@
+{
+  "name": "Should divide scientific notation by regular number",
+  "expression": ["divide", 5e2, 10],
+  "expects": 50
+}

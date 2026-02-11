@@ -1,0 +1,5 @@
+{
+  "name": "Should fail with invalid string that cannot be parsed as number",
+  "expression": ["minus", 50, "not a number"],
+  "expectsFailure": "Expected number, got value \"not a number\""
+}

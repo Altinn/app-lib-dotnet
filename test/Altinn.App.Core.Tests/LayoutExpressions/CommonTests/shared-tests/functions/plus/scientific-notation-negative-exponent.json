@@ -1,0 +1,5 @@
+{
+  "name": "Should add numbers with negative exponents",
+  "expression": ["plus", 1e-3, 2e-3],
+  "expects": 0.003
+}

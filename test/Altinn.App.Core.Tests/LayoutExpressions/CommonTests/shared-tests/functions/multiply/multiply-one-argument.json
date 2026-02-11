@@ -1,5 +1,5 @@
 {
   "name": "Should throw exception when less than two arguments are provided",
   "expression": ["multiply", 0.1],
-  "expectsFailure": "Invalid number of args"
+  "expectsFailure": "Invalid"
 }

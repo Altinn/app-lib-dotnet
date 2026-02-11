@@ -1,0 +1,5 @@
+{
+  "name": "Should subtract two integers",
+  "expression": ["minus", 50, 20],
+  "expects": 30
+}

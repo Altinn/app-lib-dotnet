@@ -127,7 +127,6 @@ public static class ExpressionEvaluator
             ExpressionFunction.argv => Argv(args, positionalArguments),
             ExpressionFunction.gatewayAction => state.GetGatewayAction(),
             ExpressionFunction.language => state.GetLanguage(),
-            // Calculations:
             ExpressionFunction.plus => Plus(args),
             ExpressionFunction.minus => Minus(args),
             ExpressionFunction.multiply => Multiply(args),

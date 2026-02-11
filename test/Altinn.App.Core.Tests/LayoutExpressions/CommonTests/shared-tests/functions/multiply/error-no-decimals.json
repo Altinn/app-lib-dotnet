@@ -1,0 +1,5 @@
+{
+  "name": "Should fail with string with no decimals after dot",
+  "expression": ["multiply", "55.", 5],
+  "expectsFailure": "Expected number, got value \"55.\""
+}

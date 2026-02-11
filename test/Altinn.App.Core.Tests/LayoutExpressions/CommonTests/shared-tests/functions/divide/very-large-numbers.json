@@ -1,0 +1,5 @@
+{
+  "name": "Should handle very large numbers",
+  "expression": ["divide", 1000000000000, 1000000],
+  "expects": 1000000
+}

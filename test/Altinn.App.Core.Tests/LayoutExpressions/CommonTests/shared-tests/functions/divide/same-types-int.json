@@ -1,0 +1,5 @@
+{
+  "name": "Should divide two integers",
+  "expression": ["divide", 30, 6],
+  "expects": 5
+}

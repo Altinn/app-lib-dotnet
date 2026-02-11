@@ -1,0 +1,5 @@
+{
+  "name": "Should multiply two negative numbers",
+  "expression": ["multiply", -5, -6],
+  "expects": 30
+}

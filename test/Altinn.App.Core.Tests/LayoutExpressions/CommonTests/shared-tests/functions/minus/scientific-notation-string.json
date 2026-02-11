@@ -1,0 +1,5 @@
+{
+  "name": "Should subtract string scientific notation from number",
+  "expression": ["minus", 150, "1e2"],
+  "expectsFailure": "Expected number, got value \"1e2\""
+}

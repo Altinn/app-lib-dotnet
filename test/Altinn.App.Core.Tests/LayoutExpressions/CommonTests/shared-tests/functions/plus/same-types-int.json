@@ -1,0 +1,5 @@
+{
+  "name": "Should add two integers",
+  "expression": ["plus", 10, 20],
+  "expects": 30
+}

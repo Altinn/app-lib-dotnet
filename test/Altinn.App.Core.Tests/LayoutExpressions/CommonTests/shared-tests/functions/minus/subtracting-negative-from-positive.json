@@ -1,0 +1,5 @@
+{
+  "name": "Should subtract negative from positive",
+  "expression": ["minus", 50, -30],
+  "expects": 80
+}

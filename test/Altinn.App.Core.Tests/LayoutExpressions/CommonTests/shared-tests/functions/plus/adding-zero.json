@@ -1,0 +1,5 @@
+{
+  "name": "Should handle adding zero",
+  "expression": ["plus", 42, 0],
+  "expects": 42
+}

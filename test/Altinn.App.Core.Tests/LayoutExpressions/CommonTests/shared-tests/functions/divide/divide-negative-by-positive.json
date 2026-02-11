@@ -1,0 +1,5 @@
+{
+  "name": "Should divide negative by positive",
+  "expression": ["divide", -30, 6],
+  "expects": -5
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Should multiply scientific notation with regular number",
+  "expression": ["multiply", 1e2, 5],
+  "expects": 500
+}
