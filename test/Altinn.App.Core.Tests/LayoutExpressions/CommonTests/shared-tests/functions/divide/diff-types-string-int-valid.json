@@ -1,5 +1,0 @@
-{
-  "name": "Should divide [string, integer] when string is valid number",
-  "expression": ["divide", "30", 6],
-  "expects": 5
-}

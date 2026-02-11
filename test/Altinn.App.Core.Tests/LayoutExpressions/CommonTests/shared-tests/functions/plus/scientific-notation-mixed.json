@@ -1,5 +1,0 @@
-{
-  "name": "Should add scientific notation with regular number",
-  "expression": ["plus", 1e2, 50],
-  "expects": 150
-}

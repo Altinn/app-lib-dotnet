@@ -1,0 +1,120 @@
+{
+  "name": "Mutiply tests",
+  "testCases": [
+    {
+      "name": "Should multiply the two arguments",
+      "expression": ["multiply", 0.1, 0.2],
+      "expects": 0.02
+    },
+    {
+      "name": "Should return null when both of the arguments are null",
+      "expression": ["multiply", null, null],
+      "expects": null
+    },
+    {
+      "name": "Should multiply the two negative arguments",
+      "expression": ["multiply", -0.1, -0.2],
+      "expects": 0.02
+    },
+    {
+      "name": "Should return null when one of the arguments is null",
+      "expression": ["multiply", null, 2.1],
+      "expects": null
+    },
+    {
+      "name": "Should multiply two integers",
+      "expression": ["multiply", 5, 6],
+      "expects": 30
+    },
+    {
+      "name": "Should multiply [float, integer]",
+      "expression": ["multiply", 7.5, 4],
+      "expects": 30.0
+    },
+    {
+      "name": "Should multiply [string, integer] when string is valid number",
+      "expression": ["multiply", "5", 6],
+      "expects": 30
+    },
+    {
+      "name": "Should multiply [string, float] when string is valid number",
+      "expression": ["multiply", "5.5", 4.0],
+      "expects": 22.0
+    },
+    {
+      "name": "Should handle multiplying by zero",
+      "expression": ["multiply", 42, 0],
+      "expects": 0
+    },
+    {
+      "name": "Should multiply negative and positive numbers",
+      "expression": ["multiply", -5, 6],
+      "expects": -30
+    },
+    {
+      "name": "Should multiply two negative numbers",
+      "expression": ["multiply", -5, -6],
+      "expects": 30
+    },
+    {
+      "name": "Should multiply numbers in scientific notation",
+      "expression": ["multiply", 2e3, 3e2],
+      "expects": 600000
+    },
+    {
+      "name": "Should multiply numbers with negative exponents",
+      "expression": ["multiply", 2e-3, 3e-2],
+      "expects": 0.00006
+    },
+    {
+      "name": "Should multiply scientific notation with regular number",
+      "expression": ["multiply", 1e2, 5],
+      "expects": 500
+    },
+    {
+      "name": "Should fail with invalid string that cannot be parsed as number",
+      "expression": ["multiply", "not a number", 5],
+      "expectsFailure": "Expected number, got value \"not a number\""
+    },
+    {
+      "name": "Should fail with [boolean, integer]",
+      "expression": ["multiply", true, 5],
+      "expectsFailure": "Expected number, got value true"
+    },
+    {
+      "name": "Should fail with string with no decimals after dot",
+      "expression": ["multiply", "55.", 5],
+      "expectsFailure": "Expected number, got value \"55.\""
+    },
+    {
+      "name": "Should handle very large numbers",
+      "expression": ["multiply", 1000000, 1000000],
+      "expects": 1000000000000
+    },
+    {
+      "name": "Should handle very small numbers",
+      "expression": ["multiply", 0.0001, 0.0001],
+      "expects": 0.00000001
+    },
+    {
+      "name": "Should multiply string scientific notation with number",
+      "expression": ["multiply", "1e2", 5],
+      "expectsFailure": "Expected number, got value \"1e2\""
+    },
+    {
+      "name": "Should throw exception when less than two arguments are provided",
+      "expression": ["multiply", 0.1],
+      "expectsFailure": "Invalid"
+    },
+    {
+      "name": "Should throw exception when more than two arguments are present",
+      "expression": ["multiply", 0.1, 0.2, 15, 1.50],
+      "expectsFailure": "Invalid"
+    },
+    {
+      "name": "Should multiply negative and positive decimal numbers",
+      "expression": ["multiply", -5.55, 6.66],
+      "expects": -36.963
+    }
+  ]
+}

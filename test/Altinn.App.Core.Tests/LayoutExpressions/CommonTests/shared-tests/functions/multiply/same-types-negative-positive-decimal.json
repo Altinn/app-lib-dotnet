@@ -1,5 +1,0 @@
-{
-  "name": "Should multiply negative and positive decimal numbers",
-  "expression": ["multiply", -5.55, 6.66],
-  "expects": -36.963
-}

@@ -1,5 +1,0 @@
-{
-  "name": "Should subtract negative from positive decimal",
-  "expression": ["minus", 50.55, -30.77],
-  "expects": 81.32
-}

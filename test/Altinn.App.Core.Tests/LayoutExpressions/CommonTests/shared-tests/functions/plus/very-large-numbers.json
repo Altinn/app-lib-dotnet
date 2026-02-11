@@ -1,5 +1,0 @@
-{
-  "name": "Should handle very large numbers",
-  "expression": ["plus", 9007199254740991, 1],
-  "expects": 9007199254740992
-}

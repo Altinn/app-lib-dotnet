@@ -1,5 +1,0 @@
-{
-  "name": "Should subtract numbers with negative exponents",
-  "expression": ["minus", 5e-3, 2e-3],
-  "expects": 0.003
-}

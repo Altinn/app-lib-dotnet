@@ -1,5 +1,0 @@
-{
-  "name": "Should multiply two integers",
-  "expression": ["multiply", 5, 6],
-  "expects": 30
-}

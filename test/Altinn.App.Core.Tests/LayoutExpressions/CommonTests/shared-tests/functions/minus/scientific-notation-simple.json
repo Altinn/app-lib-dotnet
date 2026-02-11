@@ -1,5 +1,0 @@
-{
-  "name": "Should subtract numbers in scientific notation",
-  "expression": ["minus", 5e3, 2e3],
-  "expects": 3000
-}

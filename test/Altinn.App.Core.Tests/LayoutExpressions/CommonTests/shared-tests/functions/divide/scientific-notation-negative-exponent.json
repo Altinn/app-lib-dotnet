@@ -1,5 +1,0 @@
-{
-  "name": "Should divide numbers with negative exponents",
-  "expression": ["divide", 6e-3, 2e-3],
-  "expects": 3
-}

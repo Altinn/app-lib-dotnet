@@ -1,5 +1,0 @@
-{
-  "name": "Should handle very small numbers",
-  "expression": ["plus", 0.0000001, 0.0000002],
-  "expects": 0.0000003
-}

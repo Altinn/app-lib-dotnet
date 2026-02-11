@@ -1,5 +1,0 @@
-{
-  "name": "Should multiply string scientific notation with number",
-  "expression": ["multiply", "1e2", 5],
-  "expectsFailure": "Expected number, got value \"1e2\""
-}

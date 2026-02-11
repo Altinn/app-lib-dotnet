@@ -1,5 +1,0 @@
-{
-  "name": "Should handle subtracting zero",
-  "expression": ["minus", 42, 0],
-  "expects": 42
-}

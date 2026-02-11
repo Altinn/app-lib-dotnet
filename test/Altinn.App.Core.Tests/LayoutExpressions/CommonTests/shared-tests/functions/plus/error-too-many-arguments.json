@@ -1,5 +1,0 @@
-{
-  "name": "Should throw exception when more than two arguments are present",
-  "expression": ["plus", 0.1, 0.2, 15, 1.50],
-  "expectsFailure": "Invalid"
-}

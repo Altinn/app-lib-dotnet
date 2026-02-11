@@ -1,5 +1,0 @@
-{
-  "name": "Should subtract [float, integer]",
-  "expression": ["minus", 50.5, 20],
-  "expects": 30.5
-}

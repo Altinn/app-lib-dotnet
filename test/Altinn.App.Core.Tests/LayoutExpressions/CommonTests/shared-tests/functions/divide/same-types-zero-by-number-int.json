@@ -1,5 +1,0 @@
-{
-  "name": "Should handle dividing zero by a number",
-  "expression": ["divide", 0, 42],
-  "expects": 0
-}

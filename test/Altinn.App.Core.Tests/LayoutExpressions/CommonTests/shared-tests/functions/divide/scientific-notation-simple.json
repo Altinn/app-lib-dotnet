@@ -1,5 +1,0 @@
-{
-  "name": "Should divide numbers in scientific notation",
-  "expression": ["divide", 6e3, 2e3],
-  "expects": 3
-}

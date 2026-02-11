@@ -1,5 +1,0 @@
-{
-  "name": "Should add [string, float] when string is valid number",
-  "expression": ["plus", "10.5", 20.3],
-  "expects": 30.8
-}

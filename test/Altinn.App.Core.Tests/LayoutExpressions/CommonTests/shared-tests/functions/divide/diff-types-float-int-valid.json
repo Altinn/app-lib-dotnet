@@ -1,5 +1,0 @@
-{
-  "name": "Should divide [float, integer]",
-  "expression": ["divide", 30.0, 6],
-  "expects": 5.0
-}

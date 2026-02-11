@@ -29,7 +29,7 @@ public class ExpressionTestCaseRoot
     public string? Name { get; set; }
 
     [JsonPropertyName("expression")]
-    public Expression Expression { get; set; }
+    public Expression? Expression { get; set; }
 
     [JsonPropertyName("context")]
     public ComponentContextForTestSpec? Context { get; set; }
@@ -42,6 +42,9 @@ public class ExpressionTestCaseRoot
 
     public class TestCaseItem
     {
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
         [JsonPropertyName("expression")]
         public required Expression Expression { get; set; }
 

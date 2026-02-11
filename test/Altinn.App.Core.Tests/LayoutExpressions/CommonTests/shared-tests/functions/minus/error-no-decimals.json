@@ -1,5 +1,0 @@
-{
-  "name": "Should fail with string with no decimals after dot",
-  "expression": ["minus", "55.", 10],
-  "expectsFailure": "Expected number, got value \"55.\""
-}

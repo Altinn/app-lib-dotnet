@@ -1,5 +1,0 @@
-{
-  "name": "Should divide string scientific notation by number",
-  "expression": ["divide", "5e2", 10],
-  "expectsFailure": "Expected number, got value \"5e2\""
-}
