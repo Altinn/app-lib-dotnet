@@ -1,0 +1,5 @@
+{
+  "name": "Should add negative and positive decimal numbers",
+  "expression": ["plus", 50.55, -30.66],
+  "expects": 19.89
+}
