@@ -288,7 +288,7 @@ public class TestFunctions
                 e.ValueKind switch
                 {
                     JsonValueKind.String => e.GetString(),
-                    JsonValueKind.Number => e.GetDouble(),
+                    JsonValueKind.Number => e.GetDecimal(),
                     JsonValueKind.True => true,
                     JsonValueKind.False => false,
                     JsonValueKind.Null => null,

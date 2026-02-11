@@ -11,7 +11,7 @@ namespace Altinn.App.Core.Internal.Expressions;
 /// <summary>
 /// Static class used to evaluate expressions. Holds the implementation for all expression functions.
 /// </summary>
-public static class ExpressionEvaluator
+public static partial class ExpressionEvaluator
 {
     /// <summary>
     /// Shortcut for evaluating a boolean expression on a given property on a <see cref="Models.Layout.Components.Base.BaseComponent" />
@@ -865,11 +865,9 @@ public static class ExpressionEvaluator
         );
     }
 
-    private static readonly Regex _numberRegex = new(@"^-?\d+(\.\d+)?$");
-
     internal static decimal? ParseNumber(string s, bool throwException = true)
     {
-        if (_numberRegex.IsMatch(s) && decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+        if (NumberRegex().IsMatch(s) && decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
         {
             return d;
         }
@@ -913,7 +911,7 @@ public static class ExpressionEvaluator
     private static decimal? Divide(ExpressionValue[] args)
     {
         var (a, b) = PrepareNumericArgs(args);
-        if (b == 0)
+        if (a != null && b == 0)
         {
             throw new ExpressionEvaluatorTypeErrorException("The second argument is 0, cannot divide by 0");
         }
@@ -992,4 +990,7 @@ public static class ExpressionEvaluator
 
         return positionalArguments[index.Value];
     }
+
+    [GeneratedRegex(@"^-?\d+(\.\d+)?$")]
+    private static partial Regex NumberRegex();
 }

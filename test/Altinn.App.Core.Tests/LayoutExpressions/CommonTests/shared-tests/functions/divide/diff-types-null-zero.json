@@ -1,0 +1,5 @@
+{
+  "name": "Should return null when dividend is null and divisor is zero",
+  "expression": ["divide", null, 0],
+  "expects": null
+}

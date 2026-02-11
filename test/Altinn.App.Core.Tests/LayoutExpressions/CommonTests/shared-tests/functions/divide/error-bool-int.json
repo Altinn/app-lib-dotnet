@@ -1,5 +1,5 @@
 {
   "name": "Should fail with [boolean, integer]",
-  "expression": ["divide", 100, true],
+  "expression": ["divide", true, 100],
   "expectsFailure": "Expected number, got value true"
 }
