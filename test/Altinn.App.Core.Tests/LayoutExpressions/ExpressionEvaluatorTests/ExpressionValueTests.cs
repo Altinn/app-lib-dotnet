@@ -57,15 +57,15 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
     [Fact]
     public void TestDecimal()
     {
-        decimal decimalValue = 123.456m;
-        ExpressionValue value = decimalValue;
-        Assert.Equal(decimalValue, value.ToObject());
-        Assert.Equal(decimalValue, value.Number);
+        double doubleValue = 123.456;
+        ExpressionValue value = doubleValue;
+        Assert.Equal(doubleValue, value.ToObject());
+        Assert.Equal(doubleValue, value.Number);
 
-        value = ExpressionValue.FromObject(decimalValue);
-        Assert.Equal(decimalValue, value.ToObject());
+        value = ExpressionValue.FromObject(doubleValue);
+        Assert.Equal(doubleValue, value.ToObject());
 
-        Assert.Equal(decimalValue.ToString(CultureInfo.InvariantCulture), value.ToString());
+        Assert.Equal(doubleValue.ToString(CultureInfo.InvariantCulture), value.ToString());
         Assert.Throws<NotImplementedException>(() => value.GetHashCode());
         // Assert.Equal(decimalValue.GetHashCode(), value.GetHashCode());
     }
@@ -259,7 +259,7 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
     public void TestTryDeserializeVariousTypes()
     {
         TestTryDeserialize(2, 2.0, true);
-        TestTryDeserialize(2.5m, 2.5, true);
+        TestTryDeserialize(2.5, 2.5, true);
         TestTryDeserialize("test", "test", true);
         TestTryDeserialize(true, true, true);
         TestTryDeserialize(false, false, true);

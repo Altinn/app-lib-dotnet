@@ -614,8 +614,8 @@ public static partial class ExpressionEvaluator
             throw new ExpressionEvaluatorTypeErrorException($"Expected 2-3 arguments, got {args.Length}");
         }
         string? subject = args[0].ToStringForEquals();
-        decimal? start = PrepareNumericArg(args[1]);
-        decimal? end = args.Length == 3 ? PrepareNumericArg(args[2]) : null;
+        double? start = PrepareNumericArg(args[1]);
+        double? end = args.Length == 3 ? PrepareNumericArg(args[2]) : null;
         bool hasEnd = args.Length == 3;
 
         if (start == null || (hasEnd && end == null))
@@ -810,7 +810,7 @@ public static partial class ExpressionEvaluator
         return !PrepareBooleanArg(args[0]);
     }
 
-    private static (decimal?, decimal?) PrepareNumericArgs(ExpressionValue[] args)
+    private static (double?, double?) PrepareNumericArgs(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
@@ -824,7 +824,7 @@ public static partial class ExpressionEvaluator
         return (a, b);
     }
 
-    private static decimal? PrepareNumericArg(ExpressionValue arg)
+    private static double? PrepareNumericArg(ExpressionValue arg)
     {
         return arg.ValueKind switch
         {
@@ -865,9 +865,9 @@ public static partial class ExpressionEvaluator
         );
     }
 
-    internal static decimal? ParseNumber(string s, bool throwException = true)
+    internal static double? ParseNumber(string s, bool throwException = true)
     {
-        if (NumberRegex().IsMatch(s) && decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+        if (NumberRegex().IsMatch(s) && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
         {
             return d;
         }
@@ -890,25 +890,25 @@ public static partial class ExpressionEvaluator
         return a < b; // Actual implementation
     }
 
-    private static decimal? Plus(ExpressionValue[] args)
+    private static double? Plus(ExpressionValue[] args)
     {
         var (a, b) = PrepareNumericArgs(args);
         return a + b;
     }
 
-    private static decimal? Minus(ExpressionValue[] args)
+    private static double? Minus(ExpressionValue[] args)
     {
         var (a, b) = PrepareNumericArgs(args);
         return a - b;
     }
 
-    private static decimal? Multiply(ExpressionValue[] args)
+    private static double? Multiply(ExpressionValue[] args)
     {
         var (a, b) = PrepareNumericArgs(args);
         return a * b;
     }
 
-    private static decimal? Divide(ExpressionValue[] args)
+    private static double? Divide(ExpressionValue[] args)
     {
         var (a, b) = PrepareNumericArgs(args);
         if (a != null && b == 0)
