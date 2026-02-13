@@ -115,6 +115,26 @@
       "name": "Should multiply negative and positive decimal numbers",
       "expression": ["multiply", -5.55, 6.66],
       "expects": -36.963
+    },
+    {
+      "name": "Should throw exception when any argument is double max value",
+      "expression": ["multiply", 0, 1.7976931348623157E+308],
+      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal:"
+    },
+    {
+      "name": "Should throw exception when any argument is double min value",
+      "expression": ["multiply", -1.7976931348623157E+308, 0],
+      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal:"
+    },
+    {
+      "name": "Should throw exception when any argument is float max value",
+      "expression": ["multiply", 3.4028235E+38, 0],
+      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal:"
+    },
+    {
+      "name": "Should throw exception when any argument is float min value",
+      "expression": ["multiply", 0, -3.402823e+38],
+      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal:"
     }
   ]
 }

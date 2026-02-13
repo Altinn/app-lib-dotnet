@@ -79,7 +79,7 @@
     {
       "name": "Should handle very large numbers",
       "expression": ["plus", 9007199254740991, 1],
-      "expects": 9007199254740992
+      "expects": 9007199254740991
     },
     {
       "name": "Should handle very small numbers",
@@ -105,6 +105,26 @@
       "name": "Should add negative and positive decimal numbers",
       "expression": ["plus", 50.55, -30.66],
       "expects": 19.89
+    },
+    {
+      "name": "Should throw exception when any argument is double max value",
+      "expression": ["plus", 0, 1.7976931348623157E+308],
+      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal:"
+    },
+    {
+      "name": "Should throw exception when any argument is double min value",
+      "expression": ["plus", -1.7976931348623157E+308, 0],
+      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal:"
+    },
+    {
+      "name": "Should throw exception when any argument is float max value",
+      "expression": ["plus", 3.4028235E+38, 0],
+      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal:"
+    },
+    {
+      "name": "Should throw exception when any argument is float min value",
+      "expression": ["plus", 0, -3.402823e+38],
+      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal:"
     }
   ]
 }

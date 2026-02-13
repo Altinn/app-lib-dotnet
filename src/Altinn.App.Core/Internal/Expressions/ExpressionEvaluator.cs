@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Numerics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Altinn.App.Core.Models;
@@ -614,8 +615,8 @@ public static partial class ExpressionEvaluator
             throw new ExpressionEvaluatorTypeErrorException($"Expected 2-3 arguments, got {args.Length}");
         }
         string? subject = args[0].ToStringForEquals();
-        double? start = PrepareNumericArg(args[1]);
-        double? end = args.Length == 3 ? PrepareNumericArg(args[2]) : null;
+        double? start = PrepareNumericArg<double>(args[1]);
+        double? end = args.Length == 3 ? PrepareNumericArg<double>(args[2]) : null;
         bool hasEnd = args.Length == 3;
 
         if (start == null || (hasEnd && end == null))
@@ -663,13 +664,13 @@ public static partial class ExpressionEvaluator
             );
         }
 
-        var number = PrepareNumericArg(args[0]) ?? 0;
+        var number = PrepareNumericArg<double>(args[0]) ?? 0;
 
         int precision = 0;
 
         if (args.Length == 2)
         {
-            precision = (int)(PrepareNumericArg(args[1]) ?? 0);
+            precision = (int)(PrepareNumericArg<double>(args[1]) ?? 0);
         }
 
         return number.ToString($"N{precision}", CultureInfo.InvariantCulture);
@@ -810,31 +811,49 @@ public static partial class ExpressionEvaluator
         return !PrepareBooleanArg(args[0]);
     }
 
-    private static (double?, double?) PrepareNumericArgs(ExpressionValue[] args)
+    private static (T?, T?) PrepareNumericArgs<T>(ExpressionValue[] args)
+        where T : struct, INumber<T>
     {
         if (args.Length != 2)
         {
             throw new ExpressionEvaluatorTypeErrorException("Invalid number of args");
         }
 
-        var a = PrepareNumericArg(args[0]);
+        var a = PrepareNumericArg<T>(args[0]);
 
-        var b = PrepareNumericArg(args[1]);
+        var b = PrepareNumericArg<T>(args[1]);
 
         return (a, b);
     }
 
-    private static double? PrepareNumericArg(ExpressionValue arg)
+    private static T? PrepareNumericArg<T>(ExpressionValue arg)
+        where T : struct, INumber<T>
     {
         return arg.ValueKind switch
         {
             JsonValueKind.True or JsonValueKind.False or JsonValueKind.Array or JsonValueKind.Object =>
                 throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {arg}"),
-            JsonValueKind.String => ParseNumber(arg.String, throwException: true),
-            JsonValueKind.Number => arg.Number,
+            JsonValueKind.String => ParseNumber<T>(arg.String, throwException: true),
+            JsonValueKind.Number => CastNumber<T>(arg.Number),
 
             _ => null,
         };
+    }
+
+    private static T? CastNumber<T>(double? number)
+        where T : struct, INumber<T>
+    {
+        if (typeof(T) != typeof(decimal))
+        {
+            return number.HasValue ? T.CreateChecked(number.Value) : null;
+        }
+
+        if (number.HasValue && ValidFloatingPoint(number.Value))
+        {
+            return T.CreateChecked(number.Value);
+        }
+
+        return null;
     }
 
     private static ExpressionValue IfImpl(ExpressionValue[] args)
@@ -865,9 +884,13 @@ public static partial class ExpressionEvaluator
         );
     }
 
-    internal static double? ParseNumber(string s, bool throwException = true)
+    /// <summary>
+    /// Parses a number from a string representation.
+    /// </summary>
+    internal static T? ParseNumber<T>(string s, bool throwException = true)
+        where T : struct, INumber<T>
     {
-        if (NumberRegex().IsMatch(s) && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+        if (NumberRegex().IsMatch(s) && T.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
         {
             return d;
         }
@@ -881,7 +904,7 @@ public static partial class ExpressionEvaluator
 
     private static bool LessThan(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareNumericArgs<double>(args);
 
         if (a is null || b is null)
         {
@@ -892,35 +915,35 @@ public static partial class ExpressionEvaluator
 
     private static double? Plus(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
-        return a + b;
+        var (a, b) = PrepareNumericArgs<decimal>(args);
+        return PerformArithmetic(a, b, (x, y) => x + y);
     }
 
     private static double? Minus(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
-        return a - b;
+        var (a, b) = PrepareNumericArgs<decimal>(args);
+        return PerformArithmetic(a, b, (x, y) => x - y);
     }
 
     private static double? Multiply(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
-        return a * b;
+        var (a, b) = PrepareNumericArgs<decimal>(args);
+        return PerformArithmetic(a, b, (x, y) => x * y);
     }
 
     private static double? Divide(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareNumericArgs<decimal>(args);
         if (a != null && b == 0)
         {
             throw new ExpressionEvaluatorTypeErrorException("The second argument is 0, cannot divide by 0");
         }
-        return a / b;
+        return PerformArithmetic(a, b, (x, y) => x / y);
     }
 
     private static bool LessThanEq(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareNumericArgs<double>(args);
 
         if (a is null || b is null)
         {
@@ -931,7 +954,7 @@ public static partial class ExpressionEvaluator
 
     private static bool GreaterThan(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareNumericArgs<double>(args);
 
         if (a is null || b is null)
         {
@@ -942,7 +965,7 @@ public static partial class ExpressionEvaluator
 
     private static bool GreaterThanEq(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareNumericArgs<double>(args);
 
         if (a is null || b is null)
         {
@@ -973,7 +996,7 @@ public static partial class ExpressionEvaluator
             throw new ExpressionEvaluatorTypeErrorException($"Expected 1 argument(s), got {args.Length}");
         }
 
-        var index = (int?)PrepareNumericArg(args[0]);
+        var index = (int?)PrepareNumericArg<double>(args[0]);
         if (!index.HasValue)
         {
             throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value \"{args[0]}\"");
@@ -989,6 +1012,46 @@ public static partial class ExpressionEvaluator
         }
 
         return positionalArguments[index.Value];
+    }
+
+    /// <summary>
+    /// Performs arithmetic operation using decimal precision to avoid floating point precision issues.
+    /// Converts doubles to decimal, performs the operation, and converts back to double.
+    /// </summary>
+    /// <param name="aDecimal">First operand</param>
+    /// <param name="bDecimal">Second operand</param>
+    /// <param name="operation">Function that performs the arithmetic operation on two decimals</param>
+    /// <returns>Result of the operation as double, or null if any operand is null</returns>
+    private static double? PerformArithmetic(
+        decimal? aDecimal,
+        decimal? bDecimal,
+        Func<decimal, decimal, decimal> operation
+    )
+    {
+        if (aDecimal.HasValue is false || bDecimal.HasValue is false)
+        {
+            return null;
+        }
+
+        var result = operation(aDecimal.Value, bDecimal.Value);
+
+        return (double)result;
+    }
+
+    private static bool ValidFloatingPoint(double value)
+    {
+        if (
+            double.IsNaN(value)
+            || double.IsInfinity(value)
+            || value > (double)decimal.MaxValue
+            || value < (double)decimal.MinValue
+        )
+        {
+            throw new ExpressionEvaluatorTypeErrorException(
+                $"Cannot convert non-finite or out-of-range number to decimal: {value}"
+            );
+        }
+        return true;
     }
 
     [GeneratedRegex(@"^-?\d+(\.\d+)?$")]

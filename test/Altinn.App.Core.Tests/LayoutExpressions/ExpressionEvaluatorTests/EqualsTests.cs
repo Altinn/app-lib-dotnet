@@ -54,8 +54,8 @@ public class EqualTests(ITestOutputHelper outputHelper)
             (ulong)uint.MaxValue + 1,
             (decimal)int.MaxValue + 1,
             (decimal)uint.MaxValue + 1,
-            (decimal)long.MaxValue + 1,
-            (decimal)ulong.MaxValue + 1,
+            (double)((decimal)long.MaxValue + 1),
+            (double)((decimal)ulong.MaxValue + 1),
         };
 
     [Theory]
