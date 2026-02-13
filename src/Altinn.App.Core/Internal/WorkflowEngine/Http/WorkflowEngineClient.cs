@@ -1,9 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
-using Altinn.App.ProcessEngine.Constants;
-using Altinn.App.ProcessEngine.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
 
@@ -14,22 +13,21 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Http;
 /// </summary>
 internal sealed class WorkflowEngineClient : IWorkflowEngineClient
 {
+    private const string ApiKeyHeaderName = "X-Api-Key";
+
     private readonly HttpClient _httpClient;
     private readonly AppIdentifier _appIdentifier;
-    private readonly GeneralSettings _generalSettings;
-    private readonly ProcessEngineSettings _processEngineSettings;
+    private readonly PlatformSettings _platformSettings;
 
     public WorkflowEngineClient(
         AppIdentifier appIdentifier,
         HttpClient httpClient,
-        IOptions<GeneralSettings> generalSettings,
-        IOptions<ProcessEngineSettings> processEngineSettings
+        IOptions<PlatformSettings> platformSettings
     )
     {
         _appIdentifier = appIdentifier;
         _httpClient = httpClient;
-        _generalSettings = generalSettings.Value;
-        _processEngineSettings = processEngineSettings.Value;
+        _platformSettings = platformSettings.Value;
     }
 
     /// <inheritdoc />
@@ -42,27 +40,27 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         string url = $"{GetBaseUrl()}{GetInstancePath(instance)}/next";
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
         httpRequest.Content = JsonContent.Create(request);
-        httpRequest.Headers.Add(AuthConstants.ApiKeyHeaderName, _processEngineSettings.ApiKey);
+        httpRequest.Headers.Add(ApiKeyHeaderName, _platformSettings.WorkflowEngineApiKey);
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task<ProcessEngineStatusResponse?> GetActiveJobStatus(
+    public async Task<WorkflowStatusResponse?> GetActiveJobStatus(
         Instance instance,
         CancellationToken cancellationToken = default
     )
     {
         string url = $"{GetBaseUrl()}{GetInstancePath(instance)}/status";
         using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
-        httpRequest.Headers.Add(AuthConstants.ApiKeyHeaderName, _processEngineSettings.ApiKey);
+        httpRequest.Headers.Add(ApiKeyHeaderName, _platformSettings.WorkflowEngineApiKey);
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            return await response.Content.ReadFromJsonAsync<ProcessEngineStatusResponse>(
+            return await response.Content.ReadFromJsonAsync<WorkflowStatusResponse>(
                     cancellationToken: cancellationToken
                 ) ?? throw new Exception("The expected process engine status was not found in the response content.");
         }
@@ -72,7 +70,8 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
 
     private string GetBaseUrl()
     {
-        return $"http://{_generalSettings.HostName}/process-engine/{_appIdentifier.Org}/{_appIdentifier.App}/";
+        string baseUrl = _platformSettings.ApiWorkflowEngineEndpoint.TrimEnd('/');
+        return $"{baseUrl}/{_appIdentifier.Org}/{_appIdentifier.App}/";
     }
 
     private static string GetInstancePath(Instance instance)

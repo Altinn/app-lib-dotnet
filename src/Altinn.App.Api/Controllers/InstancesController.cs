@@ -397,6 +397,8 @@ public class InstancesController : ControllerBase
             );
         }
 
+        instance = await _instanceClient.GetInstance(instance);
+
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
 

@@ -12,17 +12,16 @@ using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Internal.WorkflowEngine;
 using Altinn.App.Core.Internal.WorkflowEngine.Http;
+using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Models.Validation;
-using Altinn.App.ProcessEngine.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using AppProcessNextRequest = Altinn.App.Core.Models.Process.ProcessNextRequest;
-using ProcessNextRequest = Altinn.App.ProcessEngine.Models.ProcessNextRequest;
+using ProcessNextRequest = Altinn.App.Core.Models.Process.ProcessNextRequest;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -152,7 +151,7 @@ internal class ProcessEngine : IProcessEngine
         CancellationToken ct = default
     )
     {
-        ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(
+        WorkflowEngine.Models.ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(
             processStateChange,
             lockToken,
             prefill
@@ -162,7 +161,7 @@ internal class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<ProcessChangeResult> Next(AppProcessNextRequest request, CancellationToken ct = default)
+    public async Task<ProcessChangeResult> Next(ProcessNextRequest request, CancellationToken ct = default)
     {
         using Activity? activity = _telemetry?.StartProcessNextActivity(request.Instance, request.Action);
 
@@ -287,7 +286,7 @@ internal class ProcessEngine : IProcessEngine
 
     private async Task<UserActionResult> HandleUserAction(
         Instance instance,
-        AppProcessNextRequest request,
+        ProcessNextRequest request,
         CancellationToken ct
     )
     {
@@ -543,7 +542,10 @@ internal class ProcessEngine : IProcessEngine
             return new MoveToNextResult(instance, null);
         }
 
-        ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(processStateChange, lockToken);
+        WorkflowEngine.Models.ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(
+            processStateChange,
+            lockToken
+        );
         await _workflowEngineClient.ProcessNext(instance, processNextRequest, ct);
 
         await WaitForEngineResponse(instance, ct);
@@ -664,7 +666,7 @@ internal class ProcessEngine : IProcessEngine
 
         while (!ct.IsCancellationRequested)
         {
-            ProcessEngineStatusResponse? processStatus = await _workflowEngineClient.GetActiveJobStatus(instance, ct);
+            WorkflowStatusResponse? processStatus = await _workflowEngineClient.GetActiveJobStatus(instance, ct);
 
             if (processStatus is null)
             {
@@ -673,15 +675,15 @@ internal class ProcessEngine : IProcessEngine
 
             switch (processStatus.OverallStatus)
             {
-                case ProcessEngineItemStatus.Canceled:
+                case PersistentItemStatus.Canceled:
                     throw new InvalidOperationException("Process engine job was canceled.");
-                case ProcessEngineItemStatus.Failed:
+                case PersistentItemStatus.Failed:
                     throw new InvalidOperationException("Process engine job failed.");
-                case ProcessEngineItemStatus.Completed:
+                case PersistentItemStatus.Completed:
                     return;
-                case ProcessEngineItemStatus.Enqueued:
-                case ProcessEngineItemStatus.Processing:
-                case ProcessEngineItemStatus.Requeued:
+                case PersistentItemStatus.Enqueued:
+                case PersistentItemStatus.Processing:
+                case PersistentItemStatus.Requeued:
                     _logger.LogDebug(
                         "Process engine job is still in progress. Status: {Status}",
                         processStatus.OverallStatus

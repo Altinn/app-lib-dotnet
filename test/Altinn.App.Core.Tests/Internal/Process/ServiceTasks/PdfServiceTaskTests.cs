@@ -59,6 +59,7 @@ public class PdfServiceTaskTests
                     instance.Process.CurrentTask.ElementId,
                     FileName,
                     It.IsAny<List<string>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -108,6 +109,7 @@ public class PdfServiceTaskTests
                     "pdfTask",
                     "customFilenameTextResourceKey",
                     taskIds,
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once

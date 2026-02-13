@@ -3,9 +3,9 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
+using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
-using Altinn.App.ProcessEngine.Models;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -33,13 +33,13 @@ internal sealed class ProcessNextRequestFactory
     /// Creates a ProcessNextRequest from the instance and process state change.
     /// Maps each instance event to its corresponding command sequence.
     /// </summary>
-    public async Task<Altinn.App.ProcessEngine.Models.ProcessNextRequest> Create(
+    public async Task<WorkflowEngine.Models.ProcessNextRequest> Create(
         ProcessStateChange processStateChange,
         string lockToken,
         Dictionary<string, string>? prefill = null
     )
     {
-        var commands = new List<ProcessEngineCommandRequest>();
+        var commands = new List<StepRequest>();
 
         bool isInitialTaskStart = processStateChange.OldProcessState?.CurrentTask is null;
 
@@ -64,12 +64,12 @@ internal sealed class ProcessNextRequestFactory
             }
         }
 
-        return new Altinn.App.ProcessEngine.Models.ProcessNextRequest
+        return new WorkflowEngine.Models.ProcessNextRequest
         {
             CurrentElementId = processStateChange.OldProcessState?.CurrentTask?.ElementId ?? string.Empty,
             DesiredElementId = processStateChange.NewProcessState?.CurrentTask?.ElementId ?? string.Empty,
             Actor = await ExtractActor(),
-            Tasks = commands,
+            Steps = commands,
             LockToken = lockToken,
         };
     }
@@ -106,7 +106,7 @@ internal sealed class ProcessNextRequestFactory
         return isServiceTask ? altinnTaskType : null;
     }
 
-    private async Task<ProcessEngineActor> ExtractActor()
+    private async Task<Actor> ExtractActor()
     {
         Authenticated currentAuth = _authenticationContext.Current;
         string userIdOrOrgNumber = currentAuth switch
@@ -120,19 +120,16 @@ internal sealed class ProcessNextRequestFactory
 
         string? language = await currentAuth.GetLanguage();
 
-        return new ProcessEngineActor { UserIdOrOrgNumber = userIdOrOrgNumber, Language = language };
+        return new Actor { UserIdOrOrgNumber = userIdOrOrgNumber, Language = language };
     }
 
-    private static ProcessEngineCommandRequest CreateUpdateProcessStateCommand(ProcessStateChange processStateChange)
+    private static StepRequest CreateUpdateProcessStateCommand(ProcessStateChange processStateChange)
     {
         var payload = new UpdateProcessStatePayload(processStateChange);
         string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
-        return new ProcessEngineCommandRequest
+        return new StepRequest
         {
-            Command = new ProcessEngineCommand.AppCommand(
-                CommandKey: UpdateProcessStateInStorage.Key,
-                Payload: serializedPayload
-            ),
+            Command = new Command.AppCommand(CommandKey: UpdateProcessStateInStorage.Key, Payload: serializedPayload),
         };
     }
 }

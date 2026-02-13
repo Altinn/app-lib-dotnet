@@ -50,7 +50,7 @@ internal sealed class SubformPdfServiceTask(
                 taskId,
                 filenameTextResourceKey,
                 new SubformPdfContext(subformComponentId, dataElement.Id),
-                context.CancellationToken
+                ct: context.CancellationToken
             );
 
             await AddSubformPdfMetadata(

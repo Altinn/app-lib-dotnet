@@ -4,7 +4,7 @@ using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.ProcessEnd;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskAbandon;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
-using Altinn.App.ProcessEngine.Models;
+using Altinn.App.Core.Internal.WorkflowEngine.Models;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine;
 
@@ -13,19 +13,18 @@ namespace Altinn.App.Core.Internal.WorkflowEngine;
 /// </summary>
 internal sealed class WorkflowCommandSet
 {
-    private readonly List<ProcessEngineCommandRequest> _commands = [];
-    private readonly List<ProcessEngineCommandRequest> _postProcessNextCommittedCommands = [];
+    private readonly List<StepRequest> _commands = [];
+    private readonly List<StepRequest> _postProcessNextCommittedCommands = [];
 
     /// <summary>
     /// Gets the main commands for this event. UpdateProcessState will be added after these.
     /// </summary>
-    public IReadOnlyList<ProcessEngineCommandRequest> Commands => _commands;
+    public IReadOnlyList<StepRequest> Commands => _commands;
 
     /// <summary>
     /// Gets the commands that execute after the ProcessNext has been committed to storage (e.g., MovedToAltinnEvent).
     /// </summary>
-    public IReadOnlyList<ProcessEngineCommandRequest> PostProcessNextCommittedCommands =>
-        _postProcessNextCommittedCommands;
+    public IReadOnlyList<StepRequest> PostProcessNextCommittedCommands => _postProcessNextCommittedCommands;
 
     /// <summary>
     /// Creates command group for task start events.
@@ -119,12 +118,9 @@ internal sealed class WorkflowCommandSet
         return this;
     }
 
-    private static ProcessEngineCommandRequest CreateCommand(string commandKey, CommandRequestPayload? payload = null)
+    private static StepRequest CreateCommand(string commandKey, CommandRequestPayload? payload = null)
     {
         string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
-        return new ProcessEngineCommandRequest
-        {
-            Command = new ProcessEngineCommand.AppCommand(CommandKey: commandKey, Payload: serializedPayload),
-        };
+        return new StepRequest { Command = new Command.AppCommand(CommandKey: commandKey, Payload: serializedPayload) };
     }
 }

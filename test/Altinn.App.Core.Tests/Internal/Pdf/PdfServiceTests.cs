@@ -19,6 +19,7 @@ using Altinn.App.PlatformServices.Tests.Mocks;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -46,8 +47,6 @@ public class PdfServiceTests
 
     private readonly IOptions<PlatformSettings> _platformSettingsOptions = Options.Create<PlatformSettings>(new() { });
 
-    private readonly Mock<IUserTokenProvider> _userTokenProvider;
-
     private readonly Mock<IAuthenticationContext> _authenticationContext = new();
 
     public PdfServiceTests(ITestOutputHelper outputHelper)
@@ -68,9 +67,6 @@ public class PdfServiceTests
         httpContext.Request.Protocol = "https";
         httpContext.Request.Host = new(HostName);
         _httpContextAccessor.Setup(s => s.HttpContext!).Returns(httpContext);
-
-        _userTokenProvider = new Mock<IUserTokenProvider>();
-        _userTokenProvider.Setup(s => s.GetUserToken()).Returns("usertoken");
 
         _authenticationContext.Setup(s => s.Current).Returns(TestAuthentication.GetUserAuthentication());
     }
@@ -97,8 +93,8 @@ public class PdfServiceTests
             httpClient,
             _pdfGeneratorSettingsOptions,
             _platformSettingsOptions,
-            _userTokenProvider.Object,
-            _httpContextAccessor.Object
+            _httpContextAccessor.Object,
+            BuildServiceProvider()
         );
 
         Stream pdf = await pdfGeneratorClient.GeneratePdf(
@@ -127,8 +123,8 @@ public class PdfServiceTests
             httpClient,
             _pdfGeneratorSettingsOptions,
             _platformSettingsOptions,
-            _userTokenProvider.Object,
-            _httpContextAccessor.Object
+            _httpContextAccessor.Object,
+            BuildServiceProvider()
         );
 
         var func = async () =>
@@ -146,7 +142,12 @@ public class PdfServiceTests
         // Arrange
         TelemetrySink telemetrySink = new();
         _pdfGeneratorClient.Setup(s =>
-            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+            s.GeneratePdf(
+                It.IsAny<Uri>(),
+                It.IsAny<string?>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
+                It.IsAny<CancellationToken>()
+            )
         );
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
@@ -164,7 +165,7 @@ public class PdfServiceTests
         };
 
         // Act
-        await target.GenerateAndStorePdf(instance, "Task_1", CancellationToken.None);
+        await target.GenerateAndStorePdf(instance, "Task_1", ct: CancellationToken.None);
 
         // Asserts
         _pdfGeneratorClient.Verify(
@@ -177,6 +178,7 @@ public class PdfServiceTests
                         && u.AbsoluteUri.Contains(instance.Id)
                     ),
                     It.Is<string?>(s => s == null),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -205,7 +207,12 @@ public class PdfServiceTests
     {
         // Arrange
         _pdfGeneratorClient.Setup(s =>
-            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+            s.GeneratePdf(
+                It.IsAny<Uri>(),
+                It.IsAny<string?>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
+                It.IsAny<CancellationToken>()
+            )
         );
 
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
@@ -232,7 +239,7 @@ public class PdfServiceTests
         };
 
         // Act
-        await target.GenerateAndStorePdf(instance, "Task_1", CancellationToken.None);
+        await target.GenerateAndStorePdf(instance, "Task_1", ct: CancellationToken.None);
 
         // Asserts
         _pdfGeneratorClient.Verify(
@@ -245,6 +252,7 @@ public class PdfServiceTests
                         && u.AbsoluteUri.Contains(instance.Id)
                     ),
                     It.Is<string?>(s => s == null),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -312,7 +320,12 @@ public class PdfServiceTests
         var autoGeneratePdfForTaskIds = new List<string> { "Task_1", "Task_2", "Task_3" };
 
         _pdfGeneratorClient.Setup(s =>
-            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+            s.GeneratePdf(
+                It.IsAny<Uri>(),
+                It.IsAny<string?>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
+                It.IsAny<CancellationToken>()
+            )
         );
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
@@ -329,7 +342,13 @@ public class PdfServiceTests
         };
 
         // Act
-        await target.GenerateAndStorePdf(instance, "Task_PDF", null, autoGeneratePdfForTaskIds, CancellationToken.None);
+        await target.GenerateAndStorePdf(
+            instance,
+            "Task_PDF",
+            null,
+            autoGeneratePdfForTaskIds,
+            ct: CancellationToken.None
+        );
 
         // Assert
         _pdfGeneratorClient.Verify(
@@ -345,6 +364,7 @@ public class PdfServiceTests
                         && u.AbsoluteUri.Contains("task=Task_3")
                     ),
                     It.Is<string?>(s => s == null),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -371,7 +391,12 @@ public class PdfServiceTests
             .ReturnsAsync(resource);
 
         _pdfGeneratorClient.Setup(s =>
-            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+            s.GeneratePdf(
+                It.IsAny<Uri>(),
+                It.IsAny<string?>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
+                It.IsAny<CancellationToken>()
+            )
         );
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
@@ -394,7 +419,7 @@ public class PdfServiceTests
         };
 
         // Act
-        await target.GenerateAndStorePdf(instance, "Task_1", customTextResourceKey, null, CancellationToken.None);
+        await target.GenerateAndStorePdf(instance, "Task_1", customTextResourceKey, null, ct: CancellationToken.None);
 
         // Assert
         _dataClient.Verify(
@@ -433,7 +458,12 @@ public class PdfServiceTests
             .ReturnsAsync(resource);
 
         _pdfGeneratorClient.Setup(s =>
-            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+            s.GeneratePdf(
+                It.IsAny<Uri>(),
+                It.IsAny<string?>(),
+                It.IsAny<StorageAuthenticationMethod?>(),
+                It.IsAny<CancellationToken>()
+            )
         );
         _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
 
@@ -456,7 +486,7 @@ public class PdfServiceTests
         };
 
         // Act
-        await target.GenerateAndStorePdf(instance, "Task_1", customTextResourceKey, null, CancellationToken.None);
+        await target.GenerateAndStorePdf(instance, "Task_1", customTextResourceKey, null, ct: CancellationToken.None);
 
         // Assert
         _dataClient.Verify(
@@ -536,5 +566,12 @@ public class PdfServiceTests
             mockServiceProvider.Object,
             telemetrySink?.Object
         );
+    }
+
+    private static IServiceProvider BuildServiceProvider()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton(new Mock<IAuthenticationTokenResolver>().Object);
+        return services.BuildServiceProvider();
     }
 }

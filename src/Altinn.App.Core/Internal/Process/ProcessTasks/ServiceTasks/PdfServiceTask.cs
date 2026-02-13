@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Pdf;
@@ -45,7 +46,8 @@ internal sealed class PdfServiceTask : IPdfServiceTask
             taskId,
             config.FilenameTextResourceKey,
             config.AutoPdfTaskIds,
-            context.CancellationToken
+            StorageAuthenticationMethod.ServiceOwner(),
+            ct: context.CancellationToken
         );
 
         _logger.LogDebug(

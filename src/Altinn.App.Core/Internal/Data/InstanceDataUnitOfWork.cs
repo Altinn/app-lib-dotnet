@@ -10,7 +10,6 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Texts;
-using Altinn.App.Core.Internal.WorkflowEngine.Caching;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
@@ -62,11 +61,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     private static readonly StorageAuthenticationMethod _defaultAuthenticationMethod =
         StorageAuthenticationMethod.CurrentUser();
 
-    // Lock-scoped instance cache fields
-    private const int MaxCacheSizeBytes = 1024 * 1024; // 1 MB - don't cache larger files
-    private readonly string? _lockToken;
-    private readonly ILockScopedInstanceCache _sessionCache;
-
     public InstanceDataUnitOfWork(
         Instance instance,
         IDataClient dataClient,
@@ -78,9 +72,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         IOptions<FrontEndSettings> frontEndSettings,
         string? taskId,
         string? language,
-        Telemetry? telemetry = null,
-        string? lockToken = null,
-        ILockScopedInstanceCache? sessionCache = null
+        Telemetry? telemetry = null
     )
     {
         if (instance.Id is not null)
@@ -102,8 +94,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         _appResources = appResources;
         _instanceClient = instanceClient;
         _telemetry = telemetry;
-        _lockToken = lockToken;
-        _sessionCache = sessionCache ?? NullLockScopedInstanceCache.Instance;
     }
 
     public Instance Instance { get; }
@@ -199,6 +189,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
 
         // Could use a double lock here, but a deadlock is more problematic than creating the state twice
         var layouts = _appResources.GetLayoutModelForTask(TaskId);
+        if (layouts is null)
+        {
+            return null;
+        }
 
         _layoutEvaluatorStateCache = new LayoutEvaluatorState(
             this,
@@ -220,46 +214,13 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         return await _binaryCache.GetOrCreate(
             dataElementIdentifier,
             async () =>
-            {
-                // Check if this data element should be cached (form data, not large attachments)
-                bool shouldCache = ShouldCacheDataElement(dataElementIdentifier);
-
-                // 1. Check Redis (cross-request cache)
-                if (_lockToken is not null && shouldCache)
-                {
-                    var cached = await _sessionCache.GetBinaryData(
-                        _lockToken,
-                        _instanceGuid,
-                        dataElementIdentifier.Guid
-                    );
-                    if (cached.HasValue)
-                        return cached.Value;
-                }
-
-                // 2. Fetch from Storage
-                var data = await _dataClient.GetDataBytes(
+                await _dataClient.GetDataBytes(
                     _instanceOwnerPartyId,
                     _instanceGuid,
                     dataElementIdentifier.Guid,
                     authenticationMethod: GetAuthenticationMethod(dataElementIdentifier)
-                );
-
-                // 3. Populate Redis for subsequent requests (only if small enough)
-                if (_lockToken is not null && shouldCache && data.Length <= MaxCacheSizeBytes)
-                {
-                    await _sessionCache.SetBinaryData(_lockToken, _instanceGuid, dataElementIdentifier.Guid, data);
-                }
-
-                return data;
-            }
+                )
         );
-    }
-
-    private bool ShouldCacheDataElement(DataElementIdentifier dataElementIdentifier)
-    {
-        // Only cache form data (has AppLogic.ClassRef), not binary attachments
-        var dataType = this.GetDataType(dataElementIdentifier);
-        return dataType.AppLogic?.ClassRef is not null;
     }
 
     /// <inheritdoc />
@@ -626,45 +587,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         }
 
         await Task.WhenAll(tasks);
-
-        // Update Redis with changes
-        if (_lockToken is not null)
-        {
-            var cacheTasks = new List<Task>();
-
-            // Update modified/created form data in Redis (only form data, respecting size limit)
-            foreach (var change in changes.FormDataChanges)
-            {
-                if (
-                    change.CurrentBinaryData is not null
-                    && change.Type is ChangeType.Updated or ChangeType.Created
-                    && change.CurrentBinaryData.Value.Length <= MaxCacheSizeBytes
-                )
-                {
-                    cacheTasks.Add(
-                        _sessionCache.SetBinaryData(
-                            _lockToken,
-                            _instanceGuid,
-                            change.DataElementIdentifier.Guid,
-                            change.CurrentBinaryData.Value
-                        )
-                    );
-                }
-            }
-
-            // Remove deleted data elements from Redis
-            foreach (var change in changes.FormDataChanges.Where(c => c.Type == ChangeType.Deleted))
-            {
-                cacheTasks.Add(
-                    _sessionCache.RemoveBinaryData(_lockToken, _instanceGuid, change.DataElementIdentifier.Guid)
-                );
-            }
-
-            // Update Instance in Redis (data element list may have changed)
-            cacheTasks.Add(_sessionCache.SetInstance(_lockToken, _instanceGuid, Instance));
-
-            await Task.WhenAll(cacheTasks);
-        }
     }
 
     /// <summary>

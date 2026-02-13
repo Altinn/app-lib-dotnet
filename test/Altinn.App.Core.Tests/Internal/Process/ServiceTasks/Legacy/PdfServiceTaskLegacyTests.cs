@@ -32,7 +32,7 @@ public class PdfServiceTaskLegacyTests
         await pst.Execute("Task_1", i);
 
         _appMetadata.Verify(am => am.GetApplicationMetadata(), Times.Once);
-        _pdfService.Verify(ps => ps.GenerateAndStorePdf(i, "Task_1", CancellationToken.None), Times.Once);
+        _pdfService.Verify(ps => ps.GenerateAndStorePdf(i, "Task_1", null, CancellationToken.None), Times.Once);
         _appMetadata.VerifyNoOtherCalls();
         _pdfService.VerifyNoOtherCalls();
         _appModel.VerifyNoOtherCalls();
@@ -72,7 +72,7 @@ public class PdfServiceTaskLegacyTests
         await pst.Execute("Task_1", i);
 
         _appMetadata.Verify(am => am.GetApplicationMetadata());
-        _pdfService.Verify(ps => ps.GenerateAndStorePdf(i, "Task_1", CancellationToken.None), Times.Once);
+        _pdfService.Verify(ps => ps.GenerateAndStorePdf(i, "Task_1", null, CancellationToken.None), Times.Once);
         _appMetadata.VerifyNoOtherCalls();
         _pdfService.VerifyNoOtherCalls();
         _appModel.VerifyNoOtherCalls();

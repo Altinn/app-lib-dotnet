@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
@@ -33,7 +34,11 @@ public class ProcessTaskDataLocker : IProcessTaskDataLocker
             List<DataElement> dataElements = instance.Data.FindAll(de => de.DataType == dataType.Id);
             foreach (DataElement dataElement in dataElements)
             {
-                await _dataClient.UnlockDataElement(instanceIdentifier, Guid.Parse(dataElement.Id));
+                await _dataClient.UnlockDataElement(
+                    instanceIdentifier,
+                    Guid.Parse(dataElement.Id),
+                    StorageAuthenticationMethod.ServiceOwner()
+                );
             }
         }
     }
@@ -49,7 +54,11 @@ public class ProcessTaskDataLocker : IProcessTaskDataLocker
             List<DataElement> dataElements = instance.Data.FindAll(de => de.DataType == dataType.Id);
             foreach (DataElement dataElement in dataElements)
             {
-                await _dataClient.LockDataElement(instanceIdentifier, Guid.Parse(dataElement.Id));
+                await _dataClient.LockDataElement(
+                    instanceIdentifier,
+                    Guid.Parse(dataElement.Id),
+                    StorageAuthenticationMethod.ServiceOwner()
+                );
             }
         }
     }

@@ -57,6 +57,16 @@ public class PlatformSettings
     public string ApiAccessManagementEndpoint { get; set; } = "http://localhost:5101/accessmanagement/api/v1/";
 
     /// <summary>
+    /// Gets or sets the url for the Workflow Engine API endpoint.
+    /// </summary>
+    public string ApiWorkflowEngineEndpoint { get; set; } = "http://localhost:8080/api/v1/workflow/";
+
+    /// <summary>
+    /// Gets or sets the API key for authenticating with the Workflow Engine.
+    /// </summary>
+    public string WorkflowEngineApiKey { get; set; } = "0544ba8b-2d8a-4ec9-b93a-47cdbd220293";
+
+    /// <summary>
     /// Gets or sets the subscription key value to use in requests against the platform.
     /// A new subscription key is generated automatically every time an app is deployed to an environment. The new key is then automatically
     /// added to the environment for the app code during deploy. This will override the value stored in app settings.

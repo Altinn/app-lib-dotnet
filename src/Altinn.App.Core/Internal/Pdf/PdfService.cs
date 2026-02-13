@@ -64,11 +64,16 @@ public class PdfService : IPdfService
     }
 
     /// <inheritdoc/>
-    public async Task GenerateAndStorePdf(Instance instance, string taskId, CancellationToken ct)
+    public async Task GenerateAndStorePdf(
+        Instance instance,
+        string taskId,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         using var activity = _telemetry?.StartGenerateAndStorePdfActivity(instance, taskId);
 
-        _ = await GenerateAndStorePdfInternal(instance, taskId, null, null, null, ct);
+        _ = await GenerateAndStorePdfInternal(instance, taskId, null, null, null, authenticationMethod, ct);
     }
 
     /// <inheritdoc/>
@@ -77,6 +82,7 @@ public class PdfService : IPdfService
         string taskId,
         string? customFileNameTextResourceKey,
         List<string>? autoGeneratePdfForTaskIds = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken ct = default
     )
     {
@@ -88,6 +94,7 @@ public class PdfService : IPdfService
             customFileNameTextResourceKey,
             null,
             autoGeneratePdfForTaskIds,
+            authenticationMethod,
             ct
         );
     }
@@ -98,7 +105,8 @@ public class PdfService : IPdfService
         string taskId,
         string? customFileNameTextResourceKey,
         SubformPdfContext subformPdfContext,
-        CancellationToken ct
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
     )
     {
         return await GenerateAndStorePdfInternal(
@@ -107,12 +115,19 @@ public class PdfService : IPdfService
             customFileNameTextResourceKey,
             subformPdfContext,
             null,
+            null,
             ct
         );
     }
 
     /// <inheritdoc/>
-    public async Task<Stream> GeneratePdf(Instance instance, string taskId, bool isPreview, CancellationToken ct)
+    public async Task<Stream> GeneratePdf(
+        Instance instance,
+        string taskId,
+        bool isPreview,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken ct = default
+    )
     {
         using var activity = _telemetry?.StartGeneratePdfActivity(instance, taskId);
 
@@ -122,13 +137,13 @@ public class PdfService : IPdfService
 
         var language = GetOverriddenLanguage(queries) ?? await auth.GetLanguage();
 
-        return await GeneratePdfContent(instance, taskId, language, isPreview, null, null, ct);
+        return await GeneratePdfContent(instance, taskId, language, isPreview, null, null, authenticationMethod, ct);
     }
 
     /// <inheritdoc/>
     public async Task<Stream> GeneratePdf(Instance instance, string taskId, CancellationToken ct)
     {
-        return await GeneratePdf(instance, taskId, false, ct);
+        return await GeneratePdf(instance, taskId, false, ct: ct);
     }
 
     private async Task<DataElement> GenerateAndStorePdfInternal(
@@ -136,7 +151,8 @@ public class PdfService : IPdfService
         string taskId,
         string? customFileNameTextResourceKey,
         SubformPdfContext? subformPdfContext,
-        List<string>? autoGeneratePdfForTaskIds = null,
+        List<string>? autoGeneratePdfForTaskIds,
+        StorageAuthenticationMethod? authenticationMethod,
         CancellationToken ct = default
     )
     {
@@ -153,6 +169,7 @@ public class PdfService : IPdfService
             false,
             subformPdfContext,
             autoGeneratePdfForTaskIds,
+            authenticationMethod,
             ct
         );
 
@@ -170,6 +187,7 @@ public class PdfService : IPdfService
             fileName,
             pdfContent,
             taskId,
+            authenticationMethod: authenticationMethod,
             cancellationToken: ct
         );
 
@@ -183,6 +201,7 @@ public class PdfService : IPdfService
         bool isPreview,
         SubformPdfContext? subformPdfContext,
         List<string>? autoGeneratePdfForTaskIds,
+        StorageAuthenticationMethod? authenticationMethod,
         CancellationToken ct
     )
     {
@@ -210,7 +229,7 @@ public class PdfService : IPdfService
             footerContent = await GetFooterContent(instance, language);
         }
 
-        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, footerContent, ct);
+        Stream pdfContent = await _pdfGeneratorClient.GeneratePdf(uri, footerContent, authenticationMethod, ct);
 
         return pdfContent;
     }

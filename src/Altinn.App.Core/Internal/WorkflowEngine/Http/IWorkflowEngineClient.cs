@@ -1,4 +1,4 @@
-using Altinn.App.ProcessEngine.Models;
+using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Http;
@@ -21,8 +21,5 @@ internal interface IWorkflowEngineClient
     /// </summary>
     /// <param name="instance">The instance</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    Task<ProcessEngineStatusResponse?> GetActiveJobStatus(
-        Instance instance,
-        CancellationToken cancellationToken = default
-    );
+    Task<WorkflowStatusResponse?> GetActiveJobStatus(Instance instance, CancellationToken cancellationToken = default);
 }

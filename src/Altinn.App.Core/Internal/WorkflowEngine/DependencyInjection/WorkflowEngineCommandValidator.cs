@@ -1,6 +1,6 @@
 using System.Reflection;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
-using Altinn.App.ProcessEngine.Models;
+using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.DependencyInjection;
@@ -59,7 +59,7 @@ internal static class ProcessEngineCommandValidator
     {
         foreach (var commandRequest in eventCommandSet.Commands)
         {
-            if (commandRequest.Command is ProcessEngineCommand.AppCommand appCommand)
+            if (commandRequest.Command is Command.AppCommand appCommand)
             {
                 keys.Add(appCommand.CommandKey);
             }
@@ -67,7 +67,7 @@ internal static class ProcessEngineCommandValidator
 
         foreach (var commandRequest in eventCommandSet.PostProcessNextCommittedCommands)
         {
-            if (commandRequest.Command is ProcessEngineCommand.AppCommand appCommand)
+            if (commandRequest.Command is Command.AppCommand appCommand)
             {
                 keys.Add(appCommand.CommandKey);
             }

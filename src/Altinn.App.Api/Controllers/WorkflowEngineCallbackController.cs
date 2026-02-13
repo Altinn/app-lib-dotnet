@@ -3,9 +3,8 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
+using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
-using Altinn.App.ProcessEngine.Constants;
-using Altinn.App.ProcessEngine.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,8 +15,9 @@ namespace Altinn.App.Api.Controllers;
 /// Controller for handling process engine callbacks.
 /// </summary>
 [ApiController]
-[Authorize(AuthenticationSchemes = AuthConstants.ApiKeySchemeName)]
-[Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process-engine-callbacks")]
+// [Authorize(AuthenticationSchemes = "X-Api-Key")]
+[AllowAnonymous]
+[Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/workflow-engine-callbacks")]
 public class WorkflowEngineCallbackController : ControllerBase
 {
     private readonly IServiceProvider _serviceProvider;
@@ -53,7 +53,7 @@ public class WorkflowEngineCallbackController : ControllerBase
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
         [FromRoute] string commandKey,
-        [FromBody] ProcessEngineAppCallbackPayload payload,
+        [FromBody] AppCallbackPayload payload,
         CancellationToken cancellationToken
     )
     {
@@ -68,34 +68,29 @@ public class WorkflowEngineCallbackController : ControllerBase
 
         if (command is null)
         {
-            _logger.LogError(
-                "Handler not found for command key '{CommandKey}'. Instance: {InstanceId}.",
-                commandKey,
-                instanceId
-            );
-            activity?.SetStatus(ActivityStatusCode.Error, "Handler not found");
-            return NotFound(
-                new ProcessEngineCallbackErrorResponse
-                {
-                    Message = $"No handler registered for command key: {commandKey}",
-                    ExceptionType = "HandlerNotFoundException",
-                }
-            );
+            var commandNotFoundError = $"Workflow app command '{commandKey}' not found. Instance: {instanceId}.";
+            _logger.LogError(commandNotFoundError);
+            activity?.SetStatus(ActivityStatusCode.Error, commandNotFoundError);
+            return NotFound();
         }
 
-        InstanceDataUnitOfWork instanceDataUnitOfWork;
-        string? currentTaskId;
-
-        instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.InitWithSession(
-            appId,
-            instanceId,
-            payload.LockToken,
-            taskId: null, // Will be set from the cached instance
-            payload.Actor.Language,
+        Instance instance = await _instanceClient.GetInstance(
+            app,
+            org,
+            instanceOwnerPartyId,
+            instanceId.InstanceGuid,
             StorageAuthenticationMethod.ServiceOwner(),
             cancellationToken
         );
-        currentTaskId = instanceDataUnitOfWork.Instance.Process?.CurrentTask?.ElementId;
+
+        string? currentTaskId = instance.Process?.CurrentTask?.ElementId;
+
+        InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            taskId: currentTaskId,
+            payload.Actor.Language,
+            StorageAuthenticationMethod.ServiceOwner()
+        );
 
         ProcessEngineCommandResult result = await command.Execute(
             new ProcessEngineCommandContext
@@ -111,19 +106,15 @@ public class WorkflowEngineCallbackController : ControllerBase
         //TODO: Consider rewriting IInstanceDataMutator so that we can construct one that doesn't allow abandonment in this scenario. Don't think it makes sense when the process engine is the caller.
         if (instanceDataUnitOfWork.HasAbandonIssues)
         {
-            _logger.LogError(
-                "Data abandonment detected during callback. CommandKey: {CommandKey}, Instance: {InstanceId}, Task: {TaskId}",
-                commandKey,
-                instanceId,
-                currentTaskId
-            );
-            activity?.SetStatus(ActivityStatusCode.Error, "Data abandonment detected");
+            var message =
+                $"Data abandonment detected during callback. CommandKey: {commandKey}, Instance: {instanceId}, Task: {currentTaskId}";
+
+            _logger.LogError(message, commandKey, instanceId, currentTaskId);
+
+            activity?.SetStatus(ActivityStatusCode.Error, message);
+
             return BadRequest(
-                new ProcessEngineCallbackErrorResponse
-                {
-                    Message = "Data abandonment detected. One or more data elements could not be saved.",
-                    ExceptionType = "DataAbandonmentException",
-                }
+                new CallbackErrorResponse { Message = message, ExceptionType = "DataAbandonmentException" }
             );
         }
 
@@ -131,6 +122,7 @@ public class WorkflowEngineCallbackController : ControllerBase
         {
             case SuccessfulProcessEngineCommandResult:
                 DataElementChanges changes = instanceDataUnitOfWork.GetDataElementChanges(false);
+                await instanceDataUnitOfWork.UpdateInstanceData(changes);
                 await instanceDataUnitOfWork.SaveChanges(changes);
                 activity?.SetStatus(ActivityStatusCode.Ok);
                 return Ok();
@@ -146,11 +138,7 @@ public class WorkflowEngineCallbackController : ControllerBase
                 );
                 activity?.SetStatus(ActivityStatusCode.Error, failed.ErrorMessage);
                 return BadRequest(
-                    new ProcessEngineCallbackErrorResponse
-                    {
-                        Message = failed.ErrorMessage,
-                        ExceptionType = failed.ExceptionType,
-                    }
+                    new CallbackErrorResponse { Message = failed.ErrorMessage, ExceptionType = failed.ExceptionType }
                 );
 
             default:

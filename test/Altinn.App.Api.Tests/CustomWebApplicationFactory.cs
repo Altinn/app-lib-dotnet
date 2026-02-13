@@ -337,7 +337,7 @@ public class ApiTestBase
         services.RemoveAll<IWorkflowEngineClient>();
 
         // Add the in-process implementation as singleton to ensure it's resolved correctly
-        services.AddSingleton<IWorkflowEngineClient>(sp => new InWorkflowWorkflowEngineClient(
+        services.AddSingleton<IWorkflowEngineClient>(sp => new FakeWorkflowEngineClient(
             sp,
             sp.GetRequiredService<Altinn.App.Core.Internal.Instances.IInstanceClient>(),
             sp.GetRequiredService<Altinn.App.Core.Internal.Data.InstanceDataUnitOfWorkInitializer>()

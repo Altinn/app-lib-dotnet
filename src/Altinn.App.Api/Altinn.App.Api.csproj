@@ -32,7 +32,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../Altinn.App.Core/Altinn.App.Core.csproj" />
-    <ProjectReference Include="../Altinn.App.ProcessEngine/Altinn.App.ProcessEngine.csproj" />
   </ItemGroup>
 
   <ItemGroup>

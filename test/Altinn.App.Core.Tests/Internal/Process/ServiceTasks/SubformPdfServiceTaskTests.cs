@@ -37,12 +37,19 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<SubformPdfContext>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(
-                (Instance _, string _, string _, SubformPdfContext subformContext, CancellationToken _) =>
-                    new DataElement { Id = $"pdf-{subformContext.DataElementId}" }
+                (
+                    Instance _,
+                    string _,
+                    string _,
+                    SubformPdfContext subformContext,
+                    StorageAuthenticationMethod? _,
+                    CancellationToken _
+                ) => new DataElement { Id = $"pdf-{subformContext.DataElementId}" }
             );
 
         // Setup data client to allow metadata updates
@@ -95,6 +102,7 @@ public class SubformPdfServiceTaskTests
                     It.Is<string>(taskId => taskId == "taskId"),
                     It.Is<string?>(filename => filename == FileName),
                     It.Is<SubformPdfContext>(ctx => ctx.ComponentId == SubformComponentId),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2) // Should be called twice for the two data elements
@@ -123,6 +131,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<SubformPdfContext>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Never
@@ -150,6 +159,7 @@ public class SubformPdfServiceTaskTests
                     It.Is<SubformPdfContext>(ctx =>
                         ctx.DataElementId == "data-element-1" || ctx.DataElementId == "data-element-2"
                     ),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2)
@@ -359,6 +369,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string>(),
                     It.Is<string?>(filename => filename == null),
                     It.IsAny<SubformPdfContext>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.AtLeastOnce
@@ -382,6 +393,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<SubformPdfContext>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -430,11 +442,19 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<SubformPdfContext>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync(
-                (Instance _, string _, string _, SubformPdfContext subformContext, CancellationToken _) =>
+                (
+                    Instance _,
+                    string _,
+                    string _,
+                    SubformPdfContext subformContext,
+                    StorageAuthenticationMethod? _,
+                    CancellationToken _
+                ) =>
                 {
                     callCount++;
                     if (callCount == 2)
@@ -464,6 +484,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<SubformPdfContext>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -500,6 +521,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<SubformPdfContext>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2)
@@ -583,6 +605,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.Is<SubformPdfContext>(ctx => ctx.DataElementId == "single-data-element"),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -609,6 +632,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<SubformPdfContext>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(10)
@@ -635,6 +659,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<SubformPdfContext>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.Is<CancellationToken>(ct => ct == cts.Token)
                 ),
             Times.AtLeastOnce

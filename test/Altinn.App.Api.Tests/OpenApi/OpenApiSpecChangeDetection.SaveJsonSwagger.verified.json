@@ -7181,32 +7181,32 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+                "$ref": "#/components/schemas/AppCallbackPayload"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+                "$ref": "#/components/schemas/AppCallbackPayload"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+                "$ref": "#/components/schemas/AppCallbackPayload"
               }
             },
             "application/xml": {
               "schema": {
-                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+                "$ref": "#/components/schemas/AppCallbackPayload"
               }
             },
             "text/xml": {
               "schema": {
-                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+                "$ref": "#/components/schemas/AppCallbackPayload"
               }
             },
             "application/*+xml": {
               "schema": {
-                "$ref": "#/components/schemas/ProcessEngineAppCallbackPayload"
+                "$ref": "#/components/schemas/AppCallbackPayload"
               }
             }
           }
@@ -7249,6 +7249,23 @@
         ],
         "type": "integer",
         "format": "int32"
+      },
+      "Actor": {
+        "required": [
+          "userIdOrOrgNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "userIdOrOrgNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "Address": {
         "type": "object",
@@ -7308,6 +7325,32 @@
             "$ref": "#/components/schemas/ApiScopes"
           },
           "errorMessageTextResourceKey": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppCallbackPayload": {
+        "required": [
+          "actor",
+          "commandKey",
+          "lockToken"
+        ],
+        "type": "object",
+        "properties": {
+          "commandKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "actor": {
+            "$ref": "#/components/schemas/Actor"
+          },
+          "lockToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "payload": {
             "type": "string",
             "nullable": true
           }
@@ -9785,48 +9828,6 @@
             "$ref": "#/components/schemas/ValidationStatus"
           },
           "flowType": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "ProcessEngineActor": {
-        "required": [
-          "userIdOrOrgNumber"
-        ],
-        "type": "object",
-        "properties": {
-          "userIdOrOrgNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "language": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "ProcessEngineAppCallbackPayload": {
-        "required": [
-          "actor",
-          "commandKey"
-        ],
-        "type": "object",
-        "properties": {
-          "commandKey": {
-            "type": "string",
-            "nullable": true
-          },
-          "actor": {
-            "$ref": "#/components/schemas/ProcessEngineActor"
-          },
-          "payload": {
-            "type": "string",
-            "nullable": true
-          },
-          "lockToken": {
             "type": "string",
             "nullable": true
           }

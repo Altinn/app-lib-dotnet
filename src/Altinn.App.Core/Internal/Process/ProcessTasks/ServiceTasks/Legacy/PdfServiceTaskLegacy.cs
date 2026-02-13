@@ -50,7 +50,7 @@ internal class PdfServiceTaskLegacy : IPdfServiceTaskLegacy
             )
         )
         {
-            await _pdfService.GenerateAndStorePdf(instance, taskId, CancellationToken.None);
+            await _pdfService.GenerateAndStorePdf(instance, taskId, ct: CancellationToken.None);
         }
     }
 }
