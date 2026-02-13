@@ -382,20 +382,17 @@ public class TestFunctions
 
         test.ParsingException.Should().BeNull("Loading of test failed");
 
-        if (test.Expression != null)
-        {
-            await RunTestCaseItem(
-                new ExpressionTestCaseRoot.TestCaseItem()
-                {
-                    Expects = test.Expects,
-                    Expression = test.Expression ?? new Expression(),
-                    ExpectsFailure = test.ExpectsFailure,
-                },
-                state,
-                context,
-                positionalArguments
-            );
-        }
+        await RunTestCaseItem(
+            new ExpressionTestCaseRoot.TestCaseItem()
+            {
+                Expects = test.Expects,
+                Expression = test.Expression,
+                ExpectsFailure = test.ExpectsFailure,
+            },
+            state,
+            context,
+            positionalArguments
+        );
 
         if (test.TestCases != null)
         {

@@ -54,11 +54,7 @@ public class TestInvalid
                 test.FrontEndSettings ?? new()
             );
 
-            await ExpressionEvaluator.EvaluateExpression(
-                state,
-                test.Expression ?? new Expression(),
-                await test.GetContextOrNull(state)
-            );
+            await ExpressionEvaluator.EvaluateExpression(state, test.Expression, await test.GetContextOrNull(state));
         };
         (await act.Should().ThrowAsync<Exception>()).WithMessage(testCase.ExpectsFailure + "*");
     }

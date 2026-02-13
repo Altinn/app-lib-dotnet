@@ -55,7 +55,7 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
     }
 
     [Fact]
-    public void TestDecimal()
+    public void TestDouble()
     {
         double doubleValue = 123.456;
         ExpressionValue value = doubleValue;
@@ -67,7 +67,7 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
 
         Assert.Equal(doubleValue.ToString(CultureInfo.InvariantCulture), value.ToString());
         Assert.Throws<NotImplementedException>(() => value.GetHashCode());
-        // Assert.Equal(decimalValue.GetHashCode(), value.GetHashCode());
+        // Assert.Equal(doubleValue.GetHashCode(), value.GetHashCode());
     }
 
     [Theory]
