@@ -620,7 +620,7 @@ public class SigningDelegationServiceTests
         var ct = new CancellationToken();
 
         // Act
-        (signeeContexts, var success) = await service.DelegateSigneeRights(
+        (_, bool success) = await service.DelegateSigneeRights(
             taskId,
             instanceId,
             instanceOwnerPartyUuid,
