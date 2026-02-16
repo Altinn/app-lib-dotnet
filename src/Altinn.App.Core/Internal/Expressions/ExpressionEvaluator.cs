@@ -848,8 +848,9 @@ public static partial class ExpressionEvaluator
             return number.HasValue ? T.CreateChecked(number.Value) : null;
         }
 
-        if (number.HasValue && ValidFloatingPoint(number.Value))
+        if (number.HasValue)
         {
+            EnsureConvertibleToDecimal(number.Value);
             return T.CreateChecked(number.Value);
         }
 
@@ -1033,12 +1034,20 @@ public static partial class ExpressionEvaluator
             return null;
         }
 
-        var result = operation(aDecimal.Value, bDecimal.Value);
-
-        return (double)result;
+        try
+        {
+            var result = operation(aDecimal.Value, bDecimal.Value);
+            return (double)result;
+        }
+        catch (OverflowException)
+        {
+            throw new ExpressionEvaluatorTypeErrorException(
+                $"Arithmetic overflow: result of operation on {aDecimal.Value} and {bDecimal.Value} exceeds supported range"
+            );
+        }
     }
 
-    private static bool ValidFloatingPoint(double value)
+    private static void EnsureConvertibleToDecimal(double value)
     {
         if (
             double.IsNaN(value)
@@ -1051,7 +1060,6 @@ public static partial class ExpressionEvaluator
                 $"Cannot convert non-finite or out-of-range number to decimal: {value}"
             );
         }
-        return true;
     }
 
     [GeneratedRegex(@"^-?\d+(\.\d+)?$")]
