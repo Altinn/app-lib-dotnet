@@ -567,7 +567,9 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         await Task.WhenAll(tasks);
 
         // Remove deleted data elements from instance.Data
-        Instance.Data.RemoveAll(dataElement => _changesForDeletion.Any(d => d.DataElement?.Id == dataElement.Id));
+        Instance.Data.RemoveAll(dataElement =>
+            changes.AllChanges.Where(c => c.Type == ChangeType.Deleted).Any(d => d.DataElement?.Id == dataElement.Id)
+        );
 
         // Add Created data elements to instance
         Instance.Data.AddRange(createdDataElements.Values);
