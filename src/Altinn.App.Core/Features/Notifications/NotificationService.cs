@@ -20,27 +20,50 @@ internal sealed class NotificationService : INotificationService
         _smsNotificationClient = smsNotificationClient;
     }
 
-    public Task<List<NotificationReference>> NotifyInstanceOwner(
+    public async Task<List<NotificationReference>> NotifyInstanceOwner(
         Instance instance,
-        EmailOverride emailNotification,
-        SmsOverride smsNotification,
+        EmailOverride? emailOverride,
+        SmsOverride? smsOverride,
         CancellationToken ct
     )
     {
-        throw new NotImplementedException();
-    }
+        List<NotificationReference> notificationReferences = [];
+        string instanceOwnerRecipient = instance.InstanceOwner?.PartyId ?? throw new InvalidOperationException("Instance owner must be set on instance to use email override");
+        string sendersReference = $"instance-{instance.Id}";
 
-    public Task<NotificationReference> ProcessNotificationOrder(
-        EmailNotification emailNotification,
-        CancellationToken ct
-    )
-    {
-        return OrderEmail(emailNotification, ct);
-    }
+        if (emailOverride is not null)
+        {
+            // TODO: parse body and subject text resources
 
-    public Task<NotificationReference> ProcessNotificationOrder(SmsNotification smsNotification, CancellationToken ct)
-    {
-        return OrderSms(smsNotification, ct);
+            EmailNotification emailNotification = new()
+            {
+                Subject = emailOverride.SubjectTextResource,
+                Body = emailOverride.BodyTextResource,
+                Recipients = [new(instanceOwnerRecipient)],
+                SendersReference = sendersReference
+            };
+
+            NotificationReference notificationReference = await OrderEmail(emailNotification, ct);
+            notificationReferences.Add(notificationReference);
+        }
+
+        if (smsOverride is not null)
+        {
+            // TODO: parse body text resource
+
+            SmsNotification smsNotification = new()
+            {
+                SenderNumber = smsOverride.SenderNumber,
+                Body = smsOverride.BodyTextResource,
+                Recipients = [new(instanceOwnerRecipient)],
+                SendersReference = sendersReference
+            };
+
+            NotificationReference notificationReference = await OrderSms(smsNotification, ct);
+            notificationReferences.Add(notificationReference);
+        }
+
+        return notificationReferences;
     }
 
     public async Task<List<NotificationReference>> ProcessNotificationOrders(

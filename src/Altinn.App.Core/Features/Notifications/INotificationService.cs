@@ -13,12 +13,10 @@ internal interface INotificationService
         List<SmsNotification> smsNotifications,
         CancellationToken ct
     );
-    Task<NotificationReference> ProcessNotificationOrder(EmailNotification emailNotification, CancellationToken ct);
-    Task<NotificationReference> ProcessNotificationOrder(SmsNotification smsNotification, CancellationToken ct);
     Task<List<NotificationReference>> NotifyInstanceOwner(
         Instance instance,
-        EmailOverride emailNotification,
-        SmsOverride smsNotification,
+        EmailOverride? emailOverride,
+        SmsOverride? smsOverride,
         CancellationToken ct
     );
 }
