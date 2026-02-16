@@ -1,7 +1,10 @@
 using System.Configuration;
+using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Notifications;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models.Notifications;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 
@@ -10,18 +13,24 @@ internal sealed class NotificationServiceTask : IServiceTask
     private readonly IProcessReader _processReader;
     private readonly INotificationService _notificationService;
     private readonly INotificationReader _notificationReader;
+    private readonly IAuthenticationContext _authenticationContext;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public string Type => "notify";
 
     public NotificationServiceTask(
         IProcessReader processReader,
         INotificationService notificationService,
-        INotificationReader notificationReader
+        INotificationReader notificationReader,
+        IAuthenticationContext authenticationContext,
+        IHttpContextAccessor httpContextAccessor
     )
     {
         _processReader = processReader;
         _notificationService = notificationService;
         _notificationReader = notificationReader;
+        _authenticationContext = authenticationContext;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<ServiceTaskResult> Execute(ServiceTaskContext context)
@@ -31,26 +40,58 @@ internal sealed class NotificationServiceTask : IServiceTask
 
         ValidAltinnNotificationConfiguration notificationConfig = GetValidNotificationConfig(taskId);
 
+        string language = await GetLanguageFromContext();
+
         if (string.IsNullOrWhiteSpace(notificationConfig.NotificationProviderId) is false)
         {
-            await HandleInterfaceProvidedNotifications(notificationConfig.NotificationProviderId, ct);
+            await HandleInterfaceProvidedNotifications(notificationConfig.NotificationProviderId, language, ct);
         }
 
         if (notificationConfig.SmsOverride is not null || notificationConfig.EmailOverride is not null)
         {
-            await HandleProcessConfigurationProvidedNotifications(context, notificationConfig, ct);
+            await HandleProcessConfigurationProvidedNotifications(context, notificationConfig, language, ct);
         }
 
         return ServiceTaskResult.Success();
     }
 
+    private async Task<string> GetLanguageFromContext()
+    {
+        HttpContext? httpContext = _httpContextAccessor.HttpContext;
+        var queries = httpContext?.Request.Query;
+        var auth = _authenticationContext.Current;
+
+        var language = GetOverriddenLanguage(queries) ?? await auth.GetLanguage();
+        return language;
+    }
+
+    private static string? GetOverriddenLanguage(IQueryCollection? queries)
+    {
+        if (queries is null)
+        {
+            return null;
+        }
+
+        if (
+            queries.TryGetValue("language", out StringValues queryLanguage)
+            || queries.TryGetValue("lang", out queryLanguage)
+        )
+        {
+            return queryLanguage.ToString();
+        }
+
+        return null;
+    }
+
     private async Task HandleProcessConfigurationProvidedNotifications(
         ServiceTaskContext context,
         ValidAltinnNotificationConfiguration notificationConfig,
+        string language,
         CancellationToken ct
     )
     {
         List<NotificationReference> references = await _notificationService.NotifyInstanceOwner(
+            language,
             context.InstanceDataMutator.Instance,
             notificationConfig.EmailOverride ?? new EmailOverride(),
             notificationConfig.SmsOverride ?? new SmsOverride(),
@@ -58,18 +99,20 @@ internal sealed class NotificationServiceTask : IServiceTask
         );
     }
 
-    private async Task HandleInterfaceProvidedNotifications(string notificationProviderId, CancellationToken ct)
+    private async Task HandleInterfaceProvidedNotifications(
+        string notificationProviderId,
+        string language,
+        CancellationToken ct
+    )
     {
         try
         {
-            NotificationsWrapper notificationsWrapper = _notificationReader.GetProvidedNotifications(
-                notificationProviderId,
-                ct
-            );
+            NotificationsWrapper nw = _notificationReader.GetProvidedNotifications(notificationProviderId, ct);
 
             List<NotificationReference> references = await _notificationService.ProcessNotificationOrders(
-                notificationsWrapper.EmailNotifications ?? [],
-                notificationsWrapper.SmsNotifications ?? [],
+                language,
+                nw.EmailNotifications ?? [],
+                nw.SmsNotifications ?? [],
                 ct
             );
         }

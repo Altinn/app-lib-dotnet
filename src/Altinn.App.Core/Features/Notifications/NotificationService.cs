@@ -1,4 +1,5 @@
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models.Notifications;
 using Altinn.App.Core.Models.Notifications.Email;
 using Altinn.App.Core.Models.Notifications.Sms;
@@ -10,17 +11,21 @@ internal sealed class NotificationService : INotificationService
 {
     private readonly IEmailNotificationClient _emailNotificationClient;
     private readonly ISmsNotificationClient _smsNotificationClient;
+    private readonly ITranslationService _translationService;
 
     public NotificationService(
         IEmailNotificationClient emailNotificationClient,
-        ISmsNotificationClient smsNotificationClient
+        ISmsNotificationClient smsNotificationClient,
+        ITranslationService translationService
     )
     {
         _emailNotificationClient = emailNotificationClient;
         _smsNotificationClient = smsNotificationClient;
+        _translationService = translationService;
     }
 
     public async Task<List<NotificationReference>> NotifyInstanceOwner(
+        string language,
         Instance instance,
         EmailOverride? emailOverride,
         SmsOverride? smsOverride,
@@ -28,19 +33,28 @@ internal sealed class NotificationService : INotificationService
     )
     {
         List<NotificationReference> notificationReferences = [];
-        string instanceOwnerRecipient = instance.InstanceOwner?.PartyId ?? throw new InvalidOperationException("Instance owner must be set on instance to use email override");
+        string instanceOwnerRecipient =
+            instance.InstanceOwner?.PartyId
+            ?? throw new InvalidOperationException("Instance owner must be set on instance to use email override");
         string sendersReference = $"instance-{instance.Id}";
 
         if (emailOverride is not null)
         {
-            // TODO: parse body and subject text resources
+            string defaultSubjectTextResourceId = BackendTextResource.EmailDefaultSubject;
+            string defaultBodyTextResourceId = BackendTextResource.EmailDefaultBody;
+            string subject = await GetTextResource(
+                language,
+                defaultSubjectTextResourceId,
+                emailOverride.SubjectTextResource
+            );
+            string body = await GetTextResource(language, defaultBodyTextResourceId, emailOverride.BodyTextResource);
 
             EmailNotification emailNotification = new()
             {
-                Subject = emailOverride.SubjectTextResource,
-                Body = emailOverride.BodyTextResource,
+                Subject = subject,
+                Body = body,
                 Recipients = [new(instanceOwnerRecipient)],
-                SendersReference = sendersReference
+                SendersReference = sendersReference,
             };
 
             NotificationReference notificationReference = await OrderEmail(emailNotification, ct);
@@ -49,14 +63,15 @@ internal sealed class NotificationService : INotificationService
 
         if (smsOverride is not null)
         {
-            // TODO: parse body text resource
+            string defaultBodyTextResourceId = BackendTextResource.SmsDefaultBody;
+            string body = await GetTextResource(language, defaultBodyTextResourceId, smsOverride.BodyTextResource);
 
             SmsNotification smsNotification = new()
             {
                 SenderNumber = smsOverride.SenderNumber,
-                Body = smsOverride.BodyTextResource,
+                Body = body,
                 Recipients = [new(instanceOwnerRecipient)],
-                SendersReference = sendersReference
+                SendersReference = sendersReference,
             };
 
             NotificationReference notificationReference = await OrderSms(smsNotification, ct);
@@ -67,6 +82,7 @@ internal sealed class NotificationService : INotificationService
     }
 
     public async Task<List<NotificationReference>> ProcessNotificationOrders(
+        string language,
         List<EmailNotification> emailNotifications,
         List<SmsNotification> smsNotifications,
         CancellationToken ct
@@ -84,6 +100,20 @@ internal sealed class NotificationService : INotificationService
         }
 
         return notificationReferences;
+    }
+
+    private async Task<string> GetTextResource(
+        string language,
+        string defaultTextResourceId,
+        string? textResourceId = null
+    )
+    {
+        string? translatedText =
+            await _translationService.TranslateTextKey(language, textResourceId ?? defaultTextResourceId)
+            ?? throw new InvalidOperationException(
+                $"Default text resource '{defaultTextResourceId}' could not be found for language '{language}'"
+            );
+        return translatedText;
     }
 
     private async Task<NotificationReference> OrderEmail(EmailNotification emailNotification, CancellationToken ct)
