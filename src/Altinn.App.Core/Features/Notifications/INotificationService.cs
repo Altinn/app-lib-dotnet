@@ -17,8 +17,8 @@ internal interface INotificationService
     Task<List<NotificationReference>> NotifyInstanceOwner(
         string language,
         Instance instance,
-        EmailOverride? emailOverride,
-        SmsOverride? smsOverride,
+        EmailConfig? emailOverride,
+        SmsConfig? smsOverride,
         CancellationToken ct
     );
 }

@@ -27,8 +27,8 @@ internal sealed class NotificationService : INotificationService
     public async Task<List<NotificationReference>> NotifyInstanceOwner(
         string language,
         Instance instance,
-        EmailOverride? emailOverride,
-        SmsOverride? smsOverride,
+        EmailConfig? emailOverride,
+        SmsConfig? smsOverride,
         CancellationToken ct
     )
     {
@@ -38,7 +38,7 @@ internal sealed class NotificationService : INotificationService
             ?? throw new InvalidOperationException("Instance owner must be set on instance to use email override");
         string sendersReference = $"instance-{instance.Id}";
 
-        if (emailOverride is not null)
+        if (emailOverride is not null && emailOverride.SendEmail)
         {
             string defaultSubjectTextResourceId = BackendTextResource.EmailDefaultSubject;
             string defaultBodyTextResourceId = BackendTextResource.EmailDefaultBody;
@@ -61,7 +61,7 @@ internal sealed class NotificationService : INotificationService
             notificationReferences.Add(notificationReference);
         }
 
-        if (smsOverride is not null)
+        if (smsOverride is not null && smsOverride.SendSms)
         {
             string defaultBodyTextResourceId = BackendTextResource.SmsDefaultBody;
             string body = await GetTextResource(language, defaultBodyTextResourceId, smsOverride.BodyTextResource);

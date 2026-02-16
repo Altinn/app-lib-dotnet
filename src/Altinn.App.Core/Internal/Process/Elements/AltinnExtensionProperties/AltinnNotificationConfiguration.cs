@@ -1,3 +1,4 @@
+using System.Xml.Serialization;
 using Altinn.App.Core.Features.Notifications;
 
 namespace Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -10,33 +11,38 @@ public class AltinnNotificationConfiguration
     /// The provider must be an implementation of <see cref="INotificationProvider"/>
     public string? NotificationProviderId { get; set; }
 
-    public SmsOverride? SmsOverride { get; set; }
+    public SmsConfig? SmsConfig { get; set; }
 
-    public EmailOverride? EmailOverride { get; set; }
+    public EmailConfig? EmailConfig { get; set; }
 
     internal ValidAltinnNotificationConfiguration Validate()
     {
         //TODO: implement validation logic
 
-        return new ValidAltinnNotificationConfiguration(NotificationProviderId, SmsOverride, EmailOverride);
+        return new ValidAltinnNotificationConfiguration(NotificationProviderId, SmsConfig, EmailConfig);
     }
 }
 
-public class SmsOverride
+public class SmsConfig
 {
+    [XmlAttribute("SendSms")]
+    public bool SendSms { get; set; } = false;
+
     public string SenderNumber { get; set; } = string.Empty;
     public string BodyTextResource { get; set; } = string.Empty;
 }
 
-public class EmailOverride
+public class EmailConfig
 {
-    public string SubjectTextResource { get; set; } = string.Empty;
+    [XmlAttribute("SendEmail")]
+    public bool SendEmail { get; set; } = false;
 
+    public string SubjectTextResource { get; set; } = string.Empty;
     public string BodyTextResource { get; set; } = string.Empty;
 }
 
 internal readonly record struct ValidAltinnNotificationConfiguration(
     string? NotificationProviderId,
-    SmsOverride? SmsOverride,
-    EmailOverride? EmailOverride
+    SmsConfig? SmsConfig,
+    EmailConfig? EmailConfig
 );

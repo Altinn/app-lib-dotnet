@@ -47,7 +47,7 @@ internal sealed class NotificationServiceTask : IServiceTask
             await HandleInterfaceProvidedNotifications(notificationConfig.NotificationProviderId, language, ct);
         }
 
-        if (notificationConfig.SmsOverride is not null || notificationConfig.EmailOverride is not null)
+        if (notificationConfig.SmsConfig is not null || notificationConfig.EmailConfig is not null)
         {
             await HandleProcessConfigurationProvidedNotifications(context, notificationConfig, language, ct);
         }
@@ -93,8 +93,8 @@ internal sealed class NotificationServiceTask : IServiceTask
         List<NotificationReference> references = await _notificationService.NotifyInstanceOwner(
             language,
             context.InstanceDataMutator.Instance,
-            notificationConfig.EmailOverride ?? new EmailOverride(),
-            notificationConfig.SmsOverride ?? new SmsOverride(),
+            notificationConfig.EmailConfig ?? new EmailConfig(),
+            notificationConfig.SmsConfig ?? new SmsConfig(),
             ct
         );
     }
