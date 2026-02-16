@@ -99,6 +99,12 @@ public class StorageClientInterceptor : HttpMessageHandler
                 $"Unhandled request to {request.RequestUri?.AbsolutePath} with method {method} and body\n\n{(requestBody is not null ? System.Text.Encoding.UTF8.GetString(requestBody) : "[no body]")}"
             ),
         };
+        if (response == null)
+        {
+            throw new Exception(
+                $"Response is null for request to {request.RequestUri?.AbsolutePath} with method {request.Method} and body\n\n{(requestBody is not null ? System.Text.Encoding.UTF8.GetString(requestBody) : "[no body]")}"
+            );
+        }
         RequestsResponses.Add(new RequestResponse(request, requestBody, response));
         return response;
     }
