@@ -26,21 +26,19 @@ internal sealed class NotificationServiceTask : IServiceTask
 
     public async Task<ServiceTaskResult> Execute(ServiceTaskContext context)
     {
+        CancellationToken ct = context.CancellationToken;
         string taskId = context.InstanceDataMutator.Instance.Process.CurrentTask.ElementId;
 
         ValidAltinnNotificationConfiguration notificationConfig = GetValidNotificationConfig(taskId);
 
         if (string.IsNullOrWhiteSpace(notificationConfig.NotificationProviderId) is false)
         {
-            await HandleInterfaceProvidedNotifications(
-                notificationConfig.NotificationProviderId,
-                context.CancellationToken
-            );
+            await HandleInterfaceProvidedNotifications(notificationConfig.NotificationProviderId, ct);
         }
 
         if (notificationConfig.SmsOverride is not null || notificationConfig.EmailOverride is not null)
         {
-            await HandleProcessConfigurationProvidedNotifications(context, notificationConfig);
+            await HandleProcessConfigurationProvidedNotifications(context, notificationConfig, ct);
         }
 
         return ServiceTaskResult.Success();
@@ -48,14 +46,15 @@ internal sealed class NotificationServiceTask : IServiceTask
 
     private async Task HandleProcessConfigurationProvidedNotifications(
         ServiceTaskContext context,
-        ValidAltinnNotificationConfiguration notificationConfig
+        ValidAltinnNotificationConfiguration notificationConfig,
+        CancellationToken ct
     )
     {
         List<NotificationReference> references = await _notificationService.NotifyInstanceOwner(
             context.InstanceDataMutator.Instance,
             notificationConfig.EmailOverride ?? new EmailOverride(),
             notificationConfig.SmsOverride ?? new SmsOverride(),
-            context.CancellationToken
+            ct
         );
     }
 
