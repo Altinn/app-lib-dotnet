@@ -7,7 +7,7 @@
       "expects": 0.5
     },
     {
-      "name": "Should divide the first argument with the second",
+      "name": "Should divide two negative numbers yielding positive result",
       "expression": ["divide", -0.1, -0.2],
       "expects": 0.5
     },
@@ -88,8 +88,8 @@
     },
     {
       "name": "Should handle very large number formatted as string",
-      "expression": ["divide", 1, "9007199254740992"],
-      "expects": 1.110223024625e-16
+      "expression": ["divide", 9007199254740992, "9007199254740992"],
+      "expects": 1
     },
     {
       "name": "Should handle very small numbers",

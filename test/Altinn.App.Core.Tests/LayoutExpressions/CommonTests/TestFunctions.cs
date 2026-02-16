@@ -448,7 +448,6 @@ public class TestFunctions
                 break;
             case JsonValueKind.True:
                 Assert.True(result as bool?);
-                result.Should().Be(true);
                 break;
             case JsonValueKind.False:
                 Assert.False(result as bool?);

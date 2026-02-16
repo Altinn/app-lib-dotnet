@@ -8,17 +8,17 @@ public static class TestAttributeHelper
     {
         if (callerFilePath is null)
         {
-            throw new Exception("Caller path is null");
+            throw new InvalidOperationException("CallerFilePath attribute returned null");
         }
         var testUtilsDirectoryPath = Path.GetDirectoryName(callerFilePath);
         if (testUtilsDirectoryPath is null)
         {
-            throw new Exception("Caller path is null");
+            throw new InvalidOperationException($"Could not get directory name from caller path: {callerFilePath}");
         }
         var callerDirectoryPath = Path.GetDirectoryName(testUtilsDirectoryPath);
         if (callerDirectoryPath is null)
         {
-            throw new Exception("Caller path is null");
+            throw new InvalidOperationException($"Could not get parent directory from: {testUtilsDirectoryPath}");
         }
 
         return callerDirectoryPath;

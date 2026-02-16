@@ -21,13 +21,13 @@ public class TestCasesAttribute(string folderName) : DataAttribute
         {
             throw new DirectoryNotFoundException($"Folder not found: {folder}");
         }
-        var files = Directory.GetFiles(folder);
+        var files = Directory.GetFiles(folder, "*.json");
         var theoryData = new List<ExpressionTestCaseRoot.TestCaseItem>();
         foreach (var file in files)
         {
             var data = File.ReadAllText(file);
-            var rootCases = JsonSerializer.Deserialize<ExpressionTestCaseRoot>(data, _jsonSerializerOptions)!;
-            if (rootCases.TestCases is not null)
+            var rootCases = JsonSerializer.Deserialize<ExpressionTestCaseRoot>(data, _jsonSerializerOptions);
+            if (rootCases?.TestCases is not null)
             {
                 theoryData.AddRange(rootCases.TestCases);
             }

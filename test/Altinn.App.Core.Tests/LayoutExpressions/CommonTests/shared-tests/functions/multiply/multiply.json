@@ -1,5 +1,5 @@
 {
-  "name": "Mutiply tests",
+  "name": "Multiply tests",
   "testCases": [
     {
       "name": "Should multiply the two arguments",
