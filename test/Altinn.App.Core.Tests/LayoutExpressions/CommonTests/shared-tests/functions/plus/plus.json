@@ -77,9 +77,9 @@
       "expectsFailure": "Expected number, got value \"55.\""
     },
     {
-      "name": "Should handle very large numbers",
-      "expression": ["plus", 9007199254740991, 1],
-      "expects": 9007199254740991
+      "name": "Should handle very large number formatted as string",
+      "expression": ["plus", 1, "9007199254740992"],
+      "expects": 9007199254740993
     },
     {
       "name": "Should handle very small numbers",

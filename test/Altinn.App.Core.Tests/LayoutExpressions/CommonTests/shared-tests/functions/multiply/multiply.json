@@ -92,6 +92,11 @@
       "expects": 1000000000000
     },
     {
+      "name": "Should handle very large number formatted as string",
+      "expression": ["multiply", 1, "9007199254740992"],
+      "expects": 9007199254740992
+    },
+    {
       "name": "Should handle very small numbers",
       "expression": ["multiply", 0.0001, 0.0001],
       "expects": 0.00000001
