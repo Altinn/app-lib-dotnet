@@ -88,7 +88,7 @@
     },
     {
       "name": "Should handle very large number formatted as string",
-      "expression": ["divide", 9007199254740992, "9007199254740992"],
+      "expression": ["divide", "9007199254740992", "9007199254740992"],
       "expects": 1
     },
     {
