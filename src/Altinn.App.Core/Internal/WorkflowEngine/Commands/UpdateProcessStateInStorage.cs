@@ -1,3 +1,5 @@
+using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -13,13 +15,14 @@ internal sealed record UpdateProcessStatePayload(ProcessStateChange ProcessState
 /// Command that commits the process state transition to Storage.
 /// This command persists the new process state and instance events after task transition logic has completed.
 /// </summary>
-internal sealed class UpdateProcessStateInStorage : WorkflowEngineCommandBase<UpdateProcessStatePayload>
+internal sealed class UpdateProcessStateInStorage(IInstanceClient instanceClient)
+    : WorkflowEngineCommandBase<UpdateProcessStatePayload>
 {
     public static string Key => "UpdateProcessState";
 
     public override string GetKey() => Key;
 
-    public override Task<ProcessEngineCommandResult> Execute(
+    public override async Task<ProcessEngineCommandResult> Execute(
         ProcessEngineCommandContext context,
         UpdateProcessStatePayload payload
     )
@@ -30,23 +33,27 @@ internal sealed class UpdateProcessStateInStorage : WorkflowEngineCommandBase<Up
 
             if (processStateChange.NewProcessState == null)
             {
-                return Task.FromResult<ProcessEngineCommandResult>(
-                    new FailedProcessEngineCommandResult(
-                        "ProcessStateChange.NewProcessState is null",
-                        "InvalidOperationException"
-                    )
+                return new FailedProcessEngineCommandResult(
+                    "ProcessStateChange.NewProcessState is null",
+                    "InvalidOperationException"
                 );
             }
 
-            // Get the instance and update its process state
             Instance instance = context.InstanceDataMutator.Instance;
             instance.Process = processStateChange.NewProcessState;
 
-            return Task.FromResult<ProcessEngineCommandResult>(new SuccessfulProcessEngineCommandResult());
+            await instanceClient.UpdateProcessAndEvents(
+                instance,
+                processStateChange.Events ?? [],
+                StorageAuthenticationMethod.ServiceOwner(),
+                context.CancellationToken
+            );
+
+            return new SuccessfulProcessEngineCommandResult();
         }
         catch (Exception ex)
         {
-            return Task.FromResult<ProcessEngineCommandResult>(new FailedProcessEngineCommandResult(ex));
+            return new FailedProcessEngineCommandResult(ex);
         }
     }
 }

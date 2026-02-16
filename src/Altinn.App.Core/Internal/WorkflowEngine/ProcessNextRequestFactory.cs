@@ -8,6 +8,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
+using ProcessNextRequest = Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine;
 
@@ -39,7 +40,8 @@ internal sealed class ProcessNextRequestFactory
         Dictionary<string, string>? prefill = null
     )
     {
-        var commands = new List<StepRequest>();
+        var processNextSteps = new List<StepRequest>();
+        var postCommitSteps = new List<StepRequest>();
 
         bool isInitialTaskStart = processStateChange.OldProcessState?.CurrentTask is null;
 
@@ -58,13 +60,17 @@ internal sealed class ProcessNextRequestFactory
             );
             if (workflowCommands != null)
             {
-                commands.AddRange(workflowCommands.Commands);
-                commands.Add(CreateUpdateProcessStateCommand(processStateChange));
-                commands.AddRange(workflowCommands.PostProcessNextCommittedCommands);
+                processNextSteps.AddRange(workflowCommands.Commands);
+                postCommitSteps.AddRange(workflowCommands.PostProcessNextCommittedCommands);
             }
         }
 
-        return new WorkflowEngine.Models.ProcessNextRequest
+        var commands = new List<StepRequest>();
+        commands.AddRange(processNextSteps);
+        commands.Add(CreateUpdateProcessStateCommand(processStateChange));
+        commands.AddRange(postCommitSteps);
+
+        return new ProcessNextRequest
         {
             CurrentElementId = processStateChange.OldProcessState?.CurrentTask?.ElementId ?? string.Empty,
             DesiredElementId = processStateChange.NewProcessState?.CurrentTask?.ElementId ?? string.Empty,
