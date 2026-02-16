@@ -17,10 +17,10 @@ public interface INotificationProvider
     /// <summary>
     /// Returns the email notification to be sent for the given notification task.
     /// </summary>
-    public EmailNotification ProvidedEmailNotification { get; }
+    public List<EmailNotification> ProvidedEmailNotifications { get; }
 
     /// <summary>
     /// Returns the SMS notification to be sent for the given notification task.
     /// </summary>
-    public SmsNotification ProvidedSmsNotification { get; }
+    public List<SmsNotification> ProvidedSmsNotifications { get; }
 }

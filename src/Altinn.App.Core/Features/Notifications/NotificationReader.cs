@@ -30,8 +30,8 @@ internal sealed class NotificationReader : INotificationReader
         }
 
         var notificationsWrapper = new NotificationsWrapper(
-            provider.ProvidedEmailNotification,
-            provider.ProvidedSmsNotification
+            provider.ProvidedEmailNotifications,
+            provider.ProvidedSmsNotifications
         );
         return notificationsWrapper;
     }

@@ -30,33 +30,55 @@ internal sealed class NotificationServiceTask : IServiceTask
 
         ValidAltinnNotificationConfiguration notificationConfig = GetValidNotificationConfig(taskId);
 
-        NotificationsWrapper notificationsWrapper = new();
         if (string.IsNullOrWhiteSpace(notificationConfig.NotificationProviderId) is false)
         {
-            try
-            {
-                notificationsWrapper = _notificationReader.GetProvidedNotifications(
-                    notificationConfig.NotificationProviderId,
-                    context.CancellationToken
-                );
-            }
-            catch (ConfigurationException ex)
-            {
-                // TODO: log. For now, rethrowing to explicitly show the exception that is expected for invalid configuration.
-                throw ex;
-            }
+            await HandleInterfaceProvidedNotifications(
+                notificationConfig.NotificationProviderId,
+                context.CancellationToken
+            );
         }
 
-        var smsToProcess = notificationsWrapper.SmsNotification;
-
-        _ = await _notificationService.NotifyInstanceOwner(
-            context.InstanceDataMutator.Instance,
-            new EmailOverride(),
-            new SmsOverride(),
-            context.CancellationToken
-        );
+        if (notificationConfig.SmsOverride is not null || notificationConfig.EmailOverride is not null)
+        {
+            await HandleProcessConfigurationProvidedNotifications(context, notificationConfig);
+        }
 
         return ServiceTaskResult.Success();
+    }
+
+    private async Task HandleProcessConfigurationProvidedNotifications(
+        ServiceTaskContext context,
+        ValidAltinnNotificationConfiguration notificationConfig
+    )
+    {
+        List<NotificationReference> references = await _notificationService.NotifyInstanceOwner(
+            context.InstanceDataMutator.Instance,
+            notificationConfig.EmailOverride ?? new EmailOverride(),
+            notificationConfig.SmsOverride ?? new SmsOverride(),
+            context.CancellationToken
+        );
+    }
+
+    private async Task HandleInterfaceProvidedNotifications(string notificationProviderId, CancellationToken ct)
+    {
+        try
+        {
+            NotificationsWrapper notificationsWrapper = _notificationReader.GetProvidedNotifications(
+                notificationProviderId,
+                ct
+            );
+
+            List<NotificationReference> references = await _notificationService.ProcessNotificationOrders(
+                notificationsWrapper.EmailNotifications ?? [],
+                notificationsWrapper.SmsNotifications ?? [],
+                ct
+            );
+        }
+        catch (ConfigurationException ex)
+        {
+            // TODO: log. For now, rethrowing to explicitly show the exception that is expected for invalid configuration.
+            throw ex;
+        }
     }
 
     private ValidAltinnNotificationConfiguration GetValidNotificationConfig(string taskId)

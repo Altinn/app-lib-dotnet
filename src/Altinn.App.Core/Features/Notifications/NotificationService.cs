@@ -20,7 +20,12 @@ internal sealed class NotificationService : INotificationService
         _smsNotificationClient = smsNotificationClient;
     }
 
-    public Task<List<NotificationReference>> NotifyInstanceOwner(Instance instance, EmailOverride emailNotification, SmsOverride smsNotification, CancellationToken ct)
+    public Task<List<NotificationReference>> NotifyInstanceOwner(
+        Instance instance,
+        EmailOverride emailNotification,
+        SmsOverride smsNotification,
+        CancellationToken ct
+    )
     {
         throw new NotImplementedException();
     }
@@ -39,16 +44,21 @@ internal sealed class NotificationService : INotificationService
     }
 
     public async Task<List<NotificationReference>> ProcessNotificationOrders(
-        EmailNotification emailNotification,
-        SmsNotification smsNotification,
+        List<EmailNotification> emailNotifications,
+        List<SmsNotification> smsNotifications,
         CancellationToken ct
     )
     {
-        var notificationReferences = new List<NotificationReference>
+        var notificationReferences = new List<NotificationReference>();
+        foreach (EmailNotification emailNotification in emailNotifications)
         {
-            await OrderEmail(emailNotification, ct),
-            await OrderSms(smsNotification, ct)
-        };
+            notificationReferences.Add(await OrderEmail(emailNotification, ct));
+        }
+
+        foreach (SmsNotification smsNotification in smsNotifications)
+        {
+            notificationReferences.Add(await OrderSms(smsNotification, ct));
+        }
 
         return notificationReferences;
     }

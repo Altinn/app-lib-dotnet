@@ -9,8 +9,8 @@ namespace Altinn.App.Core.Features.Notifications;
 internal interface INotificationService
 {
     Task<List<NotificationReference>> ProcessNotificationOrders(
-        EmailNotification emailNotifications,
-        SmsNotification smsNotifications,
+        List<EmailNotification> emailNotifications,
+        List<SmsNotification> smsNotifications,
         CancellationToken ct
     );
     Task<NotificationReference> ProcessNotificationOrder(EmailNotification emailNotification, CancellationToken ct);

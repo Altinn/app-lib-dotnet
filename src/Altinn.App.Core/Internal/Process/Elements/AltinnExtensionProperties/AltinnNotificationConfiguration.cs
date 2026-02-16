@@ -18,12 +18,13 @@ public class AltinnNotificationConfiguration
     {
         //TODO: implement validation logic
 
-        return new ValidAltinnNotificationConfiguration(NotificationProviderId);
+        return new ValidAltinnNotificationConfiguration(NotificationProviderId, SmsOverride, EmailOverride);
     }
 }
 
 public class SmsOverride
 {
+    public string SenderNumber { get; set; } = string.Empty;
     public string BodyTextResource { get; set; } = string.Empty;
 }
 
@@ -32,7 +33,10 @@ public class EmailOverride
     public string SubjectTextResource { get; set; } = string.Empty;
 
     public string BodyTextResource { get; set; } = string.Empty;
-
 }
 
-internal readonly record struct ValidAltinnNotificationConfiguration(string? NotificationProviderId);
+internal readonly record struct ValidAltinnNotificationConfiguration(
+    string? NotificationProviderId,
+    SmsOverride? SmsOverride,
+    EmailOverride? EmailOverride
+);
