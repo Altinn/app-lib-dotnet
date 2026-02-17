@@ -467,7 +467,6 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 changes.Add(creationChange);
             }
         }
-        // Include the change for data elements that have been added
         changes.AddRange(_changesForDeletion);
 
         return new DataElementChanges(changes);
