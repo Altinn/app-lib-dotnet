@@ -22,9 +22,9 @@ internal sealed class CompletedAltinnEvent : IWorkflowEngineCommand
 
         try
         {
-            if (string.IsNullOrWhiteSpace(instance.Process?.CurrentTask?.ElementId))
+            if (instance.Process?.EndEvent is null)
                 throw new InvalidOperationException(
-                    "Current task is not set on instance process. Cannot raise movedTo event."
+                    "End event is not set on instance process. Cannot raise completed event."
                 );
 
             await _eventsClient.AddEvent($"app.instance.process.completed", instance);

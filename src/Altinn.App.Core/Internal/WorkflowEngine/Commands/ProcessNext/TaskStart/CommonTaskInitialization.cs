@@ -2,8 +2,8 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Prefill;
-using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,21 +25,18 @@ internal sealed class CommonTaskInitialization : WorkflowEngineCommandBase<Commo
     private readonly IPrefill _prefillService;
     private readonly IAppModel _appModel;
     private readonly AppImplementationFactory _appImplementationFactory;
-    private readonly IProcessTaskCleaner _processTaskCleaner;
 
     public CommonTaskInitialization(
         IAppMetadata appMetadata,
         IPrefill prefillService,
         IAppModel appModel,
-        IServiceProvider serviceProvider,
-        IProcessTaskCleaner processTaskCleaner
+        IServiceProvider serviceProvider
     )
     {
         _appMetadata = appMetadata;
         _prefillService = prefillService;
         _appModel = appModel;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
-        _processTaskCleaner = processTaskCleaner;
     }
 
     public override async Task<ProcessEngineCommandResult> Execute(
@@ -51,7 +48,7 @@ internal sealed class CommonTaskInitialization : WorkflowEngineCommandBase<Commo
         Instance instance = instanceDataMutator.Instance;
         string taskId = instance.Process.CurrentTask.ElementId;
 
-        await _processTaskCleaner.RemoveAllDataElementsGeneratedFromTask(instance, taskId);
+        RemoveDataElementsGeneratedFromTask(instanceDataMutator, taskId);
 
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
@@ -77,5 +74,20 @@ internal sealed class CommonTaskInitialization : WorkflowEngineCommandBase<Commo
         }
 
         return new SuccessfulProcessEngineCommandResult();
+    }
+
+    private static void RemoveDataElementsGeneratedFromTask(IInstanceDataMutator instanceDataMutator, string taskId)
+    {
+        Instance instance = instanceDataMutator.Instance;
+        var dataElements =
+            instance.Data?.Where(de =>
+                de.References?.Exists(r => r.ValueType == ReferenceType.Task && r.Value == taskId) is true
+            )
+            ?? [];
+
+        foreach (var dataElement in dataElements)
+        {
+            instanceDataMutator.RemoveDataElement(dataElement);
+        }
     }
 }

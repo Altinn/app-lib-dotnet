@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.ProcessEnd;
 
-internal sealed class WorkflowEndLegacyHook : IWorkflowEngineCommand
+internal sealed class ProcessEndLegacyHook : IWorkflowEngineCommand
 {
     public static string Key => "ProcessEndLegacyHook";
 
@@ -14,7 +14,7 @@ internal sealed class WorkflowEndLegacyHook : IWorkflowEngineCommand
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly Telemetry? _telemetry;
 
-    public WorkflowEndLegacyHook(IServiceProvider serviceProvider, Telemetry? telemetry = null)
+    public ProcessEndLegacyHook(IServiceProvider serviceProvider, Telemetry? telemetry = null)
     {
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _telemetry = telemetry;

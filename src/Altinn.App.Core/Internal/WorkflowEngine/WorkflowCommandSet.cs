@@ -91,9 +91,12 @@ internal sealed class WorkflowCommandSet
     /// </summary>
     public static WorkflowCommandSet GetProcessEndSteps()
     {
+        // ProcessEndLegacyHook runs post-commit because IProcessEnd.End reads instance.Process.EndEvent,
+        // which is only set when the process state is persisted. This matches the old ProcessEngine behavior
+        // where RunAppDefinedProcessEndHandlers ran after HandleEventsAndUpdateStorage.
         return new WorkflowCommandSet()
             .AddCommand(OnWorkflowEndingHook.Key)
-            .AddCommand(WorkflowEndLegacyHook.Key)
+            .AddPostProcessNextCommittedCommand(ProcessEndLegacyHook.Key)
             .AddPostProcessNextCommittedCommand(CompletedAltinnEvent.Key);
     }
 
