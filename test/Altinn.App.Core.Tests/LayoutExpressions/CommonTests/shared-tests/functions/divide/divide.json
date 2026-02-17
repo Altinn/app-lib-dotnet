@@ -148,7 +148,7 @@
     },
     {
       "name": "Should throw exception when any argument is float min value",
-      "expression": ["divide", 0, -3.402823e+38],
+      "expression": ["divide", 0, -3.402825e+38],
       "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal"
     }
   ]

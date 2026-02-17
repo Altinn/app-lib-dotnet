@@ -840,6 +840,7 @@ public static partial class ExpressionEvaluator
         };
     }
 
+    // Only intended to be used in cases where T is either decimal or double
     private static T? CastNumber<T>(double? number)
         where T : struct, INumber<T>
     {
