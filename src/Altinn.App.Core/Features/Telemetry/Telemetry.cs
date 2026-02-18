@@ -262,6 +262,7 @@ public sealed partial class Telemetry : IDisposable
 
     internal static class InternalLabels
     {
+        internal const string NotificationOrderId = "notification.order.id";
         internal const string Result = "result";
         internal const string Type = "type";
         internal const string AuthorizationAction = "authorization.action";
