@@ -1,9 +1,10 @@
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models.Notifications;
 using Altinn.App.Core.Models.Notifications.Email;
+using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.App.Core.Models.Notifications.Sms;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Notifications;
 
@@ -11,17 +12,23 @@ internal sealed class NotificationService : INotificationService
 {
     private readonly IEmailNotificationClient _emailNotificationClient;
     private readonly ISmsNotificationClient _smsNotificationClient;
-    private readonly ITranslationService _translationService;
+    private readonly INotificationOrderClient _notificationOrderClient;
+    private readonly NotificationTextHelper _textHelper;
+    private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
         IEmailNotificationClient emailNotificationClient,
         ISmsNotificationClient smsNotificationClient,
-        ITranslationService translationService
+        INotificationOrderClient notificationOrderClient,
+        NotificationTextHelper textHelper,
+        ILogger<NotificationService> logger
     )
     {
         _emailNotificationClient = emailNotificationClient;
         _smsNotificationClient = smsNotificationClient;
-        _translationService = translationService;
+        _notificationOrderClient = notificationOrderClient;
+        _textHelper = textHelper;
+        _logger = logger;
     }
 
     public async Task<List<NotificationReference>> NotifyInstanceOwner(
@@ -34,52 +41,89 @@ internal sealed class NotificationService : INotificationService
     {
         List<NotificationReference> notificationReferences = [];
 
-        InstanceOwner instanceOwner = instance.InstanceOwner ?? throw new InvalidOperationException("Instance owner must be set on instance to notify instance owner");
+        InstanceOwner instanceOwner =
+            instance.InstanceOwner
+            ?? throw new InvalidOperationException(
+                "Instance owner must be set on instance to notify instance owner"
+            );
+
+        if (string.IsNullOrEmpty(instanceOwner.ExternalIdentifier) is false)
+        {
+            return await HandleSelfIdentifiedUser(language, instance, emailOverride, smsOverride, instanceOwner, ct);
+        }
 
         if (emailOverride is not null && emailOverride.SendEmail)
         {
-            string defaultSubjectTextResourceId = BackendTextResource.EmailDefaultSubject;
-            string defaultBodyTextResourceId = BackendTextResource.EmailDefaultBody;
-            string subject = await GetTextResource(
-                language,
-                defaultSubjectTextResourceId,
-                emailOverride.SubjectTextResource
-            );
-            string body = await GetTextResource(language, defaultBodyTextResourceId, emailOverride.BodyTextResource);
+            (string subject, string body) = await _textHelper.GetEmailText(language, emailOverride);
 
             EmailRecipient instanceOwnerRecipient = GetInstanceOwnerEmailRecipient(instanceOwner);
-            string sendersReference = $"instance-{instance.Id}-email";
-
             EmailNotification emailNotification = new()
             {
                 Subject = subject,
                 Body = body,
                 Recipients = [instanceOwnerRecipient],
-                SendersReference = sendersReference,
+                SendersReference = $"instance-{instance.Id}-email",
             };
 
-            NotificationReference notificationReference = await OrderEmail(emailNotification, ct);
-            notificationReferences.Add(notificationReference);
+            notificationReferences.Add(await OrderEmail(emailNotification, ct));
         }
 
         if (smsOverride is not null && smsOverride.SendSms)
         {
-            string defaultBodyTextResourceId = BackendTextResource.SmsDefaultBody;
-            string body = await GetTextResource(language, defaultBodyTextResourceId, smsOverride.BodyTextResource);
+            string body = await _textHelper.GetSmsBody(language, smsOverride);
 
             SmsRecipient instanceOwnerRecipient = GetInstanceOwnerSmsRecipient(instanceOwner);
-            string sendersReference = $"instance-{instance.Id}-sms";
-
             SmsNotification smsNotification = new()
             {
                 SenderNumber = smsOverride.SenderNumber,
                 Body = body,
                 Recipients = [instanceOwnerRecipient],
-                SendersReference = sendersReference,
+                SendersReference = $"instance-{instance.Id}-sms",
             };
 
-            NotificationReference notificationReference = await OrderSms(smsNotification, ct);
-            notificationReferences.Add(notificationReference);
+            notificationReferences.Add(await OrderSms(smsNotification, ct));
+        }
+
+        return notificationReferences;
+    }
+
+    private async Task<List<NotificationReference>> HandleSelfIdentifiedUser(string language, Instance instance, EmailConfig? emailOverride, SmsConfig? smsOverride, InstanceOwner instanceOwner, CancellationToken ct)
+    {
+        List<NotificationReference> notificationReferences = [];
+        if (emailOverride is not null && emailOverride.SendEmail)
+        {
+            (string subject, string body) = await _textHelper.GetEmailText(language, emailOverride);
+
+            var request = new NotificationOrderRequest
+            {
+                IdempotencyId = $"instance-{instance.Id}-email",
+                SendersReference = $"instance-{instance.Id}-email",
+                Recipient = new NotificationRecipient
+                {
+                    RecipientSelfIdentifiedUser = new RecipientSelfIdentifiedUser
+                    {
+                        ExternalIdentity = instanceOwner.ExternalIdentifier,
+                        ChannelSchema = NotificationChannel.Email,
+                        EmailSettings = new EmailSendingOptions
+                        {
+                            Subject = subject,
+                            Body = body,
+                        },
+                    },
+                },
+            };
+
+            NotificationOrderResponse response = await _notificationOrderClient.Order(request, ct);
+
+            notificationReferences.Add(new NotificationReference(request.SendersReference, response.Notification.ShipmentId.ToString()));
+        }
+
+        if (smsOverride is not null && smsOverride.SendSms)
+        {
+            _logger.LogWarning(
+                "SMS notifications are not supported for self-identified users. SMS will not be sent for instance {InstanceId}.",
+                instance.Id
+            );
         }
 
         return notificationReferences;
@@ -114,7 +158,7 @@ internal sealed class NotificationService : INotificationService
         if (string.IsNullOrEmpty(instanceOwner.PersonNumber) is false)
             return new EmailRecipient(NationalIdentityNumber: instanceOwner.PersonNumber);
 
-        //TODO: handle intanceOwner Externalid - parse email out of the URN, when storage.interfaces is updated
+        // We have already handled self identified users.
 
         throw new InvalidOperationException(
             $"Instance owner with party id {instanceOwner.PartyId} has neither an organisation number nor a person number and cannot be sent email notifications"
@@ -129,25 +173,11 @@ internal sealed class NotificationService : INotificationService
         if (string.IsNullOrEmpty(instanceOwner.PersonNumber) is false)
             return new SmsRecipient(NationalIdentityNumber: instanceOwner.PersonNumber);
 
-        // TODO: handle intanceOwner Externalid - parse mobile number out of the URN, when storage.interfaces is updated
+        // We have already handled self identified users.
 
         throw new InvalidOperationException(
             $"Instance owner with party id {instanceOwner.PartyId} has neither an organisation number nor a person number and cannot be sent sms notifications"
         );
-    }
-
-    private async Task<string> GetTextResource(
-        string language,
-        string defaultTextResourceId,
-        string? textResourceId = null
-    )
-    {
-        string? translatedText =
-            await _translationService.TranslateTextKey(language, textResourceId ?? defaultTextResourceId)
-            ?? throw new InvalidOperationException(
-                $"Default text resource '{defaultTextResourceId}' could not be found for language '{language}'"
-            );
-        return translatedText;
     }
 
     private async Task<NotificationReference> OrderEmail(EmailNotification emailNotification, CancellationToken ct)
