@@ -1,5 +1,5 @@
 using Altinn.App.Core.Features;
-using Altinn.App.Core.Features.Notifications.Order;
+using Altinn.App.Core.Models.Notifications.Order;
 using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.Process.End;
