@@ -33,10 +33,8 @@ internal sealed class NotificationService : INotificationService
     )
     {
         List<NotificationReference> notificationReferences = [];
-        string instanceOwnerRecipient =
-            instance.InstanceOwner?.PartyId
-            ?? throw new InvalidOperationException("Instance owner must be set on instance to use email override");
-        string sendersReference = $"instance-{instance.Id}";
+
+        InstanceOwner instanceOwner = instance.InstanceOwner ?? throw new InvalidOperationException("Instance owner must be set on instance to notify instance owner");
 
         if (emailOverride is not null && emailOverride.SendEmail)
         {
@@ -49,11 +47,14 @@ internal sealed class NotificationService : INotificationService
             );
             string body = await GetTextResource(language, defaultBodyTextResourceId, emailOverride.BodyTextResource);
 
+            EmailRecipient instanceOwnerRecipient = GetInstanceOwnerEmailRecipient(instanceOwner);
+            string sendersReference = $"instance-{instance.Id}-email";
+
             EmailNotification emailNotification = new()
             {
                 Subject = subject,
                 Body = body,
-                Recipients = [new(instanceOwnerRecipient)],
+                Recipients = [instanceOwnerRecipient],
                 SendersReference = sendersReference,
             };
 
@@ -66,11 +67,14 @@ internal sealed class NotificationService : INotificationService
             string defaultBodyTextResourceId = BackendTextResource.SmsDefaultBody;
             string body = await GetTextResource(language, defaultBodyTextResourceId, smsOverride.BodyTextResource);
 
+            SmsRecipient instanceOwnerRecipient = GetInstanceOwnerSmsRecipient(instanceOwner);
+            string sendersReference = $"instance-{instance.Id}-sms";
+
             SmsNotification smsNotification = new()
             {
                 SenderNumber = smsOverride.SenderNumber,
                 Body = body,
-                Recipients = [new(instanceOwnerRecipient)],
+                Recipients = [instanceOwnerRecipient],
                 SendersReference = sendersReference,
             };
 
@@ -100,6 +104,36 @@ internal sealed class NotificationService : INotificationService
         }
 
         return notificationReferences;
+    }
+
+    private static EmailRecipient GetInstanceOwnerEmailRecipient(InstanceOwner instanceOwner)
+    {
+        if (string.IsNullOrEmpty(instanceOwner.OrganisationNumber) is false)
+            return new EmailRecipient(OrganizationNumber: instanceOwner.OrganisationNumber);
+
+        if (string.IsNullOrEmpty(instanceOwner.PersonNumber) is false)
+            return new EmailRecipient(NationalIdentityNumber: instanceOwner.PersonNumber);
+
+        //TODO: handle intanceOwner Externalid - parse email out of the URN, when storage.interfaces is updated
+
+        throw new InvalidOperationException(
+            $"Instance owner with party id {instanceOwner.PartyId} has neither an organisation number nor a person number and cannot be sent email notifications"
+        );
+    }
+
+    private static SmsRecipient GetInstanceOwnerSmsRecipient(InstanceOwner instanceOwner)
+    {
+        if (string.IsNullOrEmpty(instanceOwner.OrganisationNumber) is false)
+            return new SmsRecipient(OrganisationNumber: instanceOwner.OrganisationNumber);
+
+        if (string.IsNullOrEmpty(instanceOwner.PersonNumber) is false)
+            return new SmsRecipient(NationalIdentityNumber: instanceOwner.PersonNumber);
+
+        // TODO: handle intanceOwner Externalid - parse mobile number out of the URN, when storage.interfaces is updated
+
+        throw new InvalidOperationException(
+            $"Instance owner with party id {instanceOwner.PartyId} has neither an organisation number nor a person number and cannot be sent sms notifications"
+        );
     }
 
     private async Task<string> GetTextResource(
