@@ -360,7 +360,7 @@ public class ProcessEngine : IProcessEngine
         if (moveToNextResult.IsEndEvent)
         {
             _telemetry?.ProcessEnded(moveToNextResult.ProcessStateChange);
-            await RunAppDefinedProcessEndHandlers(instance, moveToNextResult.ProcessStateChange?.Events);
+            await RunProcessEndHandlers(instance, moveToNextResult.ProcessStateChange?.Events);
         }
 
         return new ProcessChangeResult(mutatedInstance: instance)
@@ -758,9 +758,9 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <summary>
-    /// Runs IProcessEnd implementations defined in the app.
+    /// Runs all IProcessEnd implementations.
     /// </summary>
-    private async Task RunAppDefinedProcessEndHandlers(Instance instance, List<InstanceEvent>? events)
+    private async Task RunProcessEndHandlers(Instance instance, List<InstanceEvent>? events)
     {
         var processEnds = _appImplementationFactory.GetAll<IProcessEnd>().ToList();
         if (processEnds.Count is 0)
