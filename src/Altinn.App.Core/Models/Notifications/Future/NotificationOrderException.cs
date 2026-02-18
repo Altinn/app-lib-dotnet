@@ -1,13 +1,13 @@
 using Altinn.App.Core.Exceptions;
 
-namespace Altinn.App.Core.Models.Notifications.Order;
+namespace Altinn.App.Core.Models.Notifications.Future;
 
 /// <summary>
-/// Exception thrown when a notification order could not be cancelled.
+/// Exception thrown when a notification order could not be created.
 /// </summary>
-public sealed class NotificationCancelException : AltinnException
+public sealed class NotificationOrderException : AltinnException
 {
-    internal NotificationCancelException(
+    internal NotificationOrderException(
         string? message,
         HttpResponseMessage? response,
         string? content,

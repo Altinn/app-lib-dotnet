@@ -106,6 +106,9 @@ partial class Telemetry
 
             [Display(Name = "email")]
             Email,
+
+            [Display(Name = "future")]
+            Future,
         }
 
         [EnumExtensions(MetadataSource = MetadataSource.DisplayAttribute)]
