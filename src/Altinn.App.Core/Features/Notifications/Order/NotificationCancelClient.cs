@@ -55,7 +55,7 @@ internal sealed class NotificationCancelClient : INotificationCancelClient
             httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, ct);
             httpContent = await httpResponseMessage.Content.ReadAsStringAsync(ct);
 
-            if (!httpResponseMessage.IsSuccessStatusCode)
+            if (httpResponseMessage.IsSuccessStatusCode is false)
             {
                 throw new HttpRequestException(
                     $"Got error status code for notification order cancellation: {(int)httpResponseMessage.StatusCode}"
