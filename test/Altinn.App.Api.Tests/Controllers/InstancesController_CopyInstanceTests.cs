@@ -384,11 +384,24 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
+                p.Start(
                     It.IsAny<Instance>(),
+                    It.IsAny<List<InstanceEvent>>(),
+                    It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
                 )
+            )
+            .ReturnsAsync(
+                (
+                    Instance inst,
+                    List<InstanceEvent>? _,
+                    System.Security.Claims.ClaimsPrincipal _,
+                    Dictionary<string, string>? _,
+                    string? _,
+                    CancellationToken _
+                ) => new ProcessChangeResult { Success = true, MutatedInstance = inst }
             );
         fixture
             .Mock<IDataClient>()
@@ -504,11 +517,24 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
+                p.Start(
                     It.IsAny<Instance>(),
+                    It.IsAny<List<InstanceEvent>>(),
+                    It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
                 )
+            )
+            .ReturnsAsync(
+                (
+                    Instance inst,
+                    List<InstanceEvent>? _,
+                    System.Security.Claims.ClaimsPrincipal _,
+                    Dictionary<string, string>? _,
+                    string? _,
+                    CancellationToken _
+                ) => new ProcessChangeResult { Success = true, MutatedInstance = inst }
             );
 
         // Form data mocks
@@ -703,11 +729,24 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
+                p.Start(
                     It.IsAny<Instance>(),
+                    It.IsAny<List<InstanceEvent>>(),
+                    It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
                 )
+            )
+            .ReturnsAsync(
+                (
+                    Instance inst,
+                    List<InstanceEvent>? _,
+                    System.Security.Claims.ClaimsPrincipal _,
+                    Dictionary<string, string>? _,
+                    string? _,
+                    CancellationToken _
+                ) => new ProcessChangeResult { Success = true, MutatedInstance = inst }
             );
 
         // Form data mocks (should be copied)
@@ -901,11 +940,24 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
+                p.Start(
                     It.IsAny<Instance>(),
+                    It.IsAny<List<InstanceEvent>>(),
+                    It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
                 )
+            )
+            .ReturnsAsync(
+                (
+                    Instance inst,
+                    List<InstanceEvent>? _,
+                    System.Security.Claims.ClaimsPrincipal _,
+                    Dictionary<string, string>? _,
+                    string? _,
+                    CancellationToken _
+                ) => new ProcessChangeResult { Success = true, MutatedInstance = inst }
             );
 
         // Binary data mocks (should be called)
@@ -1106,11 +1158,24 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
+                p.Start(
                     It.IsAny<Instance>(),
+                    It.IsAny<List<InstanceEvent>>(),
+                    It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
                 )
+            )
+            .ReturnsAsync(
+                (
+                    Instance inst,
+                    List<InstanceEvent>? _,
+                    System.Security.Claims.ClaimsPrincipal _,
+                    Dictionary<string, string>? _,
+                    string? _,
+                    CancellationToken _
+                ) => new ProcessChangeResult { Success = true, MutatedInstance = inst }
             );
 
         // Binary data mocks (should be called)

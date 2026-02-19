@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Claims;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
@@ -147,6 +148,38 @@ public class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
+    public async Task<ProcessChangeResult> Start(
+        Instance instance,
+        List<InstanceEvent>? events,
+        ClaimsPrincipal user,
+        Dictionary<string, string>? prefill = null,
+        string? language = null,
+        CancellationToken ct = default
+    )
+    {
+        // HandleEvents mutates instance in-place; we discard the DispatchToStorage
+        // return (same as callers did before this method existed).
+        bool isServiceTask = IsServiceTask(instance);
+        await HandleEventsAndUpdateStorage(instance, isServiceTask ? null : prefill, events);
+
+        if (!isServiceTask)
+            return new ProcessChangeResult(instance) { Success = true };
+
+        // Auto-run through initial service tasks, forwarding prefill to the first user task
+        return await Next(
+            new ProcessNextRequest
+            {
+                Instance = instance,
+                User = user,
+                Action = null,
+                Language = language,
+                Prefill = prefill,
+            },
+            ct
+        );
+    }
+
+    /// <inheritdoc/>
     public async Task<ProcessChangeResult> Next(ProcessNextRequest request, CancellationToken ct = default)
     {
         Instance instance = request.Instance;
@@ -193,6 +226,7 @@ public class ProcessEngine : IProcessEngine
                 Action = firstIteration ? request.Action : null,
                 ActionOnBehalfOf = firstIteration ? request.ActionOnBehalfOf : null,
                 Language = request.Language,
+                Prefill = request.Prefill,
             };
 
             result = await ProcessNext(processNextRequest, ct);
@@ -355,7 +389,7 @@ public class ProcessEngine : IProcessEngine
             }
         }
 
-        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, processNextAction);
+        MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, processNextAction, request.Prefill);
 
         if (moveToNextResult.IsEndEvent)
         {
@@ -742,7 +776,11 @@ public class ProcessEngine : IProcessEngine
         return instanceEvent;
     }
 
-    private async Task<MoveToNextResult> HandleMoveToNext(Instance instance, string? action)
+    private async Task<MoveToNextResult> HandleMoveToNext(
+        Instance instance,
+        string? action,
+        Dictionary<string, string>? prefill = null
+    )
     {
         ProcessStateChange? processStateChange = await MoveProcessStateToNextAndGenerateEvents(instance, action);
 
@@ -751,7 +789,10 @@ public class ProcessEngine : IProcessEngine
             return new MoveToNextResult(instance, null);
         }
 
-        instance = await HandleEventsAndUpdateStorage(instance, null, processStateChange.Events);
+        // Only apply prefill when the destination is a user task, not a service task.
+        // Service tasks can have data types too, and we don't want prefill applied to them.
+        Dictionary<string, string>? prefillForTask = IsServiceTask(instance) ? null : prefill;
+        instance = await HandleEventsAndUpdateStorage(instance, prefillForTask, processStateChange.Events);
         await _processEventDispatcher.RegisterEventWithEventsComponent(instance);
 
         return new MoveToNextResult(instance, processStateChange);

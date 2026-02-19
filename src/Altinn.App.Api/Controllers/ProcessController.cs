@@ -147,12 +147,20 @@ public class ProcessController : ControllerBase
                 return Conflict(result.ErrorMessage);
             }
 
-            await _processEngine.HandleEventsAndUpdateStorage(instance, null, result.ProcessStateChange?.Events);
-
-            AppProcessState appProcessState = await ConvertAndAuthorizeActions(
+            var startProcessResult = await _processEngine.Start(
                 instance,
-                result.ProcessStateChange?.NewProcessState
+                result.ProcessStateChange?.Events,
+                User,
+                ct: HttpContext.RequestAborted
             );
+            if (!startProcessResult.Success)
+            {
+                return Conflict(startProcessResult.ErrorMessage);
+            }
+
+            instance = startProcessResult.MutatedInstance!;
+
+            AppProcessState appProcessState = await ConvertAndAuthorizeActions(instance, instance.Process);
             return Ok(appProcessState);
         }
         catch (PlatformHttpException e)

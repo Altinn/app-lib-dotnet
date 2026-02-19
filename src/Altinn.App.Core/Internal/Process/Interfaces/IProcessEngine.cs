@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
@@ -34,5 +35,18 @@ public interface IProcessEngine
         Instance instance,
         Dictionary<string, string>? prefill,
         List<InstanceEvent>? events
+    );
+
+    /// <summary>
+    /// Dispatches process start events to storage and auto-runs any initial service tasks.
+    /// Call after instance creation and data storage, with the events from <see cref="GenerateProcessStartEvents"/>.
+    /// </summary>
+    Task<ProcessChangeResult> Start(
+        Instance instance,
+        List<InstanceEvent>? events,
+        ClaimsPrincipal user,
+        Dictionary<string, string>? prefill = null,
+        string? language = null,
+        CancellationToken ct = default
     );
 }

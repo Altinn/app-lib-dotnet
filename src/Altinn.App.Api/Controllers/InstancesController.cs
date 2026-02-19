@@ -381,9 +381,18 @@ public class InstancesController : ControllerBase
                 Guid.Parse(instance.Id.Split("/")[1])
             );
 
-            // notify app and store events
             _logger.LogInformation("Events sent to process engine: {Events}", change?.Events);
-            await _processEngine.HandleEventsAndUpdateStorage(instance, null, change?.Events);
+            ProcessChangeResult startProcessResult = await _processEngine.Start(
+                instance,
+                change?.Events,
+                User,
+                language: language,
+                ct: HttpContext.RequestAborted
+            );
+            if (!startProcessResult.Success)
+                return Conflict(startProcessResult.ErrorMessage);
+
+            instance = startProcessResult.MutatedInstance!;
         }
         catch (Exception exception)
         {
@@ -598,11 +607,17 @@ public class InstancesController : ControllerBase
             }
 
             instance = await _instanceClient.GetInstance(instance);
-            await _processEngine.HandleEventsAndUpdateStorage(
+            var startProcessResult = await _processEngine.Start(
                 instance,
-                instansiationInstance.Prefill,
-                processResult.ProcessStateChange?.Events
+                processResult.ProcessStateChange?.Events,
+                User,
+                prefill: instansiationInstance.Prefill,
+                language: language,
+                ct: HttpContext.RequestAborted
             );
+            if (!startProcessResult.Success)
+                return Conflict(startProcessResult.ErrorMessage);
+            instance = startProcessResult.MutatedInstance!;
         }
         catch (Exception exception)
         {
@@ -724,7 +739,16 @@ public class InstancesController : ControllerBase
 
         targetInstance = await _instanceClient.GetInstance(targetInstance);
 
-        await _processEngine.HandleEventsAndUpdateStorage(targetInstance, null, startResult.ProcessStateChange?.Events);
+        var startProcessResult = await _processEngine.Start(
+            targetInstance,
+            startResult.ProcessStateChange?.Events,
+            User,
+            language: language,
+            ct: HttpContext.RequestAborted
+        );
+        if (!startProcessResult.Success)
+            return Conflict(startProcessResult.ErrorMessage);
+        targetInstance = startProcessResult.MutatedInstance!;
 
         await RegisterEvent("app.instance.created", targetInstance);
 
