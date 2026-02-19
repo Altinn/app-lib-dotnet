@@ -22,7 +22,7 @@
       "expects": null
     },
     {
-      "name": "Should subtract two integers",
+      "name": "Should subtract one integer from another",
       "expression": ["minus", 50, 20],
       "expects": 30
     },
@@ -102,9 +102,64 @@
       "expectsFailure": "Invalid"
     },
     {
-      "name": "Should subtract string scientific notation from number",
-      "expression": ["minus", 150, "1e2"],
-      "expectsFailure": "Expected number, got value \"1e2\""
+      "name": "Should parse string scientific notation with plus sign in front of coefficient",
+      "expression": ["minus", "+5E2", 10],
+      "expects": 490
+    },
+    {
+      "name": "Should parse string scientific notation with plus sign in front of exponent",
+      "expression": ["minus", "5E+2", 10],
+      "expects": 490
+    },
+    {
+      "name": "Should parse string scientific notation with negative sign in front of coefficient",
+      "expression": ["minus", "-5E2", 10],
+      "expects": -510
+    },
+    {
+      "name": "Should parse string scientific notation with negative sign in front of exponent",
+      "expression": ["minus", "5e-2", 10],
+      "expects": -9.95
+    },
+    {
+      "name": "Should subtract string scientific notation by number",
+      "expression": ["minus", "5E2", 10],
+      "expects": 490
+    },
+    {
+      "name": "Should subtract string scientific notation with no whole number part by number",
+      "expression": ["minus", ".5e2", 10],
+      "expects": 40
+    },
+    {
+      "name": "Should subtract string scientific notation equivalent to 0 by number",
+      "expression": ["minus", "0e0", 10],
+      "expects": -10
+    },
+    {
+      "name": "Should throw exception when string scientific notation results in a to large number",
+      "expression": ["minus", "8e28", 10],
+      "expectsFailure": "Expected number, got value \"8e28\""
+    },
+    {
+      "name": "Should throw exception when string scientific notation has negative sign before the E",
+      "expression": ["minus", "5-E2", 10],
+      "expectsFailure": "Expected number, got value \"5-E2\""
+    },
+    {
+      "name": "Should throw exception when string scientific notation has plus sign before the E",
+      "expression": ["minus", "5+E2", 10],
+      "expectsFailure": "Expected number, got value \"5+E2\""
+    },
+    {
+      "name": "Should throw exception when string scientific notation is missing the exponent",
+      "expression": ["minus", "5e", 10],
+      "expectsFailure": "Expected number, got value \"5e\""
+    },
+    {
+      "name": "Should throw exception when string scientific notation is missing the coefficient",
+      "expression": ["minus", "e2", 10],
+      "expectsFailure": "Expected number, got value \"e2\""
     },
     {
       "name": "Should throw exception when more than two arguments are present",
@@ -117,24 +172,24 @@
       "expects": 81.32
     },
     {
-      "name": "Should throw exception when any argument is double max value",
-      "expression": ["minus", 0, 1.7976931348623157E+308],
-      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal"
+      "name": "Should accept value just below decimal max value",
+      "expression": ["minus", 7.92281625142643288E+28, -1],
+      "expects": 7.92281625142643288E+28
     },
     {
-      "name": "Should throw exception when any argument is double min value",
-      "expression": ["minus", -1.7976931348623157E+308, 0],
-      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal"
+      "name": "Should throw exception when value exceeds decimal max value",
+      "expression": ["minus", 7.92281625142643552E+28, -1],
+      "expectsFailure": "Number is not within the supported range"
     },
     {
-      "name": "Should throw exception when any argument is float max value",
-      "expression": ["minus", 3.4028235E+38, 0],
-      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal"
+      "name": "Should accept value just above decimal min value",
+      "expression": ["minus", -7.92281625142643288E+28, 1],
+      "expects": -7.92281625142643288E+28
     },
     {
-      "name": "Should throw exception when any argument is float min value",
-      "expression": ["minus", 0, -3.40285e+38],
-      "expectsFailure": "Cannot convert non-finite or out-of-range number to decimal"
+      "name": "Should throw exception when value is below decimal min value",
+      "expression": ["minus", -7.92281625142643552E+28, 1],
+      "expectsFailure": "Number is not within the supported range"
     }
   ]
 }

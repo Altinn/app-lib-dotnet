@@ -851,8 +851,16 @@ public static partial class ExpressionEvaluator
 
         if (number.HasValue)
         {
-            EnsureConvertibleToDecimal(number.Value);
-            return T.CreateChecked(number.Value);
+            try
+            {
+                return T.CreateChecked(number.Value);
+            }
+            catch (OverflowException)
+            {
+                throw new ExpressionEvaluatorTypeErrorException(
+                    $"Number is not within the supported range: {number.Value}"
+                );
+            }
         }
 
         return null;
@@ -1048,21 +1056,6 @@ public static partial class ExpressionEvaluator
         }
     }
 
-    private static void EnsureConvertibleToDecimal(double value)
-    {
-        if (
-            double.IsNaN(value)
-            || double.IsInfinity(value)
-            || value > (double)decimal.MaxValue
-            || value < (double)decimal.MinValue
-        )
-        {
-            throw new ExpressionEvaluatorTypeErrorException(
-                $"Cannot convert non-finite or out-of-range number to decimal: {value}"
-            );
-        }
-    }
-
-    [GeneratedRegex(@"^-?\d+(\.\d+)?$")]
+    [GeneratedRegex(@"^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$")]
     private static partial Regex NumberRegex();
 }
