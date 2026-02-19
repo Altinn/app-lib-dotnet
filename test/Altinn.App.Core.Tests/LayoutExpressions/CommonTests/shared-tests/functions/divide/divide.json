@@ -187,23 +187,23 @@
       "expectsFailure": "Expected number, got value true"
     },
     {
-      "name": "Should accept value just below decimal max value",
-      "expression": ["divide", 7.92281625142643288E+28, 1],
-      "expects": 7.92281625142643288E+28
+      "name": "Should accept value just below precision-safe threshold",
+      "expression": ["divide", 9.9e+14, 1],
+      "expects": 9.9e+14
     },
     {
-      "name": "Should throw exception when value exceeds decimal max value",
-      "expression": ["divide", 7.92281625142643552E+28, 1],
+      "name": "Should throw exception when value exceeds precision-safe threshold",
+      "expression": ["divide", 1.1e+15, 1],
       "expectsFailure": "Number is not within the supported range"
     },
     {
-      "name": "Should accept value just above decimal min value",
-      "expression": ["divide", -7.92281625142643288E+28, 1],
-      "expects": -7.92281625142643288E+28
+      "name": "Should accept negative value just above precision-safe threshold",
+      "expression": ["divide", -9.9e+14, 1],
+      "expects": -9.9e+14
     },
     {
-      "name": "Should throw exception when value is below decimal min value",
-      "expression": ["divide", -7.92281625142643552E+28, 1],
+      "name": "Should throw exception when negative value exceeds precision-safe threshold",
+      "expression": ["divide", -1.1e+15, 1],
       "expectsFailure": "Number is not within the supported range"
     }
   ]

@@ -851,19 +851,25 @@ public static partial class ExpressionEvaluator
 
         if (number.HasValue)
         {
-            try
-            {
-                return T.CreateChecked(number.Value);
-            }
-            catch (OverflowException)
-            {
-                throw new ExpressionEvaluatorTypeErrorException(
-                    $"Number is not within the supported range: {number.Value}"
-                );
-            }
+            EnsureConvertibleToDecimal(number.Value);
+            return T.CreateChecked(number.Value);
         }
 
         return null;
+    }
+
+    private static void EnsureConvertibleToDecimal(double value)
+    {
+        // Use conservative thresholds to ensure precision is maintained and conversions succeed
+        // These values are chosen to be well within decimal.MaxValue/MinValue while preserving
+        // double precision (approximately 15-17 significant digits)
+        const double MaxSafeValue = 1e15; // 1 quadrillion - preserves precision in round-trip conversions
+        const double MinSafeValue = -1e15; // -1 quadrillion
+
+        if (double.IsNaN(value) || double.IsInfinity(value) || value > MaxSafeValue || value < MinSafeValue)
+        {
+            throw new ExpressionEvaluatorTypeErrorException($"Number is not within the supported range: {value}");
+        }
     }
 
     private static ExpressionValue IfImpl(ExpressionValue[] args)
