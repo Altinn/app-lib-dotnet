@@ -28,9 +28,9 @@ internal static class BackendTextResources
                 Id = resource,
                 Value = language switch
                 {
-                    LanguageConst.Nb => "Feltet er påkrevd",
+                    LanguageConst.En => "Field is required",
                     LanguageConst.Nn => "Feltet er påkravd",
-                    _ => "Field is required",
+                    _ => "Feltet er påkrevd",
                 },
             },
             BackendTextResource.PdfDefaultFileName => new TextResourceElement()
