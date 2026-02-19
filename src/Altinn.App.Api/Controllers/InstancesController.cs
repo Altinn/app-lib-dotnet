@@ -255,7 +255,13 @@ public class InstancesController : ControllerBase
 
             if (
                 lookup == null
-                || (lookup.PersonNumber == null && lookup.OrganisationNumber == null && lookup.PartyId == null)
+                || (
+                    lookup.PersonNumber == null
+                    && lookup.OrganisationNumber == null
+                    && lookup.PartyId == null
+                    && lookup.ExternalIdentifier == null
+                    && lookup.Username == null
+                )
             )
             {
                 return BadRequest(
@@ -483,7 +489,13 @@ public class InstancesController : ControllerBase
 
         if (
             lookup == null
-            || (lookup.PersonNumber == null && lookup.OrganisationNumber == null && lookup.PartyId == null)
+            || (
+                lookup.PersonNumber == null
+                && lookup.OrganisationNumber == null
+                && lookup.PartyId == null
+                && lookup.ExternalIdentifier == null
+                && lookup.Username == null
+            )
         )
         {
             return BadRequest(
