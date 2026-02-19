@@ -1233,6 +1233,15 @@ public sealed class ProcessEngineTest
             Mock<IProcessNavigator> processNavigatorMock = new(MockBehavior.Strict);
             Mock<IDataClient> dataClientMock = new(MockBehavior.Strict);
             Mock<IInstanceClient> instanceClientMock = new(MockBehavior.Strict);
+            instanceClientMock
+                .Setup(c =>
+                    c.GetInstance(
+                        It.IsAny<Instance>(),
+                        It.IsAny<StorageAuthenticationMethod?>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync((Instance i, StorageAuthenticationMethod? _, CancellationToken _) => i);
             Mock<IAppModel> appModelMock = new(MockBehavior.Strict);
             Mock<IAppMetadata> appMetadataMock = new(MockBehavior.Strict);
             Mock<IAppResources> appResourcesMock = new(MockBehavior.Strict);

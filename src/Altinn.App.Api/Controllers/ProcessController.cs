@@ -227,10 +227,9 @@ public class ProcessController : ControllerBase
                 return GetResultForError(result);
             }
 
-            AppProcessState appProcessState = await ConvertAndAuthorizeActions(
-                instance,
-                result.ProcessStateChange.NewProcessState
-            );
+            Instance freshInstance = result.MutatedInstance ?? instance;
+
+            AppProcessState appProcessState = await ConvertAndAuthorizeActions(freshInstance, freshInstance.Process);
 
             return Ok(appProcessState);
         }
@@ -350,6 +349,8 @@ public class ProcessController : ControllerBase
                 {
                     return GetResultForError(result);
                 }
+
+                instance = result.MutatedInstance ?? instance;
             }
             catch (Exception ex)
             {

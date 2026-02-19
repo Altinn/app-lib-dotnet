@@ -980,17 +980,12 @@
         }
       },
       {
-        endpoint: POST {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/start,
+        endpoint: POST {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/workflow-engine-callbacks/{commandKey},
         metadata: {
-          errorMessageTextResourceKeyUser: authorization.scopes.insufficient,
-          errorMessageTextResourceKeyServiceOwner: authorization.scopes.insufficient,
-          requiredScopesUsers: [
-            custom:instances.write,
-            altinn:portal/enduser
-          ],
-          requiredScopesServiceOwners: [
-            custom:serviceowner/instances.write
-          ]
+          errorMessageTextResourceKeyUser: null,
+          errorMessageTextResourceKeyServiceOwner: null,
+          requiredScopesUsers: null,
+          requiredScopesServiceOwners: null
         }
       },
       {

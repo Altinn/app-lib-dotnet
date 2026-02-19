@@ -1,5 +1,6 @@
-﻿using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.App.Core.Models;
@@ -12,12 +13,12 @@ public class PdfServiceTaskLegacyTests
 {
     private readonly Mock<IAppMetadata> _appMetadata = new();
     private readonly Mock<IPdfService> _pdfService = new();
-    private readonly Mock<IAppModel> _appModel = new();
+    private readonly Mock<IDataClient> _dataClient = new();
 
     [Fact]
     public async Task Execute_calls_pdf_service()
     {
-        Instance i = new() { Data = [new DataElement() { DataType = "DataType_1" }] };
+        Instance i = new() { Id = "12345/abc", Data = [new DataElement() { DataType = "DataType_1" }] };
         SetupAppMetadataWithDataTypes([
             new DataType
             {
@@ -28,14 +29,35 @@ public class PdfServiceTaskLegacyTests
             },
         ]);
 
-        PdfServiceTaskLegacy pst = new(_appMetadata.Object, _pdfService.Object);
+        PdfServiceTaskLegacy pst = new(_appMetadata.Object, _pdfService.Object, _dataClient.Object);
         await pst.Execute("Task_1", i);
 
         _appMetadata.Verify(am => am.GetApplicationMetadata(), Times.Once);
-        _pdfService.Verify(ps => ps.GenerateAndStorePdf(i, "Task_1", null, CancellationToken.None), Times.Once);
-        _appMetadata.VerifyNoOtherCalls();
-        _pdfService.VerifyNoOtherCalls();
-        _appModel.VerifyNoOtherCalls();
+        _pdfService.Verify(
+            ps =>
+                ps.GeneratePdf(
+                    i,
+                    "Task_1",
+                    false,
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+        _dataClient.Verify(
+            dc =>
+                dc.InsertBinaryData(
+                    i.Id,
+                    "ref-data-as-pdf",
+                    "application/pdf",
+                    It.IsAny<string?>(),
+                    It.IsAny<Stream>(),
+                    "Task_1",
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -43,6 +65,7 @@ public class PdfServiceTaskLegacyTests
     {
         Instance i = new()
         {
+            Id = "12345/abc",
             Data =
             [
                 new DataElement() { DataType = "DataType_1" },
@@ -68,14 +91,21 @@ public class PdfServiceTaskLegacyTests
             },
         ]);
 
-        PdfServiceTaskLegacy pst = new(_appMetadata.Object, _pdfService.Object);
+        PdfServiceTaskLegacy pst = new(_appMetadata.Object, _pdfService.Object, _dataClient.Object);
         await pst.Execute("Task_1", i);
 
         _appMetadata.Verify(am => am.GetApplicationMetadata());
-        _pdfService.Verify(ps => ps.GenerateAndStorePdf(i, "Task_1", null, CancellationToken.None), Times.Once);
-        _appMetadata.VerifyNoOtherCalls();
-        _pdfService.VerifyNoOtherCalls();
-        _appModel.VerifyNoOtherCalls();
+        _pdfService.Verify(
+            ps =>
+                ps.GeneratePdf(
+                    i,
+                    "Task_1",
+                    false,
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -99,13 +129,13 @@ public class PdfServiceTaskLegacyTests
             },
         ]);
 
-        PdfServiceTaskLegacy pst = new(_appMetadata.Object, _pdfService.Object);
+        PdfServiceTaskLegacy pst = new(_appMetadata.Object, _pdfService.Object, _dataClient.Object);
         await pst.Execute("Task_1", i);
 
         _appMetadata.Verify(am => am.GetApplicationMetadata());
         _appMetadata.VerifyNoOtherCalls();
         _pdfService.VerifyNoOtherCalls();
-        _appModel.VerifyNoOtherCalls();
+        _dataClient.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -126,13 +156,13 @@ public class PdfServiceTaskLegacyTests
             },
         ]);
 
-        PdfServiceTaskLegacy pst = new(_appMetadata.Object, _pdfService.Object);
+        PdfServiceTaskLegacy pst = new(_appMetadata.Object, _pdfService.Object, _dataClient.Object);
         await pst.Execute("Task_1", i);
 
         _appMetadata.Verify(am => am.GetApplicationMetadata(), Times.Once);
         _appMetadata.VerifyNoOtherCalls();
         _pdfService.VerifyNoOtherCalls();
-        _appModel.VerifyNoOtherCalls();
+        _dataClient.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -153,13 +183,13 @@ public class PdfServiceTaskLegacyTests
             },
         ]);
 
-        PdfServiceTaskLegacy pst = new(_appMetadata.Object, _pdfService.Object);
+        PdfServiceTaskLegacy pst = new(_appMetadata.Object, _pdfService.Object, _dataClient.Object);
         await pst.Execute("Task_1", i);
 
         _appMetadata.Verify(am => am.GetApplicationMetadata(), Times.Once);
         _appMetadata.VerifyNoOtherCalls();
         _pdfService.VerifyNoOtherCalls();
-        _appModel.VerifyNoOtherCalls();
+        _dataClient.VerifyNoOtherCalls();
     }
 
     private void SetupAppMetadataWithDataTypes(List<DataType>? dataTypes = null)

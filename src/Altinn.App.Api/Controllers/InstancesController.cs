@@ -386,7 +386,7 @@ public class InstancesController : ControllerBase
             {
                 // TODO: Acquire proper lock token from Storage
                 string lockToken = Guid.NewGuid().ToString("N");
-                await _processEngine.SubmitInitialProcessState(instance, processStateChange, lockToken);
+                instance = await _processEngine.SubmitInitialProcessState(instance, processStateChange, lockToken);
             }
         }
         catch (Exception exception)
@@ -396,8 +396,6 @@ public class InstancesController : ControllerBase
                 $"Instantiation of data elements failed for instance {instance.Id} for party {instanceTemplate.InstanceOwner?.PartyId}"
             );
         }
-
-        instance = await _instanceClient.GetInstance(instance);
 
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
@@ -614,7 +612,7 @@ public class InstancesController : ControllerBase
             {
                 // TODO: Acquire proper lock token from Storage
                 string lockToken = Guid.NewGuid().ToString("N");
-                await _processEngine.SubmitInitialProcessState(
+                instance = await _processEngine.SubmitInitialProcessState(
                     instance,
                     processStateChange,
                     lockToken,
@@ -750,7 +748,11 @@ public class InstancesController : ControllerBase
         {
             // TODO: Acquire proper lock token from Storage
             string lockToken = Guid.NewGuid().ToString("N");
-            await _processEngine.SubmitInitialProcessState(targetInstance, startResult.ProcessStateChange, lockToken);
+            targetInstance = await _processEngine.SubmitInitialProcessState(
+                targetInstance,
+                startResult.ProcessStateChange,
+                lockToken
+            );
         }
 
         string url = SelfLinkHelper.BuildFrontendSelfLink(targetInstance, Request);

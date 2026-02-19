@@ -47,7 +47,7 @@ public class ProcessEngineCommandValidatorTests
         services.AddTransient<IWorkflowEngineCommand, WorkflowTaskStartLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskStartingHook>();
         services.AddTransient<IWorkflowEngineCommand, CommonTaskInitialization>();
-        services.AddTransient<IWorkflowEngineCommand, WorkflowTaskStart>();
+        services.AddTransient<IWorkflowEngineCommand, ProcessTaskStart>();
         services.AddTransient<IWorkflowEngineCommand, MovedToAltinnEvent>();
         services.AddTransient<IWorkflowEngineCommand, InstanceCreatedAltinnEvent>();
         services.AddTransient<IWorkflowEngineCommand, ExecuteServiceTask>();
@@ -56,7 +56,7 @@ public class ProcessEngineCommandValidatorTests
         services.AddTransient<IWorkflowEngineCommand, EndTaskLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskEndingHook>();
         services.AddTransient<IWorkflowEngineCommand, LockTaskData>();
-        services.AddTransient<IWorkflowEngineCommand, WorkflowTaskAbandon>();
+        services.AddTransient<IWorkflowEngineCommand, ProcessTaskAbandon>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskAbandonHook>();
         services.AddTransient<IWorkflowEngineCommand, AbandonTaskLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, OnWorkflowEndingHook>();

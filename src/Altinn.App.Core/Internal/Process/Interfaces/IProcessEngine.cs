@@ -17,7 +17,7 @@ internal interface IProcessEngine
     /// <summary>
     /// Dispatches a process state change to the async process engine and waits for completion.
     /// </summary>
-    Task SubmitInitialProcessState(
+    Task<Instance> SubmitInitialProcessState(
         Instance instance,
         ProcessStateChange processStateChange,
         string lockToken,

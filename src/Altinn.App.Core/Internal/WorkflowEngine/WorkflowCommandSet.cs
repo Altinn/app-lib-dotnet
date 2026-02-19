@@ -43,7 +43,7 @@ internal sealed class WorkflowCommandSet
             .AddCommand(WorkflowTaskStartLegacyHook.Key, new ProcessTaskStartLegacyHookPayload(prefill))
             .AddCommand(OnTaskStartingHook.Key)
             .AddCommand(CommonTaskInitialization.Key, new CommonTaskInitializationPayload(prefill))
-            .AddCommand(WorkflowTaskStart.Key)
+            .AddCommand(ProcessTaskStart.Key)
             .AddPostProcessNextCommittedCommand(MovedToAltinnEvent.Key);
 
         if (serviceTaskType is not null)
@@ -81,7 +81,7 @@ internal sealed class WorkflowCommandSet
     public static WorkflowCommandSet GetTaskAbandonSteps()
     {
         return new WorkflowCommandSet()
-            .AddCommand(WorkflowTaskAbandon.Key)
+            .AddCommand(ProcessTaskAbandon.Key)
             .AddCommand(OnTaskAbandonHook.Key)
             .AddCommand(AbandonTaskLegacyHook.Key);
     }

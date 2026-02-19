@@ -1,4 +1,5 @@
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Models;
@@ -23,14 +24,16 @@ internal class PdfServiceTaskLegacy : IPdfServiceTaskLegacy
 {
     private readonly IAppMetadata _appMetadata;
     private readonly IPdfService _pdfService;
+    private readonly IDataClient _dataClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PdfServiceTaskLegacy"/> class.
     /// </summary>
-    public PdfServiceTaskLegacy(IAppMetadata appMetadata, IPdfService pdfService)
+    public PdfServiceTaskLegacy(IAppMetadata appMetadata, IPdfService pdfService, IDataClient dataClient)
     {
         _pdfService = pdfService;
         _appMetadata = appMetadata;
+        _dataClient = dataClient;
     }
 
     /// <inheritdoc />
@@ -50,7 +53,21 @@ internal class PdfServiceTaskLegacy : IPdfServiceTaskLegacy
             )
         )
         {
-            await _pdfService.GenerateAndStorePdf(instance, taskId, ct: CancellationToken.None);
+            await using Stream pdfStream = await _pdfService.GeneratePdf(
+                instance,
+                taskId,
+                false,
+                ct: CancellationToken.None
+            );
+
+            await _dataClient.InsertBinaryData(
+                instance.Id,
+                PdfService.PdfElementType,
+                "application/pdf",
+                null,
+                pdfStream,
+                generatedFromTask: taskId
+            );
         }
     }
 }

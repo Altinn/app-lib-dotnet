@@ -34,21 +34,7 @@
       IsSoftDeleted: false,
       IsHardDeleted: false,
       ReadStatus: Read
-    },
-    Data: [
-      {
-        Id: Guid_1,
-        InstanceGuid: Guid_2,
-        DataType: default,
-        ContentType: application/xml,
-        SelfLinks: {
-          Apps: https://localhost/tdd/contributer-restriction/instances/<instancOwnerPartyId>/<instanceGuid>/data/<dataId>
-        },
-        Size: 147,
-        Locked: false,
-        IsRead: true
-      }
-    ]
+    }
   },
   ReadInstance: {
     Id: <instancOwnerPartyId>/<instanceGuid>,
@@ -93,7 +79,7 @@
         DataType: default,
         ContentType: application/xml,
         SelfLinks: {
-          Apps: https://localhost/tdd/contributer-restriction/instances/<instancOwnerPartyId>/<instanceGuid>/data/<dataId>
+          Apps: https://localhost/tdd/contributer-restriction/instances/<instancOwnerPartyId>/<instanceGuid>/data/5a53b01e-3797-4aa5-82e3-ebbbff0e6258
         },
         Size: 147,
         Locked: false,

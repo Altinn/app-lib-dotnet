@@ -82,7 +82,6 @@ public class PdfControllerTests
     )
     {
         var pdfService = new PdfService(
-            _dataClient.Object,
             httpContextAccessor.Object,
             pdfGeneratorClient,
             _pdfGeneratorSettingsOptions,

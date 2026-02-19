@@ -3,7 +3,7 @@ using Altinn.App.Core.Internal.Process.ProcessTasks;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskAbandon;
 
-internal sealed class WorkflowTaskAbandon : IWorkflowEngineCommand
+internal sealed class ProcessTaskAbandon : IWorkflowEngineCommand
 {
     public static string Key => "ProcessTaskAbandon";
 
@@ -11,7 +11,7 @@ internal sealed class WorkflowTaskAbandon : IWorkflowEngineCommand
 
     private readonly ProcessTaskResolver _processTaskResolver;
 
-    public WorkflowTaskAbandon(ProcessTaskResolver processTaskResolver)
+    public ProcessTaskAbandon(ProcessTaskResolver processTaskResolver)
     {
         _processTaskResolver = processTaskResolver;
     }

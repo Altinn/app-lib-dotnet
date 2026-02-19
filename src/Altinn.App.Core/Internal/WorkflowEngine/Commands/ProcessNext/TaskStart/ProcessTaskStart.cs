@@ -3,7 +3,7 @@ using Altinn.App.Core.Internal.Process.ProcessTasks;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 
-internal sealed class WorkflowTaskStart : IWorkflowEngineCommand
+internal sealed class ProcessTaskStart : IWorkflowEngineCommand
 {
     public static string Key => "ProcessTaskStart";
 
@@ -11,7 +11,7 @@ internal sealed class WorkflowTaskStart : IWorkflowEngineCommand
 
     private readonly ProcessTaskResolver _processTaskResolver;
 
-    public WorkflowTaskStart(ProcessTaskResolver processTaskResolver)
+    public ProcessTaskStart(ProcessTaskResolver processTaskResolver)
     {
         _processTaskResolver = processTaskResolver;
     }

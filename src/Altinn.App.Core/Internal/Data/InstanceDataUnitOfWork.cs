@@ -14,6 +14,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Options;
+using KeyValueEntry = Altinn.Platform.Storage.Interface.Models.KeyValueEntry;
 
 namespace Altinn.App.Core.Internal.Data;
 
@@ -275,7 +276,9 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         string dataTypeId,
         string contentType,
         string? filename,
-        ReadOnlyMemory<byte> bytes
+        ReadOnlyMemory<byte> bytes,
+        string? generatedFromTask = null,
+        List<KeyValueEntry>? metadata = null
     )
     {
         var dataType = GetDataTypeByString(dataTypeId);
@@ -306,7 +309,9 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             dataType: dataType,
             fileName: filename,
             contentType: contentType,
-            currentBinaryData: bytes
+            currentBinaryData: bytes,
+            generatedFromTask: generatedFromTask,
+            metadata: metadata
         );
         _changesForCreation.Add(change);
         return change;
@@ -472,8 +477,17 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             change.ContentType,
             (change as BinaryDataChange)?.FileName,
             new MemoryAsStream(bytes),
+            generatedFromTask: (change as BinaryDataChange)?.GeneratedFromTask,
             authenticationMethod: GetAuthenticationMethod(change.DataType)
         );
+
+        // Apply metadata if specified
+        if (change is BinaryDataChange { Metadata: { Count: > 0 } metadata })
+        {
+            dataElement.Metadata = metadata;
+            dataElement = await _dataClient.Update(Instance, dataElement);
+        }
+
         // Update caches
         _binaryCache.Set(dataElement, bytes);
         change.DataElement = dataElement; // Set the data element so that it can be referenced later in the save process

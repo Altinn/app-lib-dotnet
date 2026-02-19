@@ -3,7 +3,6 @@ using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
@@ -36,14 +35,13 @@ internal sealed class PdfServiceTask : IPdfServiceTask
     public async Task<ServiceTaskResult> Execute(ServiceTaskContext context)
     {
         string taskId = context.InstanceDataMutator.Instance.Process.CurrentTask.ElementId;
-        Instance instance = context.InstanceDataMutator.Instance;
 
         _logger.LogDebug("Calling PdfService for PDF Service Task {TaskId}.", LogSanitizer.Sanitize(taskId));
 
         ValidAltinnPdfConfiguration config = GetValidAltinnPdfConfiguration(taskId);
+
         _ = await _pdfService.GenerateAndStorePdf(
-            instance,
-            taskId,
+            context.InstanceDataMutator,
             config.FilenameTextResourceKey,
             config.AutoPdfTaskIds,
             StorageAuthenticationMethod.ServiceOwner(),

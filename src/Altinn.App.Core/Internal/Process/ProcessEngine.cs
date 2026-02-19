@@ -7,6 +7,7 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
 using Altinn.App.Core.Internal.Validation;
@@ -44,6 +45,7 @@ internal class ProcessEngine : IProcessEngine
     private readonly IValidationService _validationService;
     private readonly ProcessNextRequestFactory _processNextRequestFactory;
     private readonly IWorkflowEngineClient _workflowEngineClient;
+    private readonly IInstanceClient _instanceClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -73,6 +75,7 @@ internal class ProcessEngine : IProcessEngine
         _processNextRequestFactory = serviceProvider.GetRequiredService<ProcessNextRequestFactory>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
     }
 
     /// <inheritdoc/>
@@ -143,7 +146,7 @@ internal class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task SubmitInitialProcessState(
+    public async Task<Instance> SubmitInitialProcessState(
         Instance instance,
         ProcessStateChange processStateChange,
         string lockToken,
@@ -157,7 +160,7 @@ internal class ProcessEngine : IProcessEngine
             prefill
         );
         await _workflowEngineClient.ProcessNext(instance, processNextRequest, ct);
-        await WaitForEngineResponse(instance, ct);
+        return await WaitForEngineResponseAndRefetchInstance(instance, ct);
     }
 
     /// <inheritdoc/>
@@ -274,7 +277,7 @@ internal class ProcessEngine : IProcessEngine
 
         MoveToNextResult moveToNextResult = await HandleMoveToNext(instance, processNextAction, request.LockToken, ct);
 
-        var changeResult = new ProcessChangeResult(mutatedInstance: instance)
+        var changeResult = new ProcessChangeResult(mutatedInstance: moveToNextResult.Instance)
         {
             Success = true,
             ProcessStateChange = moveToNextResult.ProcessStateChange,
@@ -548,9 +551,9 @@ internal class ProcessEngine : IProcessEngine
         );
         await _workflowEngineClient.ProcessNext(instance, processNextRequest, ct);
 
-        await WaitForEngineResponse(instance, ct);
+        Instance freshInstance = await WaitForEngineResponseAndRefetchInstance(instance, ct);
 
-        return new MoveToNextResult(instance, processStateChange);
+        return new MoveToNextResult(freshInstance, processStateChange);
     }
 
     /// <summary>
@@ -656,7 +659,7 @@ internal class ProcessEngine : IProcessEngine
         return true;
     }
 
-    private async Task WaitForEngineResponse(Instance instance, CancellationToken ct)
+    private async Task<Instance> WaitForEngineResponseAndRefetchInstance(Instance instance, CancellationToken ct)
     {
         var overallStopwatch = Stopwatch.StartNew();
         const int timeoutMs = 100_000;
@@ -670,7 +673,7 @@ internal class ProcessEngine : IProcessEngine
 
             if (processStatus is null)
             {
-                return;
+                break;
             }
 
             switch (processStatus.OverallStatus)
@@ -680,7 +683,7 @@ internal class ProcessEngine : IProcessEngine
                 case PersistentItemStatus.Failed:
                     throw new InvalidOperationException("Process engine job failed.");
                 case PersistentItemStatus.Completed:
-                    return;
+                    break;
                 case PersistentItemStatus.Enqueued:
                 case PersistentItemStatus.Processing:
                 case PersistentItemStatus.Requeued:
@@ -688,7 +691,7 @@ internal class ProcessEngine : IProcessEngine
                         "Process engine job is still in progress. Status: {Status}",
                         processStatus.OverallStatus
                     );
-                    break;
+                    goto continuePolling;
 
                 default:
                     throw new InvalidOperationException(
@@ -696,6 +699,9 @@ internal class ProcessEngine : IProcessEngine
                     );
             }
 
+            break;
+
+            continuePolling:
             if (overallStopwatch.ElapsedMilliseconds > timeoutMs)
             {
                 throw new TimeoutException("Timeout while waiting for process engine job to complete.");
@@ -707,7 +713,14 @@ internal class ProcessEngine : IProcessEngine
             currentDelayMs = Math.Min(currentDelayMs * 2, maxDelayMs);
         }
 
-        throw new InvalidOperationException("Tried waiting for process engine job, but the operation was cancelled.");
+        if (ct.IsCancellationRequested)
+        {
+            throw new InvalidOperationException(
+                "Tried waiting for process engine job, but the operation was cancelled."
+            );
+        }
+
+        return await _instanceClient.GetInstance(instance, ct: ct);
     }
 
     private IServiceTask? CheckIfServiceTask(string? altinnTaskType)
