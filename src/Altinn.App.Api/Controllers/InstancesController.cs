@@ -392,7 +392,7 @@ public class InstancesController : ControllerBase
             if (!startProcessResult.Success)
                 return Conflict(startProcessResult.ErrorMessage);
 
-            instance = startProcessResult.MutatedInstance!;
+            instance = startProcessResult.MutatedInstance;
         }
         catch (Exception exception)
         {
@@ -617,7 +617,7 @@ public class InstancesController : ControllerBase
             );
             if (!startProcessResult.Success)
                 return Conflict(startProcessResult.ErrorMessage);
-            instance = startProcessResult.MutatedInstance!;
+            instance = startProcessResult.MutatedInstance;
         }
         catch (Exception exception)
         {
@@ -748,7 +748,7 @@ public class InstancesController : ControllerBase
         );
         if (!startProcessResult.Success)
             return Conflict(startProcessResult.ErrorMessage);
-        targetInstance = startProcessResult.MutatedInstance!;
+        targetInstance = startProcessResult.MutatedInstance;
 
         await RegisterEvent("app.instance.created", targetInstance);
 

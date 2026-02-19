@@ -158,7 +158,7 @@ public class ProcessController : ControllerBase
                 return Conflict(startProcessResult.ErrorMessage);
             }
 
-            instance = startProcessResult.MutatedInstance!;
+            instance = startProcessResult.MutatedInstance;
 
             AppProcessState appProcessState = await ConvertAndAuthorizeActions(instance, instance.Process);
             return Ok(appProcessState);

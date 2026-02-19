@@ -4857,14 +4857,17 @@ namespace Altinn.App.Core.Models.Process
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, new string?[]?[] {
                 "ErrorMessage",
                 "ErrorType"})]
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "MutatedInstance")]
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ProcessStateChange")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, new string?[]?[] {
                 "ErrorMessage",
                 "ErrorType"})]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "MutatedInstance")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ProcessStateChange")]
         [set: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, new string?[]?[] {
                 "ErrorMessage",
                 "ErrorType"})]
+        [set: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "MutatedInstance")]
         [set: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ProcessStateChange")]
         public bool Success { get; init; }
         public System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssueWithSource>? ValidationIssues { get; set; }
