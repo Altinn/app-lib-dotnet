@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Text.Encodings.Web;
 using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Helpers.Patch;
 using Altinn.App.Api.Helpers.RequestHandling;
@@ -1138,6 +1139,18 @@ public class InstancesController : ControllerBase
             string personOrOrganisationNumber = instanceOwner.PersonNumber ?? instanceOwner.OrganisationNumber;
             try
             {
+                if (!string.IsNullOrEmpty(instanceOwner.ExternalIdentifier))
+                {
+                    var partyId = await _altinnPartyClient.GetPartyIdByUrn(instanceOwner.ExternalIdentifier);
+                    if (partyId == null)
+                    {
+                        throw new ServiceException(
+                            HttpStatusCode.BadRequest,
+                            $"Failed to lookup party by external identifier: {instanceOwner.ExternalIdentifier}. No partyId found for the provided external identifier."
+                        );
+                    }
+                    return await _registerClient.GetPartyUnchecked(partyId.Value, this.HttpContext.RequestAborted);
+                }
                 if (!string.IsNullOrEmpty(instanceOwner.PersonNumber))
                 {
                     lookupNumber = "personNumber";
@@ -1149,6 +1162,22 @@ public class InstancesController : ControllerBase
                     return await _altinnPartyClient.LookupParty(
                         new PartyLookup { OrgNo = instanceOwner.OrganisationNumber }
                     );
+                }
+                else if (!string.IsNullOrEmpty(instanceOwner.Username))
+                {
+                    var email = instanceOwner.Username.StartsWith("epost:", StringComparison.InvariantCultureIgnoreCase)
+                        ? instanceOwner.Username[6..]
+                        : instanceOwner.Username;
+                    var urn = $"{AltinnUrns.SelfIdentifiedEmail}:{UrlEncoder.Default.Encode(email)}";
+                    var partyId = await _altinnPartyClient.GetPartyIdByUrn(urn);
+                    if (partyId == null)
+                    {
+                        throw new ServiceException(
+                            HttpStatusCode.BadRequest,
+                            $"Failed to lookup party by username: {instanceOwner.Username}. No partyId found for the provided idporten self identified email address."
+                        );
+                    }
+                    return await _registerClient.GetPartyUnchecked(partyId.Value, this.HttpContext.RequestAborted);
                 }
                 else
                 {

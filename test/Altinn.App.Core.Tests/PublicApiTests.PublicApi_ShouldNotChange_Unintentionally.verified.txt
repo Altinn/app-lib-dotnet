@@ -2483,6 +2483,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Register
     {
         public AltinnPartyClient(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings> platformSettings, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Infrastructure.Clients.Register.AltinnPartyClient> logger, System.Net.Http.HttpClient httpClient, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.Auth.IUserTokenProvider userTokenProvider, Altinn.Common.AccessTokenClient.Services.IAccessTokenGenerator accessTokenGenerator, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
         public System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party?> GetParty(int partyId) { }
+        public System.Threading.Tasks.Task<int?> GetPartyIdByUrn(string urn) { }
         public System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party> LookupParty(Altinn.Platform.Register.Models.PartyLookup partyLookup) { }
     }
     public class PersonClient : Altinn.App.Core.Internal.Registers.IPersonClient
@@ -3920,6 +3921,7 @@ namespace Altinn.App.Core.Internal.Registers
     public interface IAltinnPartyClient
     {
         System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party?> GetParty(int partyId);
+        System.Threading.Tasks.Task<int?> GetPartyIdByUrn(string urn);
         System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party> LookupParty(Altinn.Platform.Register.Models.PartyLookup partyLookup);
     }
     public interface IOrganizationClient
