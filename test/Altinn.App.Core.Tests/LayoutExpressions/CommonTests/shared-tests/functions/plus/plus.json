@@ -17,8 +17,13 @@
       "expects": null
     },
     {
-      "name": "Should return null when one of the arguments is null",
+      "name": "Should return null when one of the arguments is null [decimal, null]",
       "expression": ["plus", 4.3, null],
+      "expects": null
+    },
+    {
+      "name": "Should return null when one of the arguments is null [null, decimal]",
+      "expression": ["plus", null, 4.3],
       "expects": null
     },
     {

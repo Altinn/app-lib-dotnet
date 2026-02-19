@@ -844,6 +844,10 @@ public static partial class ExpressionEvaluator
     private static T? CastNumber<T>(double? number)
         where T : struct, INumber<T>
     {
+        if (typeof(T) != typeof(decimal) && typeof(T) != typeof(double))
+        {
+            throw new UnreachableException($"CastNumber<T> is only valid for decimal or double, got {typeof(T)}");
+        }
         if (typeof(T) != typeof(decimal))
         {
             return number.HasValue ? T.CreateChecked(number.Value) : null;

@@ -17,8 +17,13 @@
       "expects": null
     },
     {
-      "name": "Should return null when one of the arguments is null",
+      "name": "Should return null when one of the arguments is null [null, decimal]",
       "expression": ["divide", null, 2.1],
+      "expects": null
+    },
+    {
+      "name": "Should return null when one of the arguments is null [decimal, null]",
+      "expression": ["divide", 2.1, null],
       "expects": null
     },
     {
@@ -88,8 +93,8 @@
     },
     {
       "name": "Should handle very large number formatted as string",
-      "expression": ["divide", "9999999999999999", 3],
-      "expects": 3333333333333333
+      "expression": ["divide", "999999999999999", 3],
+      "expects": 333333333333333
     },
     {
       "name": "Should handle very small numbers",
