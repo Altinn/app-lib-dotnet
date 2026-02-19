@@ -93,8 +93,8 @@
     },
     {
       "name": "Should handle very large number formatted as string",
-      "expression": ["divide", "999999999999999", 3],
-      "expects": 333333333333333
+      "expression": ["divide", "9999999999999999", 3],
+      "expects": 3333333333333333
     },
     {
       "name": "Should handle very small numbers",
