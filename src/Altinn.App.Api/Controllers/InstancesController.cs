@@ -232,7 +232,7 @@ public class InstancesController : ControllerBase
 
         var requestParts = readResult.Ok;
 
-        Instance? instanceTemplate = ExtractInstanceTemplate(requestParts);
+        InstansiationInstance? instanceTemplate = ExtractInstanceTemplate(requestParts);
 
         if (instanceOwnerPartyId is null && instanceTemplate is null)
         {
@@ -270,7 +270,7 @@ public class InstancesController : ControllerBase
             }
 
             // create minimum instance template
-            instanceTemplate = new Instance
+            instanceTemplate = new InstansiationInstance
             {
                 InstanceOwner = new InstanceOwner
                 {
@@ -321,25 +321,32 @@ public class InstancesController : ControllerBase
         }
 
         // Run custom app logic to validate instantiation
+
+        Instance instance = new()
+        {
+            InstanceOwner = instanceTemplate.InstanceOwner,
+            VisibleAfter = instanceTemplate.VisibleAfter,
+            DueBefore = instanceTemplate.DueBefore,
+            Status = instanceTemplate.Status,
+        };
         var instantiationValidator = _appImplementationFactory.GetRequired<IInstantiationValidator>();
-        InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
+        InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instance);
         if (validationResult != null && !validationResult.Valid)
         {
             await TranslateValidationResult(validationResult, language);
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
-        instanceTemplate.Org = application.Org;
-        ConditionallySetReadStatus(instanceTemplate);
+        instance.Org = application.Org;
+        ConditionallySetReadStatus(instance);
 
-        Instance instance;
-        instanceTemplate.Process = null;
+        instance.Process = null;
         ProcessStateChange? change = null;
 
         try
         {
             // start process and goto next task
-            ProcessStartRequest processStartRequest = new() { Instance = instanceTemplate, User = User };
+            ProcessStartRequest processStartRequest = new() { Instance = instance, User = User };
 
             ProcessChangeResult result = await _processEngine.GenerateProcessStartEvents(processStartRequest);
             if (!result.Success)
@@ -350,13 +357,13 @@ public class InstancesController : ControllerBase
             change = result.ProcessStateChange;
 
             // create the instance
-            instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
+            instance = await _instanceClient.CreateInstance(org, app, instance);
         }
         catch (Exception exception)
         {
             return ExceptionResponse(
                 exception,
-                $"Instantiation of appId {org}/{app} failed for party {instanceTemplate.InstanceOwner?.PartyId}"
+                $"Instantiation of appId {org}/{app} failed for party {instance.InstanceOwner?.PartyId}"
             );
         }
 
@@ -389,7 +396,7 @@ public class InstancesController : ControllerBase
         {
             return ExceptionResponse(
                 exception,
-                $"Instantiation of data elements failed for instance {instance.Id} for party {instanceTemplate.InstanceOwner?.PartyId}"
+                $"Instantiation of data elements failed for instance {instance.Id} for party {instance.InstanceOwner?.PartyId}"
             );
         }
 
@@ -1263,7 +1270,7 @@ public class InstancesController : ControllerBase
     /// </summary>
     /// <param name="parts">the parts of the multipart request</param>
     /// <returns>the instance template or null if none is found</returns>
-    private static Instance? ExtractInstanceTemplate(List<RequestPart> parts)
+    private static InstansiationInstance? ExtractInstanceTemplate(List<RequestPart> parts)
     {
         RequestPart? instancePart = parts.Find(part => part.Name == "instance");
 
@@ -1283,7 +1290,9 @@ public class InstancesController : ControllerBase
                 && instancePart.ContentType.Contains("application/json", StringComparison.Ordinal)
             )
             {
-                return JsonConvert.DeserializeObject<Instance>(Encoding.UTF8.GetString(instancePart.Bytes));
+                return JsonConvert.DeserializeObject<InstansiationInstance>(
+                    Encoding.UTF8.GetString(instancePart.Bytes)
+                );
             }
         }
 
