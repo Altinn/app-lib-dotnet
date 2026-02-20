@@ -138,8 +138,27 @@ public class AltinnPartyClient : IAltinnPartyClient
         string endpointUrl = "access-management/parties/query";
         var query = new { data = new string[] { urn } };
         using var content = new StringContent(JsonSerializer.Serialize(query));
+        ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
 
-        var response = await _client.PostAsync(endpointUrl, content);
+        string token = _userTokenProvider.GetUserToken();
+
+        using HttpResponseMessage response = await _client.PostAsync(
+            token,
+            endpointUrl,
+            content,
+            _accessTokenGenerator.GenerateAccessToken(application.Org, application.AppIdentifier.App)
+        );
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            _logger.LogError(
+                "// Getting partyId by URN {Urn} failed with statuscode {StatusCode} - {Reason}",
+                urn,
+                response.StatusCode,
+                await response.Content.ReadAsStringAsync()
+            );
+            throw await PlatformHttpException.CreateAsync(response);
+        }
+
         using var responseDocument = JsonDocument.Parse(await response.Content.ReadAsByteArrayAsync());
         var listResponse = responseDocument.RootElement.GetProperty("data");
         if (listResponse.GetArrayLength() == 0)
