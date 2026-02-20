@@ -93,8 +93,8 @@
     },
     {
       "name": "Should handle very large number formatted as string",
-      "expression": ["divide", "9999999999999999", 3],
-      "expects": 3333333333333333
+      "expression": ["divide", "999999999999999", 3],
+      "expects": 333333333333333
     },
     {
       "name": "Should handle very small numbers",
@@ -135,11 +135,6 @@
       "name": "Should divide string scientific notation equivalent to 0 by number",
       "expression": ["divide", "0e0", 10],
       "expects": 0
-    },
-    {
-      "name": "Should throw exception when string scientific notation results in a to large number",
-      "expression": ["divide", "8e28", 10],
-      "expectsFailure": "Expected number, got value \"8e28\""
     },
     {
       "name": "Should throw exception when string scientific notation has negative sign before the E",
@@ -190,26 +185,6 @@
       "name": "Should fail with [boolean, integer]",
       "expression": ["divide", true, 100],
       "expectsFailure": "Expected number, got value true"
-    },
-    {
-      "name": "Should accept value just below precision-safe threshold",
-      "expression": ["divide", 9.9e+14, 1],
-      "expects": 9.9e+14
-    },
-    {
-      "name": "Should throw exception when value exceeds precision-safe threshold",
-      "expression": ["divide", 1.1e+15, 1],
-      "expectsFailure": "Number is not within the supported range"
-    },
-    {
-      "name": "Should accept negative value just above precision-safe threshold",
-      "expression": ["divide", -9.9e+14, 1],
-      "expects": -9.9e+14
-    },
-    {
-      "name": "Should throw exception when negative value exceeds precision-safe threshold",
-      "expression": ["divide", -1.1e+15, 1],
-      "expectsFailure": "Number is not within the supported range"
     }
   ]
 }

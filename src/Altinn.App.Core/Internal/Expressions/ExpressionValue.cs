@@ -420,7 +420,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 "0" => false,
                 { } sValue when sValue.Equals("true", StringComparison.OrdinalIgnoreCase) => true,
                 { } sValue when sValue.Equals("false", StringComparison.OrdinalIgnoreCase) => false,
-                _ => ExpressionEvaluator.ParseNumber<double>(String, throwException: false) switch
+                _ => ExpressionEvaluator.ParseNumber(String, throwException: false) switch
                 {
                     1 => true,
                     0 => false,
@@ -523,7 +523,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             // Support parsing numbers from strings for numeric types
             case JsonValueKind.String when IsSupportedNumericType(underlyingType):
             {
-                var parsedNumber = ExpressionEvaluator.ParseNumber<double>(String, throwException: false);
+                var parsedNumber = ExpressionEvaluator.ParseNumber(String, throwException: false);
                 if (parsedNumber.HasValue)
                 {
                     result = Convert.ChangeType(parsedNumber.Value, underlyingType, CultureInfo.InvariantCulture);

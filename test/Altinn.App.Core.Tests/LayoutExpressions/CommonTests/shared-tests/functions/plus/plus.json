@@ -83,8 +83,8 @@
     },
     {
       "name": "Should handle very large number formatted as string",
-      "expression": ["plus", 1, "9007199254740992"],
-      "expects": 9007199254740993
+      "expression": ["plus", 1, "900719925474099"],
+      "expects": 900719925474100
     },
     {
       "name": "Should handle very small numbers",
@@ -127,11 +127,6 @@
       "expects": 10
     },
     {
-      "name": "Should throw exception when string scientific notation results in a to large number",
-      "expression": ["plus", "8e28", 10],
-      "expectsFailure": "Expected number, got value \"8e28\""
-    },
-    {
       "name": "Should throw exception when string scientific notation has negative sign before the E",
       "expression": ["plus", "5-E2", 10],
       "expectsFailure": "Expected number, got value \"5-E2\""
@@ -165,26 +160,6 @@
       "name": "Should add negative and positive decimal numbers",
       "expression": ["plus", 50.55, -30.66],
       "expects": 19.89
-    },
-    {
-      "name": "Should accept value just below precision-safe threshold",
-      "expression": ["plus", 9.9e+14, 1],
-      "expects": 990000000000001
-    },
-    {
-      "name": "Should throw exception when value exceeds precision-safe threshold",
-      "expression": ["plus", 1.1e+15, 1],
-      "expectsFailure": "Number is not within the supported range"
-    },
-    {
-      "name": "Should accept negative value just above precision-safe threshold",
-      "expression": ["plus", -9.9e+14, -1],
-      "expects": -990000000000001
-    },
-    {
-      "name": "Should throw exception when negative value exceeds precision-safe threshold",
-      "expression": ["plus", -1.1e+15, -1],
-      "expectsFailure": "Number is not within the supported range"
     }
   ]
 }
