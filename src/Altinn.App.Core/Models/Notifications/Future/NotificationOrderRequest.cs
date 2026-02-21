@@ -8,6 +8,16 @@ namespace Altinn.App.Core.Models.Notifications.Future;
 public sealed record NotificationOrderRequest
 {
     /// <summary>
+    /// Gets or sets optional identifiers for one or more dialogs or transmissions in Dialogporten.
+    /// </summary>
+    /// <remarks>
+    /// When specified, this associates the notification with specific dialogs or transmissions
+    /// in the Dialogporten service, enabling integration between notifications and Dialogporten.
+    /// </remarks>
+    [JsonPropertyName("dialogportenAssociation")]
+    public DialogportenIdentifiers? DialogportenAssociation { get; set; }
+
+    /// <summary>
     /// Gets or sets the idempotency identifier for this request.
     /// </summary>
     /// <remarks>
@@ -50,6 +60,33 @@ public sealed record NotificationOrderRequest
     /// </summary>
     [JsonPropertyName("recipient")]
     public required NotificationRecipient Recipient { get; init; }
+
+    /// <summary>
+    /// Gets or sets a list of reminders that may be triggered under certain conditions after the initial notification has been processed.
+    /// </summary>
+    /// <remarks>
+    /// Each reminder can have its own recipient settings, delay period, and triggering conditions.
+    /// </remarks>
+    [JsonPropertyName("reminders")]
+    public List<NotificationReminder>? Reminders { get; set; }
+}
+
+/// <summary>
+/// Defines identifiers for associating a notification order with specific dialogs or transmissions in the Dialogporten service.
+/// </summary>
+public class DialogportenIdentifiers
+{
+    /// <summary>
+    /// Gets or sets the identifier for a specific dialog within Dialogporten.
+    /// </summary>
+    [JsonPropertyName("dialogId")]
+    public string? DialogId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the identifier for a specific transmission within Dialogporten.
+    /// </summary>
+    [JsonPropertyName("transmissionId")]
+    public string? TransmissionId { get; set; }
 }
 
 /// <summary>
@@ -258,6 +295,65 @@ public sealed record RecipientSelfIdentifiedUser
     /// </summary>
     [JsonPropertyName("smsSettings")]
     public SmsSendingOptions? SmsSettings { get; init; }
+}
+
+/// <summary>
+/// Represents a reminder notification that can be scheduled to follow an initial notification order.
+/// </summary>
+/// <remarks>
+/// This class enables configuration of follow-up notifications that can be triggered based on
+/// specific conditions or time delays after the initial notification. Each reminder can be
+/// customized with its own recipient details and timing parameters.
+/// </remarks>
+public record NotificationReminder
+{
+    /// <summary>
+    /// Gets or sets the sender's reference for this reminder.
+    /// </summary>
+    /// <remarks>
+    /// A unique identifier used by the sender to correlate this reminder with their internal systems.
+    /// </remarks>
+    [JsonPropertyName("sendersReference")]
+    public string? SendersReference { get; init; }
+
+    /// <summary>
+    /// Gets or sets the condition endpoint used to determine if the reminder should be sent.
+    /// </summary>
+    /// <remarks>
+    /// When specified, the system will call this endpoint before sending the reminder.
+    /// The reminder will only be sent if the endpoint returns a positive response.
+    /// This allows for dynamic decision-making about whether the reminder is still relevant.
+    /// </remarks>
+    [JsonPropertyName("conditionEndpoint")]
+    public Uri? ConditionEndpoint { get; init; }
+
+    /// <summary>
+    /// Gets or sets the number of days to delay this reminder.
+    /// </summary>
+    [JsonPropertyName("delayDays")]
+    public int? DelayDays { get; init; }
+
+    /// <summary>
+    /// Gets or sets the earliest date and time when the reminder should be delivered.
+    /// </summary>
+    /// <remarks>
+    /// Allows scheduling reminder for future delivery. The system will not deliver the reminder
+    /// before this time, but may deliver it later depending on system load and availability.
+    /// Defaults to the current UTC time if not specified.
+    /// </remarks>
+    [JsonPropertyName("requestedSendTime")]
+    public DateTime? RequestedSendTime { get; init; }
+
+    /// <summary>
+    /// Gets or sets the recipient information for this reminder.
+    /// </summary>
+    /// <remarks>
+    /// Specifies the target recipient through one of the supported channels:
+    /// email address, SMS number, national identity number, or organization number.
+    /// The reminder can be directed to a different recipient than the initial notification.
+    /// </remarks>
+    [JsonPropertyName("recipient")]
+    public required NotificationRecipient Recipient { get; init; }
 }
 
 /// <summary>
