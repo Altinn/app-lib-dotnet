@@ -4,10 +4,10 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Notifications;
 
-internal interface INotificationService
+public interface INotificationService
 {
     Task<List<NotificationReference>> NotifyInstanceOwnerOnInstansiation(
-        string language,
+        string? language,
         NotificationOrderRequest orderRequest,
         InstanceOwner instanceOwner,
         CancellationToken ct

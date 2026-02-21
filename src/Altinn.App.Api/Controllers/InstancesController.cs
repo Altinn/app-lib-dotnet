@@ -13,12 +13,14 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Features.Notifications;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Profile;
@@ -71,6 +73,7 @@ public class InstancesController : ControllerBase
     private readonly IHostEnvironment _env;
     private readonly ModelSerializationService _serializationService;
     private readonly InternalPatchService _patchService;
+    private readonly INotificationService _notificationService;
     private readonly ITranslationService _translationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAuthenticationContext _authenticationContext;
@@ -97,6 +100,7 @@ public class InstancesController : ControllerBase
         IHostEnvironment env,
         ModelSerializationService serializationService,
         InternalPatchService patchService,
+        INotificationService notificationService,
         ITranslationService translationService,
         IServiceProvider serviceProvider
     )
@@ -118,6 +122,7 @@ public class InstancesController : ControllerBase
         _env = env;
         _serializationService = serializationService;
         _patchService = patchService;
+        _notificationService = notificationService;
         _translationService = translationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
@@ -405,6 +410,13 @@ public class InstancesController : ControllerBase
 
         await RegisterEvent("app.instance.created", instance);
 
+        _ = _notificationService.NotifyInstanceOwnerOnInstansiation(
+            language ?? "nb",
+            instanceTemplate.Notification,
+            instance.InstanceOwner,
+            CancellationToken.None
+        );
+
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
 
@@ -632,6 +644,13 @@ public class InstancesController : ControllerBase
         }
 
         await RegisterEvent("app.instance.created", instance);
+
+        _ = _notificationService.NotifyInstanceOwnerOnInstansiation(
+            language,
+            instansiationInstance.Notification,
+            instance.InstanceOwner,
+            CancellationToken.None
+        );
 
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
