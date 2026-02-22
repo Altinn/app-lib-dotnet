@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.AltinnEvents;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.ProcessEnd;
@@ -51,6 +52,8 @@ internal static class ServiceCollectionExtensions
         services.AddTransient<IWorkflowEngineCommand, CompletedAltinnEvent>();
         services.AddTransient<IWorkflowEngineCommand, InstanceCreatedAltinnEvent>();
         services.AddTransient<IWorkflowEngineCommand, MovedToAltinnEvent>();
+
+        services.AddTransient<IServiceTaskReplier, ServiceTaskReplier>();
 
         // Validate all commands are registered
         ProcessEngineCommandValidator.Validate(services);

@@ -42,7 +42,17 @@ internal static class ProcessEngineCommandValidator
         );
         CollectCommandKeys(WorkflowCommandSet.GetTaskStartSteps(serviceTaskType: null, isInitialTaskStart: true), keys);
         CollectCommandKeys(
-            WorkflowCommandSet.GetTaskStartSteps(serviceTaskType: "DummyServiceTask", isInitialTaskStart: false),
+            WorkflowCommandSet.GetTaskStartSteps(
+                serviceTaskType: new ServiceTaskType("DummyServiceTask", ServiceTaskKind.ServiceTask),
+                isInitialTaskStart: false
+            ),
+            keys
+        );
+        CollectCommandKeys(
+            WorkflowCommandSet.GetTaskStartSteps(
+                serviceTaskType: new ServiceTaskType("DummyReplyServiceTask", ServiceTaskKind.ReplyServiceTask),
+                isInitialTaskStart: false
+            ),
             keys
         );
         CollectCommandKeys(WorkflowCommandSet.GetTaskEndSteps(), keys);
@@ -70,6 +80,10 @@ internal static class ProcessEngineCommandValidator
             if (commandRequest.Command is Command.AppCommand appCommand)
             {
                 keys.Add(appCommand.CommandKey);
+            }
+            else if (commandRequest.Command is Command.ReplyAppCommand replyAppCommand)
+            {
+                keys.Add(replyAppCommand.CommandKey);
             }
         }
     }

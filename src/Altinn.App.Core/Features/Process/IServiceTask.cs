@@ -32,6 +32,13 @@ public sealed record ServiceTaskContext
     /// Cancellation token for the operation.
     /// </summary>
     public CancellationToken CancellationToken { get; init; } = CancellationToken.None;
+
+    /// <summary>
+    /// A correlation ID linking paired AppCommand and ReplyAppCommand steps.
+    /// The app uses this ID to POST replies back to the engine via the reply endpoint.
+    /// Regular service tasks can ignore this value.
+    /// </summary>
+    public string? CorrelationId { get; init; }
 }
 
 /// <summary>

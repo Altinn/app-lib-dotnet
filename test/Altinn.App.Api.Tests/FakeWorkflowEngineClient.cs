@@ -177,4 +177,9 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
     /// </summary>
     private static bool IsAltinnEventCommand(string commandKey) =>
         commandKey.EndsWith("AltinnEvent", StringComparison.OrdinalIgnoreCase);
+
+    public Task SendReply(string correlationId, string payload, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
 }

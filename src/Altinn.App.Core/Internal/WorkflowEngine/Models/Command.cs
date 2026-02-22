@@ -16,6 +16,7 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models;
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(AppCommand), typeDiscriminator: "app")]
+[JsonDerivedType(typeof(ReplyAppCommand), typeDiscriminator: "reply-app")]
 [JsonDerivedType(typeof(Webhook), typeDiscriminator: "webhook")]
 public abstract record Command
 {
@@ -44,6 +45,17 @@ public abstract record Command
     /// <param name="Payload">Optional payload to send back with the command. If specified this becomes a POST request. Otherwise, GET.</param>
     /// <param name="MaxExecutionTime">The maximum allowed execution time for the command.</param>
     public sealed record AppCommand(
+        [property: JsonPropertyName("commandKey")] string CommandKey,
+        [property: JsonPropertyName("payload")] string? Payload = null,
+        TimeSpan? MaxExecutionTime = null
+    ) : Command(CommandKey, MaxExecutionTime);
+
+    /// <summary>
+    /// A command that handles the reply phase of an AppCommand request-reply pattern.
+    /// When a service task requires an asynchronous reply, a ReplyAppCommand is placed
+    /// after the corresponding AppCommand. The engine generates a shared CorrelationId for the pair.
+    /// </summary>
+    public sealed record ReplyAppCommand(
         [property: JsonPropertyName("commandKey")] string CommandKey,
         [property: JsonPropertyName("payload")] string? Payload = null,
         TimeSpan? MaxExecutionTime = null

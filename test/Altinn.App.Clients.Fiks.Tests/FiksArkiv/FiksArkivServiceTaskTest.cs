@@ -118,6 +118,7 @@ public class FiksArkivServiceTaskTest
                     instance.Process.CurrentTask.ElementId,
                     It.Is<Instance>(i => i.Id == instance.Id),
                     messageType,
+                    It.IsAny<string?>(),
                     It.IsAny<CancellationToken>()
                 )
             )

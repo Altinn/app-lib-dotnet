@@ -33,7 +33,7 @@ internal sealed class WorkflowCommandSet
     /// <param name="isInitialTaskStart">True if this is the first task start (process is starting), false for subsequent task transitions.</param>
     /// <param name="prefill">Prefill data for initial task start. Only relevant when isInitialTaskStart is true.</param>
     public static WorkflowCommandSet GetTaskStartSteps(
-        string? serviceTaskType,
+        ServiceTaskType? serviceTaskType,
         bool isInitialTaskStart,
         Dictionary<string, string>? prefill = null
     )
@@ -50,8 +50,16 @@ internal sealed class WorkflowCommandSet
         {
             group.AddPostProcessNextCommittedCommand(
                 ExecuteServiceTask.Key,
-                new ExecuteServiceTaskPayload(serviceTaskType)
+                new ExecuteServiceTaskPayload(serviceTaskType.Name)
             );
+
+            if (serviceTaskType.Kind == ServiceTaskKind.ReplyServiceTask)
+            {
+                group.AddPostProcessNextCommittedReplyCommand(
+                    ExecuteServiceTask.Key,
+                    new ExecuteServiceTaskPayload(serviceTaskType.Name)
+                );
+            }
         }
 
         if (isInitialTaskStart)
@@ -121,9 +129,27 @@ internal sealed class WorkflowCommandSet
         return this;
     }
 
+    private WorkflowCommandSet AddPostProcessNextCommittedReplyCommand(
+        string commandKey,
+        CommandRequestPayload? payload = null
+    )
+    {
+        _postProcessNextCommittedCommands.Add(CreateReplyCommand(commandKey, payload));
+        return this;
+    }
+
     private static StepRequest CreateCommand(string commandKey, CommandRequestPayload? payload = null)
     {
         string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
         return new StepRequest { Command = new Command.AppCommand(CommandKey: commandKey, Payload: serializedPayload) };
+    }
+
+    private static StepRequest CreateReplyCommand(string commandKey, CommandRequestPayload? payload = null)
+    {
+        string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
+        return new StepRequest
+        {
+            Command = new Command.ReplyAppCommand(CommandKey: commandKey, Payload: serializedPayload),
+        };
     }
 }

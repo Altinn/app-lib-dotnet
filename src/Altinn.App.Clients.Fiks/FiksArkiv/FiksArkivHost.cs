@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
@@ -6,6 +7,7 @@ using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Models;
@@ -25,6 +27,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
     private readonly IFiksIOClient _fiksIOClient;
     private readonly Telemetry? _telemetry;
     private readonly IFiksArkivInstanceClient _fiksArkivInstanceClient;
+    private readonly IServiceTaskReplier _serviceTaskReplier;
     private readonly IHostEnvironment _env;
     private readonly TimeProvider _timeProvider;
     private readonly FiksArkivSettings _fiksArkivSettings;
@@ -46,6 +49,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
         IAppModel appModelResolver,
         IFiksArkivConfigResolver fiksArkivConfigResolver,
         IFiksArkivInstanceClient fiksArkivInstanceClient,
+        IServiceTaskReplier serviceTaskReplier,
         AppImplementationFactory appImplementationFactory,
         IHostEnvironment env,
         TimeProvider? timeProvider = null,
@@ -60,6 +64,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
         _fiksArkivConfigResolver = fiksArkivConfigResolver;
         _appImplementationFactory = appImplementationFactory;
         _fiksArkivInstanceClient = fiksArkivInstanceClient;
+        _serviceTaskReplier = serviceTaskReplier;
         _timeProvider = timeProvider ?? TimeProvider.System;
         _env = env;
     }
@@ -69,7 +74,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
         try
         {
             _logger.LogInformation("Fiks Arkiv Service starting");
-            await _fiksIOClient.OnMessageReceived(IncomingMessageListener);
+            await _fiksIOClient.OnMessageReceived(StoreMessage);
 
             DateTimeOffset nextIteration = GetLoopDelay();
             DateTimeOffset nextHealthCheck = GetHealthCheckDelay();
@@ -112,6 +117,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
         string taskId,
         Instance instance,
         string messageType,
+        string? correlationId = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -134,7 +140,7 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
             SendersReference: instanceId.InstanceGuid,
             MessageLifetime: TimeSpan.FromDays(2),
             Payload: messagePayloads,
-            CorrelationId: _fiksArkivConfigResolver.GetCorrelationId(instance)
+            CorrelationId: correlationId ?? _fiksArkivConfigResolver.GetCorrelationId(instance)
         );
 
         await SaveArchiveRecord(instance, request);
@@ -188,6 +194,39 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
 
             await SaveArchiveReceipt(instance, receipt);
         }
+    }
+
+    internal async Task StoreMessage(FiksIOReceivedMessage message)
+    {
+        string correlationId =
+            message.Message.CorrelationId
+            ?? throw new InvalidOperationException(
+                $"Received Fiks IO message {message.Message.MessageId} has no correlation ID."
+            );
+
+        var decryptedPayloads = await message.Message.GetDecryptedPayloads();
+
+        var storedMessage = new StoredFiksArkivMessage
+        {
+            MessageId = message.Message.MessageId,
+            MessageType = message.Message.MessageType,
+            Payloads = decryptedPayloads
+                ?.Select(p => new StoredFiksArkivPayload { Filename = p.Filename, Content = p.Content })
+                .ToList(),
+        };
+
+        string json = JsonSerializer.Serialize(storedMessage);
+
+        _logger.LogInformation(
+            "Stored Fiks Arkiv message {MessageId} of type {MessageType} for deferred processing (correlation: {CorrelationId})",
+            storedMessage.MessageId,
+            storedMessage.MessageType,
+            correlationId
+        );
+
+        await _serviceTaskReplier.SendReply(correlationId, json);
+
+        await message.Responder.Ack();
     }
 
     internal async Task IncomingMessageListener(FiksIOReceivedMessage message)

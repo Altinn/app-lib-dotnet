@@ -68,6 +68,17 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         return null;
     }
 
+    public async Task SendReply(string correlationId, string payload, CancellationToken cancellationToken = default)
+    {
+        string url = $"{GetBaseUrl()}reply/{correlationId}";
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+        httpRequest.Content = JsonContent.Create(new { payload });
+        httpRequest.Headers.Add(ApiKeyHeaderName, _platformSettings.WorkflowEngineApiKey);
+
+        HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     private string GetBaseUrl()
     {
         string baseUrl = _platformSettings.ApiWorkflowEngineEndpoint.TrimEnd('/');

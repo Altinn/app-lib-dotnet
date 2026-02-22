@@ -687,6 +687,7 @@ internal class ProcessEngine : IProcessEngine
                 case PersistentItemStatus.Enqueued:
                 case PersistentItemStatus.Processing:
                 case PersistentItemStatus.Requeued:
+                case PersistentItemStatus.Suspended:
                     _logger.LogDebug(
                         "Process engine job is still in progress. Status: {Status}",
                         processStatus.OverallStatus

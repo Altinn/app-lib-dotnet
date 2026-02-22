@@ -102,14 +102,22 @@ internal sealed class ProcessNextRequestFactory
         };
     }
 
-    private string? GetServiceTaskType(string? altinnTaskType)
+    private ServiceTaskType? GetServiceTaskType(string? altinnTaskType)
     {
         if (altinnTaskType is null)
             return null;
 
         IEnumerable<IServiceTask> serviceTasks = _appImplementationFactory.GetAll<IServiceTask>();
-        bool isServiceTask = serviceTasks.Any(x => x.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase));
-        return isServiceTask ? altinnTaskType : null;
+        IServiceTask? serviceTask = serviceTasks.FirstOrDefault(x =>
+            x.Type.Equals(altinnTaskType, StringComparison.OrdinalIgnoreCase)
+        );
+
+        if (serviceTask is null)
+            return null;
+
+        var kind = serviceTask is IReplyServiceTask ? ServiceTaskKind.ReplyServiceTask : ServiceTaskKind.ServiceTask;
+
+        return new ServiceTaskType(altinnTaskType, kind);
     }
 
     private async Task<Actor> ExtractActor()

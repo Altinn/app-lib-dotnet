@@ -36,10 +36,30 @@ internal sealed class ExecuteServiceTask(AppImplementationFactory appImplementat
             {
                 InstanceDataMutator = instanceDataMutator,
                 CancellationToken = context.CancellationToken,
+                CorrelationId = context.Payload.CorrelationId?.ToString(),
             };
 
             IServiceTask serviceTask = GetServiceTask(serviceTaskType);
-            ServiceTaskResult result = await serviceTask.Execute(serviceTaskContext);
+            ServiceTaskResult result;
+
+            string? replyPayload = context.Payload.Reply;
+            if (!string.IsNullOrEmpty(replyPayload))
+            {
+                if (serviceTask is not IReplyServiceTask replyServiceTask)
+                {
+                    return new FailedProcessEngineCommandResult(
+                        new ProcessException(
+                            $"Service task {serviceTask.Type} received a reply payload but does not implement IReplyServiceTask"
+                        )
+                    );
+                }
+
+                result = await replyServiceTask.ProcessReply(serviceTaskContext, replyPayload);
+            }
+            else
+            {
+                result = await serviceTask.Execute(serviceTaskContext);
+            }
 
             if (result is ServiceTaskFailedResult)
             {

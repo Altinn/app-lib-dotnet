@@ -22,4 +22,9 @@ internal interface IWorkflowEngineClient
     /// <param name="instance">The instance</param>
     /// <param name="cancellationToken">Cancellation token</param>
     Task<WorkflowStatusResponse?> GetActiveJobStatus(Instance instance, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends a reply for a reply command.
+    /// </summary>
+    Task SendReply(string correlationId, string payload, CancellationToken cancellationToken = default);
 }
