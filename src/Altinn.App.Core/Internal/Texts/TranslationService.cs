@@ -318,6 +318,17 @@ internal sealed class TranslationService : ITranslationService
                         _ => "Dokumentet er en forhåndsvisning",
                     },
                 };
+            case "backend.xsd_validation":
+                return new TextResourceElement()
+                {
+                    Id = "backend.xsd_validation",
+                    Value = language switch
+                    {
+                        LanguageConst.Nb => "Ett eller flere felter bryter reglene satt av XSD",
+                        LanguageConst.Nn => "Eitt eller fleire felt bryt reglane sette av XSD",
+                        _ => "One or more field is violating a rule in the XSD",
+                    },
+                };
         }
 
         return null;
