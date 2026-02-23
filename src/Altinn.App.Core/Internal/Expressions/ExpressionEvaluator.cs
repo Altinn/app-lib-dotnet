@@ -1010,7 +1010,7 @@ public static partial class ExpressionEvaluator
             var aDecimal = (decimal)a.Value;
             var bDecimal = (decimal)b.Value;
             var result = operation(aDecimal, bDecimal);
-            return (double?)result;
+            return (double)result;
         }
         catch (OverflowException)
         {
