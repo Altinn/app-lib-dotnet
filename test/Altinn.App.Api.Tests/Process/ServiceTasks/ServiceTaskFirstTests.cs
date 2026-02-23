@@ -5,7 +5,6 @@ using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -48,16 +47,14 @@ public class ServiceTaskFirstTests : ApiTestBase, IClassFixture<WebApplicationFa
             TestAuthentication.GetUserToken(userId: 1337, partyId: InstanceOwnerPartyId)
         );
 
-        _serviceTaskExecuted.Should().BeTrue("the service task should have been auto-executed on instantiation");
+        Assert.True(_serviceTaskExecuted, "the service task should have been auto-executed on instantiation");
 
-        instance.Process.Should().NotBeNull();
-        instance.Process!.CurrentTask.Should().NotBeNull();
-        instance
-            .Process.CurrentTask!.ElementId.Should()
-            .Be("Task_1", "process should have advanced past the service task");
-        instance.Process.CurrentTask.AltinnTaskType.Should().Be("data");
+        Assert.NotNull(instance.Process);
+        Assert.NotNull(instance.Process.CurrentTask);
+        Assert.Equal("Task_1", instance.Process.CurrentTask.ElementId);
+        Assert.Equal("data", instance.Process.CurrentTask.AltinnTaskType);
 
-        instance.Data.Should().HaveCount(1, "auto-created data element for the user task");
+        Assert.Single(instance.Data);
 
         TestData.DeleteInstanceAndData(Org, App, instance.Id);
     }
@@ -77,21 +74,22 @@ public class ServiceTaskFirstTests : ApiTestBase, IClassFixture<WebApplicationFa
             prefill
         );
 
-        _serviceTaskExecuted.Should().BeTrue("the service task should have been auto-executed on instantiation");
+        Assert.True(_serviceTaskExecuted, "the service task should have been auto-executed on instantiation");
 
-        instance.Process!.CurrentTask!.ElementId.Should().Be("Task_1");
-        instance.Data.Should().HaveCount(1);
+        Assert.NotNull(instance.Process);
+        Assert.NotNull(instance.Process.CurrentTask);
+        Assert.Equal("Task_1", instance.Process.CurrentTask.ElementId);
+        var dataElement = Assert.Single(instance.Data);
 
-        var dataGuid = instance.Data.First().Id;
-        var readResponse = await client.GetAsync($"/{Org}/{App}/instances/{instance.Id}/data/{dataGuid}");
-        readResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var readResponse = await client.GetAsync($"/{Org}/{App}/instances/{instance.Id}/data/{dataElement.Id}");
+        Assert.Equal(HttpStatusCode.OK, readResponse.StatusCode);
 
         var content = await readResponse.Content.ReadAsStringAsync();
         var model = JsonSerializer.Deserialize<Skjema>(content);
 
-        model.Should().NotBeNull();
-        model!.Melding.Should().NotBeNull("prefill should have been applied to the user task data model");
-        model.Melding!.Name.Should().Be("PrefillThroughServiceTask");
+        Assert.NotNull(model);
+        Assert.NotNull(model.Melding);
+        Assert.Equal("PrefillThroughServiceTask", model.Melding.Name);
 
         TestData.DeleteInstanceAndData(Org, App, instance.Id);
     }
