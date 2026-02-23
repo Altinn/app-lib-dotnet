@@ -334,7 +334,7 @@ public class InstancesController : ControllerBase
 
         Instance instance;
         instanceTemplate.Process = null;
-        ProcessStateChange? change = null;
+        ProcessStateChange change;
 
         try
         {
@@ -380,9 +380,6 @@ public class InstancesController : ControllerBase
                 int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
                 Guid.Parse(instance.Id.Split("/")[1])
             );
-
-            if (change is null)
-                throw new InvalidOperationException("ProcessStateChange was not set by GenerateProcessStartEvents");
 
             ProcessChangeResult startProcessResult = await _processEngine.Start(
                 instance,
