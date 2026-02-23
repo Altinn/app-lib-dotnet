@@ -914,10 +914,6 @@ public static partial class ExpressionEvaluator
     private static double? Divide(ExpressionValue[] args)
     {
         var (a, b) = PrepareNumericArgs(args);
-        if (a != null && b == 0)
-        {
-            throw new ExpressionEvaluatorTypeErrorException("The second argument is 0, cannot divide by 0");
-        }
         return PerformArithmetic(a, b, (x, y) => x / y);
     }
 
@@ -1021,6 +1017,10 @@ public static partial class ExpressionEvaluator
             throw new ExpressionEvaluatorTypeErrorException(
                 $"Arithmetic overflow: {a.Value} and {b.Value} or operation on them exceeds the supported range"
             );
+        }
+        catch (DivideByZeroException)
+        {
+            throw new ExpressionEvaluatorTypeErrorException("The second argument is 0, cannot divide by 0");
         }
     }
 
