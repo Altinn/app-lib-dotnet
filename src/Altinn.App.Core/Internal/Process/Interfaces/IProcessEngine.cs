@@ -39,11 +39,11 @@ public interface IProcessEngine
 
     /// <summary>
     /// Dispatches process start events to storage and auto-runs any initial service tasks.
-    /// Call after instance creation and data storage, with the events from <see cref="GenerateProcessStartEvents"/>.
+    /// Call after instance creation and data storage, with the result from <see cref="GenerateProcessStartEvents"/>.
     /// </summary>
     Task<ProcessChangeResult> Start(
         Instance instance,
-        List<InstanceEvent>? events,
+        ProcessStateChange processStateChange,
         ClaimsPrincipal user,
         Dictionary<string, string>? prefill = null,
         string? language = null,

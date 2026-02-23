@@ -153,7 +153,7 @@ public class ProcessEngine : IProcessEngine
     /// <inheritdoc/>
     public async Task<ProcessChangeResult> Start(
         Instance instance,
-        List<InstanceEvent>? events,
+        ProcessStateChange processStateChange,
         ClaimsPrincipal user,
         Dictionary<string, string>? prefill = null,
         string? language = null,
@@ -163,10 +163,10 @@ public class ProcessEngine : IProcessEngine
         // HandleEvents mutates instance in-place; we discard the DispatchToStorage
         // return (same as callers did before this method existed).
         bool isServiceTask = IsServiceTask(instance);
-        await HandleEventsAndUpdateStorage(instance, isServiceTask ? null : prefill, events);
+        await HandleEventsAndUpdateStorage(instance, isServiceTask ? null : prefill, processStateChange.Events);
 
         if (!isServiceTask)
-            return new ProcessChangeResult(instance) { Success = true };
+            return new ProcessChangeResult(instance) { Success = true, ProcessStateChange = processStateChange };
 
         // Auto-run through initial service tasks, forwarding prefill to the first user task
         return await Next(

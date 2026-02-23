@@ -3693,7 +3693,7 @@ namespace Altinn.App.Core.Internal.Process
         System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> GenerateProcessStartEvents(Altinn.App.Core.Models.Process.ProcessStartRequest processStartRequest);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> HandleEventsAndUpdateStorage(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events);
         System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Next(Altinn.App.Core.Models.Process.ProcessNextRequest request, System.Threading.CancellationToken ct = default);
-        System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Start(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events, System.Security.Claims.ClaimsPrincipal user, System.Collections.Generic.Dictionary<string, string>? prefill = null, string? language = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Start(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Models.Process.ProcessStateChange processStateChange, System.Security.Claims.ClaimsPrincipal user, System.Collections.Generic.Dictionary<string, string>? prefill = null, string? language = null, System.Threading.CancellationToken ct = default);
     }
     public interface IProcessEngineAuthorizer
     {
@@ -3740,7 +3740,7 @@ namespace Altinn.App.Core.Internal.Process
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> GenerateProcessStartEvents(Altinn.App.Core.Models.Process.ProcessStartRequest processStartRequest) { }
         public System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> HandleEventsAndUpdateStorage(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string>? prefill, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Next(Altinn.App.Core.Models.Process.ProcessNextRequest request, System.Threading.CancellationToken ct = default) { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Start(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>? events, System.Security.Claims.ClaimsPrincipal user, System.Collections.Generic.Dictionary<string, string>? prefill = null, string? language = null, System.Threading.CancellationToken ct = default) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Process.ProcessChangeResult> Start(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Models.Process.ProcessStateChange processStateChange, System.Security.Claims.ClaimsPrincipal user, System.Collections.Generic.Dictionary<string, string>? prefill = null, string? language = null, System.Threading.CancellationToken ct = default) { }
     }
     public class ProcessEventDispatcher : Altinn.App.Core.Internal.Process.IProcessEventDispatcher
     {

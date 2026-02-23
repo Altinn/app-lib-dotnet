@@ -379,14 +379,14 @@ public class InstancesController_CopyInstanceTests
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() =>
             {
-                return new ProcessChangeResult() { Success = true };
+                return new ProcessChangeResult() { Success = true, ProcessStateChange = new() };
             });
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
                 p.Start(
                     It.IsAny<Instance>(),
-                    It.IsAny<List<InstanceEvent>>(),
+                    It.IsAny<ProcessStateChange>(),
                     It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
                     It.IsAny<string>(),
@@ -396,7 +396,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(
                 (
                     Instance inst,
-                    List<InstanceEvent>? _,
+                    ProcessStateChange _,
                     System.Security.Claims.ClaimsPrincipal _,
                     Dictionary<string, string>? _,
                     string? _,
@@ -513,13 +513,13 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
-            .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
+            .ReturnsAsync(() => new ProcessChangeResult() { Success = true, ProcessStateChange = new() });
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
                 p.Start(
                     It.IsAny<Instance>(),
-                    It.IsAny<List<InstanceEvent>>(),
+                    It.IsAny<ProcessStateChange>(),
                     It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
                     It.IsAny<string>(),
@@ -529,7 +529,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(
                 (
                     Instance inst,
-                    List<InstanceEvent>? _,
+                    ProcessStateChange _,
                     System.Security.Claims.ClaimsPrincipal _,
                     Dictionary<string, string>? _,
                     string? _,
@@ -725,13 +725,13 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
-            .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
+            .ReturnsAsync(() => new ProcessChangeResult() { Success = true, ProcessStateChange = new() });
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
                 p.Start(
                     It.IsAny<Instance>(),
-                    It.IsAny<List<InstanceEvent>>(),
+                    It.IsAny<ProcessStateChange>(),
                     It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
                     It.IsAny<string>(),
@@ -741,7 +741,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(
                 (
                     Instance inst,
-                    List<InstanceEvent>? _,
+                    ProcessStateChange _,
                     System.Security.Claims.ClaimsPrincipal _,
                     Dictionary<string, string>? _,
                     string? _,
@@ -936,13 +936,13 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
-            .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
+            .ReturnsAsync(() => new ProcessChangeResult() { Success = true, ProcessStateChange = new() });
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
                 p.Start(
                     It.IsAny<Instance>(),
-                    It.IsAny<List<InstanceEvent>>(),
+                    It.IsAny<ProcessStateChange>(),
                     It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
                     It.IsAny<string>(),
@@ -952,7 +952,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(
                 (
                     Instance inst,
-                    List<InstanceEvent>? _,
+                    ProcessStateChange _,
                     System.Security.Claims.ClaimsPrincipal _,
                     Dictionary<string, string>? _,
                     string? _,
@@ -1154,13 +1154,13 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
-            .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
+            .ReturnsAsync(() => new ProcessChangeResult() { Success = true, ProcessStateChange = new() });
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
                 p.Start(
                     It.IsAny<Instance>(),
-                    It.IsAny<List<InstanceEvent>>(),
+                    It.IsAny<ProcessStateChange>(),
                     It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
                     It.IsAny<string>(),
@@ -1170,7 +1170,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(
                 (
                     Instance inst,
-                    List<InstanceEvent>? _,
+                    ProcessStateChange _,
                     System.Security.Claims.ClaimsPrincipal _,
                     Dictionary<string, string>? _,
                     string? _,

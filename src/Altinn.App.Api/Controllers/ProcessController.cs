@@ -149,7 +149,7 @@ public class ProcessController : ControllerBase
 
             var startProcessResult = await _processEngine.Start(
                 instance,
-                result.ProcessStateChange?.Events,
+                result.ProcessStateChange,
                 User,
                 ct: HttpContext.RequestAborted
             );
