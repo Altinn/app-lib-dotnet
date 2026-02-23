@@ -160,16 +160,22 @@ public class ProcessEngine : IProcessEngine
         CancellationToken ct = default
     )
     {
+        using var activity = _telemetry?.StartProcessStartExecutionActivity(instance);
+
         // HandleEvents mutates instance in-place; we discard the DispatchToStorage
         // return (same as callers did before this method existed).
         bool isServiceTask = IsServiceTask(instance);
         await HandleEventsAndUpdateStorage(instance, isServiceTask ? null : prefill, processStateChange.Events);
 
         if (!isServiceTask)
-            return new ProcessChangeResult(instance) { Success = true, ProcessStateChange = processStateChange };
+        {
+            var result = new ProcessChangeResult(instance) { Success = true, ProcessStateChange = processStateChange };
+            activity?.SetProcessChangeResult(result);
+            return result;
+        }
 
         // Auto-run through initial service tasks, forwarding prefill to the first user task
-        return await Next(
+        var nextResult = await Next(
             new ProcessNextRequest
             {
                 Instance = instance,
@@ -180,6 +186,8 @@ public class ProcessEngine : IProcessEngine
             },
             ct
         );
+        activity?.SetProcessChangeResult(nextResult);
+        return nextResult;
     }
 
     /// <inheritdoc/>
