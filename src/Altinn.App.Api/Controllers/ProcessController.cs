@@ -155,7 +155,7 @@ public class ProcessController : ControllerBase
             );
             if (!startProcessResult.Success)
             {
-                return Conflict(startProcessResult.ErrorMessage);
+                return GetResultForError(startProcessResult);
             }
 
             instance = startProcessResult.MutatedInstance;

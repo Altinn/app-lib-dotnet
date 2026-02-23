@@ -401,7 +401,13 @@ public class InstancesController_CopyInstanceTests
                     Dictionary<string, string>? _,
                     string? _,
                     CancellationToken _
-                ) => new ProcessChangeResult { Success = true, MutatedInstance = inst }
+                ) =>
+                    new ProcessChangeResult
+                    {
+                        Success = true,
+                        MutatedInstance = inst,
+                        ProcessStateChange = new(),
+                    }
             );
         fixture
             .Mock<IDataClient>()
@@ -534,7 +540,13 @@ public class InstancesController_CopyInstanceTests
                     Dictionary<string, string>? _,
                     string? _,
                     CancellationToken _
-                ) => new ProcessChangeResult { Success = true, MutatedInstance = inst }
+                ) =>
+                    new ProcessChangeResult
+                    {
+                        Success = true,
+                        MutatedInstance = inst,
+                        ProcessStateChange = new(),
+                    }
             );
 
         // Form data mocks
@@ -746,7 +758,13 @@ public class InstancesController_CopyInstanceTests
                     Dictionary<string, string>? _,
                     string? _,
                     CancellationToken _
-                ) => new ProcessChangeResult { Success = true, MutatedInstance = inst }
+                ) =>
+                    new ProcessChangeResult
+                    {
+                        Success = true,
+                        MutatedInstance = inst,
+                        ProcessStateChange = new(),
+                    }
             );
 
         // Form data mocks (should be copied)
@@ -957,7 +975,13 @@ public class InstancesController_CopyInstanceTests
                     Dictionary<string, string>? _,
                     string? _,
                     CancellationToken _
-                ) => new ProcessChangeResult { Success = true, MutatedInstance = inst }
+                ) =>
+                    new ProcessChangeResult
+                    {
+                        Success = true,
+                        MutatedInstance = inst,
+                        ProcessStateChange = new(),
+                    }
             );
 
         // Binary data mocks (should be called)
@@ -1175,7 +1199,13 @@ public class InstancesController_CopyInstanceTests
                     Dictionary<string, string>? _,
                     string? _,
                     CancellationToken _
-                ) => new ProcessChangeResult { Success = true, MutatedInstance = inst }
+                ) =>
+                    new ProcessChangeResult
+                    {
+                        Success = true,
+                        MutatedInstance = inst,
+                        ProcessStateChange = new(),
+                    }
             );
 
         // Binary data mocks (should be called)
