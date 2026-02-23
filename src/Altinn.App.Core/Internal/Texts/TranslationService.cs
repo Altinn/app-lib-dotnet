@@ -324,9 +324,9 @@ internal sealed class TranslationService : ITranslationService
                     Id = "backend.xsd_validation",
                     Value = language switch
                     {
-                        LanguageConst.Nb => "Ett eller flere felter bryter reglene satt av XSD",
-                        LanguageConst.Nn => "Eitt eller fleire felt bryt reglane sette av XSD",
-                        _ => "One or more field is violating a rule in the XSD",
+                        LanguageConst.Nb => "Et felt bryter reglene satt av XSD",
+                        LanguageConst.Nn => "Eit felt bryt reglane sette av XSD",
+                        _ => "A field is in violation of the rules set by the XSD schema",
                     },
                 };
         }
