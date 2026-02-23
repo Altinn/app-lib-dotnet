@@ -4,10 +4,10 @@ using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.Factories;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Registers;
@@ -26,7 +26,6 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
     private readonly FiksArkivSettings _fiksArkivSettings;
     private readonly IAppMetadata _appMetadata;
     private readonly ITranslationService _translationService;
-    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly ILayoutEvaluatorStateInitializer _layoutStateInitializer;
     private readonly ILogger<FiksArkivConfigResolver> _logger;
     private readonly GeneralSettings _generalSettings;
@@ -37,7 +36,6 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         IOptions<FiksArkivSettings> fiksArkivSettings,
         IAppMetadata appMetadata,
         ITranslationService translationService,
-        InstanceDataUnitOfWorkInitializer instanceDataUnitOfWorkInitializer,
         ILayoutEvaluatorStateInitializer layoutStateInitializer,
         IOptions<GeneralSettings> generalSettings,
         IAltinnPartyClient altinnPartyClient,
@@ -48,7 +46,6 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         _fiksArkivSettings = fiksArkivSettings.Value;
         _appMetadata = appMetadata;
         _translationService = translationService;
-        _instanceDataUnitOfWorkInitializer = instanceDataUnitOfWorkInitializer;
         _layoutStateInitializer = layoutStateInitializer;
         _generalSettings = generalSettings.Value;
         _altinnPartyClient = altinnPartyClient;
@@ -77,16 +74,18 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
 
     /// <inheritdoc />
     public async Task<FiksArkivDocumentMetadata?> GetArchiveDocumentMetadata(
-        Instance instance,
+        IInstanceDataAccessor dataAccessor,
         CancellationToken cancellationToken = default
     )
     {
         if (_fiksArkivSettings.Metadata is null)
             return null;
 
+        Instance instance = dataAccessor.Instance;
+
         try
         {
-            var layoutState = await GetLayoutState(instance);
+            var layoutState = await GetLayoutState(dataAccessor);
 
             var caseFileTitle = await GetBindableConfigValue(
                 layoutState,
@@ -137,14 +136,19 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
     }
 
     /// <inheritdoc />
-    public async Task<FiksArkivRecipient> GetRecipient(Instance instance, CancellationToken cancellationToken = default)
+    public async Task<FiksArkivRecipient> GetRecipient(
+        IInstanceDataAccessor dataAccessor,
+        CancellationToken cancellationToken = default
+    )
     {
+        Instance instance = dataAccessor.Instance;
+
         try
         {
             var recipientSettings =
                 _fiksArkivSettings.Recipient
                 ?? throw new FiksArkivConfigurationException("FiksArkivSettings.Recipient must be configured.");
-            var layoutState = await GetLayoutState(instance);
+            var layoutState = await GetLayoutState(dataAccessor);
 
             var accountId =
                 await GetBindableConfigValue(
@@ -325,10 +329,9 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         return null;
     }
 
-    private async Task<LayoutEvaluatorState> GetLayoutState(Instance instance)
+    private async Task<LayoutEvaluatorState> GetLayoutState(IInstanceDataAccessor dataAccessor)
     {
-        var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(instance, null, null);
-        return await _layoutStateInitializer.Init(unitOfWork, null);
+        return await _layoutStateInitializer.Init(dataAccessor, null);
     }
 
     private static async Task<T?> GetBindableConfigValue<T>(

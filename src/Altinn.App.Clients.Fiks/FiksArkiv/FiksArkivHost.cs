@@ -115,20 +115,21 @@ internal sealed class FiksArkivHost : BackgroundService, IFiksArkivHost
     /// <inheritdoc />
     public async Task<FiksIOMessageResponse> GenerateAndSendMessage(
         string taskId,
-        Instance instance,
+        IInstanceDataAccessor dataAccessor,
         string messageType,
         string? correlationId = null,
         CancellationToken cancellationToken = default
     )
     {
+        Instance instance = dataAccessor.Instance;
         _logger.LogInformation("Sending Fiks Arkiv message for instance {InstanceId}", instance.Id);
         using Activity? mainActivity = _telemetry?.StartGenerateAndSendFiksActivity(taskId, instance, messageType);
 
         var instanceId = new InstanceIdentifier(instance.Id);
-        var recipient = await _fiksArkivConfigResolver.GetRecipient(instance, cancellationToken);
+        var recipient = await _fiksArkivConfigResolver.GetRecipient(dataAccessor, cancellationToken);
         var messagePayloads = await _fiksArkivPayloadGenerator.GeneratePayload(
             taskId,
-            instance,
+            dataAccessor,
             recipient,
             messageType,
             cancellationToken

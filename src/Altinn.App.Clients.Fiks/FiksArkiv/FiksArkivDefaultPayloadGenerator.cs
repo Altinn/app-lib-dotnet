@@ -5,6 +5,7 @@ using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.Factories;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
@@ -57,7 +58,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
     /// <inheritdoc />
     public async Task<IEnumerable<FiksIOMessagePayload>> GeneratePayload(
         string taskId,
-        Instance instance,
+        IInstanceDataAccessor dataAccessor,
         FiksArkivRecipient recipient,
         string messageType,
         CancellationToken cancellationToken = default
@@ -68,11 +69,15 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
                 $"Unsupported message type: {messageType}. {nameof(FiksArkivDefaultPayloadGenerator)} can only handle {FiksArkivConstants.MessageTypes.CreateArchiveRecord} requests."
             );
 
+        Instance instance = dataAccessor.Instance;
         var appMetadata = await _appMetadata.GetApplicationMetadata();
         var documentCreator = appMetadata.AppIdentifier.Org;
         var archiveDocuments = await GetArchiveDocuments(instance, cancellationToken);
         var defaultDocumentTitle = await _fiksArkivConfigResolver.GetApplicationTitle(cancellationToken);
-        var documentMetadata = await _fiksArkivConfigResolver.GetArchiveDocumentMetadata(instance, cancellationToken);
+        var documentMetadata = await _fiksArkivConfigResolver.GetArchiveDocumentMetadata(
+            dataAccessor,
+            cancellationToken
+        );
         var recipientParty = _fiksArkivConfigResolver.GetRecipientParty(instance, recipient);
         var serviceOwnerParty = await _fiksArkivConfigResolver.GetServiceOwnerParty(cancellationToken);
         var instanceOwnerParty = await _fiksArkivConfigResolver.GetInstanceOwnerParty(instance, cancellationToken);

@@ -1,4 +1,5 @@
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -15,13 +16,13 @@ public interface IFiksArkivHost
     /// which must be capable of generating the given message type.
     /// </summary>
     /// <param name="taskId">The task ID the message is generated from</param>
-    /// <param name="instance">The instance the message relates to</param>
+    /// <param name="dataAccessor">The data accessor providing access to instance data, used for reading form data with proper authentication.</param>
     /// <param name="messageType">The Fiks Arkiv message type (create, update, etc)</param>
     /// <param name="correlationId">Correlation ID that should be fowarded to Fiks</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     Task<FiksIOMessageResponse> GenerateAndSendMessage(
         string taskId,
-        Instance instance,
+        IInstanceDataAccessor dataAccessor,
         string messageType,
         string? correlationId = null,
         CancellationToken cancellationToken = default

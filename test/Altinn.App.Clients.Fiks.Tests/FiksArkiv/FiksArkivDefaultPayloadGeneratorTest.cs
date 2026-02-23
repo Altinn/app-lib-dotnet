@@ -235,9 +235,11 @@ public class FiksArkivDefaultPayloadGeneratorTest
     {
         public async Task<IReadOnlyList<FiksIOMessagePayload>> GeneratePayload(Instance instance, string messageType)
         {
+            var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+            dataAccessorMock.Setup(x => x.Instance).Returns(instance);
             var payload = await FiksArkivDefaultPayloadGenerator.GeneratePayload(
                 "",
-                instance,
+                dataAccessorMock.Object,
                 Factories.Recipient(),
                 messageType
             );
@@ -270,11 +272,10 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 .Setup(x => x.GetApplicationTitle(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(applicationTitle);
             configResolverMock
-                .Setup(x => x.GetArchiveDocumentMetadata(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
+                .Setup(x =>
+                    x.GetArchiveDocumentMetadata(It.IsAny<IInstanceDataAccessor>(), It.IsAny<CancellationToken>())
+                )
                 .ReturnsAsync(archiveDocumentMetadata);
-            configResolverMock
-                .Setup(x => x.GetCorrelationId(It.IsAny<Instance>()))
-                .Returns("https://hostname/org/app/instances/instance-owner/instance-id");
             configResolverMock
                 .Setup(x => x.GetRecipientParty(It.IsAny<Instance>(), It.IsAny<FiksArkivRecipient>()))
                 .Returns(recipientParty);

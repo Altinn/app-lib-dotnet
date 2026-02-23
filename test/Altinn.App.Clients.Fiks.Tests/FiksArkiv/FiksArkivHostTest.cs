@@ -4,6 +4,7 @@ using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Clients.Fiks.FiksIO;
 using Altinn.App.Clients.Fiks.FiksIO.Models;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
@@ -141,7 +142,7 @@ public class FiksArkivHostTest
         );
 
         fiksArkivConfigResolverMock
-            .Setup(x => x.GetRecipient(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetRecipient(It.IsAny<IInstanceDataAccessor>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new FiksArkivRecipient(Guid.Parse("120ec76a-c73b-43f7-957b-1450422c32b3"), null!, null!, null!)
             )
@@ -155,7 +156,7 @@ public class FiksArkivHostTest
             .Setup(x =>
                 x.GeneratePayload(
                     It.IsAny<string>(),
-                    It.IsAny<Instance>(),
+                    It.IsAny<IInstanceDataAccessor>(),
                     It.IsAny<FiksArkivRecipient>(),
                     It.IsAny<string>(),
                     It.IsAny<CancellationToken>()
@@ -197,7 +198,9 @@ public class FiksArkivHostTest
             .Verifiable(Times.Once);
 
         // Act
-        await fixture.FiksArkivHost.GenerateAndSendMessage("task", instance, "message-type");
+        var dataAccessorMock = new Mock<IInstanceDataAccessor>();
+        dataAccessorMock.Setup(x => x.Instance).Returns(instance);
+        await fixture.FiksArkivHost.GenerateAndSendMessage("task", dataAccessorMock.Object, "message-type");
 
         // Assert
         Assert.NotNull(capturedRequest);

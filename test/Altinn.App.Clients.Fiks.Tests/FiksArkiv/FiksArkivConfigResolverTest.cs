@@ -142,7 +142,9 @@ public class FiksArkivConfigResolverTest
         );
 
         // Act
-        var result = await fixture.FiksArkivConfigResolver.GetArchiveDocumentMetadata(Mock.Of<Instance>());
+        var result = await fixture.FiksArkivConfigResolver.GetArchiveDocumentMetadata(
+            Mock.Of<IInstanceDataAccessor>(x => x.Instance == Mock.Of<Instance>())
+        );
 
         // Assert
         Assert.Null(result);
@@ -184,7 +186,9 @@ public class FiksArkivConfigResolverTest
         );
 
         // Act
-        var result = await fixture.FiksArkivConfigResolver.GetArchiveDocumentMetadata(Mock.Of<Instance>());
+        var result = await fixture.FiksArkivConfigResolver.GetArchiveDocumentMetadata(
+            Mock.Of<IInstanceDataAccessor>(x => x.Instance == Mock.Of<Instance>())
+        );
 
         // Assert
         Assert.Equal(systemId, result?.SystemId);
@@ -251,7 +255,7 @@ public class FiksArkivConfigResolverTest
             );
 
         // Act
-        var result = await fixture.FiksArkivConfigResolver.GetArchiveDocumentMetadata(instance);
+        var result = await fixture.FiksArkivConfigResolver.GetArchiveDocumentMetadata(instanceDataAccessorMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -272,7 +276,11 @@ public class FiksArkivConfigResolverTest
         );
 
         // Act
-        var ex = await Record.ExceptionAsync(() => fixture.FiksArkivConfigResolver.GetRecipient(Mock.Of<Instance>()));
+        var ex = await Record.ExceptionAsync(() =>
+            fixture.FiksArkivConfigResolver.GetRecipient(
+                Mock.Of<IInstanceDataAccessor>(x => x.Instance == Mock.Of<Instance>())
+            )
+        );
 
         // Assert
         Assert.IsType<FiksArkivConfigurationException>(ex);
@@ -308,7 +316,9 @@ public class FiksArkivConfigResolverTest
         );
 
         // Act
-        var result = await fixture.FiksArkivConfigResolver.GetRecipient(Mock.Of<Instance>());
+        var result = await fixture.FiksArkivConfigResolver.GetRecipient(
+            Mock.Of<IInstanceDataAccessor>(x => x.Instance == Mock.Of<Instance>())
+        );
 
         // Assert
         Assert.NotNull(result);
@@ -378,7 +388,7 @@ public class FiksArkivConfigResolverTest
             );
 
         // Act
-        var result = await fixture.FiksArkivConfigResolver.GetRecipient(instance);
+        var result = await fixture.FiksArkivConfigResolver.GetRecipient(instanceDataAccessorMock.Object);
 
         // Assert
         Assert.NotNull(result);

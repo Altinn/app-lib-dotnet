@@ -47,7 +47,7 @@ internal sealed class FiksArkivReplyServiceTask : IReplyServiceTask
 
             var response = await _fiksArkivHost.GenerateAndSendMessage(
                 taskId,
-                instance,
+                context.InstanceDataMutator,
                 FiksArkivConstants.MessageTypes.CreateArchiveRecord,
                 context.CorrelationId
             );

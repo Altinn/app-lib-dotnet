@@ -116,7 +116,7 @@ public class FiksArkivServiceTaskTest
             .Setup(x =>
                 x.GenerateAndSendMessage(
                     instance.Process.CurrentTask.ElementId,
-                    It.Is<Instance>(i => i.Id == instance.Id),
+                    It.Is<IInstanceDataAccessor>(a => a.Instance.Id == instance.Id),
                     messageType,
                     It.IsAny<string?>(),
                     It.IsAny<CancellationToken>()
