@@ -1019,7 +1019,7 @@ public static partial class ExpressionEvaluator
         catch (OverflowException)
         {
             throw new ExpressionEvaluatorTypeErrorException(
-                $"Arithmetic overflow: {a.Value} and {b.Value} or operation on them causes supported range to be exceeds"
+                $"Arithmetic overflow: {a.Value} and {b.Value} or operation on them exceeds the supported range"
             );
         }
     }
