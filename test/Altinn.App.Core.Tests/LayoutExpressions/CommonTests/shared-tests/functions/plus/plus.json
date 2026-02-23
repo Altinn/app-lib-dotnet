@@ -92,37 +92,37 @@
       "expects": 0.0000003
     },
     {
-      "name": "Should plus string scientific notation with plus sign in front of coefficient",
+      "name": "Should add string scientific notation with plus sign in front of coefficient to number",
       "expression": ["plus", "+5E2", 10],
       "expects": 510
     },
     {
-      "name": "Should plus string scientific notation with plus sign in front of exponent",
+      "name": "Should add string scientific notation with plus sign in front of exponent to number",
       "expression": ["plus", "5E+2", 10],
       "expects": 510
     },
     {
-      "name": "Should plus string scientific notation with negative sign in front of coefficient",
+      "name": "Should add string scientific notation with negative sign in front of coefficient to number",
       "expression": ["plus", "-5E2", 10],
       "expects": -490
     },
     {
-      "name": "Should plus string scientific notation with negative sign in front of exponent",
+      "name": "Should add string scientific notation with negative sign in front of exponent to number",
       "expression": ["plus", "5e-2", 10],
       "expects": 10.05
     },
     {
-      "name": "Should plus string scientific notation by number",
+      "name": "Should add string scientific notation to number",
       "expression": ["plus", "5E2", 10],
       "expects": 510
     },
     {
-      "name": "Should plus string scientific notation with no whole number part by number",
+      "name": "Should add string scientific notation with no whole number part to number",
       "expression": ["plus", ".5e2", 10],
       "expects": 60
     },
     {
-      "name": "Should plus string scientific notation equivalent to 0 by number",
+      "name": "Should add string scientific notation equivalent to 0 to number",
       "expression": ["plus", "0e0", 10],
       "expects": 10
     },
