@@ -138,6 +138,7 @@ public class AltinnPartyClient : IAltinnPartyClient
         string endpointUrl = "access-management/parties/query";
         var query = new { data = new string[] { urn } };
         using var content = new StringContent(JsonSerializer.Serialize(query));
+        content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
 
         string token = _userTokenProvider.GetUserToken();
