@@ -51,7 +51,7 @@ public static class ServiceCollectionExtensions
 
         services.AddFiksIOClient();
         services.AddAltinnCdnClient();
-        services.AddSingleton<IServiceTask, FiksArkivServiceTask>();
+        services.AddSingleton<IServiceTask, FiksArkivReplyServiceTask>();
         services.AddSingleton<IFiksArkivHost, FiksArkivHost>();
         services.AddSingleton<IFiksArkivPayloadGenerator, FiksArkivDefaultPayloadGenerator>();
         services.AddSingleton<IFiksArkivResponseHandler, FiksArkivDefaultResponseHandler>();
