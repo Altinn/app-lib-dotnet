@@ -1,4 +1,5 @@
 using System.Globalization;
+using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.Factories;
@@ -260,9 +261,13 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
             Authenticated.SystemUser systemUser => KlassifikasjonFactory.CreateSystemUser(systemUser),
             Authenticated.ServiceOwner serviceOwner => KlassifikasjonFactory.CreateServiceOwner(serviceOwner),
             Authenticated.Org org => KlassifikasjonFactory.CreateOrganization(org),
-            _ => throw new FiksArkivException(
-                $"Could not determine submitter details from authentication context: {auth}"
-            ),
+            // Fallback for contexts where no user auth is available (e.g. workflow engine callbacks)
+            _ => new Klassifikasjon
+            {
+                KlassifikasjonssystemID = FiksArkivConstants.ClassificationId.AltinnUserId,
+                KlasseID = "unknown",
+                Tittel = "unknown",
+            },
         };
     }
 
