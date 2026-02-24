@@ -12,8 +12,11 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart
 /// <summary>
 /// Payload for the CommonTaskInitialization command.
 /// </summary>
+/// <param name="TargetTaskId">The task ID of the task being started. Passed explicitly because
+/// instance.Process.CurrentTask is not yet updated at this point in the command pipeline.</param>
 /// <param name="Prefill">Prefill data for the initial task start. Null for subsequent task transitions.</param>
-internal sealed record CommonTaskInitializationPayload(Dictionary<string, string>? Prefill) : CommandRequestPayload;
+internal sealed record CommonTaskInitializationPayload(string TargetTaskId, Dictionary<string, string>? Prefill)
+    : CommandRequestPayload;
 
 internal sealed class CommonTaskInitialization : WorkflowEngineCommandBase<CommonTaskInitializationPayload>
 {
@@ -46,7 +49,7 @@ internal sealed class CommonTaskInitialization : WorkflowEngineCommandBase<Commo
     {
         IInstanceDataMutator instanceDataMutator = context.InstanceDataMutator;
         Instance instance = instanceDataMutator.Instance;
-        string taskId = instance.Process.CurrentTask.ElementId;
+        string taskId = payload.TargetTaskId;
 
         RemoveDataElementsGeneratedFromTask(instanceDataMutator, taskId);
 
@@ -79,6 +82,7 @@ internal sealed class CommonTaskInitialization : WorkflowEngineCommandBase<Commo
     private static void RemoveDataElementsGeneratedFromTask(IInstanceDataMutator instanceDataMutator, string taskId)
     {
         Instance instance = instanceDataMutator.Instance;
+
         var dataElements =
             instance.Data?.Where(de =>
                 de.References?.Exists(r => r.ValueType == ReferenceType.Task && r.Value == taskId) is true

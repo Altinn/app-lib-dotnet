@@ -40,7 +40,7 @@ internal sealed class PdfServiceTask : IPdfServiceTask
 
         ValidAltinnPdfConfiguration config = GetValidAltinnPdfConfiguration(taskId);
 
-        _ = await _pdfService.GenerateAndStorePdf(
+        var change = await _pdfService.GenerateAndStorePdf(
             context.InstanceDataMutator,
             config.FilenameTextResourceKey,
             config.AutoPdfTaskIds,

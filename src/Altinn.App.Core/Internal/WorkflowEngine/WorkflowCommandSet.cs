@@ -29,10 +29,12 @@ internal sealed class WorkflowCommandSet
     /// <summary>
     /// Creates command group for task start events.
     /// </summary>
+    /// <param name="targetTaskId">The element ID of the task being started.</param>
     /// <param name="serviceTaskType">If this is a service task, the task type identifier. Otherwise null.</param>
     /// <param name="isInitialTaskStart">True if this is the first task start (process is starting), false for subsequent task transitions.</param>
     /// <param name="prefill">Prefill data for initial task start. Only relevant when isInitialTaskStart is true.</param>
     public static WorkflowCommandSet GetTaskStartSteps(
+        string targetTaskId,
         ServiceTaskType? serviceTaskType,
         bool isInitialTaskStart,
         Dictionary<string, string>? prefill = null
@@ -42,7 +44,7 @@ internal sealed class WorkflowCommandSet
             .AddCommand(UnlockTaskData.Key)
             .AddCommand(WorkflowTaskStartLegacyHook.Key, new ProcessTaskStartLegacyHookPayload(prefill))
             .AddCommand(OnTaskStartingHook.Key)
-            .AddCommand(CommonTaskInitialization.Key, new CommonTaskInitializationPayload(prefill))
+            .AddCommand(CommonTaskInitialization.Key, new CommonTaskInitializationPayload(targetTaskId, prefill))
             .AddCommand(ProcessTaskStart.Key)
             .AddPostProcessNextCommittedCommand(MovedToAltinnEvent.Key);
 

@@ -51,9 +51,11 @@ internal sealed class ProcessNextRequestFactory
                 continue;
 
             string? altinnTaskType = instanceEvent.ProcessInfo?.CurrentTask?.AltinnTaskType;
+            string? targetTaskId = instanceEvent.ProcessInfo?.CurrentTask?.ElementId;
 
             WorkflowCommandSet? workflowCommands = GetWorkflowStepsForInstanceEvent(
                 instanceEventType,
+                targetTaskId,
                 altinnTaskType,
                 isInitialTaskStart,
                 prefill
@@ -82,6 +84,7 @@ internal sealed class ProcessNextRequestFactory
 
     private WorkflowCommandSet? GetWorkflowStepsForInstanceEvent(
         InstanceEventType eventType,
+        string? targetTaskId,
         string? altinnTaskType,
         bool isInitialTaskStart,
         Dictionary<string, string>? prefill
@@ -91,6 +94,7 @@ internal sealed class ProcessNextRequestFactory
         {
             InstanceEventType.process_StartEvent => null, // No commands for process start event itself
             InstanceEventType.process_StartTask => WorkflowCommandSet.GetTaskStartSteps(
+                targetTaskId ?? throw new InvalidOperationException("Target task ID is required for task start events"),
                 GetServiceTaskType(altinnTaskType),
                 isInitialTaskStart,
                 isInitialTaskStart ? prefill : null // Only pass prefill for initial task start

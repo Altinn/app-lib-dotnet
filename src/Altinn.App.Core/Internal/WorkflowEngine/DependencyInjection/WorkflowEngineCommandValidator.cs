@@ -35,14 +35,20 @@ internal static class ProcessEngineCommandValidator
     {
         var keys = new HashSet<string>();
 
-        // Collect keys from all event types
+        // Collect keys from all event types.
+        // The targetTaskId value is irrelevant for validation — we only care about which command keys are referenced.
+        const string dummyTaskId = "validation-dummy";
         CollectCommandKeys(
-            WorkflowCommandSet.GetTaskStartSteps(serviceTaskType: null, isInitialTaskStart: false),
+            WorkflowCommandSet.GetTaskStartSteps(dummyTaskId, serviceTaskType: null, isInitialTaskStart: false),
             keys
         );
-        CollectCommandKeys(WorkflowCommandSet.GetTaskStartSteps(serviceTaskType: null, isInitialTaskStart: true), keys);
+        CollectCommandKeys(
+            WorkflowCommandSet.GetTaskStartSteps(dummyTaskId, serviceTaskType: null, isInitialTaskStart: true),
+            keys
+        );
         CollectCommandKeys(
             WorkflowCommandSet.GetTaskStartSteps(
+                dummyTaskId,
                 serviceTaskType: new ServiceTaskType("DummyServiceTask", ServiceTaskKind.ServiceTask),
                 isInitialTaskStart: false
             ),
@@ -50,6 +56,7 @@ internal static class ProcessEngineCommandValidator
         );
         CollectCommandKeys(
             WorkflowCommandSet.GetTaskStartSteps(
+                dummyTaskId,
                 serviceTaskType: new ServiceTaskType("DummyReplyServiceTask", ServiceTaskKind.ReplyServiceTask),
                 isInitialTaskStart: false
             ),
