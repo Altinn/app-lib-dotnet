@@ -7,6 +7,11 @@
       "expects": 0.3
     },
     {
+      "name": "Returns expected value for inputs that would return different result when treated as 64-bit binary floats",
+      "expression": ["plus", 0.1, 0.2],
+      "expects": 0.3
+    },
+    {
       "name": "Should add two negative numbers together",
       "expression": ["plus", -4, -0.2],
       "expects": -4.2

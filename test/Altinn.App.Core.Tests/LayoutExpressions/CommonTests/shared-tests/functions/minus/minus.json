@@ -47,6 +47,11 @@
       "expects": 30.5
     },
     {
+      "name": "Returns expected value for inputs that would return different result when treated as 64-bit binary floats",
+      "expression": ["minus", 50.8, 20.3],
+      "expects": 30.5
+    },
+    {
       "name": "Should handle subtracting zero",
       "expression": ["minus", 42, 0],
       "expects": 42
