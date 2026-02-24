@@ -11,7 +11,6 @@ using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 using Altinn.App.Tests.Common.Auth;
 using Altinn.Platform.Storage.Interface.Models;
@@ -227,7 +226,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
     internal sealed record PayloadGeneratorFixture(
         FiksArkivDefaultPayloadGenerator FiksArkivDefaultPayloadGenerator,
         Mock<IAppMetadata> AppMetadataMock,
-        Mock<IDataClient> DataClientMock,
         Mock<IFiksArkivConfigResolver> ConfigResolverMock,
         FakeTimeProvider FakeTime,
         Mock<ILogger<FiksArkivDefaultPayloadGenerator>> LoggerMock
@@ -237,6 +235,9 @@ public class FiksArkivDefaultPayloadGeneratorTest
         {
             var dataAccessorMock = new Mock<IInstanceDataAccessor>();
             dataAccessorMock.Setup(x => x.Instance).Returns(instance);
+            dataAccessorMock
+                .Setup(x => x.GetBinaryData(It.IsAny<DataElementIdentifier>()))
+                .ReturnsAsync(new ReadOnlyMemory<byte>("Mocked content"u8.ToArray()));
             var payload = await FiksArkivDefaultPayloadGenerator.GeneratePayload(
                 "",
                 dataAccessorMock.Object,
@@ -259,7 +260,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
         )
         {
             var appMetadataMock = new Mock<IAppMetadata>();
-            var dataClientMock = new Mock<IDataClient>();
             var configResolverMock = new Mock<IFiksArkivConfigResolver>();
             var loggerMock = new Mock<ILogger<FiksArkivDefaultPayloadGenerator>>();
             var fakeTime = new FakeTimeProvider(_now);
@@ -291,7 +291,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
 
             var payloadGenerator = new FiksArkivDefaultPayloadGenerator(
                 appMetadataMock.Object,
-                dataClientMock.Object,
                 Mock.Of<IAuthenticationContext>(),
                 loggerMock.Object,
                 Mock.Of<IHostEnvironment>(x => x.EnvironmentName == Environments.Development),
@@ -300,22 +299,9 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 fakeTime
             );
 
-            dataClientMock
-                .Setup(x =>
-                    x.GetDataBytes(
-                        It.IsAny<int>(),
-                        It.IsAny<Guid>(),
-                        It.IsAny<Guid>(),
-                        It.IsAny<StorageAuthenticationMethod?>(),
-                        It.IsAny<CancellationToken>()
-                    )
-                )
-                .ReturnsAsync("Mocked content"u8.ToArray());
-
             return new PayloadGeneratorFixture(
                 payloadGenerator,
                 appMetadataMock,
-                dataClientMock,
                 configResolverMock,
                 fakeTime,
                 loggerMock

@@ -8,7 +8,6 @@ using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;
@@ -24,7 +23,6 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv;
 internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenerator
 {
     private readonly IAppMetadata _appMetadata;
-    private readonly IDataClient _dataClient;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly ILogger<FiksArkivDefaultPayloadGenerator> _logger;
     private readonly IHostEnvironment _hostEnvironment;
@@ -36,7 +34,6 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
 
     public FiksArkivDefaultPayloadGenerator(
         IAppMetadata appMetadata,
-        IDataClient dataClient,
         IAuthenticationContext authenticationContext,
         ILogger<FiksArkivDefaultPayloadGenerator> logger,
         IHostEnvironment hostEnvironment,
@@ -46,7 +43,6 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
     )
     {
         _appMetadata = appMetadata;
-        _dataClient = dataClient;
         _authenticationContext = authenticationContext;
         _logger = logger;
         _hostEnvironment = hostEnvironment;
@@ -72,7 +68,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         Instance instance = dataAccessor.Instance;
         var appMetadata = await _appMetadata.GetApplicationMetadata();
         var documentCreator = appMetadata.AppIdentifier.Org;
-        var archiveDocuments = await GetArchiveDocuments(instance, cancellationToken);
+        var archiveDocuments = await GetArchiveDocuments(dataAccessor, cancellationToken);
         var defaultDocumentTitle = await _fiksArkivConfigResolver.GetApplicationTitle(cancellationToken);
         var documentMetadata = await _fiksArkivConfigResolver.GetArchiveDocumentMetadata(
             dataAccessor,
@@ -175,19 +171,18 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
     }
 
     private async Task<FiksArkivDocuments> GetArchiveDocuments(
-        Instance instance,
+        IInstanceDataAccessor dataAccessor,
         CancellationToken cancellationToken = default
     )
     {
-        InstanceIdentifier instanceId = new(instance.Id);
+        Instance instance = dataAccessor.Instance;
         var primaryDocumentSettings = _fiksArkivConfigResolver.PrimaryDocumentSettings;
         var primaryDataElement = instance.GetRequiredDataElement(primaryDocumentSettings.DataType);
         var primaryDocument = await GetPayload(
             primaryDataElement,
             primaryDocumentSettings.Filename,
             DokumenttypeKoder.Dokument,
-            instanceId,
-            cancellationToken
+            dataAccessor
         );
 
         List<MessagePayloadWrapper> attachmentDocuments = [];
@@ -203,13 +198,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
             attachmentDocuments.AddRange(
                 await Task.WhenAll(
                     dataElements.Select(async x =>
-                        await GetPayload(
-                            x,
-                            attachmentSetting.Filename,
-                            DokumenttypeKoder.Vedlegg,
-                            instanceId,
-                            cancellationToken
-                        )
+                        await GetPayload(x, attachmentSetting.Filename, DokumenttypeKoder.Vedlegg, dataAccessor)
                     )
                 )
             );
@@ -222,8 +211,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         DataElement dataElement,
         string? filename,
         Kode fileTypeCode,
-        InstanceIdentifier instanceId,
-        CancellationToken cancellationToken = default
+        IInstanceDataAccessor dataAccessor
     )
     {
         if (string.IsNullOrWhiteSpace(filename) is false)
@@ -231,18 +219,9 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         else if (string.IsNullOrWhiteSpace(dataElement.Filename))
             dataElement.Filename = $"{dataElement.DataType}{dataElement.GetExtensionForContentType()}";
 
-        return new MessagePayloadWrapper(
-            new FiksIOMessagePayload(
-                dataElement.Filename,
-                await _dataClient.GetDataBytes(
-                    instanceId.InstanceOwnerPartyId,
-                    instanceId.InstanceGuid,
-                    Guid.Parse(dataElement.Id),
-                    cancellationToken: cancellationToken
-                )
-            ),
-            fileTypeCode
-        );
+        ReadOnlyMemory<byte> data = await dataAccessor.GetBinaryData(new DataElementIdentifier(dataElement.Id));
+
+        return new MessagePayloadWrapper(new FiksIOMessagePayload(dataElement.Filename, data), fileTypeCode);
     }
 
     private Dokumentbeskrivelse GetDocumentDescription(MessagePayloadWrapper payloadWrapper)
