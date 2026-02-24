@@ -56,7 +56,6 @@ using Altinn.App.Core.Internal.Secrets;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
-using Altinn.App.Core.Internal.WorkflowEngine.Caching;
 using Altinn.App.Core.Internal.WorkflowEngine.DependencyInjection;
 using Altinn.App.Core.Models;
 using Altinn.Common.AccessTokenClient.Configuration;
@@ -213,7 +212,6 @@ public static class ServiceCollectionExtensions
         AddNotificationServices(services);
         AddProcessServices(services);
         services.AddWorkflowEngineIntegration();
-        services.AddLockScopedInstanceCache(configuration);
         AddFileAnalyserServices(services);
         AddFileValidatorServices(services);
 
@@ -412,35 +410,5 @@ public static class ServiceCollectionExtensions
             d.ServiceType == typeof(IConfigureOptions<TOptions>)
             || d.ServiceType == typeof(IOptionsChangeTokenSource<TOptions>)
         );
-    }
-
-    /// <summary>
-    /// Adds lock-scoped instance cache for distributed lock-protected operations.
-    /// Uses Redis if configured, otherwise falls back to no-op cache.
-    /// </summary>
-    public static IServiceCollection AddLockScopedInstanceCache(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
-    {
-        var redisConnection = configuration.GetConnectionString("Redis");
-
-        if (!string.IsNullOrEmpty(redisConnection))
-        {
-            services.AddStackExchangeRedisCache(options =>
-            {
-                options.Configuration = redisConnection;
-                options.InstanceName = "altinn-app:";
-            });
-
-            services.AddSingleton<ILockScopedInstanceCache, RedisLockScopedInstanceCache>();
-        }
-        else
-        {
-            // No Redis configured - use no-op cache
-            services.AddSingleton<ILockScopedInstanceCache>(NullLockScopedInstanceCache.Instance);
-        }
-
-        return services;
     }
 }
