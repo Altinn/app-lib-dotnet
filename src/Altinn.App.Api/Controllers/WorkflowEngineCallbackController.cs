@@ -112,9 +112,9 @@ public class WorkflowEngineCallbackController : ControllerBase
                 await instanceDataUnitOfWork.SaveChanges(changes);
 
                 // Capture updated state (includes Storage-assigned IDs for newly created data elements)
-                var updatedState = await _instanceStateService.CaptureState(instanceDataUnitOfWork);
+                string updatedState = await _instanceStateService.CaptureState(instanceDataUnitOfWork);
                 activity?.SetStatus(ActivityStatusCode.Ok);
-                return Ok(new AppCallbackResponse { State = updatedState, Payload = success.ResponsePayload });
+                return Ok(new AppCallbackResponse { State = updatedState });
 
             case FailedProcessEngineCommandResult failed:
                 _logger.LogError(

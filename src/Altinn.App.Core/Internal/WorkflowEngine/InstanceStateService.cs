@@ -6,6 +6,7 @@ using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine;
 
@@ -33,52 +34,56 @@ internal sealed class InstanceStateService
     }
 
     /// <summary>
-    /// Captures the current state of the unit of work into an opaque JsonElement for transport.
+    /// Captures the current state of the unit of work into an opaque string for transport.
     /// </summary>
-    public async Task<JsonElement> CaptureState(InstanceDataUnitOfWork unitOfWork)
+    public async Task<string> CaptureState(InstanceDataUnitOfWork unitOfWork)
     {
         var formData = await unitOfWork.CaptureFormData(_modelSerializationService);
         var instanceState = new InstanceState { Instance = unitOfWork.Instance, FormData = formData };
-        return JsonSerializer.SerializeToElement(instanceState);
+        return JsonSerializer.Serialize(instanceState);
     }
 
     /// <summary>
-    /// Restores an InstanceDataUnitOfWork from a previously captured state element.
+    /// Restores an InstanceDataUnitOfWork from a previously captured state string.
     /// </summary>
-    public async Task<InstanceDataUnitOfWork> RestoreState(JsonElement stateElement, string? language)
+    public async Task<InstanceDataUnitOfWork> RestoreState(string state, string? language)
     {
-        var instanceState =
-            stateElement.Deserialize<InstanceState>()
+        InstanceState instanceState =
+            JsonSerializer.Deserialize<InstanceState>(state)
             ?? throw new InvalidOperationException("Failed to deserialize instance state from callback payload");
 
-        var instance = instanceState.Instance;
+        Instance instance = instanceState.Instance;
         string? taskId = instance.Process?.CurrentTask?.ElementId;
 
-        var unitOfWork = await _unitOfWorkInitializer.Init(
+        InstanceDataUnitOfWork unitOfWork = await _unitOfWorkInitializer.Init(
             instance,
             taskId,
             language,
             StorageAuthenticationMethod.ServiceOwner()
         );
 
-        var applicationMetadata = await _appMetadata.GetApplicationMetadata();
+        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-        foreach (var (dataElementId, jsonElement) in instanceState.FormData)
+        foreach ((string dataElementId, JsonElement jsonElement) in instanceState.FormData)
         {
-            var dataElement = instance.Data.Find(d => d.Id == dataElementId);
+            DataElement? dataElement = instance.Data.Find(d => d.Id == dataElementId);
             if (dataElement is null)
                 continue;
 
-            var dataType = applicationMetadata.DataTypes.Find(dt => dt.Id == dataElement.DataType);
+            DataType? dataType = applicationMetadata.DataTypes.Find(dt => dt.Id == dataElement.DataType);
             if (dataType?.AppLogic?.ClassRef is not { } classRef)
                 continue;
 
-            var modelType = _appModel.GetModelType(classRef);
-            var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(jsonElement);
-            var model = _modelSerializationService.DeserializeJson(jsonBytes, modelType);
-            var wrapper = FormDataWrapperFactory.Create(model);
+            Type modelType = _appModel.GetModelType(classRef);
+            byte[] jsonBytes = JsonSerializer.SerializeToUtf8Bytes(jsonElement);
+            object model = _modelSerializationService.DeserializeJson(jsonBytes, modelType);
+            IFormDataWrapper wrapper = FormDataWrapperFactory.Create(model);
 
-            var (storageBytes, _) = _modelSerializationService.SerializeToStorage(model, dataType, dataElement);
+            (ReadOnlyMemory<byte> storageBytes, _) = _modelSerializationService.SerializeToStorage(
+                model,
+                dataType,
+                dataElement
+            );
 
             DataElementIdentifier identifier = dataElement;
             unitOfWork.PreloadFormData(identifier, wrapper);

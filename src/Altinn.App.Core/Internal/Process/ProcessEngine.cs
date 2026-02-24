@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
@@ -165,7 +164,7 @@ internal class ProcessEngine : IProcessEngine
             language: null,
             StorageAuthenticationMethod.ServiceOwner()
         );
-        JsonElement state = await _instanceStateService.CaptureState(unitOfWork);
+        string state = await _instanceStateService.CaptureState(unitOfWork);
 
         WorkflowEngine.Models.ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(
             processStateChange,
@@ -561,7 +560,7 @@ internal class ProcessEngine : IProcessEngine
             language: null,
             StorageAuthenticationMethod.ServiceOwner()
         );
-        JsonElement state = await _instanceStateService.CaptureState(unitOfWork);
+        string state = await _instanceStateService.CaptureState(unitOfWork);
 
         ProcessStateChange? processStateChange = await MoveProcessStateToNextAndGenerateEvents(instance, action);
 

@@ -16,12 +16,6 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
 internal abstract record CommandRequestPayload;
 
 /// <summary>
-/// Base class for command response payloads.
-/// Response payloads are returned from app → engine after command execution.
-/// </summary>
-internal abstract record CommandResponsePayload;
-
-/// <summary>
 /// Source-generated JSON serialization context for command payloads.
 /// Provides AOT-compatible, high-performance serialization.
 /// </summary>
@@ -51,11 +45,5 @@ internal static class CommandPayloadSerializer
         return string.IsNullOrWhiteSpace(json)
             ? null
             : JsonSerializer.Deserialize<T>(json, CommandPayloadJsonContext.Default.Options);
-    }
-
-    public static string? SerializeResponse<T>(T? payload)
-        where T : CommandResponsePayload
-    {
-        return payload is null ? null : JsonSerializer.Serialize(payload, CommandPayloadJsonContext.Default.Options);
     }
 }

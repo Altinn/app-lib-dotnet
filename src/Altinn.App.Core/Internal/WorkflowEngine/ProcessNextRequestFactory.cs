@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
@@ -38,7 +37,7 @@ internal sealed class ProcessNextRequestFactory
     public async Task<WorkflowEngine.Models.ProcessNextRequest> Create(
         ProcessStateChange processStateChange,
         string lockToken,
-        JsonElement state,
+        string state,
         Dictionary<string, string>? prefill = null
     )
     {

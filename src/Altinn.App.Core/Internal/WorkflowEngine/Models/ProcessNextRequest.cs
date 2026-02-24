@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Models;
@@ -42,5 +41,5 @@ public sealed record ProcessNextRequest
     /// Opaque state blob to be echoed back on each callback.
     /// </summary>
     [JsonPropertyName("state")]
-    public required JsonElement State { get; init; }
+    public required string State { get; init; }
 };

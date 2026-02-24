@@ -4,10 +4,7 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
 
 internal abstract class ProcessEngineCommandResult { }
 
-internal sealed class SuccessfulProcessEngineCommandResult : ProcessEngineCommandResult
-{
-    public string? ResponsePayload { get; init; }
-}
+internal sealed class SuccessfulProcessEngineCommandResult : ProcessEngineCommandResult { }
 
 internal sealed class FailedProcessEngineCommandResult : ProcessEngineCommandResult
 {

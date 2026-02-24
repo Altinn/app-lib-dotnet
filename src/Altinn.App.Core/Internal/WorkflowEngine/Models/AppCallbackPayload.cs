@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Models;
@@ -37,5 +36,5 @@ public sealed record AppCallbackPayload
     /// Opaque state blob echoed back from the engine.
     /// </summary>
     [JsonPropertyName("state")]
-    public required JsonElement State { get; init; }
+    public required string State { get; init; }
 }
