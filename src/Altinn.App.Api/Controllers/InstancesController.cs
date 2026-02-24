@@ -574,6 +574,9 @@ public class InstancesController : ControllerBase
 
             processResult = await _processEngine.GenerateProcessStartEvents(request);
 
+            if (!processResult.Success)
+                return Conflict(processResult.ErrorMessage);
+
             Instance? source = null;
 
             if (isCopyRequest)
@@ -607,9 +610,6 @@ public class InstancesController : ControllerBase
             }
 
             instance = await _instanceClient.GetInstance(instance);
-
-            if (!processResult.Success)
-                return Conflict(processResult.ErrorMessage);
 
             var startProcessResult = await _processEngine.Start(
                 instance,
