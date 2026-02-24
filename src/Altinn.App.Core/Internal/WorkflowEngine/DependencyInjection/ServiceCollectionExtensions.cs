@@ -16,6 +16,7 @@ internal static class ServiceCollectionExtensions
         // Process engine callback helpers
         services.AddTransient<ProcessTaskResolver>();
         services.AddTransient<ProcessNextRequestFactory>();
+        services.AddTransient<InstanceStateService>();
         services.AddHttpClient<IWorkflowEngineClient, WorkflowEngineClient>();
 
         // Process engine callback handlers - TaskStart
@@ -45,6 +46,7 @@ internal static class ServiceCollectionExtensions
         services.AddTransient<IWorkflowEngineCommand, ProcessEndLegacyHook>();
 
         // Process engine callback handlers - State Management
+        services.AddTransient<IWorkflowEngineCommand, AdvanceProcessState>();
         services.AddTransient<IWorkflowEngineCommand, UpdateProcessStateInStorage>();
 
         // Process engine callback handlers - Altinn Events

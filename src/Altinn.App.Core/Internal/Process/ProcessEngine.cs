@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
@@ -44,6 +45,7 @@ internal class ProcessEngine : IProcessEngine
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IValidationService _validationService;
     private readonly ProcessNextRequestFactory _processNextRequestFactory;
+    private readonly InstanceStateService _instanceStateService;
     private readonly IWorkflowEngineClient _workflowEngineClient;
     private readonly IInstanceClient _instanceClient;
 
@@ -73,6 +75,7 @@ internal class ProcessEngine : IProcessEngine
         _logger = logger;
         _workflowEngineClient = workflowEngineClient;
         _processNextRequestFactory = serviceProvider.GetRequiredService<ProcessNextRequestFactory>();
+        _instanceStateService = serviceProvider.GetRequiredService<InstanceStateService>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
@@ -154,9 +157,20 @@ internal class ProcessEngine : IProcessEngine
         CancellationToken ct = default
     )
     {
+        // Capture instance + form data state for transport to the workflow engine
+        string? taskId = instance.Process?.CurrentTask?.ElementId;
+        var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            taskId,
+            language: null,
+            StorageAuthenticationMethod.ServiceOwner()
+        );
+        JsonElement state = await _instanceStateService.CaptureState(unitOfWork);
+
         WorkflowEngine.Models.ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(
             processStateChange,
             lockToken,
+            state,
             prefill
         );
         await _workflowEngineClient.ProcessNext(instance, processNextRequest, ct);
@@ -538,6 +552,17 @@ internal class ProcessEngine : IProcessEngine
         CancellationToken ct = default
     )
     {
+        // Capture state BEFORE mutation — commands that run before UpdateProcessState
+        // need to see the old process state, mirroring how they'd read it from Storage.
+        string? currentTaskId = instance.Process?.CurrentTask?.ElementId;
+        var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            currentTaskId,
+            language: null,
+            StorageAuthenticationMethod.ServiceOwner()
+        );
+        JsonElement state = await _instanceStateService.CaptureState(unitOfWork);
+
         ProcessStateChange? processStateChange = await MoveProcessStateToNextAndGenerateEvents(instance, action);
 
         if (processStateChange is null)
@@ -547,7 +572,8 @@ internal class ProcessEngine : IProcessEngine
 
         WorkflowEngine.Models.ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(
             processStateChange,
-            lockToken
+            lockToken,
+            state
         );
         await _workflowEngineClient.ProcessNext(instance, processNextRequest, ct);
 

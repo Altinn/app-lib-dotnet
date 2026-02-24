@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.WorkflowEngine;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Http;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
@@ -18,17 +20,17 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IInstanceClient _instanceClient;
-    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly InstanceStateService _instanceStateService;
 
     public FakeWorkflowEngineClient(
         IServiceProvider serviceProvider,
         IInstanceClient instanceClient,
-        InstanceDataUnitOfWorkInitializer instanceDataUnitOfWorkInitializer
+        InstanceStateService instanceStateService
     )
     {
         _serviceProvider = serviceProvider;
         _instanceClient = instanceClient;
-        _instanceDataUnitOfWorkInitializer = instanceDataUnitOfWorkInitializer;
+        _instanceStateService = instanceStateService;
     }
 
     /// <inheritdoc />
@@ -46,13 +48,11 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
         // of the real process engine.
         string lockToken = Guid.NewGuid().ToString();
 
-        // Use InitWithSession to leverage caching across all commands in this batch.
-        // This is important because multiple commands often read the same data elements.
-        InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
-            instance,
-            request.CurrentElementId,
-            request.Actor.Language,
-            StorageAuthenticationMethod.ServiceOwner()
+        // Restore state from the opaque blob, mirroring how the real engine
+        // echoes state back to the callback controller.
+        InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceStateService.RestoreState(
+            request.State,
+            request.Actor.Language
         );
 
         // Execute all commands with the same unit of work
@@ -131,6 +131,7 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
             Actor = actor,
             Payload = appCommand.Payload,
             LockToken = lockToken,
+            State = default,
         };
 
         ProcessEngineCommandResult result = await command.Execute(

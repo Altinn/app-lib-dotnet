@@ -1,11 +1,10 @@
 using System.Diagnostics;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.Instances;
+using Altinn.App.Core.Internal.WorkflowEngine;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
-using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,8 +20,7 @@ namespace Altinn.App.Api.Controllers;
 public class WorkflowEngineCallbackController : ControllerBase
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly IInstanceClient _instanceClient;
-    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly InstanceStateService _instanceStateService;
     private readonly ILogger<WorkflowEngineCallbackController> _logger;
     private readonly Telemetry? _telemetry;
 
@@ -31,14 +29,12 @@ public class WorkflowEngineCallbackController : ControllerBase
     /// </summary>
     public WorkflowEngineCallbackController(
         IServiceProvider serviceProvider,
-        IInstanceClient instanceClient,
         ILogger<WorkflowEngineCallbackController> logger,
         Telemetry? telemetry = null
     )
     {
         _serviceProvider = serviceProvider;
-        _instanceClient = instanceClient;
-        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _instanceStateService = serviceProvider.GetRequiredService<InstanceStateService>();
         _logger = logger;
         _telemetry = telemetry;
     }
@@ -74,23 +70,13 @@ public class WorkflowEngineCallbackController : ControllerBase
             return NotFound();
         }
 
-        Instance instance = await _instanceClient.GetInstance(
-            app,
-            org,
-            instanceOwnerPartyId,
-            instanceId.InstanceGuid,
-            StorageAuthenticationMethod.ServiceOwner(),
-            cancellationToken
+        // Restore instance + form data from the opaque state blob instead of fetching from Storage
+        InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceStateService.RestoreState(
+            payload.State,
+            payload.Actor.Language
         );
 
-        string? currentTaskId = instance.Process?.CurrentTask?.ElementId;
-
-        InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
-            instance,
-            taskId: currentTaskId,
-            payload.Actor.Language,
-            StorageAuthenticationMethod.ServiceOwner()
-        );
+        string? currentTaskId = instanceDataUnitOfWork.Instance.Process?.CurrentTask?.ElementId;
 
         ProcessEngineCommandResult result = await command.Execute(
             new ProcessEngineCommandContext
@@ -120,12 +106,15 @@ public class WorkflowEngineCallbackController : ControllerBase
 
         switch (result)
         {
-            case SuccessfulProcessEngineCommandResult:
+            case SuccessfulProcessEngineCommandResult success:
                 DataElementChanges changes = instanceDataUnitOfWork.GetDataElementChanges(false);
                 await instanceDataUnitOfWork.UpdateInstanceData(changes);
                 await instanceDataUnitOfWork.SaveChanges(changes);
+
+                // Capture updated state (includes Storage-assigned IDs for newly created data elements)
+                var updatedState = await _instanceStateService.CaptureState(instanceDataUnitOfWork);
                 activity?.SetStatus(ActivityStatusCode.Ok);
-                return Ok();
+                return Ok(new AppCallbackResponse { State = updatedState, Payload = success.ResponsePayload });
 
             case FailedProcessEngineCommandResult failed:
                 _logger.LogError(

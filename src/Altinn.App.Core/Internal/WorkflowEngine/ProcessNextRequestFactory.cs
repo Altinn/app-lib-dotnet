@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
@@ -37,10 +38,12 @@ internal sealed class ProcessNextRequestFactory
     public async Task<WorkflowEngine.Models.ProcessNextRequest> Create(
         ProcessStateChange processStateChange,
         string lockToken,
+        JsonElement state,
         Dictionary<string, string>? prefill = null
     )
     {
-        var processNextSteps = new List<StepRequest>();
+        var taskEndSteps = new List<StepRequest>();
+        var taskStartSteps = new List<StepRequest>();
         var postCommitSteps = new List<StepRequest>();
 
         bool isInitialTaskStart = processStateChange.OldProcessState?.CurrentTask is null;
@@ -60,13 +63,29 @@ internal sealed class ProcessNextRequestFactory
             );
             if (workflowCommands != null)
             {
-                processNextSteps.AddRange(workflowCommands.Commands);
+                // Task-end/abandon commands go in the first group (they need OLD CurrentTask).
+                // Task-start and process-end commands go in the second group (they need NEW CurrentTask).
+                // AdvanceProcessState is inserted between the two groups to transition in-memory state.
+                if (instanceEventType is InstanceEventType.process_EndTask or InstanceEventType.process_AbandonTask)
+                {
+                    taskEndSteps.AddRange(workflowCommands.Commands);
+                }
+                else
+                {
+                    taskStartSteps.AddRange(workflowCommands.Commands);
+                }
+
                 postCommitSteps.AddRange(workflowCommands.PostProcessNextCommittedCommands);
             }
         }
 
         var commands = new List<StepRequest>();
-        commands.AddRange(processNextSteps);
+        commands.AddRange(taskEndSteps);
+        if (taskEndSteps.Count > 0)
+        {
+            commands.Add(CreateAdvanceProcessStateCommand(processStateChange));
+        }
+        commands.AddRange(taskStartSteps);
         commands.Add(CreateUpdateProcessStateCommand(processStateChange));
         commands.AddRange(postCommitSteps);
 
@@ -77,6 +96,7 @@ internal sealed class ProcessNextRequestFactory
             Actor = await ExtractActor(),
             Steps = commands,
             LockToken = lockToken,
+            State = state,
         };
     }
 
@@ -127,6 +147,16 @@ internal sealed class ProcessNextRequestFactory
         string? language = await currentAuth.GetLanguage();
 
         return new Actor { UserIdOrOrgNumber = userIdOrOrgNumber, Language = language };
+    }
+
+    private static StepRequest CreateAdvanceProcessStateCommand(ProcessStateChange processStateChange)
+    {
+        var payload = new UpdateProcessStatePayload(processStateChange);
+        string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
+        return new StepRequest
+        {
+            Command = new Command.AppCommand(CommandKey: AdvanceProcessState.Key, Payload: serializedPayload),
+        };
     }
 
     private static StepRequest CreateUpdateProcessStateCommand(ProcessStateChange processStateChange)

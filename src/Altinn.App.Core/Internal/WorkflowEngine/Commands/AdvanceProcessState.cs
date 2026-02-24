@@ -1,0 +1,46 @@
+using Altinn.App.Core.Models.Process;
+using Altinn.Platform.Storage.Interface.Models;
+
+namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
+
+/// <summary>
+/// Command that advances the in-memory process state without persisting to Storage.
+/// Inserted between task-end and task-start command groups so that:
+/// - Task-end commands see the OLD CurrentTask (the task being ended)
+/// - Task-start commands see the NEW CurrentTask (the task being started)
+/// The actual persistence happens later via <see cref="UpdateProcessStateInStorage"/>.
+///
+/// Note: After this command runs, Storage still has the OLD process state until
+/// <see cref="UpdateProcessStateInStorage"/> persists it. Any data saves by subsequent
+/// task-start commands are authorized by Storage against the OLD current task.
+/// This works because callbacks use ServiceOwner authentication for data operations.
+/// </summary>
+internal sealed class AdvanceProcessState : WorkflowEngineCommandBase<UpdateProcessStatePayload>
+{
+    public static string Key => "AdvanceProcessState";
+
+    public override string GetKey() => Key;
+
+    public override Task<ProcessEngineCommandResult> Execute(
+        ProcessEngineCommandContext context,
+        UpdateProcessStatePayload payload
+    )
+    {
+        ProcessStateChange processStateChange = payload.ProcessStateChange;
+
+        if (processStateChange.NewProcessState == null)
+        {
+            return Task.FromResult<ProcessEngineCommandResult>(
+                new FailedProcessEngineCommandResult(
+                    "ProcessStateChange.NewProcessState is null",
+                    "InvalidOperationException"
+                )
+            );
+        }
+
+        Instance instance = context.InstanceDataMutator.Instance;
+        instance.Process = processStateChange.NewProcessState;
+
+        return Task.FromResult<ProcessEngineCommandResult>(new SuccessfulProcessEngineCommandResult());
+    }
+}

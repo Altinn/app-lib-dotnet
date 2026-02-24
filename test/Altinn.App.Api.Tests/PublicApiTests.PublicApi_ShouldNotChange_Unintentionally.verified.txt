@@ -706,7 +706,7 @@ namespace Altinn.App.Api.Controllers
         "ine-callbacks")]
     public class WorkflowEngineCallbackController : Microsoft.AspNetCore.Mvc.ControllerBase
     {
-        public WorkflowEngineCallbackController(System.IServiceProvider serviceProvider, Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Microsoft.Extensions.Logging.ILogger<Altinn.App.Api.Controllers.WorkflowEngineCallbackController> logger, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
+        public WorkflowEngineCallbackController(System.IServiceProvider serviceProvider, Microsoft.Extensions.Logging.ILogger<Altinn.App.Api.Controllers.WorkflowEngineCallbackController> logger, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
         [Microsoft.AspNetCore.Mvc.HttpPost("{commandKey}")]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> ExecuteCommand([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid, [Microsoft.AspNetCore.Mvc.FromRoute] string commandKey, [Microsoft.AspNetCore.Mvc.FromBody] Altinn.App.Core.Internal.WorkflowEngine.Models.AppCallbackPayload payload, System.Threading.CancellationToken cancellationToken) { }
     }

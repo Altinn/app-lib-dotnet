@@ -7335,7 +7335,8 @@
         "required": [
           "actor",
           "commandKey",
-          "lockToken"
+          "lockToken",
+          "state"
         ],
         "type": "object",
         "properties": {
@@ -7353,7 +7354,8 @@
           "payload": {
             "type": "string",
             "nullable": true
-          }
+          },
+          "state": {}
         },
         "additionalProperties": false
       },

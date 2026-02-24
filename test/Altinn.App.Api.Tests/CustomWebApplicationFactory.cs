@@ -340,7 +340,7 @@ public class ApiTestBase
         services.AddSingleton<IWorkflowEngineClient>(sp => new FakeWorkflowEngineClient(
             sp,
             sp.GetRequiredService<Altinn.App.Core.Internal.Instances.IInstanceClient>(),
-            sp.GetRequiredService<Altinn.App.Core.Internal.Data.InstanceDataUnitOfWorkInitializer>()
+            sp.GetRequiredService<Altinn.App.Core.Internal.WorkflowEngine.InstanceStateService>()
         ));
 
         // Mock the events client since it calls external services

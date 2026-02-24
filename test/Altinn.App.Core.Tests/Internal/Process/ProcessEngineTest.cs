@@ -8,6 +8,7 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
+using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
@@ -110,7 +111,7 @@ public sealed class ProcessEngineTest
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata("org/app"));
+            .ReturnsAsync(new ApplicationMetadata("org/app") { DataTypes = [] });
 
         LegacyProcessEngine processEngine = fixture.ProcessEngine;
         Instance instance = new Instance()
@@ -201,7 +202,7 @@ public sealed class ProcessEngineTest
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata("org/app"));
+            .ReturnsAsync(new ApplicationMetadata("org/app") { DataTypes = [] });
 
         LegacyProcessEngine processEngine = fixture.ProcessEngine;
         var instance = new Instance()
@@ -331,7 +332,7 @@ public sealed class ProcessEngineTest
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata("org/app"));
+            .ReturnsAsync(new ApplicationMetadata("org/app") { DataTypes = [] });
 
         LegacyProcessEngine processEngine = fixture.ProcessEngine;
         var instance = new Instance()
@@ -448,7 +449,7 @@ public sealed class ProcessEngineTest
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata("org/app"));
+            .ReturnsAsync(new ApplicationMetadata("org/app") { DataTypes = [] });
 
         LegacyProcessEngine processEngine = fixture.ProcessEngine;
         Instance instance = new Instance()
@@ -507,16 +508,20 @@ public sealed class ProcessEngineTest
         commandKeys
             .Should()
             .ContainInOrder(
-                // EndTask commands
+                // EndTask commands (see OLD CurrentTask)
                 "ProcessTaskEnd",
                 "CommonTaskFinalization",
                 "EndTaskLegacyHook",
                 "OnTaskEndingHook",
                 "LockTaskData",
-                // ProcessEnd commands
+                // Advance in-memory process state to NEW
+                "AdvanceProcessState",
+                // ProcessEnd commands (see NEW state)
                 "OnProcessEndingHook",
-                "ProcessEndLegacyHook",
+                // Persist to Storage
                 "UpdateProcessState",
+                // Post-commit
+                "ProcessEndLegacyHook",
                 "CompletedAltinnEvent"
             );
 
@@ -605,7 +610,7 @@ public sealed class ProcessEngineTest
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata("org/app"));
+            .ReturnsAsync(new ApplicationMetadata("org/app") { DataTypes = [] });
 
         LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
@@ -678,7 +683,7 @@ public sealed class ProcessEngineTest
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata("org/app"));
+            .ReturnsAsync(new ApplicationMetadata("org/app") { DataTypes = [] });
 
         LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
@@ -746,7 +751,7 @@ public sealed class ProcessEngineTest
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata("org/app"));
+            .ReturnsAsync(new ApplicationMetadata("org/app") { DataTypes = [] });
 
         LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
@@ -896,7 +901,7 @@ public sealed class ProcessEngineTest
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata("org/app"));
+            .ReturnsAsync(new ApplicationMetadata("org/app") { DataTypes = [] });
         LegacyProcessEngine processEngine = fixture.ProcessEngine;
         Instance instance = new Instance()
         {
@@ -1039,7 +1044,7 @@ public sealed class ProcessEngineTest
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
-            .ReturnsAsync(new ApplicationMetadata("org/app"));
+            .ReturnsAsync(new ApplicationMetadata("org/app") { DataTypes = [] });
 
         if (registerProcessEnd)
         {
@@ -1246,7 +1251,7 @@ public sealed class ProcessEngineTest
             Mock<IAppMetadata> appMetadataMock = new(MockBehavior.Strict);
             Mock<IAppResources> appResourcesMock = new(MockBehavior.Strict);
             Mock<ITranslationService> translationServiceMock = new(MockBehavior.Strict);
-            var appMetadata = new ApplicationMetadata("org/app");
+            var appMetadata = new ApplicationMetadata("org/app") { DataTypes = [] };
             appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(appMetadata);
 
             authenticationContextMock
@@ -1341,6 +1346,7 @@ public sealed class ProcessEngineTest
             services.TryAddTransient<IWorkflowEngineClient>(_ => processEngineClientMock.Object);
 
             services.TryAddTransient<ProcessNextRequestFactory>();
+            services.TryAddTransient<InstanceStateService>();
 
             if (registerProcessEnd)
                 services.AddSingleton<IProcessEnd>(_ => new Mock<IProcessEnd>().Object);

@@ -365,6 +365,49 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
         }
     }
 
+    /// <summary>
+    /// Preload form data into the cache so that it doesn't need to be fetched from Storage.
+    /// </summary>
+    internal void PreloadFormData(DataElementIdentifier id, IFormDataWrapper wrapper)
+    {
+        _formDataCache.Set(id, wrapper);
+    }
+
+    /// <summary>
+    /// Preload binary data into the cache so that it doesn't need to be fetched from Storage.
+    /// </summary>
+    internal void PreloadBinaryData(DataElementIdentifier id, ReadOnlyMemory<byte> data)
+    {
+        _binaryCache.Set(id, data);
+    }
+
+    /// <summary>
+    /// Captures all form data from the cache for state transport.
+    /// Iterates Instance.Data, finds form data elements (via DataTypes where AppLogic.ClassRef is set),
+    /// ensures each is loaded, serializes to JSON, and returns a dictionary keyed by DataElement.Id.
+    /// </summary>
+    internal async Task<Dictionary<string, System.Text.Json.JsonElement>> CaptureFormData(
+        ModelSerializationService modelSerializationService
+    )
+    {
+        var result = new Dictionary<string, System.Text.Json.JsonElement>();
+
+        foreach (var dataElement in Instance.Data)
+        {
+            var dataType = DataTypes.FirstOrDefault(dt => dt.Id == dataElement.DataType);
+            if (dataType?.AppLogic?.ClassRef is null)
+                continue;
+
+            DataElementIdentifier identifier = dataElement;
+            var wrapper = await GetFormDataWrapper(identifier);
+            var jsonBytes = modelSerializationService.SerializeToJson(wrapper.BackingData<object>());
+            var jsonElement = System.Text.Json.JsonDocument.Parse(jsonBytes).RootElement.Clone();
+            result[dataElement.Id] = jsonElement;
+        }
+
+        return result;
+    }
+
     internal List<ValidationIssue> AbandonIssues { get; } = [];
 
     public bool HasAbandonIssues => AbandonIssues.Count > 0;
