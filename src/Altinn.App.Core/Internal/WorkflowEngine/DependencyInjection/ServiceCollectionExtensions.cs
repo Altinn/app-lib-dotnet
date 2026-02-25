@@ -44,6 +44,8 @@ internal static class ServiceCollectionExtensions
         // Process engine callback handlers - ProcessEnd
         services.AddTransient<IWorkflowEngineCommand, OnWorkflowEndingHook>();
         services.AddTransient<IWorkflowEngineCommand, ProcessEndLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, DeleteDataElementsIfConfigured>();
+        services.AddTransient<IWorkflowEngineCommand, DeleteInstanceIfConfigured>();
 
         // Process engine callback handlers - State Management
         services.AddTransient<IWorkflowEngineCommand, MutateProcessState>();

@@ -97,6 +97,8 @@ internal sealed class WorkflowCommandSet
         return new WorkflowCommandSet()
             .AddCommand(OnWorkflowEndingHook.Key)
             .AddPostProcessNextCommittedCommand(ProcessEndLegacyHook.Key)
+            .AddPostProcessNextCommittedCommand(DeleteDataElementsIfConfigured.Key)
+            .AddPostProcessNextCommittedCommand(DeleteInstanceIfConfigured.Key)
             .AddPostProcessNextCommittedCommand(CompletedAltinnEvent.Key);
     }
 

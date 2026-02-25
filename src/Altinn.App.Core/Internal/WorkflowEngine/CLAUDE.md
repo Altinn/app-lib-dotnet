@@ -69,8 +69,8 @@ WorkflowEngine/
 │   │   └── ProcessEnd/
 │   │       ├── OnWorkflowEndingHook.cs      - Runs IOnProcessEndingHandler (pre-commit)
 │   │       ├── ProcessEndLegacyHook.cs      - Runs legacy IProcessEnd (post-commit)
-│   │       ├── DeleteDataElements.cs        - Auto-delete data types (not in command sequences yet)
-│   │       └── DeleteInstance.cs            - Hard-delete instance (not in command sequences yet)
+│   │       ├── DeleteDataElements.cs        - Auto-delete data types with AutoDeleteOnProcessEnd (post-commit)
+│   │       └── DeleteInstance.cs            - Hard-delete instance if ApplicationMetadata.AutoDeleteOnProcessEnd (post-commit)
 │   ├── AltinnEvents/
 │   │   ├── MovedToAltinnEvent.cs            - Fires movedTo.{taskId} event (post-commit)
 │   │   ├── CompletedAltinnEvent.cs          - Fires process.completed event (post-commit)
@@ -129,7 +129,7 @@ ProcessTaskEnd → CommonTaskFinalization → EndTaskLegacyHook → OnTaskEnding
   ── MutateProcessState (in-memory: CurrentTask → null, EndEvent set) ──
 OnWorkflowEndingHook
   ── UpdateProcessState (persist to Storage) ──
-ProcessEndLegacyHook → CompletedAltinnEvent
+ProcessEndLegacyHook → DeleteDataElementsIfConfigured → DeleteInstanceIfConfigured → CompletedAltinnEvent
 ```
 
 ### Initial Task Start (process just created)
@@ -215,7 +215,7 @@ All data saves during callbacks use `StorageAuthenticationMethod.ServiceOwner()`
 ## Known TODOs / In-Progress
 
 - Authentication on callback controller: currently `[AllowAnonymous]`, should use X-Api-Key scheme
-- `DeleteDataElements` and `DeleteInstance` exist but aren't wired into command sequences
+- `DeleteDataElementsIfConfigured` and `DeleteInstanceIfConfigured` are wired into process end sequence (post-commit)
 - `Actor.UserIdOrOrgNumber` could use a more specific type
 - `AppCallbackPayload.LockToken` naming inconsistency with engine (LockKey vs LockToken)
 - "Go to next task after service task" - automatic progression not yet reimplemented

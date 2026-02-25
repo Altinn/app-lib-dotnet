@@ -61,6 +61,8 @@ public class ProcessEngineCommandValidatorTests
         services.AddTransient<IWorkflowEngineCommand, AbandonTaskLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, OnWorkflowEndingHook>();
         services.AddTransient<IWorkflowEngineCommand, ProcessEndLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, DeleteDataElementsIfConfigured>();
+        services.AddTransient<IWorkflowEngineCommand, DeleteInstanceIfConfigured>();
         services.AddTransient<IWorkflowEngineCommand, CompletedAltinnEvent>();
         services.AddTransient<IWorkflowEngineCommand, UpdateProcessStateInStorage>();
     }

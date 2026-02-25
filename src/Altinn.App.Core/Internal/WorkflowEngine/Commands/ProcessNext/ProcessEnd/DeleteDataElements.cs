@@ -4,18 +4,17 @@ using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.ProcessEnd;
 
-internal sealed class DeleteDataElements : IWorkflowEngineCommand
+internal sealed class DeleteDataElementsIfConfigured : IWorkflowEngineCommand
 {
+    public static string Key => "DeleteDataElementsIfConfigured";
+
+    public string GetKey() => Key;
+
     private readonly IAppMetadata _appMetadata;
 
-    public DeleteDataElements(IAppMetadata appMetadata)
+    public DeleteDataElementsIfConfigured(IAppMetadata appMetadata)
     {
         _appMetadata = appMetadata;
-    }
-
-    public string GetKey()
-    {
-        throw new NotImplementedException();
     }
 
     public async Task<ProcessEngineCommandResult> Execute(ProcessEngineCommandContext parameters)
