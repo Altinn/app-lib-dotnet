@@ -52,23 +52,23 @@ WorkflowEngine/
 │   ├── ProcessNext/
 │   │   ├── TaskStart/
 │   │   │   ├── UnlockTaskData.cs            - Unlock data elements for new task
-│   │   │   ├── ProcessTaskStartLegacyHook  - Runs legacy IProcessTaskStart (obsolete API)
+│   │   │   ├── StartTaskLegacyHook  - Runs legacy IProcessTaskStart (obsolete API)
 │   │   │   ├── OnTaskStartingHook.cs        - Runs IOnTaskStartingHandler (new API, max 1 per task)
 │   │   │   ├── CommonTaskInitialization.cs   - Auto-create data elements, prefill, remove task-generated data
-│   │   │   └── ProcessTaskStart.cs          - Calls IProcessTask.Start()
+│   │   │   └── StartTask.cs          - Calls IProcessTask.Start()
 │   │   ├── TaskEnd/
-│   │   │   ├── ProcessTaskEnd.cs            - Calls IProcessTask.End()
+│   │   │   ├── EndTask.cs            - Calls IProcessTask.End()
 │   │   │   ├── CommonTaskFinalization.cs    - Remove hidden data, shadow fields, AltinnRowIds
-│   │   │   ├── ProcessTaskEndLegacyHook.cs         - Runs legacy IProcessTaskEnd (obsolete API)
+│   │   │   ├── EndTaskLegacyHook.cs         - Runs legacy IProcessTaskEnd (obsolete API)
 │   │   │   ├── OnTaskEndingHook.cs          - Runs IOnTaskEndingHandler (new API, max 1 per task)
 │   │   │   └── LockTaskData.cs              - Lock data elements after task completes
 │   │   ├── TaskAbandon/
-│   │   │   ├── ProcessTaskAbandon.cs
+│   │   │   ├── AbandonTask.cs
 │   │   │   ├── OnTaskEndingHook.cs          - (reused from TaskEnd namespace - runs IOnTaskAbandonHandler)
-│   │   │   └── ProcessTaskAbandonLegacyHook.cs
+│   │   │   └── AbandonTaskLegacyHook.cs
 │   │   └── ProcessEnd/
 │   │       ├── OnProcessEndingHook.cs      - Runs IOnProcessEndingHandler (pre-commit)
-│   │       ├── ProcessEndLegacyHook.cs      - Runs legacy IProcessEnd (post-commit)
+│   │       ├── EndProcessLegacyHook.cs      - Runs legacy IProcessEnd (post-commit)
 │   │       ├── DeleteDataElements.cs        - Auto-delete data types with AutoDeleteOnProcessEnd (post-commit)
 │   │       └── DeleteInstance.cs            - Hard-delete instance if ApplicationMetadata.AutoDeleteOnProcessEnd (post-commit)
 │   ├── AltinnEvents/
@@ -114,10 +114,10 @@ Defined in `WorkflowCommandSet.cs`. `ProcessNextRequestFactory` assembles the fu
 ### Task-to-Task Transition (e.g., Task_1 → Task_2)
 ```
 ── instance.Process.CurrentTask = Task_1 (OLD) ──
-ProcessTaskEnd → CommonTaskFinalization → ProcessTaskEndLegacyHook → OnTaskEndingHook → LockTaskData
+EndTask → CommonTaskFinalization → EndTaskLegacyHook → OnTaskEndingHook → LockTaskData
   ── MutateProcessState (in-memory: CurrentTask → Task_2) ──
 ── instance.Process.CurrentTask = Task_2 (NEW) ──
-UnlockTaskData → ProcessTaskStart(legacy) → OnTaskStartingHook → CommonTaskInitialization → ProcessTaskStart
+UnlockTaskData → StartTaskLegacyHook → OnTaskStartingHook → CommonTaskInitialization → StartTask
   ── UpdateProcessState (persist to Storage) ──
 MovedToAltinnEvent → [ExecuteServiceTask if service task]
 ```
@@ -125,17 +125,17 @@ MovedToAltinnEvent → [ExecuteServiceTask if service task]
 ### Task-to-End Transition (e.g., Task_1 → EndEvent)
 ```
 ── instance.Process.CurrentTask = Task_1 (OLD) ──
-ProcessTaskEnd → CommonTaskFinalization → ProcessTaskEndLegacyHook → OnTaskEndingHook → LockTaskData
+EndTask → CommonTaskFinalization → EndTaskLegacyHook → OnTaskEndingHook → LockTaskData
   ── MutateProcessState (in-memory: CurrentTask → null, EndEvent set) ──
 OnProcessEndingHook
   ── UpdateProcessState (persist to Storage) ──
-ProcessEndLegacyHook → DeleteDataElementsIfConfigured → DeleteInstanceIfConfigured → CompletedAltinnEvent
+EndProcessLegacyHook → DeleteDataElementsIfConfigured → DeleteInstanceIfConfigured → CompletedAltinnEvent
 ```
 
 ### Initial Task Start (process just created)
 ```
 ── instance.Process.CurrentTask = Task_1 (already set by CreateInitialProcessState) ──
-UnlockTaskData → ProcessTaskStart(legacy) → OnTaskStartingHook → CommonTaskInitialization → ProcessTaskStart
+UnlockTaskData → StartTaskLegacyHook → OnTaskStartingHook → CommonTaskInitialization → StartTask
   ── UpdateProcessState (persist to Storage) ──
 MovedToAltinnEvent → [ExecuteServiceTask if service task] → [InstanceCreatedAltinnEvent if first task]
 ```
@@ -143,7 +143,7 @@ MovedToAltinnEvent → [ExecuteServiceTask if service task] → [InstanceCreated
 ### Task Abandon (reject → end)
 ```
 ── instance.Process.CurrentTask = Task_1 (OLD) ──
-ProcessTaskAbandon → OnTaskAbandonHook → ProcessTaskAbandonLegacyHook
+AbandonTask → OnTaskAbandonHook → AbandonTaskLegacyHook
   ── MutateProcessState (in-memory: CurrentTask → null or next task) ──
 [OnProcessEndingHook if ending] / [task-start commands if moving to next task]
   ── UpdateProcessState (persist to Storage) ──

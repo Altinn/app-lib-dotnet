@@ -157,7 +157,7 @@
           instance.guid: Guid_1
         },
         {
-          process.callback.command: ProcessTaskAbandon
+          process.callback.command: AbandonTask
         }
       ],
       HasParent: true
@@ -185,7 +185,7 @@
           instance.guid: Guid_1
         },
         {
-          process.callback.command: ProcessTaskAbandonLegacyHook
+          process.callback.command: AbandonTaskLegacyHook
         }
       ],
       HasParent: true
@@ -241,7 +241,7 @@
           instance.guid: Guid_1
         },
         {
-          process.callback.command: ProcessEndLegacyHook
+          process.callback.command: EndProcessLegacyHook
         }
       ],
       HasParent: true

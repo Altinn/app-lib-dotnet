@@ -1,17 +1,17 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 
-namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
+namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 
-internal sealed class ProcessTaskEnd : IWorkflowEngineCommand
+internal sealed class StartTask : IWorkflowEngineCommand
 {
-    public static string Key => "ProcessTaskEnd";
+    public static string Key => "StartTask";
 
     public string GetKey() => Key;
 
     private readonly ProcessTaskResolver _processTaskResolver;
 
-    public ProcessTaskEnd(ProcessTaskResolver processTaskResolver)
+    public StartTask(ProcessTaskResolver processTaskResolver)
     {
         _processTaskResolver = processTaskResolver;
     }
@@ -24,7 +24,7 @@ internal sealed class ProcessTaskEnd : IWorkflowEngineCommand
         try
         {
             IProcessTask processTask = _processTaskResolver.GetProcessTaskInstance(altinnTaskType);
-            await processTask.End(dataMutator);
+            await processTask.Start(dataMutator);
             return new SuccessfulProcessEngineCommandResult();
         }
         catch (Exception ex)

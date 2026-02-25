@@ -10,7 +10,7 @@ using Moq;
 
 namespace Altinn.App.Core.Tests.Internal.WorkflowEngine.Commands.ProcessNext.TaskAbandon;
 
-public class ProcessTaskAbandonTests
+public class AbandonTaskTests
 {
     private static ProcessEngineCommandContext CreateContext(Instance instance)
     {
@@ -25,7 +25,7 @@ public class ProcessTaskAbandonTests
             CancellationToken = CancellationToken.None,
             Payload = new AppCallbackPayload
             {
-                CommandKey = ProcessTaskAbandon.Key,
+                CommandKey = AbandonTask.Key,
                 Actor = new Actor { UserIdOrOrgNumber = "1337" },
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
@@ -46,14 +46,14 @@ public class ProcessTaskAbandonTests
         };
     }
 
-    private static ProcessTaskAbandon CreateCommand(IProcessTask processTask)
+    private static AbandonTask CreateCommand(IProcessTask processTask)
     {
         var services = new ServiceCollection();
         services.AddSingleton<AppImplementationFactory>();
         services.AddSingleton(processTask);
         var sp = services.BuildServiceProvider();
         var resolver = new ProcessTaskResolver(sp.GetRequiredService<AppImplementationFactory>());
-        return new ProcessTaskAbandon(resolver);
+        return new AbandonTask(resolver);
     }
 
     [Fact]

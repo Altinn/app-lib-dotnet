@@ -263,17 +263,17 @@ public sealed class ProcessEngineTest
             .Should()
             .ContainInOrder(
                 // EndTask commands
-                "ProcessTaskEnd",
+                "EndTask",
                 "CommonTaskFinalization",
-                "ProcessTaskEndLegacyHook",
+                "EndTaskLegacyHook",
                 "OnTaskEndingHook",
                 "LockTaskData",
                 // StartTask commands
                 "UnlockTaskData",
-                "ProcessTaskStartLegacyHook",
+                "StartTaskLegacyHook",
                 "OnTaskStartingHook",
                 "CommonTaskInitialization",
-                "ProcessTaskStart",
+                "StartTask",
                 "UpdateProcessState",
                 "MovedToAltinnEvent"
             );
@@ -392,15 +392,15 @@ public sealed class ProcessEngineTest
             .Should()
             .ContainInOrder(
                 // AbandonTask commands
-                "ProcessTaskAbandon",
+                "AbandonTask",
                 "OnTaskAbandonHook",
-                "ProcessTaskAbandonLegacyHook",
+                "AbandonTaskLegacyHook",
                 // StartTask commands
                 "UnlockTaskData",
-                "ProcessTaskStartLegacyHook",
+                "StartTaskLegacyHook",
                 "OnTaskStartingHook",
                 "CommonTaskInitialization",
-                "ProcessTaskStart",
+                "StartTask",
                 "UpdateProcessState",
                 "MovedToAltinnEvent"
             );
@@ -509,9 +509,9 @@ public sealed class ProcessEngineTest
             .Should()
             .ContainInOrder(
                 // EndTask commands (see OLD CurrentTask)
-                "ProcessTaskEnd",
+                "EndTask",
                 "CommonTaskFinalization",
-                "ProcessTaskEndLegacyHook",
+                "EndTaskLegacyHook",
                 "OnTaskEndingHook",
                 "LockTaskData",
                 // Advance in-memory process state to NEW
@@ -521,7 +521,7 @@ public sealed class ProcessEngineTest
                 // Persist to Storage
                 "UpdateProcessState",
                 // Post-commit
-                "ProcessEndLegacyHook",
+                "EndProcessLegacyHook",
                 "CompletedAltinnEvent"
             );
 

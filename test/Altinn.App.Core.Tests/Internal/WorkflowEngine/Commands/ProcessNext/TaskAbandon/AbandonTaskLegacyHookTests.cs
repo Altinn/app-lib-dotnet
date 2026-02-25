@@ -1,17 +1,15 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
-using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
+using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskAbandon;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
-#pragma warning disable CS0618 // Type or member is obsolete
+namespace Altinn.App.Core.Tests.Internal.WorkflowEngine.Commands.ProcessNext.TaskAbandon;
 
-namespace Altinn.App.Core.Tests.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
-
-public class ProcessTaskEndLegacyHookTests
+public class AbandonTaskLegacyHookTests
 {
     private static ProcessEngineCommandContext CreateContext(Instance instance)
     {
@@ -26,7 +24,7 @@ public class ProcessTaskEndLegacyHookTests
             CancellationToken = CancellationToken.None,
             Payload = new AppCallbackPayload
             {
-                CommandKey = ProcessTaskEndLegacyHook.Key,
+                CommandKey = AbandonTaskLegacyHook.Key,
                 Actor = new Actor { UserIdOrOrgNumber = "1337" },
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
@@ -44,7 +42,7 @@ public class ProcessTaskEndLegacyHookTests
         };
     }
 
-    private static ProcessTaskEndLegacyHook CreateCommand(params IProcessTaskEnd[] handlers)
+    private static AbandonTaskLegacyHook CreateCommand(params IProcessTaskAbandon[] handlers)
     {
         var services = new ServiceCollection();
         services.AddSingleton<AppImplementationFactory>();
@@ -53,7 +51,7 @@ public class ProcessTaskEndLegacyHookTests
             services.AddSingleton(handler);
         }
         var sp = services.BuildServiceProvider();
-        return new ProcessTaskEndLegacyHook(sp);
+        return new AbandonTaskLegacyHook(sp);
     }
 
     [Fact]
@@ -75,8 +73,8 @@ public class ProcessTaskEndLegacyHookTests
     {
         // Arrange
         var instance = CreateInstance("Task_2");
-        var handler1 = new Mock<IProcessTaskEnd>();
-        var handler2 = new Mock<IProcessTaskEnd>();
+        var handler1 = new Mock<IProcessTaskAbandon>();
+        var handler2 = new Mock<IProcessTaskAbandon>();
         var command = CreateCommand(handler1.Object, handler2.Object);
         var context = CreateContext(instance);
 
@@ -85,16 +83,18 @@ public class ProcessTaskEndLegacyHookTests
 
         // Assert
         Assert.IsType<SuccessfulProcessEngineCommandResult>(result);
-        handler1.Verify(x => x.End("Task_2", instance), Times.Once);
-        handler2.Verify(x => x.End("Task_2", instance), Times.Once);
+        handler1.Verify(x => x.Abandon("Task_2", instance), Times.Once);
+        handler2.Verify(x => x.Abandon("Task_2", instance), Times.Once);
     }
 
     [Fact]
     public async Task Execute_WhenHandlerThrows_ReturnsFailedResult()
     {
         // Arrange
-        var handler = new Mock<IProcessTaskEnd>();
-        handler.Setup(x => x.End(It.IsAny<string>(), It.IsAny<Instance>())).ThrowsAsync(new Exception("End failed"));
+        var handler = new Mock<IProcessTaskAbandon>();
+        handler
+            .Setup(x => x.Abandon(It.IsAny<string>(), It.IsAny<Instance>()))
+            .ThrowsAsync(new Exception("Abandon failed"));
         var command = CreateCommand(handler.Object);
         var context = CreateContext(CreateInstance());
 
@@ -103,7 +103,7 @@ public class ProcessTaskEndLegacyHookTests
 
         // Assert
         var failed = Assert.IsType<FailedProcessEngineCommandResult>(result);
-        Assert.Equal("End failed", failed.ErrorMessage);
+        Assert.Equal("Abandon failed", failed.ErrorMessage);
         Assert.Equal("Exception", failed.ExceptionType);
     }
 }

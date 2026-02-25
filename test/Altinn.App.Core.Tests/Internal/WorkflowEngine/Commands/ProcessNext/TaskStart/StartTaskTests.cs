@@ -1,16 +1,16 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
-using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
+using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
-namespace Altinn.App.Core.Tests.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
+namespace Altinn.App.Core.Tests.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 
-public class ProcessTaskEndTests
+public class StartTaskTests
 {
     private static ProcessEngineCommandContext CreateContext(Instance instance)
     {
@@ -25,7 +25,7 @@ public class ProcessTaskEndTests
             CancellationToken = CancellationToken.None,
             Payload = new AppCallbackPayload
             {
-                CommandKey = ProcessTaskEnd.Key,
+                CommandKey = StartTask.Key,
                 Actor = new Actor { UserIdOrOrgNumber = "1337" },
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
@@ -46,23 +46,23 @@ public class ProcessTaskEndTests
         };
     }
 
-    private static ProcessTaskEnd CreateCommand(IProcessTask processTask)
+    private static StartTask CreateCommand(IProcessTask processTask)
     {
         var services = new ServiceCollection();
         services.AddSingleton<AppImplementationFactory>();
         services.AddSingleton(processTask);
         var sp = services.BuildServiceProvider();
         var resolver = new ProcessTaskResolver(sp.GetRequiredService<AppImplementationFactory>());
-        return new ProcessTaskEnd(resolver);
+        return new StartTask(resolver);
     }
 
     [Fact]
-    public async Task Execute_ResolvesProcessTaskAndCallsEnd_ReturnsSuccess()
+    public async Task Execute_ResolvesProcessTaskAndCallsStart_ReturnsSuccess()
     {
         // Arrange
         var processTask = new Mock<IProcessTask>();
         processTask.Setup(x => x.Type).Returns("data");
-        processTask.Setup(x => x.End(It.IsAny<IInstanceDataMutator>())).Returns(Task.CompletedTask);
+        processTask.Setup(x => x.Start(It.IsAny<IInstanceDataMutator>())).Returns(Task.CompletedTask);
         var command = CreateCommand(processTask.Object);
         var context = CreateContext(CreateInstance());
 
@@ -71,18 +71,18 @@ public class ProcessTaskEndTests
 
         // Assert
         Assert.IsType<SuccessfulProcessEngineCommandResult>(result);
-        processTask.Verify(x => x.End(It.IsAny<IInstanceDataMutator>()), Times.Once);
+        processTask.Verify(x => x.Start(It.IsAny<IInstanceDataMutator>()), Times.Once);
     }
 
     [Fact]
-    public async Task Execute_WhenEndThrows_ReturnsFailedResult()
+    public async Task Execute_WhenStartThrows_ReturnsFailedResult()
     {
         // Arrange
         var processTask = new Mock<IProcessTask>();
         processTask.Setup(x => x.Type).Returns("data");
         processTask
-            .Setup(x => x.End(It.IsAny<IInstanceDataMutator>()))
-            .ThrowsAsync(new InvalidOperationException("End failed"));
+            .Setup(x => x.Start(It.IsAny<IInstanceDataMutator>()))
+            .ThrowsAsync(new InvalidOperationException("Start failed"));
         var command = CreateCommand(processTask.Object);
         var context = CreateContext(CreateInstance());
 
@@ -91,7 +91,7 @@ public class ProcessTaskEndTests
 
         // Assert
         var failed = Assert.IsType<FailedProcessEngineCommandResult>(result);
-        Assert.Equal("End failed", failed.ErrorMessage);
+        Assert.Equal("Start failed", failed.ErrorMessage);
         Assert.Equal("InvalidOperationException", failed.ExceptionType);
     }
 }

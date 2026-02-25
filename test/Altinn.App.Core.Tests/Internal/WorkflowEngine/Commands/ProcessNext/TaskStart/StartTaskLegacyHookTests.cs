@@ -11,12 +11,9 @@ using Moq;
 
 namespace Altinn.App.Core.Tests.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 
-public class ProcessTaskStartLegacyHookTests
+public class StartTaskLegacyHookTests
 {
-    private static ProcessEngineCommandContext CreateContext(
-        Instance instance,
-        ProcessTaskStartLegacyHookPayload payload
-    )
+    private static ProcessEngineCommandContext CreateContext(Instance instance, StartTaskLegacyHookPayload payload)
     {
         var mutatorMock = new Mock<IInstanceDataMutator>();
         mutatorMock.Setup(x => x.Instance).Returns(instance);
@@ -31,7 +28,7 @@ public class ProcessTaskStartLegacyHookTests
             CancellationToken = CancellationToken.None,
             Payload = new AppCallbackPayload
             {
-                CommandKey = ProcessTaskStartLegacyHook.Key,
+                CommandKey = StartTaskLegacyHook.Key,
                 Actor = new Actor { UserIdOrOrgNumber = "1337" },
                 Payload = serializedPayload,
                 LockToken = Guid.NewGuid().ToString(),
@@ -50,7 +47,7 @@ public class ProcessTaskStartLegacyHookTests
         };
     }
 
-    private static ProcessTaskStartLegacyHook CreateCommand(params IProcessTaskStart[] handlers)
+    private static StartTaskLegacyHook CreateCommand(params IProcessTaskStart[] handlers)
     {
         var services = new ServiceCollection();
         services.AddSingleton<AppImplementationFactory>();
@@ -59,7 +56,7 @@ public class ProcessTaskStartLegacyHookTests
             services.AddSingleton(handler);
         }
         var sp = services.BuildServiceProvider();
-        return new ProcessTaskStartLegacyHook(sp);
+        return new StartTaskLegacyHook(sp);
     }
 
     [Fact]
@@ -67,7 +64,7 @@ public class ProcessTaskStartLegacyHookTests
     {
         // Arrange
         var command = CreateCommand();
-        var payload = new ProcessTaskStartLegacyHookPayload(Prefill: null);
+        var payload = new StartTaskLegacyHookPayload(Prefill: null);
         var context = CreateContext(CreateInstance(), payload);
 
         // Act
@@ -86,7 +83,7 @@ public class ProcessTaskStartLegacyHookTests
         var handler1 = new Mock<IProcessTaskStart>();
         var handler2 = new Mock<IProcessTaskStart>();
         var command = CreateCommand(handler1.Object, handler2.Object);
-        var payload = new ProcessTaskStartLegacyHookPayload(Prefill: prefill);
+        var payload = new StartTaskLegacyHookPayload(Prefill: prefill);
         var context = CreateContext(instance, payload);
 
         // Act
@@ -111,7 +108,7 @@ public class ProcessTaskStartLegacyHookTests
         var instance = CreateInstance();
         var handler = new Mock<IProcessTaskStart>();
         var command = CreateCommand(handler.Object);
-        var payload = new ProcessTaskStartLegacyHookPayload(Prefill: null);
+        var payload = new StartTaskLegacyHookPayload(Prefill: null);
         var context = CreateContext(instance, payload);
 
         // Act
@@ -131,7 +128,7 @@ public class ProcessTaskStartLegacyHookTests
             .Setup(x => x.Start(It.IsAny<string>(), It.IsAny<Instance>(), It.IsAny<Dictionary<string, string>?>()))
             .ThrowsAsync(new InvalidOperationException("Start failed"));
         var command = CreateCommand(handler.Object);
-        var payload = new ProcessTaskStartLegacyHookPayload(Prefill: null);
+        var payload = new StartTaskLegacyHookPayload(Prefill: null);
         var context = CreateContext(CreateInstance(), payload);
 
         // Act

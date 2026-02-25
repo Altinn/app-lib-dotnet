@@ -44,23 +44,23 @@ public class ProcessEngineCommandValidatorTests
     {
         // Register all commands that are referenced in ProcessEventCommands
         services.AddTransient<IWorkflowEngineCommand, UnlockTaskData>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskStartLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, StartTaskLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskStartingHook>();
         services.AddTransient<IWorkflowEngineCommand, CommonTaskInitialization>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskStart>();
+        services.AddTransient<IWorkflowEngineCommand, StartTask>();
         services.AddTransient<IWorkflowEngineCommand, MovedToAltinnEvent>();
         services.AddTransient<IWorkflowEngineCommand, InstanceCreatedAltinnEvent>();
         services.AddTransient<IWorkflowEngineCommand, ExecuteServiceTask>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskEnd>();
+        services.AddTransient<IWorkflowEngineCommand, EndTask>();
         services.AddTransient<IWorkflowEngineCommand, CommonTaskFinalization>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskEndLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, EndTaskLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskEndingHook>();
         services.AddTransient<IWorkflowEngineCommand, LockTaskData>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskAbandon>();
+        services.AddTransient<IWorkflowEngineCommand, AbandonTask>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskAbandonHook>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskAbandonLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, AbandonTaskLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, OnProcessEndingHook>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessEndLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, EndProcessLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, DeleteDataElementsIfConfigured>();
         services.AddTransient<IWorkflowEngineCommand, DeleteInstanceIfConfigured>();
         services.AddTransient<IWorkflowEngineCommand, CompletedAltinnEvent>();

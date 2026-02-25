@@ -40,10 +40,10 @@ internal sealed class WorkflowCommandSet
     {
         var group = new WorkflowCommandSet()
             .AddCommand(UnlockTaskData.Key)
-            .AddCommand(ProcessTaskStartLegacyHook.Key, new ProcessTaskStartLegacyHookPayload(prefill))
+            .AddCommand(StartTaskLegacyHook.Key, new StartTaskLegacyHookPayload(prefill))
             .AddCommand(OnTaskStartingHook.Key)
             .AddCommand(CommonTaskInitialization.Key, new CommonTaskInitializationPayload(prefill))
-            .AddCommand(ProcessTaskStart.Key)
+            .AddCommand(StartTask.Key)
             .AddPostProcessNextCommittedCommand(MovedToAltinnEvent.Key);
 
         if (serviceTaskType is not null)
@@ -68,9 +68,9 @@ internal sealed class WorkflowCommandSet
     public static WorkflowCommandSet GetTaskEndSteps()
     {
         return new WorkflowCommandSet()
-            .AddCommand(ProcessTaskEnd.Key)
+            .AddCommand(EndTask.Key)
             .AddCommand(CommonTaskFinalization.Key)
-            .AddCommand(ProcessTaskEndLegacyHook.Key)
+            .AddCommand(EndTaskLegacyHook.Key)
             .AddCommand(OnTaskEndingHook.Key)
             .AddCommand(LockTaskData.Key);
     }
@@ -81,9 +81,9 @@ internal sealed class WorkflowCommandSet
     public static WorkflowCommandSet GetTaskAbandonSteps()
     {
         return new WorkflowCommandSet()
-            .AddCommand(ProcessTaskAbandon.Key)
+            .AddCommand(AbandonTask.Key)
             .AddCommand(OnTaskAbandonHook.Key)
-            .AddCommand(ProcessTaskAbandonLegacyHook.Key);
+            .AddCommand(AbandonTaskLegacyHook.Key);
     }
 
     /// <summary>
@@ -91,12 +91,12 @@ internal sealed class WorkflowCommandSet
     /// </summary>
     public static WorkflowCommandSet GetProcessEndSteps()
     {
-        // ProcessEndLegacyHook runs post-commit because IProcessEnd.End reads instance.Process.EndEvent,
+        // EndProcessLegacyHook runs post-commit because IProcessEnd.End reads instance.Process.EndEvent,
         // which is only set when the process state is persisted. This matches the old ProcessEngine behavior
         // where RunAppDefinedProcessEndHandlers ran after HandleEventsAndUpdateStorage.
         return new WorkflowCommandSet()
             .AddCommand(OnProcessEndingHook.Key)
-            .AddPostProcessNextCommittedCommand(ProcessEndLegacyHook.Key)
+            .AddPostProcessNextCommittedCommand(EndProcessLegacyHook.Key)
             .AddPostProcessNextCommittedCommand(DeleteDataElementsIfConfigured.Key)
             .AddPostProcessNextCommittedCommand(DeleteInstanceIfConfigured.Key)
             .AddPostProcessNextCommittedCommand(CompletedAltinnEvent.Key);

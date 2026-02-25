@@ -21,21 +21,21 @@ internal static class ServiceCollectionExtensions
 
         // Process engine callback handlers - TaskStart
         services.AddTransient<IWorkflowEngineCommand, CommonTaskInitialization>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskStart>();
+        services.AddTransient<IWorkflowEngineCommand, StartTask>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskStartingHook>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskStartLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, StartTaskLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, UnlockTaskData>();
 
         // Process engine callback handlers - TaskAbandon
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskAbandon>();
+        services.AddTransient<IWorkflowEngineCommand, AbandonTask>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskAbandonHook>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskAbandonLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, AbandonTaskLegacyHook>();
 
         // Process engine callback handlers - TaskEnd
         services.AddTransient<IWorkflowEngineCommand, CommonTaskFinalization>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskEnd>();
+        services.AddTransient<IWorkflowEngineCommand, EndTask>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskEndingHook>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessTaskEndLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, EndTaskLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, LockTaskData>();
 
         // Process engine callback handlers - ServiceTask
@@ -43,7 +43,7 @@ internal static class ServiceCollectionExtensions
 
         // Process engine callback handlers - ProcessEnd
         services.AddTransient<IWorkflowEngineCommand, OnProcessEndingHook>();
-        services.AddTransient<IWorkflowEngineCommand, ProcessEndLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, EndProcessLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, DeleteDataElementsIfConfigured>();
         services.AddTransient<IWorkflowEngineCommand, DeleteInstanceIfConfigured>();
 

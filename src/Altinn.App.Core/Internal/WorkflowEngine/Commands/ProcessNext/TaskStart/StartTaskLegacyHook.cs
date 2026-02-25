@@ -7,30 +7,30 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 
 /// <summary>
-/// Payload for the ProcessTaskStartLegacyHook command.
+/// Payload for the StartTaskLegacyHook command.
 /// </summary>
 /// <param name="Prefill">Prefill data for the initial task start. Null for subsequent task transitions.</param>
-internal sealed record ProcessTaskStartLegacyHookPayload(Dictionary<string, string>? Prefill) : CommandRequestPayload;
+internal sealed record StartTaskLegacyHookPayload(Dictionary<string, string>? Prefill) : CommandRequestPayload;
 
 /// <summary>
 /// Run the legacy IProcessTaskStart implementations defined in the app. No unit of work and rollback support.
 /// </summary>
-internal sealed class ProcessTaskStartLegacyHook : WorkflowEngineCommandBase<ProcessTaskStartLegacyHookPayload>
+internal sealed class StartTaskLegacyHook : WorkflowEngineCommandBase<StartTaskLegacyHookPayload>
 {
-    public static string Key => "ProcessTaskStartLegacyHook";
+    public static string Key => "StartTaskLegacyHook";
 
     public override string GetKey() => Key;
 
     private readonly AppImplementationFactory _appImplementationFactory;
 
-    public ProcessTaskStartLegacyHook(IServiceProvider serviceProvider)
+    public StartTaskLegacyHook(IServiceProvider serviceProvider)
     {
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
 
     public override async Task<ProcessEngineCommandResult> Execute(
         ProcessEngineCommandContext context,
-        ProcessTaskStartLegacyHookPayload payload
+        StartTaskLegacyHookPayload payload
     )
     {
         Instance instance = context.InstanceDataMutator.Instance;

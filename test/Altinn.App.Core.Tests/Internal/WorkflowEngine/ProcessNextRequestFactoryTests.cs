@@ -200,19 +200,19 @@ public class ProcessNextRequestFactoryTests
         var expected = new List<string>
         {
             // Task end commands
-            ProcessTaskEnd.Key,
+            EndTask.Key,
             CommonTaskFinalization.Key,
-            ProcessTaskEndLegacyHook.Key,
+            EndTaskLegacyHook.Key,
             OnTaskEndingHook.Key,
             LockTaskData.Key,
             // MutateProcessState (between end and start)
             MutateProcessState.Key,
             // Task start commands
             UnlockTaskData.Key,
-            ProcessTaskStartLegacyHook.Key,
+            StartTaskLegacyHook.Key,
             OnTaskStartingHook.Key,
             CommonTaskInitialization.Key,
-            ProcessTaskStart.Key,
+            StartTask.Key,
             // UpdateProcessState (commit boundary)
             UpdateProcessStateInStorage.Key,
             // Post-commit
@@ -236,9 +236,9 @@ public class ProcessNextRequestFactoryTests
         var expected = new List<string>
         {
             // Task end commands
-            ProcessTaskEnd.Key,
+            EndTask.Key,
             CommonTaskFinalization.Key,
-            ProcessTaskEndLegacyHook.Key,
+            EndTaskLegacyHook.Key,
             OnTaskEndingHook.Key,
             LockTaskData.Key,
             // MutateProcessState
@@ -248,7 +248,7 @@ public class ProcessNextRequestFactoryTests
             // UpdateProcessState
             UpdateProcessStateInStorage.Key,
             // Post-commit
-            ProcessEndLegacyHook.Key,
+            EndProcessLegacyHook.Key,
             DeleteDataElementsIfConfigured.Key,
             DeleteInstanceIfConfigured.Key,
             CompletedAltinnEvent.Key,
@@ -276,10 +276,10 @@ public class ProcessNextRequestFactoryTests
         {
             // Task start commands only
             UnlockTaskData.Key,
-            ProcessTaskStartLegacyHook.Key,
+            StartTaskLegacyHook.Key,
             OnTaskStartingHook.Key,
             CommonTaskInitialization.Key,
-            ProcessTaskStart.Key,
+            StartTask.Key,
             // UpdateProcessState
             UpdateProcessStateInStorage.Key,
             // Post-commit
@@ -304,17 +304,17 @@ public class ProcessNextRequestFactoryTests
         var expected = new List<string>
         {
             // Abandon commands
-            ProcessTaskAbandon.Key,
+            AbandonTask.Key,
             OnTaskAbandonHook.Key,
-            ProcessTaskAbandonLegacyHook.Key,
+            AbandonTaskLegacyHook.Key,
             // MutateProcessState
             MutateProcessState.Key,
             // Task start commands
             UnlockTaskData.Key,
-            ProcessTaskStartLegacyHook.Key,
+            StartTaskLegacyHook.Key,
             OnTaskStartingHook.Key,
             CommonTaskInitialization.Key,
-            ProcessTaskStart.Key,
+            StartTask.Key,
             // UpdateProcessState
             UpdateProcessStateInStorage.Key,
             // Post-commit

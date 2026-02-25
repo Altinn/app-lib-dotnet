@@ -1,17 +1,17 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 
-namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskAbandon;
+namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
 
-internal sealed class ProcessTaskAbandon : IWorkflowEngineCommand
+internal sealed class EndTask : IWorkflowEngineCommand
 {
-    public static string Key => "ProcessTaskAbandon";
+    public static string Key => "EndTask";
 
     public string GetKey() => Key;
 
     private readonly ProcessTaskResolver _processTaskResolver;
 
-    public ProcessTaskAbandon(ProcessTaskResolver processTaskResolver)
+    public EndTask(ProcessTaskResolver processTaskResolver)
     {
         _processTaskResolver = processTaskResolver;
     }
@@ -24,7 +24,7 @@ internal sealed class ProcessTaskAbandon : IWorkflowEngineCommand
         try
         {
             IProcessTask processTask = _processTaskResolver.GetProcessTaskInstance(altinnTaskType);
-            await processTask.Abandon(dataMutator);
+            await processTask.End(dataMutator);
             return new SuccessfulProcessEngineCommandResult();
         }
         catch (Exception ex)
