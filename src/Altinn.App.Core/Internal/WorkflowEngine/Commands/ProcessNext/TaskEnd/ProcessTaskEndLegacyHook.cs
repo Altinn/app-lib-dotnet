@@ -9,15 +9,15 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
 /// <summary>
 /// Run the legacy IProcessTaskEnd implementations defined in the app. No unit of work and rollback support.
 /// </summary>
-internal sealed class EndTaskLegacyHook : IWorkflowEngineCommand
+internal sealed class ProcessTaskEndLegacyHook : IWorkflowEngineCommand
 {
-    public static string Key => "EndTaskLegacyHook";
+    public static string Key => "ProcessTaskEndLegacyHook";
 
     public string GetKey() => Key;
 
     private readonly AppImplementationFactory _appImplementationFactory;
 
-    public EndTaskLegacyHook(IServiceProvider serviceProvider)
+    public ProcessTaskEndLegacyHook(IServiceProvider serviceProvider)
     {
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }

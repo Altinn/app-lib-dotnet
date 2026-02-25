@@ -44,7 +44,7 @@ public class ProcessEngineCommandValidatorTests
     {
         // Register all commands that are referenced in ProcessEventCommands
         services.AddTransient<IWorkflowEngineCommand, UnlockTaskData>();
-        services.AddTransient<IWorkflowEngineCommand, WorkflowTaskStartLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, ProcessTaskStartLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskStartingHook>();
         services.AddTransient<IWorkflowEngineCommand, CommonTaskInitialization>();
         services.AddTransient<IWorkflowEngineCommand, ProcessTaskStart>();
@@ -53,13 +53,13 @@ public class ProcessEngineCommandValidatorTests
         services.AddTransient<IWorkflowEngineCommand, ExecuteServiceTask>();
         services.AddTransient<IWorkflowEngineCommand, ProcessTaskEnd>();
         services.AddTransient<IWorkflowEngineCommand, CommonTaskFinalization>();
-        services.AddTransient<IWorkflowEngineCommand, EndTaskLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, ProcessTaskEndLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskEndingHook>();
         services.AddTransient<IWorkflowEngineCommand, LockTaskData>();
         services.AddTransient<IWorkflowEngineCommand, ProcessTaskAbandon>();
         services.AddTransient<IWorkflowEngineCommand, OnTaskAbandonHook>();
-        services.AddTransient<IWorkflowEngineCommand, AbandonTaskLegacyHook>();
-        services.AddTransient<IWorkflowEngineCommand, OnWorkflowEndingHook>();
+        services.AddTransient<IWorkflowEngineCommand, ProcessTaskAbandonLegacyHook>();
+        services.AddTransient<IWorkflowEngineCommand, OnProcessEndingHook>();
         services.AddTransient<IWorkflowEngineCommand, ProcessEndLegacyHook>();
         services.AddTransient<IWorkflowEngineCommand, DeleteDataElementsIfConfigured>();
         services.AddTransient<IWorkflowEngineCommand, DeleteInstanceIfConfigured>();

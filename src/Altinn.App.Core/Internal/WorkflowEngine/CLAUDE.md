@@ -52,22 +52,22 @@ WorkflowEngine/
 │   ├── ProcessNext/
 │   │   ├── TaskStart/
 │   │   │   ├── UnlockTaskData.cs            - Unlock data elements for new task
-│   │   │   ├── WorkflowTaskStartLegacyHook  - Runs legacy IProcessTaskStart (obsolete API)
+│   │   │   ├── ProcessTaskStartLegacyHook  - Runs legacy IProcessTaskStart (obsolete API)
 │   │   │   ├── OnTaskStartingHook.cs        - Runs IOnTaskStartingHandler (new API, max 1 per task)
 │   │   │   ├── CommonTaskInitialization.cs   - Auto-create data elements, prefill, remove task-generated data
 │   │   │   └── ProcessTaskStart.cs          - Calls IProcessTask.Start()
 │   │   ├── TaskEnd/
 │   │   │   ├── ProcessTaskEnd.cs            - Calls IProcessTask.End()
 │   │   │   ├── CommonTaskFinalization.cs    - Remove hidden data, shadow fields, AltinnRowIds
-│   │   │   ├── EndTaskLegacyHook.cs         - Runs legacy IProcessTaskEnd (obsolete API)
+│   │   │   ├── ProcessTaskEndLegacyHook.cs         - Runs legacy IProcessTaskEnd (obsolete API)
 │   │   │   ├── OnTaskEndingHook.cs          - Runs IOnTaskEndingHandler (new API, max 1 per task)
 │   │   │   └── LockTaskData.cs              - Lock data elements after task completes
 │   │   ├── TaskAbandon/
 │   │   │   ├── ProcessTaskAbandon.cs
 │   │   │   ├── OnTaskEndingHook.cs          - (reused from TaskEnd namespace - runs IOnTaskAbandonHandler)
-│   │   │   └── AbandonTaskLegacyHook.cs
+│   │   │   └── ProcessTaskAbandonLegacyHook.cs
 │   │   └── ProcessEnd/
-│   │       ├── OnWorkflowEndingHook.cs      - Runs IOnProcessEndingHandler (pre-commit)
+│   │       ├── OnProcessEndingHook.cs      - Runs IOnProcessEndingHandler (pre-commit)
 │   │       ├── ProcessEndLegacyHook.cs      - Runs legacy IProcessEnd (post-commit)
 │   │       ├── DeleteDataElements.cs        - Auto-delete data types with AutoDeleteOnProcessEnd (post-commit)
 │   │       └── DeleteInstance.cs            - Hard-delete instance if ApplicationMetadata.AutoDeleteOnProcessEnd (post-commit)
@@ -114,7 +114,7 @@ Defined in `WorkflowCommandSet.cs`. `ProcessNextRequestFactory` assembles the fu
 ### Task-to-Task Transition (e.g., Task_1 → Task_2)
 ```
 ── instance.Process.CurrentTask = Task_1 (OLD) ──
-ProcessTaskEnd → CommonTaskFinalization → EndTaskLegacyHook → OnTaskEndingHook → LockTaskData
+ProcessTaskEnd → CommonTaskFinalization → ProcessTaskEndLegacyHook → OnTaskEndingHook → LockTaskData
   ── MutateProcessState (in-memory: CurrentTask → Task_2) ──
 ── instance.Process.CurrentTask = Task_2 (NEW) ──
 UnlockTaskData → ProcessTaskStart(legacy) → OnTaskStartingHook → CommonTaskInitialization → ProcessTaskStart
@@ -125,9 +125,9 @@ MovedToAltinnEvent → [ExecuteServiceTask if service task]
 ### Task-to-End Transition (e.g., Task_1 → EndEvent)
 ```
 ── instance.Process.CurrentTask = Task_1 (OLD) ──
-ProcessTaskEnd → CommonTaskFinalization → EndTaskLegacyHook → OnTaskEndingHook → LockTaskData
+ProcessTaskEnd → CommonTaskFinalization → ProcessTaskEndLegacyHook → OnTaskEndingHook → LockTaskData
   ── MutateProcessState (in-memory: CurrentTask → null, EndEvent set) ──
-OnWorkflowEndingHook
+OnProcessEndingHook
   ── UpdateProcessState (persist to Storage) ──
 ProcessEndLegacyHook → DeleteDataElementsIfConfigured → DeleteInstanceIfConfigured → CompletedAltinnEvent
 ```
@@ -143,9 +143,9 @@ MovedToAltinnEvent → [ExecuteServiceTask if service task] → [InstanceCreated
 ### Task Abandon (reject → end)
 ```
 ── instance.Process.CurrentTask = Task_1 (OLD) ──
-ProcessTaskAbandon → OnTaskAbandonHook → AbandonTaskLegacyHook
+ProcessTaskAbandon → OnTaskAbandonHook → ProcessTaskAbandonLegacyHook
   ── MutateProcessState (in-memory: CurrentTask → null or next task) ──
-[OnWorkflowEndingHook if ending] / [task-start commands if moving to next task]
+[OnProcessEndingHook if ending] / [task-start commands if moving to next task]
   ── UpdateProcessState (persist to Storage) ──
 [post-commit commands]
 ```

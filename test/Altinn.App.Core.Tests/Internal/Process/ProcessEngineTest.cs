@@ -265,12 +265,12 @@ public sealed class ProcessEngineTest
                 // EndTask commands
                 "ProcessTaskEnd",
                 "CommonTaskFinalization",
-                "EndTaskLegacyHook",
+                "ProcessTaskEndLegacyHook",
                 "OnTaskEndingHook",
                 "LockTaskData",
                 // StartTask commands
                 "UnlockTaskData",
-                "ProcessTaskStart",
+                "ProcessTaskStartLegacyHook",
                 "OnTaskStartingHook",
                 "CommonTaskInitialization",
                 "ProcessTaskStart",
@@ -394,10 +394,10 @@ public sealed class ProcessEngineTest
                 // AbandonTask commands
                 "ProcessTaskAbandon",
                 "OnTaskAbandonHook",
-                "AbandonTaskLegacyHook",
+                "ProcessTaskAbandonLegacyHook",
                 // StartTask commands
                 "UnlockTaskData",
-                "ProcessTaskStart",
+                "ProcessTaskStartLegacyHook",
                 "OnTaskStartingHook",
                 "CommonTaskInitialization",
                 "ProcessTaskStart",
@@ -511,7 +511,7 @@ public sealed class ProcessEngineTest
                 // EndTask commands (see OLD CurrentTask)
                 "ProcessTaskEnd",
                 "CommonTaskFinalization",
-                "EndTaskLegacyHook",
+                "ProcessTaskEndLegacyHook",
                 "OnTaskEndingHook",
                 "LockTaskData",
                 // Advance in-memory process state to NEW

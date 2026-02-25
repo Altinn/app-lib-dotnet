@@ -11,7 +11,7 @@ using Moq;
 
 namespace Altinn.App.Core.Tests.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 
-public class WorkflowTaskStartLegacyHookTests
+public class ProcessTaskStartLegacyHookTests
 {
     private static ProcessEngineCommandContext CreateContext(
         Instance instance,
@@ -31,7 +31,7 @@ public class WorkflowTaskStartLegacyHookTests
             CancellationToken = CancellationToken.None,
             Payload = new AppCallbackPayload
             {
-                CommandKey = WorkflowTaskStartLegacyHook.Key,
+                CommandKey = ProcessTaskStartLegacyHook.Key,
                 Actor = new Actor { UserIdOrOrgNumber = "1337" },
                 Payload = serializedPayload,
                 LockToken = Guid.NewGuid().ToString(),
@@ -50,7 +50,7 @@ public class WorkflowTaskStartLegacyHookTests
         };
     }
 
-    private static WorkflowTaskStartLegacyHook CreateCommand(params IProcessTaskStart[] handlers)
+    private static ProcessTaskStartLegacyHook CreateCommand(params IProcessTaskStart[] handlers)
     {
         var services = new ServiceCollection();
         services.AddSingleton<AppImplementationFactory>();
@@ -59,7 +59,7 @@ public class WorkflowTaskStartLegacyHookTests
             services.AddSingleton(handler);
         }
         var sp = services.BuildServiceProvider();
-        return new WorkflowTaskStartLegacyHook(sp);
+        return new ProcessTaskStartLegacyHook(sp);
     }
 
     [Fact]

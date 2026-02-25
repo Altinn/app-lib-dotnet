@@ -40,7 +40,7 @@ internal sealed class WorkflowCommandSet
     {
         var group = new WorkflowCommandSet()
             .AddCommand(UnlockTaskData.Key)
-            .AddCommand(WorkflowTaskStartLegacyHook.Key, new ProcessTaskStartLegacyHookPayload(prefill))
+            .AddCommand(ProcessTaskStartLegacyHook.Key, new ProcessTaskStartLegacyHookPayload(prefill))
             .AddCommand(OnTaskStartingHook.Key)
             .AddCommand(CommonTaskInitialization.Key, new CommonTaskInitializationPayload(prefill))
             .AddCommand(ProcessTaskStart.Key)
@@ -70,7 +70,7 @@ internal sealed class WorkflowCommandSet
         return new WorkflowCommandSet()
             .AddCommand(ProcessTaskEnd.Key)
             .AddCommand(CommonTaskFinalization.Key)
-            .AddCommand(EndTaskLegacyHook.Key)
+            .AddCommand(ProcessTaskEndLegacyHook.Key)
             .AddCommand(OnTaskEndingHook.Key)
             .AddCommand(LockTaskData.Key);
     }
@@ -83,7 +83,7 @@ internal sealed class WorkflowCommandSet
         return new WorkflowCommandSet()
             .AddCommand(ProcessTaskAbandon.Key)
             .AddCommand(OnTaskAbandonHook.Key)
-            .AddCommand(AbandonTaskLegacyHook.Key);
+            .AddCommand(ProcessTaskAbandonLegacyHook.Key);
     }
 
     /// <summary>
@@ -95,7 +95,7 @@ internal sealed class WorkflowCommandSet
         // which is only set when the process state is persisted. This matches the old ProcessEngine behavior
         // where RunAppDefinedProcessEndHandlers ran after HandleEventsAndUpdateStorage.
         return new WorkflowCommandSet()
-            .AddCommand(OnWorkflowEndingHook.Key)
+            .AddCommand(OnProcessEndingHook.Key)
             .AddPostProcessNextCommittedCommand(ProcessEndLegacyHook.Key)
             .AddPostProcessNextCommittedCommand(DeleteDataElementsIfConfigured.Key)
             .AddPostProcessNextCommittedCommand(DeleteInstanceIfConfigured.Key)

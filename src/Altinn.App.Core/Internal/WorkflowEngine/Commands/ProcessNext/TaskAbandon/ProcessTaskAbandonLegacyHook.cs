@@ -7,15 +7,15 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskAband
 /// <summary>
 /// Run the legacy IProcessTaskAbandon implementations defined in the app. No unit of work and rollback support.
 /// </summary>
-internal sealed class AbandonTaskLegacyHook : IWorkflowEngineCommand
+internal sealed class ProcessTaskAbandonLegacyHook : IWorkflowEngineCommand
 {
-    public static string Key => "AbandonTaskLegacyHook";
+    public static string Key => "ProcessTaskAbandonLegacyHook";
 
     public string GetKey() => Key;
 
     private readonly AppImplementationFactory _appImplementationFactory;
 
-    public AbandonTaskLegacyHook(IServiceProvider serviceProvider)
+    public ProcessTaskAbandonLegacyHook(IServiceProvider serviceProvider)
     {
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }

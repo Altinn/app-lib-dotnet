@@ -10,7 +10,7 @@ using Moq;
 
 namespace Altinn.App.Core.Tests.Internal.WorkflowEngine.Commands.ProcessNext.ProcessEnd;
 
-public class OnWorkflowEndingHookTests
+public class OnProcessEndingHookTests
 {
     private static ProcessEngineCommandContext CreateContext(Instance instance)
     {
@@ -25,7 +25,7 @@ public class OnWorkflowEndingHookTests
             CancellationToken = CancellationToken.None,
             Payload = new AppCallbackPayload
             {
-                CommandKey = OnWorkflowEndingHook.Key,
+                CommandKey = OnProcessEndingHook.Key,
                 Actor = new Actor { UserIdOrOrgNumber = "1337" },
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
@@ -43,7 +43,7 @@ public class OnWorkflowEndingHookTests
         };
     }
 
-    private static OnWorkflowEndingHook CreateCommand(params IOnProcessEndingHandler[] handlers)
+    private static OnProcessEndingHook CreateCommand(params IOnProcessEndingHandler[] handlers)
     {
         var services = new ServiceCollection();
         services.AddSingleton<AppImplementationFactory>();
@@ -52,7 +52,7 @@ public class OnWorkflowEndingHookTests
             services.AddSingleton(handler);
         }
         var sp = services.BuildServiceProvider();
-        return new OnWorkflowEndingHook(sp);
+        return new OnProcessEndingHook(sp);
     }
 
     [Fact]

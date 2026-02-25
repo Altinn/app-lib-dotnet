@@ -15,15 +15,15 @@ internal sealed record ProcessTaskStartLegacyHookPayload(Dictionary<string, stri
 /// <summary>
 /// Run the legacy IProcessTaskStart implementations defined in the app. No unit of work and rollback support.
 /// </summary>
-internal sealed class WorkflowTaskStartLegacyHook : WorkflowEngineCommandBase<ProcessTaskStartLegacyHookPayload>
+internal sealed class ProcessTaskStartLegacyHook : WorkflowEngineCommandBase<ProcessTaskStartLegacyHookPayload>
 {
-    public static string Key => "ProcessTaskStart";
+    public static string Key => "ProcessTaskStartLegacyHook";
 
     public override string GetKey() => Key;
 
     private readonly AppImplementationFactory _appImplementationFactory;
 
-    public WorkflowTaskStartLegacyHook(IServiceProvider serviceProvider)
+    public ProcessTaskStartLegacyHook(IServiceProvider serviceProvider)
     {
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }

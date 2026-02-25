@@ -202,14 +202,14 @@ public class ProcessNextRequestFactoryTests
             // Task end commands
             ProcessTaskEnd.Key,
             CommonTaskFinalization.Key,
-            EndTaskLegacyHook.Key,
+            ProcessTaskEndLegacyHook.Key,
             OnTaskEndingHook.Key,
             LockTaskData.Key,
             // MutateProcessState (between end and start)
             MutateProcessState.Key,
             // Task start commands
             UnlockTaskData.Key,
-            WorkflowTaskStartLegacyHook.Key,
+            ProcessTaskStartLegacyHook.Key,
             OnTaskStartingHook.Key,
             CommonTaskInitialization.Key,
             ProcessTaskStart.Key,
@@ -238,13 +238,13 @@ public class ProcessNextRequestFactoryTests
             // Task end commands
             ProcessTaskEnd.Key,
             CommonTaskFinalization.Key,
-            EndTaskLegacyHook.Key,
+            ProcessTaskEndLegacyHook.Key,
             OnTaskEndingHook.Key,
             LockTaskData.Key,
             // MutateProcessState
             MutateProcessState.Key,
             // Process end commands (pre-commit)
-            OnWorkflowEndingHook.Key,
+            OnProcessEndingHook.Key,
             // UpdateProcessState
             UpdateProcessStateInStorage.Key,
             // Post-commit
@@ -276,7 +276,7 @@ public class ProcessNextRequestFactoryTests
         {
             // Task start commands only
             UnlockTaskData.Key,
-            WorkflowTaskStartLegacyHook.Key,
+            ProcessTaskStartLegacyHook.Key,
             OnTaskStartingHook.Key,
             CommonTaskInitialization.Key,
             ProcessTaskStart.Key,
@@ -306,12 +306,12 @@ public class ProcessNextRequestFactoryTests
             // Abandon commands
             ProcessTaskAbandon.Key,
             OnTaskAbandonHook.Key,
-            AbandonTaskLegacyHook.Key,
+            ProcessTaskAbandonLegacyHook.Key,
             // MutateProcessState
             MutateProcessState.Key,
             // Task start commands
             UnlockTaskData.Key,
-            WorkflowTaskStartLegacyHook.Key,
+            ProcessTaskStartLegacyHook.Key,
             OnTaskStartingHook.Key,
             CommonTaskInitialization.Key,
             ProcessTaskStart.Key,

@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.ProcessEnd;
 
-internal sealed class OnWorkflowEndingHook : IWorkflowEngineCommand
+internal sealed class OnProcessEndingHook : IWorkflowEngineCommand
 {
     public static string Key => "OnProcessEndingHook";
 
@@ -12,7 +12,7 @@ internal sealed class OnWorkflowEndingHook : IWorkflowEngineCommand
 
     private readonly AppImplementationFactory _appImplementationFactory;
 
-    public OnWorkflowEndingHook(IServiceProvider serviceProvider)
+    public OnProcessEndingHook(IServiceProvider serviceProvider)
     {
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
