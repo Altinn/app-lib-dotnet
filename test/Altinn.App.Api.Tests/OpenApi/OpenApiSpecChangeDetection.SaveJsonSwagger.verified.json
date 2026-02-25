@@ -7355,7 +7355,10 @@
             "type": "string",
             "nullable": true
           },
-          "state": {}
+          "state": {
+            "type": "string",
+            "nullable": true
+          }
         },
         "additionalProperties": false
       },
