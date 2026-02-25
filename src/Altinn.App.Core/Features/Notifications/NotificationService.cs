@@ -1,3 +1,4 @@
+using System.Globalization;
 using Altinn.App.Core.Features.Notifications.Texts;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.Language;
@@ -47,15 +48,33 @@ internal sealed class NotificationService(
     {
         InstanceOwner instanceOwner = instance.InstanceOwner;
         DateOnly? dueDateString = instance.DueBefore.HasValue ? DateOnly.FromDateTime(instance.DueBefore.Value) : null;
+
+        CustomEmail? customEmail = instansiationNotification.CustomEmail;
         EmailSendingOptions emailSettings = new()
         {
             SendingTimePolicy = SendingTimePolicy.Anytime,
-            Subject =
-                instansiationNotification.CustomEmail?.Subject.GetTextForLanguage(language)
-                ?? NotificationTexts.GetDefaultSubject(language),
-            Body =
-                instansiationNotification.CustomEmail?.Body.GetTextForLanguage(language)
-                ?? NotificationTexts.GetDefaultBody(
+            Subject = customEmail is not null
+                ? NotificationTexts.ReplaceTokens(
+                    text: customEmail.Subject.GetTextForLanguage(language),
+                    appId: instance.AppId,
+                    instanceOwnerName: instanceOwnerName,
+                    serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
+                    orgNumber: instanceOwner.OrganisationNumber,
+                    socialSecurityNumber: instanceOwner.PersonNumber,
+                    dueDate: dueDateString
+                )
+                : NotificationTexts.GetDefaultSubject(language),
+            Body = customEmail is not null
+                ? NotificationTexts.ReplaceTokens(
+                    text: customEmail.Body.GetTextForLanguage(language),
+                    appId: instance.AppId,
+                    instanceOwnerName: instanceOwnerName,
+                    serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
+                    orgNumber: instanceOwner.OrganisationNumber,
+                    socialSecurityNumber: instanceOwner.PersonNumber,
+                    dueDate: dueDateString
+                )
+                : NotificationTexts.GetDefaultBody(
                     language: language,
                     appid: instance.AppId,
                     instanceOwnerName: instanceOwnerName,
@@ -66,13 +85,22 @@ internal sealed class NotificationService(
                 ),
         };
 
+        CustomSms? customSms = instansiationNotification.CustomSms;
         SmsSendingOptions smsSettings = new()
         {
             SendingTimePolicy = SendingTimePolicy.Anytime,
-            Sender = instansiationNotification.CustomSms?.SenderName ?? "Altinn",
-            Body =
-                instansiationNotification.CustomSms?.Text.GetTextForLanguage(language)
-                ?? NotificationTexts.GetDefaultBody(
+            Sender = customSms?.SenderName ?? "Altinn",
+            Body = customSms is not null
+                ? NotificationTexts.ReplaceTokens(
+                    text: customSms.Text.GetTextForLanguage(language),
+                    appId: instance.AppId,
+                    instanceOwnerName: instanceOwnerName,
+                    serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
+                    orgNumber: instanceOwner.OrganisationNumber,
+                    socialSecurityNumber: instanceOwner.PersonNumber,
+                    dueDate: dueDateString
+                )
+                : NotificationTexts.GetDefaultBody(
                     language: language,
                     appid: instance.AppId,
                     instanceOwnerName: instanceOwnerName,
@@ -144,6 +172,25 @@ internal sealed class NotificationService(
             "InstanceOwner must have at least one of OrganisationNumber, PersonNumber, or ExternalIdentifier set."
         );
     }
+
+    private static string ReplaceTokens(
+        string text,
+        string? appName,
+        string? instanceOwnerName,
+        string? serviceOwnerName,
+        string? orgNumber,
+        string? socialSecurityNumber,
+        DateOnly? dueDate
+    ) =>
+        text.Replace(ReplacementTokens.AppName, appName ?? string.Empty)
+            .Replace(ReplacementTokens.InstanceOwnerName, instanceOwnerName ?? string.Empty)
+            .Replace(ReplacementTokens.ServiceOwnerName, serviceOwnerName ?? string.Empty)
+            .Replace(ReplacementTokens.OrgNumber, orgNumber ?? string.Empty)
+            .Replace(ReplacementTokens.SocialSecurityNumber, socialSecurityNumber ?? string.Empty)
+            .Replace(
+                ReplacementTokens.DueDate,
+                dueDate?.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture) ?? string.Empty
+            );
 
     private async Task<string> DetermineLanguage(InstanceOwner instanceOwner, string? requestedOrgLanguage)
     {

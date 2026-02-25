@@ -5,6 +5,29 @@ namespace Altinn.App.Core.Features.Notifications.Texts;
 
 internal static class NotificationTexts
 {
+    internal static string ReplaceTokens(
+        string text,
+        string? appId,
+        string? instanceOwnerName,
+        string? serviceOwnerName,
+        string? orgNumber,
+        string? socialSecurityNumber,
+        DateOnly? dueDate
+    )
+    {
+        (string? appName, _) =
+            appId?.Split('/') is string[] groups && groups.Length >= 2 ? (groups[1], groups[0]) : (null, null);
+
+        var formattedDate = dueDate?.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);
+
+        return text.Replace(ReplacementTokens.AppName, appName ?? string.Empty)
+            .Replace(ReplacementTokens.InstanceOwnerName, instanceOwnerName ?? string.Empty)
+            .Replace(ReplacementTokens.ServiceOwnerName, serviceOwnerName ?? string.Empty)
+            .Replace(ReplacementTokens.OrgNumber, orgNumber ?? string.Empty)
+            .Replace(ReplacementTokens.SocialSecurityNumber, socialSecurityNumber ?? string.Empty)
+            .Replace(ReplacementTokens.DueDate, formattedDate ?? string.Empty);
+    }
+
     internal static string GetDefaultSubject(string? language)
     {
         return language switch
