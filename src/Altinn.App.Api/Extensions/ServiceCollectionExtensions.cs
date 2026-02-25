@@ -215,6 +215,7 @@ public static class ServiceCollectionExtensions
         DistributedContextPropagator.Current = new AspNetCorePropagator();
 
         var appInsightsConnectionString = GetAppInsightsConnectionStringForOtel(config, env);
+        var useOpenTelemetryCollector = config.GetValue<bool?>("AppSettings:UseOpenTelemetryCollector");
 
         services
             .AddOpenTelemetry()
@@ -232,9 +233,10 @@ public static class ServiceCollectionExtensions
                     .AddAspNetCoreInstrumentation(opts =>
                     {
                         opts.RecordException = true;
+                        opts.Filter = httpContext => !httpContext.Request.Path.StartsWithSegments("/health");
                     });
 
-                if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                if (useOpenTelemetryCollector is not true && !string.IsNullOrWhiteSpace(appInsightsConnectionString))
                 {
                     builder = builder.AddAzureMonitorTraceExporter(options =>
                     {
@@ -254,7 +256,7 @@ public static class ServiceCollectionExtensions
                     .AddHttpClientInstrumentation()
                     .AddAspNetCoreInstrumentation();
 
-                if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                if (useOpenTelemetryCollector is not true && !string.IsNullOrWhiteSpace(appInsightsConnectionString))
                 {
                     builder = builder.AddAzureMonitorMetricExporter(options =>
                     {
@@ -273,7 +275,7 @@ public static class ServiceCollectionExtensions
             {
                 options.IncludeFormattedMessage = true;
 
-                if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                if (useOpenTelemetryCollector is not true && !string.IsNullOrWhiteSpace(appInsightsConnectionString))
                 {
                     options.AddAzureMonitorLogExporter(options =>
                     {
