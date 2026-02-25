@@ -112,6 +112,7 @@ public class PdfService : IPdfService
         string? customFileNameTextResourceKey,
         SubformPdfContext subformPdfContext,
         List<KeyValueEntry>? metadata = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken ct = default
     )
     {
@@ -126,7 +127,7 @@ public class PdfService : IPdfService
             customFileNameTextResourceKey,
             subformPdfContext,
             null,
-            null,
+            authenticationMethod,
             metadata,
             ct
         );

@@ -4,9 +4,9 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.App.Core.Models;
+using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -20,7 +20,6 @@ public class SubformPdfServiceTaskTests
     private readonly Mock<IPdfService> _pdfServiceMock = new();
     private readonly Mock<ILogger<SubformPdfServiceTask>> _loggerMock = new();
     private readonly Mock<IProcessReader> _processReaderMock = new();
-    private readonly Mock<IProcessTaskCleaner> _processTaskCleanerMock = new();
     private readonly SubformPdfServiceTask _serviceTask;
 
     private const string SubformComponentId = "subform-mopeder";
@@ -37,6 +36,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string?>(),
                     It.IsAny<SubformPdfContext>(),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -46,6 +46,7 @@ public class SubformPdfServiceTaskTests
                     string? _,
                     SubformPdfContext subformContext,
                     List<KeyValueEntry>? _,
+                    StorageAuthenticationMethod? _,
                     CancellationToken _
                 ) =>
                     new BinaryDataChange(
@@ -59,12 +60,7 @@ public class SubformPdfServiceTaskTests
                     )
             );
 
-        _serviceTask = new SubformPdfServiceTask(
-            _processReaderMock.Object,
-            _pdfServiceMock.Object,
-            _processTaskCleanerMock.Object,
-            _loggerMock.Object
-        );
+        _serviceTask = new SubformPdfServiceTask(_processReaderMock.Object, _pdfServiceMock.Object, _loggerMock.Object);
     }
 
     [Fact]
@@ -89,6 +85,7 @@ public class SubformPdfServiceTaskTests
                     It.Is<string?>(filename => filename == FileName),
                     It.Is<SubformPdfContext>(ctx => ctx.ComponentId == SubformComponentId),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2) // Should be called twice for the two data elements
@@ -117,6 +114,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string?>(),
                     It.IsAny<SubformPdfContext>(),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Never
@@ -144,6 +142,7 @@ public class SubformPdfServiceTaskTests
                         ctx.DataElementId == "data-element-1" || ctx.DataElementId == "data-element-2"
                     ),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2)
@@ -168,41 +167,23 @@ public class SubformPdfServiceTaskTests
     // ===== CLEANUP TESTS =====
 
     [Fact]
-    public async Task Execute_Should_CallProcessTaskCleanerWithCorrectTaskId()
+    public async Task Execute_Should_RemoveDataElementsGeneratedFromTask()
     {
         // Arrange
         SetupProcessReader();
-        var instance = CreateInstanceWithSubformData();
-        var context = CreateServiceTaskContext(instance);
+        var instance = CreateInstanceWithSubformDataAndPreviousPdfs();
+        var mutatorMock = new Mock<IInstanceDataMutator>();
+        mutatorMock.Setup(x => x.Instance).Returns(instance);
+        var context = new ServiceTaskContext { InstanceDataMutator = mutatorMock.Object, CancellationToken = default };
 
         // Act
         await _serviceTask.Execute(context);
 
-        // Assert - verify ProcessTaskCleaner was called with the correct taskId
-        _processTaskCleanerMock.Verify(
-            x =>
-                x.RemoveAllDataElementsGeneratedFromTask(
-                    It.Is<Instance>(i => i == instance),
-                    It.Is<string>(t => t == "taskId")
-                ),
+        // Assert - verify RemoveDataElement was called for data elements generated from this task
+        mutatorMock.Verify(
+            x => x.RemoveDataElement(It.Is<DataElementIdentifier>(id => id.Guid == PreviousPdfGuid)),
             Times.Once
         );
-    }
-
-    [Fact]
-    public async Task Execute_WhenCleanupFails_Should_PropagateException()
-    {
-        // Arrange
-        SetupProcessReader();
-        var instance = CreateInstanceWithSubformData();
-        var context = CreateServiceTaskContext(instance);
-
-        _processTaskCleanerMock
-            .Setup(x => x.RemoveAllDataElementsGeneratedFromTask(It.IsAny<Instance>(), It.IsAny<string>()))
-            .ThrowsAsync(new Exception("Cleanup failed"));
-
-        // Act & Assert - should propagate the exception
-        await Assert.ThrowsAsync<Exception>(async () => await _serviceTask.Execute(context));
     }
 
     // ===== METADATA TESTS =====
@@ -233,6 +214,7 @@ public class SubformPdfServiceTaskTests
                             && (m.Value == "data-element-1" || m.Value == "data-element-2")
                         )
                     ),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2)
@@ -330,6 +312,7 @@ public class SubformPdfServiceTaskTests
                     It.Is<string?>(filename => filename == null),
                     It.IsAny<SubformPdfContext>(),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.AtLeastOnce
@@ -353,6 +336,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string?>(),
                     It.IsAny<SubformPdfContext>(),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -378,6 +362,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string?>(),
                     It.IsAny<SubformPdfContext>(),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -387,6 +372,7 @@ public class SubformPdfServiceTaskTests
                     string? _,
                     SubformPdfContext subformContext,
                     List<KeyValueEntry>? _,
+                    StorageAuthenticationMethod? _,
                     CancellationToken _
                 ) =>
                 {
@@ -425,6 +411,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string?>(),
                     It.IsAny<SubformPdfContext>(),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -441,15 +428,17 @@ public class SubformPdfServiceTaskTests
     {
         // Arrange
         SetupProcessReader();
-        var instance = CreateInstanceWithSubformData();
-        var context = CreateServiceTaskContext(instance);
+        var instance = CreateInstanceWithSubformDataAndPreviousPdfs();
+        var mutatorMock = new Mock<IInstanceDataMutator>();
+        mutatorMock.Setup(x => x.Instance).Returns(instance);
+        var context = new ServiceTaskContext { InstanceDataMutator = mutatorMock.Object, CancellationToken = default };
 
         // Act
         await _serviceTask.Execute(context);
 
-        // Assert - cleanup should happen before PDF generation
-        _processTaskCleanerMock.Verify(
-            x => x.RemoveAllDataElementsGeneratedFromTask(It.IsAny<Instance>(), It.IsAny<string>()),
+        // Assert - cleanup should remove previously generated data elements
+        mutatorMock.Verify(
+            x => x.RemoveDataElement(It.Is<DataElementIdentifier>(id => id.Guid == PreviousPdfGuid)),
             Times.Once
         );
 
@@ -461,6 +450,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string?>(),
                     It.IsAny<SubformPdfContext>(),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(2)
@@ -489,6 +479,7 @@ public class SubformPdfServiceTaskTests
                         metadata != null
                         && metadata.Any(m => m.Key == "subformDataElementId" && m.Value == "data-element-1")
                     ),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -504,6 +495,7 @@ public class SubformPdfServiceTaskTests
                         metadata != null
                         && metadata.Any(m => m.Key == "subformDataElementId" && m.Value == "data-element-2")
                     ),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -519,6 +511,7 @@ public class SubformPdfServiceTaskTests
                         metadata != null
                         && metadata.Any(m => m.Key == "subformDataElementId" && m.Value == "data-element-3")
                     ),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -547,6 +540,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string?>(),
                     It.Is<SubformPdfContext>(ctx => ctx.DataElementId == "single-data-element"),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -573,6 +567,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string?>(),
                     It.IsAny<SubformPdfContext>(),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Exactly(10)
@@ -599,6 +594,7 @@ public class SubformPdfServiceTaskTests
                     It.IsAny<string?>(),
                     It.IsAny<SubformPdfContext>(),
                     It.IsAny<List<KeyValueEntry>?>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.Is<CancellationToken>(ct => ct == cts.Token)
                 ),
             Times.AtLeastOnce
@@ -685,6 +681,27 @@ public class SubformPdfServiceTaskTests
             Data = new List<DataElement>
             {
                 new() { Id = "single-data-element", DataType = SubformDataTypeId },
+            },
+        };
+    }
+
+    private static readonly Guid PreviousPdfGuid = Guid.Parse("00000000-0000-0000-0000-000000000099");
+
+    private static Instance CreateInstanceWithSubformDataAndPreviousPdfs()
+    {
+        return new Instance
+        {
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "taskId" } },
+            Data = new List<DataElement>
+            {
+                new() { Id = "data-element-1", DataType = SubformDataTypeId },
+                new() { Id = "data-element-2", DataType = SubformDataTypeId },
+                new()
+                {
+                    Id = PreviousPdfGuid.ToString(),
+                    DataType = "ref-data-as-pdf",
+                    References = [new Reference { ValueType = ReferenceType.Task, Value = "taskId" }],
+                },
             },
         };
     }

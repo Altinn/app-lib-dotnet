@@ -48,6 +48,7 @@ public interface IPdfService
     /// <param name="customFileNameTextResourceKey">A text resource element id for the file name of the PDF. If no text resource is found, the literal value will be used. If null, a default file name will be used.</param>
     /// <param name="subformPdfContext">The subform-specific context containing component and data element identifiers.</param>
     /// <param name="metadata">Optional metadata to associate with the created data element.</param>
+    /// <param name="authenticationMethod">An optional specification of the authentication method to use for requests.</param>
     /// <param name="ct">Cancellation token for when a request should be stopped before it's completed.</param>
     /// <returns>The created binary data change representing the deferred PDF.</returns>
     internal Task<BinaryDataChange> GenerateAndStoreSubformPdf(
@@ -55,6 +56,7 @@ public interface IPdfService
         string? customFileNameTextResourceKey,
         SubformPdfContext subformPdfContext,
         List<KeyValueEntry>? metadata = null,
+        StorageAuthenticationMethod? authenticationMethod = null,
         CancellationToken ct = default
     ) => throw new NotImplementedException();
 

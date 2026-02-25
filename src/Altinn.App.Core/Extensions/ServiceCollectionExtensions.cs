@@ -46,11 +46,8 @@ using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Authorization;
-using Altinn.App.Core.Internal.Process.EventHandlers;
-using Altinn.App.Core.Internal.Process.EventHandlers.ProcessTask;
 using Altinn.App.Core.Internal.Process.ProcessTasks;
 using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
-using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Secrets;
 using Altinn.App.Core.Internal.Sign;
@@ -359,14 +356,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IProcessReader, ProcessReader>();
         services.TryAddTransient<ExclusiveGatewayFactory>();
 
-        services.AddTransient<IProcessTaskInitializer, ProcessTaskInitializer>();
-        services.AddTransient<IProcessTaskFinalizer, ProcessTaskFinalizer>();
         services.AddTransient<IProcessTaskDataLocker, ProcessTaskDataLocker>();
-        services.AddTransient<IProcessTaskCleaner, ProcessTaskCleaner>();
-        services.AddTransient<IStartTaskEventHandler, StartTaskEventHandler>();
-        services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
-        services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
-        services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
 
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();
@@ -376,9 +366,6 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IProcessTask, NullTypeProcessTask>();
 
         // Service tasks
-        services.AddTransient<IPdfServiceTaskLegacy, PdfServiceTaskLegacy>();
-        services.AddTransient<IEFormidlingServiceTaskLegacy, EformidlingServiceTaskLegacy>();
-
         services.AddTransient<IServiceTask, PdfServiceTask>();
         services.AddTransient<IServiceTask, EFormidlingServiceTask>();
         services.AddTransient<IServiceTask, SubformPdfServiceTask>();

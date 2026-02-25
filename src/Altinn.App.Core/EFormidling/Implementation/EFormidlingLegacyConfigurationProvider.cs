@@ -1,6 +1,5 @@
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
-using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks.Legacy;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
