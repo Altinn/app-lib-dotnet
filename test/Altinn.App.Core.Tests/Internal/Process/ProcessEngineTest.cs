@@ -515,7 +515,7 @@ public sealed class ProcessEngineTest
                 "OnTaskEndingHook",
                 "LockTaskData",
                 // Advance in-memory process state to NEW
-                "AdvanceProcessState",
+                "MutateProcessState",
                 // ProcessEnd commands (see NEW state)
                 "OnProcessEndingHook",
                 // Persist to Storage

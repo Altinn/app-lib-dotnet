@@ -15,9 +15,9 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
 /// task-start commands are authorized by Storage against the OLD current task.
 /// This works because callbacks use ServiceOwner authentication for data operations.
 /// </summary>
-internal sealed class AdvanceProcessState : WorkflowEngineCommandBase<UpdateProcessStatePayload>
+internal sealed class MutateProcessState : WorkflowEngineCommandBase<UpdateProcessStatePayload>
 {
-    public static string Key => "AdvanceProcessState";
+    public static string Key => "MutateProcessState";
 
     public override string GetKey() => Key;
 

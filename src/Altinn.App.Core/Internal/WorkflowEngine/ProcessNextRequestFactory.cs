@@ -64,7 +64,7 @@ internal sealed class ProcessNextRequestFactory
             {
                 // Task-end/abandon commands go in the first group (they need OLD CurrentTask).
                 // Task-start and process-end commands go in the second group (they need NEW CurrentTask).
-                // AdvanceProcessState is inserted between the two groups to transition in-memory state.
+                // MutateProcessState is inserted between the two groups to transition in-memory state.
                 if (instanceEventType is InstanceEventType.process_EndTask or InstanceEventType.process_AbandonTask)
                 {
                     taskEndSteps.AddRange(workflowCommands.Commands);
@@ -82,7 +82,7 @@ internal sealed class ProcessNextRequestFactory
         commands.AddRange(taskEndSteps);
         if (taskEndSteps.Count > 0)
         {
-            commands.Add(CreateAdvanceProcessStateCommand(processStateChange));
+            commands.Add(CreateMutateProcessStateCommand(processStateChange));
         }
         commands.AddRange(taskStartSteps);
         commands.Add(CreateUpdateProcessStateCommand(processStateChange));
@@ -148,13 +148,13 @@ internal sealed class ProcessNextRequestFactory
         return new Actor { UserIdOrOrgNumber = userIdOrOrgNumber, Language = language };
     }
 
-    private static StepRequest CreateAdvanceProcessStateCommand(ProcessStateChange processStateChange)
+    private static StepRequest CreateMutateProcessStateCommand(ProcessStateChange processStateChange)
     {
         var payload = new UpdateProcessStatePayload(processStateChange);
         string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
         return new StepRequest
         {
-            Command = new Command.AppCommand(CommandKey: AdvanceProcessState.Key, Payload: serializedPayload),
+            Command = new Command.AppCommand(CommandKey: MutateProcessState.Key, Payload: serializedPayload),
         };
     }
 

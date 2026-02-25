@@ -32,7 +32,7 @@ WorkflowEngineCallbackController.ExecuteCommand()
 
 - **ALL commands MUST be idempotent** - the engine retries failed commands with configurable backoff
 - **Commands run in separate HTTP requests** - each callback is independent; state is passed between commands via an opaque JSON blob (see State Passthrough below)
-- **Three command phases**: task-end commands → `AdvanceProcessState` (in-memory state transition) → task-start commands → `UpdateProcessState` (persist to Storage) → post-commit commands
+- **Three command phases**: task-end commands → `MutateProcessState` (in-memory state transition) → task-start commands → `UpdateProcessState` (persist to Storage) → post-commit commands
 - **Authentication**: Callbacks use `[AllowAnonymous]` currently (TODO: X-Api-Key scheme). Data operations use `StorageAuthenticationMethod.ServiceOwner()`
 
 ## File Structure
@@ -76,7 +76,7 @@ WorkflowEngine/
 │   │   ├── CompletedAltinnEvent.cs          - Fires process.completed event (post-commit)
 │   │   └── InstanceCreatedAltinnEvent.cs    - Fires instance.created event (post-commit, first task only)
 │   ├── ExecuteServiceTask.cs                - Runs IServiceTask.Execute() (post-commit)
-│   ├── AdvanceProcessState.cs               - Advances in-memory process state between task-end and task-start
+│   ├── MutateProcessState.cs                - Mutates in-memory process state between task-end and task-start
 │   └── UpdateProcessStateInStorage.cs       - Commits ProcessStateChange to Storage (the commit boundary)
 ├── DependencyInjection/
 │   ├── ServiceCollectionExtensions.cs       - Registers all commands + client + helpers
@@ -106,7 +106,7 @@ WorkflowEngine/
 
 Defined in `WorkflowCommandSet.cs`. `ProcessNextRequestFactory` assembles the full sequence:
 1. Task-end/abandon commands (from `process_EndTask`/`process_AbandonTask` events)
-2. `AdvanceProcessState` (inserted by factory if there are task-end/abandon commands)
+2. `MutateProcessState` (inserted by factory if there are task-end/abandon commands)
 3. Task-start and process-end commands (from `process_StartTask`/`process_EndEvent` events)
 4. `UpdateProcessState` (always inserted by factory)
 5. Post-commit commands
@@ -115,7 +115,7 @@ Defined in `WorkflowCommandSet.cs`. `ProcessNextRequestFactory` assembles the fu
 ```
 ── instance.Process.CurrentTask = Task_1 (OLD) ──
 ProcessTaskEnd → CommonTaskFinalization → EndTaskLegacyHook → OnTaskEndingHook → LockTaskData
-  ── AdvanceProcessState (in-memory: CurrentTask → Task_2) ──
+  ── MutateProcessState (in-memory: CurrentTask → Task_2) ──
 ── instance.Process.CurrentTask = Task_2 (NEW) ──
 UnlockTaskData → ProcessTaskStart(legacy) → OnTaskStartingHook → CommonTaskInitialization → ProcessTaskStart
   ── UpdateProcessState (persist to Storage) ──
@@ -126,7 +126,7 @@ MovedToAltinnEvent → [ExecuteServiceTask if service task]
 ```
 ── instance.Process.CurrentTask = Task_1 (OLD) ──
 ProcessTaskEnd → CommonTaskFinalization → EndTaskLegacyHook → OnTaskEndingHook → LockTaskData
-  ── AdvanceProcessState (in-memory: CurrentTask → null, EndEvent set) ──
+  ── MutateProcessState (in-memory: CurrentTask → null, EndEvent set) ──
 OnWorkflowEndingHook
   ── UpdateProcessState (persist to Storage) ──
 ProcessEndLegacyHook → CompletedAltinnEvent
@@ -144,7 +144,7 @@ MovedToAltinnEvent → [ExecuteServiceTask if service task] → [InstanceCreated
 ```
 ── instance.Process.CurrentTask = Task_1 (OLD) ──
 ProcessTaskAbandon → OnTaskAbandonHook → AbandonTaskLegacyHook
-  ── AdvanceProcessState (in-memory: CurrentTask → null or next task) ──
+  ── MutateProcessState (in-memory: CurrentTask → null or next task) ──
 [OnWorkflowEndingHook if ending] / [task-start commands if moving to next task]
   ── UpdateProcessState (persist to Storage) ──
 [post-commit commands]
@@ -189,7 +189,7 @@ The engine service (separate repo at `altinn-studio/src/Runtime/workflow-engine`
 
 Each callback needs an `InstanceDataUnitOfWork` (instance + form data). Rather than fetching from Storage on every callback (which would see stale process state), the app captures instance + form data into an opaque `JsonElement` blob that the engine stores and echoes back with each callback.
 
-**Capture point**: `ProcessEngine.HandleMoveToNext` captures state BEFORE `MoveProcessStateToNextAndGenerateEvents` mutates `instance.Process`. This means the blob carries the OLD process state (CurrentTask = the task being left). `AdvanceProcessState` transitions the in-memory state to the new task between the two command groups.
+**Capture point**: `ProcessEngine.HandleMoveToNext` captures state BEFORE `MoveProcessStateToNextAndGenerateEvents` mutates `instance.Process`. This means the blob carries the OLD process state (CurrentTask = the task being left). `MutateProcessState` transitions the in-memory state to the new task between the two command groups.
 
 **Flow**:
 1. `InstanceStateService.CaptureState` → serializes instance + form data into `InstanceState` → `JsonElement`
@@ -199,7 +199,7 @@ Each callback needs an `InstanceDataUnitOfWork` (instance + form data). Rather t
 5. After command execution, updated state is captured and returned in `AppCallbackResponse.State`
 6. Engine uses the returned state for the next callback — state evolves command by command
 
-**Why commands read from `instance.Process.CurrentTask`**: In the old ProcessEngine, task-end/start handlers received `taskId` as an explicit parameter (extracted from the event's `ProcessInfo`). The new commands read directly from `instance.Process.CurrentTask` instead — simpler, single source of truth. `AdvanceProcessState` ensures each command group sees the correct CurrentTask.
+**Why commands read from `instance.Process.CurrentTask`**: In the old ProcessEngine, task-end/start handlers received `taskId` as an explicit parameter (extracted from the event's `ProcessInfo`). The new commands read directly from `instance.Process.CurrentTask` instead — simpler, single source of truth. `MutateProcessState` ensures each command group sees the correct CurrentTask.
 
 ## Authorization and Data Saves (current plan)
 
@@ -210,7 +210,7 @@ All data saves during callbacks use `StorageAuthenticationMethod.ServiceOwner()`
 - Storage's authorization service checks the ServiceOwner identity (from the token), not the original user
 - The task in Storage's XACML resource comes from `instance.Process.CurrentTask` as persisted in Storage's DB
 
-**Implication for task-start data saves**: Between `AdvanceProcessState` and `UpdateProcessState`, task-start commands create/modify data while Storage still has the OLD task as current. This works because ServiceOwner has write access on all tasks. If Storage ever starts forwarding the real userId to the authorization service (e.g., via a header), we would need to persist the process state between the two command groups instead. The factory already separates `taskEndSteps` and `taskStartSteps`, so moving the `UpdateProcessState` insert point would be straightforward.
+**Implication for task-start data saves**: Between `MutateProcessState` and `UpdateProcessState`, task-start commands create/modify data while Storage still has the OLD task as current. This works because ServiceOwner has write access on all tasks. If Storage ever starts forwarding the real userId to the authorization service (e.g., via a header), we would need to persist the process state between the two command groups instead. The factory already separates `taskEndSteps` and `taskStartSteps`, so moving the `UpdateProcessState` insert point would be straightforward.
 
 ## Known TODOs / In-Progress
 
