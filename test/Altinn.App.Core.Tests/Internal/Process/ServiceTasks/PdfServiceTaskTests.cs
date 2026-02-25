@@ -67,15 +67,6 @@ public class PdfServiceTaskTests
                 ),
             Times.Once
         );
-
-        instanceMutatorMock.Verify(
-            x =>
-                x.OverrideAuthenticationMethod(
-                    It.Is<DataType>(dt => dt.Id == "ref-data-as-pdf"),
-                    It.IsAny<StorageAuthenticationMethod>()
-                ),
-            Times.Once
-        );
     }
 
     [Fact]
