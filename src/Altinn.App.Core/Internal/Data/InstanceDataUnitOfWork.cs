@@ -384,13 +384,13 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     /// <summary>
     /// Captures all form data from the cache for state transport.
     /// Iterates Instance.Data, finds form data elements (via DataTypes where AppLogic.ClassRef is set),
-    /// ensures each is loaded, serializes to JSON, and returns a dictionary keyed by DataElement.Id.
+    /// ensures each is loaded, and serializes to JSON.
     /// </summary>
-    internal async Task<Dictionary<string, System.Text.Json.JsonElement>> CaptureFormData(
+    internal async Task<List<(string Id, string DataType, System.Text.Json.JsonElement Data)>> CaptureFormData(
         ModelSerializationService modelSerializationService
     )
     {
-        var result = new Dictionary<string, System.Text.Json.JsonElement>();
+        var result = new List<(string Id, string DataType, System.Text.Json.JsonElement Data)>();
 
         foreach (var dataElement in Instance.Data)
         {
@@ -402,7 +402,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
             var wrapper = await GetFormDataWrapper(identifier);
             var jsonBytes = modelSerializationService.SerializeToJson(wrapper.BackingData<object>());
             var jsonElement = System.Text.Json.JsonDocument.Parse(jsonBytes).RootElement.Clone();
-            result[dataElement.Id] = jsonElement;
+            result.Add((dataElement.Id, dataElement.DataType, jsonElement));
         }
 
         return result;

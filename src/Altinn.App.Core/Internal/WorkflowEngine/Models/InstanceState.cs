@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models;
 
 /// <summary>
 /// Internal DTO representing the transported instance state.
-/// The workflow engine never inspects this — it's serialized into an opaque JsonElement.
+/// The workflow engine never inspects this — it's serialized into an opaque string.
 /// </summary>
 internal sealed record InstanceState
 {
@@ -14,9 +14,23 @@ internal sealed record InstanceState
     public required Instance Instance { get; init; }
 
     /// <summary>
-    /// Form data keyed by DataElement.Id (guid string), serialized as JSON.
-    /// Only includes form data elements (those with AppLogic.ClassRef), not binary attachments.
+    /// Form data elements (those with AppLogic.ClassRef), not binary attachments.
     /// </summary>
     [JsonPropertyName("formData")]
-    public required Dictionary<string, JsonElement> FormData { get; init; }
+    public required List<FormDataEntry> FormData { get; init; }
+}
+
+/// <summary>
+/// A single form data entry in the transported state.
+/// </summary>
+internal sealed record FormDataEntry
+{
+    [JsonPropertyName("id")]
+    public required string Id { get; init; }
+
+    [JsonPropertyName("dataType")]
+    public required string DataType { get; init; }
+
+    [JsonPropertyName("data")]
+    public required JsonElement Data { get; init; }
 }

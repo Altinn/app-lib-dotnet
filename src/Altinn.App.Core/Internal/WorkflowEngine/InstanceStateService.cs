@@ -38,7 +38,15 @@ internal sealed class InstanceStateService
     /// </summary>
     public async Task<string> CaptureState(InstanceDataUnitOfWork unitOfWork)
     {
-        var formData = await unitOfWork.CaptureFormData(_modelSerializationService);
+        var rawFormData = await unitOfWork.CaptureFormData(_modelSerializationService);
+        var formData = rawFormData
+            .Select(x => new FormDataEntry
+            {
+                Id = x.Id,
+                DataType = x.DataType,
+                Data = x.Data,
+            })
+            .ToList();
         var instanceState = new InstanceState { Instance = unitOfWork.Instance, FormData = formData };
         return JsonSerializer.Serialize(instanceState);
     }
@@ -64,9 +72,9 @@ internal sealed class InstanceStateService
 
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-        foreach ((string dataElementId, JsonElement jsonElement) in instanceState.FormData)
+        foreach (FormDataEntry entry in instanceState.FormData)
         {
-            DataElement? dataElement = instance.Data.Find(d => d.Id == dataElementId);
+            DataElement? dataElement = instance.Data.Find(d => d.Id == entry.Id);
             if (dataElement is null)
                 continue;
 
@@ -75,7 +83,7 @@ internal sealed class InstanceStateService
                 continue;
 
             Type modelType = _appModel.GetModelType(classRef);
-            byte[] jsonBytes = JsonSerializer.SerializeToUtf8Bytes(jsonElement);
+            byte[] jsonBytes = JsonSerializer.SerializeToUtf8Bytes(entry.Data);
             object model = _modelSerializationService.DeserializeJson(jsonBytes, modelType);
             IFormDataWrapper wrapper = FormDataWrapperFactory.Create(model);
 
