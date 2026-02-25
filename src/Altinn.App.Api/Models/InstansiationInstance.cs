@@ -38,7 +38,7 @@ public class InstansiationInstance
     /// <summary>
     /// Gets or sets the notifications to send to the instance owner related to the instansiation of the instance.
     /// </summary>
-    public NotificationOrderRequest Notification { get; set; }
+    public InstansiationNotification? Notification { get; set; }
 
     /// <inheritdoc/>
     public override string ToString()

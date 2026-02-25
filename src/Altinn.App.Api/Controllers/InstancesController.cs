@@ -20,7 +20,6 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Instances;
-using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Profile;
@@ -410,12 +409,15 @@ public class InstancesController : ControllerBase
 
         await RegisterEvent("app.instance.created", instance);
 
-        _ = _notificationService.NotifyInstanceOwnerOnInstansiation(
-            language ?? "nb",
-            instanceTemplate.Notification,
-            instance.InstanceOwner,
-            CancellationToken.None
-        );
+        if (instanceTemplate.Notification is not null)
+        {
+            await _notificationService.NotifyInstanceOwnerOnInstansiation(
+                instance,
+                party,
+                instanceTemplate.Notification,
+                CancellationToken.None
+            );
+        }
 
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
@@ -645,12 +647,15 @@ public class InstancesController : ControllerBase
 
         await RegisterEvent("app.instance.created", instance);
 
-        _ = _notificationService.NotifyInstanceOwnerOnInstansiation(
-            language,
-            instansiationInstance.Notification,
-            instance.InstanceOwner,
-            CancellationToken.None
-        );
+        if (instansiationInstance.Notification is not null)
+        {
+            await _notificationService.NotifyInstanceOwnerOnInstansiation(
+                instance,
+                party,
+                instansiationInstance.Notification,
+                CancellationToken.None
+            );
+        }
 
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;

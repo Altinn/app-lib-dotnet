@@ -1,43 +1,170 @@
-using Altinn.App.Core.Models.Notifications;
+using Altinn.App.Core.Features.Notifications.Texts;
+using Altinn.App.Core.Internal.AltinnCdn;
+using Altinn.App.Core.Internal.Language;
+using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Models.Notifications.Future;
+using Altinn.Platform.Profile.Models;
+using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.Logging;
 
 namespace Altinn.App.Core.Features.Notifications;
 
-internal sealed class NotificationService : INotificationService
+internal sealed class NotificationService(
+    INotificationOrderClient notificationOrderClient,
+    IProfileClient profileClient,
+    IAltinnCdnClient cdnClient
+) : INotificationService
 {
-    private readonly INotificationOrderClient _notificationOrderClient;
-    private readonly ILogger<NotificationService> _logger;
-
-    public NotificationService(
-        INotificationOrderClient notificationOrderClient,
-        ILogger<NotificationService> logger
-    )
-    {
-        _notificationOrderClient = notificationOrderClient;
-        _logger = logger;
-    }
-
-    public async Task<List<NotificationReference>> NotifyInstanceOwnerOnInstansiation(
-        string language,
-        NotificationOrderRequest orderRequest,
-        InstanceOwner instanceOwner,
+    public async Task NotifyInstanceOwnerOnInstansiation(
+        Instance instance,
+        Party party,
+        InstansiationNotification instansiationNotification,
         CancellationToken ct
     )
     {
-        List<NotificationReference> notificationReferences = [];
+        InstanceOwner instanceOwner = instance.InstanceOwner;
+        string? language = await DetermineLanguage(instanceOwner, instansiationNotification.Language);
+        AltinnCdnOrgName? serviceOwnerName = await cdnClient.GetOrgNameByAppId(instance.AppId, ct);
 
-        NotificationOrderResponse response = await _notificationOrderClient.Order(orderRequest, ct);
+        NotificationOrderRequest orderRequest = CreateNotificationOrderRequest(
+            language,
+            instance,
+            party.Name,
+            serviceOwnerName,
+            instansiationNotification
+        );
 
-        notificationReferences.Add(new NotificationReference(response.Notification.ShipmentId.ToString(), response.Notification.SendersReference));
+        await notificationOrderClient.Order(orderRequest, ct);
+    }
 
-        foreach (NotificationOrderShipment notificationReference in response.Reminders)
+    internal static NotificationOrderRequest CreateNotificationOrderRequest(
+        string language,
+        Instance instance,
+        string? instanceOwnerName,
+        AltinnCdnOrgName? serviceOwnerName,
+        InstansiationNotification instansiationNotification
+    )
+    {
+        InstanceOwner instanceOwner = instance.InstanceOwner;
+        DateOnly? dueDateString = instance.DueBefore.HasValue ? DateOnly.FromDateTime(instance.DueBefore.Value) : null;
+        EmailSendingOptions emailSettings = new()
         {
-            var reference = new NotificationReference(notificationReference.ShipmentId.ToString(), notificationReference.SendersReference);
-            notificationReferences.Add(reference);
+            SendingTimePolicy = SendingTimePolicy.Anytime,
+            Subject =
+                instansiationNotification.CustomEmail?.Subject.GetTextForLanguage(language)
+                ?? NotificationTexts.GetDefaultSubject(language),
+            Body =
+                instansiationNotification.CustomEmail?.Body.GetTextForLanguage(language)
+                ?? NotificationTexts.GetDefaultBody(
+                    language: language,
+                    appid: instance.AppId,
+                    instanceOwnerName: instanceOwnerName,
+                    serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
+                    orgNumber: instanceOwner.OrganisationNumber,
+                    socialSecurityNumber: instanceOwner.PersonNumber,
+                    dueDate: dueDateString
+                ),
+        };
+
+        SmsSendingOptions smsSettings = new()
+        {
+            SendingTimePolicy = SendingTimePolicy.Anytime,
+            Sender = instansiationNotification.CustomSms?.SenderName ?? "Altinn",
+            Body =
+                instansiationNotification.CustomSms?.Text.GetTextForLanguage(language)
+                ?? NotificationTexts.GetDefaultBody(
+                    language: language,
+                    appid: instance.AppId,
+                    instanceOwnerName: instanceOwnerName,
+                    serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
+                    orgNumber: instanceOwner.OrganisationNumber,
+                    socialSecurityNumber: instanceOwner.PersonNumber,
+                    dueDate: dueDateString
+                ),
+        };
+        NotificationChannel requestedChannel = instansiationNotification.NotificationChannel;
+
+        if (instanceOwner.OrganisationNumber is not null)
+        {
+            return new NotificationOrderRequest
+            {
+                SendersReference = instance.Id + instanceOwner.OrganisationNumber,
+                IdempotencyId = instance.Id + instanceOwner.OrganisationNumber,
+                Recipient = new NotificationRecipient
+                {
+                    RecipientOrganization = new RecipientOrganization
+                    {
+                        OrgNumber = instanceOwner.OrganisationNumber,
+                        ChannelSchema = requestedChannel,
+                        EmailSettings = emailSettings,
+                        SmsSettings = smsSettings,
+                    },
+                },
+            };
         }
 
-        return notificationReferences;
+        if (instanceOwner.PersonNumber is not null)
+        {
+            return new NotificationOrderRequest
+            {
+                SendersReference = instance.Id + instanceOwner.PersonNumber,
+                IdempotencyId = instance.Id + instanceOwner.PersonNumber,
+                Recipient = new NotificationRecipient
+                {
+                    RecipientPerson = new RecipientPerson
+                    {
+                        NationalIdentityNumber = instanceOwner.PersonNumber,
+                        ChannelSchema = requestedChannel,
+                        EmailSettings = emailSettings,
+                        SmsSettings = smsSettings,
+                    },
+                },
+            };
+        }
+
+        if (instanceOwner.ExternalIdentifier is not null)
+        {
+            return new NotificationOrderRequest
+            {
+                SendersReference = instance.Id + instanceOwner.ExternalIdentifier,
+                IdempotencyId = instance.Id + instanceOwner.ExternalIdentifier,
+                Recipient = new NotificationRecipient
+                {
+                    RecipientSelfIdentifiedUser = new RecipientSelfIdentifiedUser
+                    {
+                        ExternalIdentity = instanceOwner.ExternalIdentifier,
+                        ChannelSchema = NotificationChannel.Email, // Only email is supported for self identified users
+                        EmailSettings = emailSettings,
+                    },
+                },
+            };
+        }
+
+        throw new InvalidOperationException(
+            "InstanceOwner must have at least one of OrganisationNumber, PersonNumber, or ExternalIdentifier set."
+        );
+    }
+
+    private async Task<string> DetermineLanguage(InstanceOwner instanceOwner, string? requestedOrgLanguage)
+    {
+        if (instanceOwner.PersonNumber is not null)
+        {
+            UserProfile? personProfile = await profileClient.GetUserProfile(instanceOwner.PersonNumber);
+            return personProfile?.ProfileSettingPreference.Language ?? LanguageConst.Nb;
+        }
+
+        if (instanceOwner.ExternalIdentifier is not null)
+        {
+            return LanguageConst.En; // TODO: get profile for self identified user
+        }
+
+        if (instanceOwner.OrganisationNumber is not null)
+        {
+            return requestedOrgLanguage ?? LanguageConst.Nb;
+        }
+
+        throw new InvalidOperationException(
+            "InstanceOwner must have at least one of OrganisationNumber, PersonNumber, or ExternalIdentifier set."
+        );
     }
 }

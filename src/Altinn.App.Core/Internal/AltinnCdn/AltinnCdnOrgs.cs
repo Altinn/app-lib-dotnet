@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Internal.Language;
 
 namespace Altinn.App.Core.Internal.AltinnCdn;
 
@@ -36,4 +37,14 @@ internal sealed record AltinnCdnOrgName
 
     [JsonPropertyName("en")]
     public string? En { get; init; }
+
+    public string? GetByLanguage(string? language)
+    {
+        return language switch
+        {
+            LanguageConst.Nn => Nn,
+            LanguageConst.En => En,
+            _ => Nb ?? Nn ?? En,
+        };
+    }
 }
