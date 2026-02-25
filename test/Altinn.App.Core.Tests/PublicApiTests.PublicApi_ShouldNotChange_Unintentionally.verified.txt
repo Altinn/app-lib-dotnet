@@ -4125,15 +4125,13 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models
         [System.Text.Json.Serialization.JsonPropertyName("payload")]
         public string? Payload { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("state")]
-        public required System.Text.Json.JsonElement State { get; init; }
+        public required string State { get; init; }
     }
     public sealed class AppCallbackResponse : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.AppCallbackResponse>
     {
         public AppCallbackResponse() { }
-        [System.Text.Json.Serialization.JsonPropertyName("payload")]
-        public string? Payload { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("state")]
-        public required System.Text.Json.JsonElement State { get; init; }
+        public required string State { get; init; }
     }
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     public enum BackoffType
@@ -4214,7 +4212,7 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models
         [System.Text.Json.Serialization.JsonPropertyName("lockToken")]
         public required string LockToken { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("state")]
-        public required System.Text.Json.JsonElement State { get; init; }
+        public required string State { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("steps")]
         public required System.Collections.Generic.IEnumerable<Altinn.App.Core.Internal.WorkflowEngine.Models.StepRequest> Steps { get; init; }
     }
