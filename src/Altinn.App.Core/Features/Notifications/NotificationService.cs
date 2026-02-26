@@ -1,4 +1,3 @@
-using System.Globalization;
 using Altinn.App.Core.Features.Notifications.Texts;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.Language;
@@ -173,7 +172,7 @@ internal sealed class NotificationService(
         );
     }
 
-    private async Task<string> DetermineLanguage(InstanceOwner instanceOwner, string? requestedOrgLanguage)
+    internal async Task<string> DetermineLanguage(InstanceOwner instanceOwner, string? requestedOrgLanguage)
     {
         if (instanceOwner.PersonNumber is not null)
         {
