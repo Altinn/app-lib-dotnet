@@ -47,7 +47,10 @@ internal sealed class OnTaskStartingHook : IWorkflowEngineCommand
             return handlerResult switch
             {
                 SuccessfulOnTaskStartingHandlerResult => new SuccessfulProcessEngineCommandResult(),
-                FailedOnTaskStartingHandlerResult failed => new FailedProcessEngineCommandResult(failed),
+                FailedOnTaskStartingHandlerResult failed => FailedProcessEngineCommandResult.Permanent(
+                    failed.ErrorMessage,
+                    failed.ExceptionType
+                ),
                 _ => throw new InvalidOperationException(
                     $"Unexpected {nameof(OnTaskStartingHandlerResult)} type: {handlerResult.GetType().Name}"
                 ),
@@ -55,7 +58,7 @@ internal sealed class OnTaskStartingHook : IWorkflowEngineCommand
         }
         catch (Exception ex)
         {
-            return new FailedProcessEngineCommandResult(ex);
+            return FailedProcessEngineCommandResult.Retryable(ex);
         }
     }
 }

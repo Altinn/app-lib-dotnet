@@ -47,7 +47,7 @@ internal sealed class DeleteInstanceIfConfigured : IWorkflowEngineCommand
         }
         catch (Exception ex)
         {
-            return new FailedProcessEngineCommandResult(ex);
+            return FailedProcessEngineCommandResult.Retryable(ex);
         }
     }
 }

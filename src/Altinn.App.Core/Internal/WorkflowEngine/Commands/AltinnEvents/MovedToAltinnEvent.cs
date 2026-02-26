@@ -36,7 +36,7 @@ internal sealed class MovedToAltinnEvent : IWorkflowEngineCommand
         }
         catch (Exception ex)
         {
-            return new FailedProcessEngineCommandResult(ex);
+            return FailedProcessEngineCommandResult.Retryable(ex);
         }
     }
 }

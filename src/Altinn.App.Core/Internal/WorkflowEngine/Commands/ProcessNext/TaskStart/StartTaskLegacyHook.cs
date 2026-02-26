@@ -47,7 +47,7 @@ internal sealed class StartTaskLegacyHook : WorkflowEngineCommandBase<StartTaskL
         }
         catch (Exception ex)
         {
-            return new FailedProcessEngineCommandResult(ex);
+            return FailedProcessEngineCommandResult.Retryable(ex);
         }
 
         return new SuccessfulProcessEngineCommandResult();

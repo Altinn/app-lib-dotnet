@@ -27,7 +27,7 @@ internal sealed class EndProcessLegacyHook : IWorkflowEngineCommand
 
         if (string.IsNullOrEmpty(endEvent))
         {
-            return new FailedProcessEngineCommandResult(
+            return FailedProcessEngineCommandResult.Retryable(
                 new InvalidOperationException("End event is not set on instance process state")
             );
         }
@@ -49,7 +49,7 @@ internal sealed class EndProcessLegacyHook : IWorkflowEngineCommand
         }
         catch (Exception ex)
         {
-            return new FailedProcessEngineCommandResult(ex);
+            return FailedProcessEngineCommandResult.Retryable(ex);
         }
     }
 }

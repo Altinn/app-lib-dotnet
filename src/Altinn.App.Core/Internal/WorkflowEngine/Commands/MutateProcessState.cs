@@ -31,7 +31,7 @@ internal sealed class MutateProcessState : WorkflowEngineCommandBase<UpdateProce
         if (processStateChange.NewProcessState == null)
         {
             return Task.FromResult<ProcessEngineCommandResult>(
-                new FailedProcessEngineCommandResult(
+                FailedProcessEngineCommandResult.Permanent(
                     "ProcessStateChange.NewProcessState is null",
                     "InvalidOperationException"
                 )

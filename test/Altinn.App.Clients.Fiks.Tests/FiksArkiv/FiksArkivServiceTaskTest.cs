@@ -3,7 +3,6 @@ using Altinn.App.Clients.Fiks.FiksArkiv;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Process;
-using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -68,16 +67,14 @@ public class FiksArkivServiceTaskTest
     }
 
     [Theory]
-    [InlineData(true, "reject")]
-    [InlineData(true, "something-custom")]
-    [InlineData(true, null)]
-    [InlineData(false, null)]
-    public async Task Execute_FailedSend_ReturnsFailedResult(bool moveToNextTask, string? action)
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Execute_FailedSend_ReturnsFailedResult(bool moveToNextTask)
     {
         // Arrange
         var fiksArkivSettings = new FiksArkivSettings
         {
-            ErrorHandling = new FiksArkivErrorHandlingSettings { MoveToNextTask = moveToNextTask, Action = action },
+            ErrorHandling = new FiksArkivErrorHandlingSettings { MoveToNextTask = moveToNextTask },
         };
         await using var fixture = TestFixture.Create(
             services => services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings"),
@@ -90,15 +87,8 @@ public class FiksArkivServiceTaskTest
         // Assert
         Assert.NotNull(result);
         var errorResult = Assert.IsType<ServiceTaskFailedResult>(result);
-        var expectedErrorStrategy = moveToNextTask
-            ? ServiceTaskErrorStrategy.ContinueProcessNext
-            : ServiceTaskErrorStrategy.AbortProcessNext;
-        Assert.Equal(expectedErrorStrategy, errorResult.ErrorHandling.Strategy);
-
-        // NOTE: Because of TestFixture serialization reasons, the `Action` property will be set to its default value if
-        // null was provided in the test case. The default value is "reject".
-        if (moveToNextTask)
-            Assert.Equal(action ?? "reject", errorResult.ErrorHandling.Action);
+        Assert.Equal(moveToNextTask, errorResult.NonRetryable);
+        Assert.NotEmpty(errorResult.ErrorMessage);
     }
 
     private static Mock<IInstanceDataMutator> InstanceDataMutatorMockFactory(Instance instance)

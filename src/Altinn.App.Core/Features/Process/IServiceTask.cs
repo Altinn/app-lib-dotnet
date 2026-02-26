@@ -45,23 +45,20 @@ public abstract record ServiceTaskResult
     public static ServiceTaskSuccessResult Success() => new();
 
     /// <summary>
-    /// Creates a service task result representing failed execution.
+    /// Creates a retryable failure. The workflow engine will retry the step with backoff.
+    /// Use this for transient errors (external service down, timeout, rate limit, etc.).
     /// </summary>
-    /// <param name="errorHandling">Instructions to the process engine on how to handle this error</param>
-    public static ServiceTaskFailedResult Failed(ServiceTaskErrorHandling errorHandling) => new(errorHandling);
+    /// <param name="errorMessage">Human-readable error message describing the failure.</param>
+    public static ServiceTaskFailedResult FailedRetryable(string errorMessage) =>
+        new(errorMessage, NonRetryable: false);
 
     /// <summary>
-    /// Creates a service task result representing failed execution with instruction to abort the process next request.
+    /// Creates a permanent (non-retryable) failure. The workflow engine will stop retrying
+    /// and mark the step as failed immediately.
+    /// Use this for errors that won't resolve by retrying (validation failure, missing config, bad data, etc.).
     /// </summary>
-    public static ServiceTaskFailedResult FailedAbortProcessNext() =>
-        new(new ServiceTaskErrorHandling(ServiceTaskErrorStrategy.AbortProcessNext, null));
-
-    /// <summary>
-    /// Creates a service task result representing failed execution with instruction to continue to the next element in the process.
-    /// </summary>
-    /// <param name="action">An optional action can be supplied for the process next call</param>
-    public static ServiceTaskFailedResult FailedContinueProcessNext(string? action = "reject") =>
-        new(new ServiceTaskErrorHandling(ServiceTaskErrorStrategy.ContinueProcessNext, action));
+    /// <param name="errorMessage">Human-readable error message describing the failure.</param>
+    public static ServiceTaskFailedResult FailedPermanent(string errorMessage) => new(errorMessage, NonRetryable: true);
 }
 
 /// <summary>
@@ -72,39 +69,9 @@ public sealed record ServiceTaskSuccessResult : ServiceTaskResult;
 /// <summary>
 /// Represents a failed result of executing a service task.
 /// </summary>
-public sealed record ServiceTaskFailedResult : ServiceTaskResult
-{
-    /// <summary>
-    /// Instructions to the process engine on how to handle this error
-    /// </summary>
-    public ServiceTaskErrorHandling ErrorHandling { get; init; }
-
-    /// <inheritdoc cref="ServiceTaskResult.Failed"/>
-    public ServiceTaskFailedResult(ServiceTaskErrorHandling errorHandling)
-    {
-        ErrorHandling = errorHandling;
-    }
-}
-
-/// <summary>
-/// Instructions to the process engine on how to handle errors from service tasks.
-/// </summary>
-/// <param name="Strategy">Should the process engine stop the <c>process/next</c> execution?</param>
-/// <param name="Action">If proceeding with <c>process/next</c>, should we send an action? Defaults to <c>reject</c></param>
-public sealed record ServiceTaskErrorHandling(ServiceTaskErrorStrategy Strategy, string? Action = "reject");
-
-/// <summary>
-/// Strategy for handling errors from service tasks.
-/// </summary>
-public enum ServiceTaskErrorStrategy
-{
-    /// <summary>
-    /// Abort the process/next execution.
-    /// </summary>
-    AbortProcessNext,
-
-    /// <summary>
-    /// Move to the next task in the process.
-    /// </summary>
-    ContinueProcessNext,
-}
+/// <param name="ErrorMessage">Human-readable error message describing the failure.</param>
+/// <param name="NonRetryable">
+/// If true, the workflow engine will not retry this step (permanent failure).
+/// If false, the workflow engine will retry with backoff (transient failure).
+/// </param>
+public sealed record ServiceTaskFailedResult(string ErrorMessage, bool NonRetryable) : ServiceTaskResult;

@@ -85,7 +85,7 @@ public class ExecuteServiceTaskTests
         serviceTask.Setup(x => x.Type).Returns("myServiceTask");
         serviceTask
             .Setup(x => x.Execute(It.IsAny<ServiceTaskContext>()))
-            .ReturnsAsync(ServiceTaskResult.FailedAbortProcessNext());
+            .ReturnsAsync(ServiceTaskResult.FailedPermanent("Something went wrong"));
         var command = CreateCommand(serviceTask.Object);
         var context = CreateContext(CreateInstance(), "myServiceTask");
 
@@ -94,8 +94,9 @@ public class ExecuteServiceTaskTests
 
         // Assert
         var failed = Assert.IsType<FailedProcessEngineCommandResult>(result);
-        Assert.Contains("returned a failed result", failed.ErrorMessage);
-        Assert.Equal("ProcessException", failed.ExceptionType);
+        Assert.Contains("Service task 'myServiceTask' failed: Something went wrong", failed.ErrorMessage);
+        Assert.Equal("ServiceTaskFailedException", failed.ExceptionType);
+        Assert.True(failed.NonRetryable);
     }
 
     [Fact]

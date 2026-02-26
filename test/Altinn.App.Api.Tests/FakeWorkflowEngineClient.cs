@@ -85,14 +85,9 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
                     currentState = response.State;
                     break;
 
-                case BadRequestObjectResult { Value: CallbackErrorResponse error }:
+                case ObjectResult { Value: ProblemDetails problem }:
                     throw new InvalidOperationException(
-                        $"Callback failed for command '{appCommand.CommandKey}': {error.Message}"
-                    );
-
-                case NotFoundResult:
-                    throw new InvalidOperationException(
-                        $"No handler registered for command key: {appCommand.CommandKey}"
+                        $"Callback failed for command '{appCommand.CommandKey}': {problem.Title}: {problem.Detail}"
                     );
 
                 default:

@@ -41,11 +41,13 @@ internal sealed class ExecuteServiceTask(AppImplementationFactory appImplementat
             IServiceTask serviceTask = GetServiceTask(serviceTaskType);
             ServiceTaskResult result = await serviceTask.Execute(serviceTaskContext);
 
-            if (result is ServiceTaskFailedResult)
+            if (result is ServiceTaskFailedResult failedResult)
             {
-                return new FailedProcessEngineCommandResult(
-                    new ProcessException($"Service task {serviceTask.Type} returned a failed result!")
-                );
+                string errorMessage = $"Service task '{serviceTask.Type}' failed: {failedResult.ErrorMessage}";
+
+                return failedResult.NonRetryable
+                    ? FailedProcessEngineCommandResult.Permanent(errorMessage, "ServiceTaskFailedException")
+                    : FailedProcessEngineCommandResult.Retryable(errorMessage, "ServiceTaskFailedException");
             }
 
             return new SuccessfulProcessEngineCommandResult();
@@ -53,7 +55,7 @@ internal sealed class ExecuteServiceTask(AppImplementationFactory appImplementat
         catch (Exception ex)
         {
             activity?.Errored(ex);
-            return new FailedProcessEngineCommandResult(ex);
+            return FailedProcessEngineCommandResult.Retryable(ex);
         }
     }
 

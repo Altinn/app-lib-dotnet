@@ -28,7 +28,7 @@ internal sealed class LockTaskData : IWorkflowEngineCommand
         }
         catch (Exception ex)
         {
-            return new FailedProcessEngineCommandResult(ex);
+            return FailedProcessEngineCommandResult.Retryable(ex);
         }
     }
 }

@@ -64,10 +64,10 @@ public class WorkflowEngineCallbackController : ControllerBase
 
         if (command is null)
         {
-            var commandNotFoundError = $"Workflow app command '{commandKey}' not found. Instance: {instanceId}.";
+            string commandNotFoundError = $"Workflow app command '{commandKey}' not found. Instance: {instanceId}.";
             _logger.LogError(commandNotFoundError);
             activity?.SetStatus(ActivityStatusCode.Error, commandNotFoundError);
-            return NotFound();
+            return NonRetryableProblem("Command Not Found", commandNotFoundError, StatusCodes.Status404NotFound);
         }
 
         // Restore instance + form data from the opaque state blob instead of fetching from Storage
@@ -92,16 +92,14 @@ public class WorkflowEngineCallbackController : ControllerBase
         //TODO: Consider rewriting IInstanceDataMutator so that we can construct one that doesn't allow abandonment in this scenario. Don't think it makes sense when the process engine is the caller.
         if (instanceDataUnitOfWork.HasAbandonIssues)
         {
-            var message =
+            string message =
                 $"Data abandonment detected during callback. CommandKey: {commandKey}, Instance: {instanceId}, Task: {currentTaskId}";
 
             _logger.LogError(message, commandKey, instanceId, currentTaskId);
 
             activity?.SetStatus(ActivityStatusCode.Error, message);
 
-            return BadRequest(
-                new CallbackErrorResponse { Message = message, ExceptionType = "DataAbandonmentException" }
-            );
+            return NonRetryableProblem("Data Abandonment", message, StatusCodes.Status422UnprocessableEntity);
         }
 
         switch (result)
@@ -126,8 +124,20 @@ public class WorkflowEngineCallbackController : ControllerBase
                     failed.ExceptionType
                 );
                 activity?.SetStatus(ActivityStatusCode.Error, failed.ErrorMessage);
-                return BadRequest(
-                    new CallbackErrorResponse { Message = failed.ErrorMessage, ExceptionType = failed.ExceptionType }
+
+                if (failed.NonRetryable)
+                {
+                    return NonRetryableProblem(
+                        failed.ExceptionType,
+                        failed.ErrorMessage,
+                        StatusCodes.Status422UnprocessableEntity
+                    );
+                }
+
+                return Problem(
+                    title: failed.ExceptionType,
+                    detail: failed.ErrorMessage,
+                    statusCode: StatusCodes.Status500InternalServerError
                 );
 
             default:
@@ -139,5 +149,17 @@ public class WorkflowEngineCallbackController : ControllerBase
                 );
                 throw new InvalidOperationException($"Unexpected result type: {result.GetType().Name}");
         }
+    }
+
+    private static ObjectResult NonRetryableProblem(string title, string detail, int statusCode)
+    {
+        var problemDetails = new ProblemDetails
+        {
+            Title = title,
+            Detail = detail,
+            Status = statusCode,
+        };
+        problemDetails.Extensions["nonRetryable"] = true;
+        return new ObjectResult(problemDetails) { StatusCode = statusCode };
     }
 }

@@ -60,8 +60,8 @@ internal sealed class FiksArkivServiceTask : IServiceTask
             _logger.LogError(e, "Error occurred while executing FiksArkivServiceTask: {ErrorMessage}", e.Message);
 
             return _fiksArkivSettings.ErrorHandling?.MoveToNextTask is true
-                ? ServiceTaskResult.FailedContinueProcessNext(_fiksArkivSettings.ErrorHandling?.GetActionOrDefault())
-                : ServiceTaskResult.FailedAbortProcessNext();
+                ? ServiceTaskResult.FailedPermanent(e.Message)
+                : ServiceTaskResult.FailedRetryable(e.Message);
         }
     }
 }

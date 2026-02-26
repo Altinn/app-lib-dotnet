@@ -48,7 +48,10 @@ internal sealed class OnProcessEndingHook : IWorkflowEngineCommand
             return result switch
             {
                 SuccessfulOnProcessEndingHandlerResult => new SuccessfulProcessEngineCommandResult(),
-                FailedOnProcessEndingHandlerResult failed => new FailedProcessEngineCommandResult(failed),
+                FailedOnProcessEndingHandlerResult failed => FailedProcessEngineCommandResult.Permanent(
+                    failed.ErrorMessage,
+                    failed.ExceptionType
+                ),
                 _ => throw new InvalidOperationException(
                     $"Unexpected {nameof(OnEndingHandlerResult)} type: {result.GetType().Name}"
                 ),
@@ -56,7 +59,7 @@ internal sealed class OnProcessEndingHook : IWorkflowEngineCommand
         }
         catch (Exception ex)
         {
-            return new FailedProcessEngineCommandResult(ex);
+            return FailedProcessEngineCommandResult.Retryable(ex);
         }
     }
 }

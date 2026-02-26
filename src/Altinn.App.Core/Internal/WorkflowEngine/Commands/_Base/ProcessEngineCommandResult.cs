@@ -1,5 +1,3 @@
-using Altinn.App.Core.Features.Process;
-
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
 
 internal abstract class ProcessEngineCommandResult { }
@@ -10,40 +8,31 @@ internal sealed class FailedProcessEngineCommandResult : ProcessEngineCommandRes
 {
     public readonly string ErrorMessage;
     public readonly string ExceptionType;
+    public readonly bool NonRetryable;
 
-    public FailedProcessEngineCommandResult(Exception exception)
-    {
-        ErrorMessage = exception.Message;
-        ExceptionType = exception.GetType().Name;
-    }
+    /// <summary>
+    /// Creates a retryable failure from a caught exception (likely transient — Storage down, HTTP timeout, etc.).
+    /// </summary>
+    public static FailedProcessEngineCommandResult Retryable(Exception exception) =>
+        new(exception.Message, exception.GetType().Name, nonRetryable: false);
 
-    public FailedProcessEngineCommandResult(FailedOnTaskStartingHandlerResult failedOnTaskStartingHandlerResult)
-    {
-        ErrorMessage = failedOnTaskStartingHandlerResult.ErrorMessage;
-        ExceptionType = failedOnTaskStartingHandlerResult.ExceptionType ?? "Not specified";
-    }
+    /// <summary>
+    /// Creates a retryable failure from a caught exception (likely transient — Storage down, HTTP timeout, etc.).
+    /// </summary>
+    public static FailedProcessEngineCommandResult Retryable(string errorMessage, string? exceptionType = null) =>
+        new(errorMessage, exceptionType, nonRetryable: false);
 
-    public FailedProcessEngineCommandResult(FailedOnTaskEndingHandlerResult failedOnTaskEndingHandlerResult)
-    {
-        ErrorMessage = failedOnTaskEndingHandlerResult.ErrorMessage;
-        ExceptionType = failedOnTaskEndingHandlerResult.ExceptionType ?? "Not specified";
-    }
+    /// <summary>
+    /// Creates a non-retryable failure (validation error, business rule violation, etc.).
+    /// The workflow engine will stop retrying and mark the step as permanently failed.
+    /// </summary>
+    public static FailedProcessEngineCommandResult Permanent(string errorMessage, string? exceptionType = null) =>
+        new(errorMessage, exceptionType, nonRetryable: true);
 
-    public FailedProcessEngineCommandResult(FailedOnProcessEndingHandlerResult failedOnEndingHandlerResult)
-    {
-        ErrorMessage = failedOnEndingHandlerResult.ErrorMessage;
-        ExceptionType = failedOnEndingHandlerResult.ExceptionType ?? "Not specified";
-    }
-
-    public FailedProcessEngineCommandResult(FailedOnTaskAbandonHandlerResult failedOnEndingHandlerResult)
-    {
-        ErrorMessage = failedOnEndingHandlerResult.ErrorMessage;
-        ExceptionType = failedOnEndingHandlerResult.ExceptionType ?? "Not specified";
-    }
-
-    public FailedProcessEngineCommandResult(string errorMessage, string? exceptionType)
+    private FailedProcessEngineCommandResult(string errorMessage, string? exceptionType, bool nonRetryable)
     {
         ErrorMessage = errorMessage;
         ExceptionType = exceptionType ?? "Not specified";
+        NonRetryable = nonRetryable;
     }
 }

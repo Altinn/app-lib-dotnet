@@ -18,7 +18,7 @@ internal abstract class WorkflowEngineCommandBase<TRequestPayload> : IWorkflowEn
         {
             string commandKey = GetKey();
             return Task.FromResult<ProcessEngineCommandResult>(
-                new FailedProcessEngineCommandResult(
+                FailedProcessEngineCommandResult.Permanent(
                     $"{commandKey} payload is missing or invalid",
                     "InvalidPayloadException"
                 )

@@ -33,7 +33,7 @@ internal sealed class UpdateProcessStateInStorage(IInstanceClient instanceClient
 
             if (processStateChange.NewProcessState == null)
             {
-                return new FailedProcessEngineCommandResult(
+                return FailedProcessEngineCommandResult.Permanent(
                     "ProcessStateChange.NewProcessState is null",
                     "InvalidOperationException"
                 );
@@ -53,7 +53,7 @@ internal sealed class UpdateProcessStateInStorage(IInstanceClient instanceClient
         }
         catch (Exception ex)
         {
-            return new FailedProcessEngineCommandResult(ex);
+            return FailedProcessEngineCommandResult.Retryable(ex);
         }
     }
 }

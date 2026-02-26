@@ -47,7 +47,10 @@ internal sealed class OnTaskAbandonHook : IWorkflowEngineCommand
             return result switch
             {
                 SuccessfulOnAbandonHandlerResult => new SuccessfulProcessEngineCommandResult(),
-                FailedOnTaskAbandonHandlerResult failed => new FailedProcessEngineCommandResult(failed),
+                FailedOnTaskAbandonHandlerResult failed => FailedProcessEngineCommandResult.Permanent(
+                    failed.ErrorMessage,
+                    failed.ExceptionType
+                ),
                 _ => throw new InvalidOperationException(
                     $"Unexpected {nameof(OnAbandonHandlerResult)} type: {result.GetType().Name}"
                 ),
@@ -55,7 +58,7 @@ internal sealed class OnTaskAbandonHook : IWorkflowEngineCommand
         }
         catch (Exception ex)
         {
-            return new FailedProcessEngineCommandResult(ex);
+            return FailedProcessEngineCommandResult.Retryable(ex);
         }
     }
 }
