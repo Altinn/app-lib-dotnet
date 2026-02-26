@@ -17,14 +17,14 @@ public class NotificationTextsTests
             text,
             appId: "ttd/app-test",
             instanceOwnerName: "John Doe",
-            serviceOwnerName: "Jane Smith",
+            serviceOwnerName: "TestDepartementet",
             orgNumber: "123456789",
             socialSecurityNumber: "01010112345",
             dueDate: new DateOnly(2024, 12, 31)
         );
 
         Assert.Equal(
-            "App: app-test, Owner: John Doe, Service: Jane Smith, Org: 123456789, SSN: 01010112345, Due: 31-12-2024",
+            "App: app-test, Owner: John Doe, Service: TestDepartementet, Org: 123456789, SSN: 01010112345, Due: 31-12-2024",
             result
         );
     }
@@ -250,7 +250,7 @@ public class NotificationTextsTests
             dueDate: null
         );
 
-        Assert.Equal("A new form has been created for Jane Doe person with social security number 01010112345", result);
+        Assert.Equal("A new form has been created for Jane Doe with social security number 01010112345", result);
     }
 
     [Fact]

@@ -99,7 +99,7 @@ internal static class NotificationTexts
                 {
                     LanguageConst.En => instanceOwnerName is not null
                         ? $"with organization number {orgNumber}"
-                        : $"with organization number {orgNumber}",
+                        : $"for organization with organization number {orgNumber}",
                     LanguageConst.Nn => instanceOwnerName is not null
                         ? $"med organisasjonsnummer {orgNumber}"
                         : $"avgiver med organisasjonsnummer {orgNumber}",
@@ -117,7 +117,7 @@ internal static class NotificationTexts
                 language switch
                 {
                     LanguageConst.En => instanceOwnerName is not null
-                        ? $"person with social security number {socialSecurityNumber}"
+                        ? $"with social security number {socialSecurityNumber}"
                         : $"person with social security number {socialSecurityNumber}",
                     LanguageConst.Nn => instanceOwnerName is not null
                         ? $"med fødselsnummer {socialSecurityNumber}"
