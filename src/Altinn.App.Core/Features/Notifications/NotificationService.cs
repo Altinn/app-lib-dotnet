@@ -173,25 +173,6 @@ internal sealed class NotificationService(
         );
     }
 
-    private static string ReplaceTokens(
-        string text,
-        string? appName,
-        string? instanceOwnerName,
-        string? serviceOwnerName,
-        string? orgNumber,
-        string? socialSecurityNumber,
-        DateOnly? dueDate
-    ) =>
-        text.Replace(ReplacementTokens.AppName, appName ?? string.Empty)
-            .Replace(ReplacementTokens.InstanceOwnerName, instanceOwnerName ?? string.Empty)
-            .Replace(ReplacementTokens.ServiceOwnerName, serviceOwnerName ?? string.Empty)
-            .Replace(ReplacementTokens.OrgNumber, orgNumber ?? string.Empty)
-            .Replace(ReplacementTokens.SocialSecurityNumber, socialSecurityNumber ?? string.Empty)
-            .Replace(
-                ReplacementTokens.DueDate,
-                dueDate?.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture) ?? string.Empty
-            );
-
     private async Task<string> DetermineLanguage(InstanceOwner instanceOwner, string? requestedOrgLanguage)
     {
         if (instanceOwner.PersonNumber is not null)
