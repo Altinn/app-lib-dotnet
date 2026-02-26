@@ -1951,35 +1951,31 @@ namespace Altinn.App.Core.Features.Pdf
 }
 namespace Altinn.App.Core.Features.Process
 {
-    public sealed class FailedOnProcessEndingHandlerResult : Altinn.App.Core.Features.Process.OnProcessEndingHandlerResult
+    public sealed class FailedOnProcessEndingHandlerResult : Altinn.App.Core.Features.Process.OnProcessEndingHandlerResult, System.IEquatable<Altinn.App.Core.Features.Process.FailedOnProcessEndingHandlerResult>
     {
-        public FailedOnProcessEndingHandlerResult(System.Exception exception) { }
-        public FailedOnProcessEndingHandlerResult(string errorMessage, string? exceptionType = null) { }
-        public string ErrorMessage { get; }
-        public string? ExceptionType { get; }
+        public FailedOnProcessEndingHandlerResult(string ErrorMessage, bool NonRetryable) { }
+        public string ErrorMessage { get; init; }
+        public bool NonRetryable { get; init; }
     }
-    public sealed class FailedOnTaskAbandonHandlerResult : Altinn.App.Core.Features.Process.OnAbandonHandlerResult
+    public sealed class FailedOnTaskAbandonHandlerResult : Altinn.App.Core.Features.Process.OnAbandonHandlerResult, System.IEquatable<Altinn.App.Core.Features.Process.FailedOnTaskAbandonHandlerResult>
     {
-        public FailedOnTaskAbandonHandlerResult(System.Exception exception) { }
-        public FailedOnTaskAbandonHandlerResult(string errorMessage, string? exceptionType = null) { }
-        public string ErrorMessage { get; }
-        public string? ExceptionType { get; }
+        public FailedOnTaskAbandonHandlerResult(string ErrorMessage, bool NonRetryable) { }
+        public string ErrorMessage { get; init; }
+        public bool NonRetryable { get; init; }
     }
-    public sealed class FailedOnTaskEndingHandlerResult : Altinn.App.Core.Features.Process.OnEndingHandlerResult
+    public sealed class FailedOnTaskEndingHandlerResult : Altinn.App.Core.Features.Process.OnEndingHandlerResult, System.IEquatable<Altinn.App.Core.Features.Process.FailedOnTaskEndingHandlerResult>
     {
-        public FailedOnTaskEndingHandlerResult(System.Exception exception) { }
-        public FailedOnTaskEndingHandlerResult(string errorMessage, string? exceptionType = null) { }
-        public string ErrorMessage { get; }
-        public string? ExceptionType { get; }
+        public FailedOnTaskEndingHandlerResult(string ErrorMessage, bool NonRetryable) { }
+        public string ErrorMessage { get; init; }
+        public bool NonRetryable { get; init; }
     }
-    public sealed class FailedOnTaskStartingHandlerResult : Altinn.App.Core.Features.Process.OnTaskStartingHandlerResult
+    public sealed class FailedOnTaskStartingHandlerResult : Altinn.App.Core.Features.Process.OnTaskStartingHandlerResult, System.IEquatable<Altinn.App.Core.Features.Process.FailedOnTaskStartingHandlerResult>
     {
-        public FailedOnTaskStartingHandlerResult(System.Exception exception) { }
-        public FailedOnTaskStartingHandlerResult(string errorMessage, string? exceptionType = null) { }
-        public string ErrorMessage { get; }
-        public string? ExceptionType { get; }
+        public FailedOnTaskStartingHandlerResult(string ErrorMessage, bool NonRetryable) { }
+        public string ErrorMessage { get; init; }
+        public bool NonRetryable { get; init; }
     }
-    public abstract class HookResult
+    public abstract class HookResult : System.IEquatable<Altinn.App.Core.Features.Process.HookResult>
     {
         protected HookResult() { }
     }
@@ -2006,22 +2002,31 @@ namespace Altinn.App.Core.Features.Process
     {
         System.Threading.Tasks.Task<Altinn.App.Core.Features.Process.ServiceTaskResult> Execute(Altinn.App.Core.Features.Process.ServiceTaskContext context);
     }
-    public abstract class OnAbandonHandlerResult : Altinn.App.Core.Features.Process.HookResult
+    public abstract class OnAbandonHandlerResult : Altinn.App.Core.Features.Process.HookResult, System.IEquatable<Altinn.App.Core.Features.Process.OnAbandonHandlerResult>
     {
         protected OnAbandonHandlerResult() { }
+        public static Altinn.App.Core.Features.Process.FailedOnTaskAbandonHandlerResult FailedPermanent(string errorMessage) { }
+        public static Altinn.App.Core.Features.Process.FailedOnTaskAbandonHandlerResult FailedRetryable(string errorMessage) { }
+        public static Altinn.App.Core.Features.Process.SuccessfulOnAbandonHandlerResult Success() { }
     }
-    public abstract class OnEndingHandlerResult : Altinn.App.Core.Features.Process.HookResult
+    public abstract class OnEndingHandlerResult : Altinn.App.Core.Features.Process.HookResult, System.IEquatable<Altinn.App.Core.Features.Process.OnEndingHandlerResult>
     {
         protected OnEndingHandlerResult() { }
+        public static Altinn.App.Core.Features.Process.FailedOnTaskEndingHandlerResult FailedPermanent(string errorMessage) { }
+        public static Altinn.App.Core.Features.Process.FailedOnTaskEndingHandlerResult FailedRetryable(string errorMessage) { }
+        public static Altinn.App.Core.Features.Process.SuccessfulOnEndingHandlerResult Success() { }
     }
     public sealed class OnProcessEndingHandlerContext
     {
         public OnProcessEndingHandlerContext() { }
         public required Altinn.App.Core.Features.IInstanceDataMutator InstanceDataMutator { get; init; }
     }
-    public abstract class OnProcessEndingHandlerResult : Altinn.App.Core.Features.Process.HookResult
+    public abstract class OnProcessEndingHandlerResult : Altinn.App.Core.Features.Process.HookResult, System.IEquatable<Altinn.App.Core.Features.Process.OnProcessEndingHandlerResult>
     {
         protected OnProcessEndingHandlerResult() { }
+        public static Altinn.App.Core.Features.Process.FailedOnProcessEndingHandlerResult FailedPermanent(string errorMessage) { }
+        public static Altinn.App.Core.Features.Process.FailedOnProcessEndingHandlerResult FailedRetryable(string errorMessage) { }
+        public static Altinn.App.Core.Features.Process.SuccessfulOnProcessEndingHandlerResult Success() { }
     }
     public sealed class OnTaskAbandonHandlerContext
     {
@@ -2038,9 +2043,12 @@ namespace Altinn.App.Core.Features.Process
         public OnTaskStartingContext() { }
         public required Altinn.App.Core.Features.IInstanceDataMutator InstanceDataMutator { get; init; }
     }
-    public abstract class OnTaskStartingHandlerResult : Altinn.App.Core.Features.Process.HookResult
+    public abstract class OnTaskStartingHandlerResult : Altinn.App.Core.Features.Process.HookResult, System.IEquatable<Altinn.App.Core.Features.Process.OnTaskStartingHandlerResult>
     {
         protected OnTaskStartingHandlerResult() { }
+        public static Altinn.App.Core.Features.Process.FailedOnTaskStartingHandlerResult FailedPermanent(string errorMessage) { }
+        public static Altinn.App.Core.Features.Process.FailedOnTaskStartingHandlerResult FailedRetryable(string errorMessage) { }
+        public static Altinn.App.Core.Features.Process.SuccessfulOnTaskStartingHandlerResult Success() { }
     }
     public sealed class ServiceTaskContext : System.IEquatable<Altinn.App.Core.Features.Process.ServiceTaskContext>
     {
@@ -2065,19 +2073,19 @@ namespace Altinn.App.Core.Features.Process
     {
         public ServiceTaskSuccessResult() { }
     }
-    public sealed class SuccessfulOnAbandonHandlerResult : Altinn.App.Core.Features.Process.OnAbandonHandlerResult
+    public sealed class SuccessfulOnAbandonHandlerResult : Altinn.App.Core.Features.Process.OnAbandonHandlerResult, System.IEquatable<Altinn.App.Core.Features.Process.SuccessfulOnAbandonHandlerResult>
     {
         public SuccessfulOnAbandonHandlerResult() { }
     }
-    public sealed class SuccessfulOnEndingHandlerResult : Altinn.App.Core.Features.Process.OnEndingHandlerResult
+    public sealed class SuccessfulOnEndingHandlerResult : Altinn.App.Core.Features.Process.OnEndingHandlerResult, System.IEquatable<Altinn.App.Core.Features.Process.SuccessfulOnEndingHandlerResult>
     {
         public SuccessfulOnEndingHandlerResult() { }
     }
-    public sealed class SuccessfulOnProcessEndingHandlerResult : Altinn.App.Core.Features.Process.OnProcessEndingHandlerResult
+    public sealed class SuccessfulOnProcessEndingHandlerResult : Altinn.App.Core.Features.Process.OnProcessEndingHandlerResult, System.IEquatable<Altinn.App.Core.Features.Process.SuccessfulOnProcessEndingHandlerResult>
     {
         public SuccessfulOnProcessEndingHandlerResult() { }
     }
-    public sealed class SuccessfulOnTaskStartingHandlerResult : Altinn.App.Core.Features.Process.OnTaskStartingHandlerResult
+    public sealed class SuccessfulOnTaskStartingHandlerResult : Altinn.App.Core.Features.Process.OnTaskStartingHandlerResult, System.IEquatable<Altinn.App.Core.Features.Process.SuccessfulOnTaskStartingHandlerResult>
     {
         public SuccessfulOnTaskStartingHandlerResult() { }
     }

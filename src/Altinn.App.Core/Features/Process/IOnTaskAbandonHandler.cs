@@ -1,7 +1,7 @@
 namespace Altinn.App.Core.Features.Process;
 
 /// <summary>
-/// Hook interface for custom end task logic.
+/// Hook interface for custom abandon task logic.
 /// </summary>
 /// <remarks>
 /// <strong>IMPORTANT: Implementations MUST be idempotent - this hook may be retried on failure.</strong>
@@ -17,15 +17,15 @@ public interface IOnTaskAbandonHandler
     public bool ShouldRunForTask(string taskId);
 
     /// <summary>
-    /// Executes the end task hook logic.
+    /// Executes the abandon task hook logic.
     /// </summary>
     /// <param name="context">A context object with relevant parameters and data.</param>
-    /// <returns>An end task result indicating success or failure.</returns>
+    /// <returns>An abandon task result indicating success or failure.</returns>
     public Task<OnAbandonHandlerResult> ExecuteAsync(OnTaskAbandonHandlerContext context);
 }
 
 /// <summary>
-/// Parameters for end task hook execution.
+/// Parameters for abandon task hook execution.
 /// </summary>
 public sealed class OnTaskAbandonHandlerContext
 {
@@ -36,48 +36,44 @@ public sealed class OnTaskAbandonHandlerContext
 }
 
 /// <summary>
-/// Base class for end task hook execution results.
+/// Base type for abandon task hook execution results.
 /// </summary>
-public abstract class OnAbandonHandlerResult : HookResult { }
-
-/// <summary>
-/// Represents a successful end task hook execution.
-/// </summary>
-public sealed class SuccessfulOnAbandonHandlerResult : OnAbandonHandlerResult { }
-
-/// <summary>
-/// Represents a failed end task hook execution.
-/// </summary>
-public sealed class FailedOnTaskAbandonHandlerResult : OnAbandonHandlerResult
+public abstract record OnAbandonHandlerResult : HookResult
 {
     /// <summary>
-    /// Gets the error message describing why the hook failed.
+    /// Creates a result representing successful hook execution.
     /// </summary>
-    public string ErrorMessage { get; }
+    public static SuccessfulOnAbandonHandlerResult Success() => new();
 
     /// <summary>
-    /// Gets the exception type name if the failure was caused by an exception.
+    /// Creates a retryable failure. The workflow engine will retry the step with backoff.
+    /// Use this for transient errors (external service down, timeout, rate limit, etc.).
     /// </summary>
-    public string? ExceptionType { get; }
+    /// <param name="errorMessage">Human-readable error message describing the failure.</param>
+    public static FailedOnTaskAbandonHandlerResult FailedRetryable(string errorMessage) =>
+        new(errorMessage, NonRetryable: false);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="FailedOnTaskAbandonHandlerResult"/> class from an exception.
+    /// Creates a permanent (non-retryable) failure. The workflow engine will stop retrying
+    /// and mark the step as failed immediately.
+    /// Use this for errors that won't resolve by retrying (validation failure, missing config, bad data, etc.).
     /// </summary>
-    /// <param name="exception">The exception that caused the failure.</param>
-    public FailedOnTaskAbandonHandlerResult(Exception exception)
-    {
-        ErrorMessage = exception.Message;
-        ExceptionType = exception.GetType().Name;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FailedOnTaskAbandonHandlerResult"/> class with a custom error message.
-    /// </summary>
-    /// <param name="errorMessage">The error message describing the failure.</param>
-    /// <param name="exceptionType">Optional exception type name.</param>
-    public FailedOnTaskAbandonHandlerResult(string errorMessage, string? exceptionType = null)
-    {
-        ErrorMessage = errorMessage;
-        ExceptionType = exceptionType;
-    }
+    /// <param name="errorMessage">Human-readable error message describing the failure.</param>
+    public static FailedOnTaskAbandonHandlerResult FailedPermanent(string errorMessage) =>
+        new(errorMessage, NonRetryable: true);
 }
+
+/// <summary>
+/// Represents a successful abandon task hook execution.
+/// </summary>
+public sealed record SuccessfulOnAbandonHandlerResult : OnAbandonHandlerResult;
+
+/// <summary>
+/// Represents a failed abandon task hook execution.
+/// </summary>
+/// <param name="ErrorMessage">Human-readable error message describing the failure.</param>
+/// <param name="NonRetryable">
+/// If true, the workflow engine will not retry this step (permanent failure).
+/// If false, the workflow engine will retry with backoff (transient failure).
+/// </param>
+public sealed record FailedOnTaskAbandonHandlerResult(string ErrorMessage, bool NonRetryable) : OnAbandonHandlerResult;

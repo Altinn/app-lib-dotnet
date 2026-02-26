@@ -76,7 +76,7 @@ public class OnProcessEndingHookTests
         var handler = new Mock<IOnProcessEndingHandler>();
         handler
             .Setup(x => x.ExecuteAsync(It.IsAny<OnProcessEndingHandlerContext>()))
-            .ReturnsAsync(new SuccessfulOnProcessEndingHandlerResult());
+            .ReturnsAsync(OnProcessEndingHandlerResult.Success());
         var command = CreateCommand(handler.Object);
         var context = CreateContext(CreateInstance());
 
@@ -104,13 +104,13 @@ public class OnProcessEndingHookTests
     }
 
     [Fact]
-    public async Task Execute_WhenHandlerReturnsFailure_ReturnsFailedResult()
+    public async Task Execute_WhenHandlerReturnsPermanentFailure_ReturnsNonRetryableFailedResult()
     {
         // Arrange
         var handler = new Mock<IOnProcessEndingHandler>();
         handler
             .Setup(x => x.ExecuteAsync(It.IsAny<OnProcessEndingHandlerContext>()))
-            .ReturnsAsync(new FailedOnProcessEndingHandlerResult("Hook failed", "CustomException"));
+            .ReturnsAsync(OnProcessEndingHandlerResult.FailedPermanent("Hook failed"));
         var command = CreateCommand(handler.Object);
         var context = CreateContext(CreateInstance());
 
@@ -120,7 +120,27 @@ public class OnProcessEndingHookTests
         // Assert
         var failed = Assert.IsType<FailedProcessEngineCommandResult>(result);
         Assert.Equal("Hook failed", failed.ErrorMessage);
-        Assert.Equal("CustomException", failed.ExceptionType);
+        Assert.True(failed.NonRetryable);
+    }
+
+    [Fact]
+    public async Task Execute_WhenHandlerReturnsRetryableFailure_ReturnsRetryableFailedResult()
+    {
+        // Arrange
+        var handler = new Mock<IOnProcessEndingHandler>();
+        handler
+            .Setup(x => x.ExecuteAsync(It.IsAny<OnProcessEndingHandlerContext>()))
+            .ReturnsAsync(OnProcessEndingHandlerResult.FailedRetryable("Transient error"));
+        var command = CreateCommand(handler.Object);
+        var context = CreateContext(CreateInstance());
+
+        // Act
+        var result = await command.Execute(context);
+
+        // Assert
+        var failed = Assert.IsType<FailedProcessEngineCommandResult>(result);
+        Assert.Equal("Transient error", failed.ErrorMessage);
+        Assert.False(failed.NonRetryable);
     }
 
     [Fact]

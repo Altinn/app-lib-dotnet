@@ -13,7 +13,7 @@ public interface IOnProcessEndingHandler
     /// Executes the end process hook logic.
     /// </summary>
     /// <param name="context">A context object with relevant parameters and data.</param>
-    /// <returns>An end task result indicating success or failure.</returns>
+    /// <returns>An end process result indicating success or failure.</returns>
     public Task<OnProcessEndingHandlerResult> ExecuteAsync(OnProcessEndingHandlerContext context);
 }
 
@@ -29,48 +29,45 @@ public sealed class OnProcessEndingHandlerContext
 }
 
 /// <summary>
-/// Base class for end process hook execution results.
+/// Base type for end process hook execution results.
 /// </summary>
-public abstract class OnProcessEndingHandlerResult : HookResult { }
+public abstract record OnProcessEndingHandlerResult : HookResult
+{
+    /// <summary>
+    /// Creates a result representing successful hook execution.
+    /// </summary>
+    public static SuccessfulOnProcessEndingHandlerResult Success() => new();
+
+    /// <summary>
+    /// Creates a retryable failure. The workflow engine will retry the step with backoff.
+    /// Use this for transient errors (external service down, timeout, rate limit, etc.).
+    /// </summary>
+    /// <param name="errorMessage">Human-readable error message describing the failure.</param>
+    public static FailedOnProcessEndingHandlerResult FailedRetryable(string errorMessage) =>
+        new(errorMessage, NonRetryable: false);
+
+    /// <summary>
+    /// Creates a permanent (non-retryable) failure. The workflow engine will stop retrying
+    /// and mark the step as failed immediately.
+    /// Use this for errors that won't resolve by retrying (validation failure, missing config, bad data, etc.).
+    /// </summary>
+    /// <param name="errorMessage">Human-readable error message describing the failure.</param>
+    public static FailedOnProcessEndingHandlerResult FailedPermanent(string errorMessage) =>
+        new(errorMessage, NonRetryable: true);
+}
 
 /// <summary>
 /// Represents a successful end process hook execution.
 /// </summary>
-public sealed class SuccessfulOnProcessEndingHandlerResult : OnProcessEndingHandlerResult { }
+public sealed record SuccessfulOnProcessEndingHandlerResult : OnProcessEndingHandlerResult;
 
 /// <summary>
 /// Represents a failed end process hook execution.
 /// </summary>
-public sealed class FailedOnProcessEndingHandlerResult : OnProcessEndingHandlerResult
-{
-    /// <summary>
-    /// Gets the error message describing why the hook failed.
-    /// </summary>
-    public string ErrorMessage { get; }
-
-    /// <summary>
-    /// Gets the exception type name if the failure was caused by an exception.
-    /// </summary>
-    public string? ExceptionType { get; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FailedOnTaskEndingHandlerResult"/> class from an exception.
-    /// </summary>
-    /// <param name="exception">The exception that caused the failure.</param>
-    public FailedOnProcessEndingHandlerResult(Exception exception)
-    {
-        ErrorMessage = exception.Message;
-        ExceptionType = exception.GetType().Name;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FailedOnTaskEndingHandlerResult"/> class with a custom error message.
-    /// </summary>
-    /// <param name="errorMessage">The error message describing the failure.</param>
-    /// <param name="exceptionType">Optional exception type name.</param>
-    public FailedOnProcessEndingHandlerResult(string errorMessage, string? exceptionType = null)
-    {
-        ErrorMessage = errorMessage;
-        ExceptionType = exceptionType;
-    }
-}
+/// <param name="ErrorMessage">Human-readable error message describing the failure.</param>
+/// <param name="NonRetryable">
+/// If true, the workflow engine will not retry this step (permanent failure).
+/// If false, the workflow engine will retry with backoff (transient failure).
+/// </param>
+public sealed record FailedOnProcessEndingHandlerResult(string ErrorMessage, bool NonRetryable)
+    : OnProcessEndingHandlerResult;
