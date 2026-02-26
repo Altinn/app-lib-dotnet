@@ -48,10 +48,7 @@ public class NotificationServiceTests
         _profileClientMock
             .Setup(p => p.GetUserProfile(ssn))
             .ReturnsAsync(
-                new UserProfile
-                {
-                    ProfileSettingPreference = new ProfileSettingPreference { Language = null },
-                }
+                new UserProfile { ProfileSettingPreference = new ProfileSettingPreference { Language = null } }
             );
 
         var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null);
@@ -65,9 +62,7 @@ public class NotificationServiceTests
         const string ssn = "01010112345";
         var instanceOwner = new InstanceOwner { PersonNumber = ssn };
 
-        _profileClientMock
-            .Setup(p => p.GetUserProfile(ssn))
-            .ReturnsAsync((UserProfile?)null);
+        _profileClientMock.Setup(p => p.GetUserProfile(ssn)).ReturnsAsync((UserProfile?)null);
 
         var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null);
 
@@ -122,8 +117,8 @@ public class NotificationServiceTests
     {
         var instanceOwner = new InstanceOwner();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null)
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null)
         );
     }
 }
