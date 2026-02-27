@@ -79,8 +79,8 @@ internal static class ProcessEngineCommandValidator
         return services
             .Where(sd => sd.ServiceType == typeof(IWorkflowEngineCommand))
             .Select(sd => sd.ImplementationType)
-            .Where(implType => implType is not null)
-            .Select(implType => GetCommandKeyFromType(implType!))
+            .OfType<Type>()
+            .Select(implType => GetCommandKeyFromType(implType))
             .ToHashSet();
     }
 
@@ -91,7 +91,10 @@ internal static class ProcessEngineCommandValidator
 
         if (keyProperty?.PropertyType == typeof(string))
         {
-            return (string)keyProperty.GetValue(null)!;
+            return (string?)keyProperty.GetValue(null)
+                ?? throw new InvalidOperationException(
+                    $"Command type {commandType.Name} has a null 'Key' property value"
+                );
         }
 
         throw new InvalidOperationException(

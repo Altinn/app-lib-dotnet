@@ -8,7 +8,7 @@ namespace Altinn.App.Core.EFormidling.Implementation;
 /// <summary>
 /// A small wrapper around loading legacy eFormidling configuration from ApplicationMetadata, to be able to use the same configuration as the new eFormidling service task.
 /// </summary>
-/// <remarks>Should be deleted when <see cref="EformidlingServiceTaskLegacy" /> is removed.</remarks>
+/// <remarks>Should be deleted when the legacy eFormidling service task is removed.</remarks>
 public interface IEFormidlingLegacyConfigurationProvider
 {
     /// <summary>
