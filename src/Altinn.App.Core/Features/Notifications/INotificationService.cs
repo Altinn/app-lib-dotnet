@@ -12,10 +12,11 @@ public interface INotificationService
     /// <summary>
     /// Sends notifications to the instance owner related to the instansiation of the instance.
     /// </summary>
-    /// <param name="instance"></param>
-    /// <param name="instansiationNotification"></param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
+    /// <param name="instance">The instance being instantiated.</param>
+    /// <param name="party">Instance owner party.</param>
+    /// <param name="instansiationNotification">The notification details for the instantiation.</param>
+    /// <param name="ct">Cancellation token for the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     Task NotifyInstanceOwnerOnInstansiation(
         Instance instance,
         Party party,

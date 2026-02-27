@@ -255,7 +255,7 @@ public class InstancesController : ControllerBase
 
         if (instanceTemplate is not null)
         {
-            InstanceOwner lookup = instanceTemplate.InstanceOwner;
+            InstanceOwner? lookup = instanceTemplate.InstanceOwner;
 
             if (
                 lookup == null
@@ -305,7 +305,7 @@ public class InstancesController : ControllerBase
             instanceTemplate.InstanceOwner = await InstantiationHelper.PartyToInstanceOwner(
                 party,
                 _authenticationContext
-            );
+            );;
         }
         catch (Exception partyLookupException)
         {
@@ -499,7 +499,7 @@ public class InstancesController : ControllerBase
             );
         }
 
-        InstanceOwner lookup = instansiationInstance.InstanceOwner;
+        InstanceOwner? lookup = instansiationInstance.InstanceOwner;
 
         if (
             lookup == null
@@ -542,7 +542,7 @@ public class InstancesController : ControllerBase
         if (
             isCopyRequest
             && party.PartyId.ToString(CultureInfo.InvariantCulture)
-                != instansiationInstance.SourceInstanceId.Split("/")[0]
+                != instansiationInstance?.SourceInstanceId?.Split("/")[0]
         )
         {
             return BadRequest("It is not possible to copy instances between instance owners.");
@@ -602,7 +602,7 @@ public class InstancesController : ControllerBase
 
             if (isCopyRequest)
             {
-                string[] sourceSplit = instansiationInstance.SourceInstanceId.Split("/");
+                string[] sourceSplit = instansiationInstance?.SourceInstanceId?.Split("/") ?? throw new ArgumentException("SourceInstanceId is null or not in the correct format");
                 Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
 
                 try
