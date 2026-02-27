@@ -76,7 +76,7 @@ public class XsdValidator : IValidator
             var schema = _appResourceService.GetXsdSchema(dataType.Id);
             if (schema is null)
             {
-                _logger.LogWarning(
+                _logger.LogInformation(
                     "No XSD schema found for data type {DataTypeId}, skipping XSD validation",
                     dataType.Id
                 );
