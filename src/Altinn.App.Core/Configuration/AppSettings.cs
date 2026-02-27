@@ -216,6 +216,11 @@ public class AppSettings
     public bool ExpressionValidation { get; set; }
 
     /// <summary>
+    /// Enable the functionality to validate form data against corresponding XSD if present
+    /// </summary>
+    public bool XsdValidation { get; set; }
+
+    /// <summary>
     /// Enables OpenTelemetry as a substitute for Application Insights SDK
     /// Improves instrumentation throughout the Altinn app libraries.
     /// </summary>
