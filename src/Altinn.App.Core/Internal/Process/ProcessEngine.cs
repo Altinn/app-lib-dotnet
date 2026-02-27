@@ -551,7 +551,7 @@ internal class ProcessEngine : IProcessEngine
         CancellationToken ct = default
     )
     {
-        // Capture state BEFORE mutation — commands that run before UpdateProcessState
+        // Capture state BEFORE mutation — commands that run before SaveProcessStateToStorage
         // need to see the old process state, mirroring how they'd read it from Storage.
         string? currentTaskId = instance.Process?.CurrentTask?.ElementId;
         var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(

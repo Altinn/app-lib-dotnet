@@ -274,7 +274,7 @@ public sealed class ProcessEngineTest
                 "OnTaskStartingHook",
                 "CommonTaskInitialization",
                 "StartTask",
-                "UpdateProcessState",
+                "SaveProcessStateToStorage",
                 "MovedToAltinnEvent"
             );
 
@@ -401,7 +401,7 @@ public sealed class ProcessEngineTest
                 "OnTaskStartingHook",
                 "CommonTaskInitialization",
                 "StartTask",
-                "UpdateProcessState",
+                "SaveProcessStateToStorage",
                 "MovedToAltinnEvent"
             );
     }
@@ -519,7 +519,7 @@ public sealed class ProcessEngineTest
                 // ProcessEnd commands (see NEW state)
                 "OnProcessEndingHook",
                 // Persist to Storage
-                "UpdateProcessState",
+                "SaveProcessStateToStorage",
                 // Post-commit
                 "EndProcessLegacyHook",
                 "CompletedAltinnEvent"

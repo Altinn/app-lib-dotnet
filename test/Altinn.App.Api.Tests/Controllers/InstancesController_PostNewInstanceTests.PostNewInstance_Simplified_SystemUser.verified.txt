@@ -209,7 +209,7 @@
           instance.guid: Guid_4
         },
         {
-          process.callback.command: ProcessTaskStart
+          process.callback.command: StartTaskLegacyHook
         }
       ],
       HasParent: true
@@ -251,7 +251,7 @@
           instance.guid: Guid_4
         },
         {
-          process.callback.command: ProcessTaskStart
+          process.callback.command: StartTask
         }
       ],
       HasParent: true
@@ -265,7 +265,7 @@
           instance.guid: Guid_4
         },
         {
-          process.callback.command: UpdateProcessState
+          process.callback.command: SaveProcessStateToStorage
         }
       ],
       HasParent: true

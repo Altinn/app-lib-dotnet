@@ -49,7 +49,7 @@ internal static class ServiceCollectionExtensions
 
         // Process engine callback handlers - State Management
         services.AddTransient<IWorkflowEngineCommand, MutateProcessState>();
-        services.AddTransient<IWorkflowEngineCommand, UpdateProcessStateInStorage>();
+        services.AddTransient<IWorkflowEngineCommand, SaveProcessStateToStorage>();
 
         // Process engine callback handlers - Altinn Events
         services.AddTransient<IWorkflowEngineCommand, CompletedAltinnEvent>();

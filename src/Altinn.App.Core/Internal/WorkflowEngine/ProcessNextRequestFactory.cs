@@ -85,7 +85,7 @@ internal sealed class ProcessNextRequestFactory
             commands.Add(CreateMutateProcessStateCommand(processStateChange));
         }
         commands.AddRange(taskStartSteps);
-        commands.Add(CreateUpdateProcessStateCommand(processStateChange));
+        commands.Add(CreateSaveProcessStateToStorageCommand(processStateChange));
         commands.AddRange(postCommitSteps);
 
         return new ProcessNextRequest
@@ -150,7 +150,7 @@ internal sealed class ProcessNextRequestFactory
 
     private static StepRequest CreateMutateProcessStateCommand(ProcessStateChange processStateChange)
     {
-        var payload = new UpdateProcessStatePayload(processStateChange);
+        var payload = new SaveProcessStateToStoragePayload(processStateChange);
         string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
         return new StepRequest
         {
@@ -158,13 +158,13 @@ internal sealed class ProcessNextRequestFactory
         };
     }
 
-    private static StepRequest CreateUpdateProcessStateCommand(ProcessStateChange processStateChange)
+    private static StepRequest CreateSaveProcessStateToStorageCommand(ProcessStateChange processStateChange)
     {
-        var payload = new UpdateProcessStatePayload(processStateChange);
+        var payload = new SaveProcessStateToStoragePayload(processStateChange);
         string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
         return new StepRequest
         {
-            Command = new Command.AppCommand(CommandKey: UpdateProcessStateInStorage.Key, Payload: serializedPayload),
+            Command = new Command.AppCommand(CommandKey: SaveProcessStateToStorage.Key, Payload: serializedPayload),
         };
     }
 }

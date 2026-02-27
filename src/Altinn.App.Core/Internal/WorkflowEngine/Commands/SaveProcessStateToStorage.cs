@@ -6,30 +6,30 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
 
 /// <summary>
-/// Request payload for UpdateProcessState command.
+/// Request payload for SaveProcessStateToStorage command.
 /// Contains the complete process state change with old and new states.
 /// </summary>
-internal sealed record UpdateProcessStatePayload(ProcessStateChange ProcessStateChange) : CommandRequestPayload;
+internal sealed record SaveProcessStateToStoragePayload(ProcessStateChange ProcessStateChange) : CommandRequestPayload;
 
 /// <summary>
 /// Command that commits the process state transition to Storage.
 /// This command persists the new process state and instance events after task transition logic has completed.
 /// </summary>
-internal sealed class UpdateProcessStateInStorage(IInstanceClient instanceClient)
-    : WorkflowEngineCommandBase<UpdateProcessStatePayload>
+internal sealed class SaveProcessStateToStorage(IInstanceClient instanceClient)
+    : WorkflowEngineCommandBase<SaveProcessStateToStoragePayload>
 {
-    public static string Key => "UpdateProcessState";
+    public static string Key => "SaveProcessStateToStorage";
 
     public override string GetKey() => Key;
 
     public override async Task<ProcessEngineCommandResult> Execute(
         ProcessEngineCommandContext context,
-        UpdateProcessStatePayload payload
+        SaveProcessStateToStoragePayload toStoragePayload
     )
     {
         try
         {
-            ProcessStateChange processStateChange = payload.ProcessStateChange;
+            ProcessStateChange processStateChange = toStoragePayload.ProcessStateChange;
 
             if (processStateChange.NewProcessState == null)
             {

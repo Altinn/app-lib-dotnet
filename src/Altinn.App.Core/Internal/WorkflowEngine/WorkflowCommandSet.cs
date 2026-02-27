@@ -17,7 +17,7 @@ internal sealed class WorkflowCommandSet
     private readonly List<StepRequest> _postProcessNextCommittedCommands = [];
 
     /// <summary>
-    /// Gets the main commands for this event. UpdateProcessState will be added after these.
+    /// Gets the main commands for this event. SaveProcessStateToStorage will be added after these.
     /// </summary>
     public IReadOnlyList<StepRequest> Commands => _commands;
 
@@ -112,7 +112,7 @@ internal sealed class WorkflowCommandSet
     }
 
     /// <summary>
-    /// Adds a command that executes after the ProcessNext has been committed to storage via UpdateProcessState.
+    /// Adds a command that executes after the ProcessNext has been committed to storage via SaveProcessStateToStorage.
     /// </summary>
     private WorkflowCommandSet AddPostProcessNextCommittedCommand(
         string commandKey,

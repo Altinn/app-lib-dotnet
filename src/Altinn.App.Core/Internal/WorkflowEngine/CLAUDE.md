@@ -32,7 +32,7 @@ WorkflowEngineCallbackController.ExecuteCommand()
 
 - **ALL commands MUST be idempotent** - the engine retries failed commands with configurable backoff
 - **Commands run in separate HTTP requests** - each callback is independent; state is passed between commands via an opaque JSON blob (see State Passthrough below)
-- **Three command phases**: task-end commands → `MutateProcessState` (in-memory state transition) → task-start commands → `UpdateProcessState` (persist to Storage) → post-commit commands
+- **Three command phases**: task-end commands → `MutateProcessState` (in-memory state transition) → task-start commands → `SaveProcessStateToStorage` (persist to Storage) → post-commit commands
 - **Authentication**: Callbacks use `[AllowAnonymous]` currently (TODO: X-Api-Key scheme). Data operations use `StorageAuthenticationMethod.ServiceOwner()`
 
 ## File Structure
@@ -77,7 +77,7 @@ WorkflowEngine/
 │   │   └── InstanceCreatedAltinnEvent.cs    - Fires instance.created event (post-commit, first task only)
 │   ├── ExecuteServiceTask.cs                - Runs IServiceTask.Execute() (post-commit)
 │   ├── MutateProcessState.cs                - Mutates in-memory process state between task-end and task-start
-│   └── UpdateProcessStateInStorage.cs       - Commits ProcessStateChange to Storage (the commit boundary)
+│   └── SaveProcessStateToStorageInStorage.cs       - Commits ProcessStateChange to Storage (the commit boundary)
 ├── DependencyInjection/
 │   ├── ServiceCollectionExtensions.cs       - Registers all commands + client + helpers
 │   └── WorkflowEngineCommandValidator.cs    - Startup check: all keys in WorkflowCommandSet are registered
@@ -108,7 +108,7 @@ Defined in `WorkflowCommandSet.cs`. `ProcessNextRequestFactory` assembles the fu
 1. Task-end/abandon commands (from `process_EndTask`/`process_AbandonTask` events)
 2. `MutateProcessState` (inserted by factory if there are task-end/abandon commands)
 3. Task-start and process-end commands (from `process_StartTask`/`process_EndEvent` events)
-4. `UpdateProcessState` (always inserted by factory)
+4. `SaveProcessStateToStorage` (always inserted by factory)
 5. Post-commit commands
 
 ### Task-to-Task Transition (e.g., Task_1 → Task_2)
@@ -118,7 +118,7 @@ EndTask → CommonTaskFinalization → EndTaskLegacyHook → OnTaskEndingHook �
   ── MutateProcessState (in-memory: CurrentTask → Task_2) ──
 ── instance.Process.CurrentTask = Task_2 (NEW) ──
 UnlockTaskData → StartTaskLegacyHook → OnTaskStartingHook → CommonTaskInitialization → StartTask
-  ── UpdateProcessState (persist to Storage) ──
+  ── SaveProcessStateToStorage (persist to Storage) ──
 MovedToAltinnEvent → [ExecuteServiceTask if service task]
 ```
 
@@ -128,7 +128,7 @@ MovedToAltinnEvent → [ExecuteServiceTask if service task]
 EndTask → CommonTaskFinalization → EndTaskLegacyHook → OnTaskEndingHook → LockTaskData
   ── MutateProcessState (in-memory: CurrentTask → null, EndEvent set) ──
 OnProcessEndingHook
-  ── UpdateProcessState (persist to Storage) ──
+  ── SaveProcessStateToStorage (persist to Storage) ──
 EndProcessLegacyHook → DeleteDataElementsIfConfigured → DeleteInstanceIfConfigured → CompletedAltinnEvent
 ```
 
@@ -136,7 +136,7 @@ EndProcessLegacyHook → DeleteDataElementsIfConfigured → DeleteInstanceIfConf
 ```
 ── instance.Process.CurrentTask = Task_1 (already set by CreateInitialProcessState) ──
 UnlockTaskData → StartTaskLegacyHook → OnTaskStartingHook → CommonTaskInitialization → StartTask
-  ── UpdateProcessState (persist to Storage) ──
+  ── SaveProcessStateToStorage (persist to Storage) ──
 MovedToAltinnEvent → [ExecuteServiceTask if service task] → [InstanceCreatedAltinnEvent if first task]
 ```
 
@@ -146,7 +146,7 @@ MovedToAltinnEvent → [ExecuteServiceTask if service task] → [InstanceCreated
 AbandonTask → OnTaskAbandonHook → AbandonTaskLegacyHook
   ── MutateProcessState (in-memory: CurrentTask → null or next task) ──
 [OnProcessEndingHook if ending] / [task-start commands if moving to next task]
-  ── UpdateProcessState (persist to Storage) ──
+  ── SaveProcessStateToStorage (persist to Storage) ──
 [post-commit commands]
 ```
 
@@ -171,7 +171,7 @@ AbandonTask → OnTaskAbandonHook → AbandonTaskLegacyHook
 - Every command has `public static string Key => "..."` and `public string GetKey() => Key`
 - Commands return `SuccessfulProcessEngineCommandResult` or `FailedProcessEngineCommandResult` (never throw from Execute)
 - Commands get instance data through `context.InstanceDataMutator` (an `InstanceDataUnitOfWork`)
-- The callback controller saves data changes after successful execution - commands don't need to persist data themselves (except `UpdateProcessStateInStorage` which writes to the process/events API)
+- The callback controller saves data changes after successful execution - commands don't need to persist data themselves (except `SaveProcessStateToStorageInStorage` which writes to the process/events API)
 - Hook commands (OnTaskStarting/Ending, OnProcessEnding) enforce max 1 handler per task
 
 ## Interaction with Workflow Engine Service
@@ -210,7 +210,7 @@ All data saves during callbacks use `StorageAuthenticationMethod.ServiceOwner()`
 - Storage's authorization service checks the ServiceOwner identity (from the token), not the original user
 - The task in Storage's XACML resource comes from `instance.Process.CurrentTask` as persisted in Storage's DB
 
-**Implication for task-start data saves**: Between `MutateProcessState` and `UpdateProcessState`, task-start commands create/modify data while Storage still has the OLD task as current. This works because ServiceOwner has write access on all tasks. If Storage ever starts forwarding the real userId to the authorization service (e.g., via a header), we would need to persist the process state between the two command groups instead. The factory already separates `taskEndSteps` and `taskStartSteps`, so moving the `UpdateProcessState` insert point would be straightforward.
+**Implication for task-start data saves**: Between `MutateProcessState` and `SaveProcessStateToStorage`, task-start commands create/modify data while Storage still has the OLD task as current. This works because ServiceOwner has write access on all tasks. If Storage ever starts forwarding the real userId to the authorization service (e.g., via a header), we would need to persist the process state between the two command groups instead. The factory already separates `taskEndSteps` and `taskStartSteps`, so moving the `SaveProcessStateToStorage` insert point would be straightforward.
 
 ## Known TODOs / In-Progress
 

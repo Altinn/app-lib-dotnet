@@ -56,7 +56,7 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
 
             // Skip Altinn event commands - they're designed to notify external systems
             // and can have issues when executed in-process (e.g., CompletedAltinnEvent
-            // checks CurrentTask after UpdateProcessState has set it to null for ended processes)
+            // checks CurrentTask after SaveProcessStateToStorage has set it to null for ended processes)
             if (IsAltinnEventCommand(appCommand.CommandKey))
                 continue;
 

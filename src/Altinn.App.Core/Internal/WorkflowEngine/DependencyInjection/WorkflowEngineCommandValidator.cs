@@ -49,8 +49,8 @@ internal static class ProcessEngineCommandValidator
         CollectCommandKeys(WorkflowCommandSet.GetTaskAbandonSteps(), keys);
         CollectCommandKeys(WorkflowCommandSet.GetProcessEndSteps(), keys);
 
-        // UpdateProcessState is automatically inserted
-        keys.Add(UpdateProcessStateInStorage.Key);
+        // SaveProcessStateToStorage is automatically inserted
+        keys.Add(SaveProcessStateToStorage.Key);
 
         return keys;
     }

@@ -10,7 +10,7 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
 [JsonDerivedType(typeof(ExecuteServiceTaskPayload), typeDiscriminator: "executeServiceTask")]
-[JsonDerivedType(typeof(UpdateProcessStatePayload), typeDiscriminator: "updateProcessState")]
+[JsonDerivedType(typeof(SaveProcessStateToStoragePayload), typeDiscriminator: "saveProcessStateToStorage")]
 [JsonDerivedType(typeof(CommonTaskInitializationPayload), typeDiscriminator: "commonTaskInitialization")]
 [JsonDerivedType(typeof(StartTaskLegacyHookPayload), typeDiscriminator: "startTaskLegacyHook")]
 internal abstract record CommandRequestPayload;
@@ -22,7 +22,7 @@ internal abstract record CommandRequestPayload;
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(CommandRequestPayload))]
 [JsonSerializable(typeof(ExecuteServiceTaskPayload))]
-[JsonSerializable(typeof(UpdateProcessStatePayload))]
+[JsonSerializable(typeof(SaveProcessStateToStoragePayload))]
 [JsonSerializable(typeof(CommonTaskInitializationPayload))]
 [JsonSerializable(typeof(StartTaskLegacyHookPayload))]
 internal partial class CommandPayloadJsonContext : JsonSerializerContext { }

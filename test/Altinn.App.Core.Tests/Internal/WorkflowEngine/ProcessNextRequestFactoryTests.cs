@@ -213,8 +213,8 @@ public class ProcessNextRequestFactoryTests
             OnTaskStartingHook.Key,
             CommonTaskInitialization.Key,
             StartTask.Key,
-            // UpdateProcessState (commit boundary)
-            UpdateProcessStateInStorage.Key,
+            // SaveProcessStateToStorage (commit boundary)
+            SaveProcessStateToStorage.Key,
             // Post-commit
             MovedToAltinnEvent.Key,
         };
@@ -245,8 +245,8 @@ public class ProcessNextRequestFactoryTests
             MutateProcessState.Key,
             // Process end commands (pre-commit)
             OnProcessEndingHook.Key,
-            // UpdateProcessState
-            UpdateProcessStateInStorage.Key,
+            // SaveProcessStateToStorage
+            SaveProcessStateToStorage.Key,
             // Post-commit
             EndProcessLegacyHook.Key,
             DeleteDataElementsIfConfigured.Key,
@@ -280,8 +280,8 @@ public class ProcessNextRequestFactoryTests
             OnTaskStartingHook.Key,
             CommonTaskInitialization.Key,
             StartTask.Key,
-            // UpdateProcessState
-            UpdateProcessStateInStorage.Key,
+            // SaveProcessStateToStorage
+            SaveProcessStateToStorage.Key,
             // Post-commit
             MovedToAltinnEvent.Key,
             InstanceCreatedAltinnEvent.Key,
@@ -315,8 +315,8 @@ public class ProcessNextRequestFactoryTests
             OnTaskStartingHook.Key,
             CommonTaskInitialization.Key,
             StartTask.Key,
-            // UpdateProcessState
-            UpdateProcessStateInStorage.Key,
+            // SaveProcessStateToStorage
+            SaveProcessStateToStorage.Key,
             // Post-commit
             MovedToAltinnEvent.Key,
         };

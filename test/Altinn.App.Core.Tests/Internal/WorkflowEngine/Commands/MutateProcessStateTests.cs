@@ -12,7 +12,7 @@ public class MutateProcessStateTests
 {
     private static ProcessEngineCommandContext CreateContext(
         Instance instance,
-        UpdateProcessStatePayload? payload = null
+        SaveProcessStateToStoragePayload? payload = null
     )
     {
         var mutatorMock = new Mock<IInstanceDataMutator>();
@@ -53,7 +53,7 @@ public class MutateProcessStateTests
         // Arrange
         var instance = CreateInstance();
         var newProcessState = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = "Task_2" } };
-        var payload = new UpdateProcessStatePayload(
+        var payload = new SaveProcessStateToStoragePayload(
             new ProcessStateChange { OldProcessState = instance.Process, NewProcessState = newProcessState }
         );
         var command = new MutateProcessState();
@@ -72,7 +72,7 @@ public class MutateProcessStateTests
     {
         // Arrange
         var instance = CreateInstance();
-        var payload = new UpdateProcessStatePayload(
+        var payload = new SaveProcessStateToStoragePayload(
             new ProcessStateChange { OldProcessState = instance.Process, NewProcessState = null }
         );
         var command = new MutateProcessState();

@@ -29,7 +29,7 @@ public class ProcessEngineCommandValidatorTests
         // Arrange
         var services = new ServiceCollection();
         // Intentionally NOT registering all commands
-        services.AddTransient<IWorkflowEngineCommand, UpdateProcessStateInStorage>();
+        services.AddTransient<IWorkflowEngineCommand, SaveProcessStateToStorage>();
 
         // Act & Assert
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -64,6 +64,6 @@ public class ProcessEngineCommandValidatorTests
         services.AddTransient<IWorkflowEngineCommand, DeleteDataElementsIfConfigured>();
         services.AddTransient<IWorkflowEngineCommand, DeleteInstanceIfConfigured>();
         services.AddTransient<IWorkflowEngineCommand, CompletedAltinnEvent>();
-        services.AddTransient<IWorkflowEngineCommand, UpdateProcessStateInStorage>();
+        services.AddTransient<IWorkflowEngineCommand, SaveProcessStateToStorage>();
     }
 }

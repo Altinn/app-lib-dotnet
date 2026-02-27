@@ -84,8 +84,8 @@ Then:
 
 Commands execute in sequences defined in `ProcessEventCommands.cs`:
 
-- **Task Start**: UnlockTaskData → ProcessTaskStart → ... → UpdateProcessState → MovedToAltinnEvent
-- **Task End**: ProcessTaskEnd → ... → LockTaskData → UpdateProcessState
-- **Process End**: OnProcessEndingHook → UpdateProcessState → CompletedAltinnEvent
+- **Task Start**: UnlockTaskData → ProcessTaskStart → ... → SaveProcessStateToStorage → MovedToAltinnEvent
+- **Task End**: ProcessTaskEnd → ... → LockTaskData → SaveProcessStateToStorage
+- **Process End**: OnProcessEndingHook → SaveProcessStateToStorage → CompletedAltinnEvent
 
-`UpdateProcessState` commits the process state to storage - commands after it are "post-commit" side effects.
+`SaveProcessStateToStorage` commits the process state to storage - commands after it are "post-commit" side effects.
