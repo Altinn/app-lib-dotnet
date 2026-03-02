@@ -3,6 +3,7 @@ using System.Reflection;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Dan;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Profile.Models;
@@ -20,10 +21,12 @@ public class PrefillSI : IPrefill
     private readonly IAppResources _appResourcesService;
     private readonly IRegisterClient _registerClient;
     private readonly IAuthenticationContext _authenticationContext;
+    private readonly IDanClient? _danClient;
     private readonly Telemetry? _telemetry;
     private static readonly string _erKey = "ER";
     private static readonly string _dsfKey = "DSF";
     private static readonly string _userProfileKey = "UserProfile";
+    private static readonly string _danKey = "DAN";
     private static readonly string _allowOverwriteKey = "allowOverwrite";
     private bool _allowOverwrite = false;
 
@@ -34,12 +37,14 @@ public class PrefillSI : IPrefill
     /// <param name="appResourcesService">The app's resource service</param>
     /// <param name="authenticationContext">The authentication context</param>
     /// <param name="serviceProvider">The service provider</param>
+    /// <param name="danClient">The Dan client</param>
     /// <param name="telemetry">Telemetry for traces and metrics.</param>
     public PrefillSI(
         ILogger<PrefillSI> logger,
         IAppResources appResourcesService,
         IAuthenticationContext authenticationContext,
         IServiceProvider serviceProvider,
+        IDanClient? danClient = null,
         Telemetry? telemetry = null
     )
     {
@@ -47,6 +52,7 @@ public class PrefillSI : IPrefill
         _appResourcesService = appResourcesService;
         _registerClient = serviceProvider.GetRequiredService<IRegisterClient>();
         _authenticationContext = authenticationContext;
+        _danClient = danClient;
         _telemetry = telemetry;
     }
 
@@ -203,6 +209,63 @@ public class PrefillSI : IPrefill
                 {
                     string errorMessage = $"Could not  prefill from {_dsfKey}, person is not defined.";
                     _logger.LogError(errorMessage);
+                }
+            }
+        }
+
+        // Prefill from Dan
+        JToken? danConfiguration = prefillConfiguration.SelectToken(_danKey);
+        if (danConfiguration != null && _danClient != null)
+        {
+            var datasetList = danConfiguration.SelectToken("datasets");
+            if (datasetList != null)
+            {
+                foreach (var dataset in datasetList)
+                {
+                    var datasetName = dataset.SelectToken("name")?.ToString();
+                    var subject = !string.IsNullOrWhiteSpace(party.SSN) ? party.SSN : party.OrgNumber;
+
+                    if (string.IsNullOrEmpty(subject))
+                    {
+                        _logger.LogError(
+                            "Could not prefill from {DanKey}, no valid subject (SSN or OrgNumber) found for party",
+                            _danKey
+                        );
+                        continue;
+                    }
+
+                    var fields = dataset.SelectToken("mappings");
+                    if (fields != null)
+                    {
+                        var danPrefill = fields
+                            .SelectMany(obj => obj.Children<JProperty>())
+                            .ToDictionary(prop => prop.Name, prop => prop.Value.ToString());
+
+                        if (datasetName != null)
+                        {
+                            var danDataset = await _danClient.GetDataset(datasetName, subject, fields.ToString());
+                            if (danDataset.Count > 0)
+                            {
+                                JObject danJsonObject = JObject.FromObject(danDataset);
+                                _logger.LogInformation($"Started prefill from {_danKey}");
+                                LoopThroughDictionaryAndAssignValuesToDataModel(
+                                    SwapKeyValuesForPrefill(danPrefill),
+                                    danJsonObject,
+                                    dataModel
+                                );
+                            }
+                            else
+                            {
+                                string errorMessage = $"Could not  prefill from {_danKey}, data is not defined.";
+                                _logger.LogError(errorMessage);
+                            }
+                        }
+                        else
+                        {
+                            string errorMessage = $"Could not prefill from {_danKey}, dataset name is not defined.";
+                            _logger.LogError(errorMessage);
+                        }
+                    }
                 }
             }
         }

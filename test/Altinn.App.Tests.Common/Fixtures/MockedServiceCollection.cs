@@ -6,10 +6,12 @@ using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers.Serialization;
+using Altinn.App.Core.Infrastructure.Clients.Dan;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Dan;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Texts;
@@ -97,6 +99,8 @@ public sealed class MockedServiceCollection
         // There is no TryAddHttpClient, but these are the core of the mocked service collection
         _services.AddHttpClient<IDataClient, DataClient>().ConfigurePrimaryHttpMessageHandler(() => Storage);
         _services.AddHttpClient<IInstanceClient, InstanceClient>().ConfigurePrimaryHttpMessageHandler(() => Storage);
+
+        _services.TryAddSingleton<IDanClient, DanClient>();
 
         _services.TryAddSingleton<Telemetry>();
         _services.AddLogging(builder =>
