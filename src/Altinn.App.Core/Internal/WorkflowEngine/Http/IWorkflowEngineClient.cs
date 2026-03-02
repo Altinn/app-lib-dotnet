@@ -4,22 +4,31 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Core.Internal.WorkflowEngine.Http;
 
 /// <summary>
-/// HTTP client for communicating with the Process Engine service.
+/// HTTP client for communicating with the Workflow Engine service.
 /// </summary>
 internal interface IWorkflowEngineClient
 {
     /// <summary>
-    /// Enqueues a process engine job via HTTP.
+    /// Enqueues a workflow via HTTP.
     /// </summary>
     /// <param name="instance">The instance</param>
-    /// <param name="request">The ProcessNextRequest to send</param>
+    /// <param name="request">The WorkflowEnqueueRequest to send</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    Task ProcessNext(Instance instance, ProcessNextRequest request, CancellationToken cancellationToken = default);
+    Task<WorkflowEnqueueResponse.Accepted> EnqueueWorkflow(
+        Instance instance,
+        WorkflowEnqueueRequest request,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
-    /// Checks for active jobs for a given instance ID.
+    /// Gets the status of a specific workflow by its database ID.
     /// </summary>
     /// <param name="instance">The instance</param>
+    /// <param name="workflowId">The workflow database ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    Task<WorkflowStatusResponse?> GetActiveJobStatus(Instance instance, CancellationToken cancellationToken = default);
+    Task<WorkflowStatusResponse?> GetWorkflowStatus(
+        Instance instance,
+        long workflowId,
+        CancellationToken cancellationToken = default
+    );
 }

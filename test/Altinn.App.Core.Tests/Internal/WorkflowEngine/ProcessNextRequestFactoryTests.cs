@@ -178,11 +178,14 @@ public class ProcessNextRequestFactoryTests
         };
     }
 
-    private static List<string> ExtractCommandKeys(
-        Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest request
-    )
+    private static List<string> ExtractCommandKeys(WorkflowEnqueueRequest request)
     {
-        return request.Steps.Select(s => s.Command).OfType<Command.AppCommand>().Select(c => c.CommandKey).ToList();
+        return request
+            .Workflows[0]
+            .Steps.Select(s => s.Command)
+            .OfType<Command.AppCommand>()
+            .Select(c => c.CommandKey)
+            .ToList();
     }
 
     [Fact]
@@ -357,7 +360,7 @@ public class ProcessNextRequestFactoryTests
         var request = await factory.Create(stateChange, "lock-token", "{}", prefill);
 
         // Assert
-        var steps = request.Steps.ToList();
+        var steps = request.Workflows[0].Steps.ToList();
         var commonInitStep = steps
             .Select(s => s.Command)
             .OfType<Command.AppCommand>()
@@ -371,7 +374,7 @@ public class ProcessNextRequestFactoryTests
     }
 
     [Fact]
-    public async Task Create_SetsCurrentAndDesiredElementIds()
+    public async Task Create_SetsOperationIdIdempotencyKeyAndType()
     {
         // Arrange
         var factory = CreateFactory();
@@ -381,10 +384,12 @@ public class ProcessNextRequestFactoryTests
         var request = await factory.Create(stateChange, "lock-token", "state-blob");
 
         // Assert
-        Assert.Equal("Task_1", request.CurrentElementId);
-        Assert.Equal("Task_2", request.DesiredElementId);
         Assert.Equal("lock-token", request.LockToken);
-        Assert.Equal("state-blob", request.State);
+        var workflow = request.Workflows[0];
+        Assert.Equal("Process next: Task_1 -> Task_2", workflow.OperationId);
+        Assert.Equal("lock-token", workflow.IdempotencyKey);
+        Assert.Equal(WorkflowType.AppProcessChange, workflow.Type);
+        Assert.Equal("state-blob", workflow.State);
     }
 
     [Fact]

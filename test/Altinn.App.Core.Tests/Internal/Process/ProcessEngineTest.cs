@@ -17,6 +17,7 @@ using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Internal.WorkflowEngine;
 using Altinn.App.Core.Internal.WorkflowEngine.Http;
+using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -158,22 +159,20 @@ public sealed class ProcessEngineTest
     {
         // Arrange - Mock the process engine client
         var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
-        Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest? capturedRequest = null;
+        WorkflowEnqueueRequest? capturedRequest = null;
         processEngineClientMock
             .Setup(c =>
-                c.ProcessNext(
+                c.EnqueueWorkflow(
                     It.IsAny<Instance>(),
-                    It.IsAny<Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest>(),
+                    It.IsAny<WorkflowEnqueueRequest>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .Callback<Instance, Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest, CancellationToken>(
-                (_, req, _) => capturedRequest = req
-            )
-            .Returns(Task.CompletedTask);
+            .Callback<Instance, WorkflowEnqueueRequest, CancellationToken>((_, req, _) => capturedRequest = req)
+            .ReturnsAsync(new WorkflowEnqueueResponse.Accepted { Workflows = [new WorkflowResult { DatabaseId = 1 }] });
         processEngineClientMock
-            .Setup(c => c.GetActiveJobStatus(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Altinn.App.Core.Internal.WorkflowEngine.Models.WorkflowStatusResponse?)null);
+            .Setup(c => c.GetWorkflowStatus(It.IsAny<Instance>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WorkflowStatusResponse?)null);
 
         var services = new ServiceCollection();
         services.AddSingleton(processEngineClientMock.Object);
@@ -253,9 +252,8 @@ public sealed class ProcessEngineTest
 
         // Verify command sequence: EndTask commands followed by StartTask commands
         var commandKeys = capturedRequest!
-            .Steps.Select(t =>
-                (t.Command as Altinn.App.Core.Internal.WorkflowEngine.Models.Command.AppCommand)?.CommandKey
-            )
+            .Workflows[0]
+            .Steps.Select(t => (t.Command as Command.AppCommand)?.CommandKey)
             .Where(k => k != null)
             .ToList();
 
@@ -278,9 +276,8 @@ public sealed class ProcessEngineTest
                 "MovedToAltinnEvent"
             );
 
-        // Verify CurrentElementId and DesiredElementId
-        capturedRequest.CurrentElementId.Should().Be("Task_1");
-        capturedRequest.DesiredElementId.Should().Be("Task_2");
+        // Verify OperationId contains transition info
+        capturedRequest.Workflows[0].OperationId.Should().Be("Process next: Task_1 -> Task_2");
     }
 
     [Fact]
@@ -288,22 +285,20 @@ public sealed class ProcessEngineTest
     {
         // Arrange
         var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
-        Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest? capturedRequest = null;
+        WorkflowEnqueueRequest? capturedRequest = null;
         processEngineClientMock
             .Setup(c =>
-                c.ProcessNext(
+                c.EnqueueWorkflow(
                     It.IsAny<Instance>(),
-                    It.IsAny<Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest>(),
+                    It.IsAny<WorkflowEnqueueRequest>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .Callback<Instance, Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest, CancellationToken>(
-                (_, req, _) => capturedRequest = req
-            )
-            .Returns(Task.CompletedTask);
+            .Callback<Instance, WorkflowEnqueueRequest, CancellationToken>((_, req, _) => capturedRequest = req)
+            .ReturnsAsync(new WorkflowEnqueueResponse.Accepted { Workflows = [new WorkflowResult { DatabaseId = 2 }] });
         processEngineClientMock
-            .Setup(c => c.GetActiveJobStatus(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Altinn.App.Core.Internal.WorkflowEngine.Models.WorkflowStatusResponse?)null);
+            .Setup(c => c.GetWorkflowStatus(It.IsAny<Instance>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WorkflowStatusResponse?)null);
 
         var services = new ServiceCollection();
         services.AddSingleton(processEngineClientMock.Object);
@@ -382,9 +377,8 @@ public sealed class ProcessEngineTest
 
         // Verify command sequence: AbandonTask commands followed by StartTask commands
         var commandKeys = capturedRequest!
-            .Steps.Select(t =>
-                (t.Command as Altinn.App.Core.Internal.WorkflowEngine.Models.Command.AppCommand)?.CommandKey
-            )
+            .Workflows[0]
+            .Steps.Select(t => (t.Command as Command.AppCommand)?.CommandKey)
             .Where(k => k != null)
             .ToList();
 
@@ -411,22 +405,20 @@ public sealed class ProcessEngineTest
     {
         // Arrange
         var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
-        Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest? capturedRequest = null;
+        WorkflowEnqueueRequest? capturedRequest = null;
         processEngineClientMock
             .Setup(c =>
-                c.ProcessNext(
+                c.EnqueueWorkflow(
                     It.IsAny<Instance>(),
-                    It.IsAny<Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest>(),
+                    It.IsAny<WorkflowEnqueueRequest>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .Callback<Instance, Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest, CancellationToken>(
-                (_, req, _) => capturedRequest = req
-            )
-            .Returns(Task.CompletedTask);
+            .Callback<Instance, WorkflowEnqueueRequest, CancellationToken>((_, req, _) => capturedRequest = req)
+            .ReturnsAsync(new WorkflowEnqueueResponse.Accepted { Workflows = [new WorkflowResult { DatabaseId = 3 }] });
         processEngineClientMock
-            .Setup(c => c.GetActiveJobStatus(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Altinn.App.Core.Internal.WorkflowEngine.Models.WorkflowStatusResponse?)null);
+            .Setup(c => c.GetWorkflowStatus(It.IsAny<Instance>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WorkflowStatusResponse?)null);
 
         var services = new ServiceCollection();
         services.AddSingleton(processEngineClientMock.Object);
@@ -499,9 +491,8 @@ public sealed class ProcessEngineTest
 
         // Verify command sequence: EndTask commands followed by ProcessEnd commands
         var commandKeys = capturedRequest!
-            .Steps.Select(t =>
-                (t.Command as Altinn.App.Core.Internal.WorkflowEngine.Models.Command.AppCommand)?.CommandKey
-            )
+            .Workflows[0]
+            .Steps.Select(t => (t.Command as Command.AppCommand)?.CommandKey)
             .Where(k => k != null)
             .ToList();
 
@@ -525,9 +516,8 @@ public sealed class ProcessEngineTest
                 "CompletedAltinnEvent"
             );
 
-        // Verify CurrentElementId and DesiredElementId for process end
-        capturedRequest.CurrentElementId.Should().Be("Task_2");
-        capturedRequest.DesiredElementId.Should().BeEmpty();
+        // Verify OperationId contains transition info for process end
+        capturedRequest.Workflows[0].OperationId.Should().Be("Process next: Task_2 -> ");
     }
 
     public static TheoryData<ProcessState?, string> InvalidProcessStatesData =>
@@ -1333,16 +1323,18 @@ public sealed class ProcessEngineTest
             var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
             processEngineClientMock
                 .Setup(c =>
-                    c.ProcessNext(
+                    c.EnqueueWorkflow(
                         It.IsAny<Instance>(),
-                        It.IsAny<Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest>(),
+                        It.IsAny<WorkflowEnqueueRequest>(),
                         It.IsAny<CancellationToken>()
                     )
                 )
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(
+                    new WorkflowEnqueueResponse.Accepted { Workflows = [new WorkflowResult { DatabaseId = 99 }] }
+                );
             processEngineClientMock
-                .Setup(c => c.GetActiveJobStatus(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Altinn.App.Core.Internal.WorkflowEngine.Models.WorkflowStatusResponse?)null);
+                .Setup(c => c.GetWorkflowStatus(It.IsAny<Instance>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((WorkflowStatusResponse?)null);
             services.TryAddTransient<IWorkflowEngineClient>(_ => processEngineClientMock.Object);
 
             services.TryAddTransient<ProcessNextRequestFactory>();

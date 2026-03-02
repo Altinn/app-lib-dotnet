@@ -5,38 +5,128 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models;
 /// <summary>
 /// Response model for workflow engine status endpoint.
 /// </summary>
-public sealed record WorkflowStatusResponse
+internal sealed record WorkflowStatusResponse
 {
     /// <summary>
-    /// The overall status of the workflow for this instance.
+    /// The database ID of the workflow.
+    /// </summary>
+    [JsonPropertyName("databaseId")]
+    public required long DatabaseId { get; init; }
+
+    /// <summary>
+    /// The operation ID of the workflow.
+    /// </summary>
+    [JsonPropertyName("operationId")]
+    public required string OperationId { get; init; }
+
+    /// <summary>
+    /// The idempotency key of the workflow.
+    /// </summary>
+    [JsonPropertyName("idempotencyKey")]
+    public required string IdempotencyKey { get; init; }
+
+    /// <summary>
+    /// When the workflow was created.
+    /// </summary>
+    [JsonPropertyName("createdAt")]
+    public required DateTimeOffset CreatedAt { get; init; }
+
+    /// <summary>
+    /// When the workflow was last updated.
+    /// </summary>
+    [JsonPropertyName("updatedAt")]
+    public required DateTimeOffset UpdatedAt { get; init; }
+
+    /// <summary>
+    /// When the workflow should start execution.
+    /// </summary>
+    [JsonPropertyName("startAt")]
+    public DateTimeOffset? StartAt { get; init; }
+
+    /// <summary>
+    /// Optional metadata.
+    /// </summary>
+    [JsonPropertyName("metadata")]
+    public string? Metadata { get; init; }
+
+    /// <summary>
+    /// The actor for this workflow.
+    /// </summary>
+    [JsonPropertyName("actor")]
+    public required Actor Actor { get; init; }
+
+    /// <summary>
+    /// The overall status of the workflow.
     /// </summary>
     [JsonPropertyName("overallStatus")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public required PersistentItemStatus OverallStatus { get; init; }
 
     /// <summary>
+    /// The type of workflow.
+    /// </summary>
+    [JsonPropertyName("type")]
+    public required WorkflowType Type { get; init; }
+
+    /// <summary>
+    /// Optional dependency information.
+    /// </summary>
+    [JsonPropertyName("dependencies")]
+    public IReadOnlyDictionary<string, string>? Dependencies { get; init; }
+
+    /// <summary>
+    /// Optional link information.
+    /// </summary>
+    [JsonPropertyName("links")]
+    public IReadOnlyDictionary<string, string>? Links { get; init; }
+
+    /// <summary>
     /// Details about each step in the workflow.
     /// </summary>
     [JsonPropertyName("steps")]
-    public required IReadOnlyList<StepDetail> Steps { get; init; }
+    public required IReadOnlyList<StepStatusResponse> Steps { get; init; }
 }
 
 /// <summary>
-/// Details about a workflow engine step.
+/// Status details about a workflow engine step.
 /// </summary>
-public sealed record StepDetail
+internal sealed record StepStatusResponse
 {
     /// <summary>
-    /// The step identifier.
+    /// The database ID of the step.
     /// </summary>
-    [JsonPropertyName("identifier")]
-    public required string Identifier { get; init; }
+    [JsonPropertyName("databaseId")]
+    public required long DatabaseId { get; init; }
 
     /// <summary>
-    /// The command type.
+    /// The idempotency key of the step.
     /// </summary>
-    [JsonPropertyName("commandType")]
-    public required string CommandType { get; init; }
+    [JsonPropertyName("idempotencyKey")]
+    public string? IdempotencyKey { get; init; }
+
+    /// <summary>
+    /// The processing order of this step within the workflow.
+    /// </summary>
+    [JsonPropertyName("processingOrder")]
+    public required int ProcessingOrder { get; init; }
+
+    /// <summary>
+    /// When the step was last updated.
+    /// </summary>
+    [JsonPropertyName("updatedAt")]
+    public required DateTimeOffset UpdatedAt { get; init; }
+
+    /// <summary>
+    /// Optional metadata.
+    /// </summary>
+    [JsonPropertyName("metadata")]
+    public string? Metadata { get; init; }
+
+    /// <summary>
+    /// The command details for this step.
+    /// </summary>
+    [JsonPropertyName("command")]
+    public required CommandDetails Command { get; init; }
 
     /// <summary>
     /// The current execution status.
@@ -57,4 +147,34 @@ public sealed record StepDetail
     [JsonPropertyName("backoffUntil")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DateTimeOffset? BackoffUntil { get; init; }
+
+    /// <summary>
+    /// The retry strategy for this step.
+    /// </summary>
+    [JsonPropertyName("retryStrategy")]
+    public RetryStrategy? RetryStrategy { get; init; }
+}
+
+/// <summary>
+/// Details about the command associated with a step.
+/// </summary>
+internal sealed record CommandDetails
+{
+    /// <summary>
+    /// The command type (e.g. "AppCommand", "Webhook").
+    /// </summary>
+    [JsonPropertyName("type")]
+    public required string Type { get; init; }
+
+    /// <summary>
+    /// The operation ID of the command.
+    /// </summary>
+    [JsonPropertyName("operationId")]
+    public string? OperationId { get; init; }
+
+    /// <summary>
+    /// The command payload.
+    /// </summary>
+    [JsonPropertyName("payload")]
+    public string? Payload { get; init; }
 }

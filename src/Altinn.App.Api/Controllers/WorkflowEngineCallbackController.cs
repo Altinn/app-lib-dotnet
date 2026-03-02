@@ -71,6 +71,15 @@ public class WorkflowEngineCallbackController : ControllerBase
         }
 
         // Restore instance + form data from the opaque state blob instead of fetching from Storage
+        if (payload.State is null)
+        {
+            string noStateError =
+                $"Callback payload for command '{commandKey}' is missing the state blob. Instance: {instanceId}.";
+            _logger.LogError(noStateError);
+            activity?.SetStatus(ActivityStatusCode.Error, noStateError);
+            return NonRetryableProblem("Missing State", noStateError, StatusCodes.Status400BadRequest);
+        }
+
         InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceStateService.RestoreState(
             payload.State,
             payload.Actor.Language

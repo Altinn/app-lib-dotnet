@@ -7336,7 +7336,7 @@
           "actor",
           "commandKey",
           "lockToken",
-          "state"
+          "workflowId"
         ],
         "type": "object",
         "properties": {
@@ -7358,6 +7358,10 @@
           "state": {
             "type": "string",
             "nullable": true
+          },
+          "workflowId": {
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false

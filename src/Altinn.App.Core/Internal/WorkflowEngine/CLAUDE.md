@@ -6,15 +6,16 @@ App-lib integration with the async Workflow Engine service. The engine runs as a
 
 The Workflow Engine service (external, .NET, PostgreSQL-backed) orchestrates process transitions. This integration layer:
 
-1. **Outbound**: `ProcessNextRequestFactory` builds a `ProcessNextRequest` (command sequence + actor + lock token + state blob) and `WorkflowEngineClient` POSTs it to the engine's `/next` endpoint
+1. **Outbound**: `ProcessNextRequestFactory` builds a `WorkflowEnqueueRequest` (containing `WorkflowRequest` with command sequence + actor + lock token + state blob) and `WorkflowEngineClient` POSTs it to the engine's enqueue endpoint (`POST /api/v1/workflows/{org}/{app}/{party}/{guid}`)
 2. **Inbound**: The engine calls back to `WorkflowEngineCallbackController` for each command, one at a time, sequentially
 3. **Per-callback lifecycle**: Controller restores `InstanceDataUnitOfWork` from the opaque state blob, resolves the `IWorkflowEngineCommand` by key, executes it, commits data changes on success, captures updated state, and returns it to the engine
 
 ```
 App ProcessNext API
   → Capture instance + form data into opaque state blob (InstanceStateService)
-  → ProcessNextRequestFactory.Create()     (builds command list from ProcessStateChange)
-  → WorkflowEngineClient.ProcessNext()     (HTTP POST to engine with state blob)
+  → ProcessNextRequestFactory.Create()     (builds WorkflowEnqueueRequest from ProcessStateChange)
+  → WorkflowEngineClient.EnqueueWorkflow() (HTTP POST to engine, returns WorkflowEnqueueResponse.Accepted)
+  → Extract workflowId from response for status polling
 
 Engine (external service)
   → Executes steps sequentially
@@ -40,7 +41,6 @@ WorkflowEngineCallbackController.ExecuteCommand()
 ```
 WorkflowEngine/
 ├── CLAUDE.md
-├── README.md
 ├── Commands/
 │   ├── _Base/
 │   │   ├── IWorkflowEngineCommand.cs        - Command interface (plain + generic with payload)
@@ -77,28 +77,31 @@ WorkflowEngine/
 │   │   └── InstanceCreatedAltinnEvent.cs    - Fires instance.created event (post-commit, first task only)
 │   ├── ExecuteServiceTask.cs                - Runs IServiceTask.Execute() (post-commit)
 │   ├── MutateProcessState.cs                - Mutates in-memory process state between task-end and task-start
-│   └── SaveProcessStateToStorageInStorage.cs       - Commits ProcessStateChange to Storage (the commit boundary)
+│   └── SaveProcessStateToStorage.cs         - Commits ProcessStateChange to Storage (the commit boundary)
 ├── DependencyInjection/
 │   ├── ServiceCollectionExtensions.cs       - Registers all commands + client + helpers
 │   └── WorkflowEngineCommandValidator.cs    - Startup check: all keys in WorkflowCommandSet are registered
 ├── Http/
-│   ├── IWorkflowEngineClient.cs             - ProcessNext() and GetActiveJobStatus()
+│   ├── IWorkflowEngineClient.cs             - EnqueueWorkflow() and GetWorkflowStatus()
 │   └── WorkflowEngineClient.cs              - HTTP impl with X-Api-Key auth
 ├── Models/
-│   ├── ProcessNextRequest.cs                - Request to engine (elements, actor, lock, steps)
-│   ├── StepRequest.cs                       - Single step (command + optional startTime + retryStrategy)
+│   ├── WorkflowEnqueueRequest.cs            - Batch request (actor, lockToken, list of WorkflowRequest)
+│   ├── WorkflowRequest.cs                   - Single workflow (operationId, idempotencyKey, type, steps, state)
+│   ├── WorkflowEnqueueResponse.cs           - Response: Accepted (with WorkflowResult[]) or Rejected
+│   ├── WorkflowType.cs                      - Enum (Generic, AppProcessChange)
+│   ├── StepRequest.cs                       - Single step (command + retryStrategy + metadata + idempotencyKey)
 │   ├── Command.cs                           - Polymorphic: AppCommand | Webhook | Debug (Noop/Throw/Timeout)
-│   ├── AppCallbackPayload.cs                - Payload engine sends back per callback
+│   ├── AppCallbackPayload.cs                - Payload engine sends back per callback (includes workflowId)
 │   ├── Actor.cs                             - User/org identity for the request
-│   ├── RetryStrategy.cs                     - Backoff config (Exponential/Linear/Constant)
+│   ├── RetryStrategy.cs                     - Backoff config (Exponential/Linear/Constant + nonRetryableHttpStatusCodes)
 │   ├── BackoffType.cs                       - Enum
-│   ├── PersistentItemStatus.cs              - Enum (Enqueued/Processing/Requeued/Completed/Failed/Canceled)
-│   ├── WorkflowStatusResponse.cs            - Response from engine status endpoint
+│   ├── PersistentItemStatus.cs              - Enum (Enqueued/Processing/Requeued/Completed/Failed/Canceled/DependencyFailed)
+│   ├── WorkflowStatusResponse.cs            - Full status response (databaseId, operationId, steps as StepStatusResponse)
 │   ├── CallbackErrorResponse.cs             - Error response from callback controller
-│   ├── AppCallbackResponse.cs               - Success response with updated state blob
+│   ├── AppCallbackResponse.cs               - Success response with updated state blob (nullable)
 │   └── InstanceState.cs                     - Internal DTO for transported instance + form data state
 ├── InstanceStateService.cs                  - Captures/restores InstanceDataUnitOfWork to/from opaque state blob
-├── ProcessNextRequestFactory.cs             - Maps ProcessStateChange → ProcessNextRequest
+├── ProcessNextRequestFactory.cs             - Maps ProcessStateChange → WorkflowEnqueueRequest
 └── WorkflowCommandSet.cs                    - Defines command sequences per event type
 ```
 
@@ -171,14 +174,15 @@ AbandonTask → OnTaskAbandonHook → AbandonTaskLegacyHook
 - Every command has `public static string Key => "..."` and `public string GetKey() => Key`
 - Commands return `SuccessfulProcessEngineCommandResult` or `FailedProcessEngineCommandResult` (never throw from Execute)
 - Commands get instance data through `context.InstanceDataMutator` (an `InstanceDataUnitOfWork`)
-- The callback controller saves data changes after successful execution - commands don't need to persist data themselves (except `SaveProcessStateToStorageInStorage` which writes to the process/events API)
+- The callback controller saves data changes after successful execution - commands don't need to persist data themselves (except `SaveProcessStateToStorage` which writes to the process/events API)
 - Hook commands (OnTaskStarting/Ending, OnProcessEnding) enforce max 1 handler per task
 
 ## Interaction with Workflow Engine Service
 
 The engine service (separate repo at `altinn-studio/src/Runtime/workflow-engine`):
 - .NET service backed by PostgreSQL
-- Receives `ProcessNextRequest`, stores it, executes steps sequentially
+- Receives `WorkflowEnqueueRequest`, stores it, executes steps sequentially
+- Returns `WorkflowEnqueueResponse.Accepted` with `DatabaseId` per workflow
 - Calls back to the app via HTTP POST for each `AppCommand`
 - Retries failed steps with configurable backoff (default: exponential, 1s base, 5min max delay, 24h max duration)
 - One active workflow per instance at a time
@@ -193,7 +197,7 @@ Each callback needs an `InstanceDataUnitOfWork` (instance + form data). Rather t
 
 **Flow**:
 1. `InstanceStateService.CaptureState` → serializes instance + form data into `InstanceState` → `JsonElement`
-2. State blob is included in `ProcessNextRequest.State`
+2. State blob is included in `WorkflowRequest.State`
 3. Engine echoes it back in `AppCallbackPayload.State` for each callback
 4. `InstanceStateService.RestoreState` → deserializes, creates `InstanceDataUnitOfWork` with preloaded form data
 5. After command execution, updated state is captured and returned in `AppCallbackResponse.State`

@@ -14,14 +14,20 @@ public sealed record StepRequest
     public required Command Command { get; init; }
 
     /// <summary>
-    /// An optional start time for when the task should be executed.
-    /// </summary>
-    [JsonPropertyName("startTime")]
-    public DateTimeOffset? StartAt { get; init; }
-
-    /// <summary>
     /// An optional retry strategy for the task. If none given, the default strategy will be used.
     /// </summary>
     [JsonPropertyName("retryStrategy")]
     public RetryStrategy? RetryStrategy { get; init; }
+
+    /// <summary>
+    /// Optional metadata associated with this step.
+    /// </summary>
+    [JsonPropertyName("metadata")]
+    public string? Metadata { get; init; }
+
+    /// <summary>
+    /// An optional idempotency key for this step.
+    /// </summary>
+    [JsonPropertyName("idempotencyKey")]
+    public string? IdempotencyKey { get; init; }
 }

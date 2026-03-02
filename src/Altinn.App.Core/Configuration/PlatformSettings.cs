@@ -59,7 +59,7 @@ public class PlatformSettings
     /// <summary>
     /// Gets or sets the url for the Workflow Engine API endpoint.
     /// </summary>
-    public string ApiWorkflowEngineEndpoint { get; set; } = "http://localhost:8080/api/v1/workflow/";
+    public string ApiWorkflowEngineEndpoint { get; set; } = "http://localhost:8080/api/v1/workflows/";
 
     /// <summary>
     /// Gets or sets the API key for authenticating with the Workflow Engine.

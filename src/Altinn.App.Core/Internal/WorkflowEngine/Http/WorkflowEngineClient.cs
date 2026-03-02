@@ -31,38 +31,50 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
     }
 
     /// <inheritdoc />
-    public async Task ProcessNext(
+    public async Task<WorkflowEnqueueResponse.Accepted> EnqueueWorkflow(
         Instance instance,
-        ProcessNextRequest request,
+        WorkflowEnqueueRequest request,
         CancellationToken cancellationToken = default
     )
     {
-        string url = $"{GetBaseUrl()}{GetInstancePath(instance)}/next";
+        string url = $"{GetBaseUrl()}{GetInstancePath(instance)}";
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
         httpRequest.Content = JsonContent.Create(request);
         httpRequest.Headers.Add(ApiKeyHeaderName, _platformSettings.WorkflowEngineApiKey);
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<WorkflowEnqueueResponse.Accepted>(
+                cancellationToken: cancellationToken
+            ) ?? throw new Exception("The expected workflow enqueue response was not found in the response content.");
     }
 
-    public async Task<WorkflowStatusResponse?> GetActiveJobStatus(
+    /// <inheritdoc />
+    public async Task<WorkflowStatusResponse?> GetWorkflowStatus(
         Instance instance,
+        long workflowId,
         CancellationToken cancellationToken = default
     )
     {
-        string url = $"{GetBaseUrl()}{GetInstancePath(instance)}/status";
+        string url = $"{GetBaseUrl()}{GetInstancePath(instance)}/{workflowId}";
         using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
         httpRequest.Headers.Add(ApiKeyHeaderName, _platformSettings.WorkflowEngineApiKey);
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
         response.EnsureSuccessStatusCode();
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
             return await response.Content.ReadFromJsonAsync<WorkflowStatusResponse>(
                     cancellationToken: cancellationToken
-                ) ?? throw new Exception("The expected process engine status was not found in the response content.");
+                ) ?? throw new Exception("The expected workflow status was not found in the response content.");
         }
 
         return null;

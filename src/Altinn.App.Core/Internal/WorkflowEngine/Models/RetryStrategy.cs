@@ -37,8 +37,11 @@ public sealed record RetryStrategy
     [JsonPropertyName("maxDuration")]
     public TimeSpan? MaxDuration { get; init; }
 
-    // TODO: Consider adding jitter option
-    // TODO: Consider adding short-circuit option (avoid retrying on certain error codes)
+    /// <summary>
+    /// HTTP status codes that should not be retried.
+    /// </summary>
+    [JsonPropertyName("nonRetryableHttpStatusCodes")]
+    public IReadOnlyList<int>? NonRetryableHttpStatusCodes { get; init; }
 
     /// <summary>
     /// Creates an exponential backoff retry strategy.
@@ -47,7 +50,8 @@ public sealed record RetryStrategy
         TimeSpan baseInterval,
         int? maxRetries = null,
         TimeSpan? maxDelay = null,
-        TimeSpan? maxDuration = null
+        TimeSpan? maxDuration = null,
+        IReadOnlyList<int>? nonRetryableHttpStatusCodes = null
     ) =>
         new()
         {
@@ -56,6 +60,7 @@ public sealed record RetryStrategy
             MaxRetries = maxRetries,
             MaxDelay = maxDelay,
             MaxDuration = maxDuration,
+            NonRetryableHttpStatusCodes = nonRetryableHttpStatusCodes,
         };
 
     /// <summary>
@@ -65,7 +70,8 @@ public sealed record RetryStrategy
         TimeSpan baseInterval,
         int? maxRetries = null,
         TimeSpan? maxDelay = null,
-        TimeSpan? maxDuration = null
+        TimeSpan? maxDuration = null,
+        IReadOnlyList<int>? nonRetryableHttpStatusCodes = null
     ) =>
         new()
         {
@@ -74,12 +80,18 @@ public sealed record RetryStrategy
             MaxRetries = maxRetries,
             MaxDelay = maxDelay,
             MaxDuration = maxDuration,
+            NonRetryableHttpStatusCodes = nonRetryableHttpStatusCodes,
         };
 
     /// <summary>
     /// Creates a constant backoff retry strategy.
     /// </summary>
-    public static RetryStrategy Constant(TimeSpan interval, int? maxRetries = null, TimeSpan? maxDuration = null) =>
+    public static RetryStrategy Constant(
+        TimeSpan interval,
+        int? maxRetries = null,
+        TimeSpan? maxDuration = null,
+        IReadOnlyList<int>? nonRetryableHttpStatusCodes = null
+    ) =>
         new()
         {
             BackoffType = BackoffType.Constant,
@@ -87,6 +99,7 @@ public sealed record RetryStrategy
             MaxRetries = maxRetries,
             MaxDelay = interval,
             MaxDuration = maxDuration,
+            NonRetryableHttpStatusCodes = nonRetryableHttpStatusCodes,
         };
 
     /// <summary>

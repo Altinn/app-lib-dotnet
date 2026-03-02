@@ -29,6 +29,7 @@ public class OnProcessEndingHookTests
                 Actor = new Actor { UserIdOrOrgNumber = "1337" },
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
+                WorkflowId = 0,
             },
         };
     }

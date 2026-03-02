@@ -8,12 +8,11 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
-using ProcessNextRequest = Altinn.App.Core.Internal.WorkflowEngine.Models.ProcessNextRequest;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine;
 
 /// <summary>
-/// Factory for creating ProcessNextRequest objects from process state changes.
+/// Factory for creating WorkflowEnqueueRequest objects from process state changes.
 /// Maps instance events to command sequences and assembles the complete request.
 /// </summary>
 internal sealed class ProcessNextRequestFactory
@@ -31,10 +30,10 @@ internal sealed class ProcessNextRequestFactory
     }
 
     /// <summary>
-    /// Creates a ProcessNextRequest from the instance and process state change.
+    /// Creates a WorkflowEnqueueRequest from the instance and process state change.
     /// Maps each instance event to its corresponding command sequence.
     /// </summary>
-    public async Task<WorkflowEngine.Models.ProcessNextRequest> Create(
+    public async Task<WorkflowEnqueueRequest> Create(
         ProcessStateChange processStateChange,
         string lockToken,
         string state,
@@ -88,14 +87,24 @@ internal sealed class ProcessNextRequestFactory
         commands.Add(CreateSaveProcessStateToStorageCommand(processStateChange));
         commands.AddRange(postCommitSteps);
 
-        return new ProcessNextRequest
+        string fromTaskId = processStateChange.OldProcessState?.CurrentTask?.ElementId ?? string.Empty;
+        string toTaskId = processStateChange.NewProcessState?.CurrentTask?.ElementId ?? string.Empty;
+
+        return new WorkflowEnqueueRequest
         {
-            CurrentElementId = processStateChange.OldProcessState?.CurrentTask?.ElementId ?? string.Empty,
-            DesiredElementId = processStateChange.NewProcessState?.CurrentTask?.ElementId ?? string.Empty,
             Actor = await ExtractActor(),
-            Steps = commands,
             LockToken = lockToken,
-            State = state,
+            Workflows =
+            [
+                new WorkflowRequest
+                {
+                    OperationId = $"Process next: {fromTaskId} -> {toTaskId}",
+                    IdempotencyKey = lockToken,
+                    Type = WorkflowType.AppProcessChange,
+                    Steps = commands,
+                    State = state,
+                },
+            ],
         };
     }
 

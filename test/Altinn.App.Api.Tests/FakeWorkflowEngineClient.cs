@@ -22,6 +22,7 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly InstanceStateService _instanceStateService;
+    private long _nextDatabaseId = 1;
 
     public FakeWorkflowEngineClient(IServiceProvider serviceProvider, InstanceStateService instanceStateService)
     {
@@ -30,9 +31,9 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
     }
 
     /// <inheritdoc />
-    public async Task ProcessNext(
+    public async Task<WorkflowEnqueueResponse.Accepted> EnqueueWorkflow(
         Instance instance,
-        ProcessNextRequest request,
+        WorkflowEnqueueRequest request,
         CancellationToken cancellationToken = default
     )
     {
@@ -40,78 +41,94 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
         string app = instance.AppId.Split('/')[1];
         var instanceId = new InstanceIdentifier(instance);
 
-        // Construct the controller per call, matching MVC's transient lifetime
-        var controller = new WorkflowEngineCallbackController(
-            _serviceProvider,
-            _serviceProvider.GetRequiredService<ILogger<WorkflowEngineCallbackController>>(),
-            _serviceProvider.GetService<Telemetry>()
-        );
+        var workflowResults = new List<WorkflowResult>();
 
-        string currentState = request.State;
-
-        foreach (var step in request.Steps)
+        foreach (var workflow in request.Workflows)
         {
-            if (step.Command is not Command.AppCommand appCommand)
-                continue;
+            long databaseId = _nextDatabaseId++;
 
-            // Skip Altinn event commands - they're designed to notify external systems
-            // and can have issues when executed in-process (e.g., CompletedAltinnEvent
-            // checks CurrentTask after SaveProcessStateToStorage has set it to null for ended processes)
-            if (IsAltinnEventCommand(appCommand.CommandKey))
-                continue;
-
-            var payload = new AppCallbackPayload
-            {
-                CommandKey = appCommand.CommandKey,
-                Actor = request.Actor,
-                Payload = appCommand.Payload,
-                LockToken = request.LockToken,
-                State = currentState,
-            };
-
-            IActionResult result = await controller.ExecuteCommand(
-                org,
-                app,
-                instanceId.InstanceOwnerPartyId,
-                instanceId.InstanceGuid,
-                appCommand.CommandKey,
-                payload,
-                cancellationToken
+            // Construct the controller per call, matching MVC's transient lifetime
+            var controller = new WorkflowEngineCallbackController(
+                _serviceProvider,
+                _serviceProvider.GetRequiredService<ILogger<WorkflowEngineCallbackController>>(),
+                _serviceProvider.GetService<Telemetry>()
             );
 
-            switch (result)
+            string? currentState = workflow.State;
+
+            foreach (var step in workflow.Steps)
             {
-                case OkObjectResult { Value: AppCallbackResponse response }:
-                    currentState = response.State;
-                    break;
+                if (step.Command is not Command.AppCommand appCommand)
+                    continue;
 
-                case ObjectResult { Value: ProblemDetails problem }:
-                    throw new InvalidOperationException(
-                        $"Callback failed for command '{appCommand.CommandKey}': {problem.Title}: {problem.Detail}"
-                    );
+                // Skip Altinn event commands - they're designed to notify external systems
+                // and can have issues when executed in-process (e.g., CompletedAltinnEvent
+                // checks CurrentTask after SaveProcessStateToStorage has set it to null for ended processes)
+                if (IsAltinnEventCommand(appCommand.CommandKey))
+                    continue;
 
-                default:
-                    throw new InvalidOperationException(
-                        $"Unexpected result from callback controller: {result.GetType().Name}"
-                    );
+                var payload = new AppCallbackPayload
+                {
+                    CommandKey = appCommand.CommandKey,
+                    Actor = request.Actor,
+                    Payload = appCommand.Payload,
+                    LockToken = request.LockToken ?? string.Empty,
+                    State = currentState,
+                    WorkflowId = databaseId,
+                };
+
+                IActionResult result = await controller.ExecuteCommand(
+                    org,
+                    app,
+                    instanceId.InstanceOwnerPartyId,
+                    instanceId.InstanceGuid,
+                    appCommand.CommandKey,
+                    payload,
+                    cancellationToken
+                );
+
+                switch (result)
+                {
+                    case OkObjectResult { Value: AppCallbackResponse response }:
+                        currentState = response.State;
+                        break;
+
+                    case ObjectResult { Value: ProblemDetails problem }:
+                        throw new InvalidOperationException(
+                            $"Callback failed for command '{appCommand.CommandKey}': {problem.Title}: {problem.Detail}"
+                        );
+
+                    default:
+                        throw new InvalidOperationException(
+                            $"Unexpected result from callback controller: {result.GetType().Name}"
+                        );
+                }
             }
+
+            // Restore final state to sync the caller's instance reference.
+            // This is needed because callers may inspect instance.Data / instance.Process
+            // after EnqueueWorkflow returns.
+            if (currentState is not null)
+            {
+                InstanceDataUnitOfWork finalState = await _instanceStateService.RestoreState(
+                    currentState,
+                    request.Actor.Language
+                );
+                instance.Data.Clear();
+                instance.Data.AddRange(finalState.Instance.Data);
+                instance.Process = finalState.Instance.Process;
+            }
+
+            workflowResults.Add(new WorkflowResult { Ref = workflow.Ref, DatabaseId = databaseId });
         }
 
-        // Restore final state to sync the caller's instance reference.
-        // This is needed because callers may inspect instance.Data / instance.Process
-        // after ProcessNext returns.
-        InstanceDataUnitOfWork finalState = await _instanceStateService.RestoreState(
-            currentState,
-            request.Actor.Language
-        );
-        instance.Data.Clear();
-        instance.Data.AddRange(finalState.Instance.Data);
-        instance.Process = finalState.Instance.Process;
+        return new WorkflowEnqueueResponse.Accepted { Workflows = workflowResults };
     }
 
     /// <inheritdoc />
-    public Task<WorkflowStatusResponse?> GetActiveJobStatus(
+    public Task<WorkflowStatusResponse?> GetWorkflowStatus(
         Instance instance,
+        long workflowId,
         CancellationToken cancellationToken = default
     )
     {

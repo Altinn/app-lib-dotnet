@@ -33,6 +33,7 @@ public class ExecuteServiceTaskTests
                 Payload = serializedPayload,
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
+                WorkflowId = 0,
             },
         };
     }

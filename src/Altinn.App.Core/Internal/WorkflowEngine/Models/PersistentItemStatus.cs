@@ -22,4 +22,7 @@ public enum PersistentItemStatus
 
     /// <summary>The item has been canceled.</summary>
     Canceled = 5,
+
+    /// <summary>The item failed because a dependency failed.</summary>
+    DependencyFailed = 6,
 }

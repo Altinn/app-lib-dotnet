@@ -12,5 +12,5 @@ public sealed record AppCallbackResponse
     /// The updated opaque state to echo back to the engine.
     /// </summary>
     [JsonPropertyName("state")]
-    public required string State { get; init; }
+    public string? State { get; init; }
 }

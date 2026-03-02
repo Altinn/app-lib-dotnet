@@ -36,5 +36,11 @@ public sealed record AppCallbackPayload
     /// Opaque state blob echoed back from the engine.
     /// </summary>
     [JsonPropertyName("state")]
-    public required string State { get; init; }
+    public string? State { get; init; }
+
+    /// <summary>
+    /// The workflow database ID assigned by the engine.
+    /// </summary>
+    [JsonPropertyName("workflowId")]
+    public required long WorkflowId { get; init; }
 }

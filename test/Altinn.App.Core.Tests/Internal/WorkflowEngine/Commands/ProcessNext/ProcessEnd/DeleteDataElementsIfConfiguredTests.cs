@@ -28,6 +28,7 @@ public class DeleteDataElementsIfConfiguredTests
                 Actor = new Actor { UserIdOrOrgNumber = "1337" },
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
+                WorkflowId = 0,
             },
         };
     }
@@ -53,6 +54,7 @@ public class DeleteDataElementsIfConfiguredTests
                 Actor = new Actor { UserIdOrOrgNumber = "1337" },
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
+                WorkflowId = 0,
             },
         };
     }

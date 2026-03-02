@@ -23,6 +23,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProcessNextRequest = Altinn.App.Core.Models.Process.ProcessNextRequest;
+using WorkflowEnqueueRequest = Altinn.App.Core.Internal.WorkflowEngine.Models.WorkflowEnqueueRequest;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -166,14 +167,19 @@ internal class ProcessEngine : IProcessEngine
         );
         string state = await _instanceStateService.CaptureState(unitOfWork);
 
-        WorkflowEngine.Models.ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(
+        WorkflowEnqueueRequest enqueueRequest = await _processNextRequestFactory.Create(
             processStateChange,
             lockToken,
             state,
             prefill
         );
-        await _workflowEngineClient.ProcessNext(instance, processNextRequest, ct);
-        return await WaitForEngineResponseAndRefetchInstance(instance, ct);
+        WorkflowEnqueueResponse.Accepted response = await _workflowEngineClient.EnqueueWorkflow(
+            instance,
+            enqueueRequest,
+            ct
+        );
+        long workflowId = response.Workflows[0].DatabaseId;
+        return await WaitForEngineResponseAndRefetchInstance(instance, workflowId, ct);
     }
 
     /// <inheritdoc/>
@@ -569,14 +575,19 @@ internal class ProcessEngine : IProcessEngine
             return new MoveToNextResult(instance, null);
         }
 
-        WorkflowEngine.Models.ProcessNextRequest processNextRequest = await _processNextRequestFactory.Create(
+        WorkflowEnqueueRequest enqueueRequest = await _processNextRequestFactory.Create(
             processStateChange,
             lockToken,
             state
         );
-        await _workflowEngineClient.ProcessNext(instance, processNextRequest, ct);
+        WorkflowEnqueueResponse.Accepted response = await _workflowEngineClient.EnqueueWorkflow(
+            instance,
+            enqueueRequest,
+            ct
+        );
+        long workflowId = response.Workflows[0].DatabaseId;
 
-        Instance freshInstance = await WaitForEngineResponseAndRefetchInstance(instance, ct);
+        Instance freshInstance = await WaitForEngineResponseAndRefetchInstance(instance, workflowId, ct);
 
         return new MoveToNextResult(freshInstance, processStateChange);
     }
@@ -684,7 +695,11 @@ internal class ProcessEngine : IProcessEngine
         return true;
     }
 
-    private async Task<Instance> WaitForEngineResponseAndRefetchInstance(Instance instance, CancellationToken ct)
+    private async Task<Instance> WaitForEngineResponseAndRefetchInstance(
+        Instance instance,
+        long workflowId,
+        CancellationToken ct
+    )
     {
         var overallStopwatch = Stopwatch.StartNew();
         const int timeoutMs = 100_000;
@@ -694,7 +709,11 @@ internal class ProcessEngine : IProcessEngine
 
         while (!ct.IsCancellationRequested)
         {
-            WorkflowStatusResponse? processStatus = await _workflowEngineClient.GetActiveJobStatus(instance, ct);
+            WorkflowStatusResponse? processStatus = await _workflowEngineClient.GetWorkflowStatus(
+                instance,
+                workflowId,
+                ct
+            );
 
             if (processStatus is null)
             {
@@ -707,6 +726,8 @@ internal class ProcessEngine : IProcessEngine
                     throw new InvalidOperationException("Process engine job was canceled.");
                 case PersistentItemStatus.Failed:
                     throw new InvalidOperationException("Process engine job failed.");
+                case PersistentItemStatus.DependencyFailed:
+                    throw new InvalidOperationException("Process engine job failed due to a dependency failure.");
                 case PersistentItemStatus.Completed:
                     break;
                 case PersistentItemStatus.Enqueued:

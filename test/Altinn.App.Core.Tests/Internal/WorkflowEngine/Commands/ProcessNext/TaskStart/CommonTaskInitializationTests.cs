@@ -35,6 +35,7 @@ public class CommonTaskInitializationTests
                 Payload = serializedPayload,
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
+                WorkflowId = 0,
             },
         };
     }
@@ -62,6 +63,7 @@ public class CommonTaskInitializationTests
                 Payload = serializedPayload,
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
+                WorkflowId = 0,
             },
         };
         return (context, mutatorMock);

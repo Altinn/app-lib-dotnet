@@ -36,6 +36,7 @@ public class CommonTaskFinalizationTests
                 Actor = new Actor { UserIdOrOrgNumber = "1337" },
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
+                WorkflowId = 0,
             },
         };
         return (context, mutatorMock);
