@@ -26,6 +26,7 @@ using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
@@ -409,12 +410,14 @@ public class InstancesController : ControllerBase
 
         await RegisterEvent("app.instance.created", instance);
 
-        if (instanceTemplate.Notification is not null)
+        InstansiationNotification? notification = ExtractInstantiationNotification(requestParts);
+
+        if (notification is not null)
         {
             await _notificationService.NotifyInstanceOwnerOnInstansiation(
                 instance,
                 party,
-                instanceTemplate.Notification,
+                notification,
                 CancellationToken.None
             );
         }
@@ -602,7 +605,9 @@ public class InstancesController : ControllerBase
 
             if (isCopyRequest)
             {
-                string[] sourceSplit = instansiationInstance?.SourceInstanceId?.Split("/") ?? throw new ArgumentException("SourceInstanceId is null or not in the correct format");
+                string[] sourceSplit =
+                    instansiationInstance?.SourceInstanceId?.Split("/")
+                    ?? throw new ArgumentException("SourceInstanceId is null or not in the correct format");
                 Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
 
                 try
@@ -1355,6 +1360,29 @@ public class InstancesController : ControllerBase
             )
             {
                 return JsonConvert.DeserializeObject<Instance>(Encoding.UTF8.GetString(instancePart.Bytes));
+            }
+        }
+
+        return null;
+    }
+
+    private static InstansiationNotification? ExtractInstantiationNotification(List<RequestPart> parts)
+    {
+        RequestPart? notificationPart = parts.Find(part => part.Name == "notification");
+
+        if (notificationPart is not null)
+        {
+            parts.Remove(notificationPart);
+
+            // Some clients might set contentType to application/json even if the body is empty
+            if (
+                notificationPart is { Bytes.Length: > 0 }
+                && notificationPart.ContentType.Contains("application/json", StringComparison.Ordinal)
+            )
+            {
+                return JsonConvert.DeserializeObject<InstansiationNotification>(
+                    Encoding.UTF8.GetString(notificationPart.Bytes)
+                );
             }
         }
 
