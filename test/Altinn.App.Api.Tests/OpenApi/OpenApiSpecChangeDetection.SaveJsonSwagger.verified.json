@@ -5440,6 +5440,74 @@
         }
       }
     },
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceId}/layouts/{layoutSetId}": {
+      "get": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Endpoint for layouts with instance context.\nUses ICustomLayoutForInstance if implemented with IAppResources as fallback.",
+        "parameters": [
+          {
+            "name": "org",
+            "in": "path",
+            "description": "The application owner short name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "description": "The application name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "instanceOwnerPartyId",
+            "in": "path",
+            "description": "The instance owner party id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "instanceId",
+            "in": "path",
+            "description": "The instance id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "layoutSetId",
+            "in": "path",
+            "description": "The layout set id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/{org}/{app}/api/layoutsettings": {
       "get": {
         "tags": [
@@ -5460,6 +5528,74 @@
             "name": "app",
             "in": "path",
             "description": "The application name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceId}/layoutsettings/{layoutSetId}": {
+      "get": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Endpoint for layout settings with instance context.\nUses ICustomLayoutForInstance if implemented with IAppResources as fallback.",
+        "parameters": [
+          {
+            "name": "org",
+            "in": "path",
+            "description": "The application owner short name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "description": "The application name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "instanceOwnerPartyId",
+            "in": "path",
+            "description": "The instance owner party id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "instanceId",
+            "in": "path",
+            "description": "The instance id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "layoutSetId",
+            "in": "path",
+            "description": "The layout set id",
             "required": true,
             "schema": {
               "type": "string"
