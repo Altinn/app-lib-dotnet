@@ -2,19 +2,37 @@ using Altinn.App.Core.Features.Notifications.Texts;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Features.Notifications;
 
-internal sealed class NotificationService(
+internal sealed class NotificationService : INotificationService
+{
+    private readonly IRegisterClient _registerClient;
+    private readonly INotificationOrderClient _notificationOrderClient;
+    private readonly IProfileClient _profileClient;
+    private readonly IAltinnCdnClient _cdnClient;
+    private readonly IAltinnPartyClient _altinnPartyClient;
+
+    public NotificationService(
     INotificationOrderClient notificationOrderClient,
     IProfileClient profileClient,
-    IAltinnCdnClient cdnClient
-) : INotificationService
-{
+    IAltinnCdnClient cdnClient,
+    IAltinnPartyClient altinnPartyClient,
+    IServiceProvider serviceProvider
+    )
+    {
+        _registerClient = serviceProvider.GetRequiredService<IRegisterClient>();
+        _notificationOrderClient = notificationOrderClient;
+        _profileClient = profileClient;
+        _cdnClient = cdnClient;
+        _altinnPartyClient = altinnPartyClient;
+    }
     public async Task NotifyInstanceOwnerOnInstansiation(
         Instance instance,
         Party party,
@@ -23,8 +41,8 @@ internal sealed class NotificationService(
     )
     {
         InstanceOwner instanceOwner = instance.InstanceOwner;
-        string? language = await DetermineLanguage(instanceOwner, instansiationNotification.Language);
-        AltinnCdnOrgName? serviceOwnerName = await cdnClient.GetOrgNameByAppId(instance.AppId, ct);
+        string? language = await DetermineLanguage(instanceOwner, instansiationNotification.Language, ct);
+        AltinnCdnOrgName? serviceOwnerName = await _cdnClient.GetOrgNameByAppId(instance.AppId, ct);
 
         NotificationOrderRequest orderRequest = CreateNotificationOrderRequest(
             language,
@@ -34,7 +52,7 @@ internal sealed class NotificationService(
             instansiationNotification
         );
 
-        await notificationOrderClient.Order(orderRequest, ct);
+        await _notificationOrderClient.Order(orderRequest, ct);
     }
 
     internal static NotificationOrderRequest CreateNotificationOrderRequest(
@@ -172,17 +190,38 @@ internal sealed class NotificationService(
         );
     }
 
-    internal async Task<string> DetermineLanguage(InstanceOwner instanceOwner, string? requestedOrgLanguage)
+    internal async Task<string> DetermineLanguage(InstanceOwner instanceOwner, string? requestedOrgLanguage, CancellationToken ct)
     {
         if (instanceOwner.PersonNumber is not null)
         {
-            UserProfile? personProfile = await profileClient.GetUserProfile(instanceOwner.PersonNumber);
+            UserProfile? personProfile = await _profileClient.GetUserProfile(instanceOwner.PersonNumber);
             return personProfile?.ProfileSettingPreference.Language ?? LanguageConst.Nb;
         }
 
         if (instanceOwner.ExternalIdentifier is not null)
         {
-            return LanguageConst.En; // TODO: get profile for self identified user
+            var partyId = await _altinnPartyClient.GetPartyIdByUrn(instanceOwner.ExternalIdentifier);
+            if (partyId is null)
+            {
+                return LanguageConst.En;
+            }
+
+            Party? party = await _registerClient.GetPartyUnchecked(partyId.Value, ct);
+            if (party is null)
+            {
+                return LanguageConst.En;
+            }
+
+            Guid? partyGuid = party.PartyUuid;
+            if (partyGuid is null)
+            {
+                return LanguageConst.En;
+            }
+
+            // HACK: userUuid == partyGuid
+            UserProfile? userProfile = await _profileClient.GetUserProfile(partyGuid.Value);
+
+            return userProfile?.ProfileSettingPreference.Language ?? LanguageConst.En;
         }
 
         if (instanceOwner.OrganisationNumber is not null)
