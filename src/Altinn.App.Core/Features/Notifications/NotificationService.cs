@@ -200,19 +200,7 @@ internal sealed class NotificationService : INotificationService
 
         if (instanceOwner.ExternalIdentifier is not null)
         {
-            var partyId = await _altinnPartyClient.GetPartyIdByUrn(instanceOwner.ExternalIdentifier);
-            if (partyId is null)
-            {
-                return LanguageConst.En;
-            }
-
-            Party? party = await _registerClient.GetPartyUnchecked(partyId.Value, ct);
-            if (party is null)
-            {
-                return LanguageConst.En;
-            }
-
-            Guid? partyGuid = party.PartyUuid;
+            Guid? partyGuid = await _altinnPartyClient.GetPartyUuidByUrn(instanceOwner.ExternalIdentifier);
             if (partyGuid is null)
             {
                 return LanguageConst.En;

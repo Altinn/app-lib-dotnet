@@ -24,7 +24,7 @@ public interface IProfileClient
     /// <summary>
     /// Method for getting the userprofile from a given user uuid
     /// </summary>
-    /// <param name="UserUuid">the user uuid</param>
+    /// <param name="userUuid">the user uuid</param>
     /// <returns>The userprofile for the given user uuid</returns>
-    Task<UserProfile?> GetUserProfile(Guid UserUuid);
+    Task<UserProfile?> GetUserProfile(Guid userUuid);
 }
