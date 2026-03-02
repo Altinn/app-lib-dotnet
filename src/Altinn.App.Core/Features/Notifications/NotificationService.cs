@@ -7,32 +7,29 @@ using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Features.Notifications;
 
 internal sealed class NotificationService : INotificationService
 {
-    private readonly IRegisterClient _registerClient;
     private readonly INotificationOrderClient _notificationOrderClient;
     private readonly IProfileClient _profileClient;
     private readonly IAltinnCdnClient _cdnClient;
     private readonly IAltinnPartyClient _altinnPartyClient;
 
     public NotificationService(
-    INotificationOrderClient notificationOrderClient,
-    IProfileClient profileClient,
-    IAltinnCdnClient cdnClient,
-    IAltinnPartyClient altinnPartyClient,
-    IServiceProvider serviceProvider
+        INotificationOrderClient notificationOrderClient,
+        IProfileClient profileClient,
+        IAltinnCdnClient cdnClient,
+        IAltinnPartyClient altinnPartyClient
     )
     {
-        _registerClient = serviceProvider.GetRequiredService<IRegisterClient>();
         _notificationOrderClient = notificationOrderClient;
         _profileClient = profileClient;
         _cdnClient = cdnClient;
         _altinnPartyClient = altinnPartyClient;
     }
+
     public async Task NotifyInstanceOwnerOnInstansiation(
         Instance instance,
         Party party,
@@ -190,7 +187,11 @@ internal sealed class NotificationService : INotificationService
         );
     }
 
-    internal async Task<string> DetermineLanguage(InstanceOwner instanceOwner, string? requestedOrgLanguage, CancellationToken ct)
+    internal async Task<string> DetermineLanguage(
+        InstanceOwner instanceOwner,
+        string? requestedOrgLanguage,
+        CancellationToken ct
+    )
     {
         if (instanceOwner.PersonNumber is not null)
         {

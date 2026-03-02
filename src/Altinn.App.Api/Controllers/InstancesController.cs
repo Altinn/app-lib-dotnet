@@ -306,7 +306,7 @@ public class InstancesController : ControllerBase
             instanceTemplate.InstanceOwner = await InstantiationHelper.PartyToInstanceOwner(
                 party,
                 _authenticationContext
-            );;
+            );
         }
         catch (Exception partyLookupException)
         {
