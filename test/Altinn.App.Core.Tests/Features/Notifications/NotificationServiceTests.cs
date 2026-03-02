@@ -3,6 +3,7 @@ using Altinn.App.Core.Features.Notifications;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Profile;
+using Altinn.App.Core.Internal.Registers;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Moq;
@@ -14,9 +15,10 @@ public class NotificationServiceTests
     private readonly Mock<INotificationOrderClient> _orderClientMock = new();
     private readonly Mock<IProfileClient> _profileClientMock = new();
     private readonly Mock<IAltinnCdnClient> _cdnClientMock = new();
+    private readonly Mock<IAltinnPartyClient> _partyClientMock = new();
 
     private NotificationService CreateSut() =>
-        new(_orderClientMock.Object, _profileClientMock.Object, _cdnClientMock.Object);
+        new(_orderClientMock.Object, _profileClientMock.Object, _cdnClientMock.Object, _partyClientMock.Object);
 
     [Fact]
     public async Task DetermineLanguage_PersonOwner_UsesProfileLanguage()
@@ -33,7 +35,8 @@ public class NotificationServiceTests
                 }
             );
 
-        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null);
+        var result = await CreateSut()
+            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
 
         Assert.Equal(LanguageConst.En, result);
         _profileClientMock.Verify(p => p.GetUserProfile(ssn), Times.Once);
@@ -51,7 +54,8 @@ public class NotificationServiceTests
                 new UserProfile { ProfileSettingPreference = new ProfileSettingPreference { Language = null } }
             );
 
-        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null);
+        var result = await CreateSut()
+            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
 
         Assert.Equal(LanguageConst.Nb, result);
     }
@@ -64,7 +68,8 @@ public class NotificationServiceTests
 
         _profileClientMock.Setup(p => p.GetUserProfile(ssn)).ReturnsAsync((UserProfile?)null);
 
-        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null);
+        var result = await CreateSut()
+            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
 
         Assert.Equal(LanguageConst.Nb, result);
     }
@@ -85,7 +90,8 @@ public class NotificationServiceTests
     {
         var instanceOwner = new InstanceOwner { OrganisationNumber = "123456789" };
 
-        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: requestedLanguage);
+        var result = await CreateSut()
+            .DetermineLanguage(instanceOwner, requestedOrgLanguage: requestedLanguage, CancellationToken.None);
 
         Assert.Equal(expectedLanguage, result);
         _profileClientMock.Verify(p => p.GetUserProfile(It.IsAny<string>()), Times.Never);
@@ -100,7 +106,8 @@ public class NotificationServiceTests
     {
         var instanceOwner = new InstanceOwner { ExternalIdentifier = "ext-user-42" };
 
-        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: LanguageConst.Nb);
+        var result = await CreateSut()
+            .DetermineLanguage(instanceOwner, requestedOrgLanguage: LanguageConst.Nb, CancellationToken.None);
 
         Assert.Equal(LanguageConst.En, result);
         _profileClientMock.Verify(p => p.GetUserProfile(It.IsAny<string>()), Times.Never);
@@ -118,7 +125,7 @@ public class NotificationServiceTests
         var instanceOwner = new InstanceOwner();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null)
+            CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None)
         );
     }
 }

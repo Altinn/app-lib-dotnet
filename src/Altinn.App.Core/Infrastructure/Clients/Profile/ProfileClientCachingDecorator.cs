@@ -74,6 +74,7 @@ public class ProfileClientCachingDecorator : IProfileClient
         return user;
     }
 
+    /// <inheritdoc/>
     public async Task<UserProfile?> GetUserProfile(Guid userUuid)
     {
         string uniqueCacheKey = "User_UserUuid_" + userUuid;
