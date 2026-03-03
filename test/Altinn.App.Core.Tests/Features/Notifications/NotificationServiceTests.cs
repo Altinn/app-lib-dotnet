@@ -1,9 +1,12 @@
+using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications;
 using Altinn.App.Core.Internal.AltinnCdn;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Moq;
@@ -16,9 +19,16 @@ public class NotificationServiceTests
     private readonly Mock<IProfileClient> _profileClientMock = new();
     private readonly Mock<IAltinnCdnClient> _cdnClientMock = new();
     private readonly Mock<IAltinnPartyClient> _partyClientMock = new();
+    private readonly Mock<IAppMetadata> _appMetadataMock = new();
 
     private NotificationService CreateSut() =>
-        new(_orderClientMock.Object, _profileClientMock.Object, _cdnClientMock.Object, _partyClientMock.Object);
+        new(
+            _orderClientMock.Object,
+            _profileClientMock.Object,
+            _cdnClientMock.Object,
+            _appMetadataMock.Object,
+            _partyClientMock.Object
+        );
 
     #region SSN
 
@@ -177,6 +187,86 @@ public class NotificationServiceTests
             .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
 
         Assert.Equal(LanguageConst.En, result);
+    }
+
+    #endregion
+
+    #region GetTitleFromMetadata
+
+    [Fact]
+    public void GetTitleFromMetadata_NullMetadata_ReturnsNull()
+    {
+        var result = NotificationService.GetTitleFromMetadata(LanguageConst.Nb, null);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void GetTitleFromMetadata_NullUnmappedProperties_ReturnsNull()
+    {
+        var metadata = new ApplicationMetadata("ttd/app") { UnmappedProperties = null };
+
+        var result = NotificationService.GetTitleFromMetadata(LanguageConst.Nb, metadata);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void GetTitleFromMetadata_NoTitleKey_ReturnsNull()
+    {
+        var metadata = new ApplicationMetadata("ttd/app")
+        {
+            UnmappedProperties = new Dictionary<string, object>
+            {
+                ["someOtherKey"] = JsonSerializer.SerializeToElement("value"),
+            },
+        };
+
+        var result = NotificationService.GetTitleFromMetadata(LanguageConst.Nb, metadata);
+
+        Assert.Null(result);
+    }
+
+    [Theory]
+    [InlineData(LanguageConst.Nb, "Bokmål tittel")]
+    [InlineData(LanguageConst.Nn, "Nynorsk tittel")]
+    [InlineData(LanguageConst.En, "English title")]
+    public void GetTitleFromMetadata_MatchingLanguage_ReturnsTitle(string language, string expectedTitle)
+    {
+        var titleJson = JsonSerializer.SerializeToElement(
+            new Dictionary<string, string>
+            {
+                [LanguageConst.Nb] = "Bokmål tittel",
+                [LanguageConst.Nn] = "Nynorsk tittel",
+                [LanguageConst.En] = "English title",
+            }
+        );
+
+        var metadata = new ApplicationMetadata("ttd/app")
+        {
+            UnmappedProperties = new Dictionary<string, object> { ["title"] = titleJson },
+        };
+
+        var result = NotificationService.GetTitleFromMetadata(language, metadata);
+
+        Assert.Equal(expectedTitle, result);
+    }
+
+    [Fact]
+    public void GetTitleFromMetadata_LanguageNotInTitle_ReturnsNull()
+    {
+        var titleJson = JsonSerializer.SerializeToElement(
+            new Dictionary<string, string> { [LanguageConst.Nb] = "Bokmål tittel" }
+        );
+
+        var metadata = new ApplicationMetadata("ttd/app")
+        {
+            UnmappedProperties = new Dictionary<string, object> { ["title"] = titleJson },
+        };
+
+        var result = NotificationService.GetTitleFromMetadata(LanguageConst.En, metadata);
+
+        Assert.Null(result);
     }
 
     #endregion

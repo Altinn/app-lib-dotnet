@@ -8,6 +8,7 @@ internal static class NotificationTexts
     internal static string ReplaceTokens(
         string text,
         string? appId,
+        string? title,
         string? instanceOwnerName,
         string? serviceOwnerName,
         string? orgNumber,
@@ -20,7 +21,7 @@ internal static class NotificationTexts
 
         var formattedDate = dueDate?.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);
 
-        return text.Replace(ReplacementTokens.AppName, appName ?? string.Empty)
+        return text.Replace(ReplacementTokens.AppName, title ?? appName ?? string.Empty)
             .Replace(ReplacementTokens.InstanceOwnerName, instanceOwnerName ?? string.Empty)
             .Replace(ReplacementTokens.ServiceOwnerName, serviceOwnerName ?? string.Empty)
             .Replace(ReplacementTokens.OrgNumber, orgNumber ?? string.Empty)

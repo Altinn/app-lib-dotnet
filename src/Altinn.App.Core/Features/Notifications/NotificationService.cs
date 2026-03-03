@@ -1,8 +1,10 @@
 using Altinn.App.Core.Features.Notifications.Texts;
 using Altinn.App.Core.Internal.AltinnCdn;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
@@ -15,18 +17,21 @@ internal sealed class NotificationService : INotificationService
     private readonly INotificationOrderClient _notificationOrderClient;
     private readonly IProfileClient _profileClient;
     private readonly IAltinnCdnClient _cdnClient;
+    private readonly IAppMetadata _appMetadata;
     private readonly IAltinnPartyClient _altinnPartyClient;
 
     public NotificationService(
         INotificationOrderClient notificationOrderClient,
         IProfileClient profileClient,
         IAltinnCdnClient cdnClient,
+        IAppMetadata appMetadata,
         IAltinnPartyClient altinnPartyClient
     )
     {
         _notificationOrderClient = notificationOrderClient;
         _profileClient = profileClient;
         _cdnClient = cdnClient;
+        _appMetadata = appMetadata;
         _altinnPartyClient = altinnPartyClient;
     }
 
@@ -40,10 +45,12 @@ internal sealed class NotificationService : INotificationService
         InstanceOwner instanceOwner = instance.InstanceOwner;
         string? language = await DetermineLanguage(instanceOwner, instansiationNotification.Language, ct);
         AltinnCdnOrgName? serviceOwnerName = await _cdnClient.GetOrgNameByAppId(instance.AppId, ct);
+        ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
 
         NotificationOrderRequest orderRequest = CreateNotificationOrderRequest(
             language,
             instance,
+            appMetadata,
             party.Name,
             serviceOwnerName,
             instansiationNotification
@@ -55,6 +62,7 @@ internal sealed class NotificationService : INotificationService
     internal static NotificationOrderRequest CreateNotificationOrderRequest(
         string language,
         Instance instance,
+        ApplicationMetadata? applicationMetadata,
         string? instanceOwnerName,
         AltinnCdnOrgName? serviceOwnerName,
         InstansiationNotification instansiationNotification
@@ -62,6 +70,7 @@ internal sealed class NotificationService : INotificationService
     {
         InstanceOwner instanceOwner = instance.InstanceOwner;
         DateOnly? dueDateString = instance.DueBefore.HasValue ? DateOnly.FromDateTime(instance.DueBefore.Value) : null;
+        string? appTitle = GetTitleFromMetadata(language, applicationMetadata);
 
         CustomEmail? customEmail = instansiationNotification.CustomEmail;
         EmailSendingOptions emailSettings = new()
@@ -71,6 +80,7 @@ internal sealed class NotificationService : INotificationService
                 ? NotificationTexts.ReplaceTokens(
                     text: customEmail.Subject.GetTextForLanguage(language),
                     appId: instance.AppId,
+                    title: appTitle,
                     instanceOwnerName: instanceOwnerName,
                     serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
                     orgNumber: instanceOwner.OrganisationNumber,
@@ -82,6 +92,7 @@ internal sealed class NotificationService : INotificationService
                 ? NotificationTexts.ReplaceTokens(
                     text: customEmail.Body.GetTextForLanguage(language),
                     appId: instance.AppId,
+                    title: appTitle,
                     instanceOwnerName: instanceOwnerName,
                     serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
                     orgNumber: instanceOwner.OrganisationNumber,
@@ -108,6 +119,7 @@ internal sealed class NotificationService : INotificationService
                 ? NotificationTexts.ReplaceTokens(
                     text: customSms.Text.GetTextForLanguage(language),
                     appId: instance.AppId,
+                    title: appTitle,
                     instanceOwnerName: instanceOwnerName,
                     serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
                     orgNumber: instanceOwner.OrganisationNumber,
@@ -187,10 +199,23 @@ internal sealed class NotificationService : INotificationService
         );
     }
 
+    internal static string? GetTitleFromMetadata(string language, ApplicationMetadata? applicationMetadata)
+    {
+        if (
+            applicationMetadata?.UnmappedProperties?.TryGetValue("title", out object? titleObj) == true
+            && titleObj is System.Text.Json.JsonElement titleElement
+            && titleElement.TryGetProperty(language, out var titleForLanguage)
+        )
+        {
+            return titleForLanguage.GetString();
+        }
+        return null;
+    }
+
     internal async Task<string> DetermineLanguage(
         InstanceOwner instanceOwner,
         string? requestedOrgLanguage,
-        CancellationToken ct
+        CancellationToken ct = default
     )
     {
         if (instanceOwner.PersonNumber is not null)

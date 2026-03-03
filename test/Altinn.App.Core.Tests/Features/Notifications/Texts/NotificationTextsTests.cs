@@ -16,6 +16,7 @@ public class NotificationTextsTests
         string result = NotificationTexts.ReplaceTokens(
             text,
             appId: "ttd/app-test",
+            title: null,
             instanceOwnerName: "John Doe",
             serviceOwnerName: "TestDepartementet",
             orgNumber: "123456789",
@@ -38,6 +39,7 @@ public class NotificationTextsTests
         string result = NotificationTexts.ReplaceTokens(
             text,
             appId: null,
+            title: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
             orgNumber: null,
@@ -54,6 +56,7 @@ public class NotificationTextsTests
         string result = NotificationTexts.ReplaceTokens(
             "App: {appName}",
             appId: "invalid-no-slash",
+            title: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
             orgNumber: null,
@@ -70,6 +73,7 @@ public class NotificationTextsTests
         string result = NotificationTexts.ReplaceTokens(
             "App: {appName}",
             appId: "org/app-name/extra",
+            title: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
             orgNumber: null,
@@ -86,6 +90,7 @@ public class NotificationTextsTests
         string result = NotificationTexts.ReplaceTokens(
             "{dueDate}",
             appId: null,
+            title: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
             orgNumber: null,
@@ -104,6 +109,7 @@ public class NotificationTextsTests
         string result = NotificationTexts.ReplaceTokens(
             text,
             appId: "ttd/app",
+            title: null,
             instanceOwnerName: "Someone",
             serviceOwnerName: "Owner",
             orgNumber: "999",
@@ -337,6 +343,84 @@ public class NotificationTextsTests
 
         Assert.Equal(
             "Skatteetaten har opprettet et nytt skjema (tax-form) for Acme AS med organisasjonsnummer 987654321 med frist 31-12-2025",
+            result
+        );
+    }
+
+    #endregion
+
+    #region Metadata title
+
+    [Fact]
+    public void ReplaceTokens_WithTitle_UsesTitleOverAppName()
+    {
+        string result = NotificationTexts.ReplaceTokens(
+            "{appName}",
+            appId: "ttd/my-app",
+            title: "My Application Title",
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            orgNumber: null,
+            socialSecurityNumber: null,
+            dueDate: null
+        );
+
+        Assert.Equal("My Application Title", result);
+    }
+
+    [Fact]
+    public void ReplaceTokens_NullTitle_FallsBackToAppName()
+    {
+        string result = NotificationTexts.ReplaceTokens(
+            "{appName}",
+            appId: "ttd/my-app",
+            title: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            orgNumber: null,
+            socialSecurityNumber: null,
+            dueDate: null
+        );
+
+        Assert.Equal("my-app", result);
+    }
+
+    [Fact]
+    public void ReplaceTokens_NullTitleAndNullAppId_ReplacesWithEmptyString()
+    {
+        string result = NotificationTexts.ReplaceTokens(
+            "{appName}",
+            appId: null,
+            title: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            orgNumber: null,
+            socialSecurityNumber: null,
+            dueDate: null
+        );
+
+        Assert.Equal("", result);
+    }
+
+    [Fact]
+    public void ReplaceTokens_AllTokens_WithTitle_UsesTitleForAppName()
+    {
+        string text =
+            "App: {appName}, Owner: {instanceOwnerName}, Service: {serviceOwnerName}, Org: {orgNumber}, SSN: {socialSecurityNumber}, Due: {dueDate}";
+
+        string result = NotificationTexts.ReplaceTokens(
+            text,
+            appId: "ttd/app-test",
+            title: "Utenriksøkonomi (RA-0532)",
+            instanceOwnerName: "John Doe",
+            serviceOwnerName: "TestDepartementet",
+            orgNumber: "123456789",
+            socialSecurityNumber: "01010112345",
+            dueDate: new DateOnly(2024, 12, 31)
+        );
+
+        Assert.Equal(
+            "App: Utenriksøkonomi (RA-0532), Owner: John Doe, Service: TestDepartementet, Org: 123456789, SSN: 01010112345, Due: 31-12-2024",
             result
         );
     }
