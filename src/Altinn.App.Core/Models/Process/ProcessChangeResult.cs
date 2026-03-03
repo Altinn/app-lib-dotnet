@@ -13,6 +13,7 @@ public class ProcessChangeResult
     /// Gets or sets a value indicating whether the process change was successful
     /// </summary>
     [MemberNotNullWhen(true, nameof(ProcessStateChange))]
+    [MemberNotNullWhen(true, nameof(MutatedInstance))]
     [MemberNotNullWhen(false, nameof(ErrorMessage), nameof(ErrorType))]
     public bool Success { get; init; }
 
