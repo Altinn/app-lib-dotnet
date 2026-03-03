@@ -383,6 +383,15 @@
         }
       },
       {
+        endpoint: GET {org}/{app}/api/xsdschema/{id},
+        metadata: {
+          errorMessageTextResourceKeyUser: null,
+          errorMessageTextResourceKeyServiceOwner: null,
+          requiredScopesUsers: null,
+          requiredScopesServiceOwners: null
+        }
+      },
+      {
         endpoint: GET {org}/{app}/instances/{instanceOwnerId:int}/{instanceId:guid}/data/{dataGuid:guid}/validate,
         metadata: {
           errorMessageTextResourceKeyUser: null,
