@@ -66,7 +66,8 @@ public class NotificationServiceTests
         const string ssn = "01010112345";
         var instanceOwner = new InstanceOwner { PersonNumber = ssn };
 
-        _profileClientMock.Setup(p => p.GetUserProfile(ssn)).ReturnsAsync((UserProfile?)null);
+        UserProfile? profile = null;
+        _profileClientMock.Setup(p => p.GetUserProfile(ssn)).ReturnsAsync(profile);
 
         var result = await CreateSut()
             .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
