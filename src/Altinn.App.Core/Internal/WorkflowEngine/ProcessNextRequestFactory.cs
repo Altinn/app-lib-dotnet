@@ -87,8 +87,14 @@ internal sealed class ProcessNextRequestFactory
         commands.Add(CreateSaveProcessStateToStorageCommand(processStateChange));
         commands.AddRange(postCommitSteps);
 
-        string fromTaskId = processStateChange.OldProcessState?.CurrentTask?.ElementId ?? string.Empty;
-        string toTaskId = processStateChange.NewProcessState?.CurrentTask?.ElementId ?? string.Empty;
+        string fromTaskId =
+            processStateChange.OldProcessState?.CurrentTask?.ElementId
+            ?? processStateChange.NewProcessState?.StartEvent
+            ?? "Start event";
+        string toTaskId =
+            processStateChange.NewProcessState?.CurrentTask?.ElementId
+            ?? processStateChange.NewProcessState?.EndEvent
+            ?? "End event";
 
         return new WorkflowEnqueueRequest
         {

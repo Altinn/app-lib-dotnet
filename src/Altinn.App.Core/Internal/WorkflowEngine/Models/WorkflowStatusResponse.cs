@@ -11,7 +11,7 @@ internal sealed record WorkflowStatusResponse
     /// The database ID of the workflow.
     /// </summary>
     [JsonPropertyName("databaseId")]
-    public required long DatabaseId { get; init; }
+    public long DatabaseId { get; init; }
 
     /// <summary>
     /// The operation ID of the workflow.
@@ -35,18 +35,21 @@ internal sealed record WorkflowStatusResponse
     /// When the workflow was last updated.
     /// </summary>
     [JsonPropertyName("updatedAt")]
-    public required DateTimeOffset UpdatedAt { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DateTimeOffset? UpdatedAt { get; init; }
 
     /// <summary>
     /// When the workflow should start execution.
     /// </summary>
     [JsonPropertyName("startAt")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DateTimeOffset? StartAt { get; init; }
 
     /// <summary>
     /// Optional metadata.
     /// </summary>
     [JsonPropertyName("metadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Metadata { get; init; }
 
     /// <summary>
@@ -66,19 +69,22 @@ internal sealed record WorkflowStatusResponse
     /// The type of workflow.
     /// </summary>
     [JsonPropertyName("type")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public required WorkflowType Type { get; init; }
 
     /// <summary>
     /// Optional dependency information.
     /// </summary>
     [JsonPropertyName("dependencies")]
-    public IReadOnlyDictionary<string, string>? Dependencies { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<long, PersistentItemStatus>? Dependencies { get; init; }
 
     /// <summary>
     /// Optional link information.
     /// </summary>
     [JsonPropertyName("links")]
-    public IReadOnlyDictionary<string, string>? Links { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<long, PersistentItemStatus>? Links { get; init; }
 
     /// <summary>
     /// Details about each step in the workflow.
@@ -96,7 +102,7 @@ internal sealed record StepStatusResponse
     /// The database ID of the step.
     /// </summary>
     [JsonPropertyName("databaseId")]
-    public required long DatabaseId { get; init; }
+    public long DatabaseId { get; init; }
 
     /// <summary>
     /// The idempotency key of the step.
@@ -114,12 +120,14 @@ internal sealed record StepStatusResponse
     /// When the step was last updated.
     /// </summary>
     [JsonPropertyName("updatedAt")]
-    public required DateTimeOffset UpdatedAt { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DateTimeOffset? UpdatedAt { get; init; }
 
     /// <summary>
     /// Optional metadata.
     /// </summary>
     [JsonPropertyName("metadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Metadata { get; init; }
 
     /// <summary>
@@ -152,29 +160,31 @@ internal sealed record StepStatusResponse
     /// The retry strategy for this step.
     /// </summary>
     [JsonPropertyName("retryStrategy")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RetryStrategy? RetryStrategy { get; init; }
-}
-
-/// <summary>
-/// Details about the command associated with a step.
-/// </summary>
-internal sealed record CommandDetails
-{
-    /// <summary>
-    /// The command type (e.g. "AppCommand", "Webhook").
-    /// </summary>
-    [JsonPropertyName("type")]
-    public required string Type { get; init; }
 
     /// <summary>
-    /// The operation ID of the command.
+    /// Details about the command associated with a step.
     /// </summary>
-    [JsonPropertyName("operationId")]
-    public string? OperationId { get; init; }
+    internal sealed record CommandDetails
+    {
+        /// <summary>
+        /// The command type (e.g. "AppCommand", "Webhook").
+        /// </summary>
+        [JsonPropertyName("type")]
+        public required string Type { get; init; }
 
-    /// <summary>
-    /// The command payload.
-    /// </summary>
-    [JsonPropertyName("payload")]
-    public string? Payload { get; init; }
+        /// <summary>
+        /// The operation ID of the command.
+        /// </summary>
+        [JsonPropertyName("operationId")]
+        public required string OperationId { get; init; }
+
+        /// <summary>
+        /// The command payload.
+        /// </summary>
+        [JsonPropertyName("payload")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Payload { get; init; }
+    }
 }

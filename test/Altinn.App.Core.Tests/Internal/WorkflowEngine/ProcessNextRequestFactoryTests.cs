@@ -113,13 +113,18 @@ public class ProcessNextRequestFactoryTests
         };
     }
 
-    private static ProcessStateChange CreateInitialTaskStart(string taskId = "Task_1", string? altinnTaskType = null)
+    private static ProcessStateChange CreateInitialTaskStart(
+        string taskId = "Task_1",
+        string? altinnTaskType = null,
+        string startEvent = "StartEvent_1"
+    )
     {
         return new ProcessStateChange
         {
             OldProcessState = new ProcessState { CurrentTask = null },
             NewProcessState = new ProcessState
             {
+                StartEvent = startEvent,
                 CurrentTask = new ProcessElementInfo { ElementId = taskId, AltinnTaskType = altinnTaskType ?? "data" },
             },
             Events =
@@ -390,6 +395,36 @@ public class ProcessNextRequestFactoryTests
         Assert.Equal("lock-token", workflow.IdempotencyKey);
         Assert.Equal(WorkflowType.AppProcessChange, workflow.Type);
         Assert.Equal("state-blob", workflow.State);
+    }
+
+    [Fact]
+    public async Task Create_InitialTaskStart_OperationIdUsesStartEventName()
+    {
+        // Arrange
+        var factory = CreateFactory();
+        var stateChange = CreateInitialTaskStart("Task_1", startEvent: "StartEvent_1");
+
+        // Act
+        var request = await factory.Create(stateChange, "lock-token", "{}");
+
+        // Assert
+        var workflow = request.Workflows[0];
+        Assert.Equal("Process next: StartEvent_1 -> Task_1", workflow.OperationId);
+    }
+
+    [Fact]
+    public async Task Create_TaskToEndTransition_OperationIdUsesEndEventName()
+    {
+        // Arrange
+        var factory = CreateFactory();
+        var stateChange = CreateTaskToEndTransition("Task_1", "EndEvent_1");
+
+        // Act
+        var request = await factory.Create(stateChange, "lock-token", "{}");
+
+        // Assert
+        var workflow = request.Workflows[0];
+        Assert.Equal("Process next: Task_1 -> EndEvent_1", workflow.OperationId);
     }
 
     [Fact]
