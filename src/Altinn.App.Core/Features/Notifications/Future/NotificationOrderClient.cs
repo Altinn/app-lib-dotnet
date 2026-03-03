@@ -39,6 +39,8 @@ internal sealed class NotificationOrderClient : INotificationOrderClient
     {
         using var activity = _telemetry?.StartNotificationOrderActivity(Telemetry.Notifications.OrderType.Future);
 
+        // Cannot use `using var` here — httpResponseMessage must be accessible in the catch block.
+        // Disposed manually in finally instead.
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
         try
