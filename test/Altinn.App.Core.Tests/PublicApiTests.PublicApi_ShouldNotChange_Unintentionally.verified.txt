@@ -4849,7 +4849,7 @@ namespace Altinn.App.Core.Models.Notifications.Email
 }
 namespace Altinn.App.Core.Models.Notifications.Future
 {
-    public class CustomEmail
+    public sealed class CustomEmail
     {
         public CustomEmail() { }
         [System.Text.Json.Serialization.JsonPropertyName("body")]
@@ -4857,7 +4857,7 @@ namespace Altinn.App.Core.Models.Notifications.Future
         [System.Text.Json.Serialization.JsonPropertyName("subject")]
         public required Altinn.App.Core.Models.Notifications.Future.CustomText Subject { get; set; }
     }
-    public class CustomSms
+    public sealed class CustomSms
     {
         public CustomSms() { }
         [System.Text.Json.Serialization.JsonPropertyName("senderName")]
@@ -4865,7 +4865,7 @@ namespace Altinn.App.Core.Models.Notifications.Future
         [System.Text.Json.Serialization.JsonPropertyName("text")]
         public required Altinn.App.Core.Models.Notifications.Future.CustomText Text { get; set; }
     }
-    public class CustomText
+    public sealed class CustomText
     {
         public CustomText() { }
         [System.Text.Json.Serialization.JsonPropertyName("en")]
