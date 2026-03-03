@@ -53,6 +53,12 @@ public class AltinnTaskExtension
     public AltinnSubformPdfConfiguration? SubformPdfConfiguration { get; set; }
 
     /// <summary>
+    /// Gets or sets the configuration for notifications
+    /// </summary>
+    [XmlElement("notificationConfig", Namespace = "http://altinn.no/process")]
+    public AltinnNotificationConfiguration? NotificationConfiguration { get; set; }
+
+    /// <summary>
     /// Retrieves a configuration item for given environment, in a predictable manner.
     /// Specific configurations (those specifying an environment) takes precedence over global configurations.
     /// </summary>

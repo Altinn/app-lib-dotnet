@@ -2,26 +2,24 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
-using Altinn.App.Core.Models.Notifications.Sms;
+using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.Common.AccessTokenClient.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Altinn.App.Core.Features.Notifications.Sms;
+namespace Altinn.App.Core.Features.Notifications.Future;
 
-internal sealed class SmsNotificationClient : ISmsNotificationClient
+internal sealed class NotificationOrderClient : INotificationOrderClient
 {
-    private static readonly Telemetry.Notifications.OrderType _orderType = Telemetry.Notifications.OrderType.Sms;
-
-    private readonly ILogger<SmsNotificationClient> _logger;
+    private readonly ILogger<NotificationOrderClient> _logger;
     private readonly HttpClient _httpClient;
     private readonly PlatformSettings _platformSettings;
     private readonly IAppMetadata _appMetadata;
     private readonly IAccessTokenGenerator _accessTokenGenerator;
     private readonly Telemetry? _telemetry;
 
-    public SmsNotificationClient(
-        ILogger<SmsNotificationClient> logger,
+    public NotificationOrderClient(
+        ILogger<NotificationOrderClient> logger,
         HttpClient httpClient,
         IOptions<PlatformSettings> platformSettings,
         IAppMetadata appMetadata,
@@ -37,18 +35,21 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
         _telemetry = telemetry;
     }
 
-    public async Task<SmsOrderResponse> Order(SmsNotification smsNotification, CancellationToken ct)
+    public async Task<NotificationOrderResponse> Order(NotificationOrderRequest request, CancellationToken ct)
     {
-        using var activity = _telemetry?.StartNotificationOrderActivity(_orderType, smsNotification.SendersReference);
+        using var activity = _telemetry?.StartNotificationOrderActivity(
+            Telemetry.Notifications.OrderType.Future,
+            request.SendersReference
+        );
 
         HttpResponseMessage? httpResponseMessage = null;
         string? httpContent = null;
         try
         {
-            Models.ApplicationMetadata? application = await _appMetadata.GetApplicationMetadata();
+            var application = await _appMetadata.GetApplicationMetadata();
 
-            var uri = _platformSettings.ApiNotificationEndpoint.TrimEnd('/') + "/orders/sms";
-            var body = JsonSerializer.Serialize(smsNotification);
+            var uri = _platformSettings.ApiNotificationEndpoint.TrimEnd('/') + "/future/orders";
+            var body = JsonSerializer.Serialize(request);
 
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)
             {
@@ -65,30 +66,35 @@ internal sealed class SmsNotificationClient : ISmsNotificationClient
 
             if (httpResponseMessage.IsSuccessStatusCode)
             {
-                SmsOrderResponse? orderResponse = JsonSerializer.Deserialize<SmsOrderResponse>(httpContent);
-                if (orderResponse is null)
-                    throw new JsonException("Couldn't deserialize SMS notification order response");
+                var orderResponse =
+                    JsonSerializer.Deserialize<NotificationOrderResponse>(httpContent)
+                    ?? throw new JsonException("Couldn't deserialize notification order response.");
 
-                _telemetry?.RecordNotificationOrder(_orderType, Telemetry.Notifications.OrderResult.Success);
+                _telemetry?.RecordNotificationOrder(
+                    Telemetry.Notifications.OrderType.Future,
+                    Telemetry.Notifications.OrderResult.Success
+                );
                 return orderResponse;
             }
-            else
-            {
-                throw new HttpRequestException("Got error status code for SMS notification order");
-            }
+
+            throw new HttpRequestException(
+                $"Got error status code for notification order: {(int)httpResponseMessage.StatusCode}"
+            );
         }
-        catch (Exception e)
+        catch (Exception e) when (e is not NotificationOrderException)
         {
-            var ex = new SmsNotificationException(
-                $"Something went wrong when processing the SMS notification order",
+            _telemetry?.RecordNotificationOrder(
+                Telemetry.Notifications.OrderType.Future,
+                Telemetry.Notifications.OrderResult.Error
+            );
+
+            var ex = new NotificationOrderException(
+                $"Something went wrong when processing the notification order",
                 httpResponseMessage,
                 httpContent,
                 e
             );
-            _logger.LogError(ex, "Error when processing SMS notification order");
-
-            _telemetry?.RecordNotificationOrder(_orderType, Telemetry.Notifications.OrderResult.Error);
-
+            _logger.LogError(ex, "Error when processing notification order");
             throw ex;
         }
         finally
