@@ -169,7 +169,7 @@ public class ProfileClient : IProfileClient
         string token = JwtTokenUtil.GetTokenFromContext(_httpContextAccessor.HttpContext, _settings.RuntimeCookieName);
 
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
-        HttpResponseMessage response = await _client.GetAsync(
+        using HttpResponseMessage response = await _client.GetAsync(
             token,
             endpointUrl,
             _accessTokenGenerator.GenerateAccessToken(applicationMetadata.Org, applicationMetadata.AppIdentifier.App)
@@ -178,14 +178,12 @@ public class ProfileClient : IProfileClient
         {
             return await JsonSerializerPermissive.DeserializeAsync<UserProfile>(response.Content);
         }
-        else
-        {
-            _logger.LogError(
-                "Getting user profile with party UUID {PartyUuid} failed with statuscode {StatusCode}",
-                userUuid,
-                response.StatusCode
-            );
-            return null;
-        }
+
+        _logger.LogError(
+            "Getting user profile with party UUID {PartyUuid} failed with statuscode {StatusCode}",
+            userUuid,
+            response.StatusCode
+        );
+        return null;
     }
 }

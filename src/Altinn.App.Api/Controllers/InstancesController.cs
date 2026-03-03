@@ -414,12 +414,25 @@ public class InstancesController : ControllerBase
 
         if (notification is not null)
         {
-            await _notificationService.NotifyInstanceOwnerOnInstansiation(
-                instance,
-                party,
-                notification,
-                CancellationToken.None
-            );
+            try
+            {
+                CancellationToken doNotCancelNotification = CancellationToken.None;
+                await _notificationService.NotifyInstanceOwnerOnInstansiation(
+                    instance,
+                    party,
+                    notification,
+                    doNotCancelNotification
+                );
+            }
+            catch (Exception ex)
+            {
+                // TODO: retry with workflow engine
+                _logger.LogError(
+                    ex,
+                    "Failed to send instantiation notification for instance {InstanceId}",
+                    instance.Id
+                );
+            }
         }
 
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
@@ -654,12 +667,25 @@ public class InstancesController : ControllerBase
 
         if (instansiationInstance.Notification is not null)
         {
-            await _notificationService.NotifyInstanceOwnerOnInstansiation(
-                instance,
-                party,
-                instansiationInstance.Notification,
-                CancellationToken.None
-            );
+            try
+            {
+                CancellationToken doNotCancelNotification = CancellationToken.None;
+                await _notificationService.NotifyInstanceOwnerOnInstansiation(
+                    instance,
+                    party,
+                    instansiationInstance.Notification,
+                    doNotCancelNotification
+                );
+            }
+            catch (Exception ex)
+            {
+                // TODO: retry with workflow engine
+                _logger.LogError(
+                    ex,
+                    "Failed to send instantiation notification for instance {InstanceId}",
+                    instance.Id
+                );
+            }
         }
 
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);

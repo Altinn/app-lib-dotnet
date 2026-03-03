@@ -20,6 +20,8 @@ public class NotificationServiceTests
     private NotificationService CreateSut() =>
         new(_orderClientMock.Object, _profileClientMock.Object, _cdnClientMock.Object, _partyClientMock.Object);
 
+    #region SSN
+
     [Fact]
     public async Task DetermineLanguage_PersonOwner_UsesProfileLanguage()
     {
@@ -75,9 +77,9 @@ public class NotificationServiceTests
         Assert.Equal(LanguageConst.Nb, result);
     }
 
-    // -------------------------------------------------------------------------
-    // Organisation owner — language comes from the notification request
-    // -------------------------------------------------------------------------
+    #endregion
+
+    #region Org number
 
     [Theory]
     [InlineData(LanguageConst.En, LanguageConst.En)]
@@ -98,27 +100,95 @@ public class NotificationServiceTests
         _profileClientMock.Verify(p => p.GetUserProfile(It.IsAny<string>()), Times.Never);
     }
 
-    // -------------------------------------------------------------------------
-    // Self-identified (ExternalIdentifier) owner — always English
-    // -------------------------------------------------------------------------
+    #endregion
+
+    #region ExternalIdentifier
 
     [Fact]
-    public async Task DetermineLanguage_ExternalIdentifierOwner_AlwaysReturnsEnglish()
+    public async Task DetermineLanguage_ExternalIdentifierOwner_PartyUuidMissing_FallsBackToEnglish()
     {
         var instanceOwner = new InstanceOwner { ExternalIdentifier = "ext-user-42" };
-
+        _partyClientMock
+            .Setup(p => p.GetPartyUuidByUrn("ext-user-42"))
+            .ReturnsAsync((Guid?)null);
         var result = await CreateSut()
             .DetermineLanguage(instanceOwner, requestedOrgLanguage: LanguageConst.Nb, CancellationToken.None);
-
         Assert.Equal(LanguageConst.En, result);
-        _profileClientMock.Verify(p => p.GetUserProfile(It.IsAny<string>()), Times.Never);
+        _partyClientMock.Verify(p => p.GetPartyUuidByUrn("ext-user-42"), Times.Once);
+        _profileClientMock.Verify(p => p.GetUserProfile(It.IsAny<Guid>()), Times.Never);
     }
 
-    // TODO: add more tests when we get the profile for self identified users implemented
+    [Fact]
+    public async Task DetermineLanguage_ExternalIdentifierOwner_UsesProfileLanguage()
+    {
+        var partyGuid = Guid.NewGuid();
+        var instanceOwner = new InstanceOwner { ExternalIdentifier = "ext-user-42" };
 
-    // -------------------------------------------------------------------------
-    // Guard: no identifier set — throws
-    // -------------------------------------------------------------------------
+        _partyClientMock
+            .Setup(p => p.GetPartyUuidByUrn("ext-user-42"))
+            .ReturnsAsync((Guid?)partyGuid);
+
+        _profileClientMock
+            .Setup(p => p.GetUserProfile(partyGuid))
+            .ReturnsAsync(
+                new UserProfile
+                {
+                    ProfileSettingPreference = new ProfileSettingPreference { Language = LanguageConst.Nb },
+                }
+            );
+
+        var result = await CreateSut()
+            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
+
+        Assert.Equal(LanguageConst.Nb, result);
+        _partyClientMock.Verify(p => p.GetPartyUuidByUrn("ext-user-42"), Times.Once);
+        _profileClientMock.Verify(p => p.GetUserProfile(partyGuid), Times.Once);
+    }
+
+    [Fact]
+    public async Task DetermineLanguage_ExternalIdentifierOwner_ProfileLanguageIsNull_FallsBackToEnglish()
+    {
+        var partyGuid = Guid.NewGuid();
+        var instanceOwner = new InstanceOwner { ExternalIdentifier = "ext-user-42" };
+
+        _partyClientMock
+            .Setup(p => p.GetPartyUuidByUrn("ext-user-42"))
+            .ReturnsAsync((Guid?)partyGuid);
+
+        _profileClientMock
+            .Setup(p => p.GetUserProfile(partyGuid))
+            .ReturnsAsync(
+                new UserProfile { ProfileSettingPreference = new ProfileSettingPreference { Language = null } }
+            );
+
+        var result = await CreateSut()
+            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
+
+        Assert.Equal(LanguageConst.En, result);
+    }
+
+    [Fact]
+    public async Task DetermineLanguage_ExternalIdentifierOwner_ProfileIsNull_FallsBackToEnglish()
+    {
+        var partyGuid = Guid.NewGuid();
+        var instanceOwner = new InstanceOwner { ExternalIdentifier = "ext-user-42" };
+
+        _partyClientMock
+            .Setup(p => p.GetPartyUuidByUrn("ext-user-42"))
+            .ReturnsAsync((Guid?)partyGuid);
+
+        UserProfile? profile = null;
+        _profileClientMock.Setup(p => p.GetUserProfile(partyGuid)).ReturnsAsync(profile);
+
+        var result = await CreateSut()
+            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
+
+        Assert.Equal(LanguageConst.En, result);
+    }
+
+    #endregion
+
+    #region Guard
 
     [Fact]
     public async Task DetermineLanguage_NoIdentifierSet_ThrowsInvalidOperationException()
@@ -129,4 +199,6 @@ public class NotificationServiceTests
             CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None)
         );
     }
+
+    #endregion
 }

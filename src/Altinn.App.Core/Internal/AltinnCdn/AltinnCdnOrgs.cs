@@ -42,8 +42,8 @@ internal sealed record AltinnCdnOrgName
     {
         return language switch
         {
-            LanguageConst.Nn => Nn,
-            LanguageConst.En => En,
+            LanguageConst.Nn => Nn ?? Nb ?? En,
+            LanguageConst.En => En ?? Nb ?? Nn,
             _ => Nb ?? Nn ?? En,
         };
     }

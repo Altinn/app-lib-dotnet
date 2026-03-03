@@ -41,7 +41,7 @@ public sealed class InstansiationNotification
 /// <summary>
 /// Model for providing a custom sms message in different languages.
 /// </summary>
-public class CustomSms()
+public sealed class CustomSms()
 {
     /// <summary>
     /// Gets or sets the custom sender name to use for the sms.
@@ -59,7 +59,7 @@ public class CustomSms()
 /// <summary>
 /// Model for providing a custom email subject and body in different languages.
 /// </summary>
-public class CustomEmail()
+public sealed class CustomEmail()
 {
     /// <summary>
     /// Gets or sets the custom subject in different languages.
@@ -77,7 +77,7 @@ public class CustomEmail()
 /// <summary>
 /// Model for providing custom text in different languages.
 /// </summary>
-public class CustomText
+public sealed class CustomText
 {
     /// <summary>
     /// Gets or sets the custom text in Norwegian Bokmål.

@@ -113,6 +113,9 @@ partial class Telemetry
 
             [Display(Name = "error")]
             Error,
+
+            [Display(Name = "cancelled")]
+            Cancelled,
         }
     }
 }

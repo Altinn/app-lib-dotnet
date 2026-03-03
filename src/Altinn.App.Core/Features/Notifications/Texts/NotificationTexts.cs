@@ -53,22 +53,22 @@ internal static class NotificationTexts
             appid?.Split('/') is string[] groups && groups.Length >= 2 ? (groups[1], groups[0]) : (null, null);
 
         parts.Add(
-            serviceOwnerName is not null
+            string.IsNullOrWhiteSpace(serviceOwnerName)
                 ? language switch
-                {
-                    LanguageConst.En => $"{serviceOwnerName} has created a new form",
-                    LanguageConst.Nn => $"{serviceOwnerName} har opprettet eit nytt skjema",
-                    _ => $"{serviceOwnerName} har opprettet et nytt skjema",
-                }
-                : language switch
                 {
                     LanguageConst.En => "A new form has been created",
                     LanguageConst.Nn => "Eit nytt skjema har blitt opprettet",
                     _ => "Det har blitt opprettet et nytt skjema",
                 }
+                : language switch
+                {
+                    LanguageConst.En => $"{serviceOwnerName} has created a new form",
+                    LanguageConst.Nn => $"{serviceOwnerName} har opprettet eit nytt skjema",
+                    _ => $"{serviceOwnerName} har opprettet et nytt skjema",
+                }
         );
 
-        if (appName is not null)
+        if (string.IsNullOrWhiteSpace(appName) is false)
         {
             parts.Add(
                 language switch
@@ -80,7 +80,7 @@ internal static class NotificationTexts
             );
         }
 
-        if (instanceOwnerName is not null)
+        if (string.IsNullOrWhiteSpace(instanceOwnerName) is false)
         {
             parts.Add(
                 language switch
@@ -92,39 +92,39 @@ internal static class NotificationTexts
             );
         }
 
-        if (orgNumber is not null)
+        if (string.IsNullOrWhiteSpace(orgNumber) is false)
         {
             parts.Add(
                 language switch
                 {
-                    LanguageConst.En => instanceOwnerName is not null
-                        ? $"with organization number {orgNumber}"
-                        : $"for organization with organization number {orgNumber}",
-                    LanguageConst.Nn => instanceOwnerName is not null
-                        ? $"med organisasjonsnummer {orgNumber}"
-                        : $"avgiver med organisasjonsnummer {orgNumber}",
-                    _ => instanceOwnerName is not null
-                        ? $"med organisasjonsnummer {orgNumber}"
-                        : $"avgiver med organisasjonsnummer {orgNumber}",
+                    LanguageConst.En => string.IsNullOrWhiteSpace(instanceOwnerName)
+                        ? $"for organization with organization number {orgNumber}"
+                        : $"with organization number {orgNumber}",
+                    LanguageConst.Nn => string.IsNullOrWhiteSpace(instanceOwnerName)
+                        ? $"avgiver med organisasjonsnummer {orgNumber}"
+                        : $"med organisasjonsnummer {orgNumber}",
+                    _ => string.IsNullOrWhiteSpace(instanceOwnerName)
+                        ? $"avgiver med organisasjonsnummer {orgNumber}"
+                        : $"med organisasjonsnummer {orgNumber}",
                 }
             );
         }
 
         // Org number should never be set if social security number is set, but the model allows it - so we have a fail safe to avoid corrupted notifications
-        if (socialSecurityNumber is not null && orgNumber is null)
+        if (string.IsNullOrWhiteSpace(socialSecurityNumber) is false && string.IsNullOrWhiteSpace(orgNumber))
         {
             parts.Add(
                 language switch
                 {
-                    LanguageConst.En => instanceOwnerName is not null
-                        ? $"with social security number {socialSecurityNumber}"
-                        : $"person with social security number {socialSecurityNumber}",
-                    LanguageConst.Nn => instanceOwnerName is not null
-                        ? $"med fødselsnummer {socialSecurityNumber}"
-                        : $"avgiver med fødselsnummer {socialSecurityNumber}",
-                    _ => instanceOwnerName is not null
-                        ? $"med fødselsnummer {socialSecurityNumber}"
-                        : $"avgiver med fødselsnummer {socialSecurityNumber}",
+                    LanguageConst.En => string.IsNullOrWhiteSpace(instanceOwnerName)
+                        ? $"person with social security number {socialSecurityNumber}"
+                        : $"with social security number {socialSecurityNumber}",
+                    LanguageConst.Nn => string.IsNullOrWhiteSpace(instanceOwnerName)
+                        ? $"avgiver med fødselsnummer {socialSecurityNumber}"
+                        : $"med fødselsnummer {socialSecurityNumber}",
+                    _ => string.IsNullOrWhiteSpace(instanceOwnerName)
+                        ? $"avgiver med fødselsnummer {socialSecurityNumber}"
+                        : $"med fødselsnummer {socialSecurityNumber}",
                 }
             );
         }

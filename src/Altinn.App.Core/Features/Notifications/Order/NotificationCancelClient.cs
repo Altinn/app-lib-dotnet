@@ -65,6 +65,11 @@ internal sealed class NotificationCancelClient : INotificationCancelClient
 
             _telemetry?.RecordNotificationOrderCancel(Telemetry.Notifications.CancelResult.Success);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            _telemetry?.RecordNotificationOrderCancel(Telemetry.Notifications.CancelResult.Cancelled);
+            throw;
+        }
         catch (Exception e) when (e is not NotificationCancelException)
         {
             _telemetry?.RecordNotificationOrderCancel(Telemetry.Notifications.CancelResult.Error);
