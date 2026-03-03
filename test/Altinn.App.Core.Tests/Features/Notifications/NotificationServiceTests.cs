@@ -108,9 +108,7 @@ public class NotificationServiceTests
     public async Task DetermineLanguage_ExternalIdentifierOwner_PartyUuidMissing_FallsBackToEnglish()
     {
         var instanceOwner = new InstanceOwner { ExternalIdentifier = "ext-user-42" };
-        _partyClientMock
-            .Setup(p => p.GetPartyUuidByUrn("ext-user-42"))
-            .ReturnsAsync((Guid?)null);
+        _partyClientMock.Setup(p => p.GetPartyUuidByUrn("ext-user-42")).ReturnsAsync((Guid?)null);
         var result = await CreateSut()
             .DetermineLanguage(instanceOwner, requestedOrgLanguage: LanguageConst.Nb, CancellationToken.None);
         Assert.Equal(LanguageConst.En, result);
@@ -124,9 +122,7 @@ public class NotificationServiceTests
         var partyGuid = Guid.NewGuid();
         var instanceOwner = new InstanceOwner { ExternalIdentifier = "ext-user-42" };
 
-        _partyClientMock
-            .Setup(p => p.GetPartyUuidByUrn("ext-user-42"))
-            .ReturnsAsync((Guid?)partyGuid);
+        _partyClientMock.Setup(p => p.GetPartyUuidByUrn("ext-user-42")).ReturnsAsync((Guid?)partyGuid);
 
         _profileClientMock
             .Setup(p => p.GetUserProfile(partyGuid))
@@ -151,9 +147,7 @@ public class NotificationServiceTests
         var partyGuid = Guid.NewGuid();
         var instanceOwner = new InstanceOwner { ExternalIdentifier = "ext-user-42" };
 
-        _partyClientMock
-            .Setup(p => p.GetPartyUuidByUrn("ext-user-42"))
-            .ReturnsAsync((Guid?)partyGuid);
+        _partyClientMock.Setup(p => p.GetPartyUuidByUrn("ext-user-42")).ReturnsAsync((Guid?)partyGuid);
 
         _profileClientMock
             .Setup(p => p.GetUserProfile(partyGuid))
@@ -173,9 +167,7 @@ public class NotificationServiceTests
         var partyGuid = Guid.NewGuid();
         var instanceOwner = new InstanceOwner { ExternalIdentifier = "ext-user-42" };
 
-        _partyClientMock
-            .Setup(p => p.GetPartyUuidByUrn("ext-user-42"))
-            .ReturnsAsync((Guid?)partyGuid);
+        _partyClientMock.Setup(p => p.GetPartyUuidByUrn("ext-user-42")).ReturnsAsync((Guid?)partyGuid);
 
         UserProfile? profile = null;
         _profileClientMock.Setup(p => p.GetUserProfile(partyGuid)).ReturnsAsync(profile);
