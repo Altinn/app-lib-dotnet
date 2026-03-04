@@ -138,6 +138,8 @@ internal sealed class NotificationService : INotificationService
         };
         NotificationChannel requestedChannel = instansiationNotification.NotificationChannel;
 
+        AppResourceId resourceId = AppResourceId.FromAppIdentifier(new(instance.AppId));
+
         if (instanceOwner.OrganisationNumber is not null)
         {
             return new NotificationOrderRequest
@@ -152,6 +154,7 @@ internal sealed class NotificationService : INotificationService
                         ChannelSchema = requestedChannel,
                         EmailSettings = emailSettings,
                         SmsSettings = smsSettings,
+                        ResourceId = resourceId.Value,
                     },
                 },
             };
@@ -171,6 +174,7 @@ internal sealed class NotificationService : INotificationService
                         ChannelSchema = requestedChannel,
                         EmailSettings = emailSettings,
                         SmsSettings = smsSettings,
+                        ResourceId = resourceId.Value,
                     },
                 },
             };
@@ -189,6 +193,7 @@ internal sealed class NotificationService : INotificationService
                         ExternalIdentity = instanceOwner.ExternalIdentifier,
                         ChannelSchema = NotificationChannel.Email, // Only email is supported for self identified users
                         EmailSettings = emailSettings,
+                        ResourceId = resourceId.Value,
                     },
                 },
             };

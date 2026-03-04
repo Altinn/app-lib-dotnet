@@ -7,6 +7,7 @@ using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Moq;
@@ -29,6 +30,33 @@ public class NotificationServiceTests
             _appMetadataMock.Object,
             _partyClientMock.Object
         );
+
+    #region Helpers
+
+    private static Instance CreateTestInstance(
+        string appId = "ttd/app",
+        string? orgNumber = null,
+        string? personNumber = null,
+        string? externalIdentifier = null,
+        DateTime? dueBefore = null
+    ) =>
+        new()
+        {
+            Id = "1337/abc-123",
+            AppId = appId,
+            DueBefore = dueBefore,
+            InstanceOwner = new InstanceOwner
+            {
+                OrganisationNumber = orgNumber,
+                PersonNumber = personNumber,
+                ExternalIdentifier = externalIdentifier,
+            },
+        };
+
+    private static InstansiationNotification DefaultNotification() =>
+        new() { NotificationChannel = NotificationChannel.Email };
+
+    #endregion
 
     #region SSN
 
@@ -120,8 +148,10 @@ public class NotificationServiceTests
         var instanceOwner = new InstanceOwner { ExternalIdentifier = "ext-user-42" };
         Guid? guid = null;
         _partyClientMock.Setup(p => p.GetPartyUuidByUrn("ext-user-42")).ReturnsAsync(guid);
+
         var result = await CreateSut()
             .DetermineLanguage(instanceOwner, requestedOrgLanguage: LanguageConst.Nb, CancellationToken.None);
+
         Assert.Equal(LanguageConst.En, result);
         _partyClientMock.Verify(p => p.GetPartyUuidByUrn("ext-user-42"), Times.Once);
         _profileClientMock.Verify(p => p.GetUserProfile(It.IsAny<Guid>()), Times.Never);
@@ -134,7 +164,6 @@ public class NotificationServiceTests
         InstanceOwner instanceOwner = new() { ExternalIdentifier = "ext-user-42" };
 
         _partyClientMock.Setup(p => p.GetPartyUuidByUrn("ext-user-42")).ReturnsAsync(partyGuid);
-
         _profileClientMock
             .Setup(p => p.GetUserProfile(partyGuid))
             .ReturnsAsync(
@@ -159,7 +188,6 @@ public class NotificationServiceTests
         var instanceOwner = new InstanceOwner { ExternalIdentifier = "ext-user-42" };
 
         _partyClientMock.Setup(p => p.GetPartyUuidByUrn("ext-user-42")).ReturnsAsync(partyGuid);
-
         _profileClientMock
             .Setup(p => p.GetUserProfile(partyGuid))
             .ReturnsAsync(
@@ -267,6 +295,78 @@ public class NotificationServiceTests
         var result = NotificationService.GetTitleFromMetadata(LanguageConst.En, metadata);
 
         Assert.Null(result);
+    }
+
+    #endregion
+
+    #region CreateNotificationOrderRequest
+
+    [Fact]
+    public void CreateNotificationOrderRequest_OrgOwner_SetsResourceId()
+    {
+        var instance = CreateTestInstance(appId: "ttd/my-app", orgNumber: "123456789");
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: "Firma AS",
+            serviceOwnerName: null,
+            instansiationNotification: DefaultNotification()
+        );
+
+        Assert.Equal("app_ttd_my-app", result.Recipient.RecipientOrganization?.ResourceId);
+    }
+
+    [Fact]
+    public void CreateNotificationOrderRequest_PersonOwner_SetsResourceId()
+    {
+        var instance = CreateTestInstance(appId: "ttd/my-app", personNumber: "01010112345");
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: "Ola Nordmann",
+            serviceOwnerName: null,
+            instansiationNotification: DefaultNotification()
+        );
+
+        Assert.Equal("app_ttd_my-app", result.Recipient.RecipientPerson?.ResourceId);
+    }
+
+    [Fact]
+    public void CreateNotificationOrderRequest_ExternalIdentifierOwner_SetsResourceId()
+    {
+        var instance = CreateTestInstance(appId: "ttd/my-app", externalIdentifier: "ext-user-42");
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.En,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: DefaultNotification()
+        );
+
+        Assert.Equal("app_ttd_my-app", result.Recipient.RecipientSelfIdentifiedUser?.ResourceId);
+    }
+
+    [Fact]
+    public void CreateNotificationOrderRequest_NoOwnerIdentifier_Throws()
+    {
+        var instance = CreateTestInstance(appId: "ttd/my-app");
+
+        Assert.Throws<InvalidOperationException>(() =>
+            NotificationService.CreateNotificationOrderRequest(
+                language: LanguageConst.Nb,
+                instance: instance,
+                applicationMetadata: null,
+                instanceOwnerName: null,
+                serviceOwnerName: null,
+                instansiationNotification: DefaultNotification()
+            )
+        );
     }
 
     #endregion
