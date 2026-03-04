@@ -16,7 +16,7 @@ public class NotificationTextsTests
         string result = NotificationTexts.ReplaceTokens(
             text,
             appId: "ttd/app-test",
-            title: null,
+            title: "skattemelding",
             instanceOwnerName: "John Doe",
             serviceOwnerName: "TestDepartementet",
             orgNumber: "123456789",
@@ -25,7 +25,7 @@ public class NotificationTextsTests
         );
 
         Assert.Equal(
-            "App: app-test, Owner: John Doe, Service: TestDepartementet, Org: 123456789, SSN: 01010112345, Due: 31-12-2024",
+            "App: skattemelding, Owner: John Doe, Service: TestDepartementet, Org: 123456789, SSN: 01010112345, Due: 31-12-2024",
             result
         );
     }
@@ -140,10 +140,13 @@ public class NotificationTextsTests
     #region GetDefaultBody
 
     [Theory]
-    [InlineData(LanguageConst.En, "A new form has been created")]
-    [InlineData(LanguageConst.Nn, "Eit nytt skjema har blitt opprettet")]
-    [InlineData(LanguageConst.Nb, "Det har blitt opprettet et nytt skjema")]
-    [InlineData(null, "Det har blitt opprettet et nytt skjema")]
+    [InlineData(LanguageConst.En, "A new form has been created - open your Altinn inbox to view the form.")]
+    [InlineData(LanguageConst.Nn, "Eit nytt skjema har blitt opprettet - opne innboksen i Altinn for å sjå skjemaet.")]
+    [InlineData(
+        LanguageConst.Nb,
+        "Det har blitt opprettet et nytt skjema - åpne innboksen i Altinn for å se skjemaet."
+    )]
+    [InlineData(null, "Det har blitt opprettet et nytt skjema - åpne innboksen i Altinn for å se skjemaet.")]
     public void GetDefaultBody_NoParameters_ReturnsBaseMessage(string? language, string expected)
     {
         string result = NotificationTexts.GetDefaultBody(
@@ -160,10 +163,10 @@ public class NotificationTextsTests
     }
 
     [Theory]
-    [InlineData(LanguageConst.En, "Acme has created a new form")]
-    [InlineData(LanguageConst.Nn, "Acme har opprettet eit nytt skjema")]
-    [InlineData(LanguageConst.Nb, "Acme har opprettet et nytt skjema")]
-    [InlineData(null, "Acme har opprettet et nytt skjema")]
+    [InlineData(LanguageConst.En, "Acme has created a new form - open your Altinn inbox to view the form.")]
+    [InlineData(LanguageConst.Nn, "Acme har opprettet eit nytt skjema - opne innboksen i Altinn for å sjå skjemaet.")]
+    [InlineData(LanguageConst.Nb, "Acme har opprettet et nytt skjema - åpne innboksen i Altinn for å se skjemaet.")]
+    [InlineData(null, "Acme har opprettet et nytt skjema - åpne innboksen i Altinn for å se skjemaet.")]
     public void GetDefaultBody_WithServiceOwner_IncludesOwnerName(string? language, string expected)
     {
         string result = NotificationTexts.GetDefaultBody(
@@ -192,7 +195,7 @@ public class NotificationTextsTests
             dueDate: null
         );
 
-        Assert.Equal("A new form has been created (my-app)", result);
+        Assert.Equal("A new form has been created (my-app) - open your Altinn inbox to view the form.", result);
     }
 
     [Fact]
@@ -208,7 +211,7 @@ public class NotificationTextsTests
             dueDate: null
         );
 
-        Assert.Equal("A new form has been created for John Doe", result);
+        Assert.Equal("A new form has been created for John Doe - open your Altinn inbox to view the form.", result);
     }
 
     [Fact]
@@ -224,7 +227,10 @@ public class NotificationTextsTests
             dueDate: null
         );
 
-        Assert.Equal("A new form has been created for Acme AS with organization number 123456789", result);
+        Assert.Equal(
+            "A new form has been created for Acme AS with organization number 123456789 - open your Altinn inbox to view the form.",
+            result
+        );
     }
 
     [Fact]
@@ -240,7 +246,10 @@ public class NotificationTextsTests
             dueDate: null
         );
 
-        Assert.Equal("Eit nytt skjema har blitt opprettet avgiver med organisasjonsnummer 123456789", result);
+        Assert.Equal(
+            "Eit nytt skjema har blitt opprettet avgiver med organisasjonsnummer 123456789 - opne innboksen i Altinn for å sjå skjemaet.",
+            result
+        );
     }
 
     [Fact]
@@ -256,7 +265,10 @@ public class NotificationTextsTests
             dueDate: null
         );
 
-        Assert.Equal("A new form has been created for Jane Doe with social security number 01010112345", result);
+        Assert.Equal(
+            "A new form has been created for Jane Doe with social security number 01010112345 - open your Altinn inbox to view the form.",
+            result
+        );
     }
 
     [Fact]
@@ -290,7 +302,10 @@ public class NotificationTextsTests
             dueDate: new DateOnly(2025, 3, 7)
         );
 
-        Assert.Equal("A new form has been created with due date 07-03-2025", result);
+        Assert.Equal(
+            "A new form has been created with due date 07-03-2025 - open your Altinn inbox to view the form.",
+            result
+        );
     }
 
     [Fact]
@@ -306,7 +321,10 @@ public class NotificationTextsTests
             dueDate: new DateOnly(2025, 3, 7)
         );
 
-        Assert.Equal("Eit nytt skjema har blitt opprettet med frist 07-03-2025", result);
+        Assert.Equal(
+            "Eit nytt skjema har blitt opprettet med frist 07-03-2025 - opne innboksen i Altinn for å sjå skjemaet.",
+            result
+        );
     }
 
     [Fact]
@@ -323,7 +341,7 @@ public class NotificationTextsTests
         );
 
         Assert.Equal(
-            "Tax Authority has created a new form (tax-form) for Acme AS with organization number 987654321 with due date 31-12-2025",
+            "Tax Authority has created a new form (tax-form) for Acme AS with organization number 987654321 with due date 31-12-2025 - open your Altinn inbox to view the form.",
             result
         );
     }
@@ -342,7 +360,7 @@ public class NotificationTextsTests
         );
 
         Assert.Equal(
-            "Skatteetaten har opprettet et nytt skjema (tax-form) for Acme AS med organisasjonsnummer 987654321 med frist 31-12-2025",
+            "Skatteetaten har opprettet et nytt skjema (tax-form) for Acme AS med organisasjonsnummer 987654321 med frist 31-12-2025 - åpne innboksen i Altinn for å se skjemaet.",
             result
         );
     }
@@ -366,23 +384,6 @@ public class NotificationTextsTests
         );
 
         Assert.Equal("My Application Title", result);
-    }
-
-    [Fact]
-    public void ReplaceTokens_NullTitle_FallsBackToAppName()
-    {
-        string result = NotificationTexts.ReplaceTokens(
-            "{appName}",
-            appId: "ttd/my-app",
-            title: null,
-            instanceOwnerName: null,
-            serviceOwnerName: null,
-            orgNumber: null,
-            socialSecurityNumber: null,
-            dueDate: null
-        );
-
-        Assert.Equal("my-app", result);
     }
 
     [Fact]

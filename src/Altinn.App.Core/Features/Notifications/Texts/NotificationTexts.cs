@@ -143,6 +143,15 @@ internal static class NotificationTexts
             );
         }
 
+        parts.Add(
+            language switch
+            {
+                LanguageConst.En => "- open your Altinn inbox to view the form.",
+                LanguageConst.Nn => "- opne innboksen i Altinn for å sjå skjemaet.",
+                _ => "- åpne innboksen i Altinn for å se skjemaet.",
+            }
+        );
+
         return string.Join(" ", parts);
     }
 }
