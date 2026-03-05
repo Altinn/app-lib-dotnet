@@ -139,7 +139,7 @@ public class DataFieldValueCalculator
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error while evaluating calculation for field {field}", resolvedField.Field);
+            _logger.LogError(e, "Error while evaluating calculation for field {Field}", resolvedField.Field);
             throw;
         }
     }
@@ -166,7 +166,7 @@ public class DataFieldValueCalculator
                 );
                 if (resolvedDefinition == null)
                 {
-                    logger.LogError("Calculation definition {name} could not be resolved", definitionProperty.Name);
+                    logger.LogError("Calculation definition {Name} could not be resolved", definitionProperty.Name);
                     continue;
                 }
                 calculationDefinitions[definitionProperty.Name] = resolvedDefinition;
@@ -199,7 +199,7 @@ public class DataFieldValueCalculator
                     );
                     if (resolvedDataFieldCalculation == null)
                     {
-                        logger.LogError("Calculation for field {field} could not be resolved", field);
+                        logger.LogError("Calculation for field {Field} could not be resolved", field);
                         continue;
                     }
                     dataFieldCalculation.Add(resolvedDataFieldCalculation);
@@ -223,7 +223,7 @@ public class DataFieldValueCalculator
             var stringReference = definition.GetString();
             if (stringReference == null)
             {
-                logger.LogError("Could not resolve null reference for calculation for field {field}", field);
+                logger.LogError("Could not resolve null reference for calculation for field {Field}", field);
                 return null;
             }
 
@@ -231,7 +231,7 @@ public class DataFieldValueCalculator
             if (reference == null)
             {
                 logger.LogError(
-                    "Could not resolve reference {stringReference} for calculation for field {field}",
+                    "Could not resolve reference {StringReference} for calculation for field {Field}",
                     stringReference,
                     field
                 );
@@ -246,7 +246,7 @@ public class DataFieldValueCalculator
             );
             if (dataFieldCalculationDefinition == null)
             {
-                logger.LogError("Calculation for field {field} could not be parsed", field);
+                logger.LogError("Calculation for field {Field} could not be parsed", field);
                 return null;
             }
 
@@ -256,7 +256,7 @@ public class DataFieldValueCalculator
                 if (reference == null)
                 {
                     logger.LogError(
-                        "Could not resolve reference {expressionDefinitionRef} for calculation for field {field}",
+                        "Could not resolve reference {ExpressionDefinitionRef} for calculation for field {Field}",
                         dataFieldCalculationDefinition.Ref,
                         field
                     );
@@ -273,7 +273,7 @@ public class DataFieldValueCalculator
 
         if (rawDataFieldValueCalculation.Condition == null)
         {
-            logger.LogError("Calculation for field {field} is missing condition", field);
+            logger.LogError("Calculation for field {Field} is missing condition", field);
             return null;
         }
 
@@ -295,7 +295,7 @@ public class DataFieldValueCalculator
         var rawDefinition = definitionProperty.Value.Deserialize<RawDataFieldValueCalculation>(_jsonSerializerOptions);
         if (rawDefinition == null)
         {
-            logger.LogError("Calculation definition {name} could not be parsed", definitionProperty.Name);
+            logger.LogError("Calculation definition {Name} could not be parsed", definitionProperty.Name);
             return null;
         }
 
@@ -305,7 +305,7 @@ public class DataFieldValueCalculator
             if (reference == null)
             {
                 logger.LogError(
-                    "Could not resolve reference {rawDefinitionRef} for calculation {name}",
+                    "Could not resolve reference {RawDefinitionRef} for calculation {Name}",
                     rawDefinition.Ref,
                     definitionProperty.Name
                 );
@@ -322,7 +322,7 @@ public class DataFieldValueCalculator
 
         if (resolvedDefinition.Condition == null)
         {
-            logger.LogError("Calculation {name} is missing condition", definitionProperty.Name);
+            logger.LogError("Calculation {Name} is missing condition", definitionProperty.Name);
             return null;
         }
 
