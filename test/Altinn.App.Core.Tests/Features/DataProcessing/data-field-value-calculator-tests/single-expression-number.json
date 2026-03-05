@@ -1,5 +1,5 @@
 {
-    "name": "Should set number value to field with supported data type",
+    "name": "Should set number value to field with supported data type. TODO: Move to shared when #1651 is merged",
     "expects": [
         {
             "field": "form.fourTimesTwoString", "result": "8"
