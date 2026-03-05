@@ -197,10 +197,10 @@ public class LayoutEvaluatorState
     /// <summary>
     /// Get all the resolved keys (including all possible indexes) from a data model key
     /// </summary>
-    public async Task<DataReference[]> GetResolvedKeys(DataReference reference)
+    public async Task<DataReference[]> GetResolvedKeys(DataReference reference, bool isCalculating = false)
     {
         var data = await _dataAccessor.GetFormDataWrapper(reference.DataElementIdentifier);
-        return data.GetResolvedKeys(reference);
+        return data.GetResolvedKeys(reference, isCalculating);
     }
 
     /// <summary>

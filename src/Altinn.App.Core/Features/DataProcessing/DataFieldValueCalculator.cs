@@ -72,7 +72,8 @@ public class DataFieldValueCalculator
         foreach (var (baseField, calculations) in dataFieldCalculations)
         {
             var resolvedFields = await evaluatorState.GetResolvedKeys(
-                new DataReference() { Field = baseField, DataElementIdentifier = dataElementIdentifier }
+                new DataReference() { Field = baseField, DataElementIdentifier = dataElementIdentifier },
+                true
             );
             foreach (var resolvedField in resolvedFields)
             {
@@ -93,9 +94,9 @@ public class DataFieldValueCalculator
                     dataElementIdentifier: resolvedField.DataElementIdentifier
                 );
                 var positionalArguments = new object[] { resolvedField.Field };
+                var formDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement);
                 foreach (var calculation in calculations)
                 {
-                    var formDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement);
                     await RunCalculation(
                         formDataWrapper,
                         evaluatorState,
@@ -126,7 +127,15 @@ public class DataFieldValueCalculator
                 context,
                 positionalArguments
             );
-            formDataWrapper.Set(resolvedField.Field.ToArray(), calculationResult);
+            if (!formDataWrapper.Set(resolvedField.Field, calculationResult))
+            {
+                _logger.LogWarning(
+                    "Could not set calculated value for field {Field} in data element {DataElementId}. "
+                        + "This is because the type conversion failed.",
+                    resolvedField.Field,
+                    resolvedField.DataElementIdentifier.Id
+                );
+            }
         }
         catch (Exception e)
         {

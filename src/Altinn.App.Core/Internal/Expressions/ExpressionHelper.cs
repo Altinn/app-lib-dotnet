@@ -2,8 +2,10 @@ namespace Altinn.App.Core.Internal.Expressions;
 
 internal static class ExpressionHelper
 {
-    internal static int[]? GetRowIndices(string field)
+    internal static int[]? GetRowIndices(string? field)
     {
+        if (field == null)
+            return null;
         Span<int> rowIndicesSpan = stackalloc int[200]; // Assuming max 200 indices for simplicity recursion will never go deeper than 3-4
         int count = 0;
         for (int index = 0; index < field.Length; index++)
