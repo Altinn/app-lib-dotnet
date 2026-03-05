@@ -461,7 +461,7 @@ public enum EmailContentType
 /// Defines when a notification may be delivered.
 /// NOTE!:This enum is not zero-indexed to match the implementation in Notifications
 /// </summary>
-public enum SendingTimePolicy: uint
+public enum SendingTimePolicy : uint
 {
     /// <summary>The notification may be sent at any time of day.</summary>
     [JsonStringEnumMemberName("Anytime")]
