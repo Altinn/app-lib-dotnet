@@ -315,7 +315,7 @@ public class NotificationServiceTests
             instansiationNotification: DefaultNotification()
         );
 
-        Assert.Equal("app_ttd_my-app", result.Recipient.RecipientOrganization?.ResourceId);
+        Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientOrganization?.ResourceId);
     }
 
     [Fact]
@@ -332,7 +332,7 @@ public class NotificationServiceTests
             instansiationNotification: DefaultNotification()
         );
 
-        Assert.Equal("app_ttd_my-app", result.Recipient.RecipientPerson?.ResourceId);
+        Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientPerson?.ResourceId);
     }
 
     [Fact]
@@ -349,7 +349,7 @@ public class NotificationServiceTests
             instansiationNotification: DefaultNotification()
         );
 
-        Assert.Equal("app_ttd_my-app", result.Recipient.RecipientSelfIdentifiedUser?.ResourceId);
+        Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientSelfIdentifiedUser?.ResourceId);
     }
 
     [Fact]
