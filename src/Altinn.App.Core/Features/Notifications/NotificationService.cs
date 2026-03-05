@@ -154,7 +154,7 @@ internal sealed class NotificationService : INotificationService
                         ChannelSchema = requestedChannel,
                         EmailSettings = emailSettings,
                         SmsSettings = smsSettings,
-                        ResourceId = resourceId.Value,
+                        ResourceId = resourceId.AsUrn,
                     },
                 },
             };
@@ -174,7 +174,7 @@ internal sealed class NotificationService : INotificationService
                         ChannelSchema = requestedChannel,
                         EmailSettings = emailSettings,
                         SmsSettings = smsSettings,
-                        ResourceId = resourceId.Value,
+                        ResourceId = resourceId.AsUrn,
                     },
                 },
             };
@@ -193,7 +193,7 @@ internal sealed class NotificationService : INotificationService
                         ExternalIdentity = instanceOwner.ExternalIdentifier,
                         ChannelSchema = NotificationChannel.Email, // Only email is supported for self identified users
                         EmailSettings = emailSettings,
-                        ResourceId = resourceId.Value,
+                        ResourceId = resourceId.AsUrn,
                     },
                 },
             };
