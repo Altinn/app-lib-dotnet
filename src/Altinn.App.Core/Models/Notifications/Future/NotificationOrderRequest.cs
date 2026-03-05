@@ -42,7 +42,7 @@ public sealed record NotificationOrderRequest
     /// Defaults to the current UTC time, meaning the notification will be sent as soon as possible.
     /// </remarks>
     [JsonPropertyName("requestedSendTime")]
-    public DateTime RequestedSendTime { get; init; } = DateTime.UtcNow;
+    public DateTime RequestedSendTime { get; init; } = DateTime.UtcNow.AddMinutes(1);
 
     /// <summary>
     /// Gets or sets an optional endpoint the Altinn Notifications service will call to determine
