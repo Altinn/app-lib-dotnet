@@ -166,4 +166,10 @@ public interface IAppResources
     /// Gets the validation configuration for a given data type
     /// </summary>
     string? GetValidationConfiguration(string dataTypeId);
+
+    /// <summary>
+    /// Gets the calculation configuration for a given data type
+    /// </summary>
+    /// <returns>The calculation configuration in JSON format represented as string</returns>
+    string? GetCalculationConfiguration(string dataTypeId);
 }

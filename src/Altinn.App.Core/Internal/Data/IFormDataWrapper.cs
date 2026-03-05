@@ -285,7 +285,11 @@ internal static class FormDataWrapperExtensions
     /// group[1].name
     /// group[1].age
     /// </example>
-    public static DataReference[] GetResolvedKeys(this IFormDataWrapper formDataWrapper, DataReference reference)
+    public static DataReference[] GetResolvedKeys(
+        this IFormDataWrapper formDataWrapper,
+        DataReference reference,
+        bool isCalculating = false
+    )
     {
         //TODO: write more efficient code that uses the formDataWrapper to resolve keys instead of reflection in DataModelWrapper
         var data = formDataWrapper.BackingData<object>();
@@ -293,7 +297,7 @@ internal static class FormDataWrapperExtensions
         var dataModelWrapper = new DataModelWrapper(data);
 #pragma warning restore CS0618 // Type or member is obsolete
         return dataModelWrapper
-            .GetResolvedKeys(reference.Field)
+            .GetResolvedKeys(reference.Field, isCalculating)
             .Select(resolvedField => reference with { Field = resolvedField })
             .ToArray();
     }

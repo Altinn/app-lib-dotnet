@@ -516,6 +516,9 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             case JsonValueKind.False or JsonValueKind.True when IsSupportedNumericType(underlyingType):
                 result = Convert.ChangeType(Bool ? 1 : 0, underlyingType, CultureInfo.InvariantCulture);
                 return true;
+            case JsonValueKind.False or JsonValueKind.True when underlyingType == typeof(string):
+                result = Bool ? "true" : "false";
+                return true;
             case JsonValueKind.Number when IsSupportedNumericType(underlyingType):
                 result = Convert.ChangeType(Number, underlyingType, CultureInfo.InvariantCulture);
                 return true;
@@ -560,7 +563,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         try
         {
             var json = ToString();
-            result = JsonSerializer.Deserialize(json, type, _unsafeSerializerOptionsForSerializingDates);
+            result = JsonSerializer.Deserialize(json, type);
             return true;
         }
         catch (JsonException)
