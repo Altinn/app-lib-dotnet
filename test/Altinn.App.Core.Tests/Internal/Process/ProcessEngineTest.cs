@@ -529,7 +529,7 @@ public sealed class ProcessEngineTest
             );
 
         // Verify OperationId contains transition info for process end
-        capturedRequest.Workflows[0].OperationId.Should().Be("Process next: Task_2 -> ");
+        capturedRequest.Workflows[0].OperationId.Should().Be("Process next: Task_2 -> EndEvent_1");
     }
 
     public static TheoryData<ProcessState?, string> InvalidProcessStatesData =>

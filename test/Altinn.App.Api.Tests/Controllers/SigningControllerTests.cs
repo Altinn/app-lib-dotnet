@@ -614,6 +614,18 @@ public class SigningControllerTests
     {
         // Arrange
         SetupAuthenticationContextMock();
+        _processReaderMock
+            .Setup(s => s.GetProcessTasks())
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements
+                    {
+                        TaskExtension = new AltinnTaskExtension { TaskType = "not-signing" },
+                    },
+                },
+            ]);
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
@@ -789,6 +801,18 @@ public class SigningControllerTests
     {
         // Arrange
         SetupAuthenticationContextMock();
+        _processReaderMock
+            .Setup(s => s.GetProcessTasks())
+            .Returns([
+                new ProcessTask
+                {
+                    Id = "task1",
+                    ExtensionElements = new ExtensionElements
+                    {
+                        TaskExtension = new AltinnTaskExtension { TaskType = "not-signing" },
+                    },
+                },
+            ]);
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<SigningController>();
 
