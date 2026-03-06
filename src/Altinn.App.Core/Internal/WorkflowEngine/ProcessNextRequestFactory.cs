@@ -36,7 +36,7 @@ internal sealed class ProcessNextRequestFactory
     public async Task<WorkflowEnqueueRequest> Create(
         ProcessStateChange processStateChange,
         string lockToken,
-        string? state = null,
+        WorkflowStateSnapshot? state = null,
         Actor? actor = null,
         IReadOnlyList<Guid>? dependencies = null,
         Dictionary<string, string>? prefill = null
@@ -55,6 +55,8 @@ internal sealed class ProcessNextRequestFactory
 
         string idempotencyKey = dependencies is { Count: > 0 } ? $"{lockToken}-dep-{fromTaskId}" : lockToken;
 
+        string? serializedState = state is not null ? WorkflowStateSnapshotService.Serialize(state) : null;
+
         return new WorkflowEnqueueRequest
         {
             Actor = actor ?? await ExtractActor(),
@@ -66,7 +68,7 @@ internal sealed class ProcessNextRequestFactory
                 {
                     OperationId = $"Process next: {fromTaskId} -> {toTaskId}",
                     Steps = commands,
-                    State = state,
+                    State = serializedState,
                     Dependencies = dependencies,
                 },
             ],

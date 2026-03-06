@@ -46,7 +46,7 @@ internal class ProcessEngine : IProcessEngine
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IValidationService _validationService;
     private readonly ProcessNextRequestFactory _processNextRequestFactory;
-    private readonly InstanceStateService _instanceStateService;
+    private readonly WorkflowStateSnapshotService _snapshotService;
     private readonly IWorkflowEngineClient _workflowEngineClient;
     private readonly IInstanceClient _instanceClient;
     private readonly IInstanceLocker _instanceLocker;
@@ -77,7 +77,7 @@ internal class ProcessEngine : IProcessEngine
         _logger = logger;
         _workflowEngineClient = workflowEngineClient;
         _processNextRequestFactory = serviceProvider.GetRequiredService<ProcessNextRequestFactory>();
-        _instanceStateService = serviceProvider.GetRequiredService<InstanceStateService>();
+        _snapshotService = serviceProvider.GetRequiredService<WorkflowStateSnapshotService>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
@@ -169,9 +169,9 @@ internal class ProcessEngine : IProcessEngine
             language: null,
             StorageAuthenticationMethod.ServiceOwner()
         );
-        string state = await _instanceStateService.CaptureState(unitOfWork);
+        WorkflowStateSnapshot snapshot = await _snapshotService.CaptureSnapshot(unitOfWork);
 
-        await CreateAndEnqueueWorkflow(instance, processStateChange, lockToken, state, prefill: prefill, ct: ct);
+        await CreateAndEnqueueWorkflow(instance, processStateChange, lockToken, snapshot, prefill: prefill, ct: ct);
         return await WaitForWorkflowsAndRefetchInstance(instance, ct);
     }
 
@@ -562,7 +562,7 @@ internal class ProcessEngine : IProcessEngine
             language: null,
             StorageAuthenticationMethod.ServiceOwner()
         );
-        string state = await _instanceStateService.CaptureState(unitOfWork);
+        WorkflowStateSnapshot snapshot = await _snapshotService.CaptureSnapshot(unitOfWork);
 
         ProcessStateChange? processStateChange = await MoveProcessStateToNextAndGenerateEvents(instance, action);
 
@@ -571,7 +571,7 @@ internal class ProcessEngine : IProcessEngine
             return new MoveToNextResult(instance, null);
         }
 
-        await CreateAndEnqueueWorkflow(instance, processStateChange, lockToken, state, ct: ct);
+        await CreateAndEnqueueWorkflow(instance, processStateChange, lockToken, snapshot, ct: ct);
 
         Instance freshInstance = await WaitForWorkflowsAndRefetchInstance(instance, ct);
 
@@ -584,7 +584,7 @@ internal class ProcessEngine : IProcessEngine
         Actor actor,
         string lockToken,
         Guid dependsOnWorkflowId,
-        string state,
+        WorkflowStateSnapshot state,
         string? action = null,
         CancellationToken ct = default
     )
@@ -611,7 +611,7 @@ internal class ProcessEngine : IProcessEngine
         Instance instance,
         ProcessStateChange processStateChange,
         string lockToken,
-        string? state = null,
+        WorkflowStateSnapshot? state = null,
         Actor? actor = null,
         IReadOnlyList<Guid>? dependencies = null,
         Dictionary<string, string>? prefill = null,

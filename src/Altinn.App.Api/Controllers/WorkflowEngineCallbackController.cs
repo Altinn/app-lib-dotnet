@@ -22,7 +22,7 @@ namespace Altinn.App.Api.Controllers;
 public class WorkflowEngineCallbackController : ControllerBase
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly InstanceStateService _instanceStateService;
+    private readonly WorkflowStateSnapshotService _snapshotService;
     private readonly ILogger<WorkflowEngineCallbackController> _logger;
     private readonly Telemetry? _telemetry;
 
@@ -36,7 +36,7 @@ public class WorkflowEngineCallbackController : ControllerBase
     )
     {
         _serviceProvider = serviceProvider;
-        _instanceStateService = serviceProvider.GetRequiredService<InstanceStateService>();
+        _snapshotService = serviceProvider.GetRequiredService<WorkflowStateSnapshotService>();
         _logger = logger;
         _telemetry = telemetry;
     }
@@ -92,8 +92,9 @@ public class WorkflowEngineCallbackController : ControllerBase
             return NonRetryableProblem("Missing State", missingStateError, StatusCodes.Status422UnprocessableEntity);
         }
 
-        InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceStateService.RestoreState(
-            payload.State,
+        WorkflowStateSnapshot snapshot = WorkflowStateSnapshotService.Deserialize(payload.State);
+        InstanceDataUnitOfWork instanceDataUnitOfWork = await _snapshotService.RestoreSnapshot(
+            snapshot,
             payload.Actor.Language
         );
 
@@ -136,7 +137,8 @@ public class WorkflowEngineCallbackController : ControllerBase
                 await instanceDataUnitOfWork.SaveChanges(changes);
 
                 // Capture updated state (includes Storage-assigned IDs for newly created data elements)
-                string updatedState = await _instanceStateService.CaptureState(instanceDataUnitOfWork);
+                WorkflowStateSnapshot updatedSnapshot = await _snapshotService.CaptureSnapshot(instanceDataUnitOfWork);
+                string updatedState = WorkflowStateSnapshotService.Serialize(updatedSnapshot);
 
                 // If the command signals auto-advance, enqueue a dependent process-next workflow.
                 // This happens AFTER save so the state blob includes Storage-assigned IDs.
@@ -150,7 +152,7 @@ public class WorkflowEngineCallbackController : ControllerBase
                         payload.Actor,
                         payload.LockToken,
                         payload.WorkflowId,
-                        updatedState,
+                        updatedSnapshot,
                         success.AutoAdvanceAction,
                         cancellationToken
                     );

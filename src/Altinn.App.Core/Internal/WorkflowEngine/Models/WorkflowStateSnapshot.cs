@@ -8,7 +8,7 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models;
 /// Internal DTO representing the transported instance state.
 /// The workflow engine never inspects this — it's serialized into an opaque string.
 /// </summary>
-internal sealed record InstanceState
+internal sealed record WorkflowStateSnapshot
 {
     [JsonPropertyName("instance")]
     public required Instance Instance { get; init; }

@@ -183,6 +183,13 @@ public class ProcessNextRequestFactoryTests
         };
     }
 
+    private static WorkflowStateSnapshot CreateEmptySnapshot() =>
+        new()
+        {
+            Instance = new Instance { Data = [] },
+            FormData = [],
+        };
+
     private static List<string> ExtractCommandKeys(WorkflowEnqueueRequest request)
     {
         return request
@@ -201,7 +208,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToTaskTransition();
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(stateChange, "lock-token", CreateEmptySnapshot());
 
         // Assert
         var keys = ExtractCommandKeys(request);
@@ -237,7 +244,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToEndTransition();
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(stateChange, "lock-token", CreateEmptySnapshot());
 
         // Assert
         var keys = ExtractCommandKeys(request);
@@ -272,7 +279,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart();
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(stateChange, "lock-token", CreateEmptySnapshot());
 
         // Assert
         var keys = ExtractCommandKeys(request);
@@ -305,7 +312,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskAbandonToNextTask();
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(stateChange, "lock-token", CreateEmptySnapshot());
 
         // Assert
         var keys = ExtractCommandKeys(request);
@@ -341,7 +348,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart(altinnTaskType: "signing");
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(stateChange, "lock-token", CreateEmptySnapshot());
 
         // Assert
         var keys = ExtractCommandKeys(request);
@@ -362,7 +369,7 @@ public class ProcessNextRequestFactoryTests
         var prefill = new Dictionary<string, string> { ["key1"] = "value1" };
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}", prefill: prefill);
+        var request = await factory.Create(stateChange, "lock-token", CreateEmptySnapshot(), prefill: prefill);
 
         // Assert
         var steps = request.Workflows[0].Steps.ToList();
@@ -386,13 +393,14 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToTaskTransition("Task_1", "Task_2");
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "state-blob");
+        var snapshot = CreateEmptySnapshot();
+        var request = await factory.Create(stateChange, "lock-token", snapshot);
 
         // Assert
         Assert.Equal("lock-token", request.LockToken);
         var workflow = request.Workflows[0];
         Assert.Equal("Process next: Task_1 -> Task_2", workflow.OperationId);
-        Assert.Equal("state-blob", workflow.State);
+        Assert.Equal(WorkflowStateSnapshotService.Serialize(snapshot), workflow.State);
     }
 
     [Fact]
@@ -403,7 +411,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart("Task_1", startEvent: "StartEvent_1");
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(stateChange, "lock-token", CreateEmptySnapshot());
 
         // Assert
         var workflow = request.Workflows[0];
@@ -418,7 +426,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToEndTransition("Task_1", "EndEvent_1");
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(stateChange, "lock-token", CreateEmptySnapshot());
 
         // Assert
         var workflow = request.Workflows[0];
@@ -434,7 +442,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart();
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(stateChange, "lock-token", CreateEmptySnapshot());
 
         // Assert
         Assert.Equal("42", request.Actor.UserIdOrOrgNumber);

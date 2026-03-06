@@ -23,12 +23,12 @@ namespace Altinn.App.Api.Tests;
 internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly InstanceStateService _instanceStateService;
+    private readonly WorkflowStateSnapshotService _snapshotService;
 
-    public FakeWorkflowEngineClient(IServiceProvider serviceProvider, InstanceStateService instanceStateService)
+    public FakeWorkflowEngineClient(IServiceProvider serviceProvider, WorkflowStateSnapshotService snapshotService)
     {
         _serviceProvider = serviceProvider;
-        _instanceStateService = instanceStateService;
+        _snapshotService = snapshotService;
     }
 
     /// <inheritdoc />
@@ -129,8 +129,9 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
             // after EnqueueWorkflow returns.
             if (currentState is not null)
             {
-                InstanceDataUnitOfWork finalState = await _instanceStateService.RestoreState(
-                    currentState,
+                WorkflowStateSnapshot snapshot = WorkflowStateSnapshotService.Deserialize(currentState);
+                InstanceDataUnitOfWork finalState = await _snapshotService.RestoreSnapshot(
+                    snapshot,
                     request.Actor.Language
                 );
                 instance.Data.Clear();

@@ -13,14 +13,14 @@ namespace Altinn.App.Core.Internal.WorkflowEngine;
 /// <summary>
 /// Service for capturing and restoring instance state for transport between app and workflow engine.
 /// </summary>
-internal sealed class InstanceStateService
+internal sealed class WorkflowStateSnapshotService
 {
     private readonly InstanceDataUnitOfWorkInitializer _unitOfWorkInitializer;
     private readonly ModelSerializationService _modelSerializationService;
     private readonly IAppMetadata _appMetadata;
     private readonly IAppModel _appModel;
 
-    public InstanceStateService(
+    public WorkflowStateSnapshotService(
         InstanceDataUnitOfWorkInitializer unitOfWorkInitializer,
         ModelSerializationService modelSerializationService,
         IAppMetadata appMetadata,
@@ -34,9 +34,9 @@ internal sealed class InstanceStateService
     }
 
     /// <summary>
-    /// Captures the current state of the unit of work into an opaque string for transport.
+    /// Captures the current state of the unit of work into a typed snapshot for transport.
     /// </summary>
-    public async Task<string> CaptureState(InstanceDataUnitOfWork unitOfWork)
+    public async Task<WorkflowStateSnapshot> CaptureSnapshot(InstanceDataUnitOfWork unitOfWork)
     {
         var rawFormData = await unitOfWork.CaptureFormData(_modelSerializationService);
         var formData = rawFormData
@@ -47,20 +47,20 @@ internal sealed class InstanceStateService
                 Data = x.Data,
             })
             .ToList();
-        var instanceState = new InstanceState { Instance = unitOfWork.Instance, FormData = formData };
-        return JsonSerializer.Serialize(instanceState);
+        // Deep-copy the instance so the snapshot is frozen against later mutations.
+        // ProcessEngine.HandleMoveToNext captures the snapshot and then mutates instance.Process;
+        // without a copy, the snapshot would see the mutated state.
+        Instance frozenInstance = JsonSerializer.Deserialize<Instance>(JsonSerializer.Serialize(unitOfWork.Instance))!;
+
+        return new WorkflowStateSnapshot { Instance = frozenInstance, FormData = formData };
     }
 
     /// <summary>
-    /// Restores an InstanceDataUnitOfWork from a previously captured state string.
+    /// Restores an InstanceDataUnitOfWork from a previously captured snapshot.
     /// </summary>
-    public async Task<InstanceDataUnitOfWork> RestoreState(string state, string? language)
+    public async Task<InstanceDataUnitOfWork> RestoreSnapshot(WorkflowStateSnapshot snapshot, string? language)
     {
-        InstanceState instanceState =
-            JsonSerializer.Deserialize<InstanceState>(state)
-            ?? throw new InvalidOperationException("Failed to deserialize instance state from callback payload");
-
-        Instance instance = instanceState.Instance;
+        Instance instance = snapshot.Instance;
         string? taskId = instance.Process?.CurrentTask?.ElementId;
 
         InstanceDataUnitOfWork unitOfWork = await _unitOfWorkInitializer.Init(
@@ -72,7 +72,7 @@ internal sealed class InstanceStateService
 
         ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-        foreach (FormDataEntry entry in instanceState.FormData)
+        foreach (FormDataEntry entry in snapshot.FormData)
         {
             DataElement? dataElement = instance.Data.Find(d => d.Id == entry.Id);
             if (dataElement is null)
@@ -100,4 +100,16 @@ internal sealed class InstanceStateService
 
         return unitOfWork;
     }
+
+    /// <summary>
+    /// Serializes a snapshot to an opaque JSON string for transport to/from the workflow engine.
+    /// </summary>
+    public static string Serialize(WorkflowStateSnapshot snapshot) => JsonSerializer.Serialize(snapshot);
+
+    /// <summary>
+    /// Deserializes an opaque JSON string back into a typed snapshot.
+    /// </summary>
+    public static WorkflowStateSnapshot Deserialize(string state) =>
+        JsonSerializer.Deserialize<WorkflowStateSnapshot>(state)
+        ?? throw new InvalidOperationException("Failed to deserialize workflow state snapshot from callback payload");
 }
