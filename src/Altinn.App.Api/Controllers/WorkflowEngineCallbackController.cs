@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.WorkflowEngine;
@@ -65,8 +66,13 @@ public class WorkflowEngineCallbackController : ControllerBase
 
         if (command is null)
         {
-            string commandNotFoundError = $"Workflow app command '{commandKey}' not found. Instance: {instanceId}.";
-            _logger.LogError(commandNotFoundError);
+            string commandNotFoundError =
+                $"Workflow app command '{LogSanitizer.Sanitize(commandKey)}' not found. Instance: {instanceId}.";
+            _logger.LogError(
+                "Workflow app command '{CommandKey}' not found. Instance: {InstanceId}.",
+                LogSanitizer.Sanitize(commandKey),
+                instanceId
+            );
             activity?.SetStatus(ActivityStatusCode.Error, commandNotFoundError);
             return NonRetryableProblem("Command Not Found", commandNotFoundError, StatusCodes.Status404NotFound);
         }
@@ -76,8 +82,12 @@ public class WorkflowEngineCallbackController : ControllerBase
         if (payload.State is null)
         {
             string missingStateError =
-                $"State blob is missing from callback payload. CommandKey: {commandKey}, Instance: {instanceId}.";
-            _logger.LogError(missingStateError);
+                $"State blob is missing from callback payload. CommandKey: {LogSanitizer.Sanitize(commandKey)}, Instance: {instanceId}.";
+            _logger.LogError(
+                "State blob is missing from callback payload. CommandKey: {CommandKey}, Instance: {InstanceId}.",
+                LogSanitizer.Sanitize(commandKey),
+                instanceId
+            );
             activity?.SetStatus(ActivityStatusCode.Error, missingStateError);
             return NonRetryableProblem("Missing State", missingStateError, StatusCodes.Status422UnprocessableEntity);
         }
@@ -104,9 +114,14 @@ public class WorkflowEngineCallbackController : ControllerBase
         if (instanceDataUnitOfWork.HasAbandonIssues)
         {
             string message =
-                $"Data abandonment detected during callback. CommandKey: {commandKey}, Instance: {instanceId}, Task: {currentTaskId}";
+                $"Data abandonment detected during callback. CommandKey: {LogSanitizer.Sanitize(commandKey)}, Instance: {instanceId}, Task: {currentTaskId}";
 
-            _logger.LogError(message, commandKey, instanceId, currentTaskId);
+            _logger.LogError(
+                "Data abandonment detected during callback. CommandKey: {CommandKey}, Instance: {InstanceId}, Task: {TaskId}",
+                LogSanitizer.Sanitize(commandKey),
+                instanceId,
+                currentTaskId
+            );
 
             activity?.SetStatus(ActivityStatusCode.Error, message);
 
