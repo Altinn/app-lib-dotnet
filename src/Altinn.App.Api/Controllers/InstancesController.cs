@@ -13,6 +13,7 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Features.Notifications;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
@@ -25,6 +26,7 @@ using Altinn.App.Core.Internal.Profile;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Authorization.ABAC.Xacml.JsonProfile;
@@ -71,6 +73,7 @@ public class InstancesController : ControllerBase
     private readonly IHostEnvironment _env;
     private readonly ModelSerializationService _serializationService;
     private readonly InternalPatchService _patchService;
+    private readonly INotificationService _notificationService;
     private readonly ITranslationService _translationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAuthenticationContext _authenticationContext;
@@ -97,6 +100,7 @@ public class InstancesController : ControllerBase
         IHostEnvironment env,
         ModelSerializationService serializationService,
         InternalPatchService patchService,
+        INotificationService notificationService,
         ITranslationService translationService,
         IServiceProvider serviceProvider
     )
@@ -118,6 +122,7 @@ public class InstancesController : ControllerBase
         _env = env;
         _serializationService = serializationService;
         _patchService = patchService;
+        _notificationService = notificationService;
         _translationService = translationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
@@ -251,7 +256,7 @@ public class InstancesController : ControllerBase
 
         if (instanceTemplate is not null)
         {
-            InstanceOwner lookup = instanceTemplate.InstanceOwner;
+            InstanceOwner? lookup = instanceTemplate.InstanceOwner;
 
             if (
                 lookup == null
@@ -405,6 +410,31 @@ public class InstancesController : ControllerBase
 
         await RegisterEvent("app.instance.created", instance);
 
+        InstansiationNotification? notification = ExtractInstantiationNotification(requestParts);
+
+        if (notification is not null)
+        {
+            try
+            {
+                CancellationToken doNotCancelNotification = CancellationToken.None;
+                await _notificationService.NotifyInstanceOwnerOnInstansiation(
+                    instance,
+                    party,
+                    notification,
+                    doNotCancelNotification
+                );
+            }
+            catch (Exception ex)
+            {
+                // TODO: retry with workflow engine
+                _logger.LogError(
+                    ex,
+                    "Failed to send instantiation notification for instance {InstanceId}",
+                    instance.Id
+                );
+            }
+        }
+
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
 
@@ -485,7 +515,7 @@ public class InstancesController : ControllerBase
             );
         }
 
-        InstanceOwner lookup = instansiationInstance.InstanceOwner;
+        InstanceOwner? lookup = instansiationInstance.InstanceOwner;
 
         if (
             lookup == null
@@ -528,7 +558,7 @@ public class InstancesController : ControllerBase
         if (
             isCopyRequest
             && party.PartyId.ToString(CultureInfo.InvariantCulture)
-                != instansiationInstance.SourceInstanceId.Split("/")[0]
+                != instansiationInstance?.SourceInstanceId?.Split("/")[0]
         )
         {
             return BadRequest("It is not possible to copy instances between instance owners.");
@@ -588,7 +618,9 @@ public class InstancesController : ControllerBase
 
             if (isCopyRequest)
             {
-                string[] sourceSplit = instansiationInstance.SourceInstanceId.Split("/");
+                string[] sourceSplit =
+                    instansiationInstance?.SourceInstanceId?.Split("/")
+                    ?? throw new ArgumentException("SourceInstanceId is null or not in the correct format");
                 Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
 
                 try
@@ -632,6 +664,29 @@ public class InstancesController : ControllerBase
         }
 
         await RegisterEvent("app.instance.created", instance);
+
+        if (instansiationInstance.Notification is not null)
+        {
+            try
+            {
+                CancellationToken doNotCancelNotification = CancellationToken.None;
+                await _notificationService.NotifyInstanceOwnerOnInstansiation(
+                    instance,
+                    party,
+                    instansiationInstance.Notification,
+                    doNotCancelNotification
+                );
+            }
+            catch (Exception ex)
+            {
+                // TODO: retry with workflow engine
+                _logger.LogError(
+                    ex,
+                    "Failed to send instantiation notification for instance {InstanceId}",
+                    instance.Id
+                );
+            }
+        }
 
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
@@ -1331,6 +1386,29 @@ public class InstancesController : ControllerBase
             )
             {
                 return JsonConvert.DeserializeObject<Instance>(Encoding.UTF8.GetString(instancePart.Bytes));
+            }
+        }
+
+        return null;
+    }
+
+    private static InstansiationNotification? ExtractInstantiationNotification(List<RequestPart> parts)
+    {
+        RequestPart? notificationPart = parts.Find(part => part.Name == "notification");
+
+        if (notificationPart is not null)
+        {
+            parts.Remove(notificationPart);
+
+            // Some clients might set contentType to application/json even if the body is empty
+            if (
+                notificationPart is { Bytes.Length: > 0 }
+                && notificationPart.ContentType.Contains("application/json", StringComparison.Ordinal)
+            )
+            {
+                return JsonConvert.DeserializeObject<InstansiationNotification>(
+                    Encoding.UTF8.GetString(notificationPart.Bytes)
+                );
             }
         }
 
