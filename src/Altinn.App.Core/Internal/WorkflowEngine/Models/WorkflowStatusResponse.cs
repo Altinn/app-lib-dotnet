@@ -62,7 +62,6 @@ internal sealed record WorkflowStatusResponse
     /// The overall status of the workflow.
     /// </summary>
     [JsonPropertyName("overallStatus")]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public required PersistentItemStatus OverallStatus { get; init; }
 
     /// <summary>
@@ -133,7 +132,6 @@ internal sealed record StepStatusResponse
     /// The current execution status.
     /// </summary>
     [JsonPropertyName("status")]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public required PersistentItemStatus Status { get; init; }
 
     /// <summary>

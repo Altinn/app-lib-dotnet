@@ -20,18 +20,6 @@ internal sealed record WorkflowRequest
     public required string OperationId { get; init; }
 
     /// <summary>
-    /// A unique key for idempotency.
-    /// </summary>
-    [JsonPropertyName("idempotencyKey")]
-    public required string IdempotencyKey { get; init; }
-
-    /// <summary>
-    /// The type of workflow.
-    /// </summary>
-    [JsonPropertyName("type")]
-    public required WorkflowType Type { get; init; }
-
-    /// <summary>
     /// The steps to execute in this workflow.
     /// </summary>
     [JsonPropertyName("steps")]

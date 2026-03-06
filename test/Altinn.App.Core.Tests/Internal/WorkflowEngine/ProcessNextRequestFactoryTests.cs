@@ -392,8 +392,6 @@ public class ProcessNextRequestFactoryTests
         Assert.Equal("lock-token", request.LockToken);
         var workflow = request.Workflows[0];
         Assert.Equal("Process next: Task_1 -> Task_2", workflow.OperationId);
-        Assert.Equal("lock-token", workflow.IdempotencyKey);
-        Assert.Equal(WorkflowType.AppProcessChange, workflow.Type);
         Assert.Equal("state-blob", workflow.State);
     }
 

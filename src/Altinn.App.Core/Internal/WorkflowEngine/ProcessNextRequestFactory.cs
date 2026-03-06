@@ -65,8 +65,6 @@ internal sealed class ProcessNextRequestFactory
                 new WorkflowRequest
                 {
                     OperationId = $"Process next: {fromTaskId} -> {toTaskId}",
-                    IdempotencyKey = idempotencyKey,
-                    Type = WorkflowType.AppProcessChange,
                     Steps = commands,
                     State = state,
                     Dependencies = dependencies,

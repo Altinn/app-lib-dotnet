@@ -86,9 +86,8 @@ WorkflowEngine/
 │   └── WorkflowEngineClient.cs              - HTTP impl with X-Api-Key auth
 ├── Models/
 │   ├── WorkflowEnqueueRequest.cs            - Batch request (actor, lockToken, list of WorkflowRequest)
-│   ├── WorkflowRequest.cs                   - Single workflow (operationId, idempotencyKey, type, steps, state)
+│   ├── WorkflowRequest.cs                   - Single workflow (operationId, steps, state, dependsOn)
 │   ├── WorkflowEnqueueResponse.cs           - Response: Accepted (with WorkflowResult[]) or Rejected
-│   ├── WorkflowType.cs                      - Enum (Generic, AppProcessChange)
 │   ├── StepRequest.cs                       - Single step (command + retryStrategy + metadata + idempotencyKey)
 │   ├── Command.cs                           - Polymorphic: AppCommand | Webhook | Debug (Noop/Throw/Timeout)
 │   ├── AppCallbackPayload.cs                - Payload engine sends back per callback (includes workflowId)
