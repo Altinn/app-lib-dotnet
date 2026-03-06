@@ -11,7 +11,7 @@ public class NotificationTextsTests
     public void ReplaceTokens_AllTokens_ReplacesAll()
     {
         string text =
-            "App: {appName}, Owner: {instanceOwnerName}, Service: {serviceOwnerName}, Org: {orgNumber}, SSN: {socialSecurityNumber}, Due: {dueDate}";
+            "App: $appName$, Owner: $instanceOwnerName$, Service: $serviceOwnerName$, Org: $orgNumber$, SSN: $socialSecurityNumber$, Due: $dueDate$";
 
         string result = NotificationTexts.ReplaceTokens(
             text,
@@ -34,7 +34,7 @@ public class NotificationTextsTests
     public void ReplaceTokens_NullValues_ReplacesWithEmptyStrings()
     {
         string text =
-            "App: {appName}, Owner: {instanceOwnerName}, Service: {serviceOwnerName}, Org: {orgNumber}, SSN: {socialSecurityNumber}, Due: {dueDate}";
+            "App: $appName$, Owner: $instanceOwnerName$, Service: $serviceOwnerName$, Org: $orgNumber$, SSN: $socialSecurityNumber$, Due: $dueDate$";
 
         string result = NotificationTexts.ReplaceTokens(
             text,
@@ -54,7 +54,7 @@ public class NotificationTextsTests
     public void ReplaceTokens_AppIdWithoutSlash_AppNameIsEmpty()
     {
         string result = NotificationTexts.ReplaceTokens(
-            "App: {appName}",
+            "App: $appName$",
             appId: "invalid-no-slash",
             title: null,
             instanceOwnerName: null,
@@ -71,7 +71,7 @@ public class NotificationTextsTests
     public void ReplaceTokens_AppIdWithMultipleSegments_UsesSecondSegmentAsAppName()
     {
         string result = NotificationTexts.ReplaceTokens(
-            "App: {appName}",
+            "App: $appName$",
             appId: "org/app-name/extra",
             title: null,
             instanceOwnerName: null,
@@ -88,7 +88,7 @@ public class NotificationTextsTests
     public void ReplaceTokens_DueDate_FormatsAsddMMYYYY()
     {
         string result = NotificationTexts.ReplaceTokens(
-            "{dueDate}",
+            "$dueDate$",
             appId: null,
             title: null,
             instanceOwnerName: null,
@@ -373,7 +373,7 @@ public class NotificationTextsTests
     public void ReplaceTokens_WithTitle_UsesTitleOverAppName()
     {
         string result = NotificationTexts.ReplaceTokens(
-            "{appName}",
+            "$appName$",
             appId: "ttd/my-app",
             title: "My Application Title",
             instanceOwnerName: null,
@@ -390,7 +390,7 @@ public class NotificationTextsTests
     public void ReplaceTokens_NullTitleAndNullAppId_ReplacesWithEmptyString()
     {
         string result = NotificationTexts.ReplaceTokens(
-            "{appName}",
+            "$appName$",
             appId: null,
             title: null,
             instanceOwnerName: null,
@@ -407,7 +407,7 @@ public class NotificationTextsTests
     public void ReplaceTokens_AllTokens_WithTitle_UsesTitleForAppName()
     {
         string text =
-            "App: {appName}, Owner: {instanceOwnerName}, Service: {serviceOwnerName}, Org: {orgNumber}, SSN: {socialSecurityNumber}, Due: {dueDate}";
+            "App: $appName$, Owner: $instanceOwnerName$, Service: $serviceOwnerName$, Org: $orgNumber$, SSN: $socialSecurityNumber$, Due: $dueDate$";
 
         string result = NotificationTexts.ReplaceTokens(
             text,
