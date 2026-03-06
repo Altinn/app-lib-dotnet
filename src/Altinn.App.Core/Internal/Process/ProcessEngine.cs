@@ -155,11 +155,12 @@ internal class ProcessEngine : IProcessEngine
     public async Task<Instance> SubmitInitialProcessState(
         Instance instance,
         ProcessStateChange processStateChange,
-        string lockToken,
         Dictionary<string, string>? prefill = null,
         CancellationToken ct = default
     )
     {
+        string lockToken = await _instanceLocker.LockAsync();
+
         // Capture instance + form data state for transport to the workflow engine
         string? taskId = instance.Process?.CurrentTask?.ElementId;
         var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
@@ -210,7 +211,7 @@ internal class ProcessEngine : IProcessEngine
             return result;
         }
 
-        await _instanceLocker.LockAsync();
+        string lockToken = await _instanceLocker.LockAsync();
 
         _logger.LogDebug(
             "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",
@@ -291,7 +292,7 @@ internal class ProcessEngine : IProcessEngine
         MoveToNextResult moveToNextResult;
         try
         {
-            moveToNextResult = await HandleMoveToNext(instance, processNextAction, request.LockToken, ct);
+            moveToNextResult = await HandleMoveToNext(instance, processNextAction, lockToken, ct);
         }
         catch (ServiceTaskFailedException ex)
         {

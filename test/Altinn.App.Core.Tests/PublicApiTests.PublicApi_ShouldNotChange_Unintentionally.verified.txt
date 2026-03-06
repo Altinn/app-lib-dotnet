@@ -5026,7 +5026,6 @@ namespace Altinn.App.Core.Models.Process
         public string? ActionOnBehalfOf { get; set; }
         public required Altinn.Platform.Storage.Interface.Models.Instance Instance { get; init; }
         public required string? Language { get; init; }
-        public required string LockToken { get; init; }
         public required System.Security.Claims.ClaimsPrincipal User { get; init; }
     }
     public class ProcessStartRequest

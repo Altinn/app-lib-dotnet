@@ -404,9 +404,7 @@ public class InstancesController : ControllerBase
             // Dispatch process state change to async engine
             if (processStateChange is not null)
             {
-                // TODO: Acquire proper lock token from Storage
-                string lockToken = Guid.NewGuid().ToString("N");
-                instance = await _processEngine.SubmitInitialProcessState(instance, processStateChange, lockToken);
+                instance = await _processEngine.SubmitInitialProcessState(instance, processStateChange);
             }
         }
         catch (Exception exception)
@@ -639,12 +637,9 @@ public class InstancesController : ControllerBase
             // Dispatch process state change to async engine
             if (processStateChange is not null)
             {
-                // TODO: Acquire proper lock token from Storage
-                string lockToken = Guid.NewGuid().ToString("N");
                 instance = await _processEngine.SubmitInitialProcessState(
                     instance,
                     processStateChange,
-                    lockToken,
                     instansiationInstance.Prefill
                 );
             }
@@ -775,12 +770,9 @@ public class InstancesController : ControllerBase
         // Dispatch process state change to async engine
         if (startResult.ProcessStateChange is not null)
         {
-            // TODO: Acquire proper lock token from Storage
-            string lockToken = Guid.NewGuid().ToString("N");
             targetInstance = await _processEngine.SubmitInitialProcessState(
                 targetInstance,
-                startResult.ProcessStateChange,
-                lockToken
+                startResult.ProcessStateChange
             );
         }
 

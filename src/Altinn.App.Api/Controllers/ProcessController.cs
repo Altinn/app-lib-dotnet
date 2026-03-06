@@ -207,9 +207,6 @@ public class ProcessController : ControllerBase
                 ct
             );
 
-            // TODO: Acquire proper lock token from Storage
-            string lockToken = Guid.NewGuid().ToString("N");
-
             var processNextRequest = new ProcessNextRequest
             {
                 User = User,
@@ -217,7 +214,6 @@ public class ProcessController : ControllerBase
                 Action = processNext?.Action,
                 ActionOnBehalfOf = processNext?.ActionOnBehalfOf,
                 Language = language,
-                LockToken = lockToken,
             };
 
             ProcessChangeResult result = await _processEngine.Next(processNextRequest, ct);
@@ -330,9 +326,6 @@ public class ProcessController : ControllerBase
 
             try
             {
-                // TODO: Acquire proper lock token from Storage
-                string lockToken = Guid.NewGuid().ToString("N");
-
                 ProcessNextRequest request = new()
                 {
                     Instance = instance,
@@ -341,7 +334,6 @@ public class ProcessController : ControllerBase
                         instance.Process.CurrentTask.AltinnTaskType
                     ),
                     Language = language,
-                    LockToken = lockToken,
                 };
                 ProcessChangeResult result = await _processEngine.Next(request);
 

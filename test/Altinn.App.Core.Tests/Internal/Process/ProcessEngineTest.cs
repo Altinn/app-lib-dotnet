@@ -245,7 +245,6 @@ public sealed class ProcessEngineTest
             User = user,
             Action = null,
             Language = null,
-            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         // Act
@@ -375,7 +374,6 @@ public sealed class ProcessEngineTest
             User = user,
             Action = "reject",
             Language = null,
-            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         // Act
@@ -494,7 +492,6 @@ public sealed class ProcessEngineTest
             Action = null,
             Language = null,
             Instance = instance,
-            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         // Act
@@ -579,7 +576,6 @@ public sealed class ProcessEngineTest
             Action = null,
             User = null!,
             Language = null,
-            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
@@ -648,7 +644,6 @@ public sealed class ProcessEngineTest
             User = user,
             Action = "sign",
             Language = null,
-            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         ProcessChangeResult result = await processEngine.Next(processNextRequest, CancellationToken.None);
@@ -721,7 +716,6 @@ public sealed class ProcessEngineTest
             User = user,
             Action = "sign",
             Language = null,
-            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         ProcessChangeResult result = await processEngine.Next(processNextRequest, CancellationToken.None);
@@ -798,7 +792,6 @@ public sealed class ProcessEngineTest
             User = user,
             Action = null,
             Language = null,
-            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
@@ -943,7 +936,6 @@ public sealed class ProcessEngineTest
             User = user,
             Action = "reject",
             Language = null,
-            LockToken = Guid.NewGuid().ToString("N"),
         };
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
         fixture.Mock<IProcessReader>().Verify(r => r.IsProcessTask("Task_1"), Times.Once);
@@ -1096,7 +1088,6 @@ public sealed class ProcessEngineTest
             Action = null,
             Language = null,
             Instance = instance,
-            LockToken = Guid.NewGuid().ToString("N"),
         };
 
         ProcessChangeResult result = await processEngine.Next(processNextRequest);
@@ -1334,7 +1325,10 @@ public sealed class ProcessEngineTest
             services.TryAddTransient<ITranslationService>(_ => translationServiceMock.Object);
             services.TryAddTransient<InstanceDataUnitOfWorkInitializer>();
             services.TryAddTransient<IValidationService>(_ => validationServiceMock.Object);
-            services.TryAddTransient<IInstanceLocker>(_ => new Mock<IInstanceLocker>().Object);
+            var instanceLockerMock = new Mock<IInstanceLocker>();
+            instanceLockerMock.Setup(x => x.LockAsync()).ReturnsAsync(Guid.NewGuid().ToString("N"));
+            instanceLockerMock.Setup(x => x.LockAsync(It.IsAny<TimeSpan>())).ReturnsAsync(Guid.NewGuid().ToString("N"));
+            services.TryAddTransient<IInstanceLocker>(_ => instanceLockerMock.Object);
 
             var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
             processEngineClientMock
