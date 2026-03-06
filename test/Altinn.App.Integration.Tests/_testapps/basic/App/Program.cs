@@ -2,6 +2,7 @@ using System;
 using Altinn.App.Api.Extensions;
 using Altinn.App.Api.Helpers;
 using Altinn.App.Core.Features.Auth;
+using Altinn.App.Core.Internal.WorkflowEngine.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -55,6 +56,10 @@ void ConfigureServices(IServiceCollection services, IConfiguration config)
 
     // Register services required to run this as an Altinn application
     services.AddAltinnAppServices(config, builder.Environment);
+
+    // Replace external workflow engine HTTP client with in-process fake
+    // This avoids needing a real workflow engine service for integration tests
+    services.AddTransient<IWorkflowEngineClient, FakeWorkflowEngineClient>();
 
     // Add Swagger support (Swashbuckle)
     services.AddSwaggerGen(c =>

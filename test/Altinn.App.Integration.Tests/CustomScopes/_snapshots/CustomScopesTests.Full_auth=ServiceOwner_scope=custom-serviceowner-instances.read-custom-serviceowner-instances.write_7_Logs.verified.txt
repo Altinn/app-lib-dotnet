@@ -1,27 +1,6 @@
 ﻿[basic/custom-scopes] [INIT INFO] Fixture configuration updated
 [basic/custom-scopes] [INFO] ### Request: Instances.PostSimplified - User: ServiceOwner/405003309, AuthLevel: 3, AuthMethod: maskinporten
 [basic/custom-scopes] [INFO] IInstantiationValidator.Validate
-[basic/custom-scopes] [INFO] ### Response: Instances.PostSimplified - ObjectResult, StatusCode: 500
-fail: Altinn.App.Api.Controllers.InstancesController[0]
-      Instantiation of appId ttd/basic failed for party 501337
-      System.Net.Http.HttpRequestException: Connection refused (localhost:8080)
-       ---> System.Net.Sockets.SocketException (111): Connection refused
-         at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
-         at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
-         at System.Net.Sockets.Socket.<ConnectAsync>g__WaitForConnectWithCancellation|285_0(AwaitableSocketAsyncEventArgs saea, ValueTask connectTask, CancellationToken cancellationToken)
-         at System.Net.Http.HttpConnectionPool.ConnectToTcpHostAsync(String host, Int32 port, HttpRequestMessage initialRequest, Boolean async, CancellationToken cancellationToken)
-         --- End of inner exception stack trace ---
-         at System.Net.Http.HttpConnectionPool.ConnectToTcpHostAsync(String host, Int32 port, HttpRequestMessage initialRequest, Boolean async, CancellationToken cancellationToken)
-         at System.Net.Http.HttpConnectionPool.ConnectAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
-         at System.Net.Http.HttpConnectionPool.CreateHttp11ConnectionAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
-         at System.Net.Http.HttpConnectionPool.AddHttp11ConnectionAsync(QueueItem queueItem)
-         at System.Threading.Tasks.TaskCompletionSourceWithCancellation`1.WaitWithCancellationAsync(CancellationToken cancellationToken)
-         at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)
-         at System.Net.Http.DiagnosticsHandler.SendAsyncCore(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
-         at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
-         at Microsoft.Extensions.Http.Logging.LoggingHttpMessageHandler.<SendCoreAsync>g__Core|5_0(HttpRequestMessage request, Boolean useAsync, CancellationToken cancellationToken)
-         at Microsoft.Extensions.Http.Logging.LoggingScopeHttpMessageHandler.<SendCoreAsync>g__Core|5_0(HttpRequestMessage request, Boolean useAsync, CancellationToken cancellationToken)
-         at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
-         at Altinn.App.Core.Internal.WorkflowEngine.Http.WorkflowEngineClient.ProcessNext(Instance instance, ProcessNextRequest request, CancellationToken cancellationToken) in /_/src/Altinn.App.Core/Internal/WorkflowEngine/Http/WorkflowEngineClient.cs:line 45
-         at Altinn.App.Core.Internal.Process.ProcessEngine.SubmitInitialProcessState(Instance instance, ProcessStateChange processStateChange, String lockToken, Dictionary`2 prefill, CancellationToken ct) in /_/src/Altinn.App.Core/Internal/Process/ProcessEngine.cs:line 159
-         at Altinn.App.Api.Controllers.InstancesController.PostSimplified(String org, String app, InstansiationInstance instansiationInstance, String language) in /_/src/Altinn.App.Api/Controllers/InstancesController.cs:line 617
+[basic/custom-scopes] [INFO] IProcessTaskStart.Start
+[basic/custom-scopes] [INFO] IInstantiationProcessor.DataCreation
+[basic/custom-scopes] [INFO] ### Response: Instances.PostSimplified - CreatedResult, StatusCode: 201

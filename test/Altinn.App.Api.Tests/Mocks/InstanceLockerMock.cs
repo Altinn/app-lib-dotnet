@@ -10,5 +10,11 @@ internal sealed class InstanceLockerMock : IInstanceLocker
 
     public ValueTask<string> LockAsync(TimeSpan ttl) => ValueTask.FromResult(_fakeLockToken);
 
+    public ValueTask<string> LockAsync(int instanceOwnerPartyId, Guid instanceGuid) =>
+        ValueTask.FromResult(_fakeLockToken);
+
+    public ValueTask<string> LockAsync(int instanceOwnerPartyId, Guid instanceGuid, TimeSpan ttl) =>
+        ValueTask.FromResult(_fakeLockToken);
+
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

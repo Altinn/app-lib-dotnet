@@ -159,7 +159,8 @@ internal class ProcessEngine : IProcessEngine
         CancellationToken ct = default
     )
     {
-        string lockToken = await _instanceLocker.LockAsync();
+        var instanceId = new InstanceIdentifier(instance);
+        string lockToken = await _instanceLocker.LockAsync(instanceId.InstanceOwnerPartyId, instanceId.InstanceGuid);
 
         // Capture instance + form data state for transport to the workflow engine
         string? taskId = instance.Process?.CurrentTask?.ElementId;

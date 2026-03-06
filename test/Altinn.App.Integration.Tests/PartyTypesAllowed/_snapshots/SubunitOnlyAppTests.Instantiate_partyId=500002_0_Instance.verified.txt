@@ -8,8 +8,8 @@
         ]
       }
     },
-    StatusCode: InternalServerError,
-    ReasonPhrase: Internal Server Error,
+    StatusCode: Created,
+    ReasonPhrase: Created,
     Headers: {
       Date: <date>,
       Server: [
@@ -17,6 +17,9 @@
       ],
       Cache-Control: [
         no-store, no-cache
+      ],
+      Location: [
+        https://app:5005/ttd/basic/instances/500002/<instanceGuid>
       ],
       Transfer-Encoding: [
         chunked
@@ -63,7 +66,62 @@
         ]
       }
     },
-    IsSuccessStatusCode: false
+    IsSuccessStatusCode: true
   },
-  Response: "Instantiation of appId ttd/basic failed for party 500002"
+  Response: {
+    Id: 500002/<instanceGuid>,
+    InstanceOwner: {
+      PartyId: 500002,
+      OrganisationNumber: 897069652
+    },
+    AppId: ttd/basic,
+    Org: ttd,
+    SelfLinks: {
+      Apps: https://app:5005/ttd/basic/instances/500002/<instanceGuid>,
+      Platform: https://platform.local.altinn.cloud/storage/api/v1/instances/500002/<instanceGuid>
+    },
+    VisibleAfter: DateTime_1,
+    Process: {
+      Started: DateTime_2,
+      StartEvent: StartEvent_1,
+      CurrentTask: {
+        Flow: 2,
+        Started: DateTime_3,
+        ElementId: Task_1,
+        Name: Utfylling,
+        AltinnTaskType: data,
+        FlowType: CompleteCurrentMoveToNext
+      }
+    },
+    Status: {
+      IsArchived: false,
+      IsSoftDeleted: false,
+      IsHardDeleted: false,
+      ReadStatus: UpdatedSinceLastReview
+    },
+    Data: [
+      {
+        Id: <dataElementId[0]>,
+        InstanceGuid: <instanceGuid>,
+        DataType: model,
+        ContentType: application/xml,
+        BlobStoragePath: ttd/basic/<instanceGuid>/data/<dataElementId[0]>,
+        SelfLinks: {
+          Apps: https://app:5005/ttd/basic/instances/500002/<instanceGuid>/data/<dataElementId[0]>,
+          Platform: https://platform.local.altinn.cloud/storage/api/v1/instances/500002/<instanceGuid>/data/<dataElementId[0]>
+        },
+        Size: 146,
+        Locked: false,
+        IsRead: false,
+        Created: DateTime_4,
+        CreatedBy: 991825827,
+        LastChanged: DateTime_4,
+        LastChangedBy: 991825827
+      }
+    ],
+    Created: DateTime_1,
+    CreatedBy: 1337,
+    LastChanged: DateTime_5,
+    LastChangedBy: 991825827
+  }
 }
