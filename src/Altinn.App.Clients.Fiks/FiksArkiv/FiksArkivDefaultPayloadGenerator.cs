@@ -126,20 +126,11 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         // Recipient
         journalEntry.Korrespondansepart.Add(recipientParty);
 
-        // Sender(s)
-        journalEntry.Korrespondansepart.Add(serviceOwnerParty);
+        // Sender
         if (instanceOwnerParty is not null)
         {
             journalEntry.Korrespondansepart.Add(instanceOwnerParty);
         }
-
-        // Internal sender
-        journalEntry.Korrespondansepart.Add(
-            KorrespondansepartFactory.CreateInternalSender(
-                partyId: FiksArkivConstants.AltinnOrgNo,
-                partyName: FiksArkivConstants.AltinnSystemId
-            )
-        );
 
         // Main form data file
         journalEntry.Dokumentbeskrivelse.Add(GetDocumentDescription(archiveDocuments.PrimaryDocument));
