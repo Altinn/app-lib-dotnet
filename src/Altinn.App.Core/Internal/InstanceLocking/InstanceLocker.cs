@@ -15,26 +15,42 @@ internal sealed partial class InstanceLocker(
 
     private InstanceLock? _lock;
 
-    public ValueTask LockAsync()
+    public ValueTask<string> LockAsync()
     {
         return LockAsync(TimeSpan.FromMinutes(5));
     }
 
-    public async ValueTask LockAsync(TimeSpan ttl)
+    public async ValueTask<string> LockAsync(TimeSpan ttl)
     {
         if (_lock is not null)
         {
-            return;
+            return _lock.LockToken;
         }
 
         var (instanceOwnerPartyId, instanceGuid) =
             GetInstanceIdentifiers() ?? throw new InvalidOperationException("Unable to extract instance identifiers.");
+
+        return await LockAsync(instanceOwnerPartyId, instanceGuid, ttl);
+    }
+
+    public ValueTask<string> LockAsync(int instanceOwnerPartyId, Guid instanceGuid)
+    {
+        return LockAsync(instanceOwnerPartyId, instanceGuid, TimeSpan.FromMinutes(5));
+    }
+
+    public async ValueTask<string> LockAsync(int instanceOwnerPartyId, Guid instanceGuid, TimeSpan ttl)
+    {
+        if (_lock is not null)
+        {
+            return _lock.LockToken;
+        }
 
         var lockToken = await client.AcquireInstanceLock(instanceGuid, instanceOwnerPartyId, ttl);
 
         LogLockAcquired(logger, instanceGuid);
 
         _lock = new InstanceLock(instanceGuid, instanceOwnerPartyId, lockToken);
+        return lockToken;
     }
 
     private (int instanceOwnerPartyId, Guid instanceGuid)? GetInstanceIdentifiers()

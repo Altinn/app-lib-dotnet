@@ -4,9 +4,17 @@ namespace Altinn.App.Api.Tests.Mocks;
 
 internal sealed class InstanceLockerMock : IInstanceLocker
 {
-    public ValueTask LockAsync() => ValueTask.CompletedTask;
+    private static readonly string _fakeLockToken = Guid.NewGuid().ToString("N");
 
-    public ValueTask LockAsync(TimeSpan ttl) => ValueTask.CompletedTask;
+    public ValueTask<string> LockAsync() => ValueTask.FromResult(_fakeLockToken);
+
+    public ValueTask<string> LockAsync(TimeSpan ttl) => ValueTask.FromResult(_fakeLockToken);
+
+    public ValueTask<string> LockAsync(int instanceOwnerPartyId, Guid instanceGuid) =>
+        ValueTask.FromResult(_fakeLockToken);
+
+    public ValueTask<string> LockAsync(int instanceOwnerPartyId, Guid instanceGuid, TimeSpan ttl) =>
+        ValueTask.FromResult(_fakeLockToken);
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
