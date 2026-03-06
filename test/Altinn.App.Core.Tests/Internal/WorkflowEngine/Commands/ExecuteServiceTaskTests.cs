@@ -1,6 +1,5 @@
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Process;
-using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
@@ -33,7 +32,7 @@ public class ExecuteServiceTaskTests
                 Payload = serializedPayload,
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
-                WorkflowId = 0,
+                WorkflowId = Guid.Empty,
             },
         };
     }
@@ -42,8 +41,10 @@ public class ExecuteServiceTaskTests
     {
         return new Instance
         {
+            Id = "1337/abc-123",
             Org = "ttd",
             AppId = "ttd/test-app",
+            InstanceOwner = new InstanceOwner { PartyId = "1337" },
             Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = taskId } },
         };
     }
@@ -57,11 +58,12 @@ public class ExecuteServiceTaskTests
             services.AddSingleton(st);
         }
         var sp = services.BuildServiceProvider();
+
         return new ExecuteServiceTask(sp.GetRequiredService<AppImplementationFactory>());
     }
 
     [Fact]
-    public async Task Execute_ResolvesServiceTaskAndCallsExecute_ReturnsSuccess()
+    public async Task Execute_ResolvesServiceTaskAndCallsExecute_ReturnsSuccessWithAutoAdvance()
     {
         // Arrange
         var serviceTask = new Mock<IServiceTask>();
@@ -74,8 +76,29 @@ public class ExecuteServiceTaskTests
         var result = await ((IWorkflowEngineCommand)command).Execute(context);
 
         // Assert
-        Assert.IsType<SuccessfulProcessEngineCommandResult>(result);
+        var success = Assert.IsType<SuccessfulProcessEngineCommandResult>(result);
+        Assert.True(success.AutoAdvanceProcess);
         serviceTask.Verify(x => x.Execute(It.IsAny<ServiceTaskContext>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Execute_WhenSuccessWithoutAutoAdvance_ReturnsFalseAutoAdvance()
+    {
+        // Arrange
+        var serviceTask = new Mock<IServiceTask>();
+        serviceTask.Setup(x => x.Type).Returns("myServiceTask");
+        serviceTask
+            .Setup(x => x.Execute(It.IsAny<ServiceTaskContext>()))
+            .ReturnsAsync(ServiceTaskResult.SuccessWithoutAutoAdvance());
+        var command = CreateCommand(serviceTask.Object);
+        var context = CreateContext(CreateInstance(), "myServiceTask");
+
+        // Act
+        var result = await ((IWorkflowEngineCommand)command).Execute(context);
+
+        // Assert
+        var success = Assert.IsType<SuccessfulProcessEngineCommandResult>(result);
+        Assert.False(success.AutoAdvanceProcess);
     }
 
     [Fact]

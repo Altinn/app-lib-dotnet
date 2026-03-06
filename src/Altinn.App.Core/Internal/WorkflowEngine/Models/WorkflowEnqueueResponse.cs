@@ -55,7 +55,7 @@ internal sealed record WorkflowResult
     /// The database ID assigned by the engine.
     /// </summary>
     [JsonPropertyName("databaseId")]
-    public required long DatabaseId { get; init; }
+    public required Guid DatabaseId { get; init; }
 }
 
 /// <summary>

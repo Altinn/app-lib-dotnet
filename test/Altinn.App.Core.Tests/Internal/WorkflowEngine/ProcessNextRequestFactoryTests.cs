@@ -362,7 +362,7 @@ public class ProcessNextRequestFactoryTests
         var prefill = new Dictionary<string, string> { ["key1"] = "value1" };
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}", prefill);
+        var request = await factory.Create(stateChange, "lock-token", "{}", prefill: prefill);
 
         // Assert
         var steps = request.Workflows[0].Steps.ToList();

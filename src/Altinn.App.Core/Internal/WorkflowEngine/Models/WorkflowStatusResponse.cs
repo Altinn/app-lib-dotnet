@@ -11,7 +11,7 @@ internal sealed record WorkflowStatusResponse
     /// The database ID of the workflow.
     /// </summary>
     [JsonPropertyName("databaseId")]
-    public long DatabaseId { get; init; }
+    public Guid DatabaseId { get; init; }
 
     /// <summary>
     /// The operation ID of the workflow.
@@ -66,25 +66,18 @@ internal sealed record WorkflowStatusResponse
     public required PersistentItemStatus OverallStatus { get; init; }
 
     /// <summary>
-    /// The type of workflow.
-    /// </summary>
-    [JsonPropertyName("type")]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public required WorkflowType Type { get; init; }
-
-    /// <summary>
     /// Optional dependency information.
     /// </summary>
     [JsonPropertyName("dependencies")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IReadOnlyDictionary<long, PersistentItemStatus>? Dependencies { get; init; }
+    public IReadOnlyDictionary<Guid, PersistentItemStatus>? Dependencies { get; init; }
 
     /// <summary>
     /// Optional link information.
     /// </summary>
     [JsonPropertyName("links")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IReadOnlyDictionary<long, PersistentItemStatus>? Links { get; init; }
+    public IReadOnlyDictionary<Guid, PersistentItemStatus>? Links { get; init; }
 
     /// <summary>
     /// Details about each step in the workflow.
@@ -102,7 +95,7 @@ internal sealed record StepStatusResponse
     /// The database ID of the step.
     /// </summary>
     [JsonPropertyName("databaseId")]
-    public long DatabaseId { get; init; }
+    public Guid DatabaseId { get; init; }
 
     /// <summary>
     /// The idempotency key of the step.

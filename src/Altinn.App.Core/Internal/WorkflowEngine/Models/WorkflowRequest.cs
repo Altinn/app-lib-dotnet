@@ -54,4 +54,10 @@ internal sealed record WorkflowRequest
     /// </summary>
     [JsonPropertyName("state")]
     public string? State { get; init; }
+
+    /// <summary>
+    /// Optional workflow database IDs that must complete before this workflow starts.
+    /// </summary>
+    [JsonPropertyName("dependsOn")]
+    public IReadOnlyList<Guid>? Dependencies { get; init; }
 }

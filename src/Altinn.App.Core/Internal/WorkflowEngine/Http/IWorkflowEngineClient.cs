@@ -28,7 +28,18 @@ internal interface IWorkflowEngineClient
     /// <param name="cancellationToken">Cancellation token</param>
     Task<WorkflowStatusResponse?> GetWorkflowStatus(
         Instance instance,
-        long workflowId,
+        Guid workflowId,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Lists all active (incomplete) workflows for the given instance.
+    /// Returns an empty list when no workflows are active.
+    /// </summary>
+    /// <param name="instance">The instance</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task<IReadOnlyList<WorkflowStatusResponse>> ListActiveWorkflows(
+        Instance instance,
         CancellationToken cancellationToken = default
     );
 }

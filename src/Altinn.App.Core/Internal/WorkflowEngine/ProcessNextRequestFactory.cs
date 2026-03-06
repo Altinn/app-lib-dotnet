@@ -30,13 +30,53 @@ internal sealed class ProcessNextRequestFactory
     }
 
     /// <summary>
-    /// Creates a WorkflowEnqueueRequest from the instance and process state change.
+    /// Creates a WorkflowEnqueueRequest from the process state change.
     /// Maps each instance event to its corresponding command sequence.
     /// </summary>
     public async Task<WorkflowEnqueueRequest> Create(
         ProcessStateChange processStateChange,
         string lockToken,
-        string state,
+        string? state = null,
+        Actor? actor = null,
+        IReadOnlyList<Guid>? dependencies = null,
+        Dictionary<string, string>? prefill = null
+    )
+    {
+        List<StepRequest> commands = AssembleCommandSequence(processStateChange, prefill);
+
+        string fromTaskId =
+            processStateChange.OldProcessState?.CurrentTask?.ElementId
+            ?? processStateChange.NewProcessState?.StartEvent
+            ?? "Start event";
+        string toTaskId =
+            processStateChange.NewProcessState?.CurrentTask?.ElementId
+            ?? processStateChange.NewProcessState?.EndEvent
+            ?? "End event";
+
+        string idempotencyKey = dependencies is { Count: > 0 } ? $"{lockToken}-dep-{fromTaskId}" : lockToken;
+
+        return new WorkflowEnqueueRequest
+        {
+            Actor = actor ?? await ExtractActor(),
+            IdempotencyKey = idempotencyKey,
+            LockToken = lockToken,
+            Workflows =
+            [
+                new WorkflowRequest
+                {
+                    OperationId = $"Process next: {fromTaskId} -> {toTaskId}",
+                    IdempotencyKey = idempotencyKey,
+                    Type = WorkflowType.AppProcessChange,
+                    Steps = commands,
+                    State = state,
+                    Dependencies = dependencies,
+                },
+            ],
+        };
+    }
+
+    private List<StepRequest> AssembleCommandSequence(
+        ProcessStateChange processStateChange,
         Dictionary<string, string>? prefill = null
     )
     {
@@ -87,31 +127,7 @@ internal sealed class ProcessNextRequestFactory
         commands.Add(CreateSaveProcessStateToStorageCommand(processStateChange));
         commands.AddRange(postCommitSteps);
 
-        string fromTaskId =
-            processStateChange.OldProcessState?.CurrentTask?.ElementId
-            ?? processStateChange.NewProcessState?.StartEvent
-            ?? "Start event";
-        string toTaskId =
-            processStateChange.NewProcessState?.CurrentTask?.ElementId
-            ?? processStateChange.NewProcessState?.EndEvent
-            ?? "End event";
-
-        return new WorkflowEnqueueRequest
-        {
-            Actor = await ExtractActor(),
-            LockToken = lockToken,
-            Workflows =
-            [
-                new WorkflowRequest
-                {
-                    OperationId = $"Process next: {fromTaskId} -> {toTaskId}",
-                    IdempotencyKey = lockToken,
-                    Type = WorkflowType.AppProcessChange,
-                    Steps = commands,
-                    State = state,
-                },
-            ],
-        };
+        return commands;
     }
 
     private WorkflowCommandSet? GetWorkflowStepsForInstanceEvent(

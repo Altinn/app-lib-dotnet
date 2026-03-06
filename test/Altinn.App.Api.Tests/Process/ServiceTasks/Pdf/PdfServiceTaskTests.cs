@@ -4,11 +4,13 @@ using Altinn.App.Api.Models;
 using Altinn.App.Api.Tests.Data;
 using Altinn.App.Core.EFormidling.Implementation;
 using Altinn.App.Core.EFormidling.Interface;
+using Altinn.App.Core.Features.Maskinporten;
 using Altinn.Platform.Storage.Interface.Models;
 using Argon;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Xunit.Abstractions;
 
@@ -28,10 +30,13 @@ public class PdfServiceTaskTests : ApiTestBase, IClassFixture<WebApplicationFact
     {
         var eFormidlingServiceMock = new Mock<IEFormidlingService>();
         var eFormidlingConfigurationProviderMock = new Mock<IEFormidlingLegacyConfigurationProvider>();
+        var maskinportenClientMock = new Mock<IMaskinportenClient>();
         OverrideServicesForAllTests = (services) =>
         {
             services.AddSingleton(eFormidlingServiceMock.Object);
             services.AddSingleton(eFormidlingConfigurationProviderMock.Object);
+            services.RemoveAll<IMaskinportenClient>();
+            services.AddSingleton(maskinportenClientMock.Object);
         };
 
         TestData.DeleteInstanceAndData(Org, App, InstanceOwnerPartyId, _instanceGuid);

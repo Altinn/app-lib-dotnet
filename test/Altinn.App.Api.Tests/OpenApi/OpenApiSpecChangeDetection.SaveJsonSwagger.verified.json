@@ -7360,8 +7360,8 @@
             "nullable": true
           },
           "workflowId": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "uuid"
           }
         },
         "additionalProperties": false

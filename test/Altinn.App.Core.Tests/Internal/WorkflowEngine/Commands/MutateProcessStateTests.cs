@@ -33,7 +33,7 @@ public class MutateProcessStateTests
                 Payload = serializedPayload,
                 LockToken = Guid.NewGuid().ToString(),
                 State = "{}",
-                WorkflowId = 0,
+                WorkflowId = Guid.Empty,
             },
         };
     }

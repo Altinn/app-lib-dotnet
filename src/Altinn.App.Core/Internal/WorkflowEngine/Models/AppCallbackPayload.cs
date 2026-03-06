@@ -42,5 +42,5 @@ public sealed record AppCallbackPayload
     /// The workflow database ID assigned by the engine.
     /// </summary>
     [JsonPropertyName("workflowId")]
-    public required long WorkflowId { get; init; }
+    public required Guid WorkflowId { get; init; }
 }

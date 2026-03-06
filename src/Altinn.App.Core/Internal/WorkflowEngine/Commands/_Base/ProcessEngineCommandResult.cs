@@ -2,7 +2,20 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
 
 internal abstract class ProcessEngineCommandResult { }
 
-internal sealed class SuccessfulProcessEngineCommandResult : ProcessEngineCommandResult { }
+internal sealed class SuccessfulProcessEngineCommandResult : ProcessEngineCommandResult
+{
+    /// <summary>
+    /// When true, the controller should enqueue a process-next workflow after saving data.
+    /// Used by service tasks that want the process to automatically advance.
+    /// </summary>
+    public bool AutoAdvanceProcess { get; init; }
+
+    /// <summary>
+    /// Optional action to use when auto-advancing (e.g. "reject").
+    /// Only relevant when <see cref="AutoAdvanceProcess"/> is true.
+    /// </summary>
+    public string? AutoAdvanceAction { get; init; }
+}
 
 internal sealed class FailedProcessEngineCommandResult : ProcessEngineCommandResult
 {

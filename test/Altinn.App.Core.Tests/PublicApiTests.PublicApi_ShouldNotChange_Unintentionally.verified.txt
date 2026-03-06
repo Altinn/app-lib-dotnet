@@ -2067,11 +2067,14 @@ namespace Altinn.App.Core.Features.Process
         protected ServiceTaskResult() { }
         public static Altinn.App.Core.Features.Process.ServiceTaskFailedResult FailedPermanent(string errorMessage) { }
         public static Altinn.App.Core.Features.Process.ServiceTaskFailedResult FailedRetryable(string errorMessage) { }
-        public static Altinn.App.Core.Features.Process.ServiceTaskSuccessResult Success() { }
+        public static Altinn.App.Core.Features.Process.ServiceTaskSuccessResult Success(string? action = null) { }
+        public static Altinn.App.Core.Features.Process.ServiceTaskSuccessResult SuccessWithoutAutoAdvance() { }
     }
     public sealed class ServiceTaskSuccessResult : Altinn.App.Core.Features.Process.ServiceTaskResult, System.IEquatable<Altinn.App.Core.Features.Process.ServiceTaskSuccessResult>
     {
         public ServiceTaskSuccessResult() { }
+        public string? Action { get; init; }
+        public bool AutoAdvanceProcess { get; init; }
     }
     public sealed class SuccessfulOnAbandonHandlerResult : Altinn.App.Core.Features.Process.OnAbandonHandlerResult, System.IEquatable<Altinn.App.Core.Features.Process.SuccessfulOnAbandonHandlerResult>
     {
@@ -4060,7 +4063,7 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models
         [System.Text.Json.Serialization.JsonPropertyName("state")]
         public string? State { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("workflowId")]
-        public required long WorkflowId { get; init; }
+        public required System.Guid WorkflowId { get; init; }
     }
     public sealed class AppCallbackResponse : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.AppCallbackResponse>
     {

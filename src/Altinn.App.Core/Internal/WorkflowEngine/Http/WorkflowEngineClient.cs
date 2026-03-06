@@ -4,6 +4,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Http;
@@ -18,16 +19,19 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
     private readonly HttpClient _httpClient;
     private readonly AppIdentifier _appIdentifier;
     private readonly PlatformSettings _platformSettings;
+    private readonly ILogger<WorkflowEngineClient> _logger;
 
     public WorkflowEngineClient(
         AppIdentifier appIdentifier,
         HttpClient httpClient,
-        IOptions<PlatformSettings> platformSettings
+        IOptions<PlatformSettings> platformSettings,
+        ILogger<WorkflowEngineClient> logger
     )
     {
         _appIdentifier = appIdentifier;
         _httpClient = httpClient;
         _platformSettings = platformSettings.Value;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -43,6 +47,16 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         httpRequest.Headers.Add(ApiKeyHeaderName, _platformSettings.WorkflowEngineApiKey);
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            string body = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogError(
+                "Workflow engine enqueue failed with status {StatusCode}. URL: {Url}. Response body: {Body}",
+                response.StatusCode,
+                url,
+                body
+            );
+        }
         response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadFromJsonAsync<WorkflowEnqueueResponse.Accepted>(
@@ -53,7 +67,7 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
     /// <inheritdoc />
     public async Task<WorkflowStatusResponse?> GetWorkflowStatus(
         Instance instance,
-        long workflowId,
+        Guid workflowId,
         CancellationToken cancellationToken = default
     )
     {
@@ -78,6 +92,30 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         }
 
         return null;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<WorkflowStatusResponse>> ListActiveWorkflows(
+        Instance instance,
+        CancellationToken cancellationToken = default
+    )
+    {
+        string url = $"{GetBaseUrl()}{GetInstancePath(instance)}";
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
+        httpRequest.Headers.Add(ApiKeyHeaderName, _platformSettings.WorkflowEngineApiKey);
+
+        HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return [];
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<IReadOnlyList<WorkflowStatusResponse>>(
+                cancellationToken: cancellationToken
+            ) ?? [];
     }
 
     private string GetBaseUrl()

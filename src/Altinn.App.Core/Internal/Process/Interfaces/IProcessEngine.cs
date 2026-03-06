@@ -1,3 +1,4 @@
+using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -29,4 +30,20 @@ internal interface IProcessEngine
     /// Method to move process to next task/event
     /// </summary>
     Task<ProcessChangeResult> Next(ProcessNextRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Enqueues a process-next workflow that transitions the process from the current task to the next element.
+    /// The workflow has a dependency on <paramref name="dependsOnWorkflowId"/> so it won't start
+    /// until that workflow completes.
+    /// Does not mutate the <paramref name="instance"/>.
+    /// </summary>
+    Task EnqueueProcessNext(
+        Instance instance,
+        Actor actor,
+        string lockToken,
+        Guid dependsOnWorkflowId,
+        string state,
+        string? action = null,
+        CancellationToken ct = default
+    );
 }

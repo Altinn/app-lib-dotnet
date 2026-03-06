@@ -14,6 +14,12 @@ internal sealed record WorkflowEnqueueRequest
     public required Actor Actor { get; init; }
 
     /// <summary>
+    /// An idempotency key for this entire enqueue request (all workflows in the batch).
+    /// </summary>
+    [JsonPropertyName("idempotencyKey")]
+    public required string IdempotencyKey { get; init; }
+
+    /// <summary>
     /// The lock token associated with this request.
     /// </summary>
     [JsonPropertyName("lockToken")]

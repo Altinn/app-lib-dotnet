@@ -41,8 +41,20 @@ public abstract record ServiceTaskResult
 {
     /// <summary>
     /// Creates a service task result representing successful execution.
+    /// The process will automatically advance to the next element.
     /// </summary>
-    public static ServiceTaskSuccessResult Success() => new();
+    /// <param name="action">
+    /// Optional action to use when advancing (e.g. "reject").
+    /// When null, the default BPMN transition is used.
+    /// </param>
+    public static ServiceTaskSuccessResult Success(string? action = null) => new() { Action = action };
+
+    /// <summary>
+    /// Creates a service task result representing successful execution
+    /// without automatic process advancement. The instance will remain
+    /// at the service task until manually advanced.
+    /// </summary>
+    public static ServiceTaskSuccessResult SuccessWithoutAutoAdvance() => new() { AutoAdvanceProcess = false };
 
     /// <summary>
     /// Creates a retryable failure. The workflow engine will retry the step with backoff.
@@ -64,7 +76,20 @@ public abstract record ServiceTaskResult
 /// <summary>
 /// Represents a successful result of executing a service task.
 /// </summary>
-public sealed record ServiceTaskSuccessResult : ServiceTaskResult;
+public sealed record ServiceTaskSuccessResult : ServiceTaskResult
+{
+    /// <summary>
+    /// If true, the process will automatically advance to the next element after the service task completes.
+    /// Defaults to true.
+    /// </summary>
+    public bool AutoAdvanceProcess { get; init; } = true;
+
+    /// <summary>
+    /// Optional action to use when auto-advancing (e.g. "reject" to abandon the current task).
+    /// Only used when <see cref="AutoAdvanceProcess"/> is true. When null, the default BPMN transition is used.
+    /// </summary>
+    public string? Action { get; init; }
+}
 
 /// <summary>
 /// Represents a failed result of executing a service task.

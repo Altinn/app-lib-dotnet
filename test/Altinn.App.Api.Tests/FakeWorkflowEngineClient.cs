@@ -1,7 +1,9 @@
 using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.WorkflowEngine;
+using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Http;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models;
@@ -22,7 +24,6 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly InstanceStateService _instanceStateService;
-    private long _nextDatabaseId = 1;
 
     public FakeWorkflowEngineClient(IServiceProvider serviceProvider, InstanceStateService instanceStateService)
     {
@@ -45,7 +46,7 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
 
         foreach (var workflow in request.Workflows)
         {
-            long databaseId = _nextDatabaseId++;
+            Guid databaseId = Guid.NewGuid();
 
             // Construct the controller per call, matching MVC's transient lifetime
             var controller = new WorkflowEngineCallbackController(
@@ -55,6 +56,8 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
             );
 
             string? currentState = workflow.State;
+            bool processStateCommitted = false;
+            ServiceTaskFailedException? serviceTaskFailure = null;
 
             foreach (var step in workflow.Steps)
             {
@@ -91,9 +94,23 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
                 {
                     case OkObjectResult { Value: AppCallbackResponse response }:
                         currentState = response.State;
+
+                        if (appCommand.CommandKey == SaveProcessStateToStorage.Key)
+                        {
+                            processStateCommitted = true;
+                        }
                         break;
 
                     case ObjectResult { Value: ProblemDetails problem }:
+                        // Post-commit failures (e.g., ExecuteServiceTask) should not abort the workflow.
+                        // The process state has already been saved to Storage. Sync state and record the failure.
+                        if (processStateCommitted && appCommand.CommandKey == ExecuteServiceTask.Key)
+                        {
+                            string serviceTaskType = instance.Process?.CurrentTask?.AltinnTaskType ?? "unknown";
+                            serviceTaskFailure = new ServiceTaskFailedException(serviceTaskType, problem.Detail);
+                            goto workflowDone;
+                        }
+
                         throw new InvalidOperationException(
                             $"Callback failed for command '{appCommand.CommandKey}': {problem.Title}: {problem.Detail}"
                         );
@@ -104,6 +121,8 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
                         );
                 }
             }
+
+            workflowDone:
 
             // Restore final state to sync the caller's instance reference.
             // This is needed because callers may inspect instance.Data / instance.Process
@@ -119,6 +138,12 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
                 instance.Process = finalState.Instance.Process;
             }
 
+            // Throw after syncing state, so the caller's instance reference has the committed process state
+            if (serviceTaskFailure is not null)
+            {
+                throw serviceTaskFailure;
+            }
+
             workflowResults.Add(new WorkflowResult { Ref = workflow.Ref, DatabaseId = databaseId });
         }
 
@@ -128,12 +153,22 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
     /// <inheritdoc />
     public Task<WorkflowStatusResponse?> GetWorkflowStatus(
         Instance instance,
-        long workflowId,
+        Guid workflowId,
         CancellationToken cancellationToken = default
     )
     {
         // In synchronous test mode, jobs complete immediately, so there's never an active job
         return Task.FromResult<WorkflowStatusResponse?>(null);
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<WorkflowStatusResponse>> ListActiveWorkflows(
+        Instance instance,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // In synchronous test mode, all workflows complete immediately during EnqueueWorkflow
+        return Task.FromResult<IReadOnlyList<WorkflowStatusResponse>>([]);
     }
 
     /// <summary>

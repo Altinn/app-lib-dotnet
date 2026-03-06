@@ -50,6 +50,15 @@ internal sealed class ExecuteServiceTask(AppImplementationFactory appImplementat
                     : FailedProcessEngineCommandResult.Retryable(errorMessage, "ServiceTaskFailedException");
             }
 
+            if (result is ServiceTaskSuccessResult { AutoAdvanceProcess: true } successResult)
+            {
+                return new SuccessfulProcessEngineCommandResult
+                {
+                    AutoAdvanceProcess = true,
+                    AutoAdvanceAction = successResult.Action,
+                };
+            }
+
             return new SuccessfulProcessEngineCommandResult();
         }
         catch (Exception ex)

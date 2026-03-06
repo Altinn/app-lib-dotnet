@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.WorkflowEngine;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
@@ -70,14 +71,15 @@ public class WorkflowEngineCallbackController : ControllerBase
             return NonRetryableProblem("Command Not Found", commandNotFoundError, StatusCodes.Status404NotFound);
         }
 
-        // Restore instance + form data from the opaque state blob instead of fetching from Storage
+        // Restore instance + form data from the opaque state blob.
+        // State must always be provided — every workflow is enqueued with a captured state blob.
         if (payload.State is null)
         {
-            string noStateError =
-                $"Callback payload for command '{commandKey}' is missing the state blob. Instance: {instanceId}.";
-            _logger.LogError(noStateError);
-            activity?.SetStatus(ActivityStatusCode.Error, noStateError);
-            return NonRetryableProblem("Missing State", noStateError, StatusCodes.Status400BadRequest);
+            string missingStateError =
+                $"State blob is missing from callback payload. CommandKey: {commandKey}, Instance: {instanceId}.";
+            _logger.LogError(missingStateError);
+            activity?.SetStatus(ActivityStatusCode.Error, missingStateError);
+            return NonRetryableProblem("Missing State", missingStateError, StatusCodes.Status422UnprocessableEntity);
         }
 
         InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceStateService.RestoreState(
@@ -120,6 +122,25 @@ public class WorkflowEngineCallbackController : ControllerBase
 
                 // Capture updated state (includes Storage-assigned IDs for newly created data elements)
                 string updatedState = await _instanceStateService.CaptureState(instanceDataUnitOfWork);
+
+                // If the command signals auto-advance, enqueue a dependent process-next workflow.
+                // This happens AFTER save so the state blob includes Storage-assigned IDs.
+                // If this fails, we return 500 — the engine retries the whole callback (at-least-once).
+                // The enqueue uses an idempotency key, so duplicates are safe.
+                if (success.AutoAdvanceProcess)
+                {
+                    var processEngine = _serviceProvider.GetRequiredService<IProcessEngine>();
+                    await processEngine.EnqueueProcessNext(
+                        instanceDataUnitOfWork.Instance,
+                        payload.Actor,
+                        payload.LockToken,
+                        payload.WorkflowId,
+                        updatedState,
+                        success.AutoAdvanceAction,
+                        cancellationToken
+                    );
+                }
+
                 activity?.SetStatus(ActivityStatusCode.Ok);
                 return Ok(new AppCallbackResponse { State = updatedState });
 

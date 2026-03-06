@@ -169,10 +169,15 @@ public sealed class ProcessEngineTest
                 )
             )
             .Callback<Instance, WorkflowEnqueueRequest, CancellationToken>((_, req, _) => capturedRequest = req)
-            .ReturnsAsync(new WorkflowEnqueueResponse.Accepted { Workflows = [new WorkflowResult { DatabaseId = 1 }] });
+            .ReturnsAsync(
+                new WorkflowEnqueueResponse.Accepted
+                {
+                    Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid() }],
+                }
+            );
         processEngineClientMock
-            .Setup(c => c.GetWorkflowStatus(It.IsAny<Instance>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((WorkflowStatusResponse?)null);
+            .Setup(c => c.ListActiveWorkflows(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyList<WorkflowStatusResponse>)[]);
 
         var services = new ServiceCollection();
         services.AddSingleton(processEngineClientMock.Object);
@@ -295,10 +300,15 @@ public sealed class ProcessEngineTest
                 )
             )
             .Callback<Instance, WorkflowEnqueueRequest, CancellationToken>((_, req, _) => capturedRequest = req)
-            .ReturnsAsync(new WorkflowEnqueueResponse.Accepted { Workflows = [new WorkflowResult { DatabaseId = 2 }] });
+            .ReturnsAsync(
+                new WorkflowEnqueueResponse.Accepted
+                {
+                    Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid() }],
+                }
+            );
         processEngineClientMock
-            .Setup(c => c.GetWorkflowStatus(It.IsAny<Instance>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((WorkflowStatusResponse?)null);
+            .Setup(c => c.ListActiveWorkflows(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyList<WorkflowStatusResponse>)[]);
 
         var services = new ServiceCollection();
         services.AddSingleton(processEngineClientMock.Object);
@@ -415,10 +425,15 @@ public sealed class ProcessEngineTest
                 )
             )
             .Callback<Instance, WorkflowEnqueueRequest, CancellationToken>((_, req, _) => capturedRequest = req)
-            .ReturnsAsync(new WorkflowEnqueueResponse.Accepted { Workflows = [new WorkflowResult { DatabaseId = 3 }] });
+            .ReturnsAsync(
+                new WorkflowEnqueueResponse.Accepted
+                {
+                    Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid() }],
+                }
+            );
         processEngineClientMock
-            .Setup(c => c.GetWorkflowStatus(It.IsAny<Instance>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((WorkflowStatusResponse?)null);
+            .Setup(c => c.ListActiveWorkflows(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyList<WorkflowStatusResponse>)[]);
 
         var services = new ServiceCollection();
         services.AddSingleton(processEngineClientMock.Object);
@@ -1330,11 +1345,14 @@ public sealed class ProcessEngineTest
                     )
                 )
                 .ReturnsAsync(
-                    new WorkflowEnqueueResponse.Accepted { Workflows = [new WorkflowResult { DatabaseId = 99 }] }
+                    new WorkflowEnqueueResponse.Accepted
+                    {
+                        Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid() }],
+                    }
                 );
             processEngineClientMock
-                .Setup(c => c.GetWorkflowStatus(It.IsAny<Instance>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((WorkflowStatusResponse?)null);
+                .Setup(c => c.ListActiveWorkflows(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((IReadOnlyList<WorkflowStatusResponse>)[]);
             services.TryAddTransient<IWorkflowEngineClient>(_ => processEngineClientMock.Object);
 
             services.TryAddTransient<ProcessNextRequestFactory>();

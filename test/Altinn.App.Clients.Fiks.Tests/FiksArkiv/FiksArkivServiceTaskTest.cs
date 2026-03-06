@@ -66,15 +66,13 @@ public class FiksArkivServiceTaskTest
         Assert.IsType<ServiceTaskSuccessResult>(result);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task Execute_FailedSend_ReturnsFailedResult(bool moveToNextTask)
+    [Fact]
+    public async Task Execute_FailedSend_WhenMoveToNextTask_ReturnsSuccessWithAction()
     {
         // Arrange
         var fiksArkivSettings = new FiksArkivSettings
         {
-            ErrorHandling = new FiksArkivErrorHandlingSettings { MoveToNextTask = moveToNextTask },
+            ErrorHandling = new FiksArkivErrorHandlingSettings { MoveToNextTask = true, Action = "reject" },
         };
         await using var fixture = TestFixture.Create(
             services => services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings"),
@@ -85,10 +83,30 @@ public class FiksArkivServiceTaskTest
         var result = await fixture.FiksArkivServiceTask.Execute(null!);
 
         // Assert
-        Assert.NotNull(result);
-        var errorResult = Assert.IsType<ServiceTaskFailedResult>(result);
-        Assert.Equal(moveToNextTask, errorResult.NonRetryable);
-        Assert.NotEmpty(errorResult.ErrorMessage);
+        var successResult = Assert.IsType<ServiceTaskSuccessResult>(result);
+        Assert.True(successResult.AutoAdvanceProcess);
+        Assert.Equal("reject", successResult.Action);
+    }
+
+    [Fact]
+    public async Task Execute_FailedSend_WhenNotMoveToNextTask_ReturnsRetryableFailure()
+    {
+        // Arrange
+        var fiksArkivSettings = new FiksArkivSettings
+        {
+            ErrorHandling = new FiksArkivErrorHandlingSettings { MoveToNextTask = false },
+        };
+        await using var fixture = TestFixture.Create(
+            services => services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings"),
+            [("CustomFiksArkivSettings", fiksArkivSettings)]
+        );
+
+        // Act
+        var result = await fixture.FiksArkivServiceTask.Execute(null!);
+
+        // Assert
+        var failedResult = Assert.IsType<ServiceTaskFailedResult>(result);
+        Assert.False(failedResult.NonRetryable);
     }
 
     private static Mock<IInstanceDataMutator> InstanceDataMutatorMockFactory(Instance instance)
