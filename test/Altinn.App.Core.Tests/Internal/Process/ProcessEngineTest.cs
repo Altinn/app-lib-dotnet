@@ -10,6 +10,7 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
@@ -1200,7 +1201,7 @@ public sealed class ProcessEngineTest
             );
     }
 
-    private sealed record Fixture(IServiceProvider ServiceProvider) : IDisposable
+    private sealed record Fixture(IServiceProvider ServiceProvider) : IAsyncDisposable
     {
         public LegacyProcessEngine ProcessEngine =>
             (LegacyProcessEngine)ServiceProvider.GetRequiredService<IProcessEngine>();
@@ -1334,6 +1335,7 @@ public sealed class ProcessEngineTest
             services.TryAddTransient<ITranslationService>(_ => translationServiceMock.Object);
             services.TryAddTransient<InstanceDataUnitOfWorkInitializer>();
             services.TryAddTransient<IValidationService>(_ => validationServiceMock.Object);
+            services.TryAddTransient<IInstanceLocker>(_ => instanceLockerMock.Object);
 
             var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
             processEngineClientMock
@@ -1369,7 +1371,20 @@ public sealed class ProcessEngineTest
             return new Fixture(services.BuildStrictServiceProvider());
         }
 
-        public void Dispose() => (ServiceProvider as IDisposable)?.Dispose();
+        public ValueTask DisposeAsync()
+        {
+            if (ServiceProvider is IAsyncDisposable asyncDisposable)
+            {
+                return asyncDisposable.DisposeAsync();
+            }
+
+            if (ServiceProvider is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
+            return ValueTask.CompletedTask;
+        }
     }
 
     private bool CompareInstance(Instance expected, Instance actual)
