@@ -4129,6 +4129,7 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models
             public string Uri { get; init; }
         }
     }
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     public enum PersistentItemStatus
     {
         Enqueued = 0,

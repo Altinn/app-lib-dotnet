@@ -81,6 +81,7 @@ internal class ProcessEngine : IProcessEngine
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
+        _instanceLocker = serviceProvider.GetRequiredService<IInstanceLocker>();
     }
 
     /// <inheritdoc/>
