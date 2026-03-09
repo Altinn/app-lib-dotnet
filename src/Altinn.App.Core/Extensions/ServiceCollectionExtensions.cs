@@ -10,6 +10,7 @@ using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Features.Notifications.Email;
 using Altinn.App.Core.Features.Notifications.Sms;
 using Altinn.App.Core.Features.Options;
+using Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 using Altinn.App.Core.Features.PageOrder;
 using Altinn.App.Core.Features.Payment.Processors;
 using Altinn.App.Core.Features.Payment.Processors.FakePaymentProcessor;
@@ -38,6 +39,7 @@ using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
@@ -114,6 +116,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IText, TextClient>();
 #pragma warning restore CS0618 // Type or member is obsolete
         services.AddHttpClient<IProcessClient, ProcessClient>();
+        services.AddHttpClient<InstanceLockClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
         services.AddHttpClient<IAccessManagementClient, AccessManagementClient>();
 
@@ -331,11 +334,14 @@ public static class ServiceCollectionExtensions
 
         // Services related to application options
         services.TryAddTransient<AppOptionsFactory>();
-        services.AddTransient<IAppOptionsProvider, DefaultAppOptionsProvider>();
         services.TryAddTransient<IAppOptionsFileHandler, AppOptionsFileHandler>();
 
         // Services related to instance aware and secure app options
         services.TryAddTransient<InstanceAppOptionsFactory>();
+
+        // Services related to Altinn 3 library code list
+        services.AddHttpClient<IAltinn3LibraryCodeListApiClient, Altinn3LibraryCodeListApiClient>();
+        services.TryAddTransient<IAltinn3LibraryCodeListService, Altinn3LibraryCodeListService>();
     }
 
     private static void AddExternalApis(IServiceCollection services)
@@ -364,6 +370,8 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
         services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
 
+        services.AddScoped<IInstanceLocker, InstanceLocker>();
+
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();
         services.AddTransient<IProcessTask, ConfirmationProcessTask>();
@@ -377,6 +385,7 @@ public static class ServiceCollectionExtensions
 
         services.AddTransient<IServiceTask, PdfServiceTask>();
         services.AddTransient<IServiceTask, EFormidlingServiceTask>();
+        services.AddTransient<IServiceTask, SubformPdfServiceTask>();
     }
 
     private static void AddActionServices(IServiceCollection services)

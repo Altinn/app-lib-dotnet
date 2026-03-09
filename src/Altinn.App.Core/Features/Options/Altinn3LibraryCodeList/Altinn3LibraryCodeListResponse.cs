@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Features.Options.Altinn3LibraryProvider;
+namespace Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
 
 /// <summary>
 /// Outer model for the Altinn 3 library code list API
@@ -20,29 +20,11 @@ public class Altinn3LibraryCodeListResponse
     public required string Version { get; set; }
 
     /// <summary>
-    /// Source of the code list
-    /// </summary>
-    [JsonPropertyName("source")]
-    public required Altinn3LibraryCodeListSource Source { get; set; }
-
-    /// <summary>
     /// Tag names used for grouping in combination with <see cref="Altinn3LibraryCodeListItem.Tags"/>
     /// Eg: tagNames: ["region"], tags: ["europe"]
     /// </summary>
     [JsonPropertyName("tagNames")]
-    public required List<string> TagNames { get; set; }
-}
-
-/// <summary>
-/// Altinn 3 code list source
-/// </summary>
-public class Altinn3LibraryCodeListSource
-{
-    /// <summary>
-    /// Name of the code list
-    /// </summary>
-    [JsonPropertyName("name")]
-    public required string Name { get; set; }
+    public List<string>? TagNames { get; set; }
 }
 
 /// <summary>
@@ -79,5 +61,5 @@ public class Altinn3LibraryCodeListItem
     /// Eg: tagNames: ["region"], tags: ["europe"]
     /// </summary>
     [JsonPropertyName("tags")]
-    public required List<string> Tags { get; set; }
+    public List<string>? Tags { get; set; }
 }

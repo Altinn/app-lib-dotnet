@@ -44,4 +44,9 @@ internal static class AltinnTaskTypes
     /// The confirmation task type. (Simple version of Sign without creating a signature document)
     /// </summary>
     public const string Confirmation = "confirmation";
+
+    /// <summary>
+    /// Service task type for generating pdf documents from a subform.
+    /// </summary>
+    public const string SubformPdf = "subformPdf";
 }

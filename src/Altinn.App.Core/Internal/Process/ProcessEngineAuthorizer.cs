@@ -111,7 +111,8 @@ internal sealed class ProcessEngineAuthorizer : IProcessEngineAuthorizer
             or AltinnTaskTypes.Feedback
             or AltinnTaskTypes.Pdf
             or AltinnTaskTypes.EFormidling
-            or AltinnTaskTypes.FiksArkiv => ["write"],
+            or AltinnTaskTypes.FiksArkiv
+            or AltinnTaskTypes.SubformPdf => ["write"],
             AltinnTaskTypes.Payment => ["pay", "write"],
             AltinnTaskTypes.Confirmation => ["confirm"],
             AltinnTaskTypes.Signing => ["sign", "write"],
