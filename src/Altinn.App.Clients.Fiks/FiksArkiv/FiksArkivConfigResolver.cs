@@ -12,7 +12,6 @@ using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Internal.Texts;
-using Altinn.App.Core.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;
@@ -215,32 +214,6 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
             organizationId: recipient.OrgNumber,
             reference: GetCorrelationId(instance)
         );
-
-    /// <inheritdoc />
-    public async Task<Korrespondansepart> GetServiceOwnerParty(CancellationToken cancellationToken = default)
-    {
-        ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-        AltinnCdnOrgDetails? orgDetails = null;
-
-        try
-        {
-            AltinnCdnOrgs altinnCdnOrgs = await _altinnCdnClient.GetOrgs(cancellationToken);
-            orgDetails = altinnCdnOrgs.Orgs?.GetValueOrDefault(appMetadata.Org);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Unable to get service owner details: {Exception}", e);
-        }
-
-        return KorrespondansepartFactory.CreateSender(
-            partyId: orgDetails?.Orgnr ?? appMetadata.Org ?? appMetadata.Id,
-            partyName: orgDetails?.Name?.Nb
-                ?? orgDetails?.Name?.Nn
-                ?? orgDetails?.Name?.En
-                ?? appMetadata.Org
-                ?? appMetadata.Id
-        );
-    }
 
     /// <inheritdoc />
     public async Task<Klassifikasjon> GetInstanceOwnerClassification(

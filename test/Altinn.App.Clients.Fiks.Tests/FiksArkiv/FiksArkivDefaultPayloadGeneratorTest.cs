@@ -1,6 +1,3 @@
-using System.Reflection;
-using System.Xml;
-using System.Xml.Schema;
 using Altinn.App.Clients.Fiks.Constants;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
@@ -170,7 +167,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
     [Fact]
     public async Task GeneratePayload_ThrowsException_ForUnsupportedMessageType()
     {
-        var fixture = PayloadGeneratorFixture.Create(null!, null!, null, null!, null!, null, null!, null!);
+        var fixture = PayloadGeneratorFixture.Create(null!, null!, null, null!, null!, null!, null!);
 
         var ex = await Assert.ThrowsAsync<FiksArkivException>(() =>
             fixture.GeneratePayload(Factories.Instance(null!, []), "non-create-type")
@@ -207,7 +204,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     attachmentSettings,
                     archiveDocumentMetadata,
                     recipientParty,
-                    serviceOwnerParty,
                     instanceOwnerParty,
                     instanceOwnerClassification,
                     applicationTitle,
@@ -249,7 +245,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
             IReadOnlyList<FiksArkivDataTypeSettings>? attachmentSettings,
             FiksArkivDocumentMetadata? archiveDocumentMetadata,
             Korrespondansepart recipientParty,
-            Korrespondansepart serviceOwnerParty,
             Korrespondansepart? instanceOwnerParty,
             Klassifikasjon instanceOwnerClassification,
             string applicationTitle = "Test app",
@@ -278,9 +273,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
             configResolverMock
                 .Setup(x => x.GetRecipientParty(It.IsAny<Instance>(), It.IsAny<FiksArkivRecipient>()))
                 .Returns(recipientParty);
-            configResolverMock
-                .Setup(x => x.GetServiceOwnerParty(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(serviceOwnerParty);
             configResolverMock
                 .Setup(x => x.GetInstanceOwnerParty(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(instanceOwnerParty);
