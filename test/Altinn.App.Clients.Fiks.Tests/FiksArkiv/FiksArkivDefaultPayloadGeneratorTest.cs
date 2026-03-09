@@ -58,7 +58,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 attachmentSettings: [Factories.DocumentSettings("ref-data-as-pdf")],
                 archiveDocumentMetadata: null,
                 recipientParty: Factories.RecipientParty("recipient-id", "Recipient Name"),
-                serviceOwnerParty: Factories.ServiceOwnerParty("org-number", "Org Name"),
                 instanceOwnerParty: null,
                 instanceOwnerClassification: Factories.InstanceOwnerClassification(Auth.User)
             ),
@@ -80,7 +79,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     "Custom Journal Entry Title"
                 ),
                 recipientParty: Factories.RecipientParty("recipient-id", "Recipient Name"),
-                serviceOwnerParty: Factories.ServiceOwnerParty("org-number", "Org Name"),
                 instanceOwnerParty: null,
                 instanceOwnerClassification: Factories.InstanceOwnerClassification(Auth.SystemUser)
             ),
@@ -92,7 +90,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 attachmentSettings: [Factories.DocumentSettings("doesnt-exist")],
                 archiveDocumentMetadata: null,
                 recipientParty: Factories.RecipientParty("recipient-id", "Recipient Name", "123456789", "Ref-001"),
-                serviceOwnerParty: Factories.ServiceOwnerParty("org-number", "Org Name"),
                 instanceOwnerParty: Factories.InstanceOwnerOwnerParty(
                     "altinn-party-id",
                     "Instance Owner Person Name",
@@ -120,7 +117,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     caseFileId: null
                 ),
                 recipientParty: Factories.RecipientParty("recipient-id", "Recipient Name"),
-                serviceOwnerParty: Factories.ServiceOwnerParty("org-number", "Org Name"),
                 instanceOwnerParty: Factories.InstanceOwnerOwnerParty(
                     "altinn-party-id",
                     "Instance Owner Org Name",
@@ -191,7 +187,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
             IReadOnlyList<FiksArkivDataTypeSettings>? attachmentSettings,
             FiksArkivDocumentMetadata? archiveDocumentMetadata,
             Korrespondansepart recipientParty,
-            Korrespondansepart serviceOwnerParty,
             Korrespondansepart? instanceOwnerParty,
             Klassifikasjon instanceOwnerClassification,
             string applicationTitle = "Test app",
@@ -347,9 +342,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
             string? orgNumber = null,
             string? reference = null
         ) => KorrespondansepartFactory.CreateRecipient(id, name, orgNumber, reference);
-
-        public static Korrespondansepart ServiceOwnerParty(string id, string name) =>
-            KorrespondansepartFactory.CreateSender(id, name);
 
         public static Korrespondansepart InstanceOwnerOwnerParty(
             string id,
