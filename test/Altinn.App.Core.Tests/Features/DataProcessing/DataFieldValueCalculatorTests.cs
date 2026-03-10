@@ -42,12 +42,15 @@ public class DataFieldValueCalculatorTests
 
         var dataElementAccessChecker = new Mock<IDataElementAccessChecker>();
 
+        var telemetry = new TelemetrySink();
+
         _output = output;
         _dataFieldValueCalculator = new DataFieldValueCalculator(
             _logger,
             _layoutInitializer.Object,
             _appResources.Object,
-            dataElementAccessChecker.Object
+            dataElementAccessChecker.Object,
+            telemetry.Object
         );
     }
 
