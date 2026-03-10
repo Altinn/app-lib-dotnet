@@ -368,6 +368,15 @@ namespace Altinn.App.Api.Controllers
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Models.LookupPersonResponse>> LookupPerson([Microsoft.AspNetCore.Mvc.FromBody] Altinn.App.Api.Models.LookupPersonRequest lookupPersonRequest, System.Threading.CancellationToken cancellationToken) { }
     }
     [Microsoft.AspNetCore.Mvc.ApiController]
+    [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(IgnoreApi=true)]
+    [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/notifications")]
+    public class NotificationCallbackController
+    {
+        public NotificationCallbackController() { }
+        [Microsoft.AspNetCore.Mvc.HttpGet("instance")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> ShouldCancel() { }
+    }
+    [Microsoft.AspNetCore.Mvc.ApiController]
     [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/api/options")]
     public class OptionsController : Microsoft.AspNetCore.Mvc.ControllerBase
     {

@@ -4916,6 +4916,8 @@ namespace Altinn.App.Core.Models.Notifications.Future
         public string? Language { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("notificationChannel")]
         public Altinn.App.Core.Models.Notifications.Future.NotificationChannel NotificationChannel { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("requestedSendTime")]
+        public System.DateTime? RequestedSendTime { get; init; }
     }
     public enum NotificationChannel
     {
