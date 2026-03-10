@@ -28,13 +28,14 @@ internal sealed class DataFieldValueCalculator
         ILogger<DataFieldValueCalculator> logger,
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IAppResources appResourceService,
-        IDataElementAccessChecker dataElementAccessChecker
-    )
+        IDataElementAccessChecker dataElementAccessChecker,
+        Telemetry? telemetry)
     {
         _logger = logger;
         _appResourceService = appResourceService;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _dataElementAccessChecker = dataElementAccessChecker;
+        _telemetry = telemetry;
     }
 
     public async Task Calculate(IInstanceDataAccessor dataAccessor, string taskId)
