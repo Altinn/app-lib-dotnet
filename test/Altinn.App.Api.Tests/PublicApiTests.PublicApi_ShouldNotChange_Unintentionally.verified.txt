@@ -372,9 +372,15 @@ namespace Altinn.App.Api.Controllers
     [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/notifications")]
     public class NotificationCallbackController
     {
-        public NotificationCallbackController() { }
-        [Microsoft.AspNetCore.Mvc.HttpGet("instance")]
-        public Microsoft.AspNetCore.Mvc.ActionResult<bool> ShouldCancel() { }
+        public NotificationCallbackController(Microsoft.Extensions.Logging.ILogger<Altinn.App.Api.Controllers.NotificationCallbackController> logger) { }
+        [Microsoft.AspNetCore.Mvc.HttpGet("{instanceOwnerPartyId:int}/{instanceGuid:guid}")]
+        public Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Controllers.NotificationCallbackResponse> ShouldCancel([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid) { }
+    }
+    public sealed class NotificationCallbackResponse
+    {
+        public NotificationCallbackResponse() { }
+        [System.Text.Json.Serialization.JsonPropertyName("sendNotification")]
+        public bool SendNotification { get; set; }
     }
     [Microsoft.AspNetCore.Mvc.ApiController]
     [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/api/options")]

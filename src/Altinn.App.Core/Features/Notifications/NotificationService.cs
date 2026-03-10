@@ -152,7 +152,7 @@ internal sealed class NotificationService : INotificationService
         Uri? conditionEndpoint = null;
         if (instansiationNotification.RequestedSendTime is not null)
         {
-            conditionEndpoint = new Uri(callBackBaseUrl?.TrimEnd('/') + "/notifications/instance");
+            conditionEndpoint = new Uri(callBackBaseUrl?.TrimEnd('/') + "/notifications/" + instance.Id);
         }
 
         if (instanceOwner.OrganisationNumber is not null)
