@@ -15,7 +15,7 @@ public class NotificationCallbackController
     /// </summary>
     /// <returns>Boolean</returns>
     [HttpGet("instance")]
-    public async Task<ActionResult<bool>> ShouldCancel()
+    public ActionResult<bool> ShouldCancel()
     {
         return true;
     }
