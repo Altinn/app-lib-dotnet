@@ -23,6 +23,15 @@ public sealed class InstansiationNotification
     public string? Language { get; set; }
 
     /// <summary>
+    /// Gets or sets the earliest time the notification(s) should be sent.
+    /// </summary>
+    /// <remarks>
+    /// Defaults to the current UTC time, meaning the notification will be sent as soon as possible.
+    /// </remarks>
+    [JsonPropertyName("requestedSendTime")]
+    public DateTime? RequestedSendTime { get; init; } = null;
+
+    /// <summary>
     /// Gets or sets custom sms text and sender name for the notification.
     /// If not set, a default message will be used.
     /// </summary>
