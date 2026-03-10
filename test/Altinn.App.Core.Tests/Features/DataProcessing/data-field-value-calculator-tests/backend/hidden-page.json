@@ -1,5 +1,5 @@
 {
-    "name": "Should set field if field is on hidden page",
+    "name": "Should not set field if field is on hidden page",
     "expects": [
         {
             "field": "form.name",
@@ -7,14 +7,13 @@
         }
     ],
     "calculationConfig": {
-        "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/validation/validation.schema.v1.json",
+        "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/calculation/calculation.schema.v1.json",
         "calculations": {
-            "form.name": ["none-is-not-allowed"]
-        },
-        "definitions": {
-            "none-is-not-allowed": {
-                "condition": ["equals", ["dataModel", ["argv", 0]], "none"]
-            }
+            "form.name": [
+                {
+                    "condition": ["equals", ["dataModel", ["argv", 0]], "none"]
+                }
+            ]
         }
     },
     "formData": {

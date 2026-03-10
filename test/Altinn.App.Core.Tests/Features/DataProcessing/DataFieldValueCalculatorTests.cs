@@ -11,7 +11,6 @@ using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
-using FluentAssertions;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -41,17 +40,14 @@ public class DataFieldValueCalculatorTests
         var accessCheckerMock = new Mock<IDataElementAccessChecker>();
         accessCheckerMock.Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>())).ReturnsAsync(true);
 
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        serviceProviderMock
-            .Setup(x => x.GetService(typeof(IDataElementAccessChecker)))
-            .Returns(accessCheckerMock.Object);
+        var dataElementAccessChecker = new Mock<IDataElementAccessChecker>();
 
         _output = output;
         _dataFieldValueCalculator = new DataFieldValueCalculator(
             _logger,
             _layoutInitializer.Object,
             _appResources.Object,
-            serviceProviderMock.Object
+            dataElementAccessChecker.Object
         );
     }
 
@@ -70,7 +66,7 @@ public class DataFieldValueCalculatorTests
 
         foreach (var expected in testCase.Expects)
         {
-            result.Get(expected.Field).Should().Be(expected.Result.ToObject());
+            Assert.Equal(expected.Result.ToObject(), result.Get(expected.Field));
         }
     }
 
@@ -82,7 +78,7 @@ public class DataFieldValueCalculatorTests
 
         foreach (var expected in testCase.Expects)
         {
-            result.Get(expected.Field).Should().Be(expected.Result.ToObject());
+            Assert.Equal(expected.Result.ToObject(), result.Get(expected.Field));
         }
     }
 
@@ -100,12 +96,11 @@ public class DataFieldValueCalculatorTests
                 "calculationConfig": {
                     "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/validation/validation.schema.v1.json",
                     "calculations": {
-                        "form.unsupportedDataType": ["four-times-two"]
-                    },
-                    "definitions": {
-                        "four-times-two": {
-                            "condition": ["language"]
-                        }
+                        "form.unsupportedDataType": [
+                            {
+                                "condition": ["language"]
+                            }
+                        ]
                     }
                 },
                 "formData": {
@@ -134,7 +129,7 @@ public class DataFieldValueCalculatorTests
 
         foreach (var expected in testCase.Expects)
         {
-            _logger.Collector.GetSnapshot().Select(x => x.Message).Should().Contain(expected.LogMessageWarning);
+            Assert.Contains(expected.LogMessageWarning, _logger.Collector.GetSnapshot().Select(x => x.Message));
         }
     }
 

@@ -146,8 +146,8 @@ public class DataModelWrapper
         return currentKey + "." + key;
     }
 
-    private static string?[] GetResolvedKeysRecursive(
-        string?[] keyParts,
+    private static string[] GetResolvedKeysRecursive(
+        string[] keyParts,
         object? currentModel,
         Type currentType,
         int currentIndex = 0,

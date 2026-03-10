@@ -21,6 +21,12 @@ internal static class ExpressionHelper
                 string indexString = field[startIndex..endIndex];
                 if (int.TryParse(indexString, out int rowIndex))
                 {
+                    if (count >= rowIndicesSpan.Length)
+                    {
+                        throw new InvalidOperationException(
+                            $"Too many row indices in field: {field}. Max supported: {rowIndicesSpan.Length}"
+                        );
+                    }
                     rowIndicesSpan[count] = rowIndex;
                     count++;
                     index = endIndex; // Move index to the end of the current bracket

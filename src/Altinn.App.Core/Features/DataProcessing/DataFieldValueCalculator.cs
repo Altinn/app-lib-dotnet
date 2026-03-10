@@ -5,13 +5,12 @@ using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ComponentContext = Altinn.App.Core.Models.Expressions.ComponentContext;
 
 namespace Altinn.App.Core.Features.DataProcessing;
 
-public class DataFieldValueCalculator
+internal sealed class DataFieldValueCalculator
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -23,22 +22,24 @@ public class DataFieldValueCalculator
     private readonly IAppResources _appResourceService;
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IDataElementAccessChecker _dataElementAccessChecker;
+    private readonly Telemetry? _telemetry;
 
     public DataFieldValueCalculator(
         ILogger<DataFieldValueCalculator> logger,
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IAppResources appResourceService,
-        IServiceProvider serviceProvider
+        IDataElementAccessChecker dataElementAccessChecker
     )
     {
         _logger = logger;
         _appResourceService = appResourceService;
         _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
-        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
+        _dataElementAccessChecker = dataElementAccessChecker;
     }
 
     public async Task Calculate(IInstanceDataAccessor dataAccessor, string taskId)
     {
+        using var activity = _telemetry?.StartCalculateActivity(dataAccessor.Instance.Id, taskId);
         foreach (var (dataType, dataElement) in dataAccessor.GetDataElementsWithFormDataForTask(taskId))
         {
             if (await _dataElementAccessChecker.CanRead(dataAccessor.Instance, dataType) is false)
@@ -68,6 +69,7 @@ public class DataFieldValueCalculator
         );
         DataElementIdentifier dataElementIdentifier = dataElement;
         var dataFieldCalculations = ParseDataFieldCalculationConfig(rawCalculationConfig, _logger);
+        var formDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement);
 
         foreach (var (baseField, calculations) in dataFieldCalculations)
         {
@@ -94,7 +96,6 @@ public class DataFieldValueCalculator
                     dataElementIdentifier: resolvedField.DataElementIdentifier
                 );
                 var positionalArguments = new object[] { resolvedField.Field };
-                var formDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement);
                 foreach (var calculation in calculations)
                 {
                     await RunCalculation(
@@ -150,28 +151,6 @@ public class DataFieldValueCalculator
     )
     {
         using var calculationConfigDocument = JsonDocument.Parse(rawCalculationConfig);
-        var calculationDefinitions = new Dictionary<string, RawDataFieldValueCalculation>();
-        var hasDefinitions = calculationConfigDocument.RootElement.TryGetProperty(
-            "definitions",
-            out JsonElement definitionsObject
-        );
-        if (hasDefinitions)
-        {
-            foreach (var definitionProperty in definitionsObject.EnumerateObject())
-            {
-                var resolvedDefinition = ResolveCalculationDefinition(
-                    definitionProperty,
-                    calculationDefinitions,
-                    logger
-                );
-                if (resolvedDefinition == null)
-                {
-                    logger.LogError("Calculation definition {Name} could not be resolved", definitionProperty.Name);
-                    continue;
-                }
-                calculationDefinitions[definitionProperty.Name] = resolvedDefinition;
-            }
-        }
 
         var dataFieldCalculations = new Dictionary<string, List<DataFieldCalculation>>();
         var hasCalculations = calculationConfigDocument.RootElement.TryGetProperty(
@@ -191,12 +170,7 @@ public class DataFieldValueCalculator
                         dataFieldCalculation = new List<DataFieldCalculation>();
                         dataFieldCalculations[field] = dataFieldCalculation;
                     }
-                    var resolvedDataFieldCalculation = ResolveDataFieldCalculation(
-                        field,
-                        calculation,
-                        calculationDefinitions,
-                        logger
-                    );
+                    var resolvedDataFieldCalculation = ResolveDataFieldCalculation(field, calculation, logger);
                     if (resolvedDataFieldCalculation == null)
                     {
                         logger.LogError("Calculation for field {Field} could not be resolved", field);
@@ -209,12 +183,7 @@ public class DataFieldValueCalculator
         return dataFieldCalculations;
     }
 
-    private DataFieldCalculation? ResolveDataFieldCalculation(
-        string field,
-        JsonElement definition,
-        Dictionary<string, RawDataFieldValueCalculation> resolvedDefinitions,
-        ILogger logger
-    )
+    private DataFieldCalculation? ResolveDataFieldCalculation(string field, JsonElement definition, ILogger logger)
     {
         var rawDataFieldValueCalculation = new RawDataFieldValueCalculation();
 
@@ -226,18 +195,6 @@ public class DataFieldValueCalculator
                 logger.LogError("Could not resolve null reference for calculation for field {Field}", field);
                 return null;
             }
-
-            var reference = resolvedDefinitions.GetValueOrDefault(stringReference);
-            if (reference == null)
-            {
-                logger.LogError(
-                    "Could not resolve reference {StringReference} for calculation for field {Field}",
-                    stringReference,
-                    field
-                );
-                return null;
-            }
-            rawDataFieldValueCalculation.Condition = reference.Condition;
         }
         else
         {
@@ -248,21 +205,6 @@ public class DataFieldValueCalculator
             {
                 logger.LogError("Calculation for field {Field} could not be parsed", field);
                 return null;
-            }
-
-            if (dataFieldCalculationDefinition.Ref != null)
-            {
-                var reference = resolvedDefinitions.GetValueOrDefault(dataFieldCalculationDefinition.Ref);
-                if (reference == null)
-                {
-                    logger.LogError(
-                        "Could not resolve reference {ExpressionDefinitionRef} for calculation for field {Field}",
-                        dataFieldCalculationDefinition.Ref,
-                        field
-                    );
-                    return null;
-                }
-                rawDataFieldValueCalculation.Condition = reference.Condition;
             }
 
             if (dataFieldCalculationDefinition.Condition != null)
@@ -283,49 +225,5 @@ public class DataFieldValueCalculator
         };
 
         return dataFieldCalculation;
-    }
-
-    private static RawDataFieldValueCalculation? ResolveCalculationDefinition(
-        JsonProperty definitionProperty,
-        Dictionary<string, RawDataFieldValueCalculation> resolvedDefinitions,
-        ILogger logger
-    )
-    {
-        var resolvedDefinition = new RawDataFieldValueCalculation();
-        var rawDefinition = definitionProperty.Value.Deserialize<RawDataFieldValueCalculation>(_jsonSerializerOptions);
-        if (rawDefinition == null)
-        {
-            logger.LogError("Calculation definition {Name} could not be parsed", definitionProperty.Name);
-            return null;
-        }
-
-        if (rawDefinition.Ref != null)
-        {
-            var reference = resolvedDefinitions.GetValueOrDefault(rawDefinition.Ref);
-            if (reference == null)
-            {
-                logger.LogError(
-                    "Could not resolve reference {RawDefinitionRef} for calculation {Name}",
-                    rawDefinition.Ref,
-                    definitionProperty.Name
-                );
-                return null;
-            }
-
-            resolvedDefinition.Condition = reference.Condition;
-        }
-
-        if (rawDefinition.Condition != null)
-        {
-            resolvedDefinition.Condition = rawDefinition.Condition;
-        }
-
-        if (resolvedDefinition.Condition == null)
-        {
-            logger.LogError("Calculation {Name} is missing condition", definitionProperty.Name);
-            return null;
-        }
-
-        return resolvedDefinition;
     }
 }

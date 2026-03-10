@@ -1,22 +1,21 @@
 ﻿using Altinn.App.Core.Models;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Features.DataProcessing;
 
 /// <summary>
 /// Processing data fields values that is calculated by expressions provided in [modelName].calculation.json.
 /// </summary>
-public class DataFieldValueCalculatorProcessor : IDataWriteProcessor
+internal sealed class DataFieldValueCalculatorProcessor : IDataWriteProcessor
 {
     private readonly DataFieldValueCalculator _dataFieldValueCalculator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DataFieldValueCalculatorProcessor"/> class.
     /// </summary>
-    /// <param name="serviceProvider"></param>
-    public DataFieldValueCalculatorProcessor(IServiceProvider serviceProvider)
+    /// <param name="dataFieldValueCalculator"></param>
+    public DataFieldValueCalculatorProcessor(DataFieldValueCalculator dataFieldValueCalculator)
     {
-        _dataFieldValueCalculator = serviceProvider.GetRequiredService<DataFieldValueCalculator>();
+        _dataFieldValueCalculator = dataFieldValueCalculator;
     }
 
     /// <summary>
