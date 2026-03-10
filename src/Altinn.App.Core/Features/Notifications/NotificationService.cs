@@ -1,3 +1,4 @@
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Notifications.Texts;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
@@ -9,6 +10,7 @@ using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Notifications;
 
@@ -19,13 +21,15 @@ internal sealed class NotificationService : INotificationService
     private readonly IAltinnCdnClient _cdnClient;
     private readonly IAppMetadata _appMetadata;
     private readonly IAltinnPartyClient _altinnPartyClient;
+    private readonly GeneralSettings _generalSettings;
 
     public NotificationService(
         INotificationOrderClient notificationOrderClient,
         IProfileClient profileClient,
         IAltinnCdnClient cdnClient,
         IAppMetadata appMetadata,
-        IAltinnPartyClient altinnPartyClient
+        IAltinnPartyClient altinnPartyClient,
+        IOptions<GeneralSettings> generalSettings
     )
     {
         _notificationOrderClient = notificationOrderClient;
@@ -33,6 +37,7 @@ internal sealed class NotificationService : INotificationService
         _cdnClient = cdnClient;
         _appMetadata = appMetadata;
         _altinnPartyClient = altinnPartyClient;
+        _generalSettings = generalSettings.Value;
     }
 
     public async Task NotifyInstanceOwnerOnInstansiation(
@@ -46,6 +51,7 @@ internal sealed class NotificationService : INotificationService
         string? language = await DetermineLanguage(instanceOwner, instansiationNotification.Language, ct);
         AltinnCdnOrgName? serviceOwnerName = await _cdnClient.GetOrgNameByAppId(instance.AppId, ct);
         ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
+        string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance.AppId));
 
         NotificationOrderRequest orderRequest = CreateNotificationOrderRequest(
             language,
@@ -53,7 +59,8 @@ internal sealed class NotificationService : INotificationService
             appMetadata,
             party.Name,
             serviceOwnerName,
-            instansiationNotification
+            instansiationNotification,
+            baseUrl
         );
 
         await _notificationOrderClient.Order(orderRequest, ct);
@@ -65,7 +72,8 @@ internal sealed class NotificationService : INotificationService
         ApplicationMetadata? applicationMetadata,
         string? instanceOwnerName,
         AltinnCdnOrgName? serviceOwnerName,
-        InstansiationNotification instansiationNotification
+        InstansiationNotification instansiationNotification,
+        string? callBackBaseUrl
     )
     {
         InstanceOwner instanceOwner = instance.InstanceOwner;
@@ -139,6 +147,13 @@ internal sealed class NotificationService : INotificationService
         NotificationChannel requestedChannel = instansiationNotification.NotificationChannel;
 
         AppResourceId resourceId = AppResourceId.FromAppIdentifier(new(instance.AppId));
+        DateTime requestedSendTimeOrDefault = instansiationNotification.RequestedSendTime ?? DateTime.Now.AddMinutes(5);
+
+        Uri? conditionEndpoint = null;
+        if (instansiationNotification.RequestedSendTime is not null)
+        {
+            conditionEndpoint = new Uri(callBackBaseUrl.TrimEnd('/') + "/notifications/instance");
+        }
 
         if (instanceOwner.OrganisationNumber is not null)
         {
@@ -146,6 +161,8 @@ internal sealed class NotificationService : INotificationService
             {
                 SendersReference = instance.Id + instanceOwner.OrganisationNumber,
                 IdempotencyId = instance.Id + instanceOwner.OrganisationNumber,
+                RequestedSendTime = requestedSendTimeOrDefault,
+                ConditionEndpoint = conditionEndpoint,
                 Recipient = new NotificationRecipient
                 {
                     RecipientOrganization = new RecipientOrganization
@@ -166,6 +183,8 @@ internal sealed class NotificationService : INotificationService
             {
                 SendersReference = instance.Id + instanceOwner.PersonNumber,
                 IdempotencyId = instance.Id + instanceOwner.PersonNumber,
+                RequestedSendTime = requestedSendTimeOrDefault,
+                ConditionEndpoint = conditionEndpoint,
                 Recipient = new NotificationRecipient
                 {
                     RecipientPerson = new RecipientPerson
@@ -186,6 +205,8 @@ internal sealed class NotificationService : INotificationService
             {
                 SendersReference = instance.Id + instanceOwner.ExternalIdentifier,
                 IdempotencyId = instance.Id + instanceOwner.ExternalIdentifier,
+                RequestedSendTime = requestedSendTimeOrDefault,
+                ConditionEndpoint = conditionEndpoint,
                 Recipient = new NotificationRecipient
                 {
                     RecipientSelfIdentifiedUser = new RecipientSelfIdentifiedUser
