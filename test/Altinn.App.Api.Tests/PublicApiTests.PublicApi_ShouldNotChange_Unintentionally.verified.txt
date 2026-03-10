@@ -374,7 +374,7 @@ namespace Altinn.App.Api.Controllers
     {
         public NotificationCallbackController() { }
         [Microsoft.AspNetCore.Mvc.HttpGet("instance")]
-        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> ShouldCancel() { }
+        public Microsoft.AspNetCore.Mvc.ActionResult<bool> ShouldCancel() { }
     }
     [Microsoft.AspNetCore.Mvc.ApiController]
     [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/api/options")]
