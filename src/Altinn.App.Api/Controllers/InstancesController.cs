@@ -537,9 +537,26 @@ public class InstancesController : ControllerBase
         try
         {
             party = await LookupParty(instansiationInstance.InstanceOwner) ?? throw new Exception("Unknown party");
+
+            _logger.LogInformation(
+                "Resolved party: PartyId={PartyId}, PartyTypeName={PartyTypeName}, OrgNumber={OrgNumber}, SSN={SSN}",
+                party.PartyId,
+                party.PartyTypeName,
+                party.OrgNumber ?? "(null)",
+                party.SSN != null ? "***set***" : "(null)"
+            );
+
             instansiationInstance.InstanceOwner = await InstantiationHelper.PartyToInstanceOwner(
                 party,
                 _authenticationContext
+            );
+
+            _logger.LogInformation(
+                "InstanceOwner after PartyToInstanceOwner: PartyId={PartyId}, PersonNumber={PersonNumber}, OrgNumber={OrgNumber}, ExternalIdentifier={ExternalIdentifier}",
+                instansiationInstance.InstanceOwner.PartyId,
+                instansiationInstance.InstanceOwner.PersonNumber != null ? "***set***" : "(null)",
+                instansiationInstance.InstanceOwner.OrganisationNumber ?? "(null)",
+                instansiationInstance.InstanceOwner.ExternalIdentifier ?? "(null)"
             );
         }
         catch (Exception partyLookupException)
@@ -548,6 +565,10 @@ public class InstancesController : ControllerBase
             {
                 if (sexp.StatusCode.Equals(HttpStatusCode.Unauthorized))
                 {
+                    _logger.LogWarning(
+                        "Party lookup returned Unauthorized (401) for InstanceOwner={@InstanceOwner}",
+                        instansiationInstance.InstanceOwner
+                    );
                     return StatusCode(StatusCodes.Status403Forbidden);
                 }
             }
@@ -566,13 +587,30 @@ public class InstancesController : ControllerBase
 
         EnforcementResult enforcementResult = await AuthorizeAction(org, app, party.PartyId, null, "instantiate");
 
+        _logger.LogInformation(
+            "Authorization result for party {PartyId}: Authorized={Authorized}, EnforcementResult={@EnforcementResult}",
+            party.PartyId,
+            enforcementResult.Authorized,
+            enforcementResult
+        );
+
         if (!enforcementResult.Authorized)
         {
+            _logger.LogWarning(
+                "Party {PartyId} was denied 'instantiate' on {Org}/{App}. EnforcementResult: {@EnforcementResult}",
+                party.PartyId, org, app, enforcementResult
+            );
             return Forbidden(enforcementResult);
         }
 
         if (!InstantiationHelper.IsPartyAllowedToInstantiate(party, application.PartyTypesAllowed))
         {
+            _logger.LogWarning(
+                "Party {PartyId} (PartyTypeName={PartyTypeName}) is not in partyTypesAllowed. PartyTypesAllowed={@PartyTypesAllowed}",
+                party.PartyId,
+                party.PartyTypeName,
+                application.PartyTypesAllowed
+            );
             return StatusCode(
                 StatusCodes.Status403Forbidden,
                 $"Party {party.PartyId} is not allowed to instantiate this application {org}/{app}"
@@ -592,8 +630,14 @@ public class InstancesController : ControllerBase
         // Run custom app logic to validate instantiation
         var instantiationValidator = _appImplementationFactory.GetRequired<IInstantiationValidator>();
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(instanceTemplate);
+
         if (validationResult != null && !validationResult.Valid)
         {
+            _logger.LogWarning(
+                "InstantiationValidator rejected instantiation for party {PartyId}: {@ValidationResult}",
+                party.PartyId,
+                validationResult
+            );
             await TranslateValidationResult(validationResult, language);
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
