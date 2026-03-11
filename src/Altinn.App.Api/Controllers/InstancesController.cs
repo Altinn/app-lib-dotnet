@@ -598,7 +598,10 @@ public class InstancesController : ControllerBase
         {
             _logger.LogWarning(
                 "Party {PartyId} was denied 'instantiate' on {Org}/{App}. EnforcementResult: {@EnforcementResult}",
-                party.PartyId, org, app, enforcementResult
+                party.PartyId,
+                org,
+                app,
+                enforcementResult
             );
             return Forbidden(enforcementResult);
         }
