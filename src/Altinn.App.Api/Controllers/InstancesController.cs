@@ -588,10 +588,12 @@ public class InstancesController : ControllerBase
         EnforcementResult enforcementResult = await AuthorizeAction(org, app, party.PartyId, null, "instantiate");
 
         _logger.LogInformation(
-            "Authorization result for party {PartyId}: Authorized={Authorized}, EnforcementResult={@EnforcementResult}",
+            "Authorization details for party {PartyId}: Authorized={Authorized}, FailedObligations={FailedObligations}",
             party.PartyId,
             enforcementResult.Authorized,
-            enforcementResult
+            enforcementResult.FailedObligations == null
+                ? "(null)"
+                : string.Join(", ", enforcementResult.FailedObligations.Select(kv => $"{kv.Key}={kv.Value}"))
         );
 
         if (!enforcementResult.Authorized)
