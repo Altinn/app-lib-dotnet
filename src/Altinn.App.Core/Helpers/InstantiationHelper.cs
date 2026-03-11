@@ -1,4 +1,5 @@
 using System.Globalization;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.Auth;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Enums;
@@ -253,8 +254,8 @@ public static class InstantiationHelper
             {
                 null or "" => null,
                 string name when name.StartsWith("epost:", StringComparison.InvariantCulture) =>
-                    $"urn:altinn:person:idporten-email:{name["epost:".Length..]}",
-                string name => $"urn:altinn:person:legacy-selfidentified:{name}",
+                    $"{AltinnUrns.SelfIdentifiedEmail}:{name["epost:".Length..]}",
+                string name => $"{AltinnUrns.LegacySelfIdentified}:{name}",
             };
 
             return new()
