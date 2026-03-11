@@ -248,6 +248,15 @@ public static class InstantiationHelper
             {
                 externalIdentifier = await GetExternalIdentityForSelfIdentifiedParty(party, authenticationContext);
             }
+
+            externalIdentifier ??= party.Name switch
+            {
+                null or "" => null,
+                string name when name.StartsWith("epost:", StringComparison.InvariantCulture) =>
+                    $"urn:altinn:person:idporten-email:{name["epost:".Length..]}",
+                string name => $"urn:altinn:person:legacy-selfidentified:{name}",
+            };
+
             return new()
             {
                 PartyId = party.PartyId.ToString(CultureInfo.InvariantCulture),
