@@ -11,6 +11,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Features.Notifications;
@@ -22,6 +23,7 @@ public class NotificationServiceTests
     private readonly Mock<IAltinnCdnClient> _cdnClientMock = new();
     private readonly Mock<IAltinnPartyClient> _partyClientMock = new();
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
+    private readonly Mock<ILogger<NotificationService>> _logger = new();
 
     private NotificationService CreateSut() =>
         new(
@@ -30,7 +32,8 @@ public class NotificationServiceTests
             _cdnClientMock.Object,
             _appMetadataMock.Object,
             _partyClientMock.Object,
-            Microsoft.Extensions.Options.Options.Create(new GeneralSettings())
+            Microsoft.Extensions.Options.Options.Create(new GeneralSettings()),
+            _logger.Object
         );
 
     #region Helpers

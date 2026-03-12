@@ -10,6 +10,7 @@ using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Notifications;
@@ -21,6 +22,7 @@ internal sealed class NotificationService : INotificationService
     private readonly IAltinnCdnClient _cdnClient;
     private readonly IAppMetadata _appMetadata;
     private readonly IAltinnPartyClient _altinnPartyClient;
+    private readonly ILogger<NotificationService> _logger;
     private readonly GeneralSettings _generalSettings;
 
     public NotificationService(
@@ -29,7 +31,8 @@ internal sealed class NotificationService : INotificationService
         IAltinnCdnClient cdnClient,
         IAppMetadata appMetadata,
         IAltinnPartyClient altinnPartyClient,
-        IOptions<GeneralSettings> generalSettings
+        IOptions<GeneralSettings> generalSettings,
+        ILogger<NotificationService> logger
     )
     {
         _notificationOrderClient = notificationOrderClient;
@@ -37,6 +40,7 @@ internal sealed class NotificationService : INotificationService
         _cdnClient = cdnClient;
         _appMetadata = appMetadata;
         _altinnPartyClient = altinnPartyClient;
+        _logger = logger;
         _generalSettings = generalSettings.Value;
     }
 
@@ -61,6 +65,11 @@ internal sealed class NotificationService : INotificationService
             serviceOwnerName,
             instansiationNotification,
             baseUrl
+        );
+
+        _logger.LogInformation(
+            "Sending notification order: {OrderRequest}",
+            System.Text.Json.JsonSerializer.Serialize(orderRequest)
         );
 
         await _notificationOrderClient.Order(orderRequest, ct);
