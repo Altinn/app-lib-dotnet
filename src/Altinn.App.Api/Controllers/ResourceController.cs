@@ -36,6 +36,23 @@ public class ResourceController : ControllerBase
     }
 
     /// <summary>
+    /// Get the xsd schema for the model
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "application/xml")]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Route("{org}/{app}/api/xsdschema/{id}")]
+    public ActionResult GetModelXsdSchema([FromRoute] string id)
+    {
+        string? schema = _appResourceService.GetXsdSchema(id);
+        if (schema == null)
+        {
+            return NotFound();
+        }
+        return Content(schema, "application/xml", System.Text.Encoding.UTF8);
+    }
+
+    /// <summary>
     /// Get the form layout
     /// </summary>
     /// <param name="org">Unique identifier of the organisation responsible for the app.</param>
@@ -80,6 +97,9 @@ public class ResourceController : ControllerBase
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "application/json")]
     [HttpGet]
     [Route("{org}/{app}/api/layoutsettings")]
+    [Obsolete(
+        "This endpoint is no longer available. Use /{org}/{app}/api/layoutsettings/{id} to get layout settings for a specific layout set."
+    )]
     public ActionResult GetLayoutSettings(string org, string app)
     {
         string? settings = _appResourceService.GetLayoutSettingsString();
