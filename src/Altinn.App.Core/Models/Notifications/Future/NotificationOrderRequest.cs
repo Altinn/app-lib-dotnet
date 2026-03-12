@@ -139,9 +139,9 @@ public sealed record NotificationRecipient
     /// <remarks>
     /// Contact information will be retrieved from Altinn Profile using the external identity.
     /// </remarks>
-    [JsonPropertyName("recipientSelfIdentifiedUser")]
+    [JsonPropertyName("recipientExternalIdentity")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public RecipientSelfIdentifiedUser? RecipientSelfIdentifiedUser { get; init; }
+    public RecipientExternalIdentity? RecipientExternalIdentity { get; init; }
 }
 
 /// <summary>
@@ -272,7 +272,7 @@ public sealed record RecipientOrganization
 /// Identifies a notification recipient by an external identity, used for self-identified users
 /// who authenticate via ID-porten email login.
 /// </summary>
-public sealed record RecipientSelfIdentifiedUser
+public sealed record RecipientExternalIdentity
 {
     /// <summary>
     /// Gets or sets the recipient's external identity in URN format.

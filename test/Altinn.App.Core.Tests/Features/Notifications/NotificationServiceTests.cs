@@ -357,7 +357,7 @@ public class NotificationServiceTests
             callBackBaseUrl: null
         );
 
-        Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientSelfIdentifiedUser?.ResourceId);
+        Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientExternalIdentity?.ResourceId);
     }
 
     [Fact]

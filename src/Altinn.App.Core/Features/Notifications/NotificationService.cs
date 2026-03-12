@@ -218,7 +218,7 @@ internal sealed class NotificationService : INotificationService
                 ConditionEndpoint = conditionEndpoint,
                 Recipient = new NotificationRecipient
                 {
-                    RecipientSelfIdentifiedUser = new RecipientSelfIdentifiedUser
+                    RecipientExternalIdentity = new RecipientExternalIdentity
                     {
                         ExternalIdentity = instanceOwner.ExternalIdentifier,
                         ChannelSchema = NotificationChannel.Email, // Only email is supported for self identified users

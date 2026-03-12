@@ -27,7 +27,7 @@ public class NotificationRecipientSerializationTests
         Assert.False(root.TryGetProperty("recipientEmail", out _));
         Assert.False(root.TryGetProperty("recipientSms", out _));
         Assert.False(root.TryGetProperty("recipientOrganization", out _));
-        Assert.False(root.TryGetProperty("recipientSelfIdentifiedUser", out _));
+        Assert.False(root.TryGetProperty("recipientExternalIdentity", out _));
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class NotificationRecipientSerializationTests
     {
         var recipient = new NotificationRecipient
         {
-            RecipientSelfIdentifiedUser = new RecipientSelfIdentifiedUser
+            RecipientExternalIdentity = new RecipientExternalIdentity
             {
                 ExternalIdentity = "urn:altinn:person:idporten-email:test@example.com",
                 EmailSettings = new EmailSendingOptions { Subject = "Test", Body = "Test body" },
@@ -46,7 +46,7 @@ public class NotificationRecipientSerializationTests
         using JsonDocument doc = JsonDocument.Parse(json);
         JsonElement root = doc.RootElement;
 
-        Assert.True(root.TryGetProperty("recipientSelfIdentifiedUser", out _));
+        Assert.True(root.TryGetProperty("recipientExternalIdentity", out _));
         Assert.False(root.TryGetProperty("recipientEmail", out _));
         Assert.False(root.TryGetProperty("recipientSms", out _));
         Assert.False(root.TryGetProperty("recipientPerson", out _));
@@ -74,6 +74,6 @@ public class NotificationRecipientSerializationTests
         Assert.False(root.TryGetProperty("recipientEmail", out _));
         Assert.False(root.TryGetProperty("recipientSms", out _));
         Assert.False(root.TryGetProperty("recipientPerson", out _));
-        Assert.False(root.TryGetProperty("recipientSelfIdentifiedUser", out _));
+        Assert.False(root.TryGetProperty("recipientExternalIdentity", out _));
     }
 }
