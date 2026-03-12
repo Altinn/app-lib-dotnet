@@ -12,7 +12,11 @@ namespace Altinn.App.Api.Controllers;
 [ApiController]
 [ApiExplorerSettings(IgnoreApi = true)]
 [Route("{org}/{app}/notifications")]
-public class NotificationCallbackController(ILogger<NotificationCallbackController> logger, ICancelInstantiationNotification instantiationNotification, IInstanceClient instanceClient)
+public class NotificationCallbackController(
+    ILogger<NotificationCallbackController> logger,
+    ICancelInstantiationNotification instantiationNotification,
+    IInstanceClient instanceClient
+)
 {
     /// <summary>
     /// Callback endpoint to check whether remaining notifications on application instantiation should be sent or not

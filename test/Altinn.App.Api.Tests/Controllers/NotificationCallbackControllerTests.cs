@@ -1,0 +1,121 @@
+using Altinn.App.Api.Controllers;
+using Altinn.App.Core.Features.Notifications.Cancellation;
+using Altinn.App.Core.Internal.Instances;
+using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using Xunit.Abstractions;
+
+namespace Altinn.App.Api.Tests.Controllers;
+
+public class NotificationCallbackControllerTests
+{
+    private readonly Mock<ICancelInstantiationNotification> _instantiationNotificationMock = new(MockBehavior.Strict);
+    private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
+    private readonly ServiceCollection _serviceCollection = new();
+
+    public NotificationCallbackControllerTests(ITestOutputHelper output)
+    {
+        _serviceCollection.AddTransient<NotificationCallbackController>();
+        _serviceCollection.AddSingleton(_instantiationNotificationMock.Object);
+        _serviceCollection.AddSingleton(_instanceClientMock.Object);
+        _serviceCollection.AddFakeLoggingWithXunit(output);
+    }
+
+    [Fact]
+    public async Task NotificationCallback_WhenShouldSendIsTrue_ReturnsSendNotificationTrue()
+    {
+        // Arrange
+        var instance = new Instance { Process = new ProcessState { Ended = null } };
+
+        _instanceClientMock
+            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ReturnsAsync(instance);
+
+        _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(true);
+
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<NotificationCallbackController>();
+
+        // Act
+        var actionResult = await controller.NotificationCallback("ttd", "app", 1337, Guid.NewGuid());
+
+        // Assert
+        var response = actionResult.Value;
+        Assert.NotNull(response);
+        Assert.True(response.SendNotification);
+    }
+
+    [Fact]
+    public async Task NotificationCallback_WhenShouldSendIsFalse_ReturnsSendNotificationFalse()
+    {
+        // Arrange
+        var instance = new Instance { Process = new ProcessState { Ended = DateTime.UtcNow } };
+
+        _instanceClientMock
+            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ReturnsAsync(instance);
+
+        _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(false);
+
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<NotificationCallbackController>();
+
+        // Act
+        var actionResult = await controller.NotificationCallback("ttd", "app", 1337, Guid.NewGuid());
+
+        // Assert
+        var response = actionResult.Value;
+        Assert.NotNull(response);
+        Assert.False(response.SendNotification);
+    }
+
+    [Fact]
+    public async Task NotificationCallback_PassesCorrectParametersToInstanceClient()
+    {
+        // Arrange
+        var org = "ttd";
+        var app = "my-app";
+        var instanceOwnerPartyId = 1337;
+        var instanceGuid = Guid.NewGuid();
+
+        var instance = new Instance { Process = new ProcessState() };
+
+        _instanceClientMock
+            .Setup(x => x.GetInstance(app, org, instanceOwnerPartyId, instanceGuid))
+            .ReturnsAsync(instance);
+
+        _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(true);
+
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<NotificationCallbackController>();
+
+        // Act
+        await controller.NotificationCallback(org, app, instanceOwnerPartyId, instanceGuid);
+
+        // Assert
+        _instanceClientMock.Verify(x => x.GetInstance(app, org, instanceOwnerPartyId, instanceGuid), Times.Once);
+    }
+
+    [Fact]
+    public async Task NotificationCallback_PassesInstanceToShouldSend()
+    {
+        // Arrange
+        var instance = new Instance { Process = new ProcessState() };
+
+        _instanceClientMock
+            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ReturnsAsync(instance);
+
+        _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(true);
+
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<NotificationCallbackController>();
+
+        // Act
+        await controller.NotificationCallback("ttd", "app", 1337, Guid.NewGuid());
+
+        // Assert
+        _instantiationNotificationMock.Verify(x => x.ShouldSend(instance), Times.Once);
+    }
+}

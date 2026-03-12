@@ -372,9 +372,9 @@ namespace Altinn.App.Api.Controllers
     [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/notifications")]
     public class NotificationCallbackController
     {
-        public NotificationCallbackController(Microsoft.Extensions.Logging.ILogger<Altinn.App.Api.Controllers.NotificationCallbackController> logger) { }
+        public NotificationCallbackController(Microsoft.Extensions.Logging.ILogger<Altinn.App.Api.Controllers.NotificationCallbackController> logger, Altinn.App.Core.Features.Notifications.Cancellation.ICancelInstantiationNotification instantiationNotification, Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient) { }
         [Microsoft.AspNetCore.Mvc.HttpGet("{instanceOwnerPartyId:int}/{instanceGuid:guid}")]
-        public Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Controllers.NotificationCallbackResponse> ShouldCancel([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid) { }
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Controllers.NotificationCallbackResponse>> NotificationCallback([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid) { }
     }
     public sealed class NotificationCallbackResponse
     {

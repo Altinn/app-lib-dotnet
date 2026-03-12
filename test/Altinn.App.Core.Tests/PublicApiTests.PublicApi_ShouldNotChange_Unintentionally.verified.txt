@@ -1636,6 +1636,18 @@ namespace Altinn.App.Core.Features.Maskinporten.Models
         public Microsoft.IdentityModel.Tokens.JsonWebKey GetJsonWebKey() { }
     }
 }
+namespace Altinn.App.Core.Features.Notifications.Cancellation
+{
+    public interface ICancelInstantiationNotification
+    {
+        bool ShouldSend(Altinn.Platform.Storage.Interface.Models.Instance instance);
+    }
+    public class SendOnProcessNotEnded : Altinn.App.Core.Features.Notifications.Cancellation.ICancelInstantiationNotification
+    {
+        public SendOnProcessNotEnded() { }
+        public bool ShouldSend(Altinn.Platform.Storage.Interface.Models.Instance instance) { }
+    }
+}
 namespace Altinn.App.Core.Features.Notifications
 {
     public interface INotificationService
