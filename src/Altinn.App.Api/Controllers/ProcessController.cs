@@ -51,7 +51,6 @@ public class ProcessController : ControllerBase
         IValidationService validationService,
         IAuthorizationService authorization,
         IProcessReader processReader,
-        IProcessEngine processEngine,
         IServiceProvider serviceProvider,
         IProcessEngineAuthorizer processEngineAuthorizer
     )
@@ -61,10 +60,10 @@ public class ProcessController : ControllerBase
         _processClient = processClient;
         _authorization = authorization;
         _processReader = processReader;
-        _processEngine = processEngine;
         _processEngineAuthorizer = processEngineAuthorizer;
         _validationService = validationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _processEngine = serviceProvider.GetRequiredService<IProcessEngine>();
     }
 
     /// <summary>
@@ -104,73 +103,6 @@ public class ProcessController : ControllerBase
         {
             _logger.LogError($"Failed to access process for {instanceOwnerPartyId}/{instanceGuid}");
             return ExceptionResponse(exception, $"Failed to access process for {instanceOwnerPartyId}/{instanceGuid}");
-        }
-    }
-
-    /// <summary>
-    /// Starts the process of an instance.
-    /// </summary>
-    /// <param name="org">unique identifier of the organisation responsible for the app</param>
-    /// <param name="app">application identifier which is unique within an organisation</param>
-    /// <param name="instanceOwnerPartyId">unique id of the party that is the owner of the instance</param>
-    /// <param name="instanceGuid">unique id to identify the instance</param>
-    /// <param name="startEvent">a specific start event id to start the process, must be used if there are more than one start events</param>
-    /// <returns>The process state</returns>
-    [HttpPost("start")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_INSTANTIATE)]
-    public async Task<ActionResult<AppProcessState>> StartProcess(
-        [FromRoute] string org,
-        [FromRoute] string app,
-        [FromRoute] int instanceOwnerPartyId,
-        [FromRoute] Guid instanceGuid,
-        [FromQuery] string? startEvent = null
-    )
-    {
-        Instance? instance = null;
-
-        try
-        {
-            instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-
-            var request = new ProcessStartRequest()
-            {
-                Instance = instance,
-                StartEventId = startEvent,
-                User = User,
-            };
-            ProcessChangeResult result = await _processEngine.GenerateProcessStartEvents(request);
-            if (!result.Success)
-            {
-                return Conflict(result.ErrorMessage);
-            }
-
-            await _processEngine.HandleEventsAndUpdateStorage(instance, null, result.ProcessStateChange?.Events);
-
-            AppProcessState appProcessState = await ConvertAndAuthorizeActions(
-                instance,
-                result.ProcessStateChange?.NewProcessState
-            );
-            return Ok(appProcessState);
-        }
-        catch (PlatformHttpException e)
-        {
-            return HandlePlatformHttpException(
-                e,
-                $"Unable to start the process for instance {instance?.Id} of {instance?.AppId}"
-            );
-        }
-        catch (Exception startException)
-        {
-            _logger.LogError(
-                $"Unable to start the process for instance {instance?.Id} of {instance?.AppId}. Due to {startException}"
-            );
-            return ExceptionResponse(
-                startException,
-                $"Unable to start the process for instance {instance?.Id} of {instance?.AppId}"
-            );
         }
     }
 
@@ -266,7 +198,14 @@ public class ProcessController : ControllerBase
     {
         try
         {
-            Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+            Instance instance = await _instanceClient.GetInstance(
+                app,
+                org,
+                instanceOwnerPartyId,
+                instanceGuid,
+                null,
+                ct
+            );
 
             var processNextRequest = new ProcessNextRequest
             {
@@ -284,10 +223,9 @@ public class ProcessController : ControllerBase
                 return GetResultForError(result);
             }
 
-            AppProcessState appProcessState = await ConvertAndAuthorizeActions(
-                instance,
-                result.ProcessStateChange.NewProcessState
-            );
+            Instance freshInstance = result.MutatedInstance ?? instance;
+
+            AppProcessState appProcessState = await ConvertAndAuthorizeActions(freshInstance, freshInstance.Process);
 
             return Ok(appProcessState);
         }
@@ -401,6 +339,8 @@ public class ProcessController : ControllerBase
                 {
                     return GetResultForError(result);
                 }
+
+                instance = result.MutatedInstance ?? instance;
             }
             catch (Exception ex)
             {

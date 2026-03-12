@@ -155,7 +155,16 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(CreateXacmlResponse("Permit"));
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
 
         // Act
@@ -203,7 +212,16 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(CreateXacmlResponse("Permit"));
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ThrowsAsync(platformHttpException);
 
         // Act
@@ -251,7 +269,16 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(CreateXacmlResponse("Permit"));
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ThrowsAsync(platformHttpException);
 
         // Act
@@ -298,7 +325,16 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(CreateXacmlResponse("Permit"));
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
         fixture
             .Mock<IInstantiationValidator>()
@@ -363,33 +399,50 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(CreateXacmlResponse("Permit"));
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.CreateInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Instance>()))
+            .Setup(i =>
+                i.CreateInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Instance>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
-        fixture.Mock<IInstanceClient>().Setup(i => i.GetInstance(It.IsAny<Instance>())).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<Instance>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         fixture
             .Mock<IInstantiationValidator>()
             .Setup(v => v.Validate(It.IsAny<Instance>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .Setup(p => p.CreateInitialProcessState(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() =>
             {
                 return new ProcessChangeResult() { Success = true };
             });
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
-                )
-            );
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
@@ -486,30 +539,47 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(CreateXacmlResponse("Permit"));
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.CreateInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Instance>()))
+            .Setup(i =>
+                i.CreateInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Instance>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
-        fixture.Mock<IInstanceClient>().Setup(i => i.GetInstance(It.IsAny<Instance>())).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<Instance>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         fixture
             .Mock<IInstantiationValidator>()
             .Setup(v => v.Validate(It.IsAny<Instance>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .Setup(p => p.CreateInitialProcessState(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
-                )
-            );
 
         // Form data mocks
         fixture
@@ -685,30 +755,47 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(CreateXacmlResponse("Permit"));
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.CreateInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Instance>()))
+            .Setup(i =>
+                i.CreateInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Instance>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
-        fixture.Mock<IInstanceClient>().Setup(i => i.GetInstance(It.IsAny<Instance>())).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<Instance>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         fixture
             .Mock<IInstantiationValidator>()
             .Setup(v => v.Validate(It.IsAny<Instance>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .Setup(p => p.CreateInitialProcessState(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
-                )
-            );
 
         // Form data mocks (should be copied)
         fixture
@@ -883,30 +970,47 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(CreateXacmlResponse("Permit"));
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.CreateInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Instance>()))
+            .Setup(i =>
+                i.CreateInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Instance>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
-        fixture.Mock<IInstanceClient>().Setup(i => i.GetInstance(It.IsAny<Instance>())).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<Instance>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         fixture
             .Mock<IInstantiationValidator>()
             .Setup(v => v.Validate(It.IsAny<Instance>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .Setup(p => p.CreateInitialProcessState(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
-                )
-            );
 
         // Binary data mocks (should be called)
         fixture
@@ -1088,30 +1192,47 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(CreateXacmlResponse("Permit"));
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
         fixture
             .Mock<IInstanceClient>()
-            .Setup(i => i.CreateInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Instance>()))
+            .Setup(i =>
+                i.CreateInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Instance>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
-        fixture.Mock<IInstanceClient>().Setup(i => i.GetInstance(It.IsAny<Instance>())).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i =>
+                i.GetInstance(
+                    It.IsAny<Instance>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
         fixture
             .Mock<IInstantiationValidator>()
             .Setup(v => v.Validate(It.IsAny<Instance>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
-            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .Setup(p => p.CreateInitialProcessState(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
-                )
-            );
 
         // Binary data mocks (should be called)
         fixture

@@ -21,6 +21,7 @@
     Message: 409 Conflict,
     StackTrace:
 at Altinn.App.Core.Infrastructure.Clients.Storage.InstanceLockClient.AcquireInstanceLock(Guid instanceGuid, Int32 instanceOwnerPartyId, TimeSpan expiration, StorageAuthenticationMethod authenticationMethod, CancellationToken cancellationToken)
+at Altinn.App.Core.Internal.InstanceLocking.InstanceLocker.LockAsync(Int32 instanceOwnerPartyId, Guid instanceGuid, TimeSpan ttl)
 at Altinn.App.Core.Internal.InstanceLocking.InstanceLocker.LockAsync(TimeSpan ttl)
 --- End of stack trace from previous location ---
 --- End of stack trace from previous location ---

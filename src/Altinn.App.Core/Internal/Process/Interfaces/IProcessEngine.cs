@@ -1,4 +1,4 @@
-using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
+using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -7,12 +7,23 @@ namespace Altinn.App.Core.Internal.Process;
 /// <summary>
 /// Process engine interface that defines the Altinn App process engine
 /// </summary>
-public interface IProcessEngine
+internal interface IProcessEngine
 {
     /// <summary>
-    /// Method to start a new process
+    /// Generates process start events and updates the instance's process state in memory.
+    /// Does not persist anything - use <see cref="SubmitInitialProcessState"/> to dispatch to the async engine.
     /// </summary>
-    Task<ProcessChangeResult> GenerateProcessStartEvents(ProcessStartRequest processStartRequest);
+    Task<ProcessChangeResult> CreateInitialProcessState(ProcessStartRequest request);
+
+    /// <summary>
+    /// Dispatches a process state change to the async process engine and waits for completion.
+    /// </summary>
+    Task<Instance> SubmitInitialProcessState(
+        Instance instance,
+        ProcessStateChange processStateChange,
+        Dictionary<string, string>? prefill = null,
+        CancellationToken ct = default
+    );
 
     /// <summary>
     /// Method to move process to next task/event
@@ -20,19 +31,18 @@ public interface IProcessEngine
     Task<ProcessChangeResult> Next(ProcessNextRequest request, CancellationToken ct = default);
 
     /// <summary>
-    /// Check if the Altinn task type is a service task
+    /// Enqueues a process-next workflow that transitions the process from the current task to the next element.
+    /// The workflow has a dependency on <paramref name="dependsOnWorkflowId"/> so it won't start
+    /// until that workflow completes.
+    /// Does not mutate the <paramref name="instance"/>.
     /// </summary>
-    IServiceTask? CheckIfServiceTask(string? altinnTaskType);
-
-    /// <summary>
-    /// Handle process events and update storage
-    /// </summary>
-    /// <param name="instance"></param>
-    /// <param name="prefill"></param>
-    /// <param name="events"></param>
-    Task<Instance> HandleEventsAndUpdateStorage(
+    Task EnqueueProcessNext(
         Instance instance,
-        Dictionary<string, string>? prefill,
-        List<InstanceEvent>? events
+        Actor actor,
+        string lockToken,
+        Guid dependsOnWorkflowId,
+        WorkflowStateSnapshot state,
+        string? action = null,
+        CancellationToken ct = default
     );
 }

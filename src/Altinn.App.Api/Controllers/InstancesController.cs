@@ -92,7 +92,6 @@ public class InstancesController : ControllerBase
         IOptions<AppSettings> appSettings,
         IPrefill prefillService,
         IProfileClient profileClient,
-        IProcessEngine processEngine,
         IOrganizationClient orgClient,
         IHostEnvironment env,
         ModelSerializationService serializationService,
@@ -113,7 +112,7 @@ public class InstancesController : ControllerBase
         _appSettings = appSettings.Value;
         _prefillService = prefillService;
         _profileClient = profileClient;
-        _processEngine = processEngine;
+        _processEngine = serviceProvider.GetRequiredService<IProcessEngine>();
         _orgClient = orgClient;
         _env = env;
         _serializationService = serializationService;
@@ -161,14 +160,25 @@ public class InstancesController : ControllerBase
 
         try
         {
-            Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+            Instance instance = await _instanceClient.GetInstance(
+                app,
+                org,
+                instanceOwnerPartyId,
+                instanceGuid,
+                ct: cancellationToken
+            );
             SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
 
             string? userOrgClaim = User.GetOrg();
 
             if (userOrgClaim == null || !org.Equals(userOrgClaim, StringComparison.OrdinalIgnoreCase))
             {
-                await _instanceClient.UpdateReadStatus(instanceOwnerPartyId, instanceGuid, "read");
+                await _instanceClient.UpdateReadStatus(
+                    instanceOwnerPartyId,
+                    instanceGuid,
+                    "read",
+                    ct: cancellationToken
+                );
             }
 
             var instanceOwnerParty = await _registerClient.GetPartyUnchecked(instanceOwnerPartyId, cancellationToken);
@@ -344,20 +354,20 @@ public class InstancesController : ControllerBase
 
         Instance instance;
         instanceTemplate.Process = null;
-        ProcessStateChange? change = null;
+        ProcessStateChange? processStateChange;
 
         try
         {
             // start process and goto next task
             ProcessStartRequest processStartRequest = new() { Instance = instanceTemplate, User = User };
 
-            ProcessChangeResult result = await _processEngine.GenerateProcessStartEvents(processStartRequest);
+            ProcessChangeResult result = await _processEngine.CreateInitialProcessState(processStartRequest);
             if (!result.Success)
             {
                 return Conflict(result.ErrorMessage);
             }
 
-            change = result.ProcessStateChange;
+            processStateChange = result.ProcessStateChange;
 
             // create the instance
             instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
@@ -383,7 +393,7 @@ public class InstancesController : ControllerBase
                 return StatusCode(prefillProblem.Status ?? 500, prefillProblem);
             }
 
-            // get the updated instance
+            // Get the updated instance
             instance = await _instanceClient.GetInstance(
                 app,
                 org,
@@ -391,9 +401,11 @@ public class InstancesController : ControllerBase
                 Guid.Parse(instance.Id.Split("/")[1])
             );
 
-            // notify app and store events
-            _logger.LogInformation("Events sent to process engine: {Events}", change?.Events);
-            await _processEngine.HandleEventsAndUpdateStorage(instance, null, change?.Events);
+            // Dispatch process state change to async engine
+            if (processStateChange is not null)
+            {
+                instance = await _processEngine.SubmitInitialProcessState(instance, processStateChange);
+            }
         }
         catch (Exception exception)
         {
@@ -402,8 +414,6 @@ public class InstancesController : ControllerBase
                 $"Instantiation of data elements failed for instance {instance.Id} for party {instanceTemplate.InstanceOwner?.PartyId}"
             );
         }
-
-        await RegisterEvent("app.instance.created", instance);
 
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
@@ -569,20 +579,10 @@ public class InstancesController : ControllerBase
         }
 
         Instance instance;
-        ProcessChangeResult processResult;
+        ProcessStateChange? processStateChange = null;
         try
         {
-            // start process and goto next task
             instanceTemplate.Process = null;
-
-            var request = new ProcessStartRequest()
-            {
-                Instance = instanceTemplate,
-                User = User,
-                Prefill = instansiationInstance.Prefill,
-            };
-
-            processResult = await _processEngine.GenerateProcessStartEvents(request);
 
             Instance? source = null;
 
@@ -609,6 +609,22 @@ public class InstancesController : ControllerBase
                 }
             }
 
+            // Generate process start events - updates instanceTemplate.Process in memory
+            var startRequest = new ProcessStartRequest()
+            {
+                Instance = instanceTemplate,
+                User = User,
+                Prefill = instansiationInstance.Prefill,
+            };
+
+            ProcessChangeResult processResult = await _processEngine.CreateInitialProcessState(startRequest);
+            if (!processResult.Success)
+            {
+                return Conflict(processResult.ErrorMessage);
+            }
+            processStateChange = processResult.ProcessStateChange;
+
+            // Create instance WITH process state
             instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
 
             if (isCopyRequest && source is not null)
@@ -617,11 +633,16 @@ public class InstancesController : ControllerBase
             }
 
             instance = await _instanceClient.GetInstance(instance);
-            await _processEngine.HandleEventsAndUpdateStorage(
-                instance,
-                instansiationInstance.Prefill,
-                processResult.ProcessStateChange?.Events
-            );
+
+            // Dispatch process state change to async engine
+            if (processStateChange is not null)
+            {
+                instance = await _processEngine.SubmitInitialProcessState(
+                    instance,
+                    processStateChange,
+                    instansiationInstance.Prefill
+                );
+            }
         }
         catch (Exception exception)
         {
@@ -630,8 +651,6 @@ public class InstancesController : ControllerBase
                 $"Instantiation of appId {org}/{app} failed for party {instanceTemplate.InstanceOwner?.PartyId}"
             );
         }
-
-        await RegisterEvent("app.instance.created", instance);
 
         SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
         string url = instance.SelfLinks.Apps;
@@ -733,19 +752,29 @@ public class InstancesController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
+        // Generate process start events - updates targetInstance.Process in memory
         ProcessStartRequest processStartRequest = new() { Instance = targetInstance, User = User };
+        ProcessChangeResult startResult = await _processEngine.CreateInitialProcessState(processStartRequest);
+        if (!startResult.Success)
+        {
+            return Conflict(startResult.ErrorMessage);
+        }
 
-        ProcessChangeResult startResult = await _processEngine.GenerateProcessStartEvents(processStartRequest);
-
+        // Create instance WITH process state
         targetInstance = await _instanceClient.CreateInstance(org, app, targetInstance);
 
         await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
 
         targetInstance = await _instanceClient.GetInstance(targetInstance);
 
-        await _processEngine.HandleEventsAndUpdateStorage(targetInstance, null, startResult.ProcessStateChange?.Events);
-
-        await RegisterEvent("app.instance.created", targetInstance);
+        // Dispatch process state change to async engine
+        if (startResult.ProcessStateChange is not null)
+        {
+            targetInstance = await _processEngine.SubmitInitialProcessState(
+                targetInstance,
+                startResult.ProcessStateChange
+            );
+        }
 
         string url = SelfLinkHelper.BuildFrontendSelfLink(targetInstance, Request);
 
@@ -1278,7 +1307,7 @@ public class InstancesController : ControllerBase
             }
         }
 
-        var taskId = instance.Process?.CurrentTask?.ElementId;
+        string? taskId = instance.Process?.CurrentTask?.ElementId;
 
         if (taskId is null)
             throw new InvalidOperationException("There should be a task while initializing data");

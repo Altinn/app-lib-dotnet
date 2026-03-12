@@ -20,6 +20,96 @@
       HasParent: true
     },
     {
+      Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 0
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 0
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 0
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 0
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 0
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 0
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 0
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 0
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 0
+        }
+      ],
+      HasParent: true
+    },
+    {
       Name: PUT {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/process/next,
       Kind: Server,
       IdFormat: W3C,
@@ -89,6 +179,132 @@
       HasParent: true
     },
     {
+      Name: Process.Callback,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.callback.command: AbandonTask
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.Callback,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.callback.command: OnTaskAbandonHook
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.Callback,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.callback.command: AbandonTaskLegacyHook
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.Callback,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.callback.command: MutateProcessState
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.Callback,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.callback.command: OnProcessEndingHook
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.Callback,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.callback.command: SaveProcessStateToStorage
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.Callback,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.callback.command: EndProcessLegacyHook
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.Callback,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.callback.command: DeleteDataElementsIfConfigured
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.Callback,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.callback.command: DeleteInstanceIfConfigured
+        }
+      ],
+      HasParent: true
+    },
+    {
       Name: Process.End,
       IdFormat: W3C,
       Tags: [
@@ -99,7 +315,7 @@
       HasParent: true
     },
     {
-      Name: Process.HandleEvents,
+      Name: Process.EndHandlers,
       IdFormat: W3C,
       Tags: [
         {
@@ -143,16 +359,6 @@
               to.started: DateTime_1
             }
           ]
-        }
-      ],
-      HasParent: true
-    },
-    {
-      Name: Process.StoreEvents,
-      IdFormat: W3C,
-      Tags: [
-        {
-          instance.guid: Guid_1
         }
       ],
       HasParent: true
@@ -260,6 +466,406 @@
     {
       Name: ProcessReader.IsProcessTask,
       IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.DeserializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeJson,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: SerializationService.SerializeXml,
+      IdFormat: W3C,
+      Tags: [
+        {
+          Type: Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema
+        }
+      ],
       HasParent: true
     }
   ],
