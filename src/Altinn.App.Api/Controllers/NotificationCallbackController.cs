@@ -1,4 +1,7 @@
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Features.Notifications.Cancellation;
+using Altinn.App.Core.Internal.Instances;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Altinn.App.Api.Controllers;
@@ -9,35 +12,39 @@ namespace Altinn.App.Api.Controllers;
 [ApiController]
 [ApiExplorerSettings(IgnoreApi = true)]
 [Route("{org}/{app}/notifications")]
-public class NotificationCallbackController(ILogger<NotificationCallbackController> logger)
+public class NotificationCallbackController(ILogger<NotificationCallbackController> logger, ICancelInstantiationNotification instantiationNotification, IInstanceClient instanceClient)
 {
     /// <summary>
-    /// Callback endpoint to check whether remaining notifications on application instatiation should be cancelled
+    /// Callback endpoint to check whether remaining notifications on application instantiation should be sent or not
     /// </summary>
     /// <returns><see cref="NotificationCallbackResponse"/></returns>
     [HttpGet("{instanceOwnerPartyId:int}/{instanceGuid:guid}")]
-    public ActionResult<NotificationCallbackResponse> ShouldCancel(
+    public async Task<ActionResult<NotificationCallbackResponse>> NotificationCallback(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid
     )
     {
+        Instance instance = await instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         logger.LogInformation(
             $"Received callback for org:{org}, app:{app}, instanceOwnerPartyId:{instanceOwnerPartyId}, instanceGuid:{instanceGuid}."
         );
-        NotificationCallbackResponse response = new() { SendNotification = false };
+
+        bool shouldSend = instantiationNotification.ShouldSend(instance);
+
+        NotificationCallbackResponse response = new() { SendNotification = shouldSend };
         return response;
     }
 }
 
 /// <summary>
-/// Callback response indication whether instantiation notifications should be cancelled or not
+/// Callback response indicating whether instantiation notifications should be sent or not
 /// </summary>
 public sealed class NotificationCallbackResponse
 {
     /// <summary>
-    /// True if the notification should be sent, false if it chould be cancelled
+    /// True if the notification should be sent, false if it should be cancelled
     /// </summary>
     [JsonPropertyName("sendNotification")]
     public bool SendNotification { get; set; }
