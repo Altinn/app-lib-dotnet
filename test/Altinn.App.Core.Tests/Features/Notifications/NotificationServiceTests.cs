@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications;
 using Altinn.App.Core.Internal.AltinnCdn;
@@ -10,6 +11,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Features.Notifications;
@@ -21,6 +23,7 @@ public class NotificationServiceTests
     private readonly Mock<IAltinnCdnClient> _cdnClientMock = new();
     private readonly Mock<IAltinnPartyClient> _partyClientMock = new();
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
+    private readonly Mock<ILogger<NotificationService>> _logger = new();
 
     private NotificationService CreateSut() =>
         new(
@@ -28,7 +31,9 @@ public class NotificationServiceTests
             _profileClientMock.Object,
             _cdnClientMock.Object,
             _appMetadataMock.Object,
-            _partyClientMock.Object
+            _partyClientMock.Object,
+            Microsoft.Extensions.Options.Options.Create(new GeneralSettings()),
+            _logger.Object
         );
 
     #region Helpers
@@ -312,7 +317,8 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: "Firma AS",
             serviceOwnerName: null,
-            instansiationNotification: DefaultNotification()
+            instansiationNotification: DefaultNotification(),
+            callBackBaseUrl: null
         );
 
         Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientOrganization?.ResourceId);
@@ -329,7 +335,8 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: "Ola Nordmann",
             serviceOwnerName: null,
-            instansiationNotification: DefaultNotification()
+            instansiationNotification: DefaultNotification(),
+            callBackBaseUrl: null
         );
 
         Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientPerson?.ResourceId);
@@ -346,10 +353,11 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: DefaultNotification()
+            instansiationNotification: DefaultNotification(),
+            callBackBaseUrl: null
         );
 
-        Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientSelfIdentifiedUser?.ResourceId);
+        Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientExternalIdentity?.ResourceId);
     }
 
     [Fact]
@@ -364,8 +372,63 @@ public class NotificationServiceTests
                 applicationMetadata: null,
                 instanceOwnerName: null,
                 serviceOwnerName: null,
-                instansiationNotification: DefaultNotification()
+                instansiationNotification: DefaultNotification(),
+                callBackBaseUrl: null
             )
+        );
+    }
+
+    #endregion
+
+    #region RequestedSendTime and ConditionEndpoint
+
+    [Fact]
+    public void CreateNotificationOrderRequest_NoRequestedSendTime_DefaultsToFiveMinutesFromNow_AndNoConditionEndpoint()
+    {
+        var instance = CreateTestInstance(appId: "ttd/my-app", personNumber: "01010112345");
+        var before = DateTime.Now.AddMinutes(5);
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: DefaultNotification(), // RequestedSendTime is null
+            callBackBaseUrl: null
+        );
+
+        var after = DateTime.Now.AddMinutes(5);
+
+        Assert.Null(result.ConditionEndpoint);
+        Assert.InRange(result.RequestedSendTime, before, after);
+    }
+
+    [Fact]
+    public void CreateNotificationOrderRequest_WithRequestedSendTime_UsesItAndSetsConditionEndpoint()
+    {
+        var instance = CreateTestInstance(appId: "ttd/my-app", personNumber: "01010112345");
+        var scheduledTime = DateTime.UtcNow.AddDays(1);
+        var notification = new InstansiationNotification
+        {
+            NotificationChannel = NotificationChannel.Email,
+            RequestedSendTime = scheduledTime,
+        };
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
+        );
+
+        Assert.Equal(scheduledTime, result.RequestedSendTime);
+        Assert.Equal(
+            "https://ttd.apps.tt02.altinn.no/ttd/my-app/notifications/1337/abc-123",
+            result.ConditionEndpoint?.ToString()
         );
     }
 

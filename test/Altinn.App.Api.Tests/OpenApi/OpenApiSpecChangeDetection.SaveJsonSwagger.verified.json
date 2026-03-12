@@ -8971,6 +8971,11 @@
             "type": "string",
             "nullable": true
           },
+          "requestedSendTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "customSms": {
             "$ref": "#/components/schemas/CustomSms"
           },

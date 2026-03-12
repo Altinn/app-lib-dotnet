@@ -1636,6 +1636,18 @@ namespace Altinn.App.Core.Features.Maskinporten.Models
         public Microsoft.IdentityModel.Tokens.JsonWebKey GetJsonWebKey() { }
     }
 }
+namespace Altinn.App.Core.Features.Notifications.Cancellation
+{
+    public interface ICancelInstantiationNotification
+    {
+        bool ShouldSend(Altinn.Platform.Storage.Interface.Models.Instance instance);
+    }
+    public class SendOnProcessNotEnded : Altinn.App.Core.Features.Notifications.Cancellation.ICancelInstantiationNotification
+    {
+        public SendOnProcessNotEnded() { }
+        public bool ShouldSend(Altinn.Platform.Storage.Interface.Models.Instance instance) { }
+    }
+}
 namespace Altinn.App.Core.Features.Notifications
 {
     public interface INotificationService
@@ -4879,8 +4891,10 @@ namespace Altinn.App.Core.Models.Notifications.Future
     public class DialogportenIdentifiers
     {
         public DialogportenIdentifiers() { }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("dialogId")]
         public string? DialogId { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("transmissionId")]
         public string? TransmissionId { get; set; }
     }
@@ -4898,6 +4912,7 @@ namespace Altinn.App.Core.Models.Notifications.Future
         public required string Body { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("contentType")]
         public Altinn.App.Core.Models.Notifications.Future.EmailContentType ContentType { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("senderEmailAddress")]
         public string? SenderEmailAddress { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("sendingTimePolicy")]
@@ -4916,6 +4931,8 @@ namespace Altinn.App.Core.Models.Notifications.Future
         public string? Language { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("notificationChannel")]
         public Altinn.App.Core.Models.Notifications.Future.NotificationChannel NotificationChannel { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("requestedSendTime")]
+        public System.DateTime? RequestedSendTime { get; init; }
     }
     public enum NotificationChannel
     {
@@ -4934,8 +4951,10 @@ namespace Altinn.App.Core.Models.Notifications.Future
     public sealed class NotificationOrderRequest : System.IEquatable<Altinn.App.Core.Models.Notifications.Future.NotificationOrderRequest>
     {
         public NotificationOrderRequest() { }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("conditionEndpoint")]
         public System.Uri? ConditionEndpoint { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("dialogportenAssociation")]
         public Altinn.App.Core.Models.Notifications.Future.DialogportenIdentifiers? DialogportenAssociation { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("idempotencyId")]
@@ -4970,28 +4989,37 @@ namespace Altinn.App.Core.Models.Notifications.Future
     public sealed class NotificationRecipient : System.IEquatable<Altinn.App.Core.Models.Notifications.Future.NotificationRecipient>
     {
         public NotificationRecipient() { }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("recipientEmail")]
         public Altinn.App.Core.Models.Notifications.Future.RecipientEmail? RecipientEmail { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        [System.Text.Json.Serialization.JsonPropertyName("recipientExternalIdentity")]
+        public Altinn.App.Core.Models.Notifications.Future.RecipientExternalIdentity? RecipientExternalIdentity { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("recipientOrganization")]
         public Altinn.App.Core.Models.Notifications.Future.RecipientOrganization? RecipientOrganization { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("recipientPerson")]
         public Altinn.App.Core.Models.Notifications.Future.RecipientPerson? RecipientPerson { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("recipientSelfIdentifiedUser")]
-        public Altinn.App.Core.Models.Notifications.Future.RecipientSelfIdentifiedUser? RecipientSelfIdentifiedUser { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("recipientSms")]
         public Altinn.App.Core.Models.Notifications.Future.RecipientSms? RecipientSms { get; init; }
     }
     public class NotificationReminder : System.IEquatable<Altinn.App.Core.Models.Notifications.Future.NotificationReminder>
     {
         public NotificationReminder() { }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("conditionEndpoint")]
         public System.Uri? ConditionEndpoint { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("delayDays")]
         public int? DelayDays { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("recipient")]
         public required Altinn.App.Core.Models.Notifications.Future.NotificationRecipient Recipient { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("requestedSendTime")]
         public System.DateTime? RequestedSendTime { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("sendersReference")]
         public string? SendersReference { get; init; }
     }
@@ -5003,17 +5031,37 @@ namespace Altinn.App.Core.Models.Notifications.Future
         [System.Text.Json.Serialization.JsonPropertyName("emailSettings")]
         public required Altinn.App.Core.Models.Notifications.Future.EmailSendingOptions Settings { get; init; }
     }
+    public sealed class RecipientExternalIdentity : System.IEquatable<Altinn.App.Core.Models.Notifications.Future.RecipientExternalIdentity>
+    {
+        public RecipientExternalIdentity() { }
+        [System.Text.Json.Serialization.JsonPropertyName("channelSchema")]
+        public Altinn.App.Core.Models.Notifications.Future.NotificationChannel ChannelSchema { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        [System.Text.Json.Serialization.JsonPropertyName("emailSettings")]
+        public Altinn.App.Core.Models.Notifications.Future.EmailSendingOptions? EmailSettings { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("externalIdentity")]
+        public required string ExternalIdentity { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        [System.Text.Json.Serialization.JsonPropertyName("resourceId")]
+        public string? ResourceId { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        [System.Text.Json.Serialization.JsonPropertyName("smsSettings")]
+        public Altinn.App.Core.Models.Notifications.Future.SmsSendingOptions? SmsSettings { get; init; }
+    }
     public sealed class RecipientOrganization : System.IEquatable<Altinn.App.Core.Models.Notifications.Future.RecipientOrganization>
     {
         public RecipientOrganization() { }
         [System.Text.Json.Serialization.JsonPropertyName("channelSchema")]
         public required Altinn.App.Core.Models.Notifications.Future.NotificationChannel ChannelSchema { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("emailSettings")]
         public Altinn.App.Core.Models.Notifications.Future.EmailSendingOptions? EmailSettings { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("orgNumber")]
         public required string OrgNumber { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("resourceId")]
         public string? ResourceId { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("smsSettings")]
         public Altinn.App.Core.Models.Notifications.Future.SmsSendingOptions? SmsSettings { get; init; }
     }
@@ -5022,28 +5070,17 @@ namespace Altinn.App.Core.Models.Notifications.Future
         public RecipientPerson() { }
         [System.Text.Json.Serialization.JsonPropertyName("channelSchema")]
         public Altinn.App.Core.Models.Notifications.Future.NotificationChannel ChannelSchema { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("emailSettings")]
         public Altinn.App.Core.Models.Notifications.Future.EmailSendingOptions? EmailSettings { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("ignoreReservation")]
         public bool IgnoreReservation { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("nationalIdentityNumber")]
         public required string NationalIdentityNumber { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("resourceId")]
         public string? ResourceId { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("smsSettings")]
-        public Altinn.App.Core.Models.Notifications.Future.SmsSendingOptions? SmsSettings { get; init; }
-    }
-    public sealed class RecipientSelfIdentifiedUser : System.IEquatable<Altinn.App.Core.Models.Notifications.Future.RecipientSelfIdentifiedUser>
-    {
-        public RecipientSelfIdentifiedUser() { }
-        [System.Text.Json.Serialization.JsonPropertyName("channelSchema")]
-        public Altinn.App.Core.Models.Notifications.Future.NotificationChannel ChannelSchema { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("emailSettings")]
-        public Altinn.App.Core.Models.Notifications.Future.EmailSendingOptions? EmailSettings { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("externalIdentity")]
-        public required string ExternalIdentity { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("resourceId")]
-        public string? ResourceId { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("smsSettings")]
         public Altinn.App.Core.Models.Notifications.Future.SmsSendingOptions? SmsSettings { get; init; }
     }
@@ -5067,6 +5104,7 @@ namespace Altinn.App.Core.Models.Notifications.Future
         public SmsSendingOptions() { }
         [System.Text.Json.Serialization.JsonPropertyName("body")]
         public required string Body { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("sender")]
         public string? Sender { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("sendingTimePolicy")]
