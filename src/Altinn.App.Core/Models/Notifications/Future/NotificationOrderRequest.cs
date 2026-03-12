@@ -15,6 +15,7 @@ public sealed record NotificationOrderRequest
     /// in the Dialogporten service, enabling integration between notifications and Dialogporten.
     /// </remarks>
     [JsonPropertyName("dialogportenAssociation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DialogportenIdentifiers? DialogportenAssociation { get; set; }
 
     /// <summary>
@@ -53,6 +54,7 @@ public sealed record NotificationOrderRequest
     /// apply by the time the send time is reached.
     /// </remarks>
     [JsonPropertyName("conditionEndpoint")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Uri? ConditionEndpoint { get; init; }
 
     /// <summary>
@@ -80,12 +82,14 @@ public class DialogportenIdentifiers
     /// Gets or sets the identifier for a specific dialog within Dialogporten.
     /// </summary>
     [JsonPropertyName("dialogId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? DialogId { get; set; }
 
     /// <summary>
     /// Gets or sets the identifier for a specific transmission within Dialogporten.
     /// </summary>
     [JsonPropertyName("transmissionId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? TransmissionId { get; set; }
 }
 
@@ -98,12 +102,14 @@ public sealed record NotificationRecipient
     /// Gets or sets a recipient identified by a direct email address.
     /// </summary>
     [JsonPropertyName("recipientEmail")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RecipientEmail? RecipientEmail { get; init; }
 
     /// <summary>
     /// Gets or sets a recipient identified by a direct phone number.
     /// </summary>
     [JsonPropertyName("recipientSms")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RecipientSms? RecipientSms { get; init; }
 
     /// <summary>
@@ -113,6 +119,7 @@ public sealed record NotificationRecipient
     /// Contact information will be retrieved from the Common Contact Register (KRR).
     /// </remarks>
     [JsonPropertyName("recipientPerson")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RecipientPerson? RecipientPerson { get; init; }
 
     /// <summary>
@@ -122,6 +129,7 @@ public sealed record NotificationRecipient
     /// Contact information will be retrieved from the Central Coordinating Register for Legal Entities (Enhetsregisteret).
     /// </remarks>
     [JsonPropertyName("recipientOrganization")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RecipientOrganization? RecipientOrganization { get; init; }
 
     /// <summary>
@@ -132,6 +140,7 @@ public sealed record NotificationRecipient
     /// Contact information will be retrieved from Altinn Profile using the external identity.
     /// </remarks>
     [JsonPropertyName("recipientSelfIdentifiedUser")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RecipientSelfIdentifiedUser? RecipientSelfIdentifiedUser { get; init; }
 }
 
@@ -186,6 +195,7 @@ public sealed record RecipientPerson
     /// Gets or sets an optional Altinn resource identifier used for authorization and auditing.
     /// </summary>
     [JsonPropertyName("resourceId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ResourceId { get; init; }
 
     /// <summary>
@@ -208,12 +218,14 @@ public sealed record RecipientPerson
     /// Gets or sets email content and delivery options. Required when the channel scheme includes email.
     /// </summary>
     [JsonPropertyName("emailSettings")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public EmailSendingOptions? EmailSettings { get; init; }
 
     /// <summary>
     /// Gets or sets SMS content and delivery options. Required when the channel scheme includes SMS.
     /// </summary>
     [JsonPropertyName("smsSettings")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SmsSendingOptions? SmsSettings { get; init; }
 }
 
@@ -232,6 +244,7 @@ public sealed record RecipientOrganization
     /// Gets or sets an optional Altinn resource identifier used for authorization and auditing.
     /// </summary>
     [JsonPropertyName("resourceId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ResourceId { get; init; }
 
     /// <summary>
@@ -244,12 +257,14 @@ public sealed record RecipientOrganization
     /// Gets or sets email content and delivery options. Required when the channel scheme includes email.
     /// </summary>
     [JsonPropertyName("emailSettings")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public EmailSendingOptions? EmailSettings { get; init; }
 
     /// <summary>
     /// Gets or sets SMS content and delivery options. Required when the channel scheme includes SMS.
     /// </summary>
     [JsonPropertyName("smsSettings")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SmsSendingOptions? SmsSettings { get; init; }
 }
 
@@ -276,6 +291,7 @@ public sealed record RecipientSelfIdentifiedUser
     /// Gets or sets an optional Altinn resource identifier used for authorization and auditing.
     /// </summary>
     [JsonPropertyName("resourceId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ResourceId { get; init; }
 
     /// <summary>
@@ -288,12 +304,14 @@ public sealed record RecipientSelfIdentifiedUser
     /// Gets or sets email content and delivery options. Required when the channel scheme includes email.
     /// </summary>
     [JsonPropertyName("emailSettings")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public EmailSendingOptions? EmailSettings { get; init; }
 
     /// <summary>
     /// Gets or sets SMS content and delivery options. Required when the channel scheme includes SMS.
     /// </summary>
     [JsonPropertyName("smsSettings")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SmsSendingOptions? SmsSettings { get; init; }
 }
 
@@ -314,6 +332,7 @@ public record NotificationReminder
     /// A unique identifier used by the sender to correlate this reminder with their internal systems.
     /// </remarks>
     [JsonPropertyName("sendersReference")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? SendersReference { get; init; }
 
     /// <summary>
@@ -325,12 +344,14 @@ public record NotificationReminder
     /// This allows for dynamic decision-making about whether the reminder is still relevant.
     /// </remarks>
     [JsonPropertyName("conditionEndpoint")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Uri? ConditionEndpoint { get; init; }
 
     /// <summary>
     /// Gets or sets the number of days to delay this reminder.
     /// </summary>
     [JsonPropertyName("delayDays")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? DelayDays { get; init; }
 
     /// <summary>
@@ -342,6 +363,7 @@ public record NotificationReminder
     /// Defaults to the current UTC time if not specified.
     /// </remarks>
     [JsonPropertyName("requestedSendTime")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DateTime? RequestedSendTime { get; init; }
 
     /// <summary>
@@ -365,6 +387,7 @@ public sealed record EmailSendingOptions
     /// Gets or sets an optional sender email address to display to the recipient.
     /// </summary>
     [JsonPropertyName("senderEmailAddress")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? SenderEmailAddress { get; init; }
 
     /// <summary>
@@ -401,6 +424,7 @@ public sealed record SmsSendingOptions
     /// Gets or sets an optional sender name or number displayed to the recipient.
     /// </summary>
     [JsonPropertyName("sender")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Sender { get; init; }
 
     /// <summary>
