@@ -560,7 +560,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         try
         {
             var json = ToString();
-            result = JsonSerializer.Deserialize(json, type, _unsafeSerializerOptionsForSerializingDates);
+            result = JsonSerializer.Deserialize(json, type);
             return true;
         }
         catch (JsonException)

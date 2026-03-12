@@ -8,14 +8,19 @@ public class AppSettings
 {
 #pragma warning disable CA1707 // Identifiers should not contain underscores
     /// <summary>
-    /// Constant for the location of json schema file
+    /// Constant for the suffix on json schema file names
     /// </summary>
     public const string JSON_SCHEMA_FILENAME = "schema.json";
 
     /// <summary>
-    /// Constant for the location of validation configuration file
+    /// Constant for the suffix on validation file names
     /// </summary>
     public const string VALIDATION_CONFIG_FILENAME = "validation.json";
+
+    /// <summary>
+    /// Constant for the suffix on calculation file names
+    /// </summary>
+    public const string CALCULATION_CONFIG_FILENAME = "calculation.json";
 #pragma warning restore CA1707 // Identifiers should not contain underscores
 
     /// <summary>
@@ -95,14 +100,19 @@ public class AppSettings
     public string RuleConfigurationJSONFileName { get; set; } = "RuleConfiguration.json";
 
     /// <summary>
-    /// Gets or sets The JSON schema file name
+    /// Gets or sets the file names suffix for the json schema files
     /// </summary>
     public string JsonSchemaFileName { get; set; } = JSON_SCHEMA_FILENAME;
 
     /// <summary>
-    /// Gets or sets The JSON schema file name
+    /// Gets or sets the file names suffix for the validation files
     /// </summary>
     public string ValidationConfigurationFileName { get; set; } = VALIDATION_CONFIG_FILENAME;
+
+    /// <summary>
+    /// Gets or sets the file names suffix for the calculation files
+    /// </summary>
+    public string CalculationConfigurationFileName { get; set; } = CALCULATION_CONFIG_FILENAME;
 
     /// <summary>
     /// Gets or sets the filename for application meta data
