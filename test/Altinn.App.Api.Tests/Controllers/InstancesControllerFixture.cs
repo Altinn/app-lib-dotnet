@@ -133,6 +133,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
         services.AddSingleton(new Mock<IAppResources>(MockBehavior.Strict).Object);
 
         var httpContextMock = new Mock<HttpContext>(MockBehavior.Strict);
+        httpContextMock.Setup(hc => hc.RequestAborted).Returns(CancellationToken.None);
         services.AddTransient(_ => httpContextMock.Object);
 
         services.AddTransient<InternalPatchService>();

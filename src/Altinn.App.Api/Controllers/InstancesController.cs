@@ -344,7 +344,7 @@ public class InstancesController : ControllerBase
 
         Instance instance;
         instanceTemplate.Process = null;
-        ProcessStateChange? change = null;
+        ProcessStateChange change;
 
         try
         {
@@ -391,9 +391,18 @@ public class InstancesController : ControllerBase
                 Guid.Parse(instance.Id.Split("/")[1])
             );
 
-            // notify app and store events
-            _logger.LogInformation("Events sent to process engine: {Events}", change?.Events);
-            await _processEngine.HandleEventsAndUpdateStorage(instance, null, change?.Events);
+            ProcessChangeResult startProcessResult = await _processEngine.Start(
+                instance,
+                change,
+                User,
+                language: language,
+                ct: HttpContext.RequestAborted
+            );
+
+            if (!startProcessResult.Success)
+                return Conflict(startProcessResult.ErrorMessage);
+
+            instance = startProcessResult.MutatedInstance;
         }
         catch (Exception exception)
         {
@@ -584,6 +593,9 @@ public class InstancesController : ControllerBase
 
             processResult = await _processEngine.GenerateProcessStartEvents(request);
 
+            if (!processResult.Success)
+                return Conflict(processResult.ErrorMessage);
+
             Instance? source = null;
 
             if (isCopyRequest)
@@ -617,11 +629,20 @@ public class InstancesController : ControllerBase
             }
 
             instance = await _instanceClient.GetInstance(instance);
-            await _processEngine.HandleEventsAndUpdateStorage(
+
+            var startProcessResult = await _processEngine.Start(
                 instance,
-                instansiationInstance.Prefill,
-                processResult.ProcessStateChange?.Events
+                processResult.ProcessStateChange,
+                User,
+                prefill: instansiationInstance.Prefill,
+                language: language,
+                ct: HttpContext.RequestAborted
             );
+
+            if (!startProcessResult.Success)
+                return Conflict(startProcessResult.ErrorMessage);
+
+            instance = startProcessResult.MutatedInstance;
         }
         catch (Exception exception)
         {
@@ -743,7 +764,21 @@ public class InstancesController : ControllerBase
 
         targetInstance = await _instanceClient.GetInstance(targetInstance);
 
-        await _processEngine.HandleEventsAndUpdateStorage(targetInstance, null, startResult.ProcessStateChange?.Events);
+        if (!startResult.Success)
+            return Conflict(startResult.ErrorMessage);
+
+        var startProcessResult = await _processEngine.Start(
+            targetInstance,
+            startResult.ProcessStateChange,
+            User,
+            language: language,
+            ct: HttpContext.RequestAborted
+        );
+
+        if (!startProcessResult.Success)
+            return Conflict(startProcessResult.ErrorMessage);
+
+        targetInstance = startProcessResult.MutatedInstance;
 
         await RegisterEvent("app.instance.created", targetInstance);
 

@@ -379,16 +379,35 @@ public class InstancesController_CopyInstanceTests
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() =>
             {
-                return new ProcessChangeResult() { Success = true };
+                return new ProcessChangeResult() { Success = true, ProcessStateChange = new() };
             });
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
+                p.Start(
                     It.IsAny<Instance>(),
+                    It.IsAny<ProcessStateChange>(),
+                    It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
                 )
+            )
+            .ReturnsAsync(
+                (
+                    Instance inst,
+                    ProcessStateChange _,
+                    System.Security.Claims.ClaimsPrincipal _,
+                    Dictionary<string, string>? _,
+                    string? _,
+                    CancellationToken _
+                ) =>
+                    new ProcessChangeResult
+                    {
+                        Success = true,
+                        MutatedInstance = inst,
+                        ProcessStateChange = new(),
+                    }
             );
         fixture
             .Mock<IDataClient>()
@@ -500,15 +519,34 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
-            .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
+            .ReturnsAsync(() => new ProcessChangeResult() { Success = true, ProcessStateChange = new() });
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
+                p.Start(
                     It.IsAny<Instance>(),
+                    It.IsAny<ProcessStateChange>(),
+                    It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
                 )
+            )
+            .ReturnsAsync(
+                (
+                    Instance inst,
+                    ProcessStateChange _,
+                    System.Security.Claims.ClaimsPrincipal _,
+                    Dictionary<string, string>? _,
+                    string? _,
+                    CancellationToken _
+                ) =>
+                    new ProcessChangeResult
+                    {
+                        Success = true,
+                        MutatedInstance = inst,
+                        ProcessStateChange = new(),
+                    }
             );
 
         // Form data mocks
@@ -699,15 +737,34 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
-            .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
+            .ReturnsAsync(() => new ProcessChangeResult() { Success = true, ProcessStateChange = new() });
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
+                p.Start(
                     It.IsAny<Instance>(),
+                    It.IsAny<ProcessStateChange>(),
+                    It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
                 )
+            )
+            .ReturnsAsync(
+                (
+                    Instance inst,
+                    ProcessStateChange _,
+                    System.Security.Claims.ClaimsPrincipal _,
+                    Dictionary<string, string>? _,
+                    string? _,
+                    CancellationToken _
+                ) =>
+                    new ProcessChangeResult
+                    {
+                        Success = true,
+                        MutatedInstance = inst,
+                        ProcessStateChange = new(),
+                    }
             );
 
         // Form data mocks (should be copied)
@@ -897,15 +954,34 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
-            .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
+            .ReturnsAsync(() => new ProcessChangeResult() { Success = true, ProcessStateChange = new() });
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
+                p.Start(
                     It.IsAny<Instance>(),
+                    It.IsAny<ProcessStateChange>(),
+                    It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
                 )
+            )
+            .ReturnsAsync(
+                (
+                    Instance inst,
+                    ProcessStateChange _,
+                    System.Security.Claims.ClaimsPrincipal _,
+                    Dictionary<string, string>? _,
+                    string? _,
+                    CancellationToken _
+                ) =>
+                    new ProcessChangeResult
+                    {
+                        Success = true,
+                        MutatedInstance = inst,
+                        ProcessStateChange = new(),
+                    }
             );
 
         // Binary data mocks (should be called)
@@ -1102,15 +1178,34 @@ public class InstancesController_CopyInstanceTests
         fixture
             .Mock<IProcessEngine>()
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
-            .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
+            .ReturnsAsync(() => new ProcessChangeResult() { Success = true, ProcessStateChange = new() });
         fixture
             .Mock<IProcessEngine>()
             .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
+                p.Start(
                     It.IsAny<Instance>(),
+                    It.IsAny<ProcessStateChange>(),
+                    It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
                     It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
                 )
+            )
+            .ReturnsAsync(
+                (
+                    Instance inst,
+                    ProcessStateChange _,
+                    System.Security.Claims.ClaimsPrincipal _,
+                    Dictionary<string, string>? _,
+                    string? _,
+                    CancellationToken _
+                ) =>
+                    new ProcessChangeResult
+                    {
+                        Success = true,
+                        MutatedInstance = inst,
+                        ProcessStateChange = new(),
+                    }
             );
 
         // Binary data mocks (should be called)
@@ -1214,6 +1309,151 @@ public class InstancesController_CopyInstanceTests
                     ),
                 Times.Never
             );
+    }
+
+    [Fact]
+    public async Task CopyInstance_StartFails_ReturnsConflict()
+    {
+        // Arrange
+        const string Org = "ttd";
+        const string AppName = "copy-instance";
+        const int instanceOwnerPartyId = 343234;
+        Guid instanceGuid = Guid.NewGuid();
+        Instance instance = new()
+        {
+            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
+            AppId = $"{Org}/{AppName}",
+            InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() },
+            Status = new InstanceStatus() { IsArchived = true },
+            Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
+            Data = new List<DataElement>(),
+        };
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
+        using var fixture = InstancesControllerFixture.Create(auth);
+
+        fixture
+            .Mock<HttpContext>()
+            .Setup(httpContext => httpContext.User)
+            .Returns(TestAuthentication.GetUserPrincipal(partyId: instanceOwnerPartyId));
+        fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
+        fixture
+            .Mock<IAppMetadata>()
+            .Setup(a => a.GetApplicationMetadata())
+            .ReturnsAsync(CreateApplicationMetadata(Org, AppName, true));
+        fixture
+            .Mock<IPDP>()
+            .Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
+            .ReturnsAsync(CreateXacmlResponse("Permit"));
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.CreateInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Instance>()))
+            .ReturnsAsync(instance);
+        fixture.Mock<IInstanceClient>().Setup(i => i.GetInstance(It.IsAny<Instance>())).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstantiationValidator>()
+            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .ReturnsAsync(new InstantiationValidationResult { Valid = true });
+        fixture
+            .Mock<IProcessEngine>()
+            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .ReturnsAsync(new ProcessChangeResult { Success = true, ProcessStateChange = new() });
+        fixture
+            .Mock<IProcessEngine>()
+            .Setup(p =>
+                p.Start(
+                    It.IsAny<Instance>(),
+                    It.IsAny<ProcessStateChange>(),
+                    It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
+                    It.IsAny<Dictionary<string, string>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(
+                new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorMessage = "Process next failed",
+                    ErrorType = ProcessErrorType.Conflict,
+                }
+            );
+
+        // Act
+        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
+        ActionResult actual = await controller.CopyInstance(Org, AppName, instanceOwnerPartyId, instanceGuid);
+
+        // Assert
+        Assert.IsType<ConflictObjectResult>(actual);
+    }
+
+    [Fact]
+    public async Task CopyInstance_GenerateProcessStartEventsFails_ReturnsConflict()
+    {
+        // Arrange
+        const string Org = "ttd";
+        const string AppName = "copy-instance";
+        const int instanceOwnerPartyId = 343234;
+        Guid instanceGuid = Guid.NewGuid();
+        Instance instance = new()
+        {
+            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
+            AppId = $"{Org}/{AppName}",
+            InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() },
+            Status = new InstanceStatus() { IsArchived = true },
+            Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
+            Data = new List<DataElement>(),
+        };
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
+        using var fixture = InstancesControllerFixture.Create(auth);
+
+        fixture
+            .Mock<HttpContext>()
+            .Setup(httpContext => httpContext.User)
+            .Returns(TestAuthentication.GetUserPrincipal(partyId: instanceOwnerPartyId));
+        fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
+        fixture
+            .Mock<IAppMetadata>()
+            .Setup(a => a.GetApplicationMetadata())
+            .ReturnsAsync(CreateApplicationMetadata(Org, AppName, true));
+        fixture
+            .Mock<IPDP>()
+            .Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
+            .ReturnsAsync(CreateXacmlResponse("Permit"));
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .ReturnsAsync(instance);
+        fixture
+            .Mock<IInstanceClient>()
+            .Setup(i => i.CreateInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Instance>()))
+            .ReturnsAsync(instance);
+        fixture.Mock<IInstanceClient>().Setup(i => i.GetInstance(It.IsAny<Instance>())).ReturnsAsync(instance);
+        fixture
+            .Mock<IInstantiationValidator>()
+            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .ReturnsAsync(new InstantiationValidationResult { Valid = true });
+        fixture
+            .Mock<IProcessEngine>()
+            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
+            .ReturnsAsync(
+                new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorMessage = "Process is already started. Use next.",
+                    ErrorType = ProcessErrorType.Conflict,
+                }
+            );
+
+        // Act
+        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
+        ActionResult actual = await controller.CopyInstance(Org, AppName, instanceOwnerPartyId, instanceGuid);
+
+        // Assert
+        Assert.IsType<ConflictObjectResult>(actual);
     }
 
     private static ApplicationMetadata CreateApplicationMetadata(string org, string app, bool enableCopyInstance)
