@@ -28,6 +28,18 @@ internal interface IPaymentService
     );
 
     /// <summary>
+    /// Handle webhook callback from the payment provider indicating that the payment is completed.
+    /// Calls the provider for status, not trusting the webhook alone.
+    /// </summary>
+    /// <returns>A string with info about the callback success. Can be used for logging or return
+    /// </returns>
+    Task<string> HandlePaymentCompletedWebhook(
+        Instance instance,
+        ValidAltinnPaymentConfiguration paymentConfiguration,
+        StorageAuthenticationMethod storageAuthenticationMethod
+    );
+
+    /// <summary>
     /// Get our internal payment status. Will only check the local status and will not get updated status from the payment provider.
     /// </summary>
     Task<PaymentStatus> GetPaymentStatus(Instance instance, ValidAltinnPaymentConfiguration paymentConfiguration);
