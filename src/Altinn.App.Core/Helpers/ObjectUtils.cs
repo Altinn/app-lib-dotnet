@@ -261,6 +261,6 @@ public static partial class ObjectUtils
 
     private static bool PropertyIsAltinnRowGuid(PropertyInfo prop)
     {
-        return prop.PropertyType == typeof(Guid) && prop.Name == "AltinnRowId";
+        return prop.PropertyType == typeof(Guid) && string.Equals(prop.Name, "AltinnRowId", StringComparison.OrdinalIgnoreCase);
     }
 }
