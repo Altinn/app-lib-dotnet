@@ -161,6 +161,8 @@ public class ProcessEngine : IProcessEngine
         bool firstIteration = true;
         int iterationCount = 0;
 
+        await using var instanceLock = _instanceLocker.InitLock();
+
         do
         {
             if (iterationCount >= MaxNextIterationsAllowed)
@@ -198,7 +200,7 @@ public class ProcessEngine : IProcessEngine
                 Language = request.Language,
             };
 
-            result = await ProcessNext(processNextRequest, ct);
+            result = await ProcessNext(processNextRequest, instanceLock, ct);
 
             if (!result.Success)
             {
@@ -225,7 +227,11 @@ public class ProcessEngine : IProcessEngine
     /// <summary>
     /// Internal method that performs a single process next operation without automatic service task handling.
     /// </summary>
-    private async Task<ProcessChangeResult> ProcessNext(ProcessNextRequest request, CancellationToken ct = default)
+    private async Task<ProcessChangeResult> ProcessNext(
+        ProcessNextRequest request,
+        IInstanceLock instanceLock,
+        CancellationToken ct = default
+    )
     {
         Instance instance = request.Instance;
 
@@ -255,14 +261,14 @@ public class ProcessEngine : IProcessEngine
             };
         }
 
-        await _instanceLocker.LockAsync();
-
         _logger.LogDebug(
             "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",
             LogSanitizer.Sanitize(currentTaskId),
             LogSanitizer.Sanitize(altinnTaskType),
             LogSanitizer.Sanitize(request.Action ?? "none")
         );
+
+        await instanceLock.Lock();
 
         string checkedAction = request.Action ?? ConvertTaskTypeToAction(altinnTaskType);
         bool isServiceTask = false;
