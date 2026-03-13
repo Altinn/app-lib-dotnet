@@ -157,6 +157,8 @@ internal sealed class NotificationService : INotificationService
 
         AppResourceId resourceId = AppResourceId.FromAppIdentifier(new(instance.AppId));
         DateTime requestedSendTimeOrDefault = instansiationNotification.RequestedSendTime ?? DateTime.Now.AddMinutes(5);
+        string sendersReference = "app-" + instance.Id;
+        string idempotencyId = instance.Id + "-init";
 
         Uri? conditionEndpoint = null;
         if (instansiationNotification.RequestedSendTime is not null)
@@ -168,8 +170,8 @@ internal sealed class NotificationService : INotificationService
         {
             return new NotificationOrderRequest
             {
-                SendersReference = instance.Id + instanceOwner.OrganisationNumber,
-                IdempotencyId = instance.Id + instanceOwner.OrganisationNumber,
+                SendersReference = sendersReference,
+                IdempotencyId = idempotencyId,
                 RequestedSendTime = requestedSendTimeOrDefault,
                 ConditionEndpoint = conditionEndpoint,
                 Recipient = new NotificationRecipient
@@ -190,8 +192,8 @@ internal sealed class NotificationService : INotificationService
         {
             return new NotificationOrderRequest
             {
-                SendersReference = instance.Id + instanceOwner.PersonNumber,
-                IdempotencyId = instance.Id + instanceOwner.PersonNumber,
+                SendersReference = sendersReference,
+                IdempotencyId = idempotencyId,
                 RequestedSendTime = requestedSendTimeOrDefault,
                 ConditionEndpoint = conditionEndpoint,
                 Recipient = new NotificationRecipient
@@ -212,8 +214,8 @@ internal sealed class NotificationService : INotificationService
         {
             return new NotificationOrderRequest
             {
-                SendersReference = instance.Id + instanceOwner.ExternalIdentifier,
-                IdempotencyId = instance.Id + instanceOwner.ExternalIdentifier,
+                SendersReference = sendersReference,
+                IdempotencyId = idempotencyId,
                 RequestedSendTime = requestedSendTimeOrDefault,
                 ConditionEndpoint = conditionEndpoint,
                 Recipient = new NotificationRecipient
@@ -221,7 +223,7 @@ internal sealed class NotificationService : INotificationService
                     RecipientExternalIdentity = new RecipientExternalIdentity
                     {
                         ExternalIdentity = instanceOwner.ExternalIdentifier,
-                        ChannelSchema = NotificationChannel.Email, // Only email is supported for self identified users
+                        ChannelSchema = NotificationChannel.EmailPreferred, // Self identified users may have set a mobile number in profile
                         EmailSettings = emailSettings,
                         ResourceId = resourceId.AsUrn,
                     },
