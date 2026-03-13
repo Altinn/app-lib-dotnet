@@ -11,7 +11,7 @@ public class NotificationTextsTests
     public void ReplaceTokens_AllTokens_ReplacesAll()
     {
         string text =
-            "App: $appName$, Owner: $instanceOwnerName$, Service: $serviceOwnerName$, Org: $orgNumber$, SSN: $socialSecurityNumber$, Due: $dueDate$";
+            "App: $appName$, Owner: $instanceOwnerName$, Service: $serviceOwnerName$, Org: $orgNumber$, NIN: $personNumber$, Due: $dueDate$";
 
         string result = NotificationTexts.ReplaceTokens(
             text,
@@ -20,12 +20,12 @@ public class NotificationTextsTests
             instanceOwnerName: "John Doe",
             serviceOwnerName: "TestDepartementet",
             orgNumber: "123456789",
-            socialSecurityNumber: "01010112345",
+            nationalIndentityNumber: "01010112345",
             dueDate: new DateOnly(2024, 12, 31)
         );
 
         Assert.Equal(
-            "App: skattemelding, Owner: John Doe, Service: TestDepartementet, Org: 123456789, SSN: 01010112345, Due: 31-12-2024",
+            "App: skattemelding, Owner: John Doe, Service: TestDepartementet, Org: 123456789, NIN: 01010112345, Due: 31-12-2024",
             result
         );
     }
@@ -34,7 +34,7 @@ public class NotificationTextsTests
     public void ReplaceTokens_NullValues_ReplacesWithEmptyStrings()
     {
         string text =
-            "App: $appName$, Owner: $instanceOwnerName$, Service: $serviceOwnerName$, Org: $orgNumber$, SSN: $socialSecurityNumber$, Due: $dueDate$";
+            "App: $appName$, Owner: $instanceOwnerName$, Service: $serviceOwnerName$, Org: $orgNumber$, NIN: $personNumber$, Due: $dueDate$";
 
         string result = NotificationTexts.ReplaceTokens(
             text,
@@ -43,11 +43,11 @@ public class NotificationTextsTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: null
         );
 
-        Assert.Equal("App: , Owner: , Service: , Org: , SSN: , Due: ", result);
+        Assert.Equal("App: , Owner: , Service: , Org: , NIN: , Due: ", result);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class NotificationTextsTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: null
         );
 
@@ -77,7 +77,7 @@ public class NotificationTextsTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: null
         );
 
@@ -94,7 +94,7 @@ public class NotificationTextsTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: new DateOnly(2025, 1, 5)
         );
 
@@ -113,7 +113,7 @@ public class NotificationTextsTests
             instanceOwnerName: "Someone",
             serviceOwnerName: "Owner",
             orgNumber: "999",
-            socialSecurityNumber: "12345",
+            nationalIndentityNumber: "12345",
             dueDate: new DateOnly(2024, 6, 1)
         );
 
@@ -155,7 +155,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             instanceOwnerName: null,
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: null
         );
 
@@ -175,7 +175,7 @@ public class NotificationTextsTests
             serviceOwnerName: "Acme",
             instanceOwnerName: null,
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: null
         );
 
@@ -191,7 +191,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             instanceOwnerName: null,
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: null
         );
 
@@ -207,7 +207,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             instanceOwnerName: "John Doe",
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: null
         );
 
@@ -223,7 +223,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             instanceOwnerName: "Acme AS",
             orgNumber: "123456789",
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: null
         );
 
@@ -242,7 +242,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             instanceOwnerName: null,
             orgNumber: "123456789",
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: null
         );
 
@@ -261,7 +261,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             instanceOwnerName: "Jane Doe",
             orgNumber: null,
-            socialSecurityNumber: "01010112345",
+            nationalIndentityNumber: "01010112345",
             dueDate: null
         );
 
@@ -281,7 +281,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             instanceOwnerName: null,
             orgNumber: "123456789",
-            socialSecurityNumber: "01010112345",
+            nationalIndentityNumber: "01010112345",
             dueDate: null
         );
 
@@ -298,7 +298,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             instanceOwnerName: null,
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: new DateOnly(2025, 3, 7)
         );
 
@@ -317,7 +317,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             instanceOwnerName: null,
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: new DateOnly(2025, 3, 7)
         );
 
@@ -336,7 +336,7 @@ public class NotificationTextsTests
             serviceOwnerName: "Tax Authority",
             instanceOwnerName: "Acme AS",
             orgNumber: "987654321",
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: new DateOnly(2025, 12, 31)
         );
 
@@ -355,7 +355,7 @@ public class NotificationTextsTests
             serviceOwnerName: "Skatteetaten",
             instanceOwnerName: "Acme AS",
             orgNumber: "987654321",
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: new DateOnly(2025, 12, 31)
         );
 
@@ -379,7 +379,7 @@ public class NotificationTextsTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: null
         );
 
@@ -396,7 +396,7 @@ public class NotificationTextsTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             orgNumber: null,
-            socialSecurityNumber: null,
+            nationalIndentityNumber: null,
             dueDate: null
         );
 
@@ -407,7 +407,7 @@ public class NotificationTextsTests
     public void ReplaceTokens_AllTokens_WithTitle_UsesTitleForAppName()
     {
         string text =
-            "App: $appName$, Owner: $instanceOwnerName$, Service: $serviceOwnerName$, Org: $orgNumber$, SSN: $socialSecurityNumber$, Due: $dueDate$";
+            "App: $appName$, Owner: $instanceOwnerName$, Service: $serviceOwnerName$, Org: $orgNumber$, NIN: $personNumber$, Due: $dueDate$";
 
         string result = NotificationTexts.ReplaceTokens(
             text,
@@ -416,12 +416,12 @@ public class NotificationTextsTests
             instanceOwnerName: "John Doe",
             serviceOwnerName: "TestDepartementet",
             orgNumber: "123456789",
-            socialSecurityNumber: "01010112345",
+            nationalIndentityNumber: "01010112345",
             dueDate: new DateOnly(2024, 12, 31)
         );
 
         Assert.Equal(
-            "App: Utenriksøkonomi (RA-0532), Owner: John Doe, Service: TestDepartementet, Org: 123456789, SSN: 01010112345, Due: 31-12-2024",
+            "App: Utenriksøkonomi (RA-0532), Owner: John Doe, Service: TestDepartementet, Org: 123456789, NIN: 01010112345, Due: 31-12-2024",
             result
         );
     }

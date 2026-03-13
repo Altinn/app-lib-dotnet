@@ -12,7 +12,7 @@ internal static class NotificationTexts
         string? instanceOwnerName,
         string? serviceOwnerName,
         string? orgNumber,
-        string? socialSecurityNumber,
+        string? nationalIndentityNumber,
         DateOnly? dueDate
     )
     {
@@ -25,7 +25,7 @@ internal static class NotificationTexts
             .Replace(ReplacementTokens.InstanceOwnerName, instanceOwnerName ?? string.Empty)
             .Replace(ReplacementTokens.ServiceOwnerName, serviceOwnerName ?? string.Empty)
             .Replace(ReplacementTokens.OrgNumber, orgNumber ?? string.Empty)
-            .Replace(ReplacementTokens.SocialSecurityNumber, socialSecurityNumber ?? string.Empty)
+            .Replace(ReplacementTokens.NationalIdentityNumber, nationalIndentityNumber ?? string.Empty)
             .Replace(ReplacementTokens.DueDate, formattedDate ?? string.Empty);
     }
 
@@ -45,7 +45,7 @@ internal static class NotificationTexts
         string? serviceOwnerName,
         string? instanceOwnerName,
         string? orgNumber,
-        string? socialSecurityNumber,
+        string? nationalIndentityNumber,
         DateOnly? dueDate
     )
     {
@@ -112,20 +112,20 @@ internal static class NotificationTexts
         }
 
         // Org number should never be set if social security number is set, but the model allows it - so we have a fail safe to avoid corrupted notifications
-        if (string.IsNullOrWhiteSpace(socialSecurityNumber) is false && string.IsNullOrWhiteSpace(orgNumber))
+        if (string.IsNullOrWhiteSpace(nationalIndentityNumber) is false && string.IsNullOrWhiteSpace(orgNumber))
         {
             parts.Add(
                 language switch
                 {
                     LanguageConst.En => string.IsNullOrWhiteSpace(instanceOwnerName)
-                        ? $"person with social security number {socialSecurityNumber}"
-                        : $"with social security number {socialSecurityNumber}",
+                        ? $"person with social security number {nationalIndentityNumber}"
+                        : $"with social security number {nationalIndentityNumber}",
                     LanguageConst.Nn => string.IsNullOrWhiteSpace(instanceOwnerName)
-                        ? $"avgiver med fødselsnummer {socialSecurityNumber}"
-                        : $"med fødselsnummer {socialSecurityNumber}",
+                        ? $"avgiver med fødselsnummer {nationalIndentityNumber}"
+                        : $"med fødselsnummer {nationalIndentityNumber}",
                     _ => string.IsNullOrWhiteSpace(instanceOwnerName)
-                        ? $"avgiver med fødselsnummer {socialSecurityNumber}"
-                        : $"med fødselsnummer {socialSecurityNumber}",
+                        ? $"avgiver med fødselsnummer {nationalIndentityNumber}"
+                        : $"med fødselsnummer {nationalIndentityNumber}",
                 }
             );
         }

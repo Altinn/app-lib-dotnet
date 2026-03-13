@@ -1662,9 +1662,9 @@ namespace Altinn.App.Core.Features.Notifications.Texts
         public const string AppName = "$appName$";
         public const string DueDate = "$dueDate$";
         public const string InstanceOwnerName = "$instanceOwnerName$";
+        public const string NationalIdentityNumber = "$personNumber$";
         public const string OrgNumber = "$orgNumber$";
         public const string ServiceOwnerName = "$serviceOwnerName$";
-        public const string SocialSecurityNumber = "$socialSecurityNumber$";
     }
 }
 namespace Altinn.App.Core.Features.Options.Altinn2Provider
