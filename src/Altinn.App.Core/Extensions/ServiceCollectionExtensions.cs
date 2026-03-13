@@ -8,6 +8,7 @@ using Altinn.App.Core.Features.DataProcessing;
 using Altinn.App.Core.Features.ExternalApi;
 using Altinn.App.Core.Features.FileAnalyzis;
 using Altinn.App.Core.Features.Notifications.Email;
+using Altinn.App.Core.Features.Notifications.Order;
 using Altinn.App.Core.Features.Notifications.Sms;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
@@ -279,6 +280,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddHttpClient<IEmailNotificationClient, EmailNotificationClient>();
         services.AddHttpClient<ISmsNotificationClient, SmsNotificationClient>();
+        services.AddHttpClient<INotificationCancelClient, NotificationCancelClient>();
     }
 
     private static void AddPdfServices(IServiceCollection services)

@@ -1,4 +1,5 @@
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
@@ -198,7 +199,7 @@ public static class LayoutEvaluator
                                 DataElementId = field.DataElementIdentifier.ToString(),
                                 Field = field.Field,
                                 Code = "required",
-                                CustomTextKey = "backend.validation_errors.required",
+                                CustomTextKey = BackendTextResource.ValidationErrorsRequired,
                                 CustomTextParameters = customTextParameters,
                             }
                         );
