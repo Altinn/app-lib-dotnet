@@ -2284,7 +2284,8 @@ namespace Altinn.App.Core.Helpers.DataModel
         public string AddIndicies(string field, System.ReadOnlySpan<int> rowIndexes = default) { }
         public object? GetModelData(string field, System.ReadOnlySpan<int> rowIndexes = default) { }
         public int? GetModelDataCount(string field, System.ReadOnlySpan<int> rowIndexes = default) { }
-        public string[] GetResolvedKeys(string field, bool isCalculating = false) { }
+        public string[] GetResolvedKeys(string field) { }
+        public string[] GetResolvedKeys(string field, bool isCalculating) { }
         public void RemoveField(string field, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
     }
 }
@@ -3191,7 +3192,8 @@ namespace Altinn.App.Core.Internal.Expressions
         public string GetInstanceContext(string key) { }
         public string GetLanguage() { }
         public System.Threading.Tasks.Task<object?> GetModelData(Altinn.App.Core.Models.Layout.ModelBinding key, Altinn.App.Core.Models.DataElementIdentifier? defaultDataElementIdentifier, int[]? indexes) { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference[]> GetResolvedKeys(Altinn.App.Core.Models.Layout.DataReference reference, bool isCalculating = false) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference[]> GetResolvedKeys(Altinn.App.Core.Models.Layout.DataReference reference) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference[]> GetResolvedKeys(Altinn.App.Core.Models.Layout.DataReference reference, bool isCalculating) { }
         public System.TimeZoneInfo? GetTimeZone() { }
         public System.Threading.Tasks.Task RemoveDataField(Altinn.App.Core.Models.Layout.DataReference key, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
         public System.Threading.Tasks.Task<string> TranslateText(string textKey, Altinn.App.Core.Models.Expressions.ComponentContext context) { }

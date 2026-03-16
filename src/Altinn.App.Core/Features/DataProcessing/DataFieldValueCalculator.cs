@@ -70,7 +70,7 @@ internal sealed class DataFieldValueCalculator
             evaluateRemoveWhenHidden: false
         );
         DataElementIdentifier dataElementIdentifier = dataElement;
-        var dataFieldCalculations = ParseDataFieldCalculationConfig(rawCalculationConfig, _logger);
+        var dataFieldCalculations = ParseDataFieldCalculationConfig(rawCalculationConfig);
         var formDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement);
 
         foreach (var (baseField, calculations) in dataFieldCalculations)
@@ -147,10 +147,7 @@ internal sealed class DataFieldValueCalculator
         }
     }
 
-    private Dictionary<string, List<DataFieldCalculation>> ParseDataFieldCalculationConfig(
-        string rawCalculationConfig,
-        ILogger<DataFieldValueCalculator> logger
-    )
+    private Dictionary<string, List<DataFieldCalculation>> ParseDataFieldCalculationConfig(string rawCalculationConfig)
     {
         using var calculationConfigDocument = JsonDocument.Parse(rawCalculationConfig);
 
@@ -172,10 +169,10 @@ internal sealed class DataFieldValueCalculator
                         dataFieldCalculation = new List<DataFieldCalculation>();
                         dataFieldCalculations[field] = dataFieldCalculation;
                     }
-                    var resolvedDataFieldCalculation = ResolveDataFieldCalculation(field, calculation, logger);
+                    var resolvedDataFieldCalculation = ResolveDataFieldCalculation(field, calculation);
                     if (resolvedDataFieldCalculation == null)
                     {
-                        logger.LogError("Calculation for field {Field} could not be resolved", field);
+                        _logger.LogError("Calculation for field {Field} could not be resolved", field);
                         continue;
                     }
                     dataFieldCalculation.Add(resolvedDataFieldCalculation);
@@ -185,11 +182,7 @@ internal sealed class DataFieldValueCalculator
         return dataFieldCalculations;
     }
 
-    private static DataFieldCalculation? ResolveDataFieldCalculation(
-        string field,
-        JsonElement definition,
-        ILogger logger
-    )
+    private DataFieldCalculation? ResolveDataFieldCalculation(string field, JsonElement definition)
     {
         var rawDataFieldValueCalculation = new RawDataFieldValueCalculation();
 
@@ -198,7 +191,7 @@ internal sealed class DataFieldValueCalculator
             var stringReference = definition.GetString();
             if (stringReference == null)
             {
-                logger.LogError("Could not resolve null reference for calculation for field {Field}", field);
+                _logger.LogError("Could not resolve null reference for calculation for field {Field}", field);
                 return null;
             }
         }
@@ -209,7 +202,7 @@ internal sealed class DataFieldValueCalculator
             );
             if (dataFieldCalculationDefinition == null)
             {
-                logger.LogError("Calculation for field {Field} could not be parsed", field);
+                _logger.LogError("Calculation for field {Field} could not be parsed", field);
                 return null;
             }
 
@@ -221,7 +214,7 @@ internal sealed class DataFieldValueCalculator
 
         if (rawDataFieldValueCalculation.Condition == null)
         {
-            logger.LogError("Calculation for field {Field} is missing condition", field);
+            _logger.LogError("Calculation for field {Field} is missing condition", field);
             return null;
         }
 

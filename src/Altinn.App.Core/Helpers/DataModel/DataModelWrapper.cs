@@ -110,6 +110,17 @@ public class DataModelWrapper
         return GetModelDataRecursive(keys, index + 1, elementAt, rowIndexes.Length > 0 ? rowIndexes[1..] : rowIndexes);
     }
 
+    /// <summary>
+    /// Get all valid indexed keys for the field, depending on the number of rows in repeating groups
+    /// </summary>
+    /// <example>
+    /// GetResolvedKeys("data.bedrifter.styre.medlemmer") =>
+    /// [
+    ///     "data.bedrifter[0].styre.medlemmer",
+    ///     "data.bedrifter[1].styre.medlemmer"
+    ///     ...
+    /// ]
+    /// </example>
     public string[] GetResolvedKeys(string field)
     {
         if (_dataModel is null)

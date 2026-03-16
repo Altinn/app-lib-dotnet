@@ -63,24 +63,14 @@ public class DataFieldValueCalculatorTests
     [FileNamesInFolderData(["Features", "DataProcessing", "data-field-value-calculator-tests", "backend"])]
     public async Task RunDataFieldCalculationTestsForBackend(string fileName, string folder)
     {
-        var (result, testCase) = await RunDataFieldCalculatorTest(fileName, folder);
-
-        foreach (var expected in testCase.Expects)
-        {
-            Assert.Equal(expected.Result.ToObject(), result.Get(expected.Field));
-        }
+        await RunDataFieldCalculationTests(fileName, folder);
     }
 
     [Theory]
     [FileNamesInFolderData(["Features", "DataProcessing", "data-field-value-calculator-tests", "shared"])]
     public async Task RunDataFieldCalculationTestsForShared(string fileName, string folder)
     {
-        var (result, testCase) = await RunDataFieldCalculatorTest(fileName, folder);
-
-        foreach (var expected in testCase.Expects)
-        {
-            Assert.Equal(expected.Result.ToObject(), result.Get(expected.Field));
-        }
+        await RunDataFieldCalculationTests(fileName, folder);
     }
 
     [Fact]
@@ -131,6 +121,16 @@ public class DataFieldValueCalculatorTests
         foreach (var expected in testCase.Expects)
         {
             Assert.Contains(expected.LogMessageWarning, _logger.Collector.GetSnapshot().Select(x => x.Message));
+        }
+    }
+
+    private async Task RunDataFieldCalculationTests(string fileName, string folder)
+    {
+        var (result, testCase) = await RunDataFieldCalculatorTest(fileName, folder);
+
+        foreach (var expected in testCase.Expects)
+        {
+            Assert.Equal(expected.Result.Value.ToObject(), result.Get(expected.Field));
         }
     }
 
@@ -212,10 +212,10 @@ public class DataFieldValueCalculatorTests
 
     public record Expected
     {
-        public string Field { get; set; }
+        public string? Field { get; set; }
 
-        public ExpressionValue Result { get; set; }
+        public ExpressionValue? Result { get; set; }
 
-        public string LogMessageWarning { get; set; }
+        public string? LogMessageWarning { get; set; }
     }
 }
