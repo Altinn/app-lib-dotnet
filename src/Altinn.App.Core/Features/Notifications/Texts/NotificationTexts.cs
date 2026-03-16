@@ -26,7 +26,7 @@ internal static class NotificationTexts
             .Replace(ReplacementTokens.ServiceOwnerName, serviceOwnerName ?? string.Empty)
             .Replace(ReplacementTokens.OrgNumber, orgNumber ?? string.Empty)
             .Replace(ReplacementTokens.NationalIdentityNumber, nationalIndentityNumber ?? string.Empty)
-            .Replace(ReplacementTokens.SocialSecurityNumber, nationalIndentityNumber ?? string.Empty)   // Was available in prerelease
+            .Replace(ReplacementTokens.SocialSecurityNumber, nationalIndentityNumber ?? string.Empty) // Was available in prerelease
             .Replace(ReplacementTokens.DueDate, formattedDate ?? string.Empty);
     }
 

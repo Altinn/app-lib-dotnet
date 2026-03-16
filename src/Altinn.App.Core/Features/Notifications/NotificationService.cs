@@ -88,7 +88,9 @@ internal sealed class NotificationService : INotificationService
         InstanceOwner instanceOwner = instance.InstanceOwner;
         DateOnly? dueDateString = instance.DueBefore.HasValue ? DateOnly.FromDateTime(instance.DueBefore.Value) : null;
         string? appTitle = GetTitleFromMetadata(language, applicationMetadata);
-        SendingTimePolicy sendingTimePolicy = instansiationNotification.AllowSendingAfterWorkHours is true ? SendingTimePolicy.Anytime : SendingTimePolicy.Daytime;
+        SendingTimePolicy sendingTimePolicy = instansiationNotification.AllowSendingAfterWorkHours is true
+            ? SendingTimePolicy.Anytime
+            : SendingTimePolicy.Daytime;
 
         CustomEmail? customEmail = instansiationNotification.CustomEmail;
         EmailSendingOptions emailSettings = new()
@@ -181,7 +183,12 @@ internal sealed class NotificationService : INotificationService
                 },
             };
 
-            List<NotificationReminder>? reminders = BuildReminders(language, recipient, conditionEndpoint, instansiationNotification.Reminders);
+            List<NotificationReminder>? reminders = BuildReminders(
+                language,
+                recipient,
+                conditionEndpoint,
+                instansiationNotification.Reminders
+            );
 
             return new NotificationOrderRequest
             {
@@ -190,7 +197,7 @@ internal sealed class NotificationService : INotificationService
                 RequestedSendTime = requestedSendTimeOrDefault,
                 ConditionEndpoint = conditionEndpoint,
                 Recipient = recipient,
-                Reminders = reminders
+                Reminders = reminders,
             };
         }
 
@@ -208,7 +215,12 @@ internal sealed class NotificationService : INotificationService
                 },
             };
 
-            List<NotificationReminder>? reminders = BuildReminders(language, recipient, conditionEndpoint, instansiationNotification.Reminders);
+            List<NotificationReminder>? reminders = BuildReminders(
+                language,
+                recipient,
+                conditionEndpoint,
+                instansiationNotification.Reminders
+            );
 
             return new NotificationOrderRequest
             {
@@ -217,7 +229,7 @@ internal sealed class NotificationService : INotificationService
                 RequestedSendTime = requestedSendTimeOrDefault,
                 ConditionEndpoint = conditionEndpoint,
                 Recipient = recipient,
-                Reminders = reminders
+                Reminders = reminders,
             };
         }
 
@@ -234,7 +246,12 @@ internal sealed class NotificationService : INotificationService
                 },
             };
 
-            List<NotificationReminder>? reminders = BuildReminders(language, recipient, conditionEndpoint, instansiationNotification.Reminders);
+            List<NotificationReminder>? reminders = BuildReminders(
+                language,
+                recipient,
+                conditionEndpoint,
+                instansiationNotification.Reminders
+            );
 
             return new NotificationOrderRequest
             {
@@ -243,7 +260,7 @@ internal sealed class NotificationService : INotificationService
                 RequestedSendTime = requestedSendTimeOrDefault,
                 ConditionEndpoint = conditionEndpoint,
                 Recipient = recipient,
-                Reminders = reminders
+                Reminders = reminders,
             };
         }
 
@@ -252,7 +269,12 @@ internal sealed class NotificationService : INotificationService
         );
     }
 
-    private static List<NotificationReminder>? BuildReminders(string language, NotificationRecipient requestedRecipient, Uri? conditionEndpoint, List<InstansiationNotificationReminder>? requestedReminders)
+    private static List<NotificationReminder>? BuildReminders(
+        string language,
+        NotificationRecipient requestedRecipient,
+        Uri? conditionEndpoint,
+        List<InstansiationNotificationReminder>? requestedReminders
+    )
     {
         if (requestedReminders is null or { Count: 0 })
             return null;
@@ -263,28 +285,27 @@ internal sealed class NotificationService : INotificationService
         {
             // Build a recipient that mirrors the original, but with reminder-specific
             // email/sms overrides if provided (falling back to the original settings).
-            NotificationRecipient recipient = BuildReminderRecipient(
-                language,
-                requestedRecipient,
-                requestedReminder
-                );
+            NotificationRecipient recipient = BuildReminderRecipient(language, requestedRecipient, requestedReminder);
 
-            reminders.Add(new NotificationReminder
-            {
-                Recipient = recipient,
-                ConditionEndpoint = conditionEndpoint,
-                RequestedSendTime = requestedReminder.RequestedSendTime,
-                DelayDays = requestedReminder.SendAfterDays,
-            });
+            reminders.Add(
+                new NotificationReminder
+                {
+                    Recipient = recipient,
+                    ConditionEndpoint = conditionEndpoint,
+                    RequestedSendTime = requestedReminder.RequestedSendTime,
+                    DelayDays = requestedReminder.SendAfterDays,
+                }
+            );
         }
 
         return reminders;
     }
 
     private static NotificationRecipient BuildReminderRecipient(
-    string language,
-    NotificationRecipient original,
-    InstansiationNotificationReminder reminder)
+        string language,
+        NotificationRecipient original,
+        InstansiationNotificationReminder reminder
+    )
     {
         // Each branch copies the original recipient type and applies any
         // reminder-level custom email/sms overrides on top.
@@ -300,7 +321,7 @@ internal sealed class NotificationService : INotificationService
                     SmsSettings = reminder.CustomSms is not null
                         ? BuildSmsSettings(language, reminder.CustomSms, org.SmsSettings)
                         : org.SmsSettings,
-                }
+                },
             };
         }
 
@@ -316,7 +337,7 @@ internal sealed class NotificationService : INotificationService
                     SmsSettings = reminder.CustomSms is not null
                         ? BuildSmsSettings(language, reminder.CustomSms, person.SmsSettings)
                         : person.SmsSettings,
-                }
+                },
             };
         }
 
@@ -329,14 +350,18 @@ internal sealed class NotificationService : INotificationService
                     EmailSettings = reminder.CustomEmail is not null
                         ? BuildEmailSettings(language, reminder.CustomEmail, ext.EmailSettings)
                         : ext.EmailSettings,
-                }
+                },
             };
         }
 
         throw new InvalidOperationException("Original recipient has no recognized recipient type set.");
     }
 
-    private static SmsSendingOptions? BuildSmsSettings(string language, CustomSms customSms, SmsSendingOptions? smsSettings)
+    private static SmsSendingOptions? BuildSmsSettings(
+        string language,
+        CustomSms customSms,
+        SmsSendingOptions? smsSettings
+    )
     {
         return (smsSettings ?? new SmsSendingOptions { Sender = "", Body = "" }) with
         {
@@ -345,7 +370,11 @@ internal sealed class NotificationService : INotificationService
         };
     }
 
-    private static EmailSendingOptions? BuildEmailSettings(string language, CustomEmail customEmail, EmailSendingOptions? emailSettings)
+    private static EmailSendingOptions? BuildEmailSettings(
+        string language,
+        CustomEmail customEmail,
+        EmailSendingOptions? emailSettings
+    )
     {
         return (emailSettings ?? new EmailSendingOptions { Subject = "", Body = "" }) with
         {

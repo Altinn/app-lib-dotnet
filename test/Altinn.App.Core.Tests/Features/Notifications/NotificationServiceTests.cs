@@ -480,10 +480,10 @@ public class NotificationServiceTests
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
         List<InstansiationNotificationReminder> reminders =
-            [
-                new InstansiationNotificationReminder { SendAfterDays = 3 },
-                new InstansiationNotificationReminder { SendAfterDays = 7 },
-            ];
+        [
+            new InstansiationNotificationReminder { SendAfterDays = 3 },
+            new InstansiationNotificationReminder { SendAfterDays = 7 },
+        ];
 
         var notification = NotificationWithReminders(reminders);
 
@@ -507,13 +507,9 @@ public class NotificationServiceTests
         var instance = CreateTestInstance(orgNumber: "123456789");
 
         List<InstansiationNotificationReminder> reminders =
-                    [
-                new InstansiationNotificationReminder
-                {
-                    SendAfterDays = 5,
-                    RequestedSendTime = sendTime,
-                }
-            ];
+        [
+            new InstansiationNotificationReminder { SendAfterDays = 5, RequestedSendTime = sendTime },
+        ];
         var notification = NotificationWithReminders(reminders);
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -539,7 +535,7 @@ public class NotificationServiceTests
         {
             NotificationChannel = NotificationChannel.Email,
             RequestedSendTime = DateTime.UtcNow.AddDays(1),
-            Reminders = [new InstansiationNotificationReminder { SendAfterDays = 3 }]
+            Reminders = [new InstansiationNotificationReminder { SendAfterDays = 3 }],
         };
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -561,7 +557,10 @@ public class NotificationServiceTests
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
 
-        List<InstansiationNotificationReminder> reminders = [new InstansiationNotificationReminder { SendAfterDays = 3 }];
+        List<InstansiationNotificationReminder> reminders =
+        [
+            new InstansiationNotificationReminder { SendAfterDays = 3 },
+        ];
         var notification = NotificationWithReminders(reminders);
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -662,15 +661,30 @@ public class NotificationServiceTests
             NotificationChannel = NotificationChannel.EmailAndSms,
             CustomEmail = new CustomEmail
             {
-                Subject = new CustomText { Nb = "Parent subject", Nn = "Parent subject", En = "Parent subject" },
-                Body = new CustomText { Nb = "Parent body", Nn = "Parent body", En = "Parent body" },
+                Subject = new CustomText
+                {
+                    Nb = "Parent subject",
+                    Nn = "Parent subject",
+                    En = "Parent subject",
+                },
+                Body = new CustomText
+                {
+                    Nb = "Parent body",
+                    Nn = "Parent body",
+                    En = "Parent body",
+                },
             },
             CustomSms = new CustomSms
             {
                 SenderName = "ParentSender",
-                Text = new CustomText { Nb = "Parent sms", Nn = "Parent sms", En = "Parent sms" },
+                Text = new CustomText
+                {
+                    Nb = "Parent sms",
+                    Nn = "Parent sms",
+                    En = "Parent sms",
+                },
             },
-            Reminders = [new InstansiationNotificationReminder()]  // no custom overrides
+            Reminders = [new InstansiationNotificationReminder()], // no custom overrides
         };
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -703,11 +717,21 @@ public class NotificationServiceTests
                 {
                     CustomEmail = new CustomEmail
                     {
-                        Subject = new CustomText { Nb = "Reminder subject", Nn = "Reminder subject", En = "Reminder subject" },
-                        Body = new CustomText { Nb = "Reminder body", Nn = "Reminder body", En = "Reminder body" },
-                    }
-                }
-            ]
+                        Subject = new CustomText
+                        {
+                            Nb = "Reminder subject",
+                            Nn = "Reminder subject",
+                            En = "Reminder subject",
+                        },
+                        Body = new CustomText
+                        {
+                            Nb = "Reminder body",
+                            Nn = "Reminder body",
+                            En = "Reminder body",
+                        },
+                    },
+                },
+            ],
         };
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -739,10 +763,15 @@ public class NotificationServiceTests
                     CustomSms = new CustomSms
                     {
                         SenderName = "ReminderSender",
-                        Text = new CustomText { Nb = "Reminder sms", Nn = "Reminder sms", En = "Reminder sms" },
-                    }
-                }
-            ]
+                        Text = new CustomText
+                        {
+                            Nb = "Reminder sms",
+                            Nn = "Reminder sms",
+                            En = "Reminder sms",
+                        },
+                    },
+                },
+            ],
         };
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -776,11 +805,21 @@ public class NotificationServiceTests
                 {
                     CustomEmail = new CustomEmail
                     {
-                        Subject = new CustomText { Nb = "s", Nn = "s", En = "s" },
-                        Body = new CustomText { Nb = "Reminder nb", Nn = "Reminder nn", En = "Reminder en" },
-                    }
-                }
-            ]
+                        Subject = new CustomText
+                        {
+                            Nb = "s",
+                            Nn = "s",
+                            En = "s",
+                        },
+                        Body = new CustomText
+                        {
+                            Nb = "Reminder nb",
+                            Nn = "Reminder nn",
+                            En = "Reminder en",
+                        },
+                    },
+                },
+            ],
         };
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -810,19 +849,39 @@ public class NotificationServiceTests
                 {
                     CustomEmail = new CustomEmail
                     {
-                        Subject = new CustomText { Nb = "First subject", Nn = "First subject", En = "First subject" },
-                        Body = new CustomText { Nb = "First body", Nn = "First body", En = "First body" },
-                    }
+                        Subject = new CustomText
+                        {
+                            Nb = "First subject",
+                            Nn = "First subject",
+                            En = "First subject",
+                        },
+                        Body = new CustomText
+                        {
+                            Nb = "First body",
+                            Nn = "First body",
+                            En = "First body",
+                        },
+                    },
                 },
                 new InstansiationNotificationReminder
                 {
                     CustomEmail = new CustomEmail
                     {
-                        Subject = new CustomText { Nb = "Second subject", Nn = "Second subject", En = "Second subject" },
-                        Body = new CustomText { Nb = "Second body", Nn = "Second body", En = "Second body" },
-                    }
+                        Subject = new CustomText
+                        {
+                            Nb = "Second subject",
+                            Nn = "Second subject",
+                            En = "Second subject",
+                        },
+                        Body = new CustomText
+                        {
+                            Nb = "Second body",
+                            Nn = "Second body",
+                            En = "Second body",
+                        },
+                    },
                 },
-            ]
+            ],
         };
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -892,10 +951,5 @@ public class NotificationServiceTests
 
     private static InstansiationNotification NotificationWithReminders(
         List<InstansiationNotificationReminder>? reminders
-    ) =>
-        new()
-        {
-            NotificationChannel = NotificationChannel.Email,
-            Reminders = reminders,
-        };
+    ) => new() { NotificationChannel = NotificationChannel.Email, Reminders = reminders };
 }
