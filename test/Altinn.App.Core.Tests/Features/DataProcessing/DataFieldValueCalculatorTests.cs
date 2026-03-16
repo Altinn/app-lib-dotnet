@@ -130,7 +130,14 @@ public class DataFieldValueCalculatorTests
 
         foreach (var expected in testCase.Expects)
         {
-            Assert.Equal(expected.Result.Value.ToObject(), result.Get(expected.Field));
+            if (expected.Result.HasValue)
+            {
+                Assert.Equal(expected.Result.Value.ToObject(), result.Get(expected.Field));
+            }
+            else
+            {
+                Assert.Fail($"Expected result for field {expected.Field} not found");
+            }
         }
     }
 
