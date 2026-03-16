@@ -88,11 +88,12 @@ internal sealed class NotificationService : INotificationService
         InstanceOwner instanceOwner = instance.InstanceOwner;
         DateOnly? dueDateString = instance.DueBefore.HasValue ? DateOnly.FromDateTime(instance.DueBefore.Value) : null;
         string? appTitle = GetTitleFromMetadata(language, applicationMetadata);
+        SendingTimePolicy sendingTimePolicy = instansiationNotification.AllowSendingAfterWorkHours is true ? SendingTimePolicy.Anytime : SendingTimePolicy.Daytime;
 
         CustomEmail? customEmail = instansiationNotification.CustomEmail;
         EmailSendingOptions emailSettings = new()
         {
-            SendingTimePolicy = SendingTimePolicy.Anytime,
+            SendingTimePolicy = sendingTimePolicy,
             Subject = customEmail is not null
                 ? NotificationTexts.ReplaceTokens(
                     text: customEmail.Subject.GetTextForLanguage(language),
@@ -130,7 +131,7 @@ internal sealed class NotificationService : INotificationService
         CustomSms? customSms = instansiationNotification.CustomSms;
         SmsSendingOptions smsSettings = new()
         {
-            SendingTimePolicy = SendingTimePolicy.Anytime,
+            SendingTimePolicy = sendingTimePolicy,
             Sender = customSms?.SenderName ?? "Altinn",
             Body = customSms is not null
                 ? NotificationTexts.ReplaceTokens(
@@ -168,72 +169,189 @@ internal sealed class NotificationService : INotificationService
 
         if (instanceOwner.OrganisationNumber is not null)
         {
+            NotificationRecipient recipient = new()
+            {
+                RecipientOrganization = new RecipientOrganization
+                {
+                    OrgNumber = instanceOwner.OrganisationNumber,
+                    ChannelSchema = requestedChannel,
+                    EmailSettings = emailSettings,
+                    SmsSettings = smsSettings,
+                    ResourceId = resourceId.AsUrn,
+                },
+            };
+
+            List<NotificationReminder>? reminders = BuildReminders(language, recipient, conditionEndpoint, instansiationNotification.Reminders);
+
             return new NotificationOrderRequest
             {
                 SendersReference = sendersReference,
                 IdempotencyId = idempotencyId,
                 RequestedSendTime = requestedSendTimeOrDefault,
                 ConditionEndpoint = conditionEndpoint,
-                Recipient = new NotificationRecipient
-                {
-                    RecipientOrganization = new RecipientOrganization
-                    {
-                        OrgNumber = instanceOwner.OrganisationNumber,
-                        ChannelSchema = requestedChannel,
-                        EmailSettings = emailSettings,
-                        SmsSettings = smsSettings,
-                        ResourceId = resourceId.AsUrn,
-                    },
-                },
+                Recipient = recipient,
+                Reminders = reminders
             };
         }
 
         if (instanceOwner.PersonNumber is not null)
         {
+            NotificationRecipient recipient = new()
+            {
+                RecipientPerson = new RecipientPerson
+                {
+                    NationalIdentityNumber = instanceOwner.PersonNumber,
+                    ChannelSchema = requestedChannel,
+                    EmailSettings = emailSettings,
+                    SmsSettings = smsSettings,
+                    ResourceId = resourceId.AsUrn,
+                },
+            };
+
+            List<NotificationReminder>? reminders = BuildReminders(language, recipient, conditionEndpoint, instansiationNotification.Reminders);
+
             return new NotificationOrderRequest
             {
                 SendersReference = sendersReference,
                 IdempotencyId = idempotencyId,
                 RequestedSendTime = requestedSendTimeOrDefault,
                 ConditionEndpoint = conditionEndpoint,
-                Recipient = new NotificationRecipient
-                {
-                    RecipientPerson = new RecipientPerson
-                    {
-                        NationalIdentityNumber = instanceOwner.PersonNumber,
-                        ChannelSchema = requestedChannel,
-                        EmailSettings = emailSettings,
-                        SmsSettings = smsSettings,
-                        ResourceId = resourceId.AsUrn,
-                    },
-                },
+                Recipient = recipient,
+                Reminders = reminders
             };
         }
 
         if (instanceOwner.ExternalIdentifier is not null)
         {
+            NotificationRecipient recipient = new()
+            {
+                RecipientExternalIdentity = new RecipientExternalIdentity
+                {
+                    ExternalIdentity = instanceOwner.ExternalIdentifier,
+                    ChannelSchema = NotificationChannel.EmailPreferred, // Self identified users may have set a mobile number in profile
+                    EmailSettings = emailSettings,
+                    ResourceId = resourceId.AsUrn,
+                },
+            };
+
+            List<NotificationReminder>? reminders = BuildReminders(language, recipient, conditionEndpoint, instansiationNotification.Reminders);
+
             return new NotificationOrderRequest
             {
                 SendersReference = sendersReference,
                 IdempotencyId = idempotencyId,
                 RequestedSendTime = requestedSendTimeOrDefault,
                 ConditionEndpoint = conditionEndpoint,
-                Recipient = new NotificationRecipient
-                {
-                    RecipientExternalIdentity = new RecipientExternalIdentity
-                    {
-                        ExternalIdentity = instanceOwner.ExternalIdentifier,
-                        ChannelSchema = NotificationChannel.EmailPreferred, // Self identified users may have set a mobile number in profile
-                        EmailSettings = emailSettings,
-                        ResourceId = resourceId.AsUrn,
-                    },
-                },
+                Recipient = recipient,
+                Reminders = reminders
             };
         }
 
         throw new InvalidOperationException(
             "InstanceOwner must have at least one of OrganisationNumber, PersonNumber, or ExternalIdentifier set."
         );
+    }
+
+    private static List<NotificationReminder>? BuildReminders(string language, NotificationRecipient requestedRecipient, Uri? conditionEndpoint, List<InstansiationNotificationReminder>? requestedReminders)
+    {
+        if (requestedReminders is null or { Count: 0 })
+            return null;
+
+        var reminders = new List<NotificationReminder>(requestedReminders.Count);
+
+        foreach (var requestedReminder in requestedReminders)
+        {
+            // Build a recipient that mirrors the original, but with reminder-specific
+            // email/sms overrides if provided (falling back to the original settings).
+            NotificationRecipient recipient = BuildReminderRecipient(
+                language,
+                requestedRecipient,
+                requestedReminder
+                );
+
+            reminders.Add(new NotificationReminder
+            {
+                Recipient = recipient,
+                ConditionEndpoint = conditionEndpoint,
+                RequestedSendTime = requestedReminder.RequestedSendTime,
+                DelayDays = requestedReminder.SendAfterDays,
+            });
+        }
+
+        return reminders;
+    }
+
+    private static NotificationRecipient BuildReminderRecipient(
+    string language,
+    NotificationRecipient original,
+    InstansiationNotificationReminder reminder)
+    {
+        // Each branch copies the original recipient type and applies any
+        // reminder-level custom email/sms overrides on top.
+        if (original.RecipientOrganization is { } org)
+        {
+            return new NotificationRecipient
+            {
+                RecipientOrganization = org with
+                {
+                    EmailSettings = reminder.CustomEmail is not null
+                        ? BuildEmailSettings(language, reminder.CustomEmail, org.EmailSettings)
+                        : org.EmailSettings,
+                    SmsSettings = reminder.CustomSms is not null
+                        ? BuildSmsSettings(language, reminder.CustomSms, org.SmsSettings)
+                        : org.SmsSettings,
+                }
+            };
+        }
+
+        if (original.RecipientPerson is { } person)
+        {
+            return new NotificationRecipient
+            {
+                RecipientPerson = person with
+                {
+                    EmailSettings = reminder.CustomEmail is not null
+                        ? BuildEmailSettings(language, reminder.CustomEmail, person.EmailSettings)
+                        : person.EmailSettings,
+                    SmsSettings = reminder.CustomSms is not null
+                        ? BuildSmsSettings(language, reminder.CustomSms, person.SmsSettings)
+                        : person.SmsSettings,
+                }
+            };
+        }
+
+        if (original.RecipientExternalIdentity is { } ext)
+        {
+            return new NotificationRecipient
+            {
+                RecipientExternalIdentity = ext with
+                {
+                    EmailSettings = reminder.CustomEmail is not null
+                        ? BuildEmailSettings(language, reminder.CustomEmail, ext.EmailSettings)
+                        : ext.EmailSettings,
+                }
+            };
+        }
+
+        throw new InvalidOperationException("Original recipient has no recognized recipient type set.");
+    }
+
+    private static SmsSendingOptions? BuildSmsSettings(string language, CustomSms customSms, SmsSendingOptions? smsSettings)
+    {
+        return (smsSettings ?? new SmsSendingOptions { Sender = "", Body = "" }) with
+        {
+            Sender = customSms.SenderName,
+            Body = customSms.Text.GetTextForLanguage(language),
+        };
+    }
+
+    private static EmailSendingOptions? BuildEmailSettings(string language, CustomEmail customEmail, EmailSendingOptions? emailSettings)
+    {
+        return (emailSettings ?? new EmailSendingOptions { Subject = "", Body = "" }) with
+        {
+            Subject = customEmail.Subject.GetTextForLanguage(language),
+            Body = customEmail.Body.GetTextForLanguage(language),
+        };
     }
 
     internal static string? GetTitleFromMetadata(string language, ApplicationMetadata? applicationMetadata)
@@ -258,7 +376,7 @@ internal sealed class NotificationService : INotificationService
         if (instanceOwner.PersonNumber is not null)
         {
             UserProfile? personProfile = await _profileClient.GetUserProfile(instanceOwner.PersonNumber);
-            return personProfile?.ProfileSettingPreference.Language ?? LanguageConst.Nb;
+            return personProfile?.ProfileSettingPreference?.Language ?? LanguageConst.Nb;
         }
 
         if (instanceOwner.ExternalIdentifier is not null)
@@ -272,7 +390,7 @@ internal sealed class NotificationService : INotificationService
             // HACK: userUuid == partyGuid
             UserProfile? userProfile = await _profileClient.GetUserProfile(partyGuid.Value);
 
-            return userProfile?.ProfileSettingPreference.Language ?? LanguageConst.En;
+            return userProfile?.ProfileSettingPreference?.Language ?? LanguageConst.En;
         }
 
         if (instanceOwner.OrganisationNumber is not null)

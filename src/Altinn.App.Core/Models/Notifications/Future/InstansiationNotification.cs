@@ -16,6 +16,12 @@ public sealed class InstansiationNotification
     public NotificationChannel NotificationChannel { get; set; } = NotificationChannel.EmailAndSms;
 
     /// <summary>
+    /// Allow sending notifications after work hours. Disabled by default.
+    /// </summary>
+    [JsonPropertyName("allowSendingAfterWorkHours")]
+    public bool AllowSendingAfterWorkHours { get; set; } = false;
+
+    /// <summary>
     /// Gets or sets the language to use in the notification.
     /// Only used for organizations. Profile language will be used for individuals.
     /// </summary>
@@ -29,7 +35,49 @@ public sealed class InstansiationNotification
     /// Defaults to the current UTC time, meaning the notification will be sent as soon as possible.
     /// </remarks>
     [JsonPropertyName("requestedSendTime")]
-    public DateTime? RequestedSendTime { get; init; } = null;
+    public DateTime? RequestedSendTime { get; init; }
+
+    /// <summary>
+    /// Gets or sets custom sms text and sender name for the notification.
+    /// If not set, a default message will be used.
+    /// </summary>
+    [JsonPropertyName("customSms")]
+    public CustomSms? CustomSms { get; set; }
+
+    /// <summary>
+    /// Gets or sets a custom message to include in the notification.
+    /// If not set, a default message will be used.
+    /// The content of the message should be in the language specified by the Language property.
+    /// </summary>
+    [JsonPropertyName("customEmail")]
+    public CustomEmail? CustomEmail { get; set; }
+
+    /// <summary>
+    /// Gets or sets reminder notifications.
+    /// </summary>
+    [JsonPropertyName("reminders")]
+    public List<InstansiationNotificationReminder>? Reminders { get; set; }
+}
+
+/// <summary>
+/// Model for reminder notification
+/// </summary>
+public sealed class InstansiationNotificationReminder()
+{
+    /// <summary>
+    /// Gets or sets the earliest time the notification(s) should be sent.
+    /// </summary>
+    /// <remarks>
+    /// Defaults to the current UTC time, meaning the notification will be sent as soon as possible.
+    /// </remarks>
+    [JsonPropertyName("requestedSendTime")]
+    public DateTime? RequestedSendTime { get; init; }
+
+    /// <summary>
+    /// Gets or sets days to delay before sending the reminder.
+    /// </summary>
+    [JsonPropertyName("sendAfterDays")]
+    public int? SendAfterDays { get; init; }
 
     /// <summary>
     /// Gets or sets custom sms text and sender name for the notification.

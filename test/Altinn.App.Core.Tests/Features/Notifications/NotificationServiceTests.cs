@@ -434,6 +434,448 @@ public class NotificationServiceTests
 
     #endregion
 
+    #region Reminders
+
+    [Fact]
+    public void BuildReminders_NullReminders_ReturnsNull()
+    {
+        var instance = CreateTestInstance(orgNumber: "123456789");
+        var notification = NotificationWithReminders(null);
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        Assert.Null(result.Reminders);
+    }
+
+    [Fact]
+    public void BuildReminders_EmptyReminders_ReturnsNull()
+    {
+        var instance = CreateTestInstance(orgNumber: "123456789");
+        List<InstansiationNotificationReminder> remindersEmpty = [];
+        var notification = NotificationWithReminders(remindersEmpty);
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        Assert.Null(result.Reminders);
+    }
+
+    [Fact]
+    public void BuildReminders_TwoReminders_ReturnsBothReminders()
+    {
+        var instance = CreateTestInstance(orgNumber: "123456789");
+        List<InstansiationNotificationReminder> reminders =
+            [
+                new InstansiationNotificationReminder { SendAfterDays = 3 },
+                new InstansiationNotificationReminder { SendAfterDays = 7 },
+            ];
+
+        var notification = NotificationWithReminders(reminders);
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        Assert.Equal(2, result.Reminders?.Count);
+    }
+
+    [Fact]
+    public void BuildReminders_DelayDaysAndRequestedSendTime_AreMappedFromReminder()
+    {
+        var sendTime = DateTime.UtcNow.AddDays(10);
+        var instance = CreateTestInstance(orgNumber: "123456789");
+
+        List<InstansiationNotificationReminder> reminders =
+                    [
+                new InstansiationNotificationReminder
+                {
+                    SendAfterDays = 5,
+                    RequestedSendTime = sendTime,
+                }
+            ];
+        var notification = NotificationWithReminders(reminders);
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        var reminder = Assert.Single(result.Reminders!);
+        Assert.Equal(5, reminder.DelayDays);
+        Assert.Equal(sendTime, reminder.RequestedSendTime);
+    }
+
+    [Fact]
+    public void BuildReminders_WithRequestedSendTime_ConditionEndpointPropagatedToReminders()
+    {
+        var instance = CreateTestInstance(appId: "ttd/my-app", orgNumber: "123456789");
+        var notification = new InstansiationNotification
+        {
+            NotificationChannel = NotificationChannel.Email,
+            RequestedSendTime = DateTime.UtcNow.AddDays(1),
+            Reminders = [new InstansiationNotificationReminder { SendAfterDays = 3 }]
+        };
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
+        );
+
+        var reminder = Assert.Single(result.Reminders!);
+        Assert.Equal(result.ConditionEndpoint, reminder.ConditionEndpoint);
+    }
+
+    [Fact]
+    public void BuildReminders_WithoutRequestedSendTime_ConditionEndpointIsNullOnReminders()
+    {
+        var instance = CreateTestInstance(orgNumber: "123456789");
+
+        List<InstansiationNotificationReminder> reminders = [new InstansiationNotificationReminder { SendAfterDays = 3 }];
+        var notification = NotificationWithReminders(reminders);
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
+        );
+
+        var reminder = Assert.Single(result.Reminders!);
+        Assert.Null(reminder.ConditionEndpoint);
+    }
+
+    // --- Recipient type preservation ---
+
+    [Fact]
+    public void BuildReminders_OrgOwner_ReminderRecipientIsOrganization()
+    {
+        var instance = CreateTestInstance(orgNumber: "123456789");
+        List<InstansiationNotificationReminder> reminders = [new InstansiationNotificationReminder()];
+        var notification = NotificationWithReminders(reminders);
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        var reminder = Assert.Single(result.Reminders!);
+        Assert.NotNull(reminder.Recipient.RecipientOrganization);
+        Assert.Equal("123456789", reminder.Recipient.RecipientOrganization.OrgNumber);
+    }
+
+    [Fact]
+    public void BuildReminders_PersonOwner_ReminderRecipientIsPerson()
+    {
+        var instance = CreateTestInstance(personNumber: "01010112345");
+
+        List<InstansiationNotificationReminder> reminders = [new InstansiationNotificationReminder()];
+        var notification = NotificationWithReminders(reminders);
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        var reminder = Assert.Single(result.Reminders!);
+        Assert.NotNull(reminder.Recipient.RecipientPerson);
+        Assert.Equal("01010112345", reminder.Recipient.RecipientPerson.NationalIdentityNumber);
+    }
+
+    [Fact]
+    public void BuildReminders_ExternalIdentityOwner_ReminderRecipientIsExternalIdentity()
+    {
+        var instance = CreateTestInstance(externalIdentifier: "urn:altinn:person:idporten-email:user@example.com");
+
+        List<InstansiationNotificationReminder> reminders = [new InstansiationNotificationReminder()];
+        var notification = NotificationWithReminders(reminders);
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.En,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        var reminder = Assert.Single(result.Reminders!);
+        Assert.NotNull(reminder.Recipient.RecipientExternalIdentity);
+        Assert.Equal(
+            "urn:altinn:person:idporten-email:user@example.com",
+            reminder.Recipient.RecipientExternalIdentity.ExternalIdentity
+        );
+    }
+
+    // --- Custom email/sms override vs inherit ---
+
+    [Fact]
+    public void BuildReminders_NoCustomEmailOrSms_InheritsParentSettings()
+    {
+        var instance = CreateTestInstance(orgNumber: "123456789");
+        var notification = new InstansiationNotification
+        {
+            NotificationChannel = NotificationChannel.EmailAndSms,
+            CustomEmail = new CustomEmail
+            {
+                Subject = new CustomText { Nb = "Parent subject", Nn = "Parent subject", En = "Parent subject" },
+                Body = new CustomText { Nb = "Parent body", Nn = "Parent body", En = "Parent body" },
+            },
+            CustomSms = new CustomSms
+            {
+                SenderName = "ParentSender",
+                Text = new CustomText { Nb = "Parent sms", Nn = "Parent sms", En = "Parent sms" },
+            },
+            Reminders = [new InstansiationNotificationReminder()]  // no custom overrides
+        };
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
+        Assert.Equal("Parent subject", reminderOrg.EmailSettings?.Subject);
+        Assert.Equal("Parent body", reminderOrg.EmailSettings?.Body);
+        Assert.Equal("ParentSender", reminderOrg.SmsSettings?.Sender);
+        Assert.Equal("Parent sms", reminderOrg.SmsSettings?.Body);
+    }
+
+    [Fact]
+    public void BuildReminders_WithCustomEmail_OverridesEmailSettings()
+    {
+        var instance = CreateTestInstance(orgNumber: "123456789");
+        var notification = new InstansiationNotification
+        {
+            NotificationChannel = NotificationChannel.Email,
+            Reminders =
+            [
+                new InstansiationNotificationReminder
+                {
+                    CustomEmail = new CustomEmail
+                    {
+                        Subject = new CustomText { Nb = "Reminder subject", Nn = "Reminder subject", En = "Reminder subject" },
+                        Body = new CustomText { Nb = "Reminder body", Nn = "Reminder body", En = "Reminder body" },
+                    }
+                }
+            ]
+        };
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
+        Assert.Equal("Reminder subject", reminderOrg.EmailSettings?.Subject);
+        Assert.Equal("Reminder body", reminderOrg.EmailSettings?.Body);
+    }
+
+    [Fact]
+    public void BuildReminders_WithCustomSms_OverridesSmsSettings()
+    {
+        var instance = CreateTestInstance(orgNumber: "123456789");
+        var notification = new InstansiationNotification
+        {
+            NotificationChannel = NotificationChannel.Sms,
+            Reminders =
+            [
+                new InstansiationNotificationReminder
+                {
+                    CustomSms = new CustomSms
+                    {
+                        SenderName = "ReminderSender",
+                        Text = new CustomText { Nb = "Reminder sms", Nn = "Reminder sms", En = "Reminder sms" },
+                    }
+                }
+            ]
+        };
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
+        Assert.Equal("ReminderSender", reminderOrg.SmsSettings?.Sender);
+        Assert.Equal("Reminder sms", reminderOrg.SmsSettings?.Body);
+    }
+
+    [Theory]
+    [InlineData(LanguageConst.Nb, "Reminder nb")]
+    [InlineData(LanguageConst.Nn, "Reminder nn")]
+    [InlineData(LanguageConst.En, "Reminder en")]
+    public void BuildReminders_CustomEmailText_UsesCorrectLanguage(string language, string expectedBody)
+    {
+        var instance = CreateTestInstance(orgNumber: "123456789");
+        var notification = new InstansiationNotification
+        {
+            NotificationChannel = NotificationChannel.Email,
+            Reminders =
+            [
+                new InstansiationNotificationReminder
+                {
+                    CustomEmail = new CustomEmail
+                    {
+                        Subject = new CustomText { Nb = "s", Nn = "s", En = "s" },
+                        Body = new CustomText { Nb = "Reminder nb", Nn = "Reminder nn", En = "Reminder en" },
+                    }
+                }
+            ]
+        };
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: language,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
+        Assert.Equal(expectedBody, reminderOrg.EmailSettings?.Body);
+    }
+
+    [Fact]
+    public void BuildReminders_TwoRemindersWithDifferentCustomText_ProduceIndependentSettings()
+    {
+        var instance = CreateTestInstance(orgNumber: "123456789");
+        var notification = new InstansiationNotification
+        {
+            NotificationChannel = NotificationChannel.Email,
+            Reminders =
+            [
+                new InstansiationNotificationReminder
+                {
+                    CustomEmail = new CustomEmail
+                    {
+                        Subject = new CustomText { Nb = "First subject", Nn = "First subject", En = "First subject" },
+                        Body = new CustomText { Nb = "First body", Nn = "First body", En = "First body" },
+                    }
+                },
+                new InstansiationNotificationReminder
+                {
+                    CustomEmail = new CustomEmail
+                    {
+                        Subject = new CustomText { Nb = "Second subject", Nn = "Second subject", En = "Second subject" },
+                        Body = new CustomText { Nb = "Second body", Nn = "Second body", En = "Second body" },
+                    }
+                },
+            ]
+        };
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        Assert.Equal(2, result.Reminders!.Count);
+        Assert.Equal("First body", result.Reminders[0].Recipient.RecipientOrganization!.EmailSettings?.Body);
+        Assert.Equal("Second body", result.Reminders[1].Recipient.RecipientOrganization!.EmailSettings?.Body);
+    }
+
+    #endregion
+
+    #region SendTime
+
+    [Theory]
+    [InlineData(true, SendingTimePolicy.Anytime)]
+    [InlineData(false, SendingTimePolicy.Daytime)]
+    public void CreateNotificationOrderRequest_SendingTimePolicy_ReflectsAllowSendingAfterWorkHours(
+        bool allowSendingAfterWorkHours,
+        SendingTimePolicy expectedPolicy
+    )
+    {
+        var instance = CreateTestInstance(orgNumber: "123456789");
+        var notification = new InstansiationNotification
+        {
+            NotificationChannel = NotificationChannel.EmailAndSms,
+            AllowSendingAfterWorkHours = allowSendingAfterWorkHours,
+        };
+
+        var result = NotificationService.CreateNotificationOrderRequest(
+            language: LanguageConst.Nb,
+            instance: instance,
+            applicationMetadata: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            instansiationNotification: notification,
+            callBackBaseUrl: null
+        );
+
+        var org = result.Recipient.RecipientOrganization!;
+        Assert.Equal(expectedPolicy, org.EmailSettings?.SendingTimePolicy);
+        Assert.Equal(expectedPolicy, org.SmsSettings?.SendingTimePolicy);
+    }
+
+    #endregion
+
     #region Guard
 
     [Fact]
@@ -447,4 +889,13 @@ public class NotificationServiceTests
     }
 
     #endregion
+
+    private static InstansiationNotification NotificationWithReminders(
+        List<InstansiationNotificationReminder>? reminders
+    ) =>
+        new()
+        {
+            NotificationChannel = NotificationChannel.Email,
+            Reminders = reminders,
+        };
 }
