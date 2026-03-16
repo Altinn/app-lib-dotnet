@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
+using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -93,11 +94,7 @@ public class ExpressionTestCaseRoot
         if (Context is not null)
         {
             //! Some tests do not need context, but it is not nullable in expression evaluator
-            context = await state.GetComponentContext(
-                Context.CurrentPageName,
-                Context.ComponentId,
-                Context.RowIndices
-            )!;
+            context = await state.GetComponentContext(Context.ComponentId, Context.ToContext())!;
         }
 
         //! Some tests do not need context, but it is not nullable in expression evaluator
@@ -154,4 +151,24 @@ public class ComponentContextForTestSpec
             RowIndices = context.RowIndices,
         };
     }
+
+    public ComponentContext ToContext() =>
+        new ComponentContext(
+            null!,
+            new UnknownComponent
+            {
+                Id = ComponentId,
+                PageId = CurrentPageName,
+                LayoutId = "layout",
+                Type = "unknown",
+                Hidden = default,
+                RemoveWhenHidden = default,
+                Required = default,
+                ReadOnly = default,
+                DataModelBindings = new Dictionary<string, ModelBinding>(),
+                TextResourceBindings = new Dictionary<string, Expression>(),
+            },
+            RowIndices ?? Array.Empty<int>(),
+            null
+        );
 }
