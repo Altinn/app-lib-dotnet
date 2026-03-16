@@ -123,13 +123,7 @@ public class DataModelWrapper
     /// </example>
     public string[] GetResolvedKeys(string field)
     {
-        if (_dataModel is null)
-        {
-            return [];
-        }
-
-        var fieldParts = field.Split('.');
-        return GetResolvedKeysRecursive(fieldParts, _dataModel, _dataModel.GetType());
+        return GetResolvedKeys(field, isCalculating: false);
     }
 
     /// <summary>

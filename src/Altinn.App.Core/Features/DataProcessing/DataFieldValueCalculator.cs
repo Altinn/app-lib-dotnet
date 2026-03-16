@@ -186,37 +186,22 @@ internal sealed class DataFieldValueCalculator
     {
         var rawDataFieldValueCalculation = new RawDataFieldValueCalculation();
 
-        if (definition.ValueKind == JsonValueKind.String)
+        var dataFieldCalculationDefinition = definition.Deserialize<RawDataFieldValueCalculation>(
+            _jsonSerializerOptions
+        );
+        if (dataFieldCalculationDefinition == null)
         {
-            var stringReference = definition.GetString();
-            if (stringReference == null)
-            {
-                _logger.LogError("Could not resolve null reference for calculation for field {Field}", field);
-                return null;
-            }
-        }
-        else
-        {
-            var dataFieldCalculationDefinition = definition.Deserialize<RawDataFieldValueCalculation>(
-                _jsonSerializerOptions
-            );
-            if (dataFieldCalculationDefinition == null)
-            {
-                _logger.LogError("Calculation for field {Field} could not be parsed", field);
-                return null;
-            }
-
-            if (dataFieldCalculationDefinition.Condition != null)
-            {
-                rawDataFieldValueCalculation.Condition = dataFieldCalculationDefinition.Condition;
-            }
+            _logger.LogError("Calculation for field {Field} could not be parsed", field);
+            return null;
         }
 
-        if (rawDataFieldValueCalculation.Condition == null)
+        if (dataFieldCalculationDefinition.Condition == null)
         {
             _logger.LogError("Calculation for field {Field} is missing condition", field);
             return null;
         }
+
+        rawDataFieldValueCalculation.Condition = dataFieldCalculationDefinition.Condition;
 
         var dataFieldCalculation = new DataFieldCalculation
         {
