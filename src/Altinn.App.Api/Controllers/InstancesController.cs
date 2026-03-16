@@ -538,25 +538,9 @@ public class InstancesController : ControllerBase
         {
             party = await LookupParty(instansiationInstance.InstanceOwner) ?? throw new Exception("Unknown party");
 
-            _logger.LogInformation(
-                "Resolved party: PartyId={PartyId}, PartyTypeName={PartyTypeName}, OrgNumber={OrgNumber}, SSN={SSN}",
-                party.PartyId,
-                party.PartyTypeName,
-                party.OrgNumber ?? "(null)",
-                party.SSN != null ? "***set***" : "(null)"
-            );
-
             instansiationInstance.InstanceOwner = await InstantiationHelper.PartyToInstanceOwner(
                 party,
                 _authenticationContext
-            );
-
-            _logger.LogInformation(
-                "InstanceOwner after PartyToInstanceOwner: PartyId={PartyId}, PersonNumber={PersonNumber}, OrgNumber={OrgNumber}, ExternalIdentifier={ExternalIdentifier}",
-                instansiationInstance.InstanceOwner.PartyId,
-                instansiationInstance.InstanceOwner.PersonNumber != null ? "***set***" : "(null)",
-                instansiationInstance.InstanceOwner.OrganisationNumber ?? "(null)",
-                instansiationInstance.InstanceOwner.ExternalIdentifier ?? "(null)"
             );
         }
         catch (Exception partyLookupException)

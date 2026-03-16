@@ -68,8 +68,8 @@ internal sealed class NotificationService : INotificationService
         );
 
         _logger.LogInformation(
-            "Sending notification order: {OrderRequest}",
-            System.Text.Json.JsonSerializer.Serialize(orderRequest)
+            "Sending notification order with reference: {SendersReference}",
+            orderRequest.SendersReference
         );
 
         await _notificationOrderClient.Order(orderRequest, ct);
