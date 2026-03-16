@@ -110,6 +110,8 @@ public record ModelPathNode
             "global::System.DateTime" => true,
             "global::System.DateTimeOffset" => true,
             "global::System.TimeSpan" => true,
+            "global::System.DateOnly" => true,
+            "global::System.TimeOnly" => true,
             "global::System.Int32" => true,
             "global::System.Int64" => true,
             "global::System.UInt32" => true,
