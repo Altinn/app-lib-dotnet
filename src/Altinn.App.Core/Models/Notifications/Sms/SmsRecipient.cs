@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Models.Notifications.Sms;
 /// <param name="OrganisationNumber">Organization number.</param>
 /// <param name="NationalIdentityNumber">National Identity number.</param>
 public sealed record SmsRecipient(
-    [property: JsonPropertyName("mobileNumber")] string MobileNumber,
-    [property: JsonPropertyName("organisationNumber")] string? OrganisationNumber = null,
+    [property: JsonPropertyName("mobileNumber")] string? MobileNumber = null,
+    [property: JsonPropertyName("organizationNumber")] string? OrganisationNumber = null,
     [property: JsonPropertyName("nationalIdentityNumber")] string? NationalIdentityNumber = null
 );

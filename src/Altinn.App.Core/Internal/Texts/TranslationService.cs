@@ -281,54 +281,7 @@ internal sealed class TranslationService : ITranslationService
             return new TextResourceElement() { Id = "appName", Value = _app };
         }
 
-        return GetBackendFallbackResource(key, language);
-    }
-
-    private static TextResourceElement? GetBackendFallbackResource(string key, string language)
-    {
-        // When the list of backend text resources grows, we might want to have these in a separate file or similar.
-        switch (key)
-        {
-            case "backend.validation_errors.required":
-                return new TextResourceElement()
-                {
-                    Id = "backend.validation_errors.required",
-                    Value = language switch
-                    {
-                        LanguageConst.Nb => "Feltet er påkrevd",
-                        LanguageConst.Nn => "Feltet er påkravd",
-                        _ => "Field is required",
-                    },
-                };
-            case "backend.pdf_default_file_name":
-                return new TextResourceElement()
-                {
-                    Id = "backend.pdf_default_file_name",
-                    Value = "{0}.pdf",
-                    Variables =
-                    [
-                        new TextResourceVariable()
-                        {
-                            Key = "appName",
-                            DataSource = "text",
-                            DefaultValue = "Altinn PDF",
-                        },
-                    ],
-                };
-            case "pdfPreviewText":
-                return new TextResourceElement()
-                {
-                    Id = "pdfPreviewText",
-                    Value = language switch
-                    {
-                        LanguageConst.En => "The document is a preview",
-                        LanguageConst.Nn => "Dokumentet er ein førehandsvisning",
-                        _ => "Dokumentet er en forhåndsvisning",
-                    },
-                };
-        }
-
-        return null;
+        return BackendTextResources.GetBackendFallbackResource(key, language);
     }
 
     /// <summary>
