@@ -110,6 +110,17 @@ public class DataModelWrapper
         return GetModelDataRecursive(keys, index + 1, elementAt, rowIndexes.Length > 0 ? rowIndexes[1..] : rowIndexes);
     }
 
+    public string[] GetResolvedKeys(string field)
+    {
+        if (_dataModel is null)
+        {
+            return [];
+        }
+
+        var fieldParts = field.Split('.');
+        return GetResolvedKeysRecursive(fieldParts, _dataModel, _dataModel.GetType());
+    }
+
     /// <summary>
     /// Get all valid indexed keys for the field, depending on the number of rows in repeating groups
     /// </summary>
@@ -121,7 +132,7 @@ public class DataModelWrapper
     ///     ...
     /// ]
     /// </example>
-    public string[] GetResolvedKeys(string field, bool isCalculating = false)
+    public string[] GetResolvedKeys(string field, bool isCalculating)
     {
         if (_dataModel is null)
         {
@@ -199,6 +210,10 @@ public class DataModelWrapper
                 }
                 // Index specified, recurse on that element
                 var elementAt = GetElementAt(childModelList, groupIndex.Value);
+                if (elementAt is null)
+                {
+                    return [];
+                }
                 return GetResolvedKeysRecursive(
                     keyParts,
                     elementAt,

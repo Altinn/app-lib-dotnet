@@ -185,7 +185,11 @@ internal sealed class DataFieldValueCalculator
         return dataFieldCalculations;
     }
 
-    private DataFieldCalculation? ResolveDataFieldCalculation(string field, JsonElement definition, ILogger logger)
+    private static DataFieldCalculation? ResolveDataFieldCalculation(
+        string field,
+        JsonElement definition,
+        ILogger logger
+    )
     {
         var rawDataFieldValueCalculation = new RawDataFieldValueCalculation();
 
