@@ -8967,6 +8967,9 @@
           "notificationChannel": {
             "$ref": "#/components/schemas/NotificationChannel"
           },
+          "allowSendingAfterWorkHours": {
+            "type": "boolean"
+          },
           "language": {
             "type": "string",
             "nullable": true
@@ -8974,6 +8977,35 @@
           "requestedSendTime": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          },
+          "customSms": {
+            "$ref": "#/components/schemas/CustomSms"
+          },
+          "customEmail": {
+            "$ref": "#/components/schemas/CustomEmail"
+          },
+          "reminders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InstansiationNotificationReminder"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InstansiationNotificationReminder": {
+        "type": "object",
+        "properties": {
+          "requestedSendTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "sendAfterDays": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           },
           "customSms": {

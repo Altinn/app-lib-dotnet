@@ -1665,6 +1665,7 @@ namespace Altinn.App.Core.Features.Notifications.Texts
         public const string NationalIdentityNumber = "$personNumber$";
         public const string OrgNumber = "$orgNumber$";
         public const string ServiceOwnerName = "$serviceOwnerName$";
+        public const string SocialSecurityNumber = "$socialSecurityNumber$";
     }
 }
 namespace Altinn.App.Core.Features.Options.Altinn2Provider
@@ -4925,6 +4926,8 @@ namespace Altinn.App.Core.Models.Notifications.Future
     public sealed class InstansiationNotification
     {
         public InstansiationNotification() { }
+        [System.Text.Json.Serialization.JsonPropertyName("allowSendingAfterWorkHours")]
+        public bool AllowSendingAfterWorkHours { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("customEmail")]
         public Altinn.App.Core.Models.Notifications.Future.CustomEmail? CustomEmail { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("customSms")]
@@ -4933,8 +4936,22 @@ namespace Altinn.App.Core.Models.Notifications.Future
         public string? Language { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("notificationChannel")]
         public Altinn.App.Core.Models.Notifications.Future.NotificationChannel NotificationChannel { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("reminders")]
+        public System.Collections.Generic.List<Altinn.App.Core.Models.Notifications.Future.InstansiationNotificationReminder>? Reminders { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("requestedSendTime")]
         public System.DateTime? RequestedSendTime { get; init; }
+    }
+    public sealed class InstansiationNotificationReminder
+    {
+        public InstansiationNotificationReminder() { }
+        [System.Text.Json.Serialization.JsonPropertyName("customEmail")]
+        public Altinn.App.Core.Models.Notifications.Future.CustomEmail? CustomEmail { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("customSms")]
+        public Altinn.App.Core.Models.Notifications.Future.CustomSms? CustomSms { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("requestedSendTime")]
+        public System.DateTime? RequestedSendTime { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("sendAfterDays")]
+        public int? SendAfterDays { get; init; }
     }
     public enum NotificationChannel
     {
