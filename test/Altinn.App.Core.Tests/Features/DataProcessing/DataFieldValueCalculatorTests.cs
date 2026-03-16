@@ -37,10 +37,8 @@ public class DataFieldValueCalculatorTests
 
     public DataFieldValueCalculatorTests(ITestOutputHelper output)
     {
-        var accessCheckerMock = new Mock<IDataElementAccessChecker>();
-        accessCheckerMock.Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>())).ReturnsAsync(true);
-
         var dataElementAccessChecker = new Mock<IDataElementAccessChecker>();
+        dataElementAccessChecker.Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>())).ReturnsAsync(true);
 
         var telemetry = new TelemetrySink();
 

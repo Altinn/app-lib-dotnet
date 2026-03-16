@@ -29,7 +29,7 @@ internal sealed class DataFieldValueCalculator
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IAppResources appResourceService,
         IDataElementAccessChecker dataElementAccessChecker,
-        Telemetry? telemetry
+        Telemetry? telemetry = null
     )
     {
         _logger = logger;
