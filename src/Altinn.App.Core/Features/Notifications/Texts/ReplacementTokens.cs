@@ -32,6 +32,11 @@ public static class ReplacementTokens
     public const string NationalIdentityNumber = "$personNumber$";
 
     /// <summary>
+    /// The national identity number of the instance owner, if the instance owner is an individual.
+    /// </summary>
+    public const string SocialSecurityNumber = "$socialSecurityNumber$";
+
+    /// <summary>
     /// The due date of the instance, if a due date is set.
     /// </summary>
     public const string DueDate = "$dueDate$";
