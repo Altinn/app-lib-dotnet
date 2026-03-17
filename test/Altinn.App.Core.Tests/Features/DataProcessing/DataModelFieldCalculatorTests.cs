@@ -59,20 +59,6 @@ public class DataModelFieldCalculatorTests
         return JsonSerializer.Deserialize<DataModelFieldCalculatorTestModel>(data, _jsonSerializerOptions)!;
     }
 
-    [Theory]
-    [FileNamesInFolderData(["Features", "DataProcessing", "data-field-value-calculator-tests", "backend"])]
-    public async Task RunDataModelFieldCalculationTestsForBackend(string fileName, string folder)
-    {
-        await RunDataModelFieldCalculationTests(fileName, folder);
-    }
-
-    [Theory]
-    [FileNamesInFolderData(["Features", "DataProcessing", "data-field-value-calculator-tests", "shared"])]
-    public async Task RunDataModelFieldCalculationTestsForShared(string fileName, string folder)
-    {
-        await RunDataModelFieldCalculationTests(fileName, folder);
-    }
-
     [Fact]
     public async Task ShouldLogWarningWhenTryingToSetUnsupportedDataType()
     {
@@ -124,7 +110,9 @@ public class DataModelFieldCalculatorTests
         }
     }
 
-    private async Task RunDataModelFieldCalculationTests(string fileName, string folder)
+    [Theory]
+    [FileNamesInFolderData(["Features", "DataProcessing", "data-field-value-calculator-tests"])]
+    public async Task RunDataModelFieldCalculationTests(string fileName, string folder)
     {
         var (result, testCase) = await RunDataModelFieldCalculatorTest(fileName, folder);
 
