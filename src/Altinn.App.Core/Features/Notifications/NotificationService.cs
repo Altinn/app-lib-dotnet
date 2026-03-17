@@ -169,7 +169,7 @@ internal sealed class NotificationService : INotificationService
             conditionEndpoint = new Uri(callBackBaseUrl?.TrimEnd('/') + "/notifications/" + instance.Id);
         }
 
-        if (instanceOwner.OrganisationNumber is not null)
+        if (string.IsNullOrWhiteSpace(instanceOwner.OrganisationNumber) is false)
         {
             NotificationRecipient recipient = new()
             {
@@ -201,7 +201,7 @@ internal sealed class NotificationService : INotificationService
             };
         }
 
-        if (instanceOwner.PersonNumber is not null)
+        if (string.IsNullOrWhiteSpace(instanceOwner.PersonNumber) is false)
         {
             NotificationRecipient recipient = new()
             {
@@ -233,7 +233,7 @@ internal sealed class NotificationService : INotificationService
             };
         }
 
-        if (instanceOwner.ExternalIdentifier is not null)
+        if (string.IsNullOrWhiteSpace(instanceOwner.ExternalIdentifier) is false)
         {
             NotificationRecipient recipient = new()
             {
@@ -402,13 +402,13 @@ internal sealed class NotificationService : INotificationService
         CancellationToken ct = default
     )
     {
-        if (instanceOwner.PersonNumber is not null)
+        if (string.IsNullOrWhiteSpace(instanceOwner.PersonNumber) is false)
         {
             UserProfile? personProfile = await _profileClient.GetUserProfile(instanceOwner.PersonNumber);
             return personProfile?.ProfileSettingPreference?.Language ?? LanguageConst.Nb;
         }
 
-        if (instanceOwner.ExternalIdentifier is not null)
+        if (string.IsNullOrWhiteSpace(instanceOwner.ExternalIdentifier) is false)
         {
             Guid? partyGuid = await _altinnPartyClient.GetPartyUuidByUrn(instanceOwner.ExternalIdentifier);
             if (partyGuid is null)
@@ -422,7 +422,7 @@ internal sealed class NotificationService : INotificationService
             return userProfile?.ProfileSettingPreference?.Language ?? LanguageConst.En;
         }
 
-        if (instanceOwner.OrganisationNumber is not null)
+        if (string.IsNullOrWhiteSpace(instanceOwner.OrganisationNumber) is false)
         {
             return requestedOrgLanguage ?? LanguageConst.Nb;
         }
