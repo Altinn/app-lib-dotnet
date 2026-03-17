@@ -35,7 +35,6 @@ internal static class NotificationTexts
         return language switch
         {
             LanguageConst.En => "New form created in Altinn",
-            LanguageConst.Nn => "Nytt skjema opprettet i Altinn",
             _ => "Nytt skjema opprettet i Altinn",
         };
     }
@@ -72,26 +71,12 @@ internal static class NotificationTexts
 
         if (string.IsNullOrWhiteSpace(appName) is false)
         {
-            parts.Add(
-                language switch
-                {
-                    LanguageConst.En => $"({appName})",
-                    LanguageConst.Nn => $"({appName})",
-                    _ => $"({appName})",
-                }
-            );
+            parts.Add($"({appName})");
         }
 
         if (string.IsNullOrWhiteSpace(instanceOwnerName) is false)
         {
-            parts.Add(
-                language switch
-                {
-                    LanguageConst.En => $"for {instanceOwnerName}",
-                    LanguageConst.Nn => $"for {instanceOwnerName}",
-                    _ => $"for {instanceOwnerName}",
-                }
-            );
+            parts.Add($"for {instanceOwnerName}");
         }
 
         if (string.IsNullOrWhiteSpace(orgNumber) is false)
