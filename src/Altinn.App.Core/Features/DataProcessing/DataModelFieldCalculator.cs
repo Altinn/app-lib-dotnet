@@ -166,7 +166,7 @@ internal sealed class DataModelFieldCalculator
                 {
                     if (!dataModelFieldCalculations.TryGetValue(field, out var dataModelFieldCalculation))
                     {
-                        dataModelFieldCalculation = new List<DataModelFieldCalculation>();
+                        dataModelFieldCalculation = [];
                         dataModelFieldCalculations[field] = dataModelFieldCalculation;
                     }
                     var resolvedDataModelFieldCalculation = ResolveDataModelFieldCalculation(field, calculation);

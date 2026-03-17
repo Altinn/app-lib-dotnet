@@ -52,7 +52,7 @@ public class DataModelFieldCalculatorTests
         );
     }
 
-    public async Task<DataModelFieldCalculatorTestModel> LoadData(string fileName, string folder)
+    private async Task<DataModelFieldCalculatorTestModel> LoadData(string fileName, string folder)
     {
         var data = await File.ReadAllTextAsync(Path.Join(folder, fileName));
         _output.WriteLine(data);
