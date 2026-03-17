@@ -231,7 +231,6 @@ public class DataModelWrapper
                 );
             }
 
-            // Collection is null/empty
             if (isCalculating && currentIndex == keyParts.Length - 1)
             {
                 return [JoinFieldKeyParts(currentKey, key)];
