@@ -192,10 +192,12 @@ public class DataModelWrapper
             if (childModel is System.Collections.IEnumerable childModelList)
             {
                 // Get the element type of the collection
-                var elementType = childType.GetGenericArguments().FirstOrDefault() ?? typeof(object);
+                var elementType = childType.IsArray
+                    ? childType.GetElementType() ?? typeof(object)
+                    : childType.GetGenericArguments().FirstOrDefault() ?? typeof(object);
+                // Index not specified, recurse on all elements
                 if (groupIndex is null)
                 {
-                    // Index not specified, recurse on all elements
                     int i = 0;
                     var resolvedKeys = new List<string>();
                     foreach (var child in childModelList)
