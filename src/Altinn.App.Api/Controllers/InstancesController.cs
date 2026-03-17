@@ -239,6 +239,7 @@ public class InstancesController : ControllerBase
         var requestParts = readResult.Ok;
 
         Instance? instanceTemplate = ExtractInstanceTemplate(requestParts);
+        InstansiationNotification? notification = ExtractInstantiationNotification(requestParts);
 
         if (instanceOwnerPartyId is null && instanceTemplate is null)
         {
@@ -409,8 +410,6 @@ public class InstancesController : ControllerBase
         }
 
         await RegisterEvent("app.instance.created", instance);
-
-        InstansiationNotification? notification = ExtractInstantiationNotification(requestParts);
 
         if (notification is not null)
         {
