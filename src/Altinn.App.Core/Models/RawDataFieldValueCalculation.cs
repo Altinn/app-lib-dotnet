@@ -14,7 +14,7 @@ internal sealed class DataFieldCalculation
 }
 
 /// <summary>
-/// Raw value calculation expression from the calculaiton configuration file
+/// Raw value calculation expression from the calculation configuration file
 /// </summary>
 internal sealed class RawDataFieldValueCalculation
 {

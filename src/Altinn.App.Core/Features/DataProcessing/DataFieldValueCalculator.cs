@@ -184,8 +184,6 @@ internal sealed class DataFieldValueCalculator
 
     private DataFieldCalculation? ResolveDataFieldCalculation(string field, JsonElement definition)
     {
-        var rawDataFieldValueCalculation = new RawDataFieldValueCalculation();
-
         var dataFieldCalculationDefinition = definition.Deserialize<RawDataFieldValueCalculation>(
             _jsonSerializerOptions
         );
@@ -201,11 +199,9 @@ internal sealed class DataFieldValueCalculator
             return null;
         }
 
-        rawDataFieldValueCalculation.Condition = dataFieldCalculationDefinition.Condition;
-
         var dataFieldCalculation = new DataFieldCalculation
         {
-            Condition = rawDataFieldValueCalculation.Condition.Value,
+            Condition = dataFieldCalculationDefinition.Condition.Value,
         };
 
         return dataFieldCalculation;

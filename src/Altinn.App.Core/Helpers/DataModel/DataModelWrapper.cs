@@ -205,7 +205,7 @@ public class DataModelWrapper
                             child,
                             elementType,
                             currentIndex + 1,
-                            JoinFieldKeyParts(currentKey, key + "[" + i + "]"),
+                            JoinFieldKeyParts(currentKey, $"{key}[{i}]"),
                             isCalculating
                         );
                         resolvedKeys.AddRange(newResolvedKeys);
@@ -224,7 +224,7 @@ public class DataModelWrapper
                     elementAt,
                     elementType,
                     currentIndex + 1,
-                    JoinFieldKeyParts(currentKey, key + "[" + groupIndex + "]"),
+                    JoinFieldKeyParts(currentKey, $"{key}[{groupIndex}]"),
                     isCalculating
                 );
             }
