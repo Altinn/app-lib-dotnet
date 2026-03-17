@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Models;
 /// <summary>
 /// Resolved data field calculation
 /// </summary>
-internal sealed class DataFieldCalculation
+internal sealed class DataModelFieldCalculation
 {
     /// <summary>
     /// Condition to evaluate
@@ -16,7 +16,7 @@ internal sealed class DataFieldCalculation
 /// <summary>
 /// Raw value calculation expression from the calculation configuration file
 /// </summary>
-internal sealed class RawDataFieldValueCalculation
+internal sealed class RawDataModelFieldCalculation
 {
     /// <summary>
     /// Condition to evaluate

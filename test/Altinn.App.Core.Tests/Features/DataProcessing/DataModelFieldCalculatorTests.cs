@@ -19,11 +19,11 @@ using IAppResources = Altinn.App.Core.Internal.App.IAppResources;
 
 namespace Altinn.App.Core.Tests.Features.DataProcessing;
 
-public class DataFieldValueCalculatorTests
+public class DataModelFieldCalculatorTests
 {
     private readonly ITestOutputHelper _output;
-    private readonly DataFieldValueCalculator _dataFieldValueCalculator;
-    private readonly FakeLogger<DataFieldValueCalculator> _logger = new();
+    private readonly DataModelFieldCalculator _dataModelFieldCalculator;
+    private readonly FakeLogger<DataModelFieldCalculator> _logger = new();
     private readonly Mock<IAppResources> _appResources = new(MockBehavior.Strict);
     private readonly Mock<ILayoutEvaluatorStateInitializer> _layoutInitializer = new(MockBehavior.Strict);
     private readonly IOptions<FrontEndSettings> _frontendSettings = Microsoft.Extensions.Options.Options.Create(
@@ -35,7 +35,7 @@ public class DataFieldValueCalculatorTests
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    public DataFieldValueCalculatorTests(ITestOutputHelper output)
+    public DataModelFieldCalculatorTests(ITestOutputHelper output)
     {
         var dataElementAccessChecker = new Mock<IDataElementAccessChecker>();
         dataElementAccessChecker.Setup(x => x.CanRead(It.IsAny<Instance>(), It.IsAny<DataType>())).ReturnsAsync(true);
@@ -43,7 +43,7 @@ public class DataFieldValueCalculatorTests
         var telemetry = new TelemetrySink();
 
         _output = output;
-        _dataFieldValueCalculator = new DataFieldValueCalculator(
+        _dataModelFieldCalculator = new DataModelFieldCalculator(
             _logger,
             _layoutInitializer.Object,
             _appResources.Object,
@@ -52,25 +52,25 @@ public class DataFieldValueCalculatorTests
         );
     }
 
-    public async Task<DataFieldValueCalculatorTestModel> LoadData(string fileName, string folder)
+    public async Task<DataModelFieldCalculatorTestModel> LoadData(string fileName, string folder)
     {
         var data = await File.ReadAllTextAsync(Path.Join(folder, fileName));
         _output.WriteLine(data);
-        return JsonSerializer.Deserialize<DataFieldValueCalculatorTestModel>(data, _jsonSerializerOptions)!;
+        return JsonSerializer.Deserialize<DataModelFieldCalculatorTestModel>(data, _jsonSerializerOptions)!;
     }
 
     [Theory]
     [FileNamesInFolderData(["Features", "DataProcessing", "data-field-value-calculator-tests", "backend"])]
-    public async Task RunDataFieldCalculationTestsForBackend(string fileName, string folder)
+    public async Task RunDataModelFieldCalculationTestsForBackend(string fileName, string folder)
     {
-        await RunDataFieldCalculationTests(fileName, folder);
+        await RunDataModelFieldCalculationTests(fileName, folder);
     }
 
     [Theory]
     [FileNamesInFolderData(["Features", "DataProcessing", "data-field-value-calculator-tests", "shared"])]
-    public async Task RunDataFieldCalculationTestsForShared(string fileName, string folder)
+    public async Task RunDataModelFieldCalculationTestsForShared(string fileName, string folder)
     {
-        await RunDataFieldCalculationTests(fileName, folder);
+        await RunDataModelFieldCalculationTests(fileName, folder);
     }
 
     [Fact]
@@ -111,12 +111,12 @@ public class DataFieldValueCalculatorTests
             }
             """;
         _output.WriteLine(testCaseJson);
-        var testCase = JsonSerializer.Deserialize<DataFieldValueCalculatorTestModel>(
+        var testCase = JsonSerializer.Deserialize<DataModelFieldCalculatorTestModel>(
             testCaseJson,
             _jsonSerializerOptions
         )!;
 
-        await RunDataFieldCalculatorTest(testCase);
+        await RunDataModelFieldCalculatorTest(testCase);
 
         foreach (var expected in testCase.Expects)
         {
@@ -124,9 +124,9 @@ public class DataFieldValueCalculatorTests
         }
     }
 
-    private async Task RunDataFieldCalculationTests(string fileName, string folder)
+    private async Task RunDataModelFieldCalculationTests(string fileName, string folder)
     {
-        var (result, testCase) = await RunDataFieldCalculatorTest(fileName, folder);
+        var (result, testCase) = await RunDataModelFieldCalculatorTest(fileName, folder);
 
         foreach (var expected in testCase.Expects)
         {
@@ -141,17 +141,17 @@ public class DataFieldValueCalculatorTests
         }
     }
 
-    private async Task<(IFormDataWrapper, DataFieldValueCalculatorTestModel)> RunDataFieldCalculatorTest(
+    private async Task<(IFormDataWrapper, DataModelFieldCalculatorTestModel)> RunDataModelFieldCalculatorTest(
         string fileName,
         string folder
     )
     {
         var testCase = await LoadData(fileName, folder);
 
-        return (await RunDataFieldCalculatorTest(testCase), testCase);
+        return (await RunDataModelFieldCalculatorTest(testCase), testCase);
     }
 
-    private async Task<IFormDataWrapper> RunDataFieldCalculatorTest(DataFieldValueCalculatorTestModel testCase)
+    private async Task<IFormDataWrapper> RunDataModelFieldCalculatorTest(DataModelFieldCalculatorTestModel testCase)
     {
         var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "org/app" };
         var dataElement = new DataElement { Id = "30844cc0-81af-4429-9f9e-035d78f1f9da", DataType = "default" };
@@ -186,7 +186,7 @@ public class DataFieldValueCalculatorTests
                     : new TextResource { Language = "nb", Resources = testCase.TextResources }
             );
 
-        await _dataFieldValueCalculator.CalculateFormData(
+        await _dataModelFieldCalculator.CalculateFormData(
             dataAccessor,
             dataElement,
             "Task_1",
@@ -196,7 +196,7 @@ public class DataFieldValueCalculatorTests
         return await dataAccessor.GetFormDataWrapper(dataElement);
     }
 
-    public record DataFieldValueCalculatorTestModel
+    public record DataModelFieldCalculatorTestModel
     {
         [JsonPropertyName("name")]
         public required string Name { get; set; }

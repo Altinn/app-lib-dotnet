@@ -3,19 +3,19 @@
 namespace Altinn.App.Core.Features.DataProcessing;
 
 /// <summary>
-/// Processing data fields values that is calculated by expressions provided in [modelName].calculation.json.
+/// Processing data model fields that is calculated by expressions provided in [modelName].calculation.json.
 /// </summary>
-internal sealed class DataFieldValueCalculatorProcessor : IDataWriteProcessor
+internal sealed class DataModelFieldCalculatorProcessor : IDataWriteProcessor
 {
-    private readonly DataFieldValueCalculator _dataFieldValueCalculator;
+    private readonly DataModelFieldCalculator _dataModelFieldCalculator;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DataFieldValueCalculatorProcessor"/> class.
+    /// Initializes a new instance of the <see cref="DataModelFieldCalculatorProcessor"/> class.
     /// </summary>
-    /// <param name="dataFieldValueCalculator"></param>
-    public DataFieldValueCalculatorProcessor(DataFieldValueCalculator dataFieldValueCalculator)
+    /// <param name="dataModelFieldCalculator"></param>
+    public DataModelFieldCalculatorProcessor(DataModelFieldCalculator dataModelFieldCalculator)
     {
-        _dataFieldValueCalculator = dataFieldValueCalculator;
+        _dataModelFieldCalculator = dataModelFieldCalculator;
     }
 
     /// <summary>
@@ -32,6 +32,6 @@ internal sealed class DataFieldValueCalculatorProcessor : IDataWriteProcessor
         string? language
     )
     {
-        await _dataFieldValueCalculator.Calculate(instanceDataMutator, taskId);
+        await _dataModelFieldCalculator.Calculate(instanceDataMutator, taskId);
     }
 }

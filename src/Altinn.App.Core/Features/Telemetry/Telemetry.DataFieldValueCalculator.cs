@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using static Altinn.App.Core.Features.Telemetry.DataFieldValueCalculator;
+using static Altinn.App.Core.Features.Telemetry.DataModelFieldCalculator;
 
 namespace Altinn.App.Core.Features;
 
@@ -13,8 +13,8 @@ partial class Telemetry
         return activity;
     }
 
-    internal static class DataFieldValueCalculator
+    internal static class DataModelFieldCalculator
     {
-        internal const string Prefix = "DataFieldValueCalculator";
+        internal const string Prefix = "DataModelFieldCalculator";
     }
 }

@@ -10,7 +10,7 @@ using ComponentContext = Altinn.App.Core.Models.Expressions.ComponentContext;
 
 namespace Altinn.App.Core.Features.DataProcessing;
 
-internal sealed class DataFieldValueCalculator
+internal sealed class DataModelFieldCalculator
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -18,14 +18,14 @@ internal sealed class DataFieldValueCalculator
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    private readonly ILogger<DataFieldValueCalculator> _logger;
+    private readonly ILogger<DataModelFieldCalculator> _logger;
     private readonly IAppResources _appResourceService;
     private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IDataElementAccessChecker _dataElementAccessChecker;
     private readonly Telemetry? _telemetry;
 
-    public DataFieldValueCalculator(
-        ILogger<DataFieldValueCalculator> logger,
+    public DataModelFieldCalculator(
+        ILogger<DataModelFieldCalculator> logger,
         ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IAppResources appResourceService,
         IDataElementAccessChecker dataElementAccessChecker,
@@ -70,10 +70,10 @@ internal sealed class DataFieldValueCalculator
             evaluateRemoveWhenHidden: false
         );
         DataElementIdentifier dataElementIdentifier = dataElement;
-        var dataFieldCalculations = ParseDataFieldCalculationConfig(rawCalculationConfig);
+        var dataModelFieldCalculations = ParseDataModelFieldCalculationConfig(rawCalculationConfig);
         var formDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement);
 
-        foreach (var (baseField, calculations) in dataFieldCalculations)
+        foreach (var (baseField, calculations) in dataModelFieldCalculations)
         {
             var resolvedFields = await evaluatorState.GetResolvedKeys(
                 new DataReference() { Field = baseField, DataElementIdentifier = dataElementIdentifier },
@@ -119,7 +119,7 @@ internal sealed class DataFieldValueCalculator
         DataReference resolvedField,
         ComponentContext context,
         object[] positionalArguments,
-        DataFieldCalculation calculation
+        DataModelFieldCalculation calculation
     )
     {
         try
@@ -147,11 +147,11 @@ internal sealed class DataFieldValueCalculator
         }
     }
 
-    private Dictionary<string, List<DataFieldCalculation>> ParseDataFieldCalculationConfig(string rawCalculationConfig)
+    private Dictionary<string, List<DataModelFieldCalculation>> ParseDataModelFieldCalculationConfig(string rawCalculationConfig)
     {
         using var calculationConfigDocument = JsonDocument.Parse(rawCalculationConfig);
 
-        var dataFieldCalculations = new Dictionary<string, List<DataFieldCalculation>>();
+        var dataModelFieldCalculations = new Dictionary<string, List<DataModelFieldCalculation>>();
         var hasCalculations = calculationConfigDocument.RootElement.TryGetProperty(
             "calculations",
             out JsonElement calculationsObject
@@ -164,46 +164,46 @@ internal sealed class DataFieldValueCalculator
                 var calculations = calculationArray.Value;
                 foreach (var calculation in calculations.EnumerateArray())
                 {
-                    if (!dataFieldCalculations.TryGetValue(field, out var dataFieldCalculation))
+                    if (!dataModelFieldCalculations.TryGetValue(field, out var dataModelFieldCalculation))
                     {
-                        dataFieldCalculation = new List<DataFieldCalculation>();
-                        dataFieldCalculations[field] = dataFieldCalculation;
+                        dataModelFieldCalculation = new List<DataModelFieldCalculation>();
+                        dataModelFieldCalculations[field] = dataModelFieldCalculation;
                     }
-                    var resolvedDataFieldCalculation = ResolveDataFieldCalculation(field, calculation);
-                    if (resolvedDataFieldCalculation == null)
+                    var resolvedDataModelFieldCalculation = ResolveDataModelFieldCalculation(field, calculation);
+                    if (resolvedDataModelFieldCalculation == null)
                     {
                         _logger.LogError("Calculation for field {Field} could not be resolved", field);
                         continue;
                     }
-                    dataFieldCalculation.Add(resolvedDataFieldCalculation);
+                    dataModelFieldCalculation.Add(resolvedDataModelFieldCalculation);
                 }
             }
         }
-        return dataFieldCalculations;
+        return dataModelFieldCalculations;
     }
 
-    private DataFieldCalculation? ResolveDataFieldCalculation(string field, JsonElement definition)
+    private DataModelFieldCalculation? ResolveDataModelFieldCalculation(string field, JsonElement definition)
     {
-        var dataFieldCalculationDefinition = definition.Deserialize<RawDataFieldValueCalculation>(
+        var dataModelFieldCalculationDefinition = definition.Deserialize<RawDataModelFieldCalculation>(
             _jsonSerializerOptions
         );
-        if (dataFieldCalculationDefinition == null)
+        if (dataModelFieldCalculationDefinition == null)
         {
             _logger.LogError("Calculation for field {Field} could not be parsed", field);
             return null;
         }
 
-        if (dataFieldCalculationDefinition.Condition == null)
+        if (dataModelFieldCalculationDefinition.Condition == null)
         {
             _logger.LogError("Calculation for field {Field} is missing condition", field);
             return null;
         }
 
-        var dataFieldCalculation = new DataFieldCalculation
+        var dataModelFieldCalculation = new DataModelFieldCalculation
         {
-            Condition = dataFieldCalculationDefinition.Condition.Value,
+            Condition = dataModelFieldCalculationDefinition.Condition.Value,
         };
 
-        return dataFieldCalculation;
+        return dataModelFieldCalculation;
     }
 }
