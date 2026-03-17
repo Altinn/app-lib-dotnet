@@ -93,11 +93,7 @@ internal sealed class NotificationOrderClient : INotificationOrderClient
                 httpContent,
                 e
             );
-            _logger.LogError(
-                ex,
-                "Error when processing notification order. Response body: {ResponseBody}",
-                ex.ResponseContent
-            );
+            _logger.LogError(ex, "Error when processing notification order.");
             throw ex;
         }
         finally
