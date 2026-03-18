@@ -53,7 +53,7 @@ public class NotificationCallbackController(
         catch
         {
             logger.LogWarning(
-                "Unable to get instance on notification callback - cannot cancel notification reminder(s). Does the app support Maskinporten?"
+                "Unable to get instance on notification callback - cannot cancel scheduled notification. Does the app support Maskinporten?"
             );
         }
 
