@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Altinn.App.Core.Features.Notifications.Cancellation;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Altinn.App.Api.Controllers;
@@ -10,6 +11,7 @@ namespace Altinn.App.Api.Controllers;
 /// Endpoint(s) for the Altinn Notification microservice callback
 /// </summary>
 [ApiController]
+[AllowAnonymous]
 [ApiExplorerSettings(IgnoreApi = true)]
 [Route("{org}/{app}/notifications")]
 public class NotificationCallbackController(
