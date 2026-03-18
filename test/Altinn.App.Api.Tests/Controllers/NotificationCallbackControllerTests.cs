@@ -1,4 +1,5 @@
 using Altinn.App.Api.Controllers;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications.Cancellation;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;
@@ -30,11 +31,12 @@ public class NotificationCallbackControllerTests
 
         _instanceClientMock
             .Setup(x =>
-                x.GetInstanceForNotificationCallback(
+                x.GetInstance(
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -62,11 +64,12 @@ public class NotificationCallbackControllerTests
 
         _instanceClientMock
             .Setup(x =>
-                x.GetInstanceForNotificationCallback(
+                x.GetInstance(
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -99,11 +102,12 @@ public class NotificationCallbackControllerTests
 
         _instanceClientMock
             .Setup(x =>
-                x.GetInstanceForNotificationCallback(
+                x.GetInstance(
                     app,
                     org,
                     instanceOwnerPartyId,
                     instanceGuid,
+                    It.IsAny<StorageAuthenticationMethod>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -120,11 +124,12 @@ public class NotificationCallbackControllerTests
         // Assert
         _instanceClientMock.Verify(
             x =>
-                x.GetInstanceForNotificationCallback(
+                x.GetInstance(
                     app,
                     org,
                     instanceOwnerPartyId,
                     instanceGuid,
+                    It.IsAny<StorageAuthenticationMethod>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -139,11 +144,12 @@ public class NotificationCallbackControllerTests
 
         _instanceClientMock
             .Setup(x =>
-                x.GetInstanceForNotificationCallback(
+                x.GetInstance(
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -167,11 +173,12 @@ public class NotificationCallbackControllerTests
         // Arrange
         _instanceClientMock
             .Setup(x =>
-                x.GetInstanceForNotificationCallback(
+                x.GetInstance(
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
                     It.IsAny<CancellationToken>()
                 )
             )

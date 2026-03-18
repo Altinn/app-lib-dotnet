@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications.Cancellation;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;
@@ -43,11 +44,12 @@ public class NotificationCallbackController(
         Instance? instance = null;
         try
         {
-            instance = await instanceClient.GetInstanceForNotificationCallback(
+            instance = await instanceClient.GetInstance(
                 app,
                 org,
                 instanceOwnerPartyId,
-                instanceGuid
+                instanceGuid,
+                StorageAuthenticationMethod.ServiceOwner()
             );
         }
         catch
