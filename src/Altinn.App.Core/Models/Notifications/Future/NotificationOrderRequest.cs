@@ -407,12 +407,6 @@ public sealed record EmailSendingOptions
     /// </summary>
     [JsonPropertyName("contentType")]
     public EmailContentType ContentType { get; init; } = EmailContentType.Plain;
-
-    /// <summary>
-    /// Gets or sets when the email may be delivered. Defaults to <see cref="SendingTimePolicy.Anytime"/>.
-    /// </summary>
-    [JsonPropertyName("sendingTimePolicy")]
-    public SendingTimePolicy SendingTimePolicy { get; init; } = SendingTimePolicy.Anytime;
 }
 
 /// <summary>
@@ -489,9 +483,9 @@ public enum SendingTimePolicy : uint
 {
     /// <summary>The notification may be sent at any time of day.</summary>
     [JsonStringEnumMemberName("Anytime")]
-    Anytime = 1,
+    Anytime,
 
     /// <summary>The notification will only be sent during daytime hours.</summary>
     [JsonStringEnumMemberName("Daytime")]
-    Daytime = 2,
+    Daytime,
 }

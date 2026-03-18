@@ -925,7 +925,6 @@ public class NotificationServiceTests
         );
 
         var org = result.Recipient.RecipientOrganization!;
-        Assert.Equal(expectedPolicy, org.EmailSettings?.SendingTimePolicy);
         Assert.Equal(expectedPolicy, org.SmsSettings?.SendingTimePolicy);
     }
 

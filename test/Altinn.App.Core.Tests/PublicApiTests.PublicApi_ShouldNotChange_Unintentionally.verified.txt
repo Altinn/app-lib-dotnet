@@ -4918,8 +4918,6 @@ namespace Altinn.App.Core.Models.Notifications.Future
         [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         [System.Text.Json.Serialization.JsonPropertyName("senderEmailAddress")]
         public string? SenderEmailAddress { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("sendingTimePolicy")]
-        public Altinn.App.Core.Models.Notifications.Future.SendingTimePolicy SendingTimePolicy { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("subject")]
         public required string Subject { get; init; }
     }
@@ -5114,9 +5112,9 @@ namespace Altinn.App.Core.Models.Notifications.Future
     public enum SendingTimePolicy : uint
     {
         [System.Text.Json.Serialization.JsonStringEnumMemberName("Anytime")]
-        Anytime = 1u,
+        Anytime = 0u,
         [System.Text.Json.Serialization.JsonStringEnumMemberName("Daytime")]
-        Daytime = 2u,
+        Daytime = 1u,
     }
     public sealed class SmsSendingOptions : System.IEquatable<Altinn.App.Core.Models.Notifications.Future.SmsSendingOptions>
     {

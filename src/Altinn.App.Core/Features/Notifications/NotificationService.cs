@@ -96,7 +96,6 @@ internal sealed class NotificationService : INotificationService
         CustomEmail? customEmail = instantiationNotification.CustomEmail;
         EmailSendingOptions emailSettings = new()
         {
-            SendingTimePolicy = sendingTimePolicy,
             Subject = customEmail is not null
                 ? NotificationTexts.ReplaceTokens(
                     text: customEmail.Subject.GetTextForLanguage(language),
