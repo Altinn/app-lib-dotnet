@@ -240,7 +240,8 @@ internal sealed class NotificationService : INotificationService
                 RecipientExternalIdentity = new RecipientExternalIdentity
                 {
                     ExternalIdentity = instanceOwner.ExternalIdentifier,
-                    ChannelSchema = NotificationChannel.Email,
+                    ChannelSchema = NotificationChannel.EmailPreferred,
+                    SmsSettings = smsSettings,
                     EmailSettings = emailSettings,
                     ResourceId = resourceId.AsUrn,
                 },
