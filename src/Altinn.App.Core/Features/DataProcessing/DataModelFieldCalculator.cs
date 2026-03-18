@@ -126,7 +126,7 @@ internal sealed class DataModelFieldCalculator
         {
             var calculationResult = await ExpressionEvaluator.EvaluateExpressionToExpressionValue(
                 evaluatorState,
-                calculation.Condition,
+                calculation.Expression,
                 context,
                 positionalArguments
             );
@@ -147,7 +147,9 @@ internal sealed class DataModelFieldCalculator
         }
     }
 
-    private Dictionary<string, List<DataModelFieldCalculation>> ParseDataModelFieldCalculationConfig(string rawCalculationConfig)
+    private Dictionary<string, List<DataModelFieldCalculation>> ParseDataModelFieldCalculationConfig(
+        string rawCalculationConfig
+    )
     {
         using var calculationConfigDocument = JsonDocument.Parse(rawCalculationConfig);
 
@@ -193,7 +195,7 @@ internal sealed class DataModelFieldCalculator
             return null;
         }
 
-        if (dataModelFieldCalculationDefinition.Condition == null)
+        if (dataModelFieldCalculationDefinition.Expression == null)
         {
             _logger.LogError("Calculation for field {Field} is missing condition", field);
             return null;
@@ -201,7 +203,7 @@ internal sealed class DataModelFieldCalculator
 
         var dataModelFieldCalculation = new DataModelFieldCalculation
         {
-            Condition = dataModelFieldCalculationDefinition.Condition.Value,
+            Expression = dataModelFieldCalculationDefinition.Expression.Value,
         };
 
         return dataModelFieldCalculation;

@@ -13,12 +13,12 @@
         "calculations": {
             "form.fourTimesTwoString": [
                 {
-                    "condition": ["multiply", 4, 2]
+                    "expression": ["multiply", 4, 2]
                 }
             ],
             "form.fourTimesTwoNumber": [
                 {
-                    "condition": ["multiply", 4, 2]
+                    "expression": ["multiply", 4, 2]
                 }
             ]
         }

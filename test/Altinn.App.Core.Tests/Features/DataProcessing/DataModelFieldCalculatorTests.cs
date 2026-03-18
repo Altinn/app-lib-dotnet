@@ -75,7 +75,7 @@ public class DataModelFieldCalculatorTests
                     "calculations": {
                         "form.unsupportedDataType": [
                             {
-                                "condition": ["language"]
+                                "expression": ["language"]
                             }
                         ]
                     }

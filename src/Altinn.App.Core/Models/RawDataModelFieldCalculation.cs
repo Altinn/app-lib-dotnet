@@ -8,9 +8,9 @@ namespace Altinn.App.Core.Models;
 internal sealed class DataModelFieldCalculation
 {
     /// <summary>
-    /// Condition to evaluate
+    /// Expression to evaluate
     /// </summary>
-    public required Expression Condition { get; set; }
+    public required Expression Expression { get; set; }
 }
 
 /// <summary>
@@ -19,7 +19,7 @@ internal sealed class DataModelFieldCalculation
 internal sealed class RawDataModelFieldCalculation
 {
     /// <summary>
-    /// Condition to evaluate
+    /// Expression to evaluate
     /// </summary>
-    public Expression? Condition { get; set; }
+    public Expression? Expression { get; set; }
 }

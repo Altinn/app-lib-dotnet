@@ -19,22 +19,22 @@
         "calculations": {
             "form.nameResultBoolean": [
                 {
-                    "condition": ["equals", ["dataModel", "form.name"], "none"]
+                    "expression": ["equals", ["dataModel", "form.name"], "none"]
                 }
             ],
             "form.emailResultBoolean": [
                 {
-                    "condition": ["equals", ["dataModel", "form.email"], "none"]
+                    "expression": ["equals", ["dataModel", "form.email"], "none"]
                 }
             ],
             "form.nameResultNumber": [
                 {
-                    "condition": ["equals", ["dataModel", "form.name"], "none"]
+                    "expression": ["equals", ["dataModel", "form.name"], "none"]
                 }
             ],
             "form.emailResultNumber": [
                 {
-                    "condition": ["equals", ["dataModel", "form.email"], "none"]
+                    "expression": ["equals", ["dataModel", "form.email"], "none"]
                 }
             ]
         }

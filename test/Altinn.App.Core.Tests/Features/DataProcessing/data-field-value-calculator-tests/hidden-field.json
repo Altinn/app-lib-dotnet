@@ -11,7 +11,7 @@
         "calculations": {
             "form.name": [
                 {
-                    "condition": ["equals", ["dataModel", ["argv", 0]], "feil"]
+                    "expression": ["equals", ["dataModel", ["argv", 0]], "feil"]
                 }
             ]
         }
