@@ -4,6 +4,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.Common.AccessTokenClient.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -93,7 +94,7 @@ internal sealed class NotificationOrderClient : INotificationOrderClient
                 httpContent,
                 e
             );
-            _logger.LogError(ex, "Error when processing notification order. Response body: {Body}", httpContent);
+            _logger.LogError(ex, "Error when processing notification order.");
             throw ex;
         }
         finally
