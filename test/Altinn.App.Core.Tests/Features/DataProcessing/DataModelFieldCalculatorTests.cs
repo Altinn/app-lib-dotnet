@@ -73,11 +73,9 @@ public class DataModelFieldCalculatorTests
                 "calculationConfig": {
                     "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/validation/validation.schema.v1.json",
                     "calculations": {
-                        "form.unsupportedDataType": [
-                            {
-                                "expression": ["language"]
-                            }
-                        ]
+                        "form.unsupportedDataType": {
+                            "expression": ["language"]
+                        }
                     }
                 },
                 "formData": {
