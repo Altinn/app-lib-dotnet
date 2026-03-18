@@ -44,15 +44,16 @@ internal sealed class NotificationService : INotificationService
         _generalSettings = generalSettings.Value;
     }
 
-    public async Task NotifyInstanceOwnerOnInstansiation(
+    /// <inheritdoc />
+    public async Task NotifyInstanceOwnerOnInstantiation(
         Instance instance,
         Party party,
-        InstansiationNotification instansiationNotification,
+        InstantiationNotification instantiationNotification,
         CancellationToken ct
     )
     {
         InstanceOwner instanceOwner = instance.InstanceOwner;
-        string? language = await DetermineLanguage(instanceOwner, instansiationNotification.Language, ct);
+        string language = await DetermineLanguage(instanceOwner, instantiationNotification.Language);
         AltinnCdnOrgName? serviceOwnerName = await _cdnClient.GetOrgNameByAppId(instance.AppId, ct);
         ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
         string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance.AppId));
@@ -63,7 +64,7 @@ internal sealed class NotificationService : INotificationService
             appMetadata,
             party.Name,
             serviceOwnerName,
-            instansiationNotification,
+            instantiationNotification,
             baseUrl
         );
 
@@ -81,18 +82,18 @@ internal sealed class NotificationService : INotificationService
         ApplicationMetadata? applicationMetadata,
         string? instanceOwnerName,
         AltinnCdnOrgName? serviceOwnerName,
-        InstansiationNotification instansiationNotification,
+        InstantiationNotification instantiationNotification,
         string? callBackBaseUrl
     )
     {
         InstanceOwner instanceOwner = instance.InstanceOwner;
-        DateOnly? dueDateString = instance.DueBefore.HasValue ? DateOnly.FromDateTime(instance.DueBefore.Value) : null;
+        DateTime? dueDate = instance.DueBefore.HasValue ? instance.DueBefore.Value : null;
         string? appTitle = GetTitleFromMetadata(language, applicationMetadata);
-        SendingTimePolicy sendingTimePolicy = instansiationNotification.AllowSendingAfterWorkHours is true
+        SendingTimePolicy sendingTimePolicy = instantiationNotification.AllowSendingAfterWorkHours is true
             ? SendingTimePolicy.Anytime
             : SendingTimePolicy.Daytime;
 
-        CustomEmail? customEmail = instansiationNotification.CustomEmail;
+        CustomEmail? customEmail = instantiationNotification.CustomEmail;
         EmailSendingOptions emailSettings = new()
         {
             SendingTimePolicy = sendingTimePolicy,
@@ -105,7 +106,7 @@ internal sealed class NotificationService : INotificationService
                     serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
                     orgNumber: instanceOwner.OrganisationNumber,
                     nationalIndentityNumber: instanceOwner.PersonNumber,
-                    dueDate: dueDateString
+                    dueDateTime: dueDate
                 )
                 : NotificationTexts.GetDefaultSubject(language),
             Body = customEmail is not null
@@ -117,7 +118,7 @@ internal sealed class NotificationService : INotificationService
                     serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
                     orgNumber: instanceOwner.OrganisationNumber,
                     nationalIndentityNumber: instanceOwner.PersonNumber,
-                    dueDate: dueDateString
+                    dueDateTime: dueDate
                 )
                 : NotificationTexts.GetDefaultBody(
                     language: language,
@@ -126,11 +127,11 @@ internal sealed class NotificationService : INotificationService
                     serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
                     orgNumber: instanceOwner.OrganisationNumber,
                     nationalIndentityNumber: instanceOwner.PersonNumber,
-                    dueDate: dueDateString
+                    dueDate: dueDate
                 ),
         };
 
-        CustomSms? customSms = instansiationNotification.CustomSms;
+        CustomSms? customSms = instantiationNotification.CustomSms;
         SmsSendingOptions smsSettings = new()
         {
             SendingTimePolicy = sendingTimePolicy,
@@ -144,7 +145,7 @@ internal sealed class NotificationService : INotificationService
                     serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
                     orgNumber: instanceOwner.OrganisationNumber,
                     nationalIndentityNumber: instanceOwner.PersonNumber,
-                    dueDate: dueDateString
+                    dueDateTime: dueDate
                 )
                 : NotificationTexts.GetDefaultBody(
                     language: language,
@@ -153,18 +154,18 @@ internal sealed class NotificationService : INotificationService
                     serviceOwnerName: serviceOwnerName?.GetByLanguage(language),
                     orgNumber: instanceOwner.OrganisationNumber,
                     nationalIndentityNumber: instanceOwner.PersonNumber,
-                    dueDate: dueDateString
+                    dueDate: dueDate
                 ),
         };
-        NotificationChannel requestedChannel = instansiationNotification.NotificationChannel;
+        NotificationChannel requestedChannel = instantiationNotification.NotificationChannel;
 
         AppResourceId resourceId = AppResourceId.FromAppIdentifier(new(instance.AppId));
-        DateTime requestedSendTimeOrDefault = instansiationNotification.RequestedSendTime ?? DateTime.Now.AddMinutes(5);
+        DateTime requestedSendTimeOrDefault = instantiationNotification.RequestedSendTime ?? DateTime.Now.AddMinutes(5);
         string sendersReference = "app-" + instance.Id;
         string idempotencyId = instance.Id + "-init";
 
         Uri? conditionEndpoint = null;
-        if (instansiationNotification.RequestedSendTime is not null)
+        if (instantiationNotification.RequestedSendTime is not null)
         {
             conditionEndpoint = new Uri(callBackBaseUrl?.TrimEnd('/') + "/notifications/" + instance.Id);
         }
@@ -187,7 +188,7 @@ internal sealed class NotificationService : INotificationService
                 language,
                 recipient,
                 conditionEndpoint,
-                instansiationNotification.Reminders
+                instantiationNotification.Reminders
             );
 
             return new NotificationOrderRequest
@@ -219,7 +220,7 @@ internal sealed class NotificationService : INotificationService
                 language,
                 recipient,
                 conditionEndpoint,
-                instansiationNotification.Reminders
+                instantiationNotification.Reminders
             );
 
             return new NotificationOrderRequest
@@ -250,7 +251,7 @@ internal sealed class NotificationService : INotificationService
                 language,
                 recipient,
                 conditionEndpoint,
-                instansiationNotification.Reminders
+                instantiationNotification.Reminders
             );
 
             return new NotificationOrderRequest
@@ -273,7 +274,7 @@ internal sealed class NotificationService : INotificationService
         string language,
         NotificationRecipient requestedRecipient,
         Uri? conditionEndpoint,
-        List<InstansiationNotificationReminder>? requestedReminders
+        List<InstantiationNotificationReminder>? requestedReminders
     )
     {
         if (requestedReminders is null or { Count: 0 })
@@ -304,7 +305,7 @@ internal sealed class NotificationService : INotificationService
     private static NotificationRecipient BuildReminderRecipient(
         string language,
         NotificationRecipient original,
-        InstansiationNotificationReminder reminder
+        InstantiationNotificationReminder reminder
     )
     {
         // Each branch copies the original recipient type and applies any
@@ -357,7 +358,7 @@ internal sealed class NotificationService : INotificationService
         throw new InvalidOperationException("Original recipient has no recognized recipient type set.");
     }
 
-    private static SmsSendingOptions? BuildSmsSettings(
+    private static SmsSendingOptions BuildSmsSettings(
         string language,
         CustomSms customSms,
         SmsSendingOptions? smsSettings
@@ -370,7 +371,7 @@ internal sealed class NotificationService : INotificationService
         };
     }
 
-    private static EmailSendingOptions? BuildEmailSettings(
+    private static EmailSendingOptions BuildEmailSettings(
         string language,
         CustomEmail customEmail,
         EmailSendingOptions? emailSettings
@@ -396,11 +397,7 @@ internal sealed class NotificationService : INotificationService
         return null;
     }
 
-    internal async Task<string> DetermineLanguage(
-        InstanceOwner instanceOwner,
-        string? requestedOrgLanguage,
-        CancellationToken ct = default
-    )
+    internal async Task<string> DetermineLanguage(InstanceOwner instanceOwner, string? requestedOrgLanguage)
     {
         if (string.IsNullOrWhiteSpace(instanceOwner.PersonNumber) is false)
         {

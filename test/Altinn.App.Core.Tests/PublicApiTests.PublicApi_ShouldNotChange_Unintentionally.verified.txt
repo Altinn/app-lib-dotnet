@@ -1652,7 +1652,7 @@ namespace Altinn.App.Core.Features.Notifications
 {
     public interface INotificationService
     {
-        System.Threading.Tasks.Task NotifyInstanceOwnerOnInstansiation(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Register.Models.Party party, Altinn.App.Core.Models.Notifications.Future.InstansiationNotification instansiationNotification, System.Threading.CancellationToken ct);
+        System.Threading.Tasks.Task NotifyInstanceOwnerOnInstantiation(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Register.Models.Party party, Altinn.App.Core.Models.Notifications.Future.InstantiationNotification instantiationNotification, System.Threading.CancellationToken ct);
     }
 }
 namespace Altinn.App.Core.Features.Notifications.Texts
@@ -4923,9 +4923,9 @@ namespace Altinn.App.Core.Models.Notifications.Future
         [System.Text.Json.Serialization.JsonPropertyName("subject")]
         public required string Subject { get; init; }
     }
-    public sealed class InstansiationNotification
+    public sealed class InstantiationNotification
     {
-        public InstansiationNotification() { }
+        public InstantiationNotification() { }
         [System.Text.Json.Serialization.JsonPropertyName("allowSendingAfterWorkHours")]
         public bool AllowSendingAfterWorkHours { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("customEmail")]
@@ -4937,13 +4937,13 @@ namespace Altinn.App.Core.Models.Notifications.Future
         [System.Text.Json.Serialization.JsonPropertyName("notificationChannel")]
         public Altinn.App.Core.Models.Notifications.Future.NotificationChannel NotificationChannel { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("reminders")]
-        public System.Collections.Generic.List<Altinn.App.Core.Models.Notifications.Future.InstansiationNotificationReminder>? Reminders { get; set; }
+        public System.Collections.Generic.List<Altinn.App.Core.Models.Notifications.Future.InstantiationNotificationReminder>? Reminders { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("requestedSendTime")]
         public System.DateTime? RequestedSendTime { get; init; }
     }
-    public sealed class InstansiationNotificationReminder
+    public sealed class InstantiationNotificationReminder
     {
-        public InstansiationNotificationReminder() { }
+        public InstantiationNotificationReminder() { }
         [System.Text.Json.Serialization.JsonPropertyName("customEmail")]
         public Altinn.App.Core.Models.Notifications.Future.CustomEmail? CustomEmail { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("customSms")]

@@ -239,7 +239,7 @@ public class InstancesController : ControllerBase
         var requestParts = readResult.Ok;
 
         Instance? instanceTemplate = ExtractInstanceTemplate(requestParts);
-        InstansiationNotification? notification = ExtractInstantiationNotification(requestParts);
+        InstantiationNotification? notification = ExtractInstantiationNotification(requestParts);
 
         if (instanceOwnerPartyId is null && instanceTemplate is null)
         {
@@ -416,7 +416,7 @@ public class InstancesController : ControllerBase
             try
             {
                 CancellationToken doNotCancelNotification = CancellationToken.None;
-                await _notificationService.NotifyInstanceOwnerOnInstansiation(
+                await _notificationService.NotifyInstanceOwnerOnInstantiation(
                     instance,
                     party,
                     notification,
@@ -702,7 +702,7 @@ public class InstancesController : ControllerBase
             try
             {
                 CancellationToken doNotCancelNotification = CancellationToken.None;
-                await _notificationService.NotifyInstanceOwnerOnInstansiation(
+                await _notificationService.NotifyInstanceOwnerOnInstantiation(
                     instance,
                     party,
                     instansiationInstance.Notification,
@@ -1424,7 +1424,7 @@ public class InstancesController : ControllerBase
         return null;
     }
 
-    private static InstansiationNotification? ExtractInstantiationNotification(List<RequestPart> parts)
+    private static InstantiationNotification? ExtractInstantiationNotification(List<RequestPart> parts)
     {
         RequestPart? notificationPart = parts.Find(part => part.Name == "notification");
 
@@ -1438,7 +1438,7 @@ public class InstancesController : ControllerBase
                 && notificationPart.ContentType.Contains("application/json", StringComparison.Ordinal)
             )
             {
-                return JsonConvert.DeserializeObject<InstansiationNotification>(
+                return JsonConvert.DeserializeObject<InstantiationNotification>(
                     Encoding.UTF8.GetString(notificationPart.Bytes)
                 );
             }

@@ -13,13 +13,12 @@ internal static class NotificationTexts
         string? serviceOwnerName,
         string? orgNumber,
         string? nationalIndentityNumber,
-        DateOnly? dueDate
+        DateTime? dueDateTime
     )
     {
         (string? appName, _) =
             appId?.Split('/') is string[] groups && groups.Length >= 2 ? (groups[1], groups[0]) : (null, null);
-
-        var formattedDate = dueDate?.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);
+        string? formattedDate = GetPrintableDateTime(dueDateTime);
 
         return text.Replace(ReplacementTokens.AppName, title ?? appName ?? string.Empty)
             .Replace(ReplacementTokens.InstanceOwnerName, instanceOwnerName ?? string.Empty)
@@ -28,6 +27,20 @@ internal static class NotificationTexts
             .Replace(ReplacementTokens.NationalIdentityNumber, nationalIndentityNumber ?? string.Empty)
             .Replace(ReplacementTokens.SocialSecurityNumber, nationalIndentityNumber ?? string.Empty) // Was available in prerelease
             .Replace(ReplacementTokens.DueDate, formattedDate ?? string.Empty);
+    }
+
+    internal static string? GetPrintableDateTime(DateTime? dueDateTime)
+    {
+        if (!dueDateTime.HasValue)
+            return null;
+
+        var norwegianTz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Oslo");
+        var localTime = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(dueDateTime.Value, DateTimeKind.Utc),
+            norwegianTz
+        );
+
+        return localTime.ToString("dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
     }
 
     internal static string GetDefaultSubject(string? language)
@@ -46,7 +59,7 @@ internal static class NotificationTexts
         string? instanceOwnerName,
         string? orgNumber,
         string? nationalIndentityNumber,
-        DateOnly? dueDate
+        DateTime? dueDate
     )
     {
         List<string> parts = [];

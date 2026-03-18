@@ -21,11 +21,11 @@ public class NotificationTextsTests
             serviceOwnerName: "TestDepartementet",
             orgNumber: "123456789",
             nationalIndentityNumber: "01010112345",
-            dueDate: new DateOnly(2024, 12, 31)
+            dueDateTime: new DateTime(2024, 12, 31)
         );
 
         Assert.Equal(
-            "App: skattemelding, Owner: John Doe, Service: TestDepartementet, Org: 123456789, NIN: 01010112345, Due: 31-12-2024",
+            "App: skattemelding, Owner: John Doe, Service: TestDepartementet, Org: 123456789, NIN: 01010112345, Due: 31-12-2024 01:00:00",
             result
         );
     }
@@ -44,7 +44,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             orgNumber: null,
             nationalIndentityNumber: null,
-            dueDate: null
+            dueDateTime: null
         );
 
         Assert.Equal("App: , Owner: , Service: , Org: , NIN: , Due: ", result);
@@ -61,7 +61,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             orgNumber: null,
             nationalIndentityNumber: null,
-            dueDate: null
+            dueDateTime: null
         );
 
         Assert.Equal("App: ", result);
@@ -78,7 +78,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             orgNumber: null,
             nationalIndentityNumber: null,
-            dueDate: null
+            dueDateTime: null
         );
 
         Assert.Equal("App: app-name", result);
@@ -95,10 +95,28 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             orgNumber: null,
             nationalIndentityNumber: null,
-            dueDate: new DateOnly(2025, 1, 5)
+            dueDateTime: new DateTime(2025, 1, 5)
         );
 
-        Assert.Equal("05-01-2025", result);
+        Assert.Equal("05-01-2025 01:00:00", result);
+    }
+
+    [Fact]
+    public void ReplaceTokens_DueDate_Format()
+    {
+        string dateTime = "2026-03-12T16:15:44Z";
+        string result = NotificationTexts.ReplaceTokens(
+            "$dueDate$",
+            appId: null,
+            title: null,
+            instanceOwnerName: null,
+            serviceOwnerName: null,
+            orgNumber: null,
+            nationalIndentityNumber: null,
+            dueDateTime: DateTime.Parse(dateTime)
+        );
+
+        Assert.Equal("12-03-2026 18:15:44", result);
     }
 
     [Fact]
@@ -114,7 +132,7 @@ public class NotificationTextsTests
             serviceOwnerName: "Owner",
             orgNumber: "999",
             nationalIndentityNumber: "12345",
-            dueDate: new DateOnly(2024, 6, 1)
+            dueDateTime: new DateTime(2024, 6, 1)
         );
 
         Assert.Equal(text, result);
@@ -299,7 +317,7 @@ public class NotificationTextsTests
             instanceOwnerName: null,
             orgNumber: null,
             nationalIndentityNumber: null,
-            dueDate: new DateOnly(2025, 3, 7)
+            dueDate: new DateTime(2025, 3, 7)
         );
 
         Assert.Equal(
@@ -318,7 +336,7 @@ public class NotificationTextsTests
             instanceOwnerName: null,
             orgNumber: null,
             nationalIndentityNumber: null,
-            dueDate: new DateOnly(2025, 3, 7)
+            dueDate: new DateTime(2025, 3, 7)
         );
 
         Assert.Equal(
@@ -337,7 +355,7 @@ public class NotificationTextsTests
             instanceOwnerName: "Acme AS",
             orgNumber: "987654321",
             nationalIndentityNumber: null,
-            dueDate: new DateOnly(2025, 12, 31)
+            dueDate: new DateTime(2025, 12, 31)
         );
 
         Assert.Equal(
@@ -356,13 +374,51 @@ public class NotificationTextsTests
             instanceOwnerName: "Acme AS",
             orgNumber: "987654321",
             nationalIndentityNumber: null,
-            dueDate: new DateOnly(2025, 12, 31)
+            dueDate: new DateTime(2025, 12, 31)
         );
 
         Assert.Equal(
             "Skatteetaten har opprettet et nytt skjema (tax-form) for Acme AS med organisasjonsnummer 987654321 med frist 31-12-2025 - åpne innboksen i Altinn for å se skjemaet.",
             result
         );
+    }
+
+    #endregion
+
+    #region GetPrintableTime
+
+    [Fact]
+    public void GetPrintableTime_Null_ReturnsNull()
+    {
+        Assert.Null(NotificationTexts.GetPrintableDateTime(null));
+    }
+
+    [Fact]
+    public void GetPrintableTime_WinterTime_ConvertsToOslo()
+    {
+        // UTC+1 in winter (CET)
+        var result = NotificationTexts.GetPrintableDateTime(
+            DateTime.SpecifyKind(new DateTime(2026, 3, 12, 16, 15, 44), DateTimeKind.Utc)
+        );
+        Assert.Equal("12-03-2026 17:15:44", result);
+    }
+
+    [Fact]
+    public void GetPrintableTime_SummerTime_ConvertsToOslo()
+    {
+        // UTC+2 in summer (CEST)
+        var result = NotificationTexts.GetPrintableDateTime(
+            DateTime.SpecifyKind(new DateTime(2025, 7, 1, 14, 0, 0), DateTimeKind.Utc)
+        );
+        Assert.Equal("01-07-2025 16:00:00", result);
+    }
+
+    [Fact]
+    public void GetPrintableTime_UnspecifiedKind_TreatedAsUtc()
+    {
+        var unspecified = new DateTime(2025, 6, 15, 10, 0, 0);
+        var utc = DateTime.SpecifyKind(new DateTime(2025, 6, 15, 10, 0, 0), DateTimeKind.Utc);
+        Assert.Equal(NotificationTexts.GetPrintableDateTime(utc), NotificationTexts.GetPrintableDateTime(unspecified));
     }
 
     #endregion
@@ -380,7 +436,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             orgNumber: null,
             nationalIndentityNumber: null,
-            dueDate: null
+            dueDateTime: null
         );
 
         Assert.Equal("My Application Title", result);
@@ -397,7 +453,7 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             orgNumber: null,
             nationalIndentityNumber: null,
-            dueDate: null
+            dueDateTime: null
         );
 
         Assert.Equal("", result);
@@ -417,11 +473,11 @@ public class NotificationTextsTests
             serviceOwnerName: "TestDepartementet",
             orgNumber: "123456789",
             nationalIndentityNumber: "01010112345",
-            dueDate: new DateOnly(2024, 12, 31)
+            dueDateTime: new DateTime(2024, 12, 31)
         );
 
         Assert.Equal(
-            "App: Utenriksøkonomi (RA-0532), Owner: John Doe, Service: TestDepartementet, Org: 123456789, NIN: 01010112345, Due: 31-12-2024",
+            "App: Utenriksøkonomi (RA-0532), Owner: John Doe, Service: TestDepartementet, Org: 123456789, NIN: 01010112345, Due: 31-12-2024 01:00:00",
             result
         );
     }

@@ -10,17 +10,17 @@ namespace Altinn.App.Core.Features.Notifications;
 public interface INotificationService
 {
     /// <summary>
-    /// Sends notifications to the instance owner related to the instansiation of the instance.
+    /// Sends notifications to the instance owner related to the instantiation of the instance.
     /// </summary>
     /// <param name="instance">The instance being instantiated.</param>
     /// <param name="party">Instance owner party.</param>
-    /// <param name="instansiationNotification">The notification details for the instantiation.</param>
+    /// <param name="instantiationNotification">The notification details for the instantiation.</param>
     /// <param name="ct">Cancellation token for the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task NotifyInstanceOwnerOnInstansiation(
+    Task NotifyInstanceOwnerOnInstantiation(
         Instance instance,
         Party party,
-        InstansiationNotification instansiationNotification,
+        InstantiationNotification instantiationNotification,
         CancellationToken ct
     );
 }

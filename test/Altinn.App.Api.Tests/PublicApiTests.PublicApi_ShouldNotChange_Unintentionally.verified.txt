@@ -1065,7 +1065,7 @@ namespace Altinn.App.Api.Models
         public InstansiationInstance() { }
         public System.DateTime? DueBefore { get; set; }
         public Altinn.Platform.Storage.Interface.Models.InstanceOwner InstanceOwner { get; set; }
-        public Altinn.App.Core.Models.Notifications.Future.InstansiationNotification Notification { get; set; }
+        public Altinn.App.Core.Models.Notifications.Future.InstantiationNotification Notification { get; set; }
         public System.Collections.Generic.Dictionary<string, string> Prefill { get; set; }
         public string SourceInstanceId { get; set; }
         public System.DateTime? VisibleAfter { get; set; }

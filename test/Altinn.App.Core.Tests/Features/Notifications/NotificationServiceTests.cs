@@ -58,8 +58,12 @@ public class NotificationServiceTests
             },
         };
 
-    private static InstansiationNotification DefaultNotification() =>
+    private static InstantiationNotification DefaultNotification() =>
         new() { NotificationChannel = NotificationChannel.Email };
+
+    private static InstantiationNotification NotificationWithReminders(
+        List<InstantiationNotificationReminder>? reminders
+    ) => new() { NotificationChannel = NotificationChannel.Email, Reminders = reminders };
 
     #endregion
 
@@ -80,8 +84,7 @@ public class NotificationServiceTests
                 }
             );
 
-        var result = await CreateSut()
-            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
+        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null);
 
         Assert.Equal(LanguageConst.En, result);
         _profileClientMock.Verify(p => p.GetUserProfile(ssn), Times.Once);
@@ -99,8 +102,7 @@ public class NotificationServiceTests
                 new UserProfile { ProfileSettingPreference = new ProfileSettingPreference { Language = null } }
             );
 
-        var result = await CreateSut()
-            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
+        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null);
 
         Assert.Equal(LanguageConst.Nb, result);
     }
@@ -114,8 +116,7 @@ public class NotificationServiceTests
         UserProfile? profile = null;
         _profileClientMock.Setup(p => p.GetUserProfile(ssn)).ReturnsAsync(profile);
 
-        var result = await CreateSut()
-            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
+        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null);
 
         Assert.Equal(LanguageConst.Nb, result);
     }
@@ -136,8 +137,7 @@ public class NotificationServiceTests
     {
         var instanceOwner = new InstanceOwner { OrganisationNumber = "123456789" };
 
-        var result = await CreateSut()
-            .DetermineLanguage(instanceOwner, requestedOrgLanguage: requestedLanguage, CancellationToken.None);
+        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: requestedLanguage);
 
         Assert.Equal(expectedLanguage, result);
         _profileClientMock.Verify(p => p.GetUserProfile(It.IsAny<string>()), Times.Never);
@@ -154,8 +154,7 @@ public class NotificationServiceTests
         Guid? guid = null;
         _partyClientMock.Setup(p => p.GetPartyUuidByUrn("ext-user-42")).ReturnsAsync(guid);
 
-        var result = await CreateSut()
-            .DetermineLanguage(instanceOwner, requestedOrgLanguage: LanguageConst.Nb, CancellationToken.None);
+        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: LanguageConst.Nb);
 
         Assert.Equal(LanguageConst.En, result);
         _partyClientMock.Verify(p => p.GetPartyUuidByUrn("ext-user-42"), Times.Once);
@@ -178,8 +177,7 @@ public class NotificationServiceTests
                 }
             );
 
-        var result = await CreateSut()
-            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
+        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null);
 
         Assert.Equal(LanguageConst.Nb, result);
         _partyClientMock.Verify(p => p.GetPartyUuidByUrn("ext-user-42"), Times.Once);
@@ -199,8 +197,7 @@ public class NotificationServiceTests
                 new UserProfile { ProfileSettingPreference = new ProfileSettingPreference { Language = null } }
             );
 
-        var result = await CreateSut()
-            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
+        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null);
 
         Assert.Equal(LanguageConst.En, result);
     }
@@ -216,8 +213,7 @@ public class NotificationServiceTests
         UserProfile? profile = null;
         _profileClientMock.Setup(p => p.GetUserProfile(partyGuid)).ReturnsAsync(profile);
 
-        var result = await CreateSut()
-            .DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None);
+        var result = await CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null);
 
         Assert.Equal(LanguageConst.En, result);
     }
@@ -317,7 +313,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: "Firma AS",
             serviceOwnerName: null,
-            instansiationNotification: DefaultNotification(),
+            instantiationNotification: DefaultNotification(),
             callBackBaseUrl: null
         );
 
@@ -335,7 +331,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: "Ola Nordmann",
             serviceOwnerName: null,
-            instansiationNotification: DefaultNotification(),
+            instantiationNotification: DefaultNotification(),
             callBackBaseUrl: null
         );
 
@@ -353,7 +349,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: DefaultNotification(),
+            instantiationNotification: DefaultNotification(),
             callBackBaseUrl: null
         );
 
@@ -372,7 +368,7 @@ public class NotificationServiceTests
                 applicationMetadata: null,
                 instanceOwnerName: null,
                 serviceOwnerName: null,
-                instansiationNotification: DefaultNotification(),
+                instantiationNotification: DefaultNotification(),
                 callBackBaseUrl: null
             )
         );
@@ -394,7 +390,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: DefaultNotification(), // RequestedSendTime is null
+            instantiationNotification: DefaultNotification(), // RequestedSendTime is null
             callBackBaseUrl: null
         );
 
@@ -409,7 +405,7 @@ public class NotificationServiceTests
     {
         var instance = CreateTestInstance(appId: "ttd/my-app", personNumber: "01010112345");
         var scheduledTime = DateTime.UtcNow.AddDays(1);
-        var notification = new InstansiationNotification
+        var notification = new InstantiationNotification
         {
             NotificationChannel = NotificationChannel.Email,
             RequestedSendTime = scheduledTime,
@@ -421,7 +417,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
         );
 
@@ -448,7 +444,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -459,7 +455,7 @@ public class NotificationServiceTests
     public void BuildReminders_EmptyReminders_ReturnsNull()
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
-        List<InstansiationNotificationReminder> remindersEmpty = [];
+        List<InstantiationNotificationReminder> remindersEmpty = [];
         var notification = NotificationWithReminders(remindersEmpty);
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -468,7 +464,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -479,10 +475,10 @@ public class NotificationServiceTests
     public void BuildReminders_TwoReminders_ReturnsBothReminders()
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
-        List<InstansiationNotificationReminder> reminders =
+        List<InstantiationNotificationReminder> reminders =
         [
-            new InstansiationNotificationReminder { SendAfterDays = 3 },
-            new InstansiationNotificationReminder { SendAfterDays = 7 },
+            new InstantiationNotificationReminder { SendAfterDays = 3 },
+            new InstantiationNotificationReminder { SendAfterDays = 7 },
         ];
 
         var notification = NotificationWithReminders(reminders);
@@ -493,7 +489,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -506,9 +502,9 @@ public class NotificationServiceTests
         var sendTime = DateTime.UtcNow.AddDays(10);
         var instance = CreateTestInstance(orgNumber: "123456789");
 
-        List<InstansiationNotificationReminder> reminders =
+        List<InstantiationNotificationReminder> reminders =
         [
-            new InstansiationNotificationReminder { SendAfterDays = 5, RequestedSendTime = sendTime },
+            new InstantiationNotificationReminder { SendAfterDays = 5, RequestedSendTime = sendTime },
         ];
         var notification = NotificationWithReminders(reminders);
 
@@ -518,7 +514,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -531,11 +527,11 @@ public class NotificationServiceTests
     public void BuildReminders_WithRequestedSendTime_ConditionEndpointPropagatedToReminders()
     {
         var instance = CreateTestInstance(appId: "ttd/my-app", orgNumber: "123456789");
-        var notification = new InstansiationNotification
+        var notification = new InstantiationNotification
         {
             NotificationChannel = NotificationChannel.Email,
             RequestedSendTime = DateTime.UtcNow.AddDays(1),
-            Reminders = [new InstansiationNotificationReminder { SendAfterDays = 3 }],
+            Reminders = [new InstantiationNotificationReminder { SendAfterDays = 3 }],
         };
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -544,7 +540,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
         );
 
@@ -557,9 +553,9 @@ public class NotificationServiceTests
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
 
-        List<InstansiationNotificationReminder> reminders =
+        List<InstantiationNotificationReminder> reminders =
         [
-            new InstansiationNotificationReminder { SendAfterDays = 3 },
+            new InstantiationNotificationReminder { SendAfterDays = 3 },
         ];
         var notification = NotificationWithReminders(reminders);
 
@@ -569,7 +565,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
         );
 
@@ -583,7 +579,7 @@ public class NotificationServiceTests
     public void BuildReminders_OrgOwner_ReminderRecipientIsOrganization()
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
-        List<InstansiationNotificationReminder> reminders = [new InstansiationNotificationReminder()];
+        List<InstantiationNotificationReminder> reminders = [new InstantiationNotificationReminder()];
         var notification = NotificationWithReminders(reminders);
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -592,7 +588,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -606,7 +602,7 @@ public class NotificationServiceTests
     {
         var instance = CreateTestInstance(personNumber: "01010112345");
 
-        List<InstansiationNotificationReminder> reminders = [new InstansiationNotificationReminder()];
+        List<InstantiationNotificationReminder> reminders = [new InstantiationNotificationReminder()];
         var notification = NotificationWithReminders(reminders);
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -615,7 +611,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -629,7 +625,7 @@ public class NotificationServiceTests
     {
         var instance = CreateTestInstance(externalIdentifier: "urn:altinn:person:idporten-email:user@example.com");
 
-        List<InstansiationNotificationReminder> reminders = [new InstansiationNotificationReminder()];
+        List<InstantiationNotificationReminder> reminders = [new InstantiationNotificationReminder()];
         var notification = NotificationWithReminders(reminders);
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -638,7 +634,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -656,7 +652,7 @@ public class NotificationServiceTests
     public void BuildReminders_NoCustomEmailOrSms_InheritsParentSettings()
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
-        var notification = new InstansiationNotification
+        var notification = new InstantiationNotification
         {
             NotificationChannel = NotificationChannel.EmailAndSms,
             CustomEmail = new CustomEmail
@@ -684,7 +680,7 @@ public class NotificationServiceTests
                     En = "Parent sms",
                 },
             },
-            Reminders = [new InstansiationNotificationReminder()], // no custom overrides
+            Reminders = [new InstantiationNotificationReminder()], // no custom overrides
         };
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -693,7 +689,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -708,12 +704,12 @@ public class NotificationServiceTests
     public void BuildReminders_WithCustomEmail_OverridesEmailSettings()
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
-        var notification = new InstansiationNotification
+        var notification = new InstantiationNotification
         {
             NotificationChannel = NotificationChannel.Email,
             Reminders =
             [
-                new InstansiationNotificationReminder
+                new InstantiationNotificationReminder
                 {
                     CustomEmail = new CustomEmail
                     {
@@ -740,7 +736,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -753,12 +749,12 @@ public class NotificationServiceTests
     public void BuildReminders_WithCustomSms_OverridesSmsSettings()
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
-        var notification = new InstansiationNotification
+        var notification = new InstantiationNotification
         {
             NotificationChannel = NotificationChannel.Sms,
             Reminders =
             [
-                new InstansiationNotificationReminder
+                new InstantiationNotificationReminder
                 {
                     CustomSms = new CustomSms
                     {
@@ -780,7 +776,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -796,12 +792,12 @@ public class NotificationServiceTests
     public void BuildReminders_CustomEmailText_UsesCorrectLanguage(string language, string expectedBody)
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
-        var notification = new InstansiationNotification
+        var notification = new InstantiationNotification
         {
             NotificationChannel = NotificationChannel.Email,
             Reminders =
             [
-                new InstansiationNotificationReminder
+                new InstantiationNotificationReminder
                 {
                     CustomEmail = new CustomEmail
                     {
@@ -828,7 +824,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -840,12 +836,12 @@ public class NotificationServiceTests
     public void BuildReminders_TwoRemindersWithDifferentCustomText_ProduceIndependentSettings()
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
-        var notification = new InstansiationNotification
+        var notification = new InstantiationNotification
         {
             NotificationChannel = NotificationChannel.Email,
             Reminders =
             [
-                new InstansiationNotificationReminder
+                new InstantiationNotificationReminder
                 {
                     CustomEmail = new CustomEmail
                     {
@@ -863,7 +859,7 @@ public class NotificationServiceTests
                         },
                     },
                 },
-                new InstansiationNotificationReminder
+                new InstantiationNotificationReminder
                 {
                     CustomEmail = new CustomEmail
                     {
@@ -890,7 +886,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -912,7 +908,7 @@ public class NotificationServiceTests
     )
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
-        var notification = new InstansiationNotification
+        var notification = new InstantiationNotification
         {
             NotificationChannel = NotificationChannel.EmailAndSms,
             AllowSendingAfterWorkHours = allowSendingAfterWorkHours,
@@ -924,7 +920,7 @@ public class NotificationServiceTests
             applicationMetadata: null,
             instanceOwnerName: null,
             serviceOwnerName: null,
-            instansiationNotification: notification,
+            instantiationNotification: notification,
             callBackBaseUrl: null
         );
 
@@ -943,13 +939,9 @@ public class NotificationServiceTests
         var instanceOwner = new InstanceOwner();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null, CancellationToken.None)
+            CreateSut().DetermineLanguage(instanceOwner, requestedOrgLanguage: null)
         );
     }
 
     #endregion
-
-    private static InstansiationNotification NotificationWithReminders(
-        List<InstansiationNotificationReminder>? reminders
-    ) => new() { NotificationChannel = NotificationChannel.Email, Reminders = reminders };
 }
