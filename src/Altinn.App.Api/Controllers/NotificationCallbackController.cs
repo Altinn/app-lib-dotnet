@@ -13,7 +13,7 @@ namespace Altinn.App.Api.Controllers;
 [ApiController]
 [AllowAnonymous]
 [ApiExplorerSettings(IgnoreApi = true)]
-[Route("{org}/{app}/notifications")]
+[Route("{org}/{app}/api/v1/notification-webhook-listener")]
 public class NotificationCallbackController(
     ILogger<NotificationCallbackController> logger,
     ICancelInstantiationNotification instantiationNotification,

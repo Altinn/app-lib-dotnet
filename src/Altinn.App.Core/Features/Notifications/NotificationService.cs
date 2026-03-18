@@ -166,7 +166,9 @@ internal sealed class NotificationService : INotificationService
         Uri? conditionEndpoint = null;
         if (instantiationNotification.RequestedSendTime is not null)
         {
-            conditionEndpoint = new Uri(callBackBaseUrl?.TrimEnd('/') + "/notifications/" + instance.Id);
+            conditionEndpoint = new Uri(
+                callBackBaseUrl?.TrimEnd('/') + "/api/v1/notification-webhook-listener/" + instance.Id
+            );
         }
 
         if (string.IsNullOrWhiteSpace(instanceOwner.OrganisationNumber) is false)
