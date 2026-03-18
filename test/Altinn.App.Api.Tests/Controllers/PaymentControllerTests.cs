@@ -196,7 +196,7 @@ public class PaymentControllerTests
                 Timestamp = DateTime.UtcNow,
                 MerchantId = 222,
             },
-            "Bearer somekey"
+            "somekey"
         );
         var response = Assert.IsType<NotFoundObjectResult>(result);
         Assert.Contains("no WebhookCallbackKey is configured", response.Value?.ToString()!);
@@ -224,7 +224,7 @@ public class PaymentControllerTests
                 Timestamp = DateTime.UtcNow,
                 MerchantId = 222,
             },
-            "Bearer " + wrongKey
+            wrongKey
         );
         Assert.IsType<UnauthorizedObjectResult>(result);
         _services.VerifyMocks();
@@ -253,7 +253,7 @@ public class PaymentControllerTests
                 Timestamp = DateTime.UtcNow,
                 MerchantId = 222,
             },
-            "Bearer " + callbackKey
+            callbackKey
         );
         Assert.IsType<BadRequestObjectResult>(result);
 
@@ -285,7 +285,7 @@ public class PaymentControllerTests
                 Timestamp = DateTime.UtcNow,
                 MerchantId = 222,
             },
-            "Bearer " + callbackKey
+            callbackKey
         );
         var response = Assert.IsType<OkObjectResult>(result);
         var responseString = JsonSerializer.Serialize(response.Value);
@@ -363,7 +363,7 @@ public class PaymentControllerTests
                 Timestamp = DateTime.UtcNow,
                 MerchantId = 222,
             },
-            "Bearer " + callbackKey
+            callbackKey
         );
         var response = Assert.IsType<OkObjectResult>(result);
         Assert.Contains("Payment status is Paid for instance 12345", response.Value?.ToString());
@@ -402,7 +402,7 @@ public class PaymentControllerTests
                 Timestamp = DateTime.UtcNow,
                 MerchantId = 222,
             },
-            "Bearer " + callbackKey
+            callbackKey
         );
         var response = Assert.IsType<OkObjectResult>(result);
         Assert.Contains("No payment information stored yet for instance", response.Value?.ToString());
