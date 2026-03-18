@@ -159,7 +159,7 @@ public class PaymentController : ControllerBase
             );
         }
 
-        var expectedHeader = $"Bearer {_netsPaymentSettings.Value.WebhookCallbackKey}";
+        var expectedHeader = _netsPaymentSettings.Value.WebhookCallbackKey;
         var headersEqual = CryptographicOperations.FixedTimeEquals(
             Encoding.UTF8.GetBytes(authorizationHeader ?? string.Empty),
             Encoding.UTF8.GetBytes(expectedHeader)
