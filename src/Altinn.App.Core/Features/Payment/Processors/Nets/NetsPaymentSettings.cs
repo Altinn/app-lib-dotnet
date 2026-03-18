@@ -24,7 +24,7 @@ public class NetsPaymentSettings
     [RegularExpression("^[a-zA-Z0-9\\-= ]*$")]
     [MinLength(8)]
     [MaxLength(64)]
-    public string? WebhookCallbackKey { get; set; }
+    public string? WebhookCallbackKey { get; set; } = "571d41f7-d15e-498d-a936-31293baede12"; //TODO: REMOVE, just for testing while no KV access.
 
     /// <summary>
     /// Base API url for Nets Easy.
