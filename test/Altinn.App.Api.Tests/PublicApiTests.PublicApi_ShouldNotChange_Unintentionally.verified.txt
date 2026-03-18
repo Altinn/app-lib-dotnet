@@ -367,6 +367,7 @@ namespace Altinn.App.Api.Controllers
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Microsoft.AspNetCore.Mvc.ProblemDetails), 500)]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Altinn.App.Api.Models.LookupPersonResponse>> LookupPerson([Microsoft.AspNetCore.Mvc.FromBody] Altinn.App.Api.Models.LookupPersonRequest lookupPersonRequest, System.Threading.CancellationToken cancellationToken) { }
     }
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
     [Microsoft.AspNetCore.Mvc.ApiController]
     [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(IgnoreApi=true)]
     [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/notifications")]
