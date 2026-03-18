@@ -423,7 +423,7 @@ public class NotificationServiceTests
 
         Assert.Equal(scheduledTime, result.RequestedSendTime);
         Assert.Equal(
-            "https://ttd.apps.tt02.altinn.no/ttd/my-app/notifications/1337/abc-123",
+            "https://ttd.apps.tt02.altinn.no/ttd/my-app/api/v1/notification-webhook-listener/1337/abc-123",
             result.ConditionEndpoint?.ToString()
         );
     }
@@ -925,7 +925,6 @@ public class NotificationServiceTests
         );
 
         var org = result.Recipient.RecipientOrganization!;
-        Assert.Equal(expectedPolicy, org.EmailSettings?.SendingTimePolicy);
         Assert.Equal(expectedPolicy, org.SmsSettings?.SendingTimePolicy);
     }
 

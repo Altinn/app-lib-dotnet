@@ -1,7 +1,9 @@
 using System.Text.Json.Serialization;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications.Cancellation;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Altinn.App.Api.Controllers;
@@ -10,8 +12,9 @@ namespace Altinn.App.Api.Controllers;
 /// Endpoint(s) for the Altinn Notification microservice callback
 /// </summary>
 [ApiController]
+[AllowAnonymous]
 [ApiExplorerSettings(IgnoreApi = true)]
-[Route("{org}/{app}/notifications")]
+[Route("{org}/{app}/api/v1/notification-webhook-listener")]
 public class NotificationCallbackController(
     ILogger<NotificationCallbackController> logger,
     ICancelInstantiationNotification instantiationNotification,
@@ -30,12 +33,33 @@ public class NotificationCallbackController(
         [FromRoute] Guid instanceGuid
     )
     {
-        Instance instance = await instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         logger.LogInformation(
-            $"Received callback for org:{org}, app:{app}, instanceOwnerPartyId:{instanceOwnerPartyId}, instanceGuid:{instanceGuid}."
+            "Received callback for org:{Org}, app:{App}, instanceOwnerPartyId:{InstanceOwnerPartyId}, instanceGuid:{InstanceGuid}.",
+            org,
+            app,
+            instanceOwnerPartyId,
+            instanceGuid
         );
 
-        bool shouldSend = instantiationNotification.ShouldSend(instance);
+        Instance? instance = null;
+        try
+        {
+            instance = await instanceClient.GetInstance(
+                app,
+                org,
+                instanceOwnerPartyId,
+                instanceGuid,
+                StorageAuthenticationMethod.ServiceOwner()
+            );
+        }
+        catch
+        {
+            logger.LogWarning(
+                "Unable to get instance on notification callback - cannot cancel scheduled notification. Does the app support Maskinporten?"
+            );
+        }
+
+        bool shouldSend = instance is null || instantiationNotification.ShouldSend(instance);
 
         NotificationCallbackResponse response = new() { SendNotification = shouldSend };
         return response;

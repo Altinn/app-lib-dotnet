@@ -1,4 +1,5 @@
 using Altinn.App.Api.Controllers;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications.Cancellation;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;
@@ -29,7 +30,16 @@ public class NotificationCallbackControllerTests
         var instance = new Instance { Process = new ProcessState { Ended = null } };
 
         _instanceClientMock
-            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(x =>
+                x.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
 
         _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(true);
@@ -53,7 +63,16 @@ public class NotificationCallbackControllerTests
         var instance = new Instance { Process = new ProcessState { Ended = DateTime.UtcNow } };
 
         _instanceClientMock
-            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(x =>
+                x.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
 
         _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(false);
@@ -82,7 +101,16 @@ public class NotificationCallbackControllerTests
         var instance = new Instance { Process = new ProcessState() };
 
         _instanceClientMock
-            .Setup(x => x.GetInstance(app, org, instanceOwnerPartyId, instanceGuid))
+            .Setup(x =>
+                x.GetInstance(
+                    app,
+                    org,
+                    instanceOwnerPartyId,
+                    instanceGuid,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
 
         _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(true);
@@ -94,7 +122,18 @@ public class NotificationCallbackControllerTests
         await controller.NotificationCallback(org, app, instanceOwnerPartyId, instanceGuid);
 
         // Assert
-        _instanceClientMock.Verify(x => x.GetInstance(app, org, instanceOwnerPartyId, instanceGuid), Times.Once);
+        _instanceClientMock.Verify(
+            x =>
+                x.GetInstance(
+                    app,
+                    org,
+                    instanceOwnerPartyId,
+                    instanceGuid,
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -104,7 +143,16 @@ public class NotificationCallbackControllerTests
         var instance = new Instance { Process = new ProcessState() };
 
         _instanceClientMock
-            .Setup(x => x.GetInstance(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<Guid>()))
+            .Setup(x =>
+                x.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync(instance);
 
         _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(true);
@@ -117,5 +165,34 @@ public class NotificationCallbackControllerTests
 
         // Assert
         _instantiationNotificationMock.Verify(x => x.ShouldSend(instance), Times.Once);
+    }
+
+    [Fact]
+    public async Task NotificationCallback_WhenInstanceFetchFails_ReturnsSendNotificationTrue()
+    {
+        // Arrange
+        _instanceClientMock
+            .Setup(x =>
+                x.GetInstance(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ThrowsAsync(new Exception("Storage unavailable"));
+
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var controller = sp.GetRequiredService<NotificationCallbackController>();
+
+        // Act
+        var actionResult = await controller.NotificationCallback("ttd", "app", 1337, Guid.NewGuid());
+
+        // Assert
+        var response = actionResult.Value;
+        Assert.NotNull(response);
+        Assert.True(response.SendNotification);
     }
 }

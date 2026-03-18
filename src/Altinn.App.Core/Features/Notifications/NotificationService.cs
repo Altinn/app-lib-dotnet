@@ -96,7 +96,6 @@ internal sealed class NotificationService : INotificationService
         CustomEmail? customEmail = instantiationNotification.CustomEmail;
         EmailSendingOptions emailSettings = new()
         {
-            SendingTimePolicy = sendingTimePolicy,
             Subject = customEmail is not null
                 ? NotificationTexts.ReplaceTokens(
                     text: customEmail.Subject.GetTextForLanguage(language),
@@ -167,7 +166,9 @@ internal sealed class NotificationService : INotificationService
         Uri? conditionEndpoint = null;
         if (instantiationNotification.RequestedSendTime is not null)
         {
-            conditionEndpoint = new Uri(callBackBaseUrl?.TrimEnd('/') + "/notifications/" + instance.Id);
+            conditionEndpoint = new Uri(
+                callBackBaseUrl?.TrimEnd('/') + "/api/v1/notification-webhook-listener/" + instance.Id
+            );
         }
 
         if (string.IsNullOrWhiteSpace(instanceOwner.OrganisationNumber) is false)
@@ -241,7 +242,8 @@ internal sealed class NotificationService : INotificationService
                 RecipientExternalIdentity = new RecipientExternalIdentity
                 {
                     ExternalIdentity = instanceOwner.ExternalIdentifier,
-                    ChannelSchema = NotificationChannel.EmailPreferred, // Self identified users may have set a mobile number in profile
+                    ChannelSchema = NotificationChannel.EmailPreferred,
+                    SmsSettings = smsSettings,
                     EmailSettings = emailSettings,
                     ResourceId = resourceId.AsUrn,
                 },
@@ -351,6 +353,9 @@ internal sealed class NotificationService : INotificationService
                     EmailSettings = reminder.CustomEmail is not null
                         ? BuildEmailSettings(language, reminder.CustomEmail, ext.EmailSettings)
                         : ext.EmailSettings,
+                    SmsSettings = reminder.CustomSms is not null
+                        ? BuildSmsSettings(language, reminder.CustomSms, ext.SmsSettings)
+                        : ext.SmsSettings,
                 },
             };
         }

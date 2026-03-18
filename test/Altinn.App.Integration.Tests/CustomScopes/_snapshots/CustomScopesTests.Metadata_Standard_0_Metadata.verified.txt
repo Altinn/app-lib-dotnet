@@ -338,6 +338,15 @@
         }
       },
       {
+        endpoint: GET {org}/{app}/api/v1/notification-webhook-listener/{instanceOwnerPartyId:int}/{instanceGuid:guid},
+        metadata: {
+          errorMessageTextResourceKeyUser: null,
+          errorMessageTextResourceKeyServiceOwner: null,
+          requiredScopesUsers: null,
+          requiredScopesServiceOwners: null
+        }
+      },
+      {
         endpoint: GET {org}/{app}/api/v1/parties,
         metadata: {
           errorMessageTextResourceKeyUser: null,
@@ -582,15 +591,6 @@
       },
       {
         endpoint: GET {org}/{app}/legacy/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/copy,
-        metadata: {
-          errorMessageTextResourceKeyUser: null,
-          errorMessageTextResourceKeyServiceOwner: null,
-          requiredScopesUsers: null,
-          requiredScopesServiceOwners: null
-        }
-      },
-      {
-        endpoint: GET {org}/{app}/notifications/{instanceOwnerPartyId:int}/{instanceGuid:guid},
         metadata: {
           errorMessageTextResourceKeyUser: null,
           errorMessageTextResourceKeyServiceOwner: null,
