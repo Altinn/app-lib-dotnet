@@ -353,6 +353,9 @@ internal sealed class NotificationService : INotificationService
                     EmailSettings = reminder.CustomEmail is not null
                         ? BuildEmailSettings(language, reminder.CustomEmail, ext.EmailSettings)
                         : ext.EmailSettings,
+                    SmsSettings = reminder.CustomSms is not null
+                        ? BuildSmsSettings(language, reminder.CustomSms, ext.SmsSettings)
+                        : ext.SmsSettings,
                 },
             };
         }
