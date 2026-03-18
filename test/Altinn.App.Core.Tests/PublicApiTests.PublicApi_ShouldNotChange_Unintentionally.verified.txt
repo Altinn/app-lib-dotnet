@@ -3237,7 +3237,7 @@ namespace Altinn.App.Core.Internal.Instances
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> DeleteInstance(int instanceOwnerPartyId, System.Guid instanceGuid, bool hard);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> GetInstance(Altinn.Platform.Storage.Interface.Models.Instance instance);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> GetInstance(string app, string org, int instanceOwnerPartyId, System.Guid instanceId);
-        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> GetInstanceForNotificationCallBack(string app, string org, int instanceOwnerPartyId, System.Guid instanceId, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> GetInstanceForNotificationCallback(string app, string org, int instanceOwnerPartyId, System.Guid instanceId, System.Threading.CancellationToken ct = default);
         System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.Instance>> GetInstances(System.Collections.Generic.Dictionary<string, Microsoft.Extensions.Primitives.StringValues> queryParams);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateDataValue(Altinn.Platform.Storage.Interface.Models.Instance instance, string key, string? value);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateDataValues(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string?> dataValues);
