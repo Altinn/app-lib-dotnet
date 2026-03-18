@@ -73,7 +73,7 @@ internal sealed class InstanceClient : IInstanceClient
         string apiUrl = $"instances/{instanceIdentifier}";
         string token = await _tokenResolver.GetAccessToken(authenticationMethod ?? _defaultAuthenticationMethod, ct);
 
-        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: ct);
+        using HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: ct);
         if (response.StatusCode == HttpStatusCode.OK)
         {
             Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
