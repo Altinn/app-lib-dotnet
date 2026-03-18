@@ -21,7 +21,7 @@ public class NotificationTextsTests
             serviceOwnerName: "TestDepartementet",
             orgNumber: "123456789",
             nationalIndentityNumber: "01010112345",
-            dueDateTime: new DateTime(2024, 12, 31)
+            dueDateTime: DateTime.SpecifyKind(new DateTime(2024, 12, 31), DateTimeKind.Utc)
         );
 
         Assert.Equal(
@@ -85,26 +85,8 @@ public class NotificationTextsTests
     }
 
     [Fact]
-    public void ReplaceTokens_DueDate_FormatsAsddMMYYYY()
-    {
-        string result = NotificationTexts.ReplaceTokens(
-            "$dueDate$",
-            appId: null,
-            title: null,
-            instanceOwnerName: null,
-            serviceOwnerName: null,
-            orgNumber: null,
-            nationalIndentityNumber: null,
-            dueDateTime: new DateTime(2025, 1, 5)
-        );
-
-        Assert.Equal("05-01-2025 01:00:00", result);
-    }
-
-    [Fact]
     public void ReplaceTokens_DueDate_Format()
     {
-        string dateTime = "2026-03-12T16:15:44Z";
         string result = NotificationTexts.ReplaceTokens(
             "$dueDate$",
             appId: null,
@@ -113,10 +95,10 @@ public class NotificationTextsTests
             serviceOwnerName: null,
             orgNumber: null,
             nationalIndentityNumber: null,
-            dueDateTime: DateTime.Parse(dateTime)
+            dueDateTime: DateTime.SpecifyKind(new DateTime(2026, 3, 12, 16, 15, 44), DateTimeKind.Utc)
         );
 
-        Assert.Equal("12-03-2026 18:15:44", result);
+        Assert.Equal("12-03-2026 17:15:44", result);
     }
 
     [Fact]
@@ -132,7 +114,7 @@ public class NotificationTextsTests
             serviceOwnerName: "Owner",
             orgNumber: "999",
             nationalIndentityNumber: "12345",
-            dueDateTime: new DateTime(2024, 6, 1)
+            dueDateTime: DateTime.SpecifyKind(new DateTime(2024, 6, 1), DateTimeKind.Utc)
         );
 
         Assert.Equal(text, result);
@@ -317,11 +299,11 @@ public class NotificationTextsTests
             instanceOwnerName: null,
             orgNumber: null,
             nationalIndentityNumber: null,
-            dueDate: new DateTime(2025, 3, 7)
+            dueDate: DateTime.SpecifyKind(new DateTime(2025, 7, 3), DateTimeKind.Utc)
         );
 
         Assert.Equal(
-            "A new form has been created with due date 07-03-2025 - open your Altinn inbox to view the form.",
+            "A new form has been created with due date 03-07-2025 - open your Altinn inbox to view the form.",
             result
         );
     }
@@ -336,11 +318,11 @@ public class NotificationTextsTests
             instanceOwnerName: null,
             orgNumber: null,
             nationalIndentityNumber: null,
-            dueDate: new DateTime(2025, 3, 7)
+            dueDate: DateTime.SpecifyKind(new DateTime(2025, 7, 3), DateTimeKind.Utc)
         );
 
         Assert.Equal(
-            "Eit nytt skjema har blitt opprettet med frist 07-03-2025 - opne innboksen i Altinn for å sjå skjemaet.",
+            "Eit nytt skjema har blitt opprettet med frist 03-07-2025 - opne innboksen i Altinn for å sjå skjemaet.",
             result
         );
     }
@@ -355,7 +337,7 @@ public class NotificationTextsTests
             instanceOwnerName: "Acme AS",
             orgNumber: "987654321",
             nationalIndentityNumber: null,
-            dueDate: new DateTime(2025, 12, 31)
+            dueDate: DateTime.SpecifyKind(new DateTime(2025, 12, 31), DateTimeKind.Utc)
         );
 
         Assert.Equal(
@@ -374,7 +356,7 @@ public class NotificationTextsTests
             instanceOwnerName: "Acme AS",
             orgNumber: "987654321",
             nationalIndentityNumber: null,
-            dueDate: new DateTime(2025, 12, 31)
+            dueDate: DateTime.SpecifyKind(new DateTime(2025, 12, 31), DateTimeKind.Utc)
         );
 
         Assert.Equal(
@@ -473,7 +455,7 @@ public class NotificationTextsTests
             serviceOwnerName: "TestDepartementet",
             orgNumber: "123456789",
             nationalIndentityNumber: "01010112345",
-            dueDateTime: new DateTime(2024, 12, 31)
+            dueDateTime: DateTime.SpecifyKind(new DateTime(2024, 12, 31), DateTimeKind.Utc)
         );
 
         Assert.Equal(
