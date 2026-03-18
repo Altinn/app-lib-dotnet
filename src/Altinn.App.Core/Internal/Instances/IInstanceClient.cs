@@ -17,7 +17,7 @@ public interface IInstanceClient
     /// <summary>
     /// Gets the instance. Can be removed when all endpoints support authenticationMethod.
     /// </summary>
-    Task<Instance> GetInstanceForNotificationCallBack(
+    Task<Instance> GetInstanceForNotificationCallback(
         string app,
         string org,
         int instanceOwnerPartyId,

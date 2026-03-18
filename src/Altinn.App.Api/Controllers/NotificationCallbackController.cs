@@ -43,7 +43,7 @@ public class NotificationCallbackController(
         Instance? instance = null;
         try
         {
-            instance = await instanceClient.GetInstanceForNotificationCallBack(
+            instance = await instanceClient.GetInstanceForNotificationCallback(
                 app,
                 org,
                 instanceOwnerPartyId,

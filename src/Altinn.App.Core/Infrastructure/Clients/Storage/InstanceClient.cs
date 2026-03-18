@@ -60,7 +60,7 @@ internal sealed class InstanceClient : IInstanceClient
     }
 
     /// <inheritdoc />
-    public async Task<Instance> GetInstanceForNotificationCallBack(
+    public async Task<Instance> GetInstanceForNotificationCallback(
         string app,
         string org,
         int instanceOwnerPartyId,

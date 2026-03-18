@@ -597,7 +597,7 @@ public sealed class InstanceClientMockSi : IInstanceClient
         }
     }
 
-    public Task<Instance> GetInstanceForNotificationCallBack(
+    public Task<Instance> GetInstanceForNotificationCallback(
         string app,
         string org,
         int instanceOwnerPartyId,
