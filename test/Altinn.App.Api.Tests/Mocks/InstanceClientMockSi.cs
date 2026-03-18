@@ -596,4 +596,15 @@ public sealed class InstanceClientMockSi : IInstanceClient
             _fileLock.Release();
         }
     }
+
+    public Task<Instance> GetInstanceForNotificationCallBack(
+        string app,
+        string org,
+        int instanceOwnerPartyId,
+        Guid instanceId,
+        CancellationToken ct = default
+    )
+    {
+        throw new NotImplementedException();
+    }
 }

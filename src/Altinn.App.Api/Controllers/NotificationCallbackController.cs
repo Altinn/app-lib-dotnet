@@ -32,12 +32,32 @@ public class NotificationCallbackController(
         [FromRoute] Guid instanceGuid
     )
     {
-        Instance instance = await instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
         logger.LogInformation(
-            $"Received callback for org:{org}, app:{app}, instanceOwnerPartyId:{instanceOwnerPartyId}, instanceGuid:{instanceGuid}."
+            "Received callback for org:{Org}, app:{App}, instanceOwnerPartyId:{InstanceOwnerPartyId}, instanceGuid:{InstanceGuid}.",
+            org,
+            app,
+            instanceOwnerPartyId,
+            instanceGuid
         );
 
-        bool shouldSend = instantiationNotification.ShouldSend(instance);
+        Instance? instance = null;
+        try
+        {
+            instance = await instanceClient.GetInstanceForNotificationCallBack(
+                app,
+                org,
+                instanceOwnerPartyId,
+                instanceGuid
+            );
+        }
+        catch
+        {
+            logger.LogWarning(
+                "Unable to get instance on notification callback - cannot cancel notification reminder(s). Does the app support Maskinporten?"
+            );
+        }
+
+        bool shouldSend = instance is null || instantiationNotification.ShouldSend(instance);
 
         NotificationCallbackResponse response = new() { SendNotification = shouldSend };
         return response;

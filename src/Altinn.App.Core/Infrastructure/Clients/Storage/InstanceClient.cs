@@ -22,10 +22,11 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage;
 /// <summary>
 /// A client for handling actions on instances in Altinn Platform.
 /// </summary>
-public class InstanceClient : IInstanceClient
+internal sealed class InstanceClient : IInstanceClient
 {
     private readonly ILogger _logger;
     private readonly IUserTokenProvider _userTokenProvider;
+    private readonly IAuthenticationTokenResolver _tokenResolver;
     private readonly HttpClient _client;
     private readonly Telemetry? _telemetry;
 
@@ -35,24 +36,55 @@ public class InstanceClient : IInstanceClient
     /// <param name="platformSettings">the platform settings</param>
     /// <param name="logger">the logger</param>
     /// <param name="userTokenProvider">Get user token from httpContext</param>
+    /// <param name="tokenResolver">Get token from httpContext</param>
     /// <param name="httpClient">A HttpClient that can be used to perform HTTP requests against the platform.</param>
     /// <param name="telemetry">Telemetry for traces and metrics.</param>
     public InstanceClient(
         IOptions<PlatformSettings> platformSettings,
         ILogger<InstanceClient> logger,
         IUserTokenProvider userTokenProvider,
+        IAuthenticationTokenResolver tokenResolver,
         HttpClient httpClient,
         Telemetry? telemetry = null
     )
     {
         _logger = logger;
         _userTokenProvider = userTokenProvider;
+        _tokenResolver = tokenResolver;
         httpClient.BaseAddress = new Uri(platformSettings.Value.ApiStorageEndpoint);
         httpClient.DefaultRequestHeaders.Add(General.SubscriptionKeyHeaderName, platformSettings.Value.SubscriptionKey);
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         _client = httpClient;
         _telemetry = telemetry;
+    }
+
+    /// <inheritdoc />
+    public async Task<Instance> GetInstanceForNotificationCallBack(
+        string app,
+        string org,
+        int instanceOwnerPartyId,
+        Guid instanceId,
+        CancellationToken ct = default
+    )
+    {
+        using var activity = _telemetry?.StartGetInstanceByGuidActivity(instanceId);
+        string instanceIdentifier = $"{instanceOwnerPartyId}/{instanceId}";
+
+        string apiUrl = $"instances/{instanceIdentifier}";
+        string token = await _tokenResolver.GetAccessToken(StorageAuthenticationMethod.ServiceOwner(), ct);
+
+        HttpResponseMessage response = await _client.GetAsync(token, apiUrl, cancellationToken: ct);
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            Instance instance = await JsonSerializerPermissive.DeserializeAsync<Instance>(response.Content, ct);
+            return instance;
+        }
+        else
+        {
+            _logger.LogError($"Unable to fetch instance with instance id {instanceId}");
+            throw await PlatformHttpException.CreateAsync(response);
+        }
     }
 
     /// <inheritdoc />

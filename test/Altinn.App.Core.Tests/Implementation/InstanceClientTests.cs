@@ -21,6 +21,7 @@ public sealed class InstanceClientTests : IDisposable
     private readonly Mock<HttpMessageHandler> _handlerMock;
     private readonly Mock<IUserTokenProvider> _userTokenProvider = new(MockBehavior.Strict);
     private readonly Mock<ILogger<InstanceClient>> _logger;
+    private readonly Mock<IAuthenticationTokenResolver> _authenticationTokenResolver = new(MockBehavior.Strict);
     private readonly TelemetrySink _telemetry;
 
     public InstanceClientTests()
@@ -57,6 +58,7 @@ public sealed class InstanceClientTests : IDisposable
             _platformSettingsOptions.Object,
             _logger.Object,
             _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -88,6 +90,7 @@ public sealed class InstanceClientTests : IDisposable
             _platformSettingsOptions.Object,
             _logger.Object,
             _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -128,6 +131,7 @@ public sealed class InstanceClientTests : IDisposable
             _platformSettingsOptions.Object,
             _logger.Object,
             _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -170,6 +174,7 @@ public sealed class InstanceClientTests : IDisposable
             _platformSettingsOptions.Object,
             _logger.Object,
             _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -208,6 +213,7 @@ public sealed class InstanceClientTests : IDisposable
             _platformSettingsOptions.Object,
             _logger.Object,
             _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -243,6 +249,7 @@ public sealed class InstanceClientTests : IDisposable
             _platformSettingsOptions.Object,
             _logger.Object,
             _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -292,6 +299,7 @@ public sealed class InstanceClientTests : IDisposable
             _platformSettingsOptions.Object,
             _logger.Object,
             _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -324,6 +332,7 @@ public sealed class InstanceClientTests : IDisposable
             _platformSettingsOptions.Object,
             _logger.Object,
             _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -366,6 +375,7 @@ public sealed class InstanceClientTests : IDisposable
             _platformSettingsOptions.Object,
             _logger.Object,
             _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -415,6 +425,7 @@ public sealed class InstanceClientTests : IDisposable
             _platformSettingsOptions.Object,
             _logger.Object,
             _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
@@ -469,6 +480,7 @@ public sealed class InstanceClientTests : IDisposable
             _platformSettingsOptions.Object,
             _logger.Object,
             _userTokenProvider.Object,
+            _authenticationTokenResolver.Object,
             httpClient,
             _telemetry.Object
         );
