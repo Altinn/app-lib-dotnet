@@ -14,6 +14,8 @@ using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Internal.WorkflowEngine;
 using Altinn.App.Core.Internal.WorkflowEngine.Http;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -23,7 +25,7 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProcessNextRequest = Altinn.App.Core.Models.Process.ProcessNextRequest;
-using WorkflowEnqueueRequest = Altinn.App.Core.Internal.WorkflowEngine.Models.WorkflowEnqueueRequest;
+using WorkflowEnqueueRequest = Altinn.App.Core.Internal.WorkflowEngine.Models.Engine.WorkflowEnqueueRequest;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -48,6 +50,7 @@ internal class ProcessEngine : IProcessEngine
     private readonly InstanceStateService _instanceStateService;
     private readonly IWorkflowEngineClient _workflowEngineClient;
     private readonly IInstanceClient _instanceClient;
+    private readonly AppIdentifier _appIdentifier;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -79,6 +82,7 @@ internal class ProcessEngine : IProcessEngine
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
+        _appIdentifier = serviceProvider.GetRequiredService<AppIdentifier>();
     }
 
     /// <inheritdoc/>
@@ -592,7 +596,7 @@ internal class ProcessEngine : IProcessEngine
             lockToken,
             state,
             actor: actor,
-            dependencies: [dependsOnWorkflowId],
+            dependsOn: [WorkflowRef.FromDatabaseId(dependsOnWorkflowId)],
             ct: ct
         );
     }
@@ -607,24 +611,21 @@ internal class ProcessEngine : IProcessEngine
         string lockToken,
         string? state = null,
         Actor? actor = null,
-        IReadOnlyList<Guid>? dependencies = null,
+        IEnumerable<WorkflowRef>? dependsOn = null,
         Dictionary<string, string>? prefill = null,
         CancellationToken ct = default
     )
     {
         WorkflowEnqueueRequest enqueueRequest = await _processNextRequestFactory.Create(
+            instance,
             processStateChange,
             lockToken,
             state,
             actor: actor,
-            dependencies: dependencies,
+            dependsOn: dependsOn,
             prefill: prefill
         );
-        WorkflowEnqueueResponse.Accepted response = await _workflowEngineClient.EnqueueWorkflow(
-            instance,
-            enqueueRequest,
-            ct
-        );
+        WorkflowEnqueueResponse.Accepted response = await _workflowEngineClient.EnqueueWorkflows(enqueueRequest, ct);
         return response.Workflows[0].DatabaseId;
     }
 
@@ -753,11 +754,15 @@ internal class ProcessEngine : IProcessEngine
         const int maxDelayMs = 2_000;
         int currentDelayMs = initialDelayMs;
 
+        string ns = $"{_appIdentifier.Org}/{_appIdentifier.App}";
+        Guid correlationId = new InstanceIdentifier(instance).InstanceGuid;
+
         while (!ct.IsCancellationRequested)
         {
             IReadOnlyList<WorkflowStatusResponse> activeWorkflows = await _workflowEngineClient.ListActiveWorkflows(
-                instance,
-                ct
+                ns,
+                correlationId,
+                cancellationToken: ct
             );
 
             if (activeWorkflows.Count == 0)

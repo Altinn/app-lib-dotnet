@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
@@ -6,6 +7,8 @@ using Altinn.App.Core.Internal.WorkflowEngine;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Http;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -32,15 +35,21 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowEnqueueResponse.Accepted> EnqueueWorkflow(
-        Instance instance,
+    public async Task<WorkflowEnqueueResponse.Accepted> EnqueueWorkflows(
         WorkflowEnqueueRequest request,
         CancellationToken cancellationToken = default
     )
     {
-        string org = instance.Org;
-        string app = instance.AppId.Split('/')[1];
-        var instanceId = new InstanceIdentifier(instance);
+        // Extract context from request
+        var context = request.Context is { } ctx
+            ? JsonSerializer.Deserialize<AppWorkflowContext>(ctx)
+                ?? throw new InvalidOperationException("Failed to deserialize AppWorkflowContext from request")
+            : throw new InvalidOperationException("WorkflowEnqueueRequest.Context is required");
+
+        string org = context.Org;
+        string app = context.App;
+        int instanceOwnerPartyId = context.InstanceOwnerPartyId;
+        Guid instanceGuid = context.InstanceGuid;
 
         var workflowResults = new List<WorkflowResult>();
 
@@ -61,21 +70,25 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
 
             foreach (var step in workflow.Steps)
             {
-                if (step.Command is not Command.AppCommand appCommand)
+                if (step.Command.Type != "app" || step.Command.Data is not { } data)
                     continue;
+
+                var appCommandData =
+                    JsonSerializer.Deserialize<AppCommandData>(data)
+                    ?? throw new InvalidOperationException("Failed to deserialize AppCommandData");
 
                 // Skip Altinn event commands - they're designed to notify external systems
                 // and can have issues when executed in-process (e.g., CompletedAltinnEvent
                 // checks CurrentTask after SaveProcessStateToStorage has set it to null for ended processes)
-                if (IsAltinnEventCommand(appCommand.CommandKey))
+                if (IsAltinnEventCommand(appCommandData.CommandKey))
                     continue;
 
                 var payload = new AppCallbackPayload
                 {
-                    CommandKey = appCommand.CommandKey,
-                    Actor = request.Actor,
-                    Payload = appCommand.Payload,
-                    LockToken = request.LockToken ?? string.Empty,
+                    CommandKey = appCommandData.CommandKey,
+                    Actor = context.Actor,
+                    Payload = appCommandData.Payload,
+                    LockToken = context.LockToken,
                     State = currentState,
                     WorkflowId = databaseId,
                 };
@@ -83,9 +96,9 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
                 IActionResult result = await controller.ExecuteCommand(
                     org,
                     app,
-                    instanceId.InstanceOwnerPartyId,
-                    instanceId.InstanceGuid,
-                    appCommand.CommandKey,
+                    instanceOwnerPartyId,
+                    instanceGuid,
+                    appCommandData.CommandKey,
                     payload,
                     cancellationToken
                 );
@@ -95,7 +108,7 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
                     case OkObjectResult { Value: AppCallbackResponse response }:
                         currentState = response.State;
 
-                        if (appCommand.CommandKey == SaveProcessStateToStorage.Key)
+                        if (appCommandData.CommandKey == SaveProcessStateToStorage.Key)
                         {
                             processStateCommitted = true;
                         }
@@ -103,16 +116,24 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
 
                     case ObjectResult { Value: ProblemDetails problem }:
                         // Post-commit failures (e.g., ExecuteServiceTask) should not abort the workflow.
-                        // The process state has already been saved to Storage. Sync state and record the failure.
-                        if (processStateCommitted && appCommand.CommandKey == ExecuteServiceTask.Key)
+                        // The process state has already been saved to Storage. Record the failure.
+                        if (processStateCommitted && appCommandData.CommandKey == ExecuteServiceTask.Key)
                         {
-                            string serviceTaskType = instance.Process?.CurrentTask?.AltinnTaskType ?? "unknown";
+                            string serviceTaskType = "unknown";
+                            if (appCommandData.Payload is not null)
+                            {
+                                var stPayload = CommandPayloadSerializer.Deserialize<ExecuteServiceTaskPayload>(
+                                    appCommandData.Payload
+                                );
+                                if (stPayload is not null)
+                                    serviceTaskType = stPayload.ServiceTaskType;
+                            }
                             serviceTaskFailure = new ServiceTaskFailedException(serviceTaskType, problem.Detail);
                             goto workflowDone;
                         }
 
                         throw new InvalidOperationException(
-                            $"Callback failed for command '{appCommand.CommandKey}': {problem.Title}: {problem.Detail}"
+                            $"Callback failed for command '{appCommandData.CommandKey}': {problem.Title}: {problem.Detail}"
                         );
 
                     default:
@@ -124,38 +145,28 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
 
             workflowDone:
 
-            // Restore final state to sync the caller's instance reference.
-            // This is needed because callers may inspect instance.Data / instance.Process
-            // after EnqueueWorkflow returns.
-            if (currentState is not null)
-            {
-                InstanceDataUnitOfWork finalState = await _instanceStateService.RestoreState(
-                    currentState,
-                    request.Actor.Language
-                );
-                instance.Data.Clear();
-                instance.Data.AddRange(finalState.Instance.Data);
-                instance.Process = finalState.Instance.Process;
-            }
-
-            // Throw after syncing state, so the caller's instance reference has the committed process state
+            // Throw after processing - the caller (ProcessEngine.WaitForWorkflowsAndRefetchInstance)
+            // will refetch from Storage
             if (serviceTaskFailure is not null)
             {
                 throw serviceTaskFailure;
             }
 
-            workflowResults.Add(new WorkflowResult { Ref = workflow.Ref, DatabaseId = databaseId });
+            workflowResults.Add(
+                new WorkflowResult
+                {
+                    Ref = workflow.Ref,
+                    DatabaseId = databaseId,
+                    Namespace = request.Namespace ?? "default",
+                }
+            );
         }
 
         return new WorkflowEnqueueResponse.Accepted { Workflows = workflowResults };
     }
 
     /// <inheritdoc />
-    public Task<WorkflowStatusResponse?> GetWorkflowStatus(
-        Instance instance,
-        Guid workflowId,
-        CancellationToken cancellationToken = default
-    )
+    public Task<WorkflowStatusResponse?> GetWorkflow(Guid workflowId, CancellationToken cancellationToken = default)
     {
         // In synchronous test mode, jobs complete immediately, so there's never an active job
         return Task.FromResult<WorkflowStatusResponse?>(null);
@@ -163,12 +174,21 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
 
     /// <inheritdoc />
     public Task<IReadOnlyList<WorkflowStatusResponse>> ListActiveWorkflows(
-        Instance instance,
+        string ns,
+        Guid? correlationId = null,
+        Dictionary<string, string>? labels = null,
         CancellationToken cancellationToken = default
     )
     {
-        // In synchronous test mode, all workflows complete immediately during EnqueueWorkflow
+        // In synchronous test mode, all workflows complete immediately during EnqueueWorkflows
         return Task.FromResult<IReadOnlyList<WorkflowStatusResponse>>([]);
+    }
+
+    /// <inheritdoc />
+    public Task<CancelWorkflowResponse> CancelWorkflow(Guid workflowId, CancellationToken cancellationToken = default)
+    {
+        // In synchronous test mode, cancellation is a no-op
+        return Task.FromResult(new CancelWorkflowResponse(workflowId, DateTimeOffset.UtcNow, true));
     }
 
     /// <summary>

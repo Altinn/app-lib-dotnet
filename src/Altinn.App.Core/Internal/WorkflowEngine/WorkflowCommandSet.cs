@@ -5,6 +5,8 @@ using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskAbandon;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine;
 
@@ -126,6 +128,13 @@ internal sealed class WorkflowCommandSet
     private static StepRequest CreateCommand(string commandKey, CommandRequestPayload? payload = null)
     {
         string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
-        return new StepRequest { Command = new Command.AppCommand(CommandKey: commandKey, Payload: serializedPayload) };
+        return new StepRequest
+        {
+            OperationId = commandKey,
+            Command = CommandDefinition.Create(
+                "app",
+                new AppCommandData { CommandKey = commandKey, Payload = serializedPayload }
+            ),
+        };
     }
 }

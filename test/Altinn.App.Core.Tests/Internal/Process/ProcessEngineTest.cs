@@ -18,6 +18,8 @@ using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Internal.WorkflowEngine;
 using Altinn.App.Core.Internal.WorkflowEngine.Http;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
@@ -161,22 +163,23 @@ public sealed class ProcessEngineTest
         var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
         WorkflowEnqueueRequest? capturedRequest = null;
         processEngineClientMock
-            .Setup(c =>
-                c.EnqueueWorkflow(
-                    It.IsAny<Instance>(),
-                    It.IsAny<WorkflowEnqueueRequest>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Callback<Instance, WorkflowEnqueueRequest, CancellationToken>((_, req, _) => capturedRequest = req)
+            .Setup(c => c.EnqueueWorkflows(It.IsAny<WorkflowEnqueueRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<WorkflowEnqueueRequest, CancellationToken>((req, _) => capturedRequest = req)
             .ReturnsAsync(
                 new WorkflowEnqueueResponse.Accepted
                 {
-                    Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid() }],
+                    Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid(), Namespace = "org/app" }],
                 }
             );
         processEngineClientMock
-            .Setup(c => c.ListActiveWorkflows(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
+            .Setup(c =>
+                c.ListActiveWorkflows(
+                    It.IsAny<string>(),
+                    It.IsAny<Guid?>(),
+                    It.IsAny<Dictionary<string, string>?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((IReadOnlyList<WorkflowStatusResponse>)[]);
 
         var services = new ServiceCollection();
@@ -258,7 +261,11 @@ public sealed class ProcessEngineTest
         // Verify command sequence: EndTask commands followed by StartTask commands
         var commandKeys = capturedRequest!
             .Workflows[0]
-            .Steps.Select(t => (t.Command as Command.AppCommand)?.CommandKey)
+            .Steps.Select(t =>
+                t.Command.Type == "app" && t.Command.Data is { } d
+                    ? System.Text.Json.JsonSerializer.Deserialize<AppCommandData>(d)?.CommandKey
+                    : null
+            )
             .Where(k => k != null)
             .ToList();
 
@@ -292,22 +299,23 @@ public sealed class ProcessEngineTest
         var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
         WorkflowEnqueueRequest? capturedRequest = null;
         processEngineClientMock
-            .Setup(c =>
-                c.EnqueueWorkflow(
-                    It.IsAny<Instance>(),
-                    It.IsAny<WorkflowEnqueueRequest>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Callback<Instance, WorkflowEnqueueRequest, CancellationToken>((_, req, _) => capturedRequest = req)
+            .Setup(c => c.EnqueueWorkflows(It.IsAny<WorkflowEnqueueRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<WorkflowEnqueueRequest, CancellationToken>((req, _) => capturedRequest = req)
             .ReturnsAsync(
                 new WorkflowEnqueueResponse.Accepted
                 {
-                    Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid() }],
+                    Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid(), Namespace = "org/app" }],
                 }
             );
         processEngineClientMock
-            .Setup(c => c.ListActiveWorkflows(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
+            .Setup(c =>
+                c.ListActiveWorkflows(
+                    It.IsAny<string>(),
+                    It.IsAny<Guid?>(),
+                    It.IsAny<Dictionary<string, string>?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((IReadOnlyList<WorkflowStatusResponse>)[]);
 
         var services = new ServiceCollection();
@@ -388,7 +396,11 @@ public sealed class ProcessEngineTest
         // Verify command sequence: AbandonTask commands followed by StartTask commands
         var commandKeys = capturedRequest!
             .Workflows[0]
-            .Steps.Select(t => (t.Command as Command.AppCommand)?.CommandKey)
+            .Steps.Select(t =>
+                t.Command.Type == "app" && t.Command.Data is { } d
+                    ? System.Text.Json.JsonSerializer.Deserialize<AppCommandData>(d)?.CommandKey
+                    : null
+            )
             .Where(k => k != null)
             .ToList();
 
@@ -417,22 +429,23 @@ public sealed class ProcessEngineTest
         var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
         WorkflowEnqueueRequest? capturedRequest = null;
         processEngineClientMock
-            .Setup(c =>
-                c.EnqueueWorkflow(
-                    It.IsAny<Instance>(),
-                    It.IsAny<WorkflowEnqueueRequest>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Callback<Instance, WorkflowEnqueueRequest, CancellationToken>((_, req, _) => capturedRequest = req)
+            .Setup(c => c.EnqueueWorkflows(It.IsAny<WorkflowEnqueueRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<WorkflowEnqueueRequest, CancellationToken>((req, _) => capturedRequest = req)
             .ReturnsAsync(
                 new WorkflowEnqueueResponse.Accepted
                 {
-                    Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid() }],
+                    Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid(), Namespace = "org/app" }],
                 }
             );
         processEngineClientMock
-            .Setup(c => c.ListActiveWorkflows(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
+            .Setup(c =>
+                c.ListActiveWorkflows(
+                    It.IsAny<string>(),
+                    It.IsAny<Guid?>(),
+                    It.IsAny<Dictionary<string, string>?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((IReadOnlyList<WorkflowStatusResponse>)[]);
 
         var services = new ServiceCollection();
@@ -507,7 +520,11 @@ public sealed class ProcessEngineTest
         // Verify command sequence: EndTask commands followed by ProcessEnd commands
         var commandKeys = capturedRequest!
             .Workflows[0]
-            .Steps.Select(t => (t.Command as Command.AppCommand)?.CommandKey)
+            .Steps.Select(t =>
+                t.Command.Type == "app" && t.Command.Data is { } d
+                    ? System.Text.Json.JsonSerializer.Deserialize<AppCommandData>(d)?.CommandKey
+                    : null
+            )
             .Where(k => k != null)
             .ToList();
 
@@ -532,7 +549,7 @@ public sealed class ProcessEngineTest
             );
 
         // Verify OperationId contains transition info for process end
-        capturedRequest.Workflows[0].OperationId.Should().Be("Process next: Task_2 -> ");
+        capturedRequest.Workflows[0].OperationId.Should().Be("Process next: Task_2 -> EndEvent_1");
     }
 
     public static TheoryData<ProcessState?, string> InvalidProcessStatesData =>
@@ -1337,24 +1354,26 @@ public sealed class ProcessEngineTest
 
             var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
             processEngineClientMock
-                .Setup(c =>
-                    c.EnqueueWorkflow(
-                        It.IsAny<Instance>(),
-                        It.IsAny<WorkflowEnqueueRequest>(),
-                        It.IsAny<CancellationToken>()
-                    )
-                )
+                .Setup(c => c.EnqueueWorkflows(It.IsAny<WorkflowEnqueueRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(
                     new WorkflowEnqueueResponse.Accepted
                     {
-                        Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid() }],
+                        Workflows = [new WorkflowResult { DatabaseId = Guid.NewGuid(), Namespace = "org/app" }],
                     }
                 );
             processEngineClientMock
-                .Setup(c => c.ListActiveWorkflows(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
+                .Setup(c =>
+                    c.ListActiveWorkflows(
+                        It.IsAny<string>(),
+                        It.IsAny<Guid?>(),
+                        It.IsAny<Dictionary<string, string>?>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
                 .ReturnsAsync((IReadOnlyList<WorkflowStatusResponse>)[]);
             services.TryAddTransient<IWorkflowEngineClient>(_ => processEngineClientMock.Object);
 
+            services.TryAddSingleton(new AppIdentifier("org", "app"));
             services.TryAddTransient<ProcessNextRequestFactory>();
             services.TryAddTransient<InstanceStateService>();
 

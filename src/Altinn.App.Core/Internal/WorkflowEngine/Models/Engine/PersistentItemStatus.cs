@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Internal.WorkflowEngine.Models;
+namespace Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 
 /// <summary>
 /// Represents the status of a persistent workflow item.

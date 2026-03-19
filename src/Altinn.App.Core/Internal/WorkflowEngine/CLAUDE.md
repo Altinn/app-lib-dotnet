@@ -6,7 +6,7 @@ App-lib integration with the async Workflow Engine service. The engine runs as a
 
 The Workflow Engine service (external, .NET, PostgreSQL-backed) orchestrates process transitions. This integration layer:
 
-1. **Outbound**: `ProcessNextRequestFactory` builds a `WorkflowEnqueueRequest` (containing `WorkflowRequest` with command sequence + actor + lock token + state blob) and `WorkflowEngineClient` POSTs it to the engine's enqueue endpoint (`POST /api/v1/workflows/{org}/{app}/{party}/{guid}`)
+1. **Outbound**: `ProcessNextRequestFactory` builds a `WorkflowEnqueueRequest` (containing `WorkflowRequest` with command sequence + context + state blob) and `WorkflowEngineClient` POSTs it to the engine's enqueue endpoint (`POST {ApiWorkflowEngineEndpoint}`). Context (`AppWorkflowContext`) carries actor, lock token, org/app, and instance identification. `Namespace` = `{org}/{app}` (isolation boundary), `CorrelationId` = `instanceGuid` (for querying all workflows for an instance).
 2. **Inbound**: The engine calls back to `WorkflowEngineCallbackController` for each command, one at a time, sequentially
 3. **Per-callback lifecycle**: Controller restores `InstanceDataUnitOfWork` from the opaque state blob, resolves the `IWorkflowEngineCommand` by key, executes it, commits data changes on success, captures updated state, and returns it to the engine
 
@@ -85,11 +85,13 @@ WorkflowEngine/
 │   ├── IWorkflowEngineClient.cs             - EnqueueWorkflow() and GetWorkflowStatus()
 │   └── WorkflowEngineClient.cs              - HTTP impl with X-Api-Key auth
 ├── Models/
-│   ├── WorkflowEnqueueRequest.cs            - Batch request (actor, lockToken, list of WorkflowRequest)
+│   ├── WorkflowEnqueueRequest.cs            - Batch request (namespace, correlationId, context, list of WorkflowRequest)
 │   ├── WorkflowRequest.cs                   - Single workflow (operationId, steps, state, dependsOn)
 │   ├── WorkflowEnqueueResponse.cs           - Response: Accepted (with WorkflowResult[]) or Rejected
-│   ├── StepRequest.cs                       - Single step (command + retryStrategy + metadata + idempotencyKey)
-│   ├── Command.cs                           - Polymorphic: AppCommand | Webhook | Debug (Noop/Throw/Timeout)
+│   ├── StepRequest.cs                       - Single step (operationId + command + retryStrategy + metadata)
+│   ├── Command.cs                           - CommandDefinition: flat record with type + data (JsonElement)
+│   ├── AppCommandData.cs                    - Data for "app" commands (commandKey + payload)
+│   ├── AppWorkflowContext.cs                - Context for app commands (actor, lockToken, org, app, party, guid)
 │   ├── AppCallbackPayload.cs                - Payload engine sends back per callback (includes workflowId)
 │   ├── Actor.cs                             - User/org identity for the request
 │   ├── RetryStrategy.cs                     - Backoff config (Exponential/Linear/Constant + nonRetryableHttpStatusCodes)
@@ -181,12 +183,19 @@ AbandonTask → OnTaskAbandonHook → AbandonTaskLegacyHook
 The engine service (separate repo at `altinn-studio/src/Runtime/workflow-engine`):
 - .NET service backed by PostgreSQL
 - Receives `WorkflowEnqueueRequest`, stores it, executes steps sequentially
-- Returns `WorkflowEnqueueResponse.Accepted` with `DatabaseId` per workflow
+- Returns `WorkflowEnqueueResponse.Accepted` with `DatabaseId` and `Namespace` per workflow
 - Calls back to the app via HTTP POST for each `AppCommand`
 - Retries failed steps with configurable backoff (default: exponential, 1s base, 5min max delay, 24h max duration)
-- One active workflow per instance at a time
+- `Namespace` = `{org}/{app}` is the primary isolation boundary; idempotency keys are unique within a namespace
+- `CorrelationId` = `instanceGuid` groups workflows per instance for status queries
 - Steps execute in order; previous step must complete before next begins
-- Lock token is passed through for idempotency/caching scoping
+- `Context` (`AppWorkflowContext`) is opaque to the engine; passed through to command handlers
+- Commands use `CommandDefinition` with `type: "app"` and `data: AppCommandData { commandKey, payload }`
+
+### URL Patterns
+- Enqueue: `POST {ApiWorkflowEngineEndpoint}` (base URL, no path segments)
+- Status: `GET {ApiWorkflowEngineEndpoint}/{workflowId}`
+- List active: `GET {ApiWorkflowEngineEndpoint}?namespace={ns}&correlationId={correlationId}`
 
 ## State Passthrough
 

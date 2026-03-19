@@ -1,6 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.DependencyInjection;
@@ -59,19 +62,35 @@ internal static class ProcessEngineCommandValidator
     {
         foreach (var commandRequest in eventCommandSet.Commands)
         {
-            if (commandRequest.Command is Command.AppCommand appCommand)
+            if (TryGetAppCommandKey(commandRequest, out string? commandKey))
             {
-                keys.Add(appCommand.CommandKey);
+                keys.Add(commandKey);
             }
         }
 
         foreach (var commandRequest in eventCommandSet.PostProcessNextCommittedCommands)
         {
-            if (commandRequest.Command is Command.AppCommand appCommand)
+            if (TryGetAppCommandKey(commandRequest, out string? commandKey))
             {
-                keys.Add(appCommand.CommandKey);
+                keys.Add(commandKey);
             }
         }
+    }
+
+    private static bool TryGetAppCommandKey(StepRequest step, [NotNullWhen(true)] out string? commandKey)
+    {
+        if (step.Command.Type == "app" && step.Command.Data is { } data)
+        {
+            var appData = System.Text.Json.JsonSerializer.Deserialize<AppCommandData>(data);
+            if (appData is not null)
+            {
+                commandKey = appData.CommandKey;
+                return true;
+            }
+        }
+
+        commandKey = null;
+        return false;
     }
 
     private static HashSet<string> GetRegisteredCommandKeys(IServiceCollection services)

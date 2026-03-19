@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Internal.WorkflowEngine.Models;
+namespace Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 
 /// <summary>
 /// Defines a retry strategy for process engine tasks.
@@ -38,10 +38,16 @@ public sealed record RetryStrategy
     public TimeSpan? MaxDuration { get; init; }
 
     /// <summary>
-    /// HTTP status codes that should not be retried.
+    /// HTTP status codes that should not be retried. When an HTTP call returns one of these
+    /// status codes, the step fails immediately instead of being requeued.
     /// </summary>
     [JsonPropertyName("nonRetryableHttpStatusCodes")]
     public IReadOnlyList<int>? NonRetryableHttpStatusCodes { get; init; }
+
+    /// <summary>
+    /// Default HTTP status codes that are considered non-retryable (client errors that won't succeed on retry).
+    /// </summary>
+    public static readonly IReadOnlyList<int> DefaultNonRetryableHttpStatusCodes = [400, 401, 403, 404, 422];
 
     /// <summary>
     /// Creates an exponential backoff retry strategy.
@@ -105,8 +111,12 @@ public sealed record RetryStrategy
     /// <summary>
     /// Alias for <see cref="Constant"/>
     /// </summary>
-    public static RetryStrategy Fixed(TimeSpan intervalDelay, int? maxRetries = null, TimeSpan? maxDuration = null) =>
-        Constant(intervalDelay, maxRetries, maxDuration);
+    public static RetryStrategy Fixed(
+        TimeSpan intervalDelay,
+        int? maxRetries = null,
+        TimeSpan? maxDuration = null,
+        IReadOnlyList<int>? nonRetryableHttpStatusCodes = null
+    ) => Constant(intervalDelay, maxRetries, maxDuration, nonRetryableHttpStatusCodes);
 
     /// <summary>
     /// Creates a retry strategy with no retries.

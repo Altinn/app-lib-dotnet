@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Altinn.App.Core.Internal.WorkflowEngine.Models;
+namespace Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 
 /// <summary>
 /// Response model for workflow engine status endpoint.
@@ -14,6 +14,13 @@ internal sealed record WorkflowStatusResponse
     public Guid DatabaseId { get; init; }
 
     /// <summary>
+    /// The correlation ID for this workflow, if one was provided.
+    /// </summary>
+    [JsonPropertyName("correlationId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Guid? CorrelationId { get; init; }
+
+    /// <summary>
     /// The operation ID of the workflow.
     /// </summary>
     [JsonPropertyName("operationId")]
@@ -24,6 +31,12 @@ internal sealed record WorkflowStatusResponse
     /// </summary>
     [JsonPropertyName("idempotencyKey")]
     public required string IdempotencyKey { get; init; }
+
+    /// <summary>
+    /// The namespace this workflow belongs to.
+    /// </summary>
+    [JsonPropertyName("namespace")]
+    public required string Namespace { get; init; }
 
     /// <summary>
     /// When the workflow was created.
@@ -46,17 +59,25 @@ internal sealed record WorkflowStatusResponse
     public DateTimeOffset? StartAt { get; init; }
 
     /// <summary>
-    /// Optional metadata.
+    /// When the workflow will next be eligible for execution.
     /// </summary>
-    [JsonPropertyName("metadata")]
+    [JsonPropertyName("backoffUntil")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Metadata { get; init; }
+    public DateTimeOffset? BackoffUntil { get; init; }
 
     /// <summary>
-    /// The actor for this workflow.
+    /// When cancellation was requested for this workflow, if applicable.
     /// </summary>
-    [JsonPropertyName("actor")]
-    public required Actor Actor { get; init; }
+    [JsonPropertyName("cancellationRequestedAt")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DateTimeOffset? CancellationRequestedAt { get; init; }
+
+    /// <summary>
+    /// Labels associated with this workflow.
+    /// </summary>
+    [JsonPropertyName("labels")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, string>? Labels { get; init; }
 
     /// <summary>
     /// The overall status of the workflow.
@@ -103,6 +124,12 @@ internal sealed record StepStatusResponse
     public string? IdempotencyKey { get; init; }
 
     /// <summary>
+    /// An identifier for this operation.
+    /// </summary>
+    [JsonPropertyName("operationId")]
+    public required string OperationId { get; init; }
+
+    /// <summary>
     /// The processing order of this step within the workflow.
     /// </summary>
     [JsonPropertyName("processingOrder")]
@@ -116,11 +143,11 @@ internal sealed record StepStatusResponse
     public DateTimeOffset? UpdatedAt { get; init; }
 
     /// <summary>
-    /// Optional metadata.
+    /// Labels associated with the step.
     /// </summary>
-    [JsonPropertyName("metadata")]
+    [JsonPropertyName("labels")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Metadata { get; init; }
+    public Dictionary<string, string>? Labels { get; init; }
 
     /// <summary>
     /// The command details for this step.
@@ -141,13 +168,6 @@ internal sealed record StepStatusResponse
     public required int RetryCount { get; init; }
 
     /// <summary>
-    /// When the step will next be eligible for execution (if backed off).
-    /// </summary>
-    [JsonPropertyName("backoffUntil")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public DateTimeOffset? BackoffUntil { get; init; }
-
-    /// <summary>
     /// The retry strategy for this step.
     /// </summary>
     [JsonPropertyName("retryStrategy")]
@@ -160,22 +180,9 @@ internal sealed record StepStatusResponse
     internal sealed record CommandDetails
     {
         /// <summary>
-        /// The command type (e.g. "AppCommand", "Webhook").
+        /// The command type (e.g. "app", "webhook").
         /// </summary>
         [JsonPropertyName("type")]
         public required string Type { get; init; }
-
-        /// <summary>
-        /// The operation ID of the command.
-        /// </summary>
-        [JsonPropertyName("operationId")]
-        public required string OperationId { get; init; }
-
-        /// <summary>
-        /// The command payload.
-        /// </summary>
-        [JsonPropertyName("payload")]
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? Payload { get; init; }
     }
 }

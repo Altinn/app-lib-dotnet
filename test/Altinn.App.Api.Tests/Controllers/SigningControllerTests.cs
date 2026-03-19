@@ -634,7 +634,11 @@ public class SigningControllerTests
                     InstanceOwner = new InstanceOwner { PartyId = "1337" },
                     Process = new ProcessState
                     {
-                        CurrentTask = new ProcessElementInfo { ElementId = "task1", AltinnTaskType = "not-signing" },
+                        CurrentTask = new ProcessElementInfo
+                        {
+                            ElementId = "task-not-signing",
+                            AltinnTaskType = "data",
+                        },
                     },
                 }
             );
@@ -809,7 +813,11 @@ public class SigningControllerTests
                     InstanceOwner = new InstanceOwner { PartyId = "1337" },
                     Process = new ProcessState
                     {
-                        CurrentTask = new ProcessElementInfo { ElementId = "task1", AltinnTaskType = "not-signing" },
+                        CurrentTask = new ProcessElementInfo
+                        {
+                            ElementId = "task-not-signing",
+                            AltinnTaskType = "data",
+                        },
                     },
                 }
             );

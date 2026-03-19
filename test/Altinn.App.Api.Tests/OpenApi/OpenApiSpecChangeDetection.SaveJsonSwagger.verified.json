@@ -7355,13 +7355,13 @@
             "type": "string",
             "nullable": true
           },
-          "state": {
-            "type": "string",
-            "nullable": true
-          },
           "workflowId": {
             "type": "string",
             "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

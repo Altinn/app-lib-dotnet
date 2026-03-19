@@ -1,9 +1,12 @@
 using System.Globalization;
+using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Enums;
@@ -19,14 +22,17 @@ internal sealed class ProcessNextRequestFactory
 {
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IAuthenticationContext _authenticationContext;
+    private readonly AppIdentifier _appIdentifier;
 
     public ProcessNextRequestFactory(
         AppImplementationFactory appImplementationFactory,
-        IAuthenticationContext authenticationContext
+        IAuthenticationContext authenticationContext,
+        AppIdentifier appIdentifier
     )
     {
         _appImplementationFactory = appImplementationFactory;
         _authenticationContext = authenticationContext;
+        _appIdentifier = appIdentifier;
     }
 
     /// <summary>
@@ -34,11 +40,12 @@ internal sealed class ProcessNextRequestFactory
     /// Maps each instance event to its corresponding command sequence.
     /// </summary>
     public async Task<WorkflowEnqueueRequest> Create(
+        Instance instance,
         ProcessStateChange processStateChange,
         string lockToken,
         string? state = null,
         Actor? actor = null,
-        IReadOnlyList<Guid>? dependencies = null,
+        IEnumerable<WorkflowRef>? dependsOn = null,
         Dictionary<string, string>? prefill = null
     )
     {
@@ -53,13 +60,27 @@ internal sealed class ProcessNextRequestFactory
             ?? processStateChange.NewProcessState?.EndEvent
             ?? "End event";
 
-        string idempotencyKey = dependencies is { Count: > 0 } ? $"{lockToken}-dep-{fromTaskId}" : lockToken;
+        string idempotencyKey = dependsOn?.Any() == true ? $"{lockToken}-dep-{fromTaskId}" : lockToken;
+
+        Actor resolvedActor = actor ?? await ExtractActor();
+        InstanceIdentifier instanceId = new(instance);
+
+        var context = new AppWorkflowContext
+        {
+            Actor = resolvedActor,
+            LockToken = lockToken,
+            Org = _appIdentifier.Org,
+            App = _appIdentifier.App,
+            InstanceOwnerPartyId = instanceId.InstanceOwnerPartyId,
+            InstanceGuid = instanceId.InstanceGuid,
+        };
 
         return new WorkflowEnqueueRequest
         {
-            Actor = actor ?? await ExtractActor(),
             IdempotencyKey = idempotencyKey,
-            LockToken = lockToken,
+            Namespace = $"{_appIdentifier.Org}/{_appIdentifier.App}",
+            CorrelationId = instanceId.InstanceGuid,
+            Context = JsonSerializer.SerializeToElement(context),
             Workflows =
             [
                 new WorkflowRequest
@@ -67,7 +88,7 @@ internal sealed class ProcessNextRequestFactory
                     OperationId = $"Process next: {fromTaskId} -> {toTaskId}",
                     Steps = commands,
                     State = state,
-                    Dependencies = dependencies,
+                    DependsOn = dependsOn,
                 },
             ],
         };
@@ -183,7 +204,11 @@ internal sealed class ProcessNextRequestFactory
         string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
         return new StepRequest
         {
-            Command = new Command.AppCommand(CommandKey: MutateProcessState.Key, Payload: serializedPayload),
+            OperationId = MutateProcessState.Key,
+            Command = CommandDefinition.Create(
+                "app",
+                new AppCommandData { CommandKey = MutateProcessState.Key, Payload = serializedPayload }
+            ),
         };
     }
 
@@ -193,7 +218,11 @@ internal sealed class ProcessNextRequestFactory
         string? serializedPayload = CommandPayloadSerializer.Serialize(payload);
         return new StepRequest
         {
-            Command = new Command.AppCommand(CommandKey: SaveProcessStateToStorage.Key, Payload: serializedPayload),
+            OperationId = SaveProcessStateToStorage.Key,
+            Command = CommandDefinition.Create(
+                "app",
+                new AppCommandData { CommandKey = SaveProcessStateToStorage.Key, Payload = serializedPayload }
+            ),
         };
     }
 }

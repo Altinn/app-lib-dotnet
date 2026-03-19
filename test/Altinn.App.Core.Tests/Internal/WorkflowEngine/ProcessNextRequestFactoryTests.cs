@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
@@ -9,6 +10,9 @@ using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskAbandon;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 using Altinn.App.Core.Internal.WorkflowEngine.Models;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
+using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Tests.Common.Auth;
 using Altinn.Platform.Storage.Interface.Enums;
@@ -20,6 +24,17 @@ namespace Altinn.App.Core.Tests.Internal.WorkflowEngine;
 
 public class ProcessNextRequestFactoryTests
 {
+    private static readonly AppIdentifier TestAppIdentifier = new("ttd", "test-app");
+
+    private static readonly Instance TestInstance = new()
+    {
+        Id = "1337/aabbccdd-1234-5678-9012-aabbccddeeff",
+        AppId = "ttd/test-app",
+        Org = "ttd",
+        InstanceOwner = new InstanceOwner { PartyId = "1337" },
+        Data = [],
+    };
+
     private static ProcessNextRequestFactory CreateFactory(
         Authenticated? authentication = null,
         params IServiceTask[] serviceTasks
@@ -37,7 +52,7 @@ public class ProcessNextRequestFactoryTests
         var authContextMock = new Mock<IAuthenticationContext>();
         authContextMock.Setup(x => x.Current).Returns(authentication ?? TestAuthentication.GetUserAuthentication());
 
-        return new ProcessNextRequestFactory(appImplFactory, authContextMock.Object);
+        return new ProcessNextRequestFactory(appImplFactory, authContextMock.Object, TestAppIdentifier);
     }
 
     private static ProcessStateChange CreateTaskToTaskTransition(
@@ -187,10 +202,15 @@ public class ProcessNextRequestFactoryTests
     {
         return request
             .Workflows[0]
-            .Steps.Select(s => s.Command)
-            .OfType<Command.AppCommand>()
-            .Select(c => c.CommandKey)
-            .ToList();
+            .Steps.Select(s =>
+            {
+                if (s.Command.Type != "app" || s.Command.Data is not { } data)
+                    return null;
+                var appData = JsonSerializer.Deserialize<AppCommandData>(data);
+                return appData?.CommandKey;
+            })
+            .Where(k => k != null)
+            .ToList()!;
     }
 
     [Fact]
@@ -201,7 +221,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToTaskTransition();
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
         var keys = ExtractCommandKeys(request);
@@ -237,7 +257,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToEndTransition();
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
         var keys = ExtractCommandKeys(request);
@@ -272,7 +292,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart();
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
         var keys = ExtractCommandKeys(request);
@@ -305,7 +325,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskAbandonToNextTask();
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
         var keys = ExtractCommandKeys(request);
@@ -341,7 +361,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart(altinnTaskType: "signing");
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
         var keys = ExtractCommandKeys(request);
@@ -362,16 +382,20 @@ public class ProcessNextRequestFactoryTests
         var prefill = new Dictionary<string, string> { ["key1"] = "value1" };
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}", prefill: prefill);
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}", prefill: prefill);
 
         // Assert
         var steps = request.Workflows[0].Steps.ToList();
         var commonInitStep = steps
-            .Select(s => s.Command)
-            .OfType<Command.AppCommand>()
-            .First(c => c.CommandKey == CommonTaskInitialization.Key);
+            .Where(s => s.Command.Type == "app" && s.Command.Data is not null)
+            .Select(s =>
+            {
+                var appData = JsonSerializer.Deserialize<AppCommandData>(s.Command.Data!.Value);
+                return appData;
+            })
+            .First(c => c?.CommandKey == CommonTaskInitialization.Key);
 
-        Assert.NotNull(commonInitStep.Payload);
+        Assert.NotNull(commonInitStep?.Payload);
         var payload = CommandPayloadSerializer.Deserialize<CommonTaskInitializationPayload>(commonInitStep.Payload);
         Assert.NotNull(payload);
         Assert.NotNull(payload.Prefill);
@@ -386,10 +410,11 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToTaskTransition("Task_1", "Task_2");
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "state-blob");
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "state-blob");
 
         // Assert
-        Assert.Equal("lock-token", request.LockToken);
+        Assert.Equal("lock-token", request.IdempotencyKey);
+        Assert.Equal("ttd/test-app", request.Namespace);
         var workflow = request.Workflows[0];
         Assert.Equal("Process next: Task_1 -> Task_2", workflow.OperationId);
         Assert.Equal("state-blob", workflow.State);
@@ -403,7 +428,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart("Task_1", startEvent: "StartEvent_1");
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
         var workflow = request.Workflows[0];
@@ -418,7 +443,7 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToEndTransition("Task_1", "EndEvent_1");
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
         var workflow = request.Workflows[0];
@@ -434,9 +459,12 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart();
 
         // Act
-        var request = await factory.Create(stateChange, "lock-token", "{}");
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
-        // Assert
-        Assert.Equal("42", request.Actor.UserIdOrOrgNumber);
+        // Assert - Actor is now in Context
+        Assert.NotNull(request.Context);
+        var context = JsonSerializer.Deserialize<AppWorkflowContext>(request.Context.Value);
+        Assert.NotNull(context);
+        Assert.Equal("42", context.Actor.UserIdOrOrgNumber);
     }
 }

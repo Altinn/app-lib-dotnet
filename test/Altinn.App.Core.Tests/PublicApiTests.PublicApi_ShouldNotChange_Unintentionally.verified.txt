@@ -4039,9 +4039,9 @@ namespace Altinn.App.Core.Internal.Validation
         public System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.IValidator> GetValidators(string taskId) { }
     }
 }
-namespace Altinn.App.Core.Internal.WorkflowEngine.Models
+namespace Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand
 {
-    public sealed class Actor : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.Actor>
+    public sealed class Actor : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand.Actor>
     {
         public Actor() { }
         [System.Text.Json.Serialization.JsonPropertyName("language")]
@@ -4049,11 +4049,11 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models
         [System.Text.Json.Serialization.JsonPropertyName("userIdOrOrgNumber")]
         public required string UserIdOrOrgNumber { get; init; }
     }
-    public sealed class AppCallbackPayload : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.AppCallbackPayload>
+    public sealed class AppCallbackPayload : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand.AppCallbackPayload>
     {
         public AppCallbackPayload() { }
         [System.Text.Json.Serialization.JsonPropertyName("actor")]
-        public required Altinn.App.Core.Internal.WorkflowEngine.Models.Actor Actor { get; init; }
+        public required Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand.Actor Actor { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("commandKey")]
         public required string CommandKey { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("lockToken")]
@@ -4065,12 +4065,15 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models
         [System.Text.Json.Serialization.JsonPropertyName("workflowId")]
         public required System.Guid WorkflowId { get; init; }
     }
-    public sealed class AppCallbackResponse : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.AppCallbackResponse>
+    public sealed class AppCallbackResponse : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand.AppCallbackResponse>
     {
         public AppCallbackResponse() { }
         [System.Text.Json.Serialization.JsonPropertyName("state")]
         public string? State { get; init; }
     }
+}
+namespace Altinn.App.Core.Internal.WorkflowEngine.Models.Engine
+{
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     public enum BackoffType
     {
@@ -4078,51 +4081,7 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models
         Linear = 1,
         Exponential = 2,
     }
-    [System.Text.Json.Serialization.JsonDerivedType(typeof(Altinn.App.Core.Internal.WorkflowEngine.Models.Command.AppCommand), "app")]
-    [System.Text.Json.Serialization.JsonDerivedType(typeof(Altinn.App.Core.Internal.WorkflowEngine.Models.Command.Webhook), "webhook")]
-    [System.Text.Json.Serialization.JsonPolymorphic(TypeDiscriminatorPropertyName="type")]
-    public abstract class Command : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.Command>
-    {
-        [System.Text.Json.Serialization.JsonPropertyName("maxExecutionTime")]
-        public System.TimeSpan? MaxExecutionTime { get; init; }
-        public string OperationId { get; init; }
-        public override sealed string ToString() { }
-        public sealed class AppCommand : Altinn.App.Core.Internal.WorkflowEngine.Models.Command, System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.Command.AppCommand>
-        {
-            public AppCommand(string CommandKey, string? Payload = null, System.TimeSpan? MaxExecutionTime = default) { }
-            [System.Text.Json.Serialization.JsonPropertyName("commandKey")]
-            public string CommandKey { get; init; }
-            [System.Text.Json.Serialization.JsonPropertyName("payload")]
-            public string? Payload { get; init; }
-        }
-        public static class Debug
-        {
-            public sealed class Noop : Altinn.App.Core.Internal.WorkflowEngine.Models.Command, System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.Command.Debug.Noop>
-            {
-                public Noop() { }
-            }
-            public sealed class Throw : Altinn.App.Core.Internal.WorkflowEngine.Models.Command, System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.Command.Debug.Throw>
-            {
-                public Throw() { }
-            }
-            public sealed class Timeout : Altinn.App.Core.Internal.WorkflowEngine.Models.Command, System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.Command.Debug.Timeout>
-            {
-                public Timeout(System.TimeSpan Duration, System.TimeSpan? MaxExecutionTime = default) { }
-                [System.Text.Json.Serialization.JsonPropertyName("duration")]
-                public System.TimeSpan Duration { get; init; }
-            }
-        }
-        public sealed class Webhook : Altinn.App.Core.Internal.WorkflowEngine.Models.Command, System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.Command.Webhook>
-        {
-            public Webhook(string Uri, string? Payload = null, string? ContentType = null, System.TimeSpan? MaxExecutionTime = default) { }
-            [System.Text.Json.Serialization.JsonPropertyName("contentType")]
-            public string? ContentType { get; init; }
-            [System.Text.Json.Serialization.JsonPropertyName("payload")]
-            public string? Payload { get; init; }
-            [System.Text.Json.Serialization.JsonPropertyName("uri")]
-            public string Uri { get; init; }
-        }
-    }
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     public enum PersistentItemStatus
     {
         Enqueued = 0,
@@ -4133,11 +4092,12 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models
         Canceled = 5,
         DependencyFailed = 6,
     }
-    public sealed class RetryStrategy : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.RetryStrategy>
+    public sealed class RetryStrategy : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.Engine.RetryStrategy>
     {
+        public static readonly System.Collections.Generic.IReadOnlyList<int> DefaultNonRetryableHttpStatusCodes;
         public RetryStrategy() { }
         [System.Text.Json.Serialization.JsonPropertyName("backoffType")]
-        public Altinn.App.Core.Internal.WorkflowEngine.Models.BackoffType BackoffType { get; init; }
+        public Altinn.App.Core.Internal.WorkflowEngine.Models.Engine.BackoffType BackoffType { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("baseInterval")]
         public System.TimeSpan BaseInterval { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("maxDelay")]
@@ -4148,23 +4108,11 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Models
         public int? MaxRetries { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("nonRetryableHttpStatusCodes")]
         public System.Collections.Generic.IReadOnlyList<int>? NonRetryableHttpStatusCodes { get; init; }
-        public static Altinn.App.Core.Internal.WorkflowEngine.Models.RetryStrategy Constant(System.TimeSpan interval, int? maxRetries = default, System.TimeSpan? maxDuration = default, System.Collections.Generic.IReadOnlyList<int>? nonRetryableHttpStatusCodes = null) { }
-        public static Altinn.App.Core.Internal.WorkflowEngine.Models.RetryStrategy Exponential(System.TimeSpan baseInterval, int? maxRetries = default, System.TimeSpan? maxDelay = default, System.TimeSpan? maxDuration = default, System.Collections.Generic.IReadOnlyList<int>? nonRetryableHttpStatusCodes = null) { }
-        public static Altinn.App.Core.Internal.WorkflowEngine.Models.RetryStrategy Fixed(System.TimeSpan intervalDelay, int? maxRetries = default, System.TimeSpan? maxDuration = default) { }
-        public static Altinn.App.Core.Internal.WorkflowEngine.Models.RetryStrategy Linear(System.TimeSpan baseInterval, int? maxRetries = default, System.TimeSpan? maxDelay = default, System.TimeSpan? maxDuration = default, System.Collections.Generic.IReadOnlyList<int>? nonRetryableHttpStatusCodes = null) { }
-        public static Altinn.App.Core.Internal.WorkflowEngine.Models.RetryStrategy None() { }
-    }
-    public sealed class StepRequest : System.IEquatable<Altinn.App.Core.Internal.WorkflowEngine.Models.StepRequest>
-    {
-        public StepRequest() { }
-        [System.Text.Json.Serialization.JsonPropertyName("command")]
-        public required Altinn.App.Core.Internal.WorkflowEngine.Models.Command Command { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("idempotencyKey")]
-        public string? IdempotencyKey { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("metadata")]
-        public string? Metadata { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("retryStrategy")]
-        public Altinn.App.Core.Internal.WorkflowEngine.Models.RetryStrategy? RetryStrategy { get; init; }
+        public static Altinn.App.Core.Internal.WorkflowEngine.Models.Engine.RetryStrategy Constant(System.TimeSpan interval, int? maxRetries = default, System.TimeSpan? maxDuration = default, System.Collections.Generic.IReadOnlyList<int>? nonRetryableHttpStatusCodes = null) { }
+        public static Altinn.App.Core.Internal.WorkflowEngine.Models.Engine.RetryStrategy Exponential(System.TimeSpan baseInterval, int? maxRetries = default, System.TimeSpan? maxDelay = default, System.TimeSpan? maxDuration = default, System.Collections.Generic.IReadOnlyList<int>? nonRetryableHttpStatusCodes = null) { }
+        public static Altinn.App.Core.Internal.WorkflowEngine.Models.Engine.RetryStrategy Fixed(System.TimeSpan intervalDelay, int? maxRetries = default, System.TimeSpan? maxDuration = default, System.Collections.Generic.IReadOnlyList<int>? nonRetryableHttpStatusCodes = null) { }
+        public static Altinn.App.Core.Internal.WorkflowEngine.Models.Engine.RetryStrategy Linear(System.TimeSpan baseInterval, int? maxRetries = default, System.TimeSpan? maxDelay = default, System.TimeSpan? maxDuration = default, System.Collections.Generic.IReadOnlyList<int>? nonRetryableHttpStatusCodes = null) { }
+        public static Altinn.App.Core.Internal.WorkflowEngine.Models.Engine.RetryStrategy None() { }
     }
 }
 namespace Altinn.App.Core.Models
