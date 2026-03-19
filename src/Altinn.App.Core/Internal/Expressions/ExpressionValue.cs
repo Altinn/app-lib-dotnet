@@ -514,7 +514,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             case JsonValueKind.False or JsonValueKind.True when IsSupportedNumericType(underlyingType):
                 result = Convert.ChangeType(Bool ? 1 : 0, underlyingType, CultureInfo.InvariantCulture);
                 return true;
-            case JsonValueKind.Number when IsSupportedNumericType(underlyingType):
+            case JsonValueKind.Number when IsSupportedNumericType(underlyingType) || underlyingType == typeof(string):
                 result = Convert.ChangeType(Number, underlyingType, CultureInfo.InvariantCulture);
                 return true;
             case JsonValueKind.String when underlyingType == typeof(string):
