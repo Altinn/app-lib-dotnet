@@ -4615,6 +4615,10 @@ namespace Altinn.App.Core.Models.Expressions
         gatewayAction = 34,
         language = 35,
         text = 36,
+        plus = 37,
+        minus = 38,
+        multiply = 39,
+        divide = 40,
     }
 }
 namespace Altinn.App.Core.Models.Layout.Components.Base
