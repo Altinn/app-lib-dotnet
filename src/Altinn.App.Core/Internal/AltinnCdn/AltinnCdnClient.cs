@@ -29,9 +29,34 @@ internal sealed class AltinnCdnClient : IAltinnCdnClient
                 cancellationToken: cancellationToken
             ) ?? throw new JsonException("Received literal \"null\" response from Altinn CDN");
 
+        InjectDigdirOrgNrForTestDepartment(orgs);
+
+        return orgs;
+    }
+
+    public async Task<AltinnCdnOrgName?> GetOrgNameByAppId(string appId, CancellationToken cancellationToken = default)
+    {
+        AltinnCdnOrgs? orgs = await _httpClient.GetFromJsonAsync<AltinnCdnOrgs>(
+            requestUri: "https://altinncdn.no/orgs/altinn-orgs.json",
+            options: _jsonOptions,
+            cancellationToken: cancellationToken
+        );
+
+        InjectDigdirOrgNrForTestDepartment(orgs);
+
+        string orgAccronym = appId.Split('/')[0];
+        AltinnCdnOrgDetails? orgDetails = orgs
+            ?.Orgs?.FirstOrDefault(kvp => kvp.Key.Equals(orgAccronym, StringComparison.OrdinalIgnoreCase))
+            .Value;
+        return orgDetails?.Name;
+    }
+
+    private static void InjectDigdirOrgNrForTestDepartment(AltinnCdnOrgs? orgs)
+    {
         // Inject Digdir's organisation number for TTD, because TTD does not have an organisation number
         if (
-            !orgs.Orgs.IsNullOrEmpty()
+            orgs is not null
+            && !orgs.Orgs.IsNullOrEmpty()
             && orgs.Orgs.TryGetValue("ttd", out var ttdOrgDetails)
             && orgs.Orgs.TryGetValue("digdir", out var digdirOrgDetails)
             && string.IsNullOrEmpty(ttdOrgDetails.Orgnr)
@@ -39,8 +64,6 @@ internal sealed class AltinnCdnClient : IAltinnCdnClient
         {
             ttdOrgDetails.Orgnr = digdirOrgDetails.Orgnr;
         }
-
-        return orgs;
     }
 
     public void Dispose()
