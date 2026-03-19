@@ -141,9 +141,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             uint numberValue => numberValue,
             long numberValue => numberValue,
             ulong numberValue => numberValue,
-            decimal numberValue =>
-                (double?)numberValue // expressions uses double which needs an explicit cast
-            ,
+            decimal numberValue => (double?)numberValue, // expressions uses double which needs an explicit cast
             DateTime dateTimeValue => JsonSerializer
                 .Serialize(dateTimeValue, _unsafeSerializerOptionsForSerializingDates)
                 .Trim(
