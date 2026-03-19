@@ -296,7 +296,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// <summary>
     /// Get the value as a string that can be used for equality comparisons in ["equals"] expressions.
     ///
-    /// Has special handeling for strings that are "true", "false", or "null" to make them equal to the primitive types
+    /// Has special handling for strings that are "true", "false", or "null" to make them equal to the primitive types
     /// </summary>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
@@ -517,6 +517,22 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             case JsonValueKind.Number when IsSupportedNumericType(underlyingType):
                 result = Convert.ChangeType(Number, underlyingType, CultureInfo.InvariantCulture);
                 return true;
+            case JsonValueKind.Number when underlyingType == typeof(bool):
+                switch (Number)
+                {
+                    case 1:
+                        result = true;
+                        return true;
+                    case 0:
+                        result = false;
+                        return true;
+                    default:
+                        result = null;
+                        return false;
+                }
+            case JsonValueKind.Number when underlyingType == typeof(string):
+                result = Number.ToString(CultureInfo.InvariantCulture);
+                return true;
             case JsonValueKind.String when underlyingType == typeof(string):
                 result = String;
                 return true;
@@ -529,8 +545,30 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                     result = Convert.ChangeType(parsedNumber.Value, underlyingType, CultureInfo.InvariantCulture);
                     return true;
                 }
-                break;
+                else
+                {
+                    result = null;
+                    return false;
+                }
             }
+            case JsonValueKind.String:
+                // Fallback to JSON deserialization when the fast path fails (i.e., deserialize string to DateTime or similar)
+                try
+                {
+                    var json = $"\"{String}\""; // Wrap in quotes to ensure it's deserialized as a string (e.g., for DateTime)
+                    result = JsonSerializer.Deserialize(json, type);
+                    return true;
+                }
+                catch (JsonException)
+                {
+                    result = null;
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    result = null;
+                    return false;
+                }
         }
 
         // Add special handling for bool to support loose conversion rules
@@ -554,23 +592,9 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             result = boolValue.Value;
             return true;
         }
-        // Fallback to JSON deserialization when the fast path fails (i.e., deserialize string to DateTime or similar)
-        try
-        {
-            var json = ToString();
-            result = JsonSerializer.Deserialize(json, type);
-            return true;
-        }
-        catch (JsonException)
-        {
-            result = null;
-            return false;
-        }
-        catch (NotSupportedException)
-        {
-            result = null;
-            return false;
-        }
+
+        result = null;
+        return false;
     }
 
     private static bool IsSupportedNumericType(Type type)
