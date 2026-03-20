@@ -1,6 +1,7 @@
 using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications.Cancellation;
+using Altinn.App.Core.Features.Notifications.SecretProvider;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,7 @@ public class NotificationCallbackControllerTests
 {
     private readonly Mock<ICancelInstantiationNotification> _instantiationNotificationMock = new(MockBehavior.Strict);
     private readonly Mock<IInstanceClient> _instanceClientMock = new(MockBehavior.Strict);
+    private readonly Mock<INotificationConditionCodeValidator> _secretValidatorMock = new(MockBehavior.Strict);
     private readonly ServiceCollection _serviceCollection = new();
 
     public NotificationCallbackControllerTests(ITestOutputHelper output)
@@ -20,6 +22,7 @@ public class NotificationCallbackControllerTests
         _serviceCollection.AddTransient<NotificationCallbackController>();
         _serviceCollection.AddSingleton(_instantiationNotificationMock.Object);
         _serviceCollection.AddSingleton(_instanceClientMock.Object);
+        _serviceCollection.AddSingleton(_secretValidatorMock.Object);
         _serviceCollection.AddFakeLoggingWithXunit(output);
     }
 
@@ -43,12 +46,19 @@ public class NotificationCallbackControllerTests
             .ReturnsAsync(instance);
 
         _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(true);
+        _secretValidatorMock.Setup(s => s.ValidateCode(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<NotificationCallbackController>();
 
         // Act
-        var actionResult = await controller.NotificationCallback("ttd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.NotificationCallback(
+            "ttd",
+            "app",
+            1337,
+            Guid.NewGuid(),
+            "not-relevant-for-this-test"
+        );
 
         // Assert
         var response = actionResult.Value;
@@ -76,12 +86,19 @@ public class NotificationCallbackControllerTests
             .ReturnsAsync(instance);
 
         _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(false);
+        _secretValidatorMock.Setup(s => s.ValidateCode(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<NotificationCallbackController>();
 
         // Act
-        var actionResult = await controller.NotificationCallback("ttd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.NotificationCallback(
+            "ttd",
+            "app",
+            1337,
+            Guid.NewGuid(),
+            "not-relevant-for-this-test"
+        );
 
         // Assert
         var response = actionResult.Value;
@@ -114,12 +131,19 @@ public class NotificationCallbackControllerTests
             .ReturnsAsync(instance);
 
         _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(true);
+        _secretValidatorMock.Setup(s => s.ValidateCode(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<NotificationCallbackController>();
 
         // Act
-        await controller.NotificationCallback(org, app, instanceOwnerPartyId, instanceGuid);
+        await controller.NotificationCallback(
+            org,
+            app,
+            instanceOwnerPartyId,
+            instanceGuid,
+            "not-relevant-for-this-test"
+        );
 
         // Assert
         _instanceClientMock.Verify(
@@ -156,12 +180,13 @@ public class NotificationCallbackControllerTests
             .ReturnsAsync(instance);
 
         _instantiationNotificationMock.Setup(x => x.ShouldSend(instance)).Returns(true);
+        _secretValidatorMock.Setup(s => s.ValidateCode(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<NotificationCallbackController>();
 
         // Act
-        await controller.NotificationCallback("ttd", "app", 1337, Guid.NewGuid());
+        await controller.NotificationCallback("ttd", "app", 1337, Guid.NewGuid(), "not-relevant-for-this-test");
 
         // Assert
         _instantiationNotificationMock.Verify(x => x.ShouldSend(instance), Times.Once);
@@ -184,11 +209,19 @@ public class NotificationCallbackControllerTests
             )
             .ThrowsAsync(new Exception("Storage unavailable"));
 
+        _secretValidatorMock.Setup(s => s.ValidateCode(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
+
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
         var controller = sp.GetRequiredService<NotificationCallbackController>();
 
         // Act
-        var actionResult = await controller.NotificationCallback("ttd", "app", 1337, Guid.NewGuid());
+        var actionResult = await controller.NotificationCallback(
+            "ttd",
+            "app",
+            1337,
+            Guid.NewGuid(),
+            "not-relevant-for-this-test"
+        );
 
         // Assert
         var response = actionResult.Value;

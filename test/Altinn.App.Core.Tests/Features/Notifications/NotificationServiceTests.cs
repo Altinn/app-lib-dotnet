@@ -2,6 +2,7 @@ using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications;
+using Altinn.App.Core.Features.Notifications.SecretProvider;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Language;
@@ -24,10 +25,12 @@ public class NotificationServiceTests
     private readonly Mock<IAltinnPartyClient> _partyClientMock = new();
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
     private readonly Mock<ILogger<NotificationService>> _logger = new();
+    private readonly Mock<INotificationConditionTokenGenerator> _tokenGenerator = new();
 
     private NotificationService CreateSut() =>
         new(
             _orderClientMock.Object,
+            _tokenGenerator.Object,
             _profileClientMock.Object,
             _cdnClientMock.Object,
             _appMetadataMock.Object,
@@ -314,7 +317,7 @@ public class NotificationServiceTests
             instanceOwnerName: "Firma AS",
             serviceOwnerName: null,
             instantiationNotification: DefaultNotification(),
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientOrganization?.ResourceId);
@@ -332,7 +335,7 @@ public class NotificationServiceTests
             instanceOwnerName: "Ola Nordmann",
             serviceOwnerName: null,
             instantiationNotification: DefaultNotification(),
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientPerson?.ResourceId);
@@ -350,7 +353,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: DefaultNotification(),
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientExternalIdentity?.ResourceId);
@@ -369,7 +372,7 @@ public class NotificationServiceTests
                 instanceOwnerName: null,
                 serviceOwnerName: null,
                 instantiationNotification: DefaultNotification(),
-                callBackBaseUrl: null
+                conditionEndpoint: new Uri("/dummy")
             )
         );
     }
@@ -391,7 +394,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: DefaultNotification(), // RequestedSendTime is null
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         var after = DateTime.Now.AddMinutes(5);
@@ -418,7 +421,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
+            conditionEndpoint: new Uri("https://ttd.apps.tt02.altinn.no/ttd/my-app")
         );
 
         Assert.Equal(scheduledTime, result.RequestedSendTime);
@@ -445,7 +448,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         Assert.Null(result.Reminders);
@@ -465,7 +468,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         Assert.Null(result.Reminders);
@@ -490,7 +493,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         Assert.Equal(2, result.Reminders?.Count);
@@ -515,7 +518,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         var reminder = Assert.Single(result.Reminders!);
@@ -541,7 +544,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
+            conditionEndpoint: new Uri("https://ttd.apps.tt02.altinn.no/ttd/my-app")
         );
 
         var reminder = Assert.Single(result.Reminders!);
@@ -566,7 +569,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
+            conditionEndpoint: new Uri("https://ttd.apps.tt02.altinn.no/ttd/my-app")
         );
 
         var reminder = Assert.Single(result.Reminders!);
@@ -589,7 +592,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         var reminder = Assert.Single(result.Reminders!);
@@ -612,7 +615,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         var reminder = Assert.Single(result.Reminders!);
@@ -635,7 +638,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         var reminder = Assert.Single(result.Reminders!);
@@ -690,7 +693,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
@@ -737,7 +740,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
@@ -777,7 +780,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
@@ -825,7 +828,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
@@ -887,7 +890,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         Assert.Equal(2, result.Reminders!.Count);
@@ -921,7 +924,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: new Uri("/dummy")
         );
 
         var org = result.Recipient.RecipientOrganization!;
