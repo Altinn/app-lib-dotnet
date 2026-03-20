@@ -84,7 +84,7 @@ internal sealed class DataModelFieldCalculator
                 if (
                     hiddenFields.Exists(d =>
                         d.DataElementIdentifier == resolvedField.DataElementIdentifier
-                        && resolvedField.Field.StartsWith(d.Field, StringComparison.InvariantCulture)
+                        && IsSameOrDescendantField(resolvedField.Field, d.Field)
                     )
                 )
                 {
@@ -197,5 +197,17 @@ internal sealed class DataModelFieldCalculator
         };
 
         return dataModelFieldCalculation;
+    }
+
+    private static bool IsSameOrDescendantField(string candidate, string hiddenField)
+    {
+        if (candidate.Equals(hiddenField, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return candidate.StartsWith(hiddenField, StringComparison.Ordinal)
+            && candidate.Length > hiddenField.Length
+            && (candidate[hiddenField.Length] == '.' || candidate[hiddenField.Length] == '[');
     }
 }
