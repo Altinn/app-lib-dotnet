@@ -517,19 +517,6 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             case JsonValueKind.Number when IsSupportedNumericType(underlyingType):
                 result = Convert.ChangeType(Number, underlyingType, CultureInfo.InvariantCulture);
                 return true;
-            case JsonValueKind.Number when underlyingType == typeof(bool):
-                switch (Number)
-                {
-                    case 1:
-                        result = true;
-                        return true;
-                    case 0:
-                        result = false;
-                        return true;
-                    default:
-                        result = null;
-                        return false;
-                }
             case JsonValueKind.Number when underlyingType == typeof(string):
                 result = Number.ToString(CultureInfo.InvariantCulture);
                 return true;
@@ -551,24 +538,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                     return false;
                 }
             }
-            case JsonValueKind.String:
-                // Fallback to JSON deserialization when the fast path fails (i.e., deserialize string to DateTime or similar)
-                try
-                {
-                    var json = $"\"{String}\""; // Wrap in quotes to ensure it's deserialized as a string (e.g., for DateTime)
-                    result = JsonSerializer.Deserialize(json, type);
-                    return true;
-                }
-                catch (JsonException)
-                {
-                    result = null;
-                    return false;
-                }
-                catch (NotSupportedException)
-                {
-                    result = null;
-                    return false;
-                }
+
         }
 
         // Add special handling for bool to support loose conversion rules
@@ -593,12 +563,35 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             return true;
         }
 
+        if(ValueKind == JsonValueKind.String)
+        {
+             // Fallback to JSON deserialization when the fast path fails (i.e., deserialize string to DateTime or similar)
+            try
+            {
+                var json = JsonSerializer.Serialize(String, _unsafeSerializerOptionsForSerializingDates); // Wrap in quotes to ensure it's deserialized as a string (e.g., for DateTime)
+                result = JsonSerializer.Deserialize(json, type);
+                return true;
+            }
+            catch (JsonException)
+            {
+                result = null;
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                result = null;
+                return false;
+            }
+        }
+
         result = null;
         return false;
     }
 
     private static bool IsSupportedNumericType(Type type)
     {
+        // TODO: consider supporting enums as numeric types as well, but currently we
+        // don't use C# enums in datamodels, so it isn't very urgent.
         return type == typeof(double)
             || type == typeof(int)
             || type == typeof(float)
