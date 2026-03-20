@@ -538,7 +538,6 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                     return false;
                 }
             }
-
         }
 
         // Add special handling for bool to support loose conversion rules
@@ -563,9 +562,9 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             return true;
         }
 
-        if(ValueKind == JsonValueKind.String)
+        if (ValueKind == JsonValueKind.String)
         {
-             // Fallback to JSON deserialization when the fast path fails (i.e., deserialize string to DateTime or similar)
+            // Fallback to JSON deserialization when the fast path fails (i.e., deserialize string to DateTime or similar)
             try
             {
                 var json = JsonSerializer.Serialize(String, _unsafeSerializerOptionsForSerializingDates); // Wrap in quotes to ensure it's deserialized as a string (e.g., for DateTime)
