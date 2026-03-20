@@ -1,6 +1,6 @@
+using System.Text;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 namespace Altinn.App.Core.Features.Notifications.SecretProvider;
 
@@ -32,15 +32,18 @@ internal sealed class NotificationConditionCodeValidator(INotificationConditionS
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
 
             var handler = new JsonWebTokenHandler();
-            var result = await handler.ValidateTokenAsync(code, new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = key,
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero,
-            });
+            var result = await handler.ValidateTokenAsync(
+                code,
+                new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = key,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero,
+                }
+            );
 
             if (!result.IsValid)
                 return false;

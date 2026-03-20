@@ -277,7 +277,7 @@ internal sealed class NotificationService : INotificationService
         var uriBuilder = new UriBuilder(callBackBaseUrl.TrimEnd('/'))
         {
             Path = $"/api/v1/notification-webhook-listener/{instance.Id}",
-            Query = $"code={Uri.EscapeDataString(token)}"
+            Query = $"code={Uri.EscapeDataString(token)}",
         };
         return uriBuilder.Uri;
     }

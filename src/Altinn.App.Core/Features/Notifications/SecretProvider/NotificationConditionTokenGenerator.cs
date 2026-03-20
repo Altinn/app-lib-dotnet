@@ -28,10 +28,7 @@ internal sealed class NotificationConditionTokenGenerator(INotificationCondition
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Claims = new Dictionary<string, object>
-            {
-                [JwtRegisteredClaimNames.Jti] = instanceGuid.ToString(),
-            },
+            Claims = new Dictionary<string, object> { [JwtRegisteredClaimNames.Jti] = instanceGuid.ToString() },
             Expires = DateTime.UtcNow.AddDays(31),
             SigningCredentials = credentials,
         };

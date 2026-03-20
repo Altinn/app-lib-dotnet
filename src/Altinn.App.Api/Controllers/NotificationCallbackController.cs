@@ -49,7 +49,10 @@ public class NotificationCallbackController(
         bool isValid = await validator.ValidateCode(code, instanceGuid);
         if (isValid is false)
         {
-            logger.LogWarning("Notification callback rejected: invalid or missing code for instance {InstanceGuid}.", instanceGuid);
+            logger.LogWarning(
+                "Notification callback rejected: invalid or missing code for instance {InstanceGuid}.",
+                instanceGuid
+            );
             return Unauthorized();
         }
 
