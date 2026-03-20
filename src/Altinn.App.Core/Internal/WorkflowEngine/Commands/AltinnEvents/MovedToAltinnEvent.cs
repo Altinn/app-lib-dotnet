@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Events;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -29,7 +30,8 @@ internal sealed class MovedToAltinnEvent : IWorkflowEngineCommand
 
             await _eventsClient.AddEvent(
                 $"app.instance.process.movedTo.{instance.Process.CurrentTask.ElementId}",
-                instance
+                instance,
+                StorageAuthenticationMethod.ServiceOwner()
             );
 
             return new SuccessfulProcessEngineCommandResult();

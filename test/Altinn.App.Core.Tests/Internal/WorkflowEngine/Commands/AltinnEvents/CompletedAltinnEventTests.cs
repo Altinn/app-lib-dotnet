@@ -65,7 +65,15 @@ public class CompletedAltinnEventTests
 
         // Assert
         Assert.IsType<SuccessfulProcessEngineCommandResult>(result);
-        eventsClientMock.Verify(x => x.AddEvent("app.instance.process.completed", instance), Times.Once);
+        eventsClientMock.Verify(
+            x =>
+                x.AddEvent(
+                    "app.instance.process.completed",
+                    instance,
+                    It.Is<StorageAuthenticationMethod>(a => a != null)
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -93,7 +101,7 @@ public class CompletedAltinnEventTests
         var instance = CreateInstance("EndEvent_1");
         var eventsClientMock = new Mock<IEventsClient>();
         eventsClientMock
-            .Setup(x => x.AddEvent(It.IsAny<string>(), It.IsAny<Instance>()))
+            .Setup(x => x.AddEvent(It.IsAny<string>(), It.IsAny<Instance>(), It.IsAny<StorageAuthenticationMethod>()))
             .ThrowsAsync(new Exception("AddEvent failed"));
         var command = new CompletedAltinnEvent(eventsClientMock.Object);
         var context = CreateContext(instance);

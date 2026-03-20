@@ -58,7 +58,10 @@ public class InstanceCreatedAltinnEventTests
 
         // Assert
         Assert.IsType<SuccessfulProcessEngineCommandResult>(result);
-        eventsClientMock.Verify(x => x.AddEvent("app.instance.created", instance), Times.Once);
+        eventsClientMock.Verify(
+            x => x.AddEvent("app.instance.created", instance, It.Is<StorageAuthenticationMethod>(a => a != null)),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -68,7 +71,7 @@ public class InstanceCreatedAltinnEventTests
         var instance = CreateInstance();
         var eventsClientMock = new Mock<IEventsClient>();
         eventsClientMock
-            .Setup(x => x.AddEvent(It.IsAny<string>(), It.IsAny<Instance>()))
+            .Setup(x => x.AddEvent(It.IsAny<string>(), It.IsAny<Instance>(), It.IsAny<StorageAuthenticationMethod>()))
             .ThrowsAsync(new Exception("AddEvent failed"));
         var command = new InstanceCreatedAltinnEvent(eventsClientMock.Object);
         var context = CreateContext(instance);

@@ -93,6 +93,7 @@ namespace Altinn.App.Core.Configuration
         public string ApiWorkflowEngineEndpoint { get; set; }
         public string SubscriptionKey { get; set; }
         public string WorkflowEngineApiKey { get; set; }
+        public string WorkflowEngineCallbackBaseUrl { get; set; }
     }
 }
 namespace Altinn.App.Core.Constants
@@ -2536,20 +2537,20 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization
 {
     public class AuthorizationClient : Altinn.App.Core.Internal.Auth.IAuthorizationClient
     {
-        public AuthorizationClient(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings> platformSettings, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, System.Net.Http.HttpClient httpClient, Microsoft.Extensions.Options.IOptionsMonitor<Altinn.App.Core.Configuration.AppSettings> settings, Altinn.Common.PEP.Interfaces.IPDP pdp, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Infrastructure.Clients.Authorization.AuthorizationClient> logger, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
+        public AuthorizationClient(System.Net.Http.HttpClient httpClient, System.IServiceProvider serviceProvider) { }
         public System.Threading.Tasks.Task<bool> AuthorizeAction(Altinn.App.Core.Models.AppIdentifier appIdentifier, Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, System.Security.Claims.ClaimsPrincipal user, string action, string? taskId = null) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, bool>> AuthorizeActions(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Security.Claims.ClaimsPrincipal user, System.Collections.Generic.List<string> actions) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<string>> GetKeyRoleOrganizationParties(int userId, System.Collections.Generic.List<string> orgNumbers) { }
-        public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Register.Models.Party>?> GetPartyList(int userId) { }
-        public System.Threading.Tasks.Task<bool?> ValidateSelectedParty(int userId, int partyId) { }
+        public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Register.Models.Party>?> GetPartyList(int userId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
+        public System.Threading.Tasks.Task<bool?> ValidateSelectedParty(int userId, int partyId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
     }
 }
 namespace Altinn.App.Core.Infrastructure.Clients.Events
 {
     public class EventsClient : Altinn.App.Core.Internal.Events.IEventsClient
     {
-        public EventsClient(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings> platformSettings, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, System.Net.Http.HttpClient httpClient, Altinn.Common.AccessTokenClient.Services.IAccessTokenGenerator accessTokenGenerator, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Microsoft.Extensions.Options.IOptionsMonitor<Altinn.App.Core.Configuration.AppSettings> settings, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.GeneralSettings> generalSettings, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
-        public System.Threading.Tasks.Task<string> AddEvent(string eventType, Altinn.Platform.Storage.Interface.Models.Instance instance) { }
+        public EventsClient(System.Net.Http.HttpClient httpClient, System.IServiceProvider serviceProvider) { }
+        public System.Threading.Tasks.Task<string> AddEvent(string eventType, Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
     }
     public class EventsSubscriptionClient : Altinn.App.Core.Internal.Events.IEventsSubscription
     {
@@ -2619,34 +2620,34 @@ namespace Altinn.App.Core.Infrastructure.Clients.Profile
 {
     public class ProfileClient : Altinn.App.Core.Internal.Profile.IProfileClient
     {
-        public ProfileClient(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings> platformSettings, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Infrastructure.Clients.Profile.ProfileClient> logger, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, Microsoft.Extensions.Options.IOptionsMonitor<Altinn.App.Core.Configuration.AppSettings> settings, System.Net.Http.HttpClient httpClient, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.Common.AccessTokenClient.Services.IAccessTokenGenerator accessTokenGenerator, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
-        public System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(int userId) { }
-        public System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(string ssn) { }
+        public ProfileClient(System.Net.Http.HttpClient httpClient, System.IServiceProvider serviceProvider) { }
+        public System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(int userId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
+        public System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(string ssn, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
     }
     public class ProfileClientCachingDecorator : Altinn.App.Core.Internal.Profile.IProfileClient
     {
         public ProfileClientCachingDecorator(Altinn.App.Core.Internal.Profile.IProfileClient decoratedService, Microsoft.Extensions.Caching.Memory.IMemoryCache memoryCache, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.CacheSettings> settings) { }
-        public System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(int userId) { }
-        public System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(string ssn) { }
+        public System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(int userId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
+        public System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(string ssn, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
     }
 }
 namespace Altinn.App.Core.Infrastructure.Clients.Register
 {
     public class AltinnPartyClient : Altinn.App.Core.Internal.Registers.IAltinnPartyClient
     {
-        public AltinnPartyClient(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings> platformSettings, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Infrastructure.Clients.Register.AltinnPartyClient> logger, System.Net.Http.HttpClient httpClient, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Internal.Auth.IUserTokenProvider userTokenProvider, Altinn.Common.AccessTokenClient.Services.IAccessTokenGenerator accessTokenGenerator, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
-        public System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party?> GetParty(int partyId) { }
-        public System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party> LookupParty(Altinn.Platform.Register.Models.PartyLookup partyLookup) { }
+        public AltinnPartyClient(System.Net.Http.HttpClient httpClient, System.IServiceProvider serviceProvider) { }
+        public System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party?> GetParty(int partyId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
+        public System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party> LookupParty(Altinn.Platform.Register.Models.PartyLookup partyLookup, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
     }
     public class PersonClient : Altinn.App.Core.Internal.Registers.IPersonClient
     {
-        public PersonClient(System.Net.Http.HttpClient httpClient, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings> platformSettings, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.Common.AccessTokenClient.Services.IAccessTokenGenerator accessTokenGenerator, Altinn.App.Core.Internal.Auth.IUserTokenProvider userTokenProvider) { }
-        public System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Person?> GetPerson(string nationalIdentityNumber, string lastName, System.Threading.CancellationToken ct) { }
+        public PersonClient(System.Net.Http.HttpClient httpClient, System.IServiceProvider serviceProvider) { }
+        public System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Person?> GetPerson(string nationalIdentityNumber, string lastName, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default) { }
     }
     public class RegisterERClient : Altinn.App.Core.Internal.Registers.IOrganizationClient
     {
-        public RegisterERClient(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings> platformSettings, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Infrastructure.Clients.Register.RegisterERClient> logger, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, Microsoft.Extensions.Options.IOptionsMonitor<Altinn.App.Core.Configuration.AppSettings> settings, System.Net.Http.HttpClient httpClient, Altinn.Common.AccessTokenClient.Services.IAccessTokenGenerator accessTokenGenerator, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
-        public System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Organization?> GetOrganization(string OrgNr) { }
+        public RegisterERClient(System.Net.Http.HttpClient httpClient, System.IServiceProvider serviceProvider) { }
+        public System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Organization?> GetOrganization(string OrgNr, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
     }
 }
 namespace Altinn.App.Core.Infrastructure.Clients.Storage
@@ -2689,20 +2690,20 @@ namespace Altinn.App.Core.Infrastructure.Clients.Storage
     }
     public class InstanceEventClient : Altinn.App.Core.Internal.Instances.IInstanceEventClient
     {
-        public InstanceEventClient(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings> platformSettings, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, System.Net.Http.HttpClient httpClient, Microsoft.Extensions.Options.IOptionsMonitor<Altinn.App.Core.Configuration.AppSettings> settings) { }
-        public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>> GetInstanceEvents(string instanceId, string instanceOwnerPartyId, string org, string app, string[] eventTypes, string from, string to) { }
-        public System.Threading.Tasks.Task<string> SaveInstanceEvent(object dataToSerialize, string org, string app) { }
+        public InstanceEventClient(System.Net.Http.HttpClient httpClient, System.IServiceProvider serviceProvider) { }
+        public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>> GetInstanceEvents(string instanceId, string instanceOwnerPartyId, string org, string app, string[] eventTypes, string from, string to, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
+        public System.Threading.Tasks.Task<string> SaveInstanceEvent(object dataToSerialize, string org, string app, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
     }
     public class ProcessClient : Altinn.App.Core.Internal.Process.IProcessClient
     {
-        public ProcessClient(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings> platformSettings, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings> appSettings, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Infrastructure.Clients.Storage.ProcessClient> logger, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, System.Net.Http.HttpClient httpClient, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
+        public ProcessClient(System.Net.Http.HttpClient httpClient, System.IServiceProvider serviceProvider) { }
         public System.IO.Stream GetProcessDefinition() { }
-        public System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.ProcessHistoryList> GetProcessHistory(string instanceGuid, string instanceOwnerPartyId) { }
+        public System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.ProcessHistoryList> GetProcessHistory(string instanceGuid, string instanceOwnerPartyId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
     }
     public class SignClient : Altinn.App.Core.Internal.Sign.ISignClient
     {
-        public SignClient(Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.PlatformSettings> platformSettings, System.Net.Http.HttpClient httpClient, Altinn.App.Core.Internal.Auth.IUserTokenProvider userTokenProvider) { }
-        public System.Threading.Tasks.Task SignDataElements(Altinn.App.Core.Internal.Sign.SignatureContext signatureContext) { }
+        public SignClient(System.Net.Http.HttpClient httpClient, System.IServiceProvider serviceProvider) { }
+        public System.Threading.Tasks.Task SignDataElements(Altinn.App.Core.Internal.Sign.SignatureContext signatureContext, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null) { }
     }
     [System.Obsolete("Use IAppResources.GetTexts() instead")]
     public class TextClient : Altinn.App.Core.Internal.Texts.IText
@@ -3107,8 +3108,8 @@ namespace Altinn.App.Core.Internal.Auth
         System.Threading.Tasks.Task<bool> AuthorizeAction(Altinn.App.Core.Models.AppIdentifier appIdentifier, Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, System.Security.Claims.ClaimsPrincipal user, string action, string? taskId = null);
         System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, bool>> AuthorizeActions(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Security.Claims.ClaimsPrincipal user, System.Collections.Generic.List<string> actions);
         System.Threading.Tasks.Task<System.Collections.Generic.List<string>> GetKeyRoleOrganizationParties(int userId, System.Collections.Generic.List<string> orgNumbers);
-        System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Register.Models.Party>?> GetPartyList(int userId);
-        System.Threading.Tasks.Task<bool?> ValidateSelectedParty(int userId, int partyId);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Register.Models.Party>?> GetPartyList(int userId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
+        System.Threading.Tasks.Task<bool?> ValidateSelectedParty(int userId, int partyId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
     }
     public interface IAuthorizationService
     {
@@ -3218,7 +3219,7 @@ namespace Altinn.App.Core.Internal.Events
     }
     public interface IEventsClient
     {
-        System.Threading.Tasks.Task<string> AddEvent(string eventType, Altinn.Platform.Storage.Interface.Models.Instance instance);
+        System.Threading.Tasks.Task<string> AddEvent(string eventType, Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
     }
     public interface IEventsSubscription
     {
@@ -3353,8 +3354,8 @@ namespace Altinn.App.Core.Internal.Instances
     }
     public interface IInstanceEventClient
     {
-        System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>> GetInstanceEvents(string instanceId, string instanceOwnerPartyId, string org, string app, string[] eventTypes, string from, string to);
-        System.Threading.Tasks.Task<string> SaveInstanceEvent(object dataToSerialize, string org, string app);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent>> GetInstanceEvents(string instanceId, string instanceOwnerPartyId, string org, string app, string[] eventTypes, string from, string to, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
+        System.Threading.Tasks.Task<string> SaveInstanceEvent(object dataToSerialize, string org, string app, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
     }
 }
 namespace Altinn.App.Core.Internal.Language
@@ -3782,7 +3783,7 @@ namespace Altinn.App.Core.Internal.Process
     public interface IProcessClient
     {
         System.IO.Stream GetProcessDefinition();
-        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.ProcessHistoryList> GetProcessHistory(string instanceGuid, string instanceOwnerPartyId);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.ProcessHistoryList> GetProcessHistory(string instanceGuid, string instanceOwnerPartyId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
     }
     public interface IProcessEngineAuthorizer
     {
@@ -3912,24 +3913,24 @@ namespace Altinn.App.Core.Internal.Profile
 {
     public interface IProfileClient
     {
-        System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(int userId);
-        System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(string ssn);
+        System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(int userId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
+        System.Threading.Tasks.Task<Altinn.Platform.Profile.Models.UserProfile?> GetUserProfile(string ssn, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
     }
 }
 namespace Altinn.App.Core.Internal.Registers
 {
     public interface IAltinnPartyClient
     {
-        System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party?> GetParty(int partyId);
-        System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party> LookupParty(Altinn.Platform.Register.Models.PartyLookup partyLookup);
+        System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party?> GetParty(int partyId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
+        System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Party> LookupParty(Altinn.Platform.Register.Models.PartyLookup partyLookup, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
     }
     public interface IOrganizationClient
     {
-        System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Organization?> GetOrganization(string OrgNr);
+        System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Organization?> GetOrganization(string OrgNr, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
     }
     public interface IPersonClient
     {
-        System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Person?> GetPerson(string nationalIdentityNumber, string lastName, System.Threading.CancellationToken ct);
+        System.Threading.Tasks.Task<Altinn.Platform.Register.Models.Person?> GetPerson(string nationalIdentityNumber, string lastName, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
     }
 }
 namespace Altinn.App.Core.Internal.Secrets
@@ -3953,7 +3954,7 @@ namespace Altinn.App.Core.Internal.Sign
     }
     public interface ISignClient
     {
-        System.Threading.Tasks.Task SignDataElements(Altinn.App.Core.Internal.Sign.SignatureContext signatureContext);
+        System.Threading.Tasks.Task SignDataElements(Altinn.App.Core.Internal.Sign.SignatureContext signatureContext, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null);
     }
     public class SignatureContext
     {

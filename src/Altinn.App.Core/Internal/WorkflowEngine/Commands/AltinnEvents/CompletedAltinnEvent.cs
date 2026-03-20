@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Events;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -27,7 +28,11 @@ internal sealed class CompletedAltinnEvent : IWorkflowEngineCommand
                     "End event is not set on instance process. Cannot raise completed event."
                 );
 
-            await _eventsClient.AddEvent($"app.instance.process.completed", instance);
+            await _eventsClient.AddEvent(
+                $"app.instance.process.completed",
+                instance,
+                StorageAuthenticationMethod.ServiceOwner()
+            );
 
             return new SuccessfulProcessEngineCommandResult();
         }

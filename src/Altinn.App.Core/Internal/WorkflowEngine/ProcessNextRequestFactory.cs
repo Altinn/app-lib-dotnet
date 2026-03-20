@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
@@ -11,6 +12,7 @@ using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine;
 
@@ -23,16 +25,19 @@ internal sealed class ProcessNextRequestFactory
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly AppIdentifier _appIdentifier;
+    private readonly PlatformSettings _platformSettings;
 
     public ProcessNextRequestFactory(
         AppImplementationFactory appImplementationFactory,
         IAuthenticationContext authenticationContext,
-        AppIdentifier appIdentifier
+        AppIdentifier appIdentifier,
+        IOptions<PlatformSettings> platformSettings
     )
     {
         _appImplementationFactory = appImplementationFactory;
         _authenticationContext = authenticationContext;
         _appIdentifier = appIdentifier;
+        _platformSettings = platformSettings.Value;
     }
 
     /// <summary>
@@ -65,6 +70,10 @@ internal sealed class ProcessNextRequestFactory
         Actor resolvedActor = actor ?? await ExtractActor();
         InstanceIdentifier instanceId = new(instance);
 
+        string callbackBaseUrl = _platformSettings.WorkflowEngineCallbackBaseUrl.TrimEnd('/');
+        string callbackUrl =
+            $"{callbackBaseUrl}/{_appIdentifier.Org}/{_appIdentifier.App}/instances/{instanceId.InstanceOwnerPartyId}/{instanceId.InstanceGuid}/workflow-engine-callbacks";
+
         var context = new AppWorkflowContext
         {
             Actor = resolvedActor,
@@ -73,6 +82,7 @@ internal sealed class ProcessNextRequestFactory
             App = _appIdentifier.App,
             InstanceOwnerPartyId = instanceId.InstanceOwnerPartyId,
             InstanceGuid = instanceId.InstanceGuid,
+            CallbackUrl = callbackUrl,
         };
 
         return new WorkflowEnqueueRequest

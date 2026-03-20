@@ -180,7 +180,10 @@ public class InstancesController : ControllerBase
                 );
             }
 
-            var instanceOwnerParty = await _registerClient.GetPartyUnchecked(instanceOwnerPartyId, cancellationToken);
+            var instanceOwnerParty = await _registerClient.GetPartyUnchecked(
+                instanceOwnerPartyId,
+                cancellationToken: cancellationToken
+            );
 
             var dto = InstanceResponse.From(
                 await instance.WithOnlyAccessibleDataElements(_dataElementAccessChecker),
@@ -1150,7 +1153,7 @@ public class InstancesController : ControllerBase
             {
                 return await _registerClient.GetPartyUnchecked(
                     int.Parse(instanceOwner.PartyId, CultureInfo.InvariantCulture),
-                    this.HttpContext.RequestAborted
+                    cancellationToken: this.HttpContext.RequestAborted
                 );
             }
             catch (Exception e) when (e is not ServiceException)

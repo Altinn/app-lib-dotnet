@@ -23,6 +23,7 @@ public sealed partial class AppFixture : IAsyncDisposable
     private const string LocaltestHostname = "localtest";
     private const string AppHostname = "app";
     private const string PdfServiceHostname = "pdf-service";
+    private const string WorkflowEngineHostname = "workflow-engine-app";
     private static readonly string _localtestUrl = $"http://{LocaltestHostname}:{LocaltestPort}";
     private static readonly bool _reuseContainers = !string.IsNullOrWhiteSpace(
         Environment.GetEnvironmentVariable("TEST_REUSE_CONTAINERS")
@@ -378,6 +379,8 @@ public sealed partial class AppFixture : IAsyncDisposable
             { "PlatformSettings__ApiPdf2Endpoint", $"http://{PdfServiceHostname}:{PdfServicePort}/pdf" },
             { "PlatformSettings__ApiNotificationEndpoint", $"{_localtestUrl}/notifications/api/v1/" },
             { "PlatformSettings__ApiCorrespondenceEndpoint", $"{_localtestUrl}/correspondence/api/v1/" },
+            { "PlatformSettings__ApiWorkflowEngineEndpoint", $"http://{WorkflowEngineHostname}:8080/api/v1/workflows" },
+            { "PlatformSettings__WorkflowEngineCallbackBaseUrl", $"http://{AppHostname}:{AppPort}" },
         };
     }
 
@@ -599,6 +602,10 @@ public sealed partial class AppFixture : IAsyncDisposable
 
             await network.CreateAsync(cancellationToken);
 
+            // Connect the external workflow engine container to the test network
+            // so the engine can call back to the app container via its hostname
+            await ConnectWorkflowEngineToNetwork(network, logger);
+
             var localtestContainerBuilder = new ContainerBuilder()
                 .WithName($"applib-{name}-localtest-{fixtureInstance:00}")
                 .WithImage(localtestContainerImage)
@@ -708,8 +715,82 @@ public sealed partial class AppFixture : IAsyncDisposable
             await TryDispose(logger, pdfContainer);
             await TryDispose(logger, appContainer);
             await TryDispose(logger, localtestContainer);
+            await DisconnectWorkflowEngineFromNetwork(network, logger);
             await TryDispose(logger, network);
             throw;
+        }
+    }
+
+    private static async Task ConnectWorkflowEngineToNetwork(INetwork network, ILogger logger)
+    {
+        try
+        {
+            var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "docker",
+                    ArgumentList = { "network", "connect", network.Name, WorkflowEngineHostname },
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                },
+            };
+            process.Start();
+            await process.WaitForExitAsync();
+            if (process.ExitCode == 0)
+            {
+                logger.LogInformation(
+                    "Connected {Container} to network {Network}",
+                    WorkflowEngineHostname,
+                    network.Name
+                );
+            }
+            else
+            {
+                var stderr = await process.StandardError.ReadToEndAsync();
+                logger.LogWarning(
+                    "Failed to connect {Container} to network {Network}: {Error}",
+                    WorkflowEngineHostname,
+                    network.Name,
+                    stderr.Trim()
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Could not connect {Container} to network {Network}. Is the workflow engine running?",
+                WorkflowEngineHostname,
+                network.Name
+            );
+        }
+    }
+
+    private static async Task DisconnectWorkflowEngineFromNetwork(INetwork? network, ILogger logger)
+    {
+        if (network is null)
+            return;
+        try
+        {
+            var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "docker",
+                    ArgumentList = { "network", "disconnect", network.Name, WorkflowEngineHostname },
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                },
+            };
+            process.Start();
+            await process.WaitForExitAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to disconnect {Container} from network", WorkflowEngineHostname);
         }
     }
 
@@ -801,6 +882,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         await TryDispose(_pdfContainer);
         await TryDispose(_appContainer);
         await TryDispose(_localtestContainer);
+        await DisconnectWorkflowEngineFromNetwork(_network, _logger);
         await TryDispose(_network);
     }
 

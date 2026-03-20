@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Events;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -22,7 +23,7 @@ internal sealed class InstanceCreatedAltinnEvent : IWorkflowEngineCommand
 
         try
         {
-            await _eventsClient.AddEvent("app.instance.created", instance);
+            await _eventsClient.AddEvent("app.instance.created", instance, StorageAuthenticationMethod.ServiceOwner());
 
             return new SuccessfulProcessEngineCommandResult();
         }

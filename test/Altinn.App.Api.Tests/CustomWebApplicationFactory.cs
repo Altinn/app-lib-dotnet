@@ -345,7 +345,13 @@ public class ApiTestBase
         // Mock the events client since it calls external services
         var eventsClientMock = new Mock<Altinn.App.Core.Internal.Events.IEventsClient>();
         eventsClientMock
-            .Setup(x => x.AddEvent(It.IsAny<string>(), It.IsAny<Altinn.Platform.Storage.Interface.Models.Instance>()))
+            .Setup(x =>
+                x.AddEvent(
+                    It.IsAny<string>(),
+                    It.IsAny<Altinn.Platform.Storage.Interface.Models.Instance>(),
+                    It.IsAny<Altinn.App.Core.Features.StorageAuthenticationMethod>()
+                )
+            )
             .ReturnsAsync("mock-event-id");
         services.RemoveAll<Altinn.App.Core.Internal.Events.IEventsClient>();
         services.AddSingleton(eventsClientMock.Object);
