@@ -38,14 +38,6 @@ public class NotificationCallbackController(
         [FromQuery] string? code
     )
     {
-        logger.LogInformation(
-            "Received callback for org:{Org}, app:{App}, instanceOwnerPartyId:{InstanceOwnerPartyId}, instanceGuid:{InstanceGuid}.",
-            org,
-            app,
-            instanceOwnerPartyId,
-            instanceGuid
-        );
-
         bool isValid = await validator.ValidateCode(code, instanceGuid);
         if (isValid is false)
         {

@@ -77,7 +77,7 @@ internal sealed class NotificationConditionCodeValidator(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Notification condition code validation failed with an unexpected exception.");
+            logger.LogWarning(ex, "Notification condition code validation failed with an unexpected exception.");
             return false;
         }
     }
