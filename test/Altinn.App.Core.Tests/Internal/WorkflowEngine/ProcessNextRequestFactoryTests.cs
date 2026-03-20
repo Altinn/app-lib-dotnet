@@ -54,12 +54,12 @@ public class ProcessNextRequestFactoryTests
         var authContextMock = new Mock<IAuthenticationContext>();
         authContextMock.Setup(x => x.Current).Returns(authentication ?? TestAuthentication.GetUserAuthentication());
 
-        var platformSettings = Options.Create(new PlatformSettings());
+        var generalSettings = Options.Create(new GeneralSettings());
         return new ProcessNextRequestFactory(
             appImplFactory,
             authContextMock.Object,
             TestAppIdentifier,
-            platformSettings
+            generalSettings
         );
     }
 

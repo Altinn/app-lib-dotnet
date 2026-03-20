@@ -25,19 +25,19 @@ internal sealed class ProcessNextRequestFactory
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly AppIdentifier _appIdentifier;
-    private readonly PlatformSettings _platformSettings;
+    private readonly GeneralSettings _generalSettings;
 
     public ProcessNextRequestFactory(
         AppImplementationFactory appImplementationFactory,
         IAuthenticationContext authenticationContext,
         AppIdentifier appIdentifier,
-        IOptions<PlatformSettings> platformSettings
+        IOptions<GeneralSettings> generalSettings
     )
     {
         _appImplementationFactory = appImplementationFactory;
         _authenticationContext = authenticationContext;
         _appIdentifier = appIdentifier;
-        _platformSettings = platformSettings.Value;
+        _generalSettings = generalSettings.Value;
     }
 
     /// <summary>
@@ -70,9 +70,9 @@ internal sealed class ProcessNextRequestFactory
         Actor resolvedActor = actor ?? await ExtractActor();
         InstanceIdentifier instanceId = new(instance);
 
-        string callbackBaseUrl = _platformSettings.WorkflowEngineCallbackBaseUrl.TrimEnd('/');
+        string appBaseUrl = _generalSettings.FormattedExternalAppBaseUrl(_appIdentifier).TrimEnd('/');
         string callbackUrl =
-            $"{callbackBaseUrl}/{_appIdentifier.Org}/{_appIdentifier.App}/instances/{instanceId.InstanceOwnerPartyId}/{instanceId.InstanceGuid}/workflow-engine-callbacks";
+            $"{appBaseUrl}/instances/{instanceId.InstanceOwnerPartyId}/{instanceId.InstanceGuid}/workflow-engine-callbacks";
 
         var context = new AppWorkflowContext
         {

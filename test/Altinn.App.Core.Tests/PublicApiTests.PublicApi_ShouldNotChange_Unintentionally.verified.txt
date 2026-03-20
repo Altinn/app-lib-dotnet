@@ -93,7 +93,6 @@ namespace Altinn.App.Core.Configuration
         public string ApiWorkflowEngineEndpoint { get; set; }
         public string SubscriptionKey { get; set; }
         public string WorkflowEngineApiKey { get; set; }
-        public string WorkflowEngineCallbackBaseUrl { get; set; }
     }
 }
 namespace Altinn.App.Core.Constants

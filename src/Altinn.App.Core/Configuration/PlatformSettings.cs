@@ -67,12 +67,6 @@ public class PlatformSettings
     public string WorkflowEngineApiKey { get; set; } = "0544ba8b-2d8a-4ec9-b93a-47cdbd220293";
 
     /// <summary>
-    /// Gets or sets the base URL where this app is reachable by the workflow engine for callbacks.
-    /// Sent to the engine as part of the workflow context so the engine knows where to POST command callbacks.
-    /// </summary>
-    public string WorkflowEngineCallbackBaseUrl { get; set; } = "http://local.altinn.cloud";
-
-    /// <summary>
     /// Gets or sets the subscription key value to use in requests against the platform.
     /// A new subscription key is generated automatically every time an app is deployed to an environment. The new key is then automatically
     /// added to the environment for the app code during deploy. This will override the value stored in app settings.
