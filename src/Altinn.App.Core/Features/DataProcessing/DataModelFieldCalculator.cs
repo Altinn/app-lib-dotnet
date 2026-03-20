@@ -149,29 +149,43 @@ internal sealed class DataModelFieldCalculator
         string rawCalculationConfig
     )
     {
-        using var calculationConfigDocument = JsonDocument.Parse(rawCalculationConfig);
-
-        var dataModelFieldCalculations = new Dictionary<string, DataModelFieldCalculation>();
-        var hasCalculations = calculationConfigDocument.RootElement.TryGetProperty(
-            "calculations",
-            out JsonElement calculationsObject
-        );
-        if (hasCalculations)
+        JsonDocument calculationConfigDocument;
+        try
         {
-            foreach (var calculationArray in calculationsObject.EnumerateObject())
-            {
-                var field = calculationArray.Name;
-                var calculation = calculationArray.Value;
-                var resolvedDataModelFieldCalculation = ResolveDataModelFieldCalculation(field, calculation);
-                if (resolvedDataModelFieldCalculation == null)
-                {
-                    _logger.LogError("Calculation for field {Field} could not be resolved", field);
-                    continue;
-                }
-                dataModelFieldCalculations[field] = resolvedDataModelFieldCalculation;
-            }
+            calculationConfigDocument = JsonDocument.Parse(
+                rawCalculationConfig,
+                new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip }
+            );
         }
-        return dataModelFieldCalculations;
+        catch (JsonException e)
+        {
+            _logger.LogError(e, "Failed to parse calculation configuration JSON");
+            return new Dictionary<string, DataModelFieldCalculation>();
+        }
+        using (calculationConfigDocument)
+        {
+            var dataModelFieldCalculations = new Dictionary<string, DataModelFieldCalculation>();
+            var hasCalculations = calculationConfigDocument.RootElement.TryGetProperty(
+                "calculations",
+                out JsonElement calculationsObject
+            );
+            if (hasCalculations)
+            {
+                foreach (var calculationArray in calculationsObject.EnumerateObject())
+                {
+                    var field = calculationArray.Name;
+                    var calculation = calculationArray.Value;
+                    var resolvedDataModelFieldCalculation = ResolveDataModelFieldCalculation(field, calculation);
+                    if (resolvedDataModelFieldCalculation == null)
+                    {
+                        _logger.LogError("Calculation for field {Field} could not be resolved", field);
+                        continue;
+                    }
+                    dataModelFieldCalculations[field] = resolvedDataModelFieldCalculation;
+                }
+            }
+            return dataModelFieldCalculations;
+        }
     }
 
     private DataModelFieldCalculation? ResolveDataModelFieldCalculation(string field, JsonElement definition)
