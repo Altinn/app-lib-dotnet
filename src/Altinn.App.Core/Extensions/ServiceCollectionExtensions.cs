@@ -11,6 +11,7 @@ using Altinn.App.Core.Features.Notifications;
 using Altinn.App.Core.Features.Notifications.Cancellation;
 using Altinn.App.Core.Features.Notifications.Email;
 using Altinn.App.Core.Features.Notifications.Future;
+using Altinn.App.Core.Features.Notifications.SecretProvider;
 using Altinn.App.Core.Features.Notifications.Sms;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
@@ -285,6 +286,9 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<INotificationOrderClient, NotificationOrderClient>();
         services.TryAddTransient<INotificationService, NotificationService>();
         services.TryAddTransient<ICancelInstantiationNotification, SendOnProcessNotEnded>();
+        services.TryAddSingleton<INotificationConditionSecretProvider, NotificationConditionSecretProvider>();
+        services.TryAddSingleton<INotificationConditionTokenGenerator, NotificationConditionTokenGenerator>();
+        services.TryAddSingleton<INotificationConditionCodeValidator, NotificationConditionCodeValidator>();
     }
 
     private static void AddPdfServices(IServiceCollection services)
