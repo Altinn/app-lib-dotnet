@@ -78,7 +78,19 @@ internal sealed class NotificationService : INotificationService
             orderRequest.SendersReference
         );
 
-        await _notificationOrderClient.Order(orderRequest, ct);
+        NotificationOrderResponse orderResponse = await _notificationOrderClient.Order(orderRequest, ct);
+
+        _logger.LogInformation(
+            "Notification order created. OrderId: {OrderId}, ShipmentId: {ShipmentId}, Reference: {SendersReference}, ConditionEndpoint: {ConditionEndpoint}, ReminderCount: {ReminderCount}, ReminderShipmentIds: {ReminderShipmentIds}",
+            orderResponse.OrderChainId,
+            orderResponse.Notification.ShipmentId,
+            orderRequest.SendersReference,
+            orderRequest.ConditionEndpoint,
+            orderRequest.Reminders?.Count ?? 0,
+            orderResponse.Reminders.Count > 0
+                ? string.Join(", ", orderResponse.Reminders.Select(r => r.ShipmentId))
+                : "none"
+        );
     }
 
     internal static NotificationOrderRequest CreateNotificationOrderRequest(
