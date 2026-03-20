@@ -935,6 +935,39 @@ public class NotificationServiceTests
 
     #endregion
 
+    #region Callback uri
+
+    [Fact]
+    public async Task CallbackUrlWithAuth_IncludesOrgAppAndInstanceInPath()
+    {
+        // Arrange
+        var instance = new Instance
+        {
+            Id = "53440291/772f4e79-c494-4848-a74b-1b786d334069",
+            AppId = "ttd/my-app",
+            Org = "ttd",
+        };
+        var baseUrl = "https://ttd.apps.tt02.altinn.no/ttd/my-app";
+
+        _tokenGenerator
+            .Setup(x => x.GenerateToken(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("test-token");
+
+        // Act
+        var result = await CreateSut().CallbackUrlWithAuth(instance, baseUrl);
+
+        // Assert
+        Assert.Equal("https", result.Scheme);
+        Assert.Equal("ttd.apps.tt02.altinn.no", result.Host);
+        Assert.Equal(
+            "/ttd/my-app/api/v1/notification-webhook-listener/53440291/772f4e79-c494-4848-a74b-1b786d334069",
+            result.AbsolutePath
+        );
+        Assert.Contains("code=test-token", result.Query);
+    }
+
+    #endregion
+
     #region Guard
 
     [Fact]

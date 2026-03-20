@@ -286,11 +286,9 @@ internal sealed class NotificationService : INotificationService
         InstanceIdentifier instanceIdentifier = new(instance.Id);
         string token = await _tokenGenerator.GenerateToken(instanceIdentifier.InstanceGuid);
 
-        var uriBuilder = new UriBuilder(callBackBaseUrl.TrimEnd('/'))
-        {
-            Path = $"/api/v1/notification-webhook-listener/{instance.Id}",
-            Query = $"code={Uri.EscapeDataString(token)}",
-        };
+        var uriBuilder = new UriBuilder(callBackBaseUrl.TrimEnd('/'));
+        uriBuilder.Path = uriBuilder.Path.TrimEnd('/') + $"/api/v1/notification-webhook-listener/{instance.Id}";
+        uriBuilder.Query = $"code={Uri.EscapeDataString(token)}";
         return uriBuilder.Uri;
     }
 

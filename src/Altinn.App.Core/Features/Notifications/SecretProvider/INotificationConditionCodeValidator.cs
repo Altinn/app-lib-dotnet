@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
@@ -17,14 +18,18 @@ public interface INotificationConditionCodeValidator
 }
 
 /// <inheritdoc />
-internal sealed class NotificationConditionCodeValidator(INotificationConditionSecretProvider secretProvider)
-    : INotificationConditionCodeValidator
+internal sealed class NotificationConditionCodeValidator(
+    INotificationConditionSecretProvider secretProvider,
+    ILogger<NotificationConditionCodeValidator> logger
+) : INotificationConditionCodeValidator
 {
-    /// <inheritdoc />
     public async Task<bool> ValidateCode(string? code, Guid instanceGuid)
     {
         if (string.IsNullOrWhiteSpace(code))
+        {
+            logger.LogWarning("Notification condition code validation failed: no code provided.");
             return false;
+        }
 
         try
         {
@@ -46,13 +51,33 @@ internal sealed class NotificationConditionCodeValidator(INotificationConditionS
             );
 
             if (!result.IsValid)
+            {
+                logger.LogWarning(
+                    "Notification condition code validation failed: token is invalid. Reason: {Reason}",
+                    result.Exception?.Message
+                );
                 return false;
+            }
 
-            return result.Claims.TryGetValue(JwtRegisteredClaimNames.Jti, out var jti)
+            var jtiMatches =
+                result.Claims.TryGetValue(JwtRegisteredClaimNames.Jti, out var jti)
                 && jti?.ToString() == instanceGuid.ToString();
+
+            if (!jtiMatches)
+            {
+                logger.LogWarning(
+                    "Notification condition code validation failed: jti claim {Jti} does not match instanceGuid {InstanceGuid}.",
+                    jti,
+                    instanceGuid
+                );
+                return false;
+            }
+
+            return true;
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogError(ex, "Notification condition code validation failed with an unexpected exception.");
             return false;
         }
     }
