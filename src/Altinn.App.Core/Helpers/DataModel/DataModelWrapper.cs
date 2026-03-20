@@ -177,7 +177,8 @@ public class DataModelWrapper
         }
 
         var (key, groupIndex) = ParseKeyPart(keyParts[currentIndex]);
-        var prop = Array.Find(currentType.GetProperties(), p => IsPropertyWithJsonName(p, key));
+        var lookupType = currentModel?.GetType() ?? currentType;
+        var prop = Array.Find(lookupType.GetProperties(), p => IsPropertyWithJsonName(p, key));
         if (prop is null)
         {
             return [];
@@ -202,6 +203,11 @@ public class DataModelWrapper
                     var resolvedKeys = new List<string>();
                     foreach (var child in childModelList)
                     {
+                        if (child is null)
+                        {
+                            i++;
+                            continue;
+                        }
                         var newResolvedKeys = GetResolvedKeysRecursive(
                             keyParts,
                             child,

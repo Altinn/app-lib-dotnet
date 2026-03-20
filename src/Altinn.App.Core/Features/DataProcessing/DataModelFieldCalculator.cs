@@ -187,7 +187,7 @@ internal sealed class DataModelFieldCalculator
 
         if (dataModelFieldCalculationDefinition.Expression == null)
         {
-            _logger.LogError("Calculation for field {Field} is missing condition", field);
+            _logger.LogError("Calculation for field {Field} is missing expression", field);
             return null;
         }
 

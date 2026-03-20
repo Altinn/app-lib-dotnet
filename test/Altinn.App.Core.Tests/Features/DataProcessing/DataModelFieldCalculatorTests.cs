@@ -35,6 +35,9 @@ public class DataModelFieldCalculatorTests
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
+    private DataElement _dataElement;
+    private IInstanceDataAccessor _instanceDataAccessor;
+
     public DataModelFieldCalculatorTests(ITestOutputHelper output)
     {
         var dataElementAccessChecker = new Mock<IDataElementAccessChecker>();
@@ -60,39 +63,31 @@ public class DataModelFieldCalculatorTests
     }
 
     [Fact]
-    public async Task ShouldLogWarningWhenTryingToSetUnsupportedDataType()
+    public async Task ShouldLogErrorAndThrowWhenExpressionEvaluatorThrowsException()
     {
         var testCaseJson = """
-            {
-                "name": "Should log warning when trying to set field with unsupported data type",
-                "expects": [
-                    {
-                        "logMessageWarning": "Could not set calculated value for field form.unsupportedDataType in data element 30844cc0-81af-4429-9f9e-035d78f1f9da. This is because the type conversion failed."
-                    }
-                ],
-                "calculationConfig": {
-                    "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/validation/validation.schema.v1.json",
-                    "calculations": {
-                        "form.unsupportedDataType": {
-                            "expression": ["language"]
-                        }
-                    }
-                },
-                "formData": {
-                    "form": {
-                        "unsupportedDataType": true
-                    }
-                },
-                "layouts": {
-                    "Page": {
-                        "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/layout/layout.schema.v1.json",
-                        "data": {
-                            "layout": [
-                            ]
-                        }
-                    }
+                {
+                  "name": "Should log error and throw when ExpressionEvaluator throws exception",
+                  "expects": [
+                      {
+                          "logMessage": "Error while evaluating calculation for field form.formDataWrapperThrows"
+                      }
+                  ],
+                  "calculationConfig": {
+                      "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/calculation/calculation.schema.v1.json",
+                      "calculations": {
+                          "form.formDataWrapperThrows": {
+                            "expression": ["noneExistingExpression"]
+                          }
+                      }
+                  },
+                  "formData": {
+                      "form": {
+                          "formDataWrapperThrows": true
+                      }
+                  },
+                  "layouts": {}
                 }
-            }
             """;
         _output.WriteLine(testCaseJson);
         var testCase = JsonSerializer.Deserialize<DataModelFieldCalculatorTestModel>(
@@ -100,11 +95,33 @@ public class DataModelFieldCalculatorTests
             _jsonSerializerOptions
         )!;
 
-        await RunDataModelFieldCalculatorTest(testCase);
+        Setup(testCase);
+
+        var exception = await Assert.ThrowsAsync<ExpressionEvaluatorTypeErrorException>(() =>
+            _dataModelFieldCalculator.CalculateFormData(
+                _instanceDataAccessor,
+                _dataElement,
+                "Task_1",
+                JsonSerializer.Serialize(testCase.CalculationConfig)
+            )
+        );
+
+        Assert.Contains(testCase.Expects.First().LogMessage, _logger.Collector.GetSnapshot().Select(x => x.Message));
+        Assert.Contains(
+            $"Function \"noneExistingExpression\" not implemented in backend [\"noneExistingExpression\"]",
+            exception.Message
+        );
+    }
+
+    [Theory]
+    [FileNamesInFolderData(["Features", "DataProcessing", "data-field-value-calculator-tests", "assert-logger"])]
+    public async Task RunDataModelFieldCalculationTestsThatAssertLogger(string fileName, string folder)
+    {
+        var (_, testCase) = await RunDataModelFieldCalculatorTest(fileName, folder);
 
         foreach (var expected in testCase.Expects)
         {
-            Assert.Contains(expected.LogMessageWarning, _logger.Collector.GetSnapshot().Select(x => x.Message));
+            Assert.Contains(expected.LogMessage, _logger.Collector.GetSnapshot().Select(x => x.Message));
         }
     }
 
@@ -134,16 +151,31 @@ public class DataModelFieldCalculatorTests
     {
         var testCase = await LoadData(fileName, folder);
 
-        return (await RunDataModelFieldCalculatorTest(testCase), testCase);
+        Setup(testCase);
+
+        await _dataModelFieldCalculator.CalculateFormData(
+            _instanceDataAccessor,
+            _dataElement,
+            "Task_1",
+            JsonSerializer.Serialize(testCase.CalculationConfig)
+        );
+
+        var formDataWrapper = await _instanceDataAccessor.GetFormDataWrapper(_dataElement);
+
+        return (formDataWrapper, testCase);
     }
 
-    private async Task<IFormDataWrapper> RunDataModelFieldCalculatorTest(DataModelFieldCalculatorTestModel testCase)
+    private void Setup(DataModelFieldCalculatorTestModel testCase)
     {
         var instance = new Instance() { Id = "1337/fa0678ad-960d-4307-aba2-ba29c9804c9d", AppId = "org/app" };
-        var dataElement = new DataElement { Id = "30844cc0-81af-4429-9f9e-035d78f1f9da", DataType = "default" };
         var dataType = new DataType() { Id = "default" };
 
-        var dataAccessor = DynamicClassBuilder.DataAccessorFromJsonDocument(instance, testCase.FormData, dataElement);
+        _dataElement = new DataElement { Id = "30844cc0-81af-4429-9f9e-035d78f1f9da", DataType = "default" };
+        _instanceDataAccessor = DynamicClassBuilder.DataAccessorFromJsonDocument(
+            instance,
+            testCase.FormData,
+            _dataElement
+        );
 
         var layout = new LayoutSetComponent(testCase.Layouts, "layout", dataType);
         var componentModel = new LayoutModel([layout], null);
@@ -153,7 +185,7 @@ public class DataModelFieldCalculatorTests
             FakeLoggerXunit.Get<TranslationService>(_output)
         );
         var evaluatorState = new LayoutEvaluatorState(
-            dataAccessor,
+            _instanceDataAccessor,
             componentModel,
             translationService,
             _frontendSettings.Value
@@ -171,15 +203,6 @@ public class DataModelFieldCalculatorTests
                     ? null
                     : new TextResource { Language = "nb", Resources = testCase.TextResources }
             );
-
-        await _dataModelFieldCalculator.CalculateFormData(
-            dataAccessor,
-            dataElement,
-            "Task_1",
-            JsonSerializer.Serialize(testCase.CalculationConfig)
-        );
-
-        return await dataAccessor.GetFormDataWrapper(dataElement);
     }
 
     public record DataModelFieldCalculatorTestModel
@@ -209,6 +232,6 @@ public class DataModelFieldCalculatorTests
 
         public ExpressionValue? Result { get; set; }
 
-        public string? LogMessageWarning { get; set; }
+        public string? LogMessage { get; set; }
     }
 }
