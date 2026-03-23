@@ -34,6 +34,7 @@ using Altinn.App.Core.Infrastructure.Clients.KeyVault;
 using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
+using Altinn.App.Core.Infrastructure.Clients.Secrets;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal;
 using Altinn.App.Core.Internal.AltinnCdn;
