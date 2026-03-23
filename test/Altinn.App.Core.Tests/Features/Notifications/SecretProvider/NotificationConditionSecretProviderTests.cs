@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features.Notifications.Exceptions;
 using Altinn.App.Core.Features.Notifications.SecretProvider;
 using Altinn.App.Core.Infrastructure.Clients.Secrets;
 using Microsoft.Extensions.Options;
@@ -39,7 +40,7 @@ public class NotificationConditionSecretProviderTests
     {
         SetupCodes([]);
 
-        Assert.Throws<InvalidOperationException>(() => CreateSut().GetSigningSecret());
+        Assert.Throws<NotificationConditionSecretNotFoundException>(() => CreateSut().GetSigningSecret());
     }
 
     [Fact]
@@ -58,7 +59,7 @@ public class NotificationConditionSecretProviderTests
     {
         SetupCodes([]);
 
-        Assert.Throws<InvalidOperationException>(() => CreateSut().GetValidationSecrets());
+        Assert.Throws<NotificationConditionSecretNotFoundException>(() => CreateSut().GetValidationSecrets());
     }
 
     [Fact]

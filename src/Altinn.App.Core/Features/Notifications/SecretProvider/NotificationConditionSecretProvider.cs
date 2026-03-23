@@ -1,3 +1,4 @@
+using Altinn.App.Core.Features.Notifications.Exceptions;
 using Altinn.App.Core.Infrastructure.Clients.Secrets;
 using Microsoft.Extensions.Options;
 
@@ -28,7 +29,7 @@ internal sealed class NotificationConditionSecretProvider(IOptionsMonitor<AppCod
     {
         var codes = options.CurrentValue.Monthly;
         if (codes is null or { Count: 0 })
-            throw new InvalidOperationException(
+            throw new NotificationConditionSecretNotFoundException(
                 "AppCodes:Monthly is not configured. Ensure the app-codes secret is mounted."
             );
         return codes[0];
@@ -38,7 +39,7 @@ internal sealed class NotificationConditionSecretProvider(IOptionsMonitor<AppCod
     {
         var codes = options.CurrentValue.Monthly;
         if (codes is null or { Count: 0 })
-            throw new InvalidOperationException(
+            throw new NotificationConditionSecretNotFoundException(
                 "AppCodes:Monthly is not configured. Ensure the app-codes secret is mounted."
             );
         return codes;

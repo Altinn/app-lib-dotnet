@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Text;
+using Altinn.App.Core.Features.Notifications.Exceptions;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
@@ -12,7 +14,7 @@ internal interface INotificationConditionTokenGenerator
     /// <summary>
     /// Generates a signed JWT token for the given instance, valid for 31 days.
     /// </summary>
-    string GenerateToken(Guid instanceGuid, CancellationToken ct = default);
+    string GenerateToken(Guid instanceGuid, Telemetry? telemetry = null, CancellationToken ct = default);
 }
 
 /// <inheritdoc />
@@ -20,9 +22,22 @@ internal sealed class NotificationConditionTokenGenerator(INotificationCondition
     : INotificationConditionTokenGenerator
 {
     /// <inheritdoc />
-    public string GenerateToken(Guid instanceGuid, CancellationToken ct = default)
+    public string GenerateToken(Guid instanceGuid, Telemetry? telemetry = null, CancellationToken ct = default)
     {
-        var secret = secretProvider.GetSigningSecret();
+        using var activity = telemetry?.StartNotificationConditionTokenGenerateActivity(instanceGuid);
+        string? secret = null;
+        try
+        {
+            secret = secretProvider.GetSigningSecret();
+        }
+        catch (NotificationConditionSecretNotFoundException)
+        {
+            activity?.SetStatus(
+                ActivityStatusCode.Error,
+                "Generating token for notification callback failed - secret not found"
+            );
+            throw;
+        }
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

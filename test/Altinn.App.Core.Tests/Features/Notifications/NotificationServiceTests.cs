@@ -950,7 +950,13 @@ public class NotificationServiceTests
         var baseUrl = "https://ttd.apps.tt02.altinn.no/ttd/my-app";
 
         _tokenGenerator
-            .Setup(x => x.GenerateToken(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(x =>
+                x.GenerateToken(
+                    It.IsAny<Guid>(),
+                    It.IsAny<Altinn.App.Core.Features.Telemetry?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns("test-token");
 
         // Act

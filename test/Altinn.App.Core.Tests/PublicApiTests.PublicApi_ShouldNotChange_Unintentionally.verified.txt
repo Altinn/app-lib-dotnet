@@ -1659,7 +1659,7 @@ namespace Altinn.App.Core.Features.Notifications.SecretProvider
 {
     public interface INotificationConditionCodeValidator
     {
-        System.Threading.Tasks.Task<bool> ValidateCode(string? code, System.Guid instanceGuid);
+        System.Threading.Tasks.Task<bool> ValidateCode(string? code, System.Guid instanceGuid, Altinn.App.Core.Features.Telemetry? telemetry = null);
     }
 }
 namespace Altinn.App.Core.Features.Notifications.Texts

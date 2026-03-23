@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Text;
+using Altinn.App.Core.Features.Notifications.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -14,7 +16,7 @@ public interface INotificationConditionCodeValidator
     /// Validates that the provided code is a valid JWT signed with the notification condition secret,
     /// and that it was issued for the specified instance.
     /// </summary>
-    Task<bool> ValidateCode(string? code, Guid instanceGuid);
+    Task<bool> ValidateCode(string? code, Guid instanceGuid, Telemetry? telemetry = null);
 }
 
 /// <inheritdoc />
@@ -23,8 +25,9 @@ internal sealed class NotificationConditionCodeValidator(
     ILogger<NotificationConditionCodeValidator> logger
 ) : INotificationConditionCodeValidator
 {
-    public async Task<bool> ValidateCode(string? code, Guid instanceGuid)
+    public async Task<bool> ValidateCode(string? code, Guid instanceGuid, Telemetry? telemetry = null)
     {
+        using var activity = telemetry?.StartNotificationConditionValidateActivity(instanceGuid);
         if (string.IsNullOrWhiteSpace(code))
         {
             logger.LogWarning("Notification condition code validation failed: no code provided.");
@@ -66,6 +69,7 @@ internal sealed class NotificationConditionCodeValidator(
                         jti,
                         instanceGuid
                     );
+                    activity?.SetStatus(ActivityStatusCode.Error, "Token jti did not match instance guid.");
                     return false;
                 }
 
@@ -76,11 +80,25 @@ internal sealed class NotificationConditionCodeValidator(
                 "Notification condition code validation failed: token did not match any known secrets for instance {InstanceGuid}.",
                 instanceGuid
             );
+            activity?.SetStatus(ActivityStatusCode.Error, "Token did not match any known secrets");
+            return false;
+        }
+        catch (NotificationConditionSecretNotFoundException ex)
+        {
+            logger.LogWarning(ex, "Notification condition code validation failed - secrets not found");
+            activity?.SetStatus(
+                ActivityStatusCode.Error,
+                "Notification condition code validation failed - secrets not found."
+            );
             return false;
         }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Notification condition code validation failed with an unexpected exception.");
+            activity?.SetStatus(
+                ActivityStatusCode.Error,
+                "Notification condition code validation failed with an unexpected exception."
+            );
             return false;
         }
     }
