@@ -61,7 +61,7 @@ internal sealed class NotificationService : INotificationService
         AltinnCdnOrgName? serviceOwnerName = await _cdnClient.GetOrgNameByAppId(instance.AppId, ct);
         ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
         string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance.AppId));
-        Uri callBackUri = await CallbackUrlWithAuth(instance, baseUrl);
+        Uri callBackUri = CallbackUrlWithAuth(instance, baseUrl);
 
         NotificationOrderRequest orderRequest = CreateNotificationOrderRequest(
             language,
@@ -275,10 +275,10 @@ internal sealed class NotificationService : INotificationService
         );
     }
 
-    internal async Task<Uri> CallbackUrlWithAuth(Instance instance, string callBackBaseUrl)
+    internal Uri CallbackUrlWithAuth(Instance instance, string callBackBaseUrl)
     {
         InstanceIdentifier instanceIdentifier = new(instance.Id);
-        string token = await _tokenGenerator.GenerateToken(instanceIdentifier.InstanceGuid);
+        string token = _tokenGenerator.GenerateToken(instanceIdentifier.InstanceGuid);
 
         var uriBuilder = new UriBuilder(callBackBaseUrl.TrimEnd('/'));
         uriBuilder.Path = uriBuilder.Path.TrimEnd('/') + $"/api/v1/notification-webhook-listener/{instance.Id}";

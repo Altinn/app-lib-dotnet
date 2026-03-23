@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Features.Notifications.SecretProvider;
 
@@ -10,21 +10,36 @@ internal interface INotificationConditionSecretProvider
     /// <summary>
     /// Gets the secret used for signing JWT tokens for notification condition endpoints.
     /// </summary>
-    Task<string> GetSecretCode();
+    string GetSigningSecret();
+
+    /// <summary>
+    /// Get the currently available secrets for validation.
+    /// </summary>
+    IReadOnlyList<string> GetValidationSecrets();
 }
 
 /// <inheritdoc />
-internal sealed class NotificationConditionSecretProvider(IConfiguration configuration)
+internal sealed class NotificationConditionSecretProvider(IOptionsMonitor<AppCodesSettings> options)
     : INotificationConditionSecretProvider
 {
     /// <inheritdoc />
-    public Task<string> GetSecretCode()
+    public string GetSigningSecret()
     {
-        var secret =
-            configuration["NotificationConditionSecret"]
-            ?? throw new InvalidOperationException(
-                "NotificationConditionSecret is not configured. Add it to your app configuration or keyvault."
+        var codes = options.CurrentValue.AppCodes.Monthly;
+        if (codes is { Count: 0 })
+            throw new InvalidOperationException(
+                "AppCodes:Monthly is not configured. Ensure the app-codes secret is mounted."
             );
-        return Task.FromResult(secret);
+        return codes[0];
+    }
+
+    public IReadOnlyList<string> GetValidationSecrets()
+    {
+        var codes = options.CurrentValue.AppCodes.Monthly;
+        if (codes is { Count: 0 })
+            throw new InvalidOperationException(
+                "AppCodes:Monthly is not configured. Ensure the app-codes secret is mounted."
+            );
+        return codes;
     }
 }

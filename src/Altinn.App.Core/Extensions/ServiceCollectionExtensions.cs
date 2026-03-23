@@ -101,6 +101,7 @@ public static class ServiceCollectionExtensions
         services.Configure<GeneralSettings>(configuration.GetSection("GeneralSettings"));
         services.Configure<PlatformSettings>(configuration.GetSection("PlatformSettings"));
         services.Configure<CacheSettings>(configuration.GetSection("CacheSettings"));
+        services.Configure<AppCodesSettings>(configuration);
 
         AddApplicationIdentifier(services);
 

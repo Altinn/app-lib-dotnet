@@ -33,47 +33,50 @@ internal sealed class NotificationConditionCodeValidator(
 
         try
         {
-            var secret = await secretProvider.GetSecretCode();
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-
+            var secrets = secretProvider.GetValidationSecrets();
             var handler = new JsonWebTokenHandler();
-            var result = await handler.ValidateTokenAsync(
-                code,
-                new TokenValidationParameters
+
+            foreach (var secret in secrets)
+            {
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+                var result = await handler.ValidateTokenAsync(
+                    code,
+                    new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = key,
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.Zero,
+                    }
+                );
+
+                if (!result.IsValid)
+                    continue;
+
+                var jtiMatches =
+                    result.Claims.TryGetValue(JwtRegisteredClaimNames.Jti, out var jti)
+                    && jti?.ToString() == instanceGuid.ToString();
+
+                if (!jtiMatches)
                 {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = key,
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero,
+                    logger.LogWarning(
+                        "Notification condition code validation failed: jti claim {Jti} does not match instanceGuid {InstanceGuid}.",
+                        jti,
+                        instanceGuid
+                    );
+                    return false;
                 }
+
+                return true;
+            }
+
+            logger.LogWarning(
+                "Notification condition code validation failed: token did not match any known secrets for instance {InstanceGuid}.",
+                instanceGuid
             );
-
-            if (!result.IsValid)
-            {
-                logger.LogWarning(
-                    "Notification condition code validation failed: token is invalid. Reason: {Reason}",
-                    result.Exception?.Message
-                );
-                return false;
-            }
-
-            var jtiMatches =
-                result.Claims.TryGetValue(JwtRegisteredClaimNames.Jti, out var jti)
-                && jti?.ToString() == instanceGuid.ToString();
-
-            if (!jtiMatches)
-            {
-                logger.LogWarning(
-                    "Notification condition code validation failed: jti claim {Jti} does not match instanceGuid {InstanceGuid}.",
-                    jti,
-                    instanceGuid
-                );
-                return false;
-            }
-
-            return true;
+            return false;
         }
         catch (Exception ex)
         {

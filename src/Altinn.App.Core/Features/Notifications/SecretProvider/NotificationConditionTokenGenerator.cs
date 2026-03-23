@@ -12,7 +12,7 @@ internal interface INotificationConditionTokenGenerator
     /// <summary>
     /// Generates a signed JWT token for the given instance, valid for 31 days.
     /// </summary>
-    Task<string> GenerateToken(Guid instanceGuid, CancellationToken ct = default);
+    string GenerateToken(Guid instanceGuid, CancellationToken ct = default);
 }
 
 /// <inheritdoc />
@@ -20,9 +20,9 @@ internal sealed class NotificationConditionTokenGenerator(INotificationCondition
     : INotificationConditionTokenGenerator
 {
     /// <inheritdoc />
-    public async Task<string> GenerateToken(Guid instanceGuid, CancellationToken ct = default)
+    public string GenerateToken(Guid instanceGuid, CancellationToken ct = default)
     {
-        var secret = await secretProvider.GetSecretCode();
+        var secret = secretProvider.GetSigningSecret();
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

@@ -951,10 +951,10 @@ public class NotificationServiceTests
 
         _tokenGenerator
             .Setup(x => x.GenerateToken(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("test-token");
+            .Returns("test-token");
 
         // Act
-        var result = await CreateSut().CallbackUrlWithAuth(instance, baseUrl);
+        var result = CreateSut().CallbackUrlWithAuth(instance, baseUrl);
 
         // Assert
         Assert.Equal("https", result.Scheme);
