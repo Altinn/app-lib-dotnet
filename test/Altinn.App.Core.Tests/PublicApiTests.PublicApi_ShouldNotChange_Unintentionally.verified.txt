@@ -1655,6 +1655,13 @@ namespace Altinn.App.Core.Features.Notifications
         System.Threading.Tasks.Task NotifyInstanceOwnerOnInstantiation(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Register.Models.Party party, Altinn.App.Core.Models.Notifications.Future.InstantiationNotification instantiationNotification, System.Threading.CancellationToken ct);
     }
 }
+namespace Altinn.App.Core.Features.Notifications.SecretProvider
+{
+    public interface INotificationConditionCodeValidator
+    {
+        System.Threading.Tasks.Task<bool> ValidateCode(string? code, System.Guid instanceGuid, Altinn.App.Core.Features.Telemetry? telemetry = null);
+    }
+}
 namespace Altinn.App.Core.Features.Notifications.Texts
 {
     public static class ReplacementTokens

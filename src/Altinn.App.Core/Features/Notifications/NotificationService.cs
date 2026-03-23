@@ -1,4 +1,5 @@
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features.Notifications.SecretProvider;
 using Altinn.App.Core.Features.Notifications.Texts;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
@@ -18,6 +19,7 @@ namespace Altinn.App.Core.Features.Notifications;
 internal sealed class NotificationService : INotificationService
 {
     private readonly INotificationOrderClient _notificationOrderClient;
+    private readonly INotificationConditionTokenGenerator _tokenGenerator;
     private readonly IProfileClient _profileClient;
     private readonly IAltinnCdnClient _cdnClient;
     private readonly IAppMetadata _appMetadata;
@@ -27,6 +29,7 @@ internal sealed class NotificationService : INotificationService
 
     public NotificationService(
         INotificationOrderClient notificationOrderClient,
+        INotificationConditionTokenGenerator tokenGenerator,
         IProfileClient profileClient,
         IAltinnCdnClient cdnClient,
         IAppMetadata appMetadata,
@@ -36,6 +39,7 @@ internal sealed class NotificationService : INotificationService
     )
     {
         _notificationOrderClient = notificationOrderClient;
+        _tokenGenerator = tokenGenerator;
         _profileClient = profileClient;
         _cdnClient = cdnClient;
         _appMetadata = appMetadata;
@@ -57,6 +61,7 @@ internal sealed class NotificationService : INotificationService
         AltinnCdnOrgName? serviceOwnerName = await _cdnClient.GetOrgNameByAppId(instance.AppId, ct);
         ApplicationMetadata? appMetadata = await _appMetadata.GetApplicationMetadata();
         string baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance.AppId));
+        Uri callBackUri = CallbackUrlWithAuth(instance, baseUrl);
 
         NotificationOrderRequest orderRequest = CreateNotificationOrderRequest(
             language,
@@ -65,15 +70,21 @@ internal sealed class NotificationService : INotificationService
             party.Name,
             serviceOwnerName,
             instantiationNotification,
-            baseUrl
+            callBackUri
         );
+
+        NotificationOrderResponse orderResponse = await _notificationOrderClient.Order(orderRequest, ct);
 
         _logger.LogInformation(
-            "Sending notification order with reference: {SendersReference}",
-            orderRequest.SendersReference
+            "Notification order created. OrderId: {OrderId}, ShipmentId: {ShipmentId}, Reference: {SendersReference}, ReminderCount: {ReminderCount}, ReminderShipmentIds: {ReminderShipmentIds}",
+            orderResponse.OrderChainId,
+            orderResponse.Notification.ShipmentId,
+            orderRequest.SendersReference,
+            orderRequest.Reminders?.Count ?? 0,
+            orderResponse.Reminders.Count > 0
+                ? string.Join(", ", orderResponse.Reminders.Select(r => r.ShipmentId))
+                : "none"
         );
-
-        await _notificationOrderClient.Order(orderRequest, ct);
     }
 
     internal static NotificationOrderRequest CreateNotificationOrderRequest(
@@ -83,7 +94,7 @@ internal sealed class NotificationService : INotificationService
         string? instanceOwnerName,
         AltinnCdnOrgName? serviceOwnerName,
         InstantiationNotification instantiationNotification,
-        string? callBackBaseUrl
+        Uri conditionEndpoint
     )
     {
         InstanceOwner instanceOwner = instance.InstanceOwner;
@@ -162,14 +173,6 @@ internal sealed class NotificationService : INotificationService
         DateTime requestedSendTimeOrDefault = instantiationNotification.RequestedSendTime ?? DateTime.Now.AddMinutes(5);
         string sendersReference = "app-" + instance.Id;
         string idempotencyId = instance.Id + "-init";
-
-        Uri? conditionEndpoint = null;
-        if (instantiationNotification.RequestedSendTime is not null)
-        {
-            conditionEndpoint = new Uri(
-                callBackBaseUrl?.TrimEnd('/') + "/api/v1/notification-webhook-listener/" + instance.Id
-            );
-        }
 
         if (string.IsNullOrWhiteSpace(instanceOwner.OrganisationNumber) is false)
         {
@@ -270,6 +273,17 @@ internal sealed class NotificationService : INotificationService
         throw new InvalidOperationException(
             "InstanceOwner must have at least one of OrganisationNumber, PersonNumber, or ExternalIdentifier set."
         );
+    }
+
+    internal Uri CallbackUrlWithAuth(Instance instance, string callBackBaseUrl)
+    {
+        InstanceIdentifier instanceIdentifier = new(instance.Id);
+        string token = _tokenGenerator.GenerateToken(instanceIdentifier.InstanceGuid);
+
+        var uriBuilder = new UriBuilder(callBackBaseUrl.TrimEnd('/'));
+        uriBuilder.Path = uriBuilder.Path.TrimEnd('/') + $"/api/v1/notification-webhook-listener/{instance.Id}";
+        uriBuilder.Query = $"code={Uri.EscapeDataString(token)}";
+        return uriBuilder.Uri;
     }
 
     private static List<NotificationReminder>? BuildReminders(
