@@ -13,7 +13,7 @@ public class NotificationConditionSecretProviderTests
     private NotificationConditionSecretProvider CreateSut() => new(_optionsMonitorMock.Object);
 
     private void SetupCodes(List<string> codes) =>
-        _optionsMonitorMock.Setup(x => x.CurrentValue).Returns(new AppCodesSettings { Monthly = codes });
+        _optionsMonitorMock.Setup(x => x.CurrentValue).Returns(new AppCodesSettings { NotificationCallback = codes });
 
     [Fact]
     public void GetSigningSecret_ReturnFirstCode()
