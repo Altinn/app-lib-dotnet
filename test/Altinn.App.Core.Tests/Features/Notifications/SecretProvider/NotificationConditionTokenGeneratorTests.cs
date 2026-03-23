@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features.Notifications.SecretProvider;
+using Altinn.App.Core.Infrastructure.Clients.Secrets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -30,7 +31,17 @@ public class NotificationConditionTokenGeneratorTests
     [Fact]
     public async Task GenerateToken_RecordsTelemetry()
     {
-        _secretProviderMock.Setup(x => x.GetSigningSecret()).Returns("test-secret-that-is-long-enough-for-hmac");
+        _secretProviderMock
+            .Setup(x => x.GetSigningSecret())
+            .Returns(
+                new AppCode
+                {
+                    Id = "test-id",
+                    Code = "test-secret-that-is-long-enough-for-hmac",
+                    IssuedAt = DateTimeOffset.UtcNow,
+                    ExpiresAt = DateTimeOffset.UtcNow.AddDays(62),
+                }
+            );
         using var fixture = CreateFixture(withTelemetry: true);
 
         fixture.Generator.GenerateToken(Guid.NewGuid(), fixture.TelemetrySink?.Object);

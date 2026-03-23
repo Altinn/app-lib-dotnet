@@ -12,12 +12,12 @@ internal interface INotificationConditionSecretProvider
     /// <summary>
     /// Gets the secret used for signing JWT tokens for notification condition endpoints.
     /// </summary>
-    string GetSigningSecret();
+    AppCode GetSigningSecret();
 
     /// <summary>
     /// Get the currently available secrets for validation.
     /// </summary>
-    IReadOnlyList<string> GetValidationSecrets();
+    IReadOnlyList<AppCode> GetValidationSecrets();
 }
 
 /// <inheritdoc />
@@ -25,7 +25,7 @@ internal sealed class NotificationConditionSecretProvider(IOptionsMonitor<AppCod
     : INotificationConditionSecretProvider
 {
     /// <inheritdoc />
-    public string GetSigningSecret()
+    public AppCode GetSigningSecret()
     {
         var codes = options.CurrentValue.NotificationCallback;
         if (codes is null or { Count: 0 })
@@ -35,7 +35,7 @@ internal sealed class NotificationConditionSecretProvider(IOptionsMonitor<AppCod
         return codes[0];
     }
 
-    public IReadOnlyList<string> GetValidationSecrets()
+    public IReadOnlyList<AppCode> GetValidationSecrets()
     {
         var codes = options.CurrentValue.NotificationCallback;
         if (codes is null or { Count: 0 })

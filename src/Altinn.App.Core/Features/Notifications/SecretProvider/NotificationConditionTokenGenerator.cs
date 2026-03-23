@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using Altinn.App.Core.Features.Notifications.Exceptions;
+using Altinn.App.Core.Infrastructure.Clients.Secrets;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
@@ -25,10 +26,10 @@ internal sealed class NotificationConditionTokenGenerator(INotificationCondition
     public string GenerateToken(Guid instanceGuid, Telemetry? telemetry = null, CancellationToken ct = default)
     {
         using var activity = telemetry?.StartNotificationConditionTokenGenerateActivity(instanceGuid);
-        string? secret = null;
+        AppCode appCode;
         try
         {
-            secret = secretProvider.GetSigningSecret();
+            appCode = secretProvider.GetSigningSecret();
         }
         catch (NotificationConditionSecretNotFoundException)
         {
@@ -38,12 +39,17 @@ internal sealed class NotificationConditionTokenGenerator(INotificationCondition
             );
             throw;
         }
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appCode.Code));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Claims = new Dictionary<string, object> { [JwtRegisteredClaimNames.Jti] = instanceGuid.ToString() },
+            Claims = new Dictionary<string, object>
+            {
+                [JwtRegisteredClaimNames.Jti] = instanceGuid.ToString(),
+                ["secret_id"] = appCode.Id,
+            },
             Expires = DateTime.UtcNow.AddDays(31),
             SigningCredentials = credentials,
         };

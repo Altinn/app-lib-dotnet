@@ -1,5 +1,6 @@
 using System.Text;
 using Altinn.App.Core.Features.Notifications.SecretProvider;
+using Altinn.App.Core.Infrastructure.Clients.Secrets;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -14,7 +15,7 @@ public class NotificationConditionCodeValidatorTests
 
     private NotificationConditionCodeValidator CreateSut() => new(_secretProviderMock.Object, _loggerMock.Object);
 
-    private static string GenerateToken(Guid instanceGuid, string secret, DateTime? expires = null)
+    private static string GenerateToken(Guid instanceGuid, string secret, string secretId, DateTime? expires = null)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -22,21 +23,33 @@ public class NotificationConditionCodeValidatorTests
         return handler.CreateToken(
             new SecurityTokenDescriptor
             {
-                Claims = new Dictionary<string, object> { [JwtRegisteredClaimNames.Jti] = instanceGuid.ToString() },
+                Claims = new Dictionary<string, object>
+                {
+                    [JwtRegisteredClaimNames.Jti] = instanceGuid.ToString(),
+                    ["secret_id"] = secretId,
+                },
                 Expires = expires ?? DateTime.UtcNow.AddDays(31),
                 SigningCredentials = credentials,
             }
         );
     }
 
-    private void SetupSecrets(params string[] secrets) =>
-        _secretProviderMock.Setup(x => x.GetValidationSecrets()).Returns(secrets.ToList());
+    private void SetupSecrets(params (string Id, string Code)[] secrets) =>
+        _secretProviderMock
+            .Setup(x => x.GetValidationSecrets())
+            .Returns([
+                .. secrets.Select(s => new AppCode
+                {
+                    Id = s.Id,
+                    Code = s.Code,
+                    IssuedAt = DateTimeOffset.UtcNow,
+                    ExpiresAt = DateTimeOffset.UtcNow.AddDays(62),
+                }),
+            ]);
 
     [Fact]
     public async Task ValidateCode_NullCode_ReturnsFalse()
     {
-        SetupSecrets("secret");
-
         var result = await CreateSut().ValidateCode(null, Guid.NewGuid());
 
         Assert.False(result);
@@ -45,8 +58,6 @@ public class NotificationConditionCodeValidatorTests
     [Fact]
     public async Task ValidateCode_EmptyCode_ReturnsFalse()
     {
-        SetupSecrets("secret");
-
         var result = await CreateSut().ValidateCode("", Guid.NewGuid());
 
         Assert.False(result);
@@ -55,8 +66,6 @@ public class NotificationConditionCodeValidatorTests
     [Fact]
     public async Task ValidateCode_WhitespaceCode_ReturnsFalse()
     {
-        SetupSecrets("secret");
-
         var result = await CreateSut().ValidateCode("   ", Guid.NewGuid());
 
         Assert.False(result);
@@ -66,10 +75,11 @@ public class NotificationConditionCodeValidatorTests
     public async Task ValidateCode_ValidTokenMatchingSecret_ReturnsTrue()
     {
         const string secret = "test-secret-that-is-long-enough-for-hmac";
+        const string secretId = "id-1";
         var instanceGuid = Guid.NewGuid();
-        SetupSecrets(secret);
+        SetupSecrets((secretId, secret));
 
-        var token = GenerateToken(instanceGuid, secret);
+        var token = GenerateToken(instanceGuid, secret, secretId);
         var result = await CreateSut().ValidateCode(token, instanceGuid);
 
         Assert.True(result);
@@ -80,23 +90,38 @@ public class NotificationConditionCodeValidatorTests
     {
         const string newSecret = "new-secret-that-is-long-enough-for-hmac";
         const string oldSecret = "old-secret-that-is-long-enough-for-hmac";
+        const string oldSecretId = "id-old";
         var instanceGuid = Guid.NewGuid();
-        SetupSecrets(newSecret, oldSecret);
+        SetupSecrets(("id-new", newSecret), (oldSecretId, oldSecret));
 
-        var token = GenerateToken(instanceGuid, oldSecret);
+        var token = GenerateToken(instanceGuid, oldSecret, oldSecretId);
         var result = await CreateSut().ValidateCode(token, instanceGuid);
 
         Assert.True(result);
     }
 
     [Fact]
-    public async Task ValidateCode_WrongSecret_ReturnsFalse()
+    public async Task ValidateCode_UnknownSecretId_ReturnsFalse()
     {
         const string secret = "correct-secret-that-is-long-enough-ok";
         var instanceGuid = Guid.NewGuid();
-        SetupSecrets(secret);
+        SetupSecrets(("id-1", secret));
 
-        var token = GenerateToken(instanceGuid, "wrong-secret-that-is-long-enough-ok");
+        var token = GenerateToken(instanceGuid, secret, "unknown-id");
+        var result = await CreateSut().ValidateCode(token, instanceGuid);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task ValidateCode_WrongSecret_ReturnsFalse()
+    {
+        const string secret = "correct-secret-that-is-long-enough-ok";
+        const string secretId = "id-1";
+        var instanceGuid = Guid.NewGuid();
+        SetupSecrets((secretId, secret));
+
+        var token = GenerateToken(instanceGuid, "wrong-secret-that-is-long-enough-ok", secretId);
         var result = await CreateSut().ValidateCode(token, instanceGuid);
 
         Assert.False(result);
@@ -106,10 +131,11 @@ public class NotificationConditionCodeValidatorTests
     public async Task ValidateCode_ExpiredToken_ReturnsFalse()
     {
         const string secret = "test-secret-that-is-long-enough-for-hmac";
+        const string secretId = "id-1";
         var instanceGuid = Guid.NewGuid();
-        SetupSecrets(secret);
+        SetupSecrets((secretId, secret));
 
-        var token = GenerateToken(instanceGuid, secret, expires: DateTime.UtcNow.AddSeconds(-1));
+        var token = GenerateToken(instanceGuid, secret, secretId, expires: DateTime.UtcNow.AddMinutes(-10));
         var result = await CreateSut().ValidateCode(token, instanceGuid);
 
         Assert.False(result);
@@ -119,9 +145,10 @@ public class NotificationConditionCodeValidatorTests
     public async Task ValidateCode_JtiDoesNotMatchInstanceGuid_ReturnsFalse()
     {
         const string secret = "test-secret-that-is-long-enough-for-hmac";
-        SetupSecrets(secret);
+        const string secretId = "id-1";
+        SetupSecrets((secretId, secret));
 
-        var token = GenerateToken(Guid.NewGuid(), secret);
+        var token = GenerateToken(Guid.NewGuid(), secret, secretId);
         var result = await CreateSut().ValidateCode(token, Guid.NewGuid());
 
         Assert.False(result);
@@ -130,25 +157,11 @@ public class NotificationConditionCodeValidatorTests
     [Fact]
     public async Task ValidateCode_InvalidJwt_ReturnsFalse()
     {
-        SetupSecrets("test-secret-that-is-long-enough-for-hmac");
+        SetupSecrets(("id-1", "test-secret-that-is-long-enough-for-hmac"));
 
         var result = await CreateSut().ValidateCode("not.a.jwt", Guid.NewGuid());
 
         Assert.False(result);
-    }
-
-    [Fact]
-    public async Task ValidateCode_ValidTokenMatchingFirstOfMultipleSecrets_ReturnsTrue()
-    {
-        const string secret1 = "first-secret-that-is-long-enough-ok";
-        const string secret2 = "second-secret-that-is-long-enough-ok";
-        var instanceGuid = Guid.NewGuid();
-        SetupSecrets(secret1, secret2);
-
-        var token = GenerateToken(instanceGuid, secret1);
-        var result = await CreateSut().ValidateCode(token, instanceGuid);
-
-        Assert.True(result);
     }
 
     [Fact]
