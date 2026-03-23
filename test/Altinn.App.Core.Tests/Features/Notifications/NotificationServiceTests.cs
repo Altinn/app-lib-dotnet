@@ -949,11 +949,13 @@ public class NotificationServiceTests
         };
         var baseUrl = "https://ttd.apps.tt02.altinn.no/ttd/my-app";
 
-        _tokenGenerator
+        var expectedInstanceGuid = Guid.Parse("772f4e79-c494-4848-a74b-1b786d334069");
+
+        _ = _tokenGenerator
             .Setup(x =>
                 x.GenerateToken(
-                    It.IsAny<Guid>(),
-                    It.IsAny<Altinn.App.Core.Features.Telemetry?>(),
+                    expectedInstanceGuid,
+                    It.IsAny<Core.Features.Telemetry?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -970,6 +972,15 @@ public class NotificationServiceTests
             result.AbsolutePath
         );
         Assert.Contains("code=test-token", result.Query);
+        _tokenGenerator.Verify(
+            x =>
+                x.GenerateToken(
+                    expectedInstanceGuid,
+                    It.IsAny<Core.Features.Telemetry?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     #endregion
