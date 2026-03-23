@@ -938,7 +938,7 @@ public class NotificationServiceTests
     #region Callback uri
 
     [Fact]
-    public async Task CallbackUrlWithAuth_IncludesOrgAppAndInstanceInPath()
+    public void CallbackUrlWithAuth_IncludesOrgAppAndInstanceInPath()
     {
         // Arrange
         var instance = new Instance

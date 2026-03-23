@@ -72,7 +72,7 @@ public class NotificationConditionTokenGeneratorTests
     }
 
     [Fact]
-    public async Task GenerateToken_DifferentInstanceGuids_ProduceDifferentTokens()
+    public void GenerateToken_DifferentInstanceGuids_ProduceDifferentTokens()
     {
         const string secret = "test-secret-that-is-long-enough-for-hmac";
         SetupSecret(secret);
