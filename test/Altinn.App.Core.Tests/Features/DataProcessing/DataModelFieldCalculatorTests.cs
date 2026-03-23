@@ -35,8 +35,8 @@ public class DataModelFieldCalculatorTests
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    private DataElement? _dataElement;
-    private IInstanceDataAccessor? _instanceDataAccessor;
+    private DataElement _dataElement = null!;
+    private IInstanceDataAccessor _instanceDataAccessor = null!;
 
     public DataModelFieldCalculatorTests(ITestOutputHelper output)
     {
@@ -99,8 +99,8 @@ public class DataModelFieldCalculatorTests
 
         var exception = await Assert.ThrowsAsync<ExpressionEvaluatorTypeErrorException>(() =>
             _dataModelFieldCalculator.CalculateFormData(
-                _instanceDataAccessor!,
-                _dataElement!,
+                _instanceDataAccessor,
+                _dataElement,
                 "Task_1",
                 JsonSerializer.Serialize(testCase.CalculationConfig)
             )
@@ -154,13 +154,13 @@ public class DataModelFieldCalculatorTests
         Setup(testCase);
 
         await _dataModelFieldCalculator.CalculateFormData(
-            _instanceDataAccessor!,
-            _dataElement!,
+            _instanceDataAccessor,
+            _dataElement,
             "Task_1",
             JsonSerializer.Serialize(testCase.CalculationConfig)
         );
 
-        var formDataWrapper = await _instanceDataAccessor!.GetFormDataWrapper(_dataElement!);
+        var formDataWrapper = await _instanceDataAccessor.GetFormDataWrapper(_dataElement);
 
         return (formDataWrapper, testCase);
     }
