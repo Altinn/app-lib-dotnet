@@ -19,7 +19,7 @@ using IAppResources = Altinn.App.Core.Internal.App.IAppResources;
 
 namespace Altinn.App.Core.Tests.Features.DataProcessing;
 
-public class DataModelFieldCalculatorTests
+public sealed class DataModelFieldCalculatorTests
 {
     private readonly ITestOutputHelper _output;
     private readonly DataModelFieldCalculator _dataModelFieldCalculator;
@@ -205,7 +205,7 @@ public class DataModelFieldCalculatorTests
             );
     }
 
-    public record DataModelFieldCalculatorTestModel
+    private record DataModelFieldCalculatorTestModel
     {
         [JsonPropertyName("name")]
         public required string Name { get; set; }
@@ -226,7 +226,7 @@ public class DataModelFieldCalculatorTests
         public List<TextResourceElement>? TextResources { get; set; }
     }
 
-    public record Expected
+    private record Expected
     {
         public string? Field { get; set; }
 
