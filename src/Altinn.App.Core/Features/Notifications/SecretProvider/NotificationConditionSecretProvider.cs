@@ -26,7 +26,7 @@ internal sealed class NotificationConditionSecretProvider(IOptionsMonitor<AppCod
     /// <inheritdoc />
     public string GetSigningSecret()
     {
-        var codes = options.CurrentValue.AppCodes.Monthly;
+        var codes = options.CurrentValue.Monthly;
         if (codes is null or { Count: 0 })
             throw new InvalidOperationException(
                 "AppCodes:Monthly is not configured. Ensure the app-codes secret is mounted."
@@ -36,7 +36,7 @@ internal sealed class NotificationConditionSecretProvider(IOptionsMonitor<AppCod
 
     public IReadOnlyList<string> GetValidationSecrets()
     {
-        var codes = options.CurrentValue.AppCodes.Monthly;
+        var codes = options.CurrentValue.Monthly;
         if (codes is null or { Count: 0 })
             throw new InvalidOperationException(
                 "AppCodes:Monthly is not configured. Ensure the app-codes secret is mounted."
