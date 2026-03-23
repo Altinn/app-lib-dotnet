@@ -35,8 +35,8 @@ public class DataModelFieldCalculatorTests
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    private DataElement _dataElement;
-    private IInstanceDataAccessor _instanceDataAccessor;
+    private DataElement? _dataElement;
+    private IInstanceDataAccessor? _instanceDataAccessor;
 
     public DataModelFieldCalculatorTests(ITestOutputHelper output)
     {
