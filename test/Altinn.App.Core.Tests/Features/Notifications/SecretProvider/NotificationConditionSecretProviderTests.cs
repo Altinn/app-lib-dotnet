@@ -1,4 +1,5 @@
 using Altinn.App.Core.Features.Notifications.SecretProvider;
+using Altinn.App.Core.Infrastructure.Clients.Secrets;
 using Microsoft.Extensions.Options;
 using Moq;
 
