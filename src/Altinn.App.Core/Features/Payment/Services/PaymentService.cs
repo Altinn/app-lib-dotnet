@@ -330,7 +330,13 @@ internal class PaymentService : IPaymentService
             "Bearer",
             token.Value
         );
-        var response = await client.PutAsync($"instances/{instance.Id}/process/next", null);
+
+        using var content = new StringContent(
+            """{"action":"confirm"}""",
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+        var response = await client.PutAsync($"instances/{instance.Id}/process/next", content);
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogError(
