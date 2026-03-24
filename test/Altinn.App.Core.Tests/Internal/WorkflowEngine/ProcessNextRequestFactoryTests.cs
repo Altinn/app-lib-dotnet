@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
@@ -19,7 +18,6 @@ using Altinn.App.Tests.Common.Auth;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Internal.WorkflowEngine;
@@ -54,13 +52,7 @@ public class ProcessNextRequestFactoryTests
         var authContextMock = new Mock<IAuthenticationContext>();
         authContextMock.Setup(x => x.Current).Returns(authentication ?? TestAuthentication.GetUserAuthentication());
 
-        var generalSettings = Options.Create(new GeneralSettings());
-        return new ProcessNextRequestFactory(
-            appImplFactory,
-            authContextMock.Object,
-            TestAppIdentifier,
-            generalSettings
-        );
+        return new ProcessNextRequestFactory(appImplFactory, authContextMock.Object, TestAppIdentifier);
     }
 
     private static ProcessStateChange CreateTaskToTaskTransition(

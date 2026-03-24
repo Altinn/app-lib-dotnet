@@ -24,11 +24,4 @@ internal sealed record AppWorkflowContext
 
     [JsonPropertyName("instanceGuid")]
     public required Guid InstanceGuid { get; init; }
-
-    /// <summary>
-    /// The full callback endpoint URL where the engine should POST command callbacks.
-    /// The <c>commandKey</c> is appended as a relative path segment.
-    /// </summary>
-    [JsonPropertyName("callbackUrl")]
-    public required string CallbackUrl { get; init; }
 }
