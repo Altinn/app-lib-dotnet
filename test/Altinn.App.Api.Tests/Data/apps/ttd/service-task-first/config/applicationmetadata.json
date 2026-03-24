@@ -1,0 +1,33 @@
+{
+    "id": "ttd/service-task-first",
+    "org": "ttd",
+    "title": {
+        "nb": "service-task-first"
+    },
+    "dataTypes": [
+        {
+            "id": "default",
+            "allowedContentTypes": [
+                "application/xml"
+            ],
+            "maxCount": 1,
+            "appLogic": {
+                "autoCreate": true,
+                "classRef": "Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models.Skjema"
+            },
+            "taskId": "Task_1"
+        }
+    ],
+    "partyTypesAllowed": {
+        "bankruptcyEstate": false,
+        "organisation": false,
+        "person": false,
+        "subUnit": false
+    },
+    "autoDeleteOnProcessEnd": false,
+    "disallowUserInstantiation": false,
+    "created": "2025-01-01T00:00:00Z",
+    "createdBy": "test",
+    "lastChanged": "2025-01-01T00:00:00Z",
+    "lastChangedBy": "test"
+}

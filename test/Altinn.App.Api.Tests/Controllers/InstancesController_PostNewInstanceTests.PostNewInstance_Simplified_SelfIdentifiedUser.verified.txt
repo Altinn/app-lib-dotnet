@@ -163,6 +163,37 @@
       HasParent: true
     },
     {
+      Name: Process.StartExecution,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_2
+        }
+      ],
+      Events: [
+        {
+          Name: change,
+          Timestamp: DateTimeOffset_2,
+          Tags: [
+            {
+              events: [
+                Type=process_StartEvent DataId=,
+                Type=process_StartTask DataId=
+              ]
+            },
+            {
+              to.started: DateTime_1
+            },
+            {
+              to.task.name: Utfylling
+            }
+          ]
+        }
+      ],
+      HasParent: true
+    },
+    {
       Name: Process.StoreEvents,
       IdFormat: W3C,
       Tags: [

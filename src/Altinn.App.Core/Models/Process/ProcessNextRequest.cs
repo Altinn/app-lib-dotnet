@@ -32,4 +32,10 @@ public sealed record ProcessNextRequest
     /// The language the user sent with process/next (not required)
     /// </summary>
     public required string? Language { get; init; }
+
+    /// <summary>
+    /// Prefill data to apply when the next user task starts.
+    /// Used during instantiation to forward prefill past initial service tasks.
+    /// </summary>
+    public Dictionary<string, string>? Prefill { get; init; }
 }

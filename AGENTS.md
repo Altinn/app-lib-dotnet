@@ -115,6 +115,7 @@ The libraries integrate with:
 - Use internal accessibility on types by default
 - Use sealed for classes unless we consider inheritance a valid use-case
 - Use Nullable Reference Types
+- Don't use null forgiveness operator without justification
 - Remember to dispose `IDisposable`/`IAsyncDisposable` instances
 - We want to minimize external dependencies
 - For HTTP APIs we should have `...Request` and `...Response` DTOs (see `LookupPersonRequest.cs` and the corresponding response as an example)
