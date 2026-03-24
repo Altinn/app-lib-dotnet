@@ -206,7 +206,7 @@ public class AuthenticatedTests
                 Description = description,
                 AuthType = auth.GetType().FullName,
                 Auth = auth,
-                Jwt = (Dictionary<string, object>)jwtToken.Payload,
+                Jwt = jwtToken.Payload,
                 Details = details,
             },
             $"type={tokenType}_{hash[0..4]}"
@@ -238,7 +238,7 @@ public class AuthenticatedTests
                 AppMetadataOrg = appMetadataOrg,
                 AuthType = auth.GetType().FullName,
                 Auth = auth,
-                Jwt = (Dictionary<string, object>)jwtToken.Payload,
+                Jwt = jwtToken.Payload,
                 Details = details,
             },
             "service_owner_mismatched_app_org"
