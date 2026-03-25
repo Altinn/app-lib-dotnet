@@ -5,7 +5,7 @@ using Microsoft.Extensions.Primitives;
 
 namespace Altinn.App.Core.Internal.Instances;
 
-// [Obsolete] TODO: Remvoe default impememtations without authentication method and cancellation token when breaking binanry compatibility in next major version.
+// [Obsolete] TODO: Remove default implementations without authentication method and cancellation token when breaking binary compatibility in the next major version.
 
 /// <summary>
 /// Interface for handling form data related operations

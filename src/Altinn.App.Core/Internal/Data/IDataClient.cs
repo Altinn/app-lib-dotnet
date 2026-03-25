@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Altinn.App.Core.Internal.Data;
 
-// [Obsolete] TODO: Remvoe default impememtations without authentication method and cancellation token when breaking binanry compatibility in next major version.
+// [Obsolete] TODO: Remove default implementations without authentication method and cancellation token when breaking binary compatibility in the next major version.
 
 /// <summary>
 /// Interface for data handling
@@ -498,7 +498,7 @@ public interface IDataClient
         DeleteData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, false);
 
     /// <summary>
-    /// Method that removes a data elemen from disk/storage immediatly or marks it as deleted.
+    /// Method that removes a data element from disk/storage immediately or marks it as deleted.
     /// </summary>
     /// <param name="org">Unique identifier of the organisation responsible for the app.</param>
     /// <param name="app">Application identifier which is unique within an organisation.</param>
@@ -521,7 +521,7 @@ public interface IDataClient
     ) => DeleteData(instanceOwnerPartyId, instanceGuid, dataGuid, delay, authenticationMethod, cancellationToken);
 
     /// <summary>
-    /// Method that removes a data elemen from disk/storage immediatly or marks it as deleted.
+    /// Method that removes a data element from disk/storage immediately or marks it as deleted.
     /// </summary>
     /// <param name="org">Unique identifier of the organisation responsible for the app.</param>
     /// <param name="app">Application identifier which is unique within an organisation.</param>
@@ -540,7 +540,7 @@ public interface IDataClient
     ) => DeleteData(org, app, instanceOwnerPartyId, instanceGuid, dataGuid, delay, null, default);
 
     /// <summary>
-    /// Method that removes a data elemen from disk/storage immediatly or marks it as deleted.
+    /// Method that removes a data element from disk/storage immediately or marks it as deleted.
     /// </summary>
     /// <param name="instanceOwnerPartyId">The instance owner id</param>
     /// <param name="instanceGuid">The instance id</param>
@@ -558,7 +558,7 @@ public interface IDataClient
     );
 
     /// <summary>
-    /// Method that removes a data elemen from disk/storage immediatly or marks it as deleted.
+    /// Method that removes a data element from disk/storage immediately or marks it as deleted.
     /// </summary>
     /// <param name="instanceOwnerPartyId">The instance owner id</param>
     /// <param name="instanceGuid">The instance id</param>
@@ -696,7 +696,7 @@ public interface IDataClient
     /// <summary>
     /// Insert a binary data element.
     /// </summary>
-    /// <param name="instanceId">isntanceId = {instanceOwnerPartyId}/{instanceGuid}</param>
+    /// <param name="instanceId">instanceId = {instanceOwnerPartyId}/{instanceGuid}</param>
     /// <param name="dataType">data type</param>
     /// <param name="contentType">content type</param>
     /// <param name="filename">filename</param>
@@ -718,7 +718,7 @@ public interface IDataClient
     /// <summary>
     /// Insert a binary data element.
     /// </summary>
-    /// <param name="instanceId">isntanceId = {instanceOwnerPartyId}/{instanceGuid}</param>
+    /// <param name="instanceId">instanceId = {instanceOwnerPartyId}/{instanceGuid}</param>
     /// <param name="dataType">data type</param>
     /// <param name="contentType">content type</param>
     /// <param name="filename">filename</param>
@@ -736,7 +736,7 @@ public interface IDataClient
     /// <summary>
     /// Insert a binary data element.
     /// </summary>
-    /// <param name="instanceId">isntanceId = {instanceOwnerPartyId}/{instanceGuid}</param>
+    /// <param name="instanceId">instanceId = {instanceOwnerPartyId}/{instanceGuid}</param>
     /// <param name="dataType">data type</param>
     /// <param name="contentType">content type</param>
     /// <param name="filename">filename</param>

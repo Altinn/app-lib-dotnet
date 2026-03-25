@@ -293,7 +293,7 @@ public class ProcessController : ControllerBase
                 instanceOwnerPartyId,
                 instanceGuid,
                 authenticationMethod: null,
-                CancellationToken.None
+                ct
             );
 
             var processNextRequest = new ProcessNextRequest
