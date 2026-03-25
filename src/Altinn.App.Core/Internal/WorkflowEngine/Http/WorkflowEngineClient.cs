@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using Altinn.App.Core.Configuration;
-using Altinn.App.Core.Internal.WorkflowEngine.Models;
 using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

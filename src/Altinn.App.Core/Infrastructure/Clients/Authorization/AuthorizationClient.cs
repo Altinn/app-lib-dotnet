@@ -12,7 +12,6 @@ using Altinn.Common.PEP.Helpers;
 using Altinn.Common.PEP.Interfaces;
 using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -25,7 +24,6 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization;
 /// </summary>
 public class AuthorizationClient : IAuthorizationClient
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly HttpClient _client;
     private readonly IServiceProvider _serviceProvider;
     private readonly IPDP _pdp;
@@ -50,7 +48,6 @@ public class AuthorizationClient : IAuthorizationClient
     public AuthorizationClient(HttpClient httpClient, IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
-        _httpContextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
         _pdp = serviceProvider.GetRequiredService<IPDP>();
         _logger = serviceProvider.GetRequiredService<ILogger<AuthorizationClient>>();
         _telemetry = serviceProvider.GetService<Telemetry>();
