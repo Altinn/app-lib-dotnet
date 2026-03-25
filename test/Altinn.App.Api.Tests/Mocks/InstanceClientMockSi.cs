@@ -223,6 +223,15 @@ public sealed class InstanceClientMockSi : IInstanceClient
         return dataElements;
     }
 
+    public Task<List<Instance>> GetActiveInstances(
+        int instanceOwnerPartyId,
+        StorageAuthenticationMethod? authenticationMethod = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<Instance> AddCompleteConfirmation(
         int instanceOwnerPartyId,
         Guid instanceGuid,

@@ -10,6 +10,16 @@ namespace Altinn.App.Core.Tests.LayoutExpressions.CommonTests;
 
 public class ExpressionTestCaseRoot
 {
+    public ExpressionTestCaseRoot(TestCaseItem testCaseItem)
+    {
+        Name = testCaseItem.Name;
+        Expression = testCaseItem.Expression;
+        Expects = testCaseItem.Expects;
+        ExpectsFailure = testCaseItem.ExpectsFailure;
+    }
+
+    public ExpressionTestCaseRoot() { }
+
     [JsonIgnore]
     public string? Filename { get; set; }
 
@@ -42,6 +52,9 @@ public class ExpressionTestCaseRoot
 
     public class TestCaseItem
     {
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
         [JsonPropertyName("expression")]
         public required Expression Expression { get; set; }
 

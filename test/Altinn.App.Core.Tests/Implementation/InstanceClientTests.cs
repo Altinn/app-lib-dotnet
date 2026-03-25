@@ -5,6 +5,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
@@ -19,7 +20,7 @@ namespace Altinn.App.PlatformServices.Tests.Implementation;
 public sealed class InstanceClientTests : IDisposable
 {
     private readonly Mock<IOptions<PlatformSettings>> _platformSettingsOptions;
-    private readonly Mock<HttpMessageHandler> _handlerMock;
+    private readonly Mock<HttpMessageHandler> _handlerMock = new(MockBehavior.Strict);
     private readonly Mock<IAuthenticationTokenResolver> _authenticationTokenResolver = new(MockBehavior.Strict);
     private readonly Mock<ILogger<InstanceClient>> _logger;
     private readonly TelemetrySink _telemetry;
@@ -27,7 +28,6 @@ public sealed class InstanceClientTests : IDisposable
     public InstanceClientTests()
     {
         _platformSettingsOptions = new Mock<IOptions<PlatformSettings>>();
-        _handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
         _logger = new Mock<ILogger<InstanceClient>>();
         _telemetry = new TelemetrySink();
     }
@@ -378,6 +378,69 @@ public sealed class InstanceClientTests : IDisposable
         _handlerMock.VerifyAll();
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public async Task UpdateDataValues_WithFullInstance_SuccessfullyCallsStorage(int methodVerion)
+    {
+        Guid instanceGuid = Guid.NewGuid();
+        int instanceOwnerId = 1337;
+
+        Instance instance = new Instance
+        {
+            InstanceOwner = new InstanceOwner { PartyId = instanceOwnerId.ToString() },
+            Id = $"{instanceOwnerId}/{instanceGuid}",
+        };
+
+        using HttpResponseMessage httpResponseMessage = new HttpResponseMessage
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent(JsonConvert.SerializeObject(instance), Encoding.UTF8, "application/json"),
+        };
+
+        InitializeMocks([httpResponseMessage], ["datavalues"]);
+
+        HttpClient httpClient = new HttpClient(_handlerMock.Object);
+
+        IInstanceClient target = new InstanceClient(
+            _platformSettingsOptions.Object,
+            _logger.Object,
+            _authenticationTokenResolver.Object,
+            httpClient,
+            _telemetry.Object
+        );
+
+        // Act
+        switch (methodVerion)
+        {
+            case 1:
+                await target.UpdateDataValues(
+                    instanceOwnerId,
+                    instanceGuid,
+                    new DataValues() { Values = new() { { "key", "value" } } }
+                );
+                break;
+            case 2:
+                await target.UpdateDataValue(instance, "key", "value");
+                break;
+            case 3:
+                await target.UpdateDataValues(instance, new() { { "key", "value" } });
+                break;
+        }
+
+        // Assert
+        var url = new Uri($"http://localhost/instances/{instanceOwnerId}/{instanceGuid}/datavalues");
+        _handlerMock
+            .Protected()
+            .Verify(
+                "SendAsync",
+                Times.Once(),
+                ItExpr.Is<HttpRequestMessage>(request => request.Method == HttpMethod.Put && request.RequestUri == url),
+                ItExpr.IsAny<CancellationToken>()
+            );
+    }
+
     [Fact]
     public async Task QueryInstances_QueryResponseContainsNext()
     {
@@ -435,6 +498,17 @@ public sealed class InstanceClientTests : IDisposable
         _handlerMock.VerifyAll();
     }
 
+    private static string CreateDummyJwt()
+    {
+        static string B64Url(string s) =>
+            Convert.ToBase64String(Encoding.UTF8.GetBytes(s)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+        var header = B64Url("{\"alg\":\"none\",\"typ\":\"JWT\"}");
+        var payload = B64Url("{\"sub\":\"123\",\"name\":\"dummy\"}");
+        var sig = B64Url("sig");
+        return $"{header}.{payload}.{sig}";
+    }
+
     private void InitializeMocks(HttpResponseMessage[] httpResponseMessages, string[] urlPart)
     {
         PlatformSettings platformSettings = new PlatformSettings
@@ -444,12 +518,9 @@ public sealed class InstanceClientTests : IDisposable
         };
         _platformSettingsOptions.Setup(s => s.Value).Returns(platformSettings);
 
-        // Using a valid JWT format token (header.payload.signature)
-        const string validJwtToken =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
         _authenticationTokenResolver
             .Setup(s => s.GetAccessToken(It.IsAny<AuthenticationMethod>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(JwtToken.Parse(validJwtToken));
+            .ReturnsAsync(JwtToken.Parse(CreateDummyJwt()));
 
         if (httpResponseMessages.Length == 2)
         {

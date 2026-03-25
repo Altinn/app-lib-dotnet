@@ -7,6 +7,7 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
@@ -51,6 +52,7 @@ internal class ProcessEngine : IProcessEngine
     private readonly IWorkflowEngineClient _workflowEngineClient;
     private readonly IInstanceClient _instanceClient;
     private readonly AppIdentifier _appIdentifier;
+    private readonly IInstanceLocker _instanceLocker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -83,6 +85,7 @@ internal class ProcessEngine : IProcessEngine
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
         _appIdentifier = serviceProvider.GetRequiredService<AppIdentifier>();
+        _instanceLocker = serviceProvider.GetRequiredService<IInstanceLocker>();
     }
 
     /// <inheritdoc/>
@@ -210,6 +213,8 @@ internal class ProcessEngine : IProcessEngine
             activity?.SetProcessChangeResult(result);
             return result;
         }
+
+        await _instanceLocker.LockAsync();
 
         _logger.LogDebug(
             "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",

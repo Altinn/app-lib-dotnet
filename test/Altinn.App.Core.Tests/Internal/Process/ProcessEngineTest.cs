@@ -10,6 +10,7 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
@@ -55,7 +56,7 @@ public sealed class ProcessEngineTest
     [Fact]
     public async Task Start_returns_error_when_process_already_started()
     {
-        using var fixture = Fixture.Create();
+        await using var fixture = Fixture.Create();
         LegacyProcessEngine processEngine = fixture.ProcessEngine;
         Instance instance = new Instance()
         {
@@ -77,7 +78,7 @@ public sealed class ProcessEngineTest
         processReaderMock.Setup(r => r.GetStartEventIds()).Returns(new List<string>() { "StartEvent_1" });
         var services = new ServiceCollection();
         services.AddSingleton(processReaderMock.Object);
-        using var fixture = Fixture.Create(services);
+        await using var fixture = Fixture.Create(services);
         LegacyProcessEngine processEngine = fixture.ProcessEngine;
         Instance instance = new Instance() { Id = _instanceId, AppId = "org/app" };
         ProcessStartRequest processStartRequest = new ProcessStartRequest()
@@ -101,7 +102,7 @@ public sealed class ProcessEngineTest
         // Arrange
         var services = new ServiceCollection();
 
-        using var fixture = Fixture.Create(services, withTelemetry: false, token: token);
+        await using var fixture = Fixture.Create(services, withTelemetry: false, token: token);
         var instanceOwnerPartyId = token.Auth switch
         {
             Authenticated.User auth => auth.SelectedPartyId,
@@ -205,7 +206,7 @@ public sealed class ProcessEngineTest
             },
         };
 
-        using var fixture = Fixture.Create(services);
+        await using var fixture = Fixture.Create(services);
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
@@ -341,7 +342,7 @@ public sealed class ProcessEngineTest
             },
         };
 
-        using var fixture = Fixture.Create(services);
+        await using var fixture = Fixture.Create(services);
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
@@ -465,7 +466,7 @@ public sealed class ProcessEngineTest
             },
         };
 
-        using var fixture = Fixture.Create(services, registerProcessEnd: false);
+        await using var fixture = Fixture.Create(services, registerProcessEnd: false);
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
@@ -580,7 +581,7 @@ public sealed class ProcessEngineTest
         string expectedErrorMessage
     )
     {
-        using var fixture = Fixture.Create();
+        await using var fixture = Fixture.Create();
         LegacyProcessEngine processEngine = fixture.ProcessEngine;
 
         var instance = new Instance()
@@ -628,7 +629,7 @@ public sealed class ProcessEngineTest
             .Setup(u => u.HandleAction(It.IsAny<UserActionContext>()))
             .ReturnsAsync(UserActionResult.SuccessResult());
 
-        using var fixture = Fixture.Create(userActions: [userActionMock.Object]);
+        await using var fixture = Fixture.Create(userActions: [userActionMock.Object]);
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
@@ -701,7 +702,7 @@ public sealed class ProcessEngineTest
                 )
             );
 
-        using var fixture = Fixture.Create(userActions: [userActionMock.Object]);
+        await using var fixture = Fixture.Create(userActions: [userActionMock.Object]);
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
@@ -769,7 +770,7 @@ public sealed class ProcessEngineTest
             },
         };
 
-        using var fixture = Fixture.Create();
+        await using var fixture = Fixture.Create();
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
@@ -919,7 +920,7 @@ public sealed class ProcessEngineTest
                 StartEvent = "StartEvent_1",
             },
         };
-        using var fixture = Fixture.Create();
+        await using var fixture = Fixture.Create();
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
@@ -1062,7 +1063,7 @@ public sealed class ProcessEngineTest
                 EndEvent = "EndEvent_1",
             },
         };
-        using var fixture = Fixture.Create(registerProcessEnd: registerProcessEnd, withTelemetry: useTelemetry);
+        await using var fixture = Fixture.Create(registerProcessEnd: registerProcessEnd, withTelemetry: useTelemetry);
         fixture
             .Mock<IAppMetadata>()
             .Setup(x => x.GetApplicationMetadata())
@@ -1217,7 +1218,7 @@ public sealed class ProcessEngineTest
             );
     }
 
-    private sealed record Fixture(IServiceProvider ServiceProvider) : IDisposable
+    private sealed record Fixture(IServiceProvider ServiceProvider) : IAsyncDisposable
     {
         public LegacyProcessEngine ProcessEngine =>
             (LegacyProcessEngine)ServiceProvider.GetRequiredService<IProcessEngine>();
@@ -1273,6 +1274,7 @@ public sealed class ProcessEngineTest
             Mock<IAppMetadata> appMetadataMock = new(MockBehavior.Strict);
             Mock<IAppResources> appResourcesMock = new(MockBehavior.Strict);
             Mock<ITranslationService> translationServiceMock = new(MockBehavior.Strict);
+            Mock<IInstanceLocker> instanceLockerMock = new(MockBehavior.Loose);
             var appMetadata = new ApplicationMetadata("org/app") { DataTypes = [] };
             appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(appMetadata);
 
@@ -1351,6 +1353,7 @@ public sealed class ProcessEngineTest
             services.TryAddTransient<ITranslationService>(_ => translationServiceMock.Object);
             services.TryAddTransient<InstanceDataUnitOfWorkInitializer>();
             services.TryAddTransient<IValidationService>(_ => validationServiceMock.Object);
+            services.TryAddTransient<IInstanceLocker>(_ => instanceLockerMock.Object);
 
             var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
             processEngineClientMock
@@ -1388,7 +1391,20 @@ public sealed class ProcessEngineTest
             return new Fixture(services.BuildStrictServiceProvider());
         }
 
-        public void Dispose() => (ServiceProvider as IDisposable)?.Dispose();
+        public ValueTask DisposeAsync()
+        {
+            if (ServiceProvider is IAsyncDisposable asyncDisposable)
+            {
+                return asyncDisposable.DisposeAsync();
+            }
+
+            if (ServiceProvider is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
+            return ValueTask.CompletedTask;
+        }
     }
 
     private bool CompareInstance(Instance expected, Instance actual)
