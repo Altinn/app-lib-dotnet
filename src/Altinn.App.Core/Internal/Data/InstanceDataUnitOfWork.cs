@@ -754,7 +754,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 int.Parse(Instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
                 Guid.Parse(Instance.Id.Split("/")[1]),
                 new PresentationTexts { Texts = updatedTexts },
-                GetAuthenticationMethod(dataType)
+                GetAuthenticationMethod(dataType),
+                CancellationToken.None
             );
 
             // Maintain local copy of presentation texts
@@ -784,7 +785,8 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 int.Parse(Instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
                 Guid.Parse(Instance.Id.Split("/")[1]),
                 new DataValues { Values = updatedValues },
-                GetAuthenticationMethod(dataType)
+                GetAuthenticationMethod(dataType),
+                CancellationToken.None
             );
 
             // Maintain local copy of data values

@@ -37,7 +37,8 @@ public class ProcessTaskDataLocker : IProcessTaskDataLocker
                 await _dataClient.UnlockDataElement(
                     instanceIdentifier,
                     Guid.Parse(dataElement.Id),
-                    StorageAuthenticationMethod.ServiceOwner()
+                    StorageAuthenticationMethod.ServiceOwner(),
+                    CancellationToken.None
                 );
             }
         }
@@ -57,7 +58,8 @@ public class ProcessTaskDataLocker : IProcessTaskDataLocker
                 await _dataClient.LockDataElement(
                     instanceIdentifier,
                     Guid.Parse(dataElement.Id),
-                    StorageAuthenticationMethod.ServiceOwner()
+                    StorageAuthenticationMethod.ServiceOwner(),
+                    CancellationToken.None
                 );
             }
         }

@@ -379,7 +379,13 @@ public class InstancesController : ControllerBase
             processStateChange = result.ProcessStateChange;
 
             // create the instance
-            instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
+            instance = await _instanceClient.CreateInstance(
+                org,
+                app,
+                instanceTemplate,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
         }
         catch (Exception exception)
         {
@@ -397,7 +403,9 @@ public class InstancesController : ControllerBase
                 await _instanceClient.DeleteInstance(
                     int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
                     Guid.Parse(instance.Id.Split("/")[1]),
-                    hard: true
+                    hard: true,
+                    authenticationMethod: null,
+                    CancellationToken.None
                 );
                 return StatusCode(prefillProblem.Status ?? 500, prefillProblem);
             }
@@ -407,7 +415,9 @@ public class InstancesController : ControllerBase
                 app,
                 org,
                 int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
-                Guid.Parse(instance.Id.Split("/")[1])
+                Guid.Parse(instance.Id.Split("/")[1]),
+                authenticationMethod: null,
+                CancellationToken.None
             );
 
             // Dispatch process state change to async engine
@@ -639,7 +649,14 @@ public class InstancesController : ControllerBase
 
                 try
                 {
-                    source = await _instanceClient.GetInstance(app, org, party.PartyId, sourceInstanceGuid);
+                    source = await _instanceClient.GetInstance(
+                        app,
+                        org,
+                        party.PartyId,
+                        sourceInstanceGuid,
+                        authenticationMethod: null,
+                        CancellationToken.None
+                    );
                 }
                 catch (PlatformHttpException exception)
                 {
@@ -814,7 +831,11 @@ public class InstancesController : ControllerBase
 
         await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
 
-        targetInstance = await _instanceClient.GetInstance(targetInstance);
+        targetInstance = await _instanceClient.GetInstance(
+            targetInstance,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
 
         // Dispatch process state change to async engine
         if (startResult.ProcessStateChange is not null)
@@ -855,7 +876,12 @@ public class InstancesController : ControllerBase
     {
         try
         {
-            Instance instance = await _instanceClient.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid);
+            Instance instance = await _instanceClient.AddCompleteConfirmation(
+                instanceOwnerPartyId,
+                instanceGuid,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
             SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
 
             return Ok(instance);
@@ -898,7 +924,14 @@ public class InstancesController : ControllerBase
             );
         }
 
-        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        Instance instance = await _instanceClient.GetInstance(
+            app,
+            org,
+            instanceOwnerPartyId,
+            instanceGuid,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
 
         string? orgClaim = User.GetOrg();
         if (!instance.Org.Equals(orgClaim, StringComparison.OrdinalIgnoreCase))
@@ -911,7 +944,9 @@ public class InstancesController : ControllerBase
             Instance updatedInstance = await _instanceClient.UpdateSubstatus(
                 instanceOwnerPartyId,
                 instanceGuid,
-                substatus
+                substatus,
+                authenticationMethod: null,
+                CancellationToken.None
             );
             SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
 
@@ -947,7 +982,13 @@ public class InstancesController : ControllerBase
     {
         try
         {
-            Instance deletedInstance = await _instanceClient.DeleteInstance(instanceOwnerPartyId, instanceGuid, hard);
+            Instance deletedInstance = await _instanceClient.DeleteInstance(
+                instanceOwnerPartyId,
+                instanceGuid,
+                hard,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
             SelfLinkHelper.SetInstanceAppSelfLinks(deletedInstance, Request);
 
             return Ok(deletedInstance);
@@ -983,7 +1024,11 @@ public class InstancesController : ControllerBase
             { "status.isSoftDeleted", "false" },
         };
 
-        List<Instance> activeInstances = await _instanceClient.GetInstances(queryParams);
+        List<Instance> activeInstances = await _instanceClient.GetInstances(
+            queryParams,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
 
         if (activeInstances.Count == 0)
         {
@@ -1021,7 +1066,14 @@ public class InstancesController : ControllerBase
     {
         try
         {
-            return await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+            return await _instanceClient.GetInstance(
+                app,
+                org,
+                instanceOwnerPartyId,
+                instanceGuid,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
         }
         catch (PlatformHttpException platformHttpException)
         {
@@ -1081,7 +1133,12 @@ public class InstancesController : ControllerBase
             {
                 DataType dt = dts.First(dt => dt.Id.Equals(de.DataType, StringComparison.Ordinal));
 
-                object data = await _dataClient.GetFormData(sourceInstance, de);
+                object data = await _dataClient.GetFormData(
+                    sourceInstance,
+                    de,
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
 
                 if (application.CopyInstanceSettings.ExcludedDataFields != null)
                 {
@@ -1099,7 +1156,13 @@ public class InstancesController : ControllerBase
 
                 ObjectUtils.InitializeAltinnRowId(data);
 
-                await _dataClient.InsertFormData(targetInstance, dt.Id, data);
+                await _dataClient.InsertFormData(
+                    targetInstance,
+                    dt.Id,
+                    data,
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
 
                 await UpdatePresentationTextsOnInstance(application.PresentationFields, targetInstance, dt.Id, data);
                 await UpdateDataValuesOnInstance(application.DataFields, targetInstance, dt.Id, data);
@@ -1134,7 +1197,9 @@ public class InstancesController : ControllerBase
                 using var binaryDataStream = await _dataClient.GetBinaryData(
                     instanceOwnerPartyId,
                     sourceInstanceGuid,
-                    Guid.Parse(de.Id)
+                    Guid.Parse(de.Id),
+                    authenticationMethod: null,
+                    CancellationToken.None
                 );
 
                 await _dataClient.InsertBinaryData(
@@ -1142,7 +1207,10 @@ public class InstancesController : ControllerBase
                     de.DataType,
                     de.ContentType,
                     de.Filename,
-                    binaryDataStream
+                    binaryDataStream,
+                    generatedFromTask: null,
+                    authenticationMethod: null,
+                    CancellationToken.None
                 );
             }
         }
@@ -1491,7 +1559,9 @@ public class InstancesController : ControllerBase
             await _instanceClient.UpdatePresentationTexts(
                 int.Parse(instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
                 Guid.Parse(instance.Id.Split("/")[1]),
-                new PresentationTexts { Texts = updatedValues }
+                new PresentationTexts { Texts = updatedValues },
+                authenticationMethod: null,
+                CancellationToken.None
             );
         }
     }
@@ -1510,7 +1580,9 @@ public class InstancesController : ControllerBase
             await _instanceClient.UpdateDataValues(
                 int.Parse(instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
                 Guid.Parse(instance.Id.Split("/")[1]),
-                new DataValues { Values = updatedValues }
+                new DataValues { Values = updatedValues },
+                authenticationMethod: null,
+                CancellationToken.None
             );
         }
     }
