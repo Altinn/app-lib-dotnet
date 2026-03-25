@@ -178,7 +178,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
                       "dataModelBindings": {
                         "simpleBinding": "Address"
                       },
-                      "required": ["notEquals", ["component", "Name"], "Always required, bu test component lookup"]
+                      "required": ["notEquals", ["component", "Name"], "Always required, by test component lookup"]
                     },
                     {
                       "id": "Phone",
