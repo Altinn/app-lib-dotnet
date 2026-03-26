@@ -424,6 +424,13 @@ public class InstancesController : ControllerBase
         }
         catch (Exception exception)
         {
+            await _instanceClient.DeleteInstance(
+                int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
+                Guid.Parse(instance.Id.Split("/")[1]),
+                hard: true,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
             return ExceptionResponse(
                 exception,
                 $"Instantiation of data elements failed for instance {instance.Id} for party {instanceTemplate.InstanceOwner?.PartyId}"
@@ -651,7 +658,7 @@ public class InstancesController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
-        Instance instance;
+        Instance? instance = null;
         ProcessChangeResult processResult;
         try
         {
@@ -723,6 +730,18 @@ public class InstancesController : ControllerBase
         }
         catch (Exception exception)
         {
+            if (instance?.Id is not null)
+            {
+                // Try to delete instance if creation fails to avoid leaving orphaned instances in storage.
+                // If deletion also fails, there is not much we can do about it, but we should at least log the error.
+                await _instanceClient.DeleteInstance(
+                    int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
+                    Guid.Parse(instance.Id.Split("/")[1]),
+                    hard: true,
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
+            }
             return ExceptionResponse(
                 exception,
                 $"Instantiation of appId {org}/{app} failed for party {instanceTemplate.InstanceOwner?.PartyId}"
