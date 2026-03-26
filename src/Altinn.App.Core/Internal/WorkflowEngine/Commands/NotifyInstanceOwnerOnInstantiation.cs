@@ -1,6 +1,7 @@
 using System.Globalization;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.Platform.Register.Models;
@@ -35,14 +36,23 @@ internal sealed class NotifyInstanceOwnerOnInstantiation(
     {
         Instance instance = context.InstanceDataMutator.Instance;
 
+        if (!int.TryParse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture, out int partyId))
+        {
+            return FailedProcessEngineCommandResult.Permanent(
+                $"Invalid PartyId '{instance.InstanceOwner.PartyId}'. Instance: {instance.Id}",
+                nameof(FormatException)
+            );
+        }
+
         try
         {
-            int partyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
-            Party party =
-                await altinnPartyClient.GetParty(partyId, StorageAuthenticationMethod.ServiceOwner())
-                ?? throw new InvalidOperationException(
+            Party? party = await altinnPartyClient.GetParty(partyId, StorageAuthenticationMethod.ServiceOwner());
+            if (party is null)
+            {
+                return FailedProcessEngineCommandResult.Permanent(
                     $"Party not found for partyId {partyId}. Instance: {instance.Id}"
                 );
+            }
 
             await notificationService.NotifyInstanceOwnerOnInstantiation(
                 instance,
@@ -52,6 +62,10 @@ internal sealed class NotifyInstanceOwnerOnInstantiation(
             );
 
             return new SuccessfulProcessEngineCommandResult();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ServiceException)
+        {
+            return FailedProcessEngineCommandResult.Permanent(ex.Message, ex.GetType().Name);
         }
         catch (Exception ex)
         {
