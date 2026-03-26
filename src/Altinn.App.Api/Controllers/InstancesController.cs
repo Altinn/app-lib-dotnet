@@ -424,13 +424,24 @@ public class InstancesController : ControllerBase
         }
         catch (Exception exception)
         {
-            await _instanceClient.DeleteInstance(
-                int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
-                Guid.Parse(instance.Id.Split("/")[1]),
-                hard: true,
-                authenticationMethod: null,
-                CancellationToken.None
-            );
+            try
+            {
+                await _instanceClient.DeleteInstance(
+                    int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
+                    Guid.Parse(instance.Id.Split("/")[1]),
+                    hard: true,
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
+            }
+            catch (Exception deleteException)
+            {
+                _logger.LogError(
+                    deleteException,
+                    "Failed to delete instance {InstanceId} after unsuccessful prefill. Manual cleanup might be required.",
+                    instance.Id
+                );
+            }
             return ExceptionResponse(
                 exception,
                 $"Instantiation of data elements failed for instance {instance.Id} for party {instanceTemplate.InstanceOwner?.PartyId}"
@@ -732,15 +743,25 @@ public class InstancesController : ControllerBase
         {
             if (instance?.Id is not null)
             {
-                // Try to delete instance if creation fails to avoid leaving orphaned instances in storage.
-                // If deletion also fails, there is not much we can do about it, but we should at least log the error.
-                await _instanceClient.DeleteInstance(
-                    int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
-                    Guid.Parse(instance.Id.Split("/")[1]),
-                    hard: true,
-                    authenticationMethod: null,
-                    CancellationToken.None
-                );
+                try
+                {
+                    // Try to delete instance if creation fails to avoid leaving orphaned instances in storage.
+                    // If deletion also fails, there is not much we can do about it, but we should at least log the error.
+                    await _instanceClient.DeleteInstance(
+                        int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
+                        Guid.Parse(instance.Id.Split("/")[1]),
+                        hard: true,
+                        authenticationMethod: null,
+                        CancellationToken.None
+                    );
+                }
+                catch (Exception deleteException)
+                {
+                    _logger.LogError(
+                        deleteException,
+                        "Failed to delete instance {InstanceId} after unsuccessful instantiation. Manual cleanup might be required.",
+                        instance.Id
+                    );
             }
             return ExceptionResponse(
                 exception,
