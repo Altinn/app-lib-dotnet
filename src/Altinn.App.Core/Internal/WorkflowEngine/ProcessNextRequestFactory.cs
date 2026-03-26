@@ -175,11 +175,14 @@ internal sealed class ProcessNextRequestFactory
                 return null;
             case InstanceEventType.process_StartTask:
                 return WorkflowCommandSet.GetTaskStartSteps(
-                    GetServiceTaskType(altinnTaskType),
-                    isInitialTaskStart,
-                    isInitialTaskStart ? prefill : null,
-                    isInitialTaskStart ? notification : null,
-                    _appSettings.RegisterEventsWithEventsComponent
+                    new TaskStartContext
+                    {
+                        ServiceTaskType = GetServiceTaskType(altinnTaskType),
+                        IsInitialTaskStart = isInitialTaskStart,
+                        Prefill = isInitialTaskStart ? prefill : null,
+                        Notification = isInitialTaskStart ? notification : null,
+                        RegisterEvents = _appSettings.RegisterEventsWithEventsComponent,
+                    }
                 );
             case InstanceEventType.process_EndTask:
                 return WorkflowCommandSet.GetTaskEndSteps();
@@ -188,13 +191,15 @@ internal sealed class ProcessNextRequestFactory
             case InstanceEventType.process_EndEvent:
             {
                 ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
-                bool hasAutoDeleteDataTypes = appMetadata.DataTypes.Any(dt =>
-                    dt?.AppLogic?.AutoDeleteOnProcessEnd == true
-                );
                 return WorkflowCommandSet.GetProcessEndSteps(
-                    registerEvents: _appSettings.RegisterEventsWithEventsComponent,
-                    hasAutoDeleteDataTypes: hasAutoDeleteDataTypes,
-                    autoDeleteInstanceOnProcessEnd: appMetadata.AutoDeleteOnProcessEnd == true
+                    new ProcessEndContext
+                    {
+                        RegisterEvents = _appSettings.RegisterEventsWithEventsComponent,
+                        HasAutoDeleteDataTypes = appMetadata.DataTypes.Any(dt =>
+                            dt?.AppLogic?.AutoDeleteOnProcessEnd == true
+                        ),
+                        AutoDeleteInstanceOnProcessEnd = appMetadata.AutoDeleteOnProcessEnd == true,
+                    }
                 );
             }
             default:

@@ -37,25 +37,37 @@ internal static class ProcessEngineCommandValidator
     {
         var keys = new HashSet<string>();
 
-        // Collect keys from all event types
-        // Pass registerEvents: true to collect all possible command keys including event commands
+        // Collect keys from all event types with all features enabled to cover all possible commands
         CollectCommandKeys(
             WorkflowCommandSet.GetTaskStartSteps(
-                serviceTaskType: null,
-                isInitialTaskStart: false,
-                registerEvents: true
+                new TaskStartContext
+                {
+                    ServiceTaskType = null,
+                    IsInitialTaskStart = false,
+                    RegisterEvents = true,
+                }
             ),
             keys
         );
         CollectCommandKeys(
-            WorkflowCommandSet.GetTaskStartSteps(serviceTaskType: null, isInitialTaskStart: true, registerEvents: true),
+            WorkflowCommandSet.GetTaskStartSteps(
+                new TaskStartContext
+                {
+                    ServiceTaskType = null,
+                    IsInitialTaskStart = true,
+                    RegisterEvents = true,
+                }
+            ),
             keys
         );
         CollectCommandKeys(
             WorkflowCommandSet.GetTaskStartSteps(
-                serviceTaskType: "DummyServiceTask",
-                isInitialTaskStart: false,
-                registerEvents: true
+                new TaskStartContext
+                {
+                    ServiceTaskType = "DummyServiceTask",
+                    IsInitialTaskStart = false,
+                    RegisterEvents = true,
+                }
             ),
             keys
         );
@@ -63,9 +75,12 @@ internal static class ProcessEngineCommandValidator
         CollectCommandKeys(WorkflowCommandSet.GetTaskAbandonSteps(), keys);
         CollectCommandKeys(
             WorkflowCommandSet.GetProcessEndSteps(
-                registerEvents: true,
-                hasAutoDeleteDataTypes: true,
-                autoDeleteInstanceOnProcessEnd: true
+                new ProcessEndContext
+                {
+                    RegisterEvents = true,
+                    HasAutoDeleteDataTypes = true,
+                    AutoDeleteInstanceOnProcessEnd = true,
+                }
             ),
             keys
         );
