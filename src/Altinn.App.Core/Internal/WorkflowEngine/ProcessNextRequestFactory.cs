@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
@@ -11,6 +12,7 @@ using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine;
 
@@ -23,16 +25,19 @@ internal sealed class ProcessNextRequestFactory
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly AppIdentifier _appIdentifier;
+    private readonly AppSettings _appSettings;
 
     public ProcessNextRequestFactory(
         AppImplementationFactory appImplementationFactory,
         IAuthenticationContext authenticationContext,
-        AppIdentifier appIdentifier
+        AppIdentifier appIdentifier,
+        IOptions<AppSettings> appSettings
     )
     {
         _appImplementationFactory = appImplementationFactory;
         _authenticationContext = authenticationContext;
         _appIdentifier = appIdentifier;
+        _appSettings = appSettings.Value;
     }
 
     /// <summary>
@@ -167,11 +172,14 @@ internal sealed class ProcessNextRequestFactory
                 GetServiceTaskType(altinnTaskType),
                 isInitialTaskStart,
                 isInitialTaskStart ? prefill : null, // Only pass prefill for initial task start
-                isInitialTaskStart ? notification : null // Only pass notification for initial task start
+                isInitialTaskStart ? notification : null, // Only pass notification for initial task start
+                _appSettings.RegisterEventsWithEventsComponent
             ),
             InstanceEventType.process_EndTask => WorkflowCommandSet.GetTaskEndSteps(),
             InstanceEventType.process_AbandonTask => WorkflowCommandSet.GetTaskAbandonSteps(),
-            InstanceEventType.process_EndEvent => WorkflowCommandSet.GetProcessEndSteps(),
+            InstanceEventType.process_EndEvent => WorkflowCommandSet.GetProcessEndSteps(
+                _appSettings.RegisterEventsWithEventsComponent
+            ),
             _ => null,
         };
     }

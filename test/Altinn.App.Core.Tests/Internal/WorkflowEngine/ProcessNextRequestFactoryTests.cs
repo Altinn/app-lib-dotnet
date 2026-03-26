@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
@@ -18,6 +19,7 @@ using Altinn.App.Tests.Common.Auth;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Altinn.App.Core.Tests.Internal.WorkflowEngine;
@@ -37,6 +39,7 @@ public class ProcessNextRequestFactoryTests
 
     private static ProcessNextRequestFactory CreateFactory(
         Authenticated? authentication = null,
+        bool registerEvents = true,
         params IServiceTask[] serviceTasks
     )
     {
@@ -52,7 +55,9 @@ public class ProcessNextRequestFactoryTests
         var authContextMock = new Mock<IAuthenticationContext>();
         authContextMock.Setup(x => x.Current).Returns(authentication ?? TestAuthentication.GetUserAuthentication());
 
-        return new ProcessNextRequestFactory(appImplFactory, authContextMock.Object, TestAppIdentifier);
+        var appSettings = Options.Create(new AppSettings { RegisterEventsWithEventsComponent = registerEvents });
+
+        return new ProcessNextRequestFactory(appImplFactory, authContextMock.Object, TestAppIdentifier, appSettings);
     }
 
     private static ProcessStateChange CreateTaskToTaskTransition(
@@ -466,5 +471,58 @@ public class ProcessNextRequestFactoryTests
         var context = JsonSerializer.Deserialize<AppWorkflowContext>(request.Context.Value);
         Assert.NotNull(context);
         Assert.Equal("42", context.Actor.UserIdOrOrgNumber);
+    }
+
+    [Fact]
+    public async Task Create_RegisterEventsDisabled_ExcludesAltinnEventCommands()
+    {
+        // Arrange
+        var factory = CreateFactory(registerEvents: false);
+        var stateChange = CreateTaskToTaskTransition();
+
+        // Act
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+
+        // Assert
+        var keys = ExtractCommandKeys(request);
+        Assert.DoesNotContain(MovedToAltinnEvent.Key, keys);
+        Assert.DoesNotContain(CompletedAltinnEvent.Key, keys);
+        Assert.DoesNotContain(InstanceCreatedAltinnEvent.Key, keys);
+    }
+
+    [Fact]
+    public async Task Create_RegisterEventsDisabled_TaskToEnd_ExcludesCompletedEvent()
+    {
+        // Arrange
+        var factory = CreateFactory(registerEvents: false);
+        var stateChange = CreateTaskToEndTransition();
+
+        // Act
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+
+        // Assert
+        var keys = ExtractCommandKeys(request);
+        Assert.DoesNotContain(CompletedAltinnEvent.Key, keys);
+        Assert.DoesNotContain(MovedToAltinnEvent.Key, keys);
+        // Non-event post-commit commands should still be present
+        Assert.Contains(EndProcessLegacyHook.Key, keys);
+        Assert.Contains(DeleteDataElementsIfConfigured.Key, keys);
+        Assert.Contains(DeleteInstanceIfConfigured.Key, keys);
+    }
+
+    [Fact]
+    public async Task Create_RegisterEventsDisabled_InitialTaskStart_ExcludesAllEvents()
+    {
+        // Arrange
+        var factory = CreateFactory(registerEvents: false);
+        var stateChange = CreateInitialTaskStart();
+
+        // Act
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+
+        // Assert
+        var keys = ExtractCommandKeys(request);
+        Assert.DoesNotContain(MovedToAltinnEvent.Key, keys);
+        Assert.DoesNotContain(InstanceCreatedAltinnEvent.Key, keys);
     }
 }

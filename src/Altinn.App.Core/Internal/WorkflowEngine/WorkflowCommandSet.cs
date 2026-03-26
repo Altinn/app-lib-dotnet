@@ -35,11 +35,13 @@ internal sealed class WorkflowCommandSet
     /// <param name="isInitialTaskStart">True if this is the first task start (process is starting), false for subsequent task transitions.</param>
     /// <param name="prefill">Prefill data for initial task start. Only relevant when isInitialTaskStart is true.</param>
     /// <param name="notification">Notification to send to instance owner on instantiation. Only relevant when isInitialTaskStart is true.</param>
+    /// <param name="registerEvents">Whether to register events with the events component. Controlled by AppSettings.RegisterEventsWithEventsComponent.</param>
     public static WorkflowCommandSet GetTaskStartSteps(
         string? serviceTaskType,
         bool isInitialTaskStart,
         Dictionary<string, string>? prefill = null,
-        InstantiationNotification? notification = null
+        InstantiationNotification? notification = null,
+        bool registerEvents = false
     )
     {
         var group = new WorkflowCommandSet()
@@ -47,8 +49,12 @@ internal sealed class WorkflowCommandSet
             .AddCommand(StartTaskLegacyHook.Key, new StartTaskLegacyHookPayload(prefill))
             .AddCommand(OnTaskStartingHook.Key)
             .AddCommand(CommonTaskInitialization.Key, new CommonTaskInitializationPayload(prefill))
-            .AddCommand(StartTask.Key)
-            .AddPostProcessNextCommittedCommand(MovedToAltinnEvent.Key);
+            .AddCommand(StartTask.Key);
+
+        if (registerEvents)
+        {
+            group.AddPostProcessNextCommittedCommand(MovedToAltinnEvent.Key);
+        }
 
         if (serviceTaskType is not null)
         {
@@ -58,7 +64,7 @@ internal sealed class WorkflowCommandSet
             );
         }
 
-        if (isInitialTaskStart)
+        if (isInitialTaskStart && registerEvents)
         {
             group.AddPostProcessNextCommittedCommand(InstanceCreatedAltinnEvent.Key);
 
@@ -101,17 +107,24 @@ internal sealed class WorkflowCommandSet
     /// <summary>
     /// Creates command group for process end events.
     /// </summary>
-    public static WorkflowCommandSet GetProcessEndSteps()
+    /// <param name="registerEvents">Whether to register events with the events component. Controlled by AppSettings.RegisterEventsWithEventsComponent.</param>
+    public static WorkflowCommandSet GetProcessEndSteps(bool registerEvents = false)
     {
         // EndProcessLegacyHook runs post-commit because IProcessEnd.End reads instance.Process.EndEvent,
         // which is only set when the process state is persisted. This matches the old ProcessEngine behavior
         // where RunAppDefinedProcessEndHandlers ran after HandleEventsAndUpdateStorage.
-        return new WorkflowCommandSet()
+        var group = new WorkflowCommandSet()
             .AddCommand(OnProcessEndingHook.Key)
             .AddPostProcessNextCommittedCommand(EndProcessLegacyHook.Key)
             .AddPostProcessNextCommittedCommand(DeleteDataElementsIfConfigured.Key)
-            .AddPostProcessNextCommittedCommand(DeleteInstanceIfConfigured.Key)
-            .AddPostProcessNextCommittedCommand(CompletedAltinnEvent.Key);
+            .AddPostProcessNextCommittedCommand(DeleteInstanceIfConfigured.Key);
+
+        if (registerEvents)
+        {
+            group.AddPostProcessNextCommittedCommand(CompletedAltinnEvent.Key);
+        }
+
+        return group;
     }
 
     /// <summary>

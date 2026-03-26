@@ -38,18 +38,30 @@ internal static class ProcessEngineCommandValidator
         var keys = new HashSet<string>();
 
         // Collect keys from all event types
+        // Pass registerEvents: true to collect all possible command keys including event commands
         CollectCommandKeys(
-            WorkflowCommandSet.GetTaskStartSteps(serviceTaskType: null, isInitialTaskStart: false),
+            WorkflowCommandSet.GetTaskStartSteps(
+                serviceTaskType: null,
+                isInitialTaskStart: false,
+                registerEvents: true
+            ),
             keys
         );
-        CollectCommandKeys(WorkflowCommandSet.GetTaskStartSteps(serviceTaskType: null, isInitialTaskStart: true), keys);
         CollectCommandKeys(
-            WorkflowCommandSet.GetTaskStartSteps(serviceTaskType: "DummyServiceTask", isInitialTaskStart: false),
+            WorkflowCommandSet.GetTaskStartSteps(serviceTaskType: null, isInitialTaskStart: true, registerEvents: true),
+            keys
+        );
+        CollectCommandKeys(
+            WorkflowCommandSet.GetTaskStartSteps(
+                serviceTaskType: "DummyServiceTask",
+                isInitialTaskStart: false,
+                registerEvents: true
+            ),
             keys
         );
         CollectCommandKeys(WorkflowCommandSet.GetTaskEndSteps(), keys);
         CollectCommandKeys(WorkflowCommandSet.GetTaskAbandonSteps(), keys);
-        CollectCommandKeys(WorkflowCommandSet.GetProcessEndSteps(), keys);
+        CollectCommandKeys(WorkflowCommandSet.GetProcessEndSteps(registerEvents: true), keys);
 
         // SaveProcessStateToStorage is automatically inserted
         keys.Add(SaveProcessStateToStorage.Key);
