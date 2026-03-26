@@ -41,6 +41,9 @@ internal static class ServiceCollectionExtensions
         // Process engine callback handlers - ServiceTask
         services.AddTransient<IWorkflowEngineCommand, ExecuteServiceTask>();
 
+        // Process engine callback handlers - Notifications
+        services.AddTransient<IWorkflowEngineCommand, NotifyInstanceOwnerOnInstantiation>();
+
         // Process engine callback handlers - ProcessEnd
         services.AddTransient<IWorkflowEngineCommand, OnProcessEndingHook>();
         services.AddTransient<IWorkflowEngineCommand, EndProcessLegacyHook>();

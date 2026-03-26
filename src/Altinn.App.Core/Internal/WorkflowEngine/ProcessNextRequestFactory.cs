@@ -7,6 +7,7 @@ using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
 using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Enums;
 using Altinn.Platform.Storage.Interface.Models;
@@ -45,10 +46,11 @@ internal sealed class ProcessNextRequestFactory
         string? state = null,
         Actor? actor = null,
         IEnumerable<WorkflowRef>? dependsOn = null,
-        Dictionary<string, string>? prefill = null
+        Dictionary<string, string>? prefill = null,
+        InstantiationNotification? notification = null
     )
     {
-        List<StepRequest> commands = AssembleCommandSequence(processStateChange, prefill);
+        List<StepRequest> commands = AssembleCommandSequence(processStateChange, prefill, notification);
 
         string fromTaskId =
             processStateChange.OldProcessState?.CurrentTask?.ElementId
@@ -95,7 +97,8 @@ internal sealed class ProcessNextRequestFactory
 
     private List<StepRequest> AssembleCommandSequence(
         ProcessStateChange processStateChange,
-        Dictionary<string, string>? prefill = null
+        Dictionary<string, string>? prefill = null,
+        InstantiationNotification? notification = null
     )
     {
         var taskEndSteps = new List<StepRequest>();
@@ -115,7 +118,8 @@ internal sealed class ProcessNextRequestFactory
                 instanceEventType,
                 altinnTaskType,
                 isInitialTaskStart,
-                prefill
+                prefill,
+                notification
             );
             if (workflowCommands != null)
             {
@@ -152,7 +156,8 @@ internal sealed class ProcessNextRequestFactory
         InstanceEventType eventType,
         string? altinnTaskType,
         bool isInitialTaskStart,
-        Dictionary<string, string>? prefill
+        Dictionary<string, string>? prefill,
+        InstantiationNotification? notification
     )
     {
         return eventType switch
@@ -161,7 +166,8 @@ internal sealed class ProcessNextRequestFactory
             InstanceEventType.process_StartTask => WorkflowCommandSet.GetTaskStartSteps(
                 GetServiceTaskType(altinnTaskType),
                 isInitialTaskStart,
-                isInitialTaskStart ? prefill : null // Only pass prefill for initial task start
+                isInitialTaskStart ? prefill : null, // Only pass prefill for initial task start
+                isInitialTaskStart ? notification : null // Only pass notification for initial task start
             ),
             InstanceEventType.process_EndTask => WorkflowCommandSet.GetTaskEndSteps(),
             InstanceEventType.process_AbandonTask => WorkflowCommandSet.GetTaskAbandonSteps(),

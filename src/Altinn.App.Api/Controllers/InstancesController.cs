@@ -73,7 +73,6 @@ public class InstancesController : ControllerBase
     private readonly IHostEnvironment _env;
     private readonly ModelSerializationService _serializationService;
     private readonly InternalPatchService _patchService;
-    private readonly INotificationService _notificationService;
     private readonly ITranslationService _translationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAuthenticationContext _authenticationContext;
@@ -121,7 +120,6 @@ public class InstancesController : ControllerBase
         _env = env;
         _serializationService = serializationService;
         _patchService = patchService;
-        _notificationService = notificationService;
         _translationService = translationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
@@ -425,7 +423,12 @@ public class InstancesController : ControllerBase
             {
                 // TODO: Acquire proper lock token from Storage
                 string lockToken = Guid.NewGuid().ToString("N");
-                instance = await _processEngine.SubmitInitialProcessState(instance, processStateChange, lockToken);
+                instance = await _processEngine.SubmitInitialProcessState(
+                    instance,
+                    processStateChange,
+                    lockToken,
+                    notification: notification
+                );
             }
         }
         catch (Exception exception)
@@ -706,7 +709,8 @@ public class InstancesController : ControllerBase
                     instance,
                     processStateChange,
                     lockToken,
-                    instansiationInstance.Prefill
+                    instansiationInstance.Prefill,
+                    notification: instansiationInstance.Notification
                 );
             }
         }

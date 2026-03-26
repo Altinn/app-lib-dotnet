@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
+using Altinn.App.Core.Models.Notifications.Future;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
 
@@ -13,6 +14,10 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Commands;
 [JsonDerivedType(typeof(SaveProcessStateToStoragePayload), typeDiscriminator: "saveProcessStateToStorage")]
 [JsonDerivedType(typeof(CommonTaskInitializationPayload), typeDiscriminator: "commonTaskInitialization")]
 [JsonDerivedType(typeof(StartTaskLegacyHookPayload), typeDiscriminator: "startTaskLegacyHook")]
+[JsonDerivedType(
+    typeof(NotifyInstanceOwnerOnInstantiationPayload),
+    typeDiscriminator: "notifyInstanceOwnerOnInstantiation"
+)]
 internal abstract record CommandRequestPayload;
 
 /// <summary>
@@ -25,6 +30,12 @@ internal abstract record CommandRequestPayload;
 [JsonSerializable(typeof(SaveProcessStateToStoragePayload))]
 [JsonSerializable(typeof(CommonTaskInitializationPayload))]
 [JsonSerializable(typeof(StartTaskLegacyHookPayload))]
+[JsonSerializable(typeof(NotifyInstanceOwnerOnInstantiationPayload))]
+[JsonSerializable(typeof(InstantiationNotification))]
+[JsonSerializable(typeof(InstantiationNotificationReminder))]
+[JsonSerializable(typeof(CustomSms))]
+[JsonSerializable(typeof(CustomEmail))]
+[JsonSerializable(typeof(CustomText))]
 internal partial class CommandPayloadJsonContext : JsonSerializerContext { }
 
 /// <summary>

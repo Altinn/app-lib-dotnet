@@ -17,6 +17,7 @@ using Altinn.App.Core.Internal.WorkflowEngine.Http;
 using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
 using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.App.Core.Models.Process;
 using Altinn.App.Core.Models.UserAction;
 using Altinn.App.Core.Models.Validation;
@@ -160,6 +161,7 @@ internal class ProcessEngine : IProcessEngine
         ProcessStateChange processStateChange,
         string lockToken,
         Dictionary<string, string>? prefill = null,
+        InstantiationNotification? notification = null,
         CancellationToken ct = default
     )
     {
@@ -173,7 +175,15 @@ internal class ProcessEngine : IProcessEngine
         );
         string state = await _instanceStateService.CaptureState(unitOfWork);
 
-        await CreateAndEnqueueWorkflow(instance, processStateChange, lockToken, state, prefill: prefill, ct: ct);
+        await CreateAndEnqueueWorkflow(
+            instance,
+            processStateChange,
+            lockToken,
+            state,
+            prefill: prefill,
+            notification: notification,
+            ct: ct
+        );
         return await WaitForWorkflowsAndRefetchInstance(instance, ct);
     }
 
@@ -617,6 +627,7 @@ internal class ProcessEngine : IProcessEngine
         Actor? actor = null,
         IEnumerable<WorkflowRef>? dependsOn = null,
         Dictionary<string, string>? prefill = null,
+        InstantiationNotification? notification = null,
         CancellationToken ct = default
     )
     {
@@ -627,7 +638,8 @@ internal class ProcessEngine : IProcessEngine
             state,
             actor: actor,
             dependsOn: dependsOn,
-            prefill: prefill
+            prefill: prefill,
+            notification: notification
         );
         WorkflowEnqueueResponse.Accepted response = await _workflowEngineClient.EnqueueWorkflows(enqueueRequest, ct);
         return response.Workflows[0].DatabaseId;

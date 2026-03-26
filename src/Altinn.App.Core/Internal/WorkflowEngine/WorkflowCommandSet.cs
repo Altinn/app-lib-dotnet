@@ -6,6 +6,7 @@ using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskEnd;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.ProcessNext.TaskStart;
 using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
 using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
+using Altinn.App.Core.Models.Notifications.Future;
 
 namespace Altinn.App.Core.Internal.WorkflowEngine;
 
@@ -33,10 +34,12 @@ internal sealed class WorkflowCommandSet
     /// <param name="serviceTaskType">If this is a service task, the task type identifier. Otherwise null.</param>
     /// <param name="isInitialTaskStart">True if this is the first task start (process is starting), false for subsequent task transitions.</param>
     /// <param name="prefill">Prefill data for initial task start. Only relevant when isInitialTaskStart is true.</param>
+    /// <param name="notification">Notification to send to instance owner on instantiation. Only relevant when isInitialTaskStart is true.</param>
     public static WorkflowCommandSet GetTaskStartSteps(
         string? serviceTaskType,
         bool isInitialTaskStart,
-        Dictionary<string, string>? prefill = null
+        Dictionary<string, string>? prefill = null,
+        InstantiationNotification? notification = null
     )
     {
         var group = new WorkflowCommandSet()
@@ -58,6 +61,14 @@ internal sealed class WorkflowCommandSet
         if (isInitialTaskStart)
         {
             group.AddPostProcessNextCommittedCommand(InstanceCreatedAltinnEvent.Key);
+
+            if (notification is not null)
+            {
+                group.AddPostProcessNextCommittedCommand(
+                    NotifyInstanceOwnerOnInstantiation.Key,
+                    new NotifyInstanceOwnerOnInstantiationPayload(notification)
+                );
+            }
         }
 
         return group;

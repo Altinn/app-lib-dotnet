@@ -1,4 +1,5 @@
 using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
+using Altinn.App.Core.Models.Notifications.Future;
 using Altinn.App.Core.Models.Process;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -23,6 +24,7 @@ internal interface IProcessEngine
         ProcessStateChange processStateChange,
         string lockToken,
         Dictionary<string, string>? prefill = null,
+        InstantiationNotification? notification = null,
         CancellationToken ct = default
     );
 
