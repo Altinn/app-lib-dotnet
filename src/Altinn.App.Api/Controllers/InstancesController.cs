@@ -398,13 +398,7 @@ public class InstancesController : ControllerBase
             var prefillProblem = await StorePrefillParts(instance, application, requestParts, language);
             if (prefillProblem is not null)
             {
-                await _instanceClient.DeleteInstance(
-                    int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
-                    Guid.Parse(instance.Id.Split("/")[1]),
-                    hard: true,
-                    authenticationMethod: null,
-                    CancellationToken.None
-                );
+                await TryDeleteInstance(instance);
                 return StatusCode(prefillProblem.Status ?? 500, prefillProblem);
             }
 
@@ -424,24 +418,7 @@ public class InstancesController : ControllerBase
         }
         catch (Exception exception)
         {
-            try
-            {
-                await _instanceClient.DeleteInstance(
-                    int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
-                    Guid.Parse(instance.Id.Split("/")[1]),
-                    hard: true,
-                    authenticationMethod: null,
-                    CancellationToken.None
-                );
-            }
-            catch (Exception deleteException)
-            {
-                _logger.LogError(
-                    deleteException,
-                    "Failed to delete instance {InstanceId} after unsuccessful prefill. Manual cleanup might be required.",
-                    instance.Id
-                );
-            }
+            await TryDeleteInstance(instance);
             return ExceptionResponse(
                 exception,
                 $"Instantiation of data elements failed for instance {instance.Id} for party {instanceTemplate.InstanceOwner?.PartyId}"
@@ -899,29 +876,70 @@ public class InstancesController : ControllerBase
 
         ProcessChangeResult startResult = await _processEngine.GenerateProcessStartEvents(processStartRequest);
 
-        targetInstance = await _instanceClient.CreateInstance(
-            org,
-            app,
-            targetInstance,
-            authenticationMethod: null,
-            CancellationToken.None
-        );
+        try
+        {
+            targetInstance = await _instanceClient.CreateInstance(
+                org,
+                app,
+                targetInstance,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
 
-        await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
+            await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
 
-        targetInstance = await _instanceClient.GetInstance(
-            targetInstance,
-            authenticationMethod: null,
-            CancellationToken.None
-        );
+            targetInstance = await _instanceClient.GetInstance(
+                targetInstance,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
 
-        await _processEngine.HandleEventsAndUpdateStorage(targetInstance, null, startResult.ProcessStateChange?.Events);
+            await _processEngine.HandleEventsAndUpdateStorage(
+                targetInstance,
+                null,
+                startResult.ProcessStateChange?.Events
+            );
 
-        await RegisterEvent("app.instance.created", targetInstance);
+            await RegisterEvent("app.instance.created", targetInstance);
 
-        string url = SelfLinkHelper.BuildFrontendSelfLink(targetInstance, Request);
+            string url = SelfLinkHelper.BuildFrontendSelfLink(targetInstance, Request);
 
-        return Redirect(url);
+            return Redirect(url);
+        }
+        catch (Exception exception)
+        {
+            await TryDeleteInstance(targetInstance);
+
+            return ExceptionResponse(
+                exception,
+                $"Copying instance {instanceOwnerPartyId}/{instanceGuid} failed for party {targetInstance?.InstanceOwner?.PartyId}"
+            );
+        }
+    }
+
+    private async Task TryDeleteInstance(Instance? targetInstance)
+    {
+        if (targetInstance?.Id is not null)
+        {
+            try
+            {
+                await _instanceClient.DeleteInstance(
+                    int.Parse(targetInstance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
+                    Guid.Parse(targetInstance.Id.Split("/")[1]),
+                    hard: true,
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
+            }
+            catch (Exception deleteException)
+            {
+                _logger.LogError(
+                    deleteException,
+                    "Failed to delete instance {InstanceId} after unsuccessful copy. Manual cleanup might be required.",
+                    targetInstance.Id
+                );
+            }
+        }
     }
 
     /// <summary>
