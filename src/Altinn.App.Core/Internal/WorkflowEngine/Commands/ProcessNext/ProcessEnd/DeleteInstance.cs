@@ -1,4 +1,5 @@
 using System.Globalization;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
@@ -41,7 +42,13 @@ internal sealed class DeleteInstanceIfConfigured : IWorkflowEngineCommand
         try
         {
             int instanceOwnerPartyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
-            await _instanceClient.DeleteInstance(instanceOwnerPartyId, instanceIdentifier.InstanceGuid, true);
+            await _instanceClient.DeleteInstance(
+                instanceOwnerPartyId,
+                instanceIdentifier.InstanceGuid,
+                true,
+                StorageAuthenticationMethod.ServiceOwner(),
+                CancellationToken.None
+            );
 
             return new SuccessfulProcessEngineCommandResult();
         }

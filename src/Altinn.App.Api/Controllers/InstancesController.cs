@@ -689,7 +689,13 @@ public class InstancesController : ControllerBase
             processStateChange = processResult.ProcessStateChange;
 
             // Create instance WITH process state
-            instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
+            instance = await _instanceClient.CreateInstance(
+                org,
+                app,
+                instanceTemplate,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
 
             if (isCopyRequest && source is not null)
             {
@@ -829,7 +835,13 @@ public class InstancesController : ControllerBase
         }
 
         // Create instance WITH process state
-        targetInstance = await _instanceClient.CreateInstance(org, app, targetInstance);
+        targetInstance = await _instanceClient.CreateInstance(
+            org,
+            app,
+            targetInstance,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
 
         await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
 

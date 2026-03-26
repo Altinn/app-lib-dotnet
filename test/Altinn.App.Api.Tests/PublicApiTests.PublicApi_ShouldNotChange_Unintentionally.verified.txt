@@ -285,7 +285,6 @@ namespace Altinn.App.Api.Controllers
                     Microsoft.Extensions.Hosting.IHostEnvironment env,
                     Altinn.App.Core.Helpers.Serialization.ModelSerializationService serializationService,
                     Altinn.App.Api.Helpers.Patch.InternalPatchService patchService,
-                    Altinn.App.Core.Features.Notifications.INotificationService notificationService,
                     Altinn.App.Core.Internal.Texts.ITranslationService translationService,
                     System.IServiceProvider serviceProvider) { }
         [Microsoft.AspNetCore.Authorization.Authorize(Policy="InstanceComplete")]
