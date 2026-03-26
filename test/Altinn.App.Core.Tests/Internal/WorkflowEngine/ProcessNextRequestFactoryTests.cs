@@ -3,6 +3,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.WorkflowEngine;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands.AltinnEvents;
@@ -40,6 +41,8 @@ public class ProcessNextRequestFactoryTests
     private static ProcessNextRequestFactory CreateFactory(
         Authenticated? authentication = null,
         bool registerEvents = true,
+        bool autoDeleteOnProcessEnd = false,
+        bool hasAutoDeleteDataTypes = true,
         params IServiceTask[] serviceTasks
     )
     {
@@ -57,7 +60,36 @@ public class ProcessNextRequestFactoryTests
 
         var appSettings = Options.Create(new AppSettings { RegisterEventsWithEventsComponent = registerEvents });
 
-        return new ProcessNextRequestFactory(appImplFactory, authContextMock.Object, TestAppIdentifier, appSettings);
+        var dataTypes = new List<DataType>();
+        if (hasAutoDeleteDataTypes)
+        {
+            dataTypes.Add(
+                new DataType
+                {
+                    Id = "auto-delete-type",
+                    AppLogic = new ApplicationLogic { AutoDeleteOnProcessEnd = true },
+                }
+            );
+        }
+
+        var appMetadataMock = new Mock<IAppMetadata>();
+        appMetadataMock
+            .Setup(x => x.GetApplicationMetadata())
+            .ReturnsAsync(
+                new ApplicationMetadata("ttd/test-app")
+                {
+                    AutoDeleteOnProcessEnd = autoDeleteOnProcessEnd,
+                    DataTypes = dataTypes,
+                }
+            );
+
+        return new ProcessNextRequestFactory(
+            appImplFactory,
+            authContextMock.Object,
+            TestAppIdentifier,
+            appSettings,
+            appMetadataMock.Object
+        );
     }
 
     private static ProcessStateChange CreateTaskToTaskTransition(
@@ -258,7 +290,7 @@ public class ProcessNextRequestFactoryTests
     public async Task Create_TaskToEndTransition_ProducesCorrectCommandSequence()
     {
         // Arrange
-        var factory = CreateFactory();
+        var factory = CreateFactory(autoDeleteOnProcessEnd: true);
         var stateChange = CreateTaskToEndTransition();
 
         // Act
@@ -494,7 +526,7 @@ public class ProcessNextRequestFactoryTests
     public async Task Create_RegisterEventsDisabled_TaskToEnd_ExcludesCompletedEvent()
     {
         // Arrange
-        var factory = CreateFactory(registerEvents: false);
+        var factory = CreateFactory(registerEvents: false, autoDeleteOnProcessEnd: true);
         var stateChange = CreateTaskToEndTransition();
 
         // Act
@@ -524,5 +556,55 @@ public class ProcessNextRequestFactoryTests
         var keys = ExtractCommandKeys(request);
         Assert.DoesNotContain(MovedToAltinnEvent.Key, keys);
         Assert.DoesNotContain(InstanceCreatedAltinnEvent.Key, keys);
+    }
+
+    [Fact]
+    public async Task Create_NoAutoDeleteConfig_TaskToEnd_ExcludesDeleteCommands()
+    {
+        // Arrange
+        var factory = CreateFactory(autoDeleteOnProcessEnd: false, hasAutoDeleteDataTypes: false);
+        var stateChange = CreateTaskToEndTransition();
+
+        // Act
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+
+        // Assert
+        var keys = ExtractCommandKeys(request);
+        Assert.DoesNotContain(DeleteDataElementsIfConfigured.Key, keys);
+        Assert.DoesNotContain(DeleteInstanceIfConfigured.Key, keys);
+        // Other process end commands should still be present
+        Assert.Contains(EndProcessLegacyHook.Key, keys);
+    }
+
+    [Fact]
+    public async Task Create_AutoDeleteInstanceEnabled_TaskToEnd_IncludesDeleteInstanceCommand()
+    {
+        // Arrange
+        var factory = CreateFactory(autoDeleteOnProcessEnd: true, hasAutoDeleteDataTypes: false);
+        var stateChange = CreateTaskToEndTransition();
+
+        // Act
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+
+        // Assert
+        var keys = ExtractCommandKeys(request);
+        Assert.Contains(DeleteInstanceIfConfigured.Key, keys);
+        Assert.DoesNotContain(DeleteDataElementsIfConfigured.Key, keys);
+    }
+
+    [Fact]
+    public async Task Create_AutoDeleteDataTypesEnabled_TaskToEnd_IncludesDeleteDataElementsCommand()
+    {
+        // Arrange
+        var factory = CreateFactory(autoDeleteOnProcessEnd: false, hasAutoDeleteDataTypes: true);
+        var stateChange = CreateTaskToEndTransition();
+
+        // Act
+        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+
+        // Assert
+        var keys = ExtractCommandKeys(request);
+        Assert.Contains(DeleteDataElementsIfConfigured.Key, keys);
+        Assert.DoesNotContain(DeleteInstanceIfConfigured.Key, keys);
     }
 }

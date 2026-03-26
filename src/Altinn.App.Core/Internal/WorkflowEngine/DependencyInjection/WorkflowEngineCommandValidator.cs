@@ -61,7 +61,14 @@ internal static class ProcessEngineCommandValidator
         );
         CollectCommandKeys(WorkflowCommandSet.GetTaskEndSteps(), keys);
         CollectCommandKeys(WorkflowCommandSet.GetTaskAbandonSteps(), keys);
-        CollectCommandKeys(WorkflowCommandSet.GetProcessEndSteps(registerEvents: true), keys);
+        CollectCommandKeys(
+            WorkflowCommandSet.GetProcessEndSteps(
+                registerEvents: true,
+                hasAutoDeleteDataTypes: true,
+                autoDeleteInstanceOnProcessEnd: true
+            ),
+            keys
+        );
 
         // SaveProcessStateToStorage is automatically inserted
         keys.Add(SaveProcessStateToStorage.Key);

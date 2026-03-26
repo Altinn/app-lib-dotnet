@@ -108,16 +108,30 @@ internal sealed class WorkflowCommandSet
     /// Creates command group for process end events.
     /// </summary>
     /// <param name="registerEvents">Whether to register events with the events component. Controlled by AppSettings.RegisterEventsWithEventsComponent.</param>
-    public static WorkflowCommandSet GetProcessEndSteps(bool registerEvents = false)
+    /// <param name="hasAutoDeleteDataTypes">Whether any data types have AutoDeleteOnProcessEnd enabled.</param>
+    /// <param name="autoDeleteInstanceOnProcessEnd">Whether the application is configured to auto-delete the instance on process end.</param>
+    public static WorkflowCommandSet GetProcessEndSteps(
+        bool registerEvents = false,
+        bool hasAutoDeleteDataTypes = false,
+        bool autoDeleteInstanceOnProcessEnd = false
+    )
     {
         // EndProcessLegacyHook runs post-commit because IProcessEnd.End reads instance.Process.EndEvent,
         // which is only set when the process state is persisted. This matches the old ProcessEngine behavior
         // where RunAppDefinedProcessEndHandlers ran after HandleEventsAndUpdateStorage.
         var group = new WorkflowCommandSet()
             .AddCommand(OnProcessEndingHook.Key)
-            .AddPostProcessNextCommittedCommand(EndProcessLegacyHook.Key)
-            .AddPostProcessNextCommittedCommand(DeleteDataElementsIfConfigured.Key)
-            .AddPostProcessNextCommittedCommand(DeleteInstanceIfConfigured.Key);
+            .AddPostProcessNextCommittedCommand(EndProcessLegacyHook.Key);
+
+        if (hasAutoDeleteDataTypes)
+        {
+            group.AddPostProcessNextCommittedCommand(DeleteDataElementsIfConfigured.Key);
+        }
+
+        if (autoDeleteInstanceOnProcessEnd)
+        {
+            group.AddPostProcessNextCommittedCommand(DeleteInstanceIfConfigured.Key);
+        }
 
         if (registerEvents)
         {

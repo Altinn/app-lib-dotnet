@@ -1377,6 +1377,11 @@ public sealed class ProcessEngineTest
             services.TryAddTransient<IWorkflowEngineClient>(_ => processEngineClientMock.Object);
 
             services.TryAddSingleton(new AppIdentifier("org", "app"));
+            services.AddSingleton(
+                Microsoft.Extensions.Options.Options.Create(
+                    new Altinn.App.Core.Configuration.AppSettings { RegisterEventsWithEventsComponent = true }
+                )
+            );
             services.TryAddTransient<ProcessNextRequestFactory>();
             services.TryAddTransient<InstanceStateService>();
 

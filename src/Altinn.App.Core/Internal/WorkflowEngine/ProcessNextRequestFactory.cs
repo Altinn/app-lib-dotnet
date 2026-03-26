@@ -4,6 +4,7 @@ using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Process;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
 using Altinn.App.Core.Internal.WorkflowEngine.Models.AppCommand;
 using Altinn.App.Core.Internal.WorkflowEngine.Models.Engine;
@@ -26,18 +27,21 @@ internal sealed class ProcessNextRequestFactory
     private readonly IAuthenticationContext _authenticationContext;
     private readonly AppIdentifier _appIdentifier;
     private readonly AppSettings _appSettings;
+    private readonly IAppMetadata _appMetadata;
 
     public ProcessNextRequestFactory(
         AppImplementationFactory appImplementationFactory,
         IAuthenticationContext authenticationContext,
         AppIdentifier appIdentifier,
-        IOptions<AppSettings> appSettings
+        IOptions<AppSettings> appSettings,
+        IAppMetadata appMetadata
     )
     {
         _appImplementationFactory = appImplementationFactory;
         _authenticationContext = authenticationContext;
         _appIdentifier = appIdentifier;
         _appSettings = appSettings.Value;
+        _appMetadata = appMetadata;
     }
 
     /// <summary>
@@ -55,7 +59,7 @@ internal sealed class ProcessNextRequestFactory
         InstantiationNotification? notification = null
     )
     {
-        List<StepRequest> commands = AssembleCommandSequence(processStateChange, prefill, notification);
+        List<StepRequest> commands = await AssembleCommandSequence(processStateChange, prefill, notification);
 
         string fromTaskId =
             processStateChange.OldProcessState?.CurrentTask?.ElementId
@@ -100,7 +104,7 @@ internal sealed class ProcessNextRequestFactory
         };
     }
 
-    private List<StepRequest> AssembleCommandSequence(
+    private async Task<List<StepRequest>> AssembleCommandSequence(
         ProcessStateChange processStateChange,
         Dictionary<string, string>? prefill = null,
         InstantiationNotification? notification = null
@@ -119,7 +123,7 @@ internal sealed class ProcessNextRequestFactory
 
             string? altinnTaskType = instanceEvent.ProcessInfo?.CurrentTask?.AltinnTaskType;
 
-            WorkflowCommandSet? workflowCommands = GetWorkflowStepsForInstanceEvent(
+            WorkflowCommandSet? workflowCommands = await GetWorkflowStepsForInstanceEvent(
                 instanceEventType,
                 altinnTaskType,
                 isInitialTaskStart,
@@ -157,7 +161,7 @@ internal sealed class ProcessNextRequestFactory
         return commands;
     }
 
-    private WorkflowCommandSet? GetWorkflowStepsForInstanceEvent(
+    private async Task<WorkflowCommandSet?> GetWorkflowStepsForInstanceEvent(
         InstanceEventType eventType,
         string? altinnTaskType,
         bool isInitialTaskStart,
@@ -165,23 +169,37 @@ internal sealed class ProcessNextRequestFactory
         InstantiationNotification? notification
     )
     {
-        return eventType switch
+        switch (eventType)
         {
-            InstanceEventType.process_StartEvent => null, // No commands for process start event itself
-            InstanceEventType.process_StartTask => WorkflowCommandSet.GetTaskStartSteps(
-                GetServiceTaskType(altinnTaskType),
-                isInitialTaskStart,
-                isInitialTaskStart ? prefill : null, // Only pass prefill for initial task start
-                isInitialTaskStart ? notification : null, // Only pass notification for initial task start
-                _appSettings.RegisterEventsWithEventsComponent
-            ),
-            InstanceEventType.process_EndTask => WorkflowCommandSet.GetTaskEndSteps(),
-            InstanceEventType.process_AbandonTask => WorkflowCommandSet.GetTaskAbandonSteps(),
-            InstanceEventType.process_EndEvent => WorkflowCommandSet.GetProcessEndSteps(
-                _appSettings.RegisterEventsWithEventsComponent
-            ),
-            _ => null,
-        };
+            case InstanceEventType.process_StartEvent:
+                return null;
+            case InstanceEventType.process_StartTask:
+                return WorkflowCommandSet.GetTaskStartSteps(
+                    GetServiceTaskType(altinnTaskType),
+                    isInitialTaskStart,
+                    isInitialTaskStart ? prefill : null,
+                    isInitialTaskStart ? notification : null,
+                    _appSettings.RegisterEventsWithEventsComponent
+                );
+            case InstanceEventType.process_EndTask:
+                return WorkflowCommandSet.GetTaskEndSteps();
+            case InstanceEventType.process_AbandonTask:
+                return WorkflowCommandSet.GetTaskAbandonSteps();
+            case InstanceEventType.process_EndEvent:
+            {
+                ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+                bool hasAutoDeleteDataTypes = appMetadata.DataTypes.Any(dt =>
+                    dt?.AppLogic?.AutoDeleteOnProcessEnd == true
+                );
+                return WorkflowCommandSet.GetProcessEndSteps(
+                    registerEvents: _appSettings.RegisterEventsWithEventsComponent,
+                    hasAutoDeleteDataTypes: hasAutoDeleteDataTypes,
+                    autoDeleteInstanceOnProcessEnd: appMetadata.AutoDeleteOnProcessEnd == true
+                );
+            }
+            default:
+                return null;
+        }
     }
 
     private string? GetServiceTaskType(string? altinnTaskType)
