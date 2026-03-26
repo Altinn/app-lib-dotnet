@@ -762,6 +762,7 @@ public class InstancesController : ControllerBase
                         "Failed to delete instance {InstanceId} after unsuccessful instantiation. Manual cleanup might be required.",
                         instance.Id
                     );
+                }
             }
             return ExceptionResponse(
                 exception,
