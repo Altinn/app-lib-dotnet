@@ -190,6 +190,87 @@ internal class ProcessEngine : IProcessEngine
     /// <inheritdoc/>
     public async Task<ProcessChangeResult> Next(ProcessNextRequest request, CancellationToken ct = default)
     {
+        Instance instance = request.Instance;
+
+        using Activity? activity = _telemetry?.StartProcessNextActivity(instance, request.Action);
+
+        ProcessChangeResult result;
+        bool moveToNextTaskAutomatically;
+        bool firstIteration = true;
+        int iterationCount = 0;
+
+        await using var instanceLock = _instanceLocker.InitLock();
+
+        do
+        {
+            if (iterationCount >= MaxNextIterationsAllowed)
+            {
+                _logger.LogError(
+                    "More than {MaxIterations} iterations detected in process for instance {InstanceId}. Possible loop in process definition.",
+                    MaxNextIterationsAllowed,
+                    instance.Id
+                );
+                var loopError = new ProcessChangeResult
+                {
+                    Success = false,
+                    ErrorType = ProcessErrorType.Internal,
+                    ErrorTitle = "Process loop detected",
+                    ErrorMessage =
+                        $"More than {MaxNextIterationsAllowed} iterations detected in process. Possible loop in process definition.",
+                };
+                activity?.SetProcessChangeResult(loopError);
+                return loopError;
+            }
+
+            // Fetch fresh instance on subsequent iterations
+            if (!firstIteration)
+            {
+                instance = await _instanceClient.GetInstance(instance);
+            }
+
+            // Only use action and actionOnBehalfOf on first iteration
+            var processNextRequest = new ProcessNextRequest
+            {
+                User = request.User,
+                Instance = instance,
+                Action = firstIteration ? request.Action : null,
+                ActionOnBehalfOf = firstIteration ? request.ActionOnBehalfOf : null,
+                Language = request.Language,
+            };
+
+            result = await ProcessNext(processNextRequest, instanceLock, ct);
+
+            if (!result.Success)
+            {
+                activity?.SetProcessChangeResult(result);
+                return result;
+            }
+
+            if (result.MutatedInstance is null)
+            {
+                throw new ProcessException(
+                    "ProcessNext returned successfully, but ProcessChangeResult.MutatedInstance is null. Conundrum."
+                );
+            }
+
+            moveToNextTaskAutomatically = IsServiceTask(result.MutatedInstance);
+            firstIteration = false;
+            iterationCount++;
+        } while (moveToNextTaskAutomatically);
+
+        activity?.SetProcessChangeResult(result);
+        return result;
+    }
+
+    /// <summary>
+    /// Internal method that performs a single process next operation without automatic service task handling.
+    /// </summary>
+    private async Task<ProcessChangeResult> ProcessNext(
+        ProcessNextRequest request,
+        IInstanceLock instanceLock,
+        CancellationToken ct = default
+    )
+    {
         using Activity? activity = _telemetry?.StartProcessNextActivity(request.Instance, request.Action);
 
         Instance instance = request.Instance;
@@ -223,14 +304,14 @@ internal class ProcessEngine : IProcessEngine
             return result;
         }
 
-        await _instanceLocker.LockAsync();
-
         _logger.LogDebug(
             "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",
             LogSanitizer.Sanitize(currentTaskId),
             LogSanitizer.Sanitize(altinnTaskType),
             LogSanitizer.Sanitize(request.Action ?? "none")
         );
+
+        await instanceLock.Lock();
 
         string checkedAction = request.Action ?? ConvertTaskTypeToAction(altinnTaskType);
         bool isServiceTask = CheckIfServiceTask(altinnTaskType) is not null;
@@ -304,7 +385,12 @@ internal class ProcessEngine : IProcessEngine
         MoveToNextResult moveToNextResult;
         try
         {
-            moveToNextResult = await HandleMoveToNext(instance, processNextAction, request.LockToken, ct);
+            moveToNextResult = await HandleMoveToNext(
+                instance,
+                processNextAction,
+                _instanceLocker.CurrentLockToken!, // NX0001: Lock is acquired above via instanceLock.Lock()
+                ct
+            );
         }
         catch (ServiceTaskFailedException ex)
         {
@@ -814,6 +900,17 @@ internal class ProcessEngine : IProcessEngine
         ct.ThrowIfCancellationRequested();
 
         return await _instanceClient.GetInstance(instance, ct: ct);
+    }
+
+    private bool IsServiceTask(Instance instance)
+    {
+        if (instance.Process?.CurrentTask is null)
+        {
+            return false;
+        }
+
+        IServiceTask? serviceTask = CheckIfServiceTask(instance.Process.CurrentTask.AltinnTaskType);
+        return serviceTask is not null;
     }
 
     private IServiceTask? CheckIfServiceTask(string? altinnTaskType)
