@@ -8,7 +8,6 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Exceptions;
 using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Internal.AltinnCdn;
-using Altinn.App.Core.Internal.Process.ProcessTasks.ServiceTasks;
 using KS.Fiks.IO.Send.Client.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

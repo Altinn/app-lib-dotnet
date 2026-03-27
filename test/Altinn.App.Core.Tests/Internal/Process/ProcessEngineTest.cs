@@ -8,7 +8,6 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
-using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
@@ -891,10 +890,10 @@ public sealed class ProcessEngineTest
                 },
                 options =>
                     options
-                        .Excluding(x => x.NewProcessState.CurrentTask.Started)
-                        .Excluding(x => x.Events[0].Created)
-                        .Excluding(x => x.Events[1].Created)
-                        .Excluding(x => x.Events[1].ProcessInfo.CurrentTask.Started)
+                        .Excluding(x => x.NewProcessState!.CurrentTask!.Started)
+                        .Excluding(x => x.Events![0].Created)
+                        .Excluding(x => x.Events![1].Created)
+                        .Excluding(x => x.Events![1].ProcessInfo!.CurrentTask!.Started)
             );
     }
 
@@ -1037,10 +1036,10 @@ public sealed class ProcessEngineTest
                 },
                 options =>
                     options
-                        .Excluding(x => x.NewProcessState.CurrentTask.Started)
-                        .Excluding(x => x.Events[0].Created)
-                        .Excluding(x => x.Events[1].Created)
-                        .Excluding(x => x.Events[1].ProcessInfo.CurrentTask.Started)
+                        .Excluding(x => x.NewProcessState!.CurrentTask!.Started)
+                        .Excluding(x => x.Events![0].Created)
+                        .Excluding(x => x.Events![1].Created)
+                        .Excluding(x => x.Events![1].ProcessInfo!.CurrentTask!.Started)
             );
     }
 
@@ -1209,12 +1208,12 @@ public sealed class ProcessEngineTest
                 },
                 options =>
                     options
-                        .Excluding(x => x.NewProcessState.Ended)
-                        .Excluding(x => x.Events[0].Created)
-                        .Excluding(x => x.Events[1].Created)
-                        .Excluding(x => x.Events[1].ProcessInfo.Ended)
-                        .Excluding(x => x.Events[2].Created)
-                        .Excluding(x => x.Events[2].ProcessInfo.Ended)
+                        .Excluding(x => x.NewProcessState!.Ended)
+                        .Excluding(x => x.Events![0].Created)
+                        .Excluding(x => x.Events![1].Created)
+                        .Excluding(x => x.Events![1].ProcessInfo!.Ended)
+                        .Excluding(x => x.Events![2].Created)
+                        .Excluding(x => x.Events![2].ProcessInfo!.Ended)
             );
     }
 
