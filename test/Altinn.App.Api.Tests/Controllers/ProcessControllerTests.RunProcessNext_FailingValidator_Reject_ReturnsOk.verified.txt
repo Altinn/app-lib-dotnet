@@ -316,6 +316,45 @@
       HasParent: true
     },
     {
+      Name: Process.Next,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.action: reject
+        }
+      ],
+      Events: [
+        {
+          Name: change,
+          Timestamp: DateTimeOffset_2,
+          Tags: [
+            {
+              events: [
+                Type=process_AbandonTask DataId=,
+                Type=process_EndEvent DataId=,
+                Type=Submited DataId=
+              ]
+            },
+            {
+              from.started: DateTime_1
+            },
+            {},
+            {
+              from.task.name: Utfylling
+            },
+            {
+              to.started: DateTime_1
+            }
+          ]
+        }
+      ],
+      HasParent: true
+    },
+    {
       Name: ProcessClient.GetProcessDefinition,
       IdFormat: W3C,
       HasParent: true

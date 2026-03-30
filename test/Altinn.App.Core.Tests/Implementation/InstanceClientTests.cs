@@ -5,6 +5,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -39,6 +40,7 @@ public sealed class InstanceClientTests : IDisposable
             _logger.Object,
             _authenticationTokenResolver.Object,
             httpClient,
+            Mock.Of<IInstanceLocker>(),
             _telemetry.Object
         );
     }
@@ -408,6 +410,7 @@ public sealed class InstanceClientTests : IDisposable
             _logger.Object,
             _authenticationTokenResolver.Object,
             httpClient,
+            Mock.Of<IInstanceLocker>(),
             _telemetry.Object
         );
 

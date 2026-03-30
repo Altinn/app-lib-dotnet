@@ -1266,6 +1266,7 @@ public sealed class ProcessEngineTest
             Mock<ITranslationService> translationServiceMock = new(MockBehavior.Strict);
             Mock<IInstanceLocker> instanceLockerMock = new(MockBehavior.Strict);
             instanceLockerMock.Setup(x => x.InitLock()).Returns(Moq.Mock.Of<IInstanceLock>());
+            instanceLockerMock.Setup(x => x.CurrentLockToken).Returns("test-lock-token");
             var appMetadata = new ApplicationMetadata("org/app") { DataTypes = [] };
             appMetadataMock.Setup(x => x.GetApplicationMetadata()).ReturnsAsync(appMetadata);
 

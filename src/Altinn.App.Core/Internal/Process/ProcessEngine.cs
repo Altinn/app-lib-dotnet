@@ -388,7 +388,8 @@ internal class ProcessEngine : IProcessEngine
             moveToNextResult = await HandleMoveToNext(
                 instance,
                 processNextAction,
-                _instanceLocker.CurrentLockToken!, // NX0001: Lock is acquired above via instanceLock.Lock()
+                _instanceLocker.CurrentLockToken
+                    ?? throw new InvalidOperationException("Lock token must be set after acquiring instance lock"),
                 ct
             );
         }

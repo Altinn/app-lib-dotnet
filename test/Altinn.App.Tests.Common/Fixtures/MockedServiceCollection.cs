@@ -11,6 +11,7 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Internal.Validation;
@@ -97,6 +98,8 @@ public sealed class MockedServiceCollection
         // There is no TryAddHttpClient, but these are the core of the mocked service collection
         _services.AddHttpClient<IDataClient, DataClient>().ConfigurePrimaryHttpMessageHandler(() => Storage);
         _services.AddHttpClient<IInstanceClient, InstanceClient>().ConfigurePrimaryHttpMessageHandler(() => Storage);
+
+        _services.TryAddSingleton<IInstanceLocker>(Mock.Of<IInstanceLocker>());
 
         _services.TryAddSingleton<Telemetry>();
         _services.AddLogging(builder =>

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.WorkflowEngine;
 using Altinn.App.Core.Internal.WorkflowEngine.Commands;
@@ -55,6 +56,10 @@ public class WorkflowEngineCallbackController : ControllerBase
     )
     {
         using Activity? activity = _telemetry?.StartProcessEngineCallbackActivity(instanceGuid, commandKey);
+
+        // Set the lock token from the workflow engine payload so all Storage clients include it
+        var instanceLocker = _serviceProvider.GetRequiredService<IInstanceLocker>();
+        instanceLocker.UseExternalLockToken(payload.LockToken);
 
         var appId = new AppIdentifier(org, app);
         var instanceId = new InstanceIdentifier(instanceOwnerPartyId, instanceGuid);

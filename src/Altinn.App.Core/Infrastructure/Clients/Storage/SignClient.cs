@@ -6,6 +6,7 @@ using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Auth;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Sign;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
@@ -21,6 +22,7 @@ public class SignClient : ISignClient
 {
     private readonly IAuthenticationTokenResolver _authenticationTokenResolver;
     private readonly HttpClient _client;
+    private readonly IInstanceLocker _instanceLocker;
 
     private readonly AuthenticationMethod _defaultAuthenticationMethod = StorageAuthenticationMethod.CurrentUser();
 
@@ -39,6 +41,7 @@ public class SignClient : ISignClient
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         _client = httpClient;
         _authenticationTokenResolver = serviceProvider.GetRequiredService<IAuthenticationTokenResolver>();
+        _instanceLocker = serviceProvider.GetRequiredService<IInstanceLocker>();
     }
 
     /// <inheritdoc/>
@@ -51,7 +54,12 @@ public class SignClient : ISignClient
         JwtToken token = await _authenticationTokenResolver.GetAccessToken(
             authenticationMethod ?? _defaultAuthenticationMethod
         );
-        HttpResponseMessage response = await _client.PostAsync(token, apiUrl, BuildSignRequest(signatureContext));
+        HttpResponseMessage response = await _client.PostAsync(
+            token,
+            apiUrl,
+            BuildSignRequest(signatureContext),
+            lockToken: _instanceLocker.CurrentLockToken
+        );
         if (response.IsSuccessStatusCode)
         {
             return;

@@ -18,6 +18,7 @@ using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Profile;
@@ -76,6 +77,7 @@ public class InstancesController : ControllerBase
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly IDataElementAccessChecker _dataElementAccessChecker;
+    private readonly IInstanceLocker _instanceLocker;
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
     /// <summary>
@@ -122,6 +124,7 @@ public class InstancesController : ControllerBase
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
         _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
+        _instanceLocker = serviceProvider.GetRequiredService<IInstanceLocker>();
     }
 
     /// <summary>
@@ -419,12 +422,15 @@ public class InstancesController : ControllerBase
             // Dispatch process state change to async engine
             if (processStateChange is not null)
             {
-                // TODO: Acquire proper lock token from Storage
-                string lockToken = Guid.NewGuid().ToString("N");
+                int partyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
+                Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+                await using var instanceLock = _instanceLocker.InitLock(partyId, instanceGuid);
+                await instanceLock.Lock();
                 instance = await _processEngine.SubmitInitialProcessState(
                     instance,
                     processStateChange,
-                    lockToken,
+                    _instanceLocker.CurrentLockToken
+                        ?? throw new InvalidOperationException("Lock token must be set after acquiring instance lock"),
                     notification: notification
                 );
             }
@@ -707,12 +713,15 @@ public class InstancesController : ControllerBase
             // Dispatch process state change to async engine
             if (processStateChange is not null)
             {
-                // TODO: Acquire proper lock token from Storage
-                string lockToken = Guid.NewGuid().ToString("N");
+                int partyId = int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
+                Guid instanceGuid = Guid.Parse(instance.Id.Split("/")[1]);
+                await using var instanceLock = _instanceLocker.InitLock(partyId, instanceGuid);
+                await instanceLock.Lock();
                 instance = await _processEngine.SubmitInitialProcessState(
                     instance,
                     processStateChange,
-                    lockToken,
+                    _instanceLocker.CurrentLockToken
+                        ?? throw new InvalidOperationException("Lock token must be set after acquiring instance lock"),
                     instansiationInstance.Prefill,
                     notification: instansiationInstance.Notification
                 );
@@ -854,12 +863,15 @@ public class InstancesController : ControllerBase
         // Dispatch process state change to async engine
         if (startResult.ProcessStateChange is not null)
         {
-            // TODO: Acquire proper lock token from Storage
-            string lockToken = Guid.NewGuid().ToString("N");
+            int targetPartyId = int.Parse(targetInstance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
+            Guid targetInstanceGuid = Guid.Parse(targetInstance.Id.Split("/")[1]);
+            await using var instanceLock = _instanceLocker.InitLock(targetPartyId, targetInstanceGuid);
+            await instanceLock.Lock();
             targetInstance = await _processEngine.SubmitInitialProcessState(
                 targetInstance,
                 startResult.ProcessStateChange,
-                lockToken
+                _instanceLocker.CurrentLockToken
+                    ?? throw new InvalidOperationException("Lock token must be set after acquiring instance lock")
             );
         }
 

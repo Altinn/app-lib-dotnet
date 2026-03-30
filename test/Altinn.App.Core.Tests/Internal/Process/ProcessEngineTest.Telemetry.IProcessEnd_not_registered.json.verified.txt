@@ -39,6 +39,36 @@
         }
       ],
       HasParent: false
+    },
+    {
+      Name: Process.Next,
+      IdFormat: W3C,
+      Status: Ok,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        }
+      ],
+      Events: [
+        {
+          Name: change,
+          Timestamp: DateTimeOffset_2,
+          Tags: [
+            {
+              events: [
+                Type=process_EndTask DataId=,
+                Type=process_EndEvent DataId=,
+                Type=Submited DataId=
+              ]
+            },
+            {},
+            {},
+            {},
+            {}
+          ]
+        }
+      ],
+      HasParent: true
     }
   ]
 }
