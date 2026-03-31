@@ -81,6 +81,7 @@ internal class DataService : IDataService
             "application/json",
             dataTypeId + ".json",
             referenceStream,
+            generatedFromTask: null,
             authenticationMethod: authenticationMethod,
             cancellationToken: ct
         );

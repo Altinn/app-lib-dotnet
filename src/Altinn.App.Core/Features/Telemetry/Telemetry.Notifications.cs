@@ -49,6 +49,20 @@ partial class Telemetry
         );
     }
 
+    internal Activity? StartNotificationConditionTokenGenerateActivity(Guid instanceGuid)
+    {
+        var activity = ActivitySource.StartActivity("Notifications.Condition.GenerateToken");
+        activity?.SetTag(InternalLabels.NotificationOrderId, instanceGuid);
+        return activity;
+    }
+
+    internal Activity? StartNotificationConditionValidateActivity(Guid instanceGuid)
+    {
+        var activity = ActivitySource.StartActivity("Notifications.Condition.ValidateCode");
+        activity?.SetTag(InternalLabels.NotificationOrderId, instanceGuid);
+        return activity;
+    }
+
     internal Activity? StartNotificationOrderActivity(OrderType type)
     {
         var activity = ActivitySource.StartActivity("Notifications.Order");

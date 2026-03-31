@@ -88,7 +88,9 @@ internal sealed class PaymentProcessTask : IProcessTask
             PdfContentType,
             ReceiptFileName,
             pdfStream,
-            taskId
+            taskId,
+            authenticationMethod: null,
+            CancellationToken.None
         );
     }
 

@@ -467,14 +467,27 @@ public sealed class InstanceClientTests : IDisposable
                 await target.UpdateDataValues(
                     instanceOwnerId,
                     instanceGuid,
-                    new DataValues() { Values = new() { { "key", "value" } } }
+                    new DataValues() { Values = new() { { "key", "value" } } },
+                    authenticationMethod: null,
+                    CancellationToken.None
                 );
                 break;
             case 2:
-                await target.UpdateDataValue(instance, "key", "value");
+                await target.UpdateDataValue(
+                    instance,
+                    "key",
+                    "value",
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
                 break;
             case 3:
-                await target.UpdateDataValues(instance, new() { { "key", "value" } });
+                await target.UpdateDataValues(
+                    instance,
+                    new() { { "key", "value" } },
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
                 break;
         }
 

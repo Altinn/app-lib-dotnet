@@ -121,7 +121,14 @@ public class PaymentController : ControllerBase
             );
         }
 
-        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        Instance instance = await _instanceClient.GetInstance(
+            app,
+            org,
+            instanceOwnerPartyId,
+            instanceGuid,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
         OrderDetails orderDetails = await orderDetailsCalculator.CalculateOrderDetails(instance, language);
 
         return Ok(orderDetails);
