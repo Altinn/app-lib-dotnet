@@ -386,5 +386,6 @@ public class CorrespondenceResponseTests
         parsedResponse.IgnoreReservation.Should().BeTrue();
         parsedResponse.Published.Should().Be(DateTimeOffset.Parse("2024-11-14T11:06:56.208705+00:00"));
         parsedResponse.IsConfirmationNeeded.Should().BeFalse();
+        parsedResponse.IsConfidential.Should().BeFalse();
     }
 }
