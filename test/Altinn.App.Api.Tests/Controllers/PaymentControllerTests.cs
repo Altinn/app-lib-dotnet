@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Core.Constants;
@@ -7,6 +9,7 @@ using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Processors;
 using Altinn.App.Core.Features.Payment.Processors.Nets;
 using Altinn.App.Core.Features.Payment.Services;
+using Altinn.App.Core.Infrastructure.Clients.Secrets;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -43,6 +46,8 @@ public class PaymentControllerTests
         SecretApiKey = "secure",
     };
 
+    private readonly List<AppCode> _paymentsCallbackCodes = [];
+
     private readonly OrderDetails _orderDetails = new OrderDetails
     {
         PaymentProcessorId = "Nets Easy",
@@ -73,6 +78,8 @@ public class PaymentControllerTests
         _services.Services.AddSingleton<PaymentController>();
 
         _services.Services.AddSingleton(Options.Create(_netsPaymentSettings));
+        _services.Services.Configure<AppCodesSettings>(s => s.PaymentsCallback = _paymentsCallbackCodes);
+        _services.Services.AddSingleton<INetsWebhookSecretProvider, NetsWebhookSecretProvider>();
 
         // Add default instance to mocked storage
         _services.Storage.AddInstance(_instance);
@@ -177,10 +184,72 @@ public class PaymentControllerTests
         Assert.Contains("IOrderDetailsCalculator", exception.Message);
     }
 
-    [Fact]
-    public async Task PaymentWebhookListener_NoWebhookCallbackKeyFromConfig_ReturnsNotFound()
+    /// <summary>
+    /// Adds an <see cref="AppCode"/> to the <c>PaymentsCallback</c> rotation and returns the derived
+    /// webhook secret that Nets would send back in the <c>Authorization</c> header for that code.
+    /// </summary>
+    /// <remarks>
+    /// The controller under test does not compare against the raw <c>AppCode.Code</c> value. Nets Easy
+    /// constrains the webhook <c>Authorization</c> value to 8-64 alphanumeric characters, and raw
+    /// app-codes may contain characters outside that set, so <see cref="NetsWebhookSecretProvider"/>
+    /// derives a SHA-256 hex string from the code. These tests mirror that derivation here so they can
+    /// feed the controller a header value that actually matches what the production provider computes.
+    /// If the production derivation changes, this must be updated too.
+    /// </remarks>
+    private string AddPaymentsCallbackCode(string code, string id = "code-1")
     {
-        _netsPaymentSettings.WebhookCallbackKey = null!;
+        _paymentsCallbackCodes.Add(
+            new AppCode
+            {
+                Id = id,
+                Code = code,
+                IssuedAt = DateTimeOffset.UtcNow,
+                ExpiresAt = DateTimeOffset.UtcNow.AddDays(30),
+            }
+        );
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code))).ToLowerInvariant();
+    }
+
+    [Fact]
+    public async Task PaymentWebhookListener_NoPaymentsCallbackCodesConfigured_Throws()
+    {
+        // No codes added to _paymentsCallbackCodes — this is an app misconfiguration and should surface
+        // as a thrown PaymentException (resulting in a 500), not be swallowed.
+        await using var sp = _services.BuildServiceProvider();
+        var controller = sp.GetRequiredService<PaymentController>();
+        var exception = await Assert.ThrowsAsync<PaymentException>(async () =>
+            await controller.PaymentWebhookListener(
+                "org",
+                "app",
+                PartyId,
+                _instanceGuid,
+                new()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Data = new() { PaymentId = Guid.NewGuid().ToString() },
+                    EventName = "PaymentCreated",
+                    Timestamp = DateTime.UtcNow,
+                    MerchantId = 222,
+                },
+                "somekey"
+            )
+        );
+        Assert.Contains("AppCodes:PaymentsCallback is not configured", exception.Message);
+        _services.VerifyMocks();
+    }
+
+    [Fact]
+    public async Task PaymentWebhookListener_AuthorizationMatchesOlderRotatedCode_IsAccepted()
+    {
+        // Two codes in the rotation; webhook arrives signed with the older one (index 1).
+        AddPaymentsCallbackCode("current-key", id: "current");
+        var previousDerived = AddPaymentsCallbackCode("previous-key", id: "previous");
+
+        SetupAltinnTaskExtensionMock(
+            "currentTask",
+            new AltinnTaskExtension() { PaymentConfiguration = null },
+            Times.Once()
+        );
         await using var sp = _services.BuildServiceProvider();
         var controller = sp.GetRequiredService<PaymentController>();
         var result = await controller.PaymentWebhookListener(
@@ -196,19 +265,18 @@ public class PaymentControllerTests
                 Timestamp = DateTime.UtcNow,
                 MerchantId = 222,
             },
-            "somekey"
+            previousDerived
         );
-        var response = Assert.IsType<NotFoundObjectResult>(result);
-        Assert.Contains("no WebhookCallbackKey is configured", response.Value?.ToString()!);
+        // Reaching past the auth gate is sufficient — the not-a-payment-task path returns Ok.
+        Assert.IsType<OkObjectResult>(result);
         _services.VerifyMocks();
     }
 
     [Fact]
     public async Task PaymentWebhookListener_InvalidAuthorization_ReturnsUnauthorized()
     {
-        var callbackKey = "validkey";
         var wrongKey = "invalid";
-        _netsPaymentSettings.WebhookCallbackKey = callbackKey;
+        AddPaymentsCallbackCode("validkey");
         await using var sp = _services.BuildServiceProvider();
         var controller = sp.GetRequiredService<PaymentController>();
         var result = await controller.PaymentWebhookListener(
@@ -234,8 +302,7 @@ public class PaymentControllerTests
     public async Task PaymentWebhookListener_NoCurrentTask_ReturnsBadRequest()
     {
         _instance.Process.CurrentTask = null;
-        var callbackKey = "invalid";
-        _netsPaymentSettings.WebhookCallbackKey = callbackKey;
+        var callbackKey = AddPaymentsCallbackCode("validkey");
 
         await using var sp = _services.BuildServiceProvider();
 
@@ -263,8 +330,7 @@ public class PaymentControllerTests
     [Fact]
     public async Task PaymentWebhookListener_TaskIsNotPaymentTask_ReturnsOkRequest()
     {
-        var callbackKey = "validkey";
-        _netsPaymentSettings.WebhookCallbackKey = callbackKey;
+        var callbackKey = AddPaymentsCallbackCode("validkey");
         SetupAltinnTaskExtensionMock(
             "currentTask",
             new AltinnTaskExtension() { PaymentConfiguration = null },
@@ -296,8 +362,7 @@ public class PaymentControllerTests
     [Fact]
     public async Task PaymentWebhookListener_ValidRequestWithPaymentInfo_ReturnsOkRequest()
     {
-        var callbackKey = "validkey";
-        _netsPaymentSettings.WebhookCallbackKey = callbackKey;
+        var callbackKey = AddPaymentsCallbackCode("validkey");
         SetupAltinnTaskExtensionMock(
             "currentTask",
             new AltinnTaskExtension()
@@ -373,8 +438,7 @@ public class PaymentControllerTests
     [Fact]
     public async Task PaymentWebhookListener_ValidRequestWithoutPaymentInfo_ReturnsOkRequest()
     {
-        var callbackKey = "validkey";
-        _netsPaymentSettings.WebhookCallbackKey = callbackKey;
+        var callbackKey = AddPaymentsCallbackCode("validkey");
         SetupAltinnTaskExtensionMock(
             "currentTask",
             new AltinnTaskExtension()

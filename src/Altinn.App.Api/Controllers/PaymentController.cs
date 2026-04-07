@@ -14,7 +14,6 @@ using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -31,7 +30,7 @@ public class PaymentController : ControllerBase
     private readonly IPaymentService _paymentService;
     private readonly AppImplementationFactory _appImplementationFactory;
     private readonly ILogger<PaymentController> _logger;
-    private readonly IOptions<NetsPaymentSettings> _netsPaymentSettings;
+    private readonly INetsWebhookSecretProvider _netsWebhookSecretProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PaymentController"/> class.
@@ -41,7 +40,7 @@ public class PaymentController : ControllerBase
         _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
         _processReader = serviceProvider.GetRequiredService<IProcessReader>();
         _logger = serviceProvider.GetRequiredService<ILogger<PaymentController>>();
-        _netsPaymentSettings = serviceProvider.GetRequiredService<IOptions<NetsPaymentSettings>>();
+        _netsWebhookSecretProvider = serviceProvider.GetRequiredService<INetsWebhookSecretProvider>();
         _paymentService = serviceProvider.GetRequiredService<IPaymentService>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
     }
@@ -156,21 +155,19 @@ public class PaymentController : ControllerBase
         [FromHeader(Name = "Authorization")] string authorizationHeader
     )
     {
-        if (_netsPaymentSettings.Value.WebhookCallbackKey == null)
-        {
-            _logger.LogWarning(
-                "Received Nets webhook callback, but no WebhookCallbackKey is configured. Ignoring the callback."
-            );
-            return NotFound(
-                "Received Nets webhook callback, but no WebhookCallbackKey is configured. Ignoring the callback"
-            );
-        }
+        IReadOnlyList<string> validSecrets = _netsWebhookSecretProvider.GetValidationSecrets();
 
-        var expectedHeader = _netsPaymentSettings.Value.WebhookCallbackKey;
-        var headersEqual = CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(authorizationHeader ?? string.Empty),
-            Encoding.UTF8.GetBytes(expectedHeader)
-        );
+        var providedHeaderBytes = Encoding.UTF8.GetBytes(authorizationHeader ?? string.Empty);
+        bool headersEqual = false;
+        foreach (var secret in validSecrets)
+        {
+            // Loop through all secrets without short-circuiting to keep timing constant.
+            var expectedBytes = Encoding.UTF8.GetBytes(secret);
+            if (CryptographicOperations.FixedTimeEquals(providedHeaderBytes, expectedBytes))
+            {
+                headersEqual = true;
+            }
+        }
         if (!headersEqual)
         {
             _logger.LogWarning(

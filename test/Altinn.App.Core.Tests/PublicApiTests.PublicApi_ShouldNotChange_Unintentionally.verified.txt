@@ -1994,10 +1994,6 @@ namespace Altinn.App.Core.Features.Payment.Processors.Nets
         public bool ShowMerchantName { get; set; }
         public bool ShowOrderSummary { get; set; }
         public required string TermsUrl { get; set; }
-        [System.ComponentModel.DataAnnotations.MaxLength(64)]
-        [System.ComponentModel.DataAnnotations.MinLength(8)]
-        [System.ComponentModel.DataAnnotations.RegularExpression("^[a-zA-Z0-9\\-= ]*$")]
-        public string? WebhookCallbackKey { get; set; }
         public class PaymentMethodConfigurationItem
         {
             public PaymentMethodConfigurationItem() { }

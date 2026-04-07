@@ -5,6 +5,7 @@ using Altinn.App.Core.Features.Payment.Exceptions;
 using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Processors.Nets;
 using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
+using Altinn.App.Core.Infrastructure.Clients.Secrets;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Tests.Common.Fixtures;
 using Altinn.Platform.Storage.Interface.Models;
@@ -26,7 +27,6 @@ public class NetsPaymentProcessorTests
         SecretApiKey = "secret",
         BaseUrl = "https://api.nets.eu",
         TermsUrl = "termsUrl",
-        WebhookCallbackKey = "SECRET::webhookCallbackKey",
         PaymentMethodsConfiguration =
         [
             new NetsPaymentSettings.PaymentMethodConfigurationItem { Name = "Card", Enabled = true },
@@ -37,6 +37,18 @@ public class NetsPaymentProcessorTests
     {
         _fixture.OutputHelper = outputHelper;
         _fixture.Services.AddSingleton(Microsoft.Extensions.Options.Options.Create(_netsPaymentSettings));
+        _fixture.Services.Configure<AppCodesSettings>(s =>
+            s.PaymentsCallback = [
+                new AppCode
+                {
+                    Id = "code-1",
+                    Code = "SECRET-webhookCallbackKey",
+                    IssuedAt = DateTimeOffset.UtcNow,
+                    ExpiresAt = DateTimeOffset.UtcNow.AddDays(30),
+                },
+            ]
+        );
+        _fixture.Services.AddSingleton<INetsWebhookSecretProvider, NetsWebhookSecretProvider>();
         _fixture.Services.AddHttpClient<INetsClient, NetsClient>();
         _fixture.Services.AddScoped<NetsPaymentProcessor>();
     }

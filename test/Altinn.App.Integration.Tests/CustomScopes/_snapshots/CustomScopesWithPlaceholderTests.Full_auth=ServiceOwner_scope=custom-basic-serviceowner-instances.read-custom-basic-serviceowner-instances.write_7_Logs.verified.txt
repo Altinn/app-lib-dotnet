@@ -1,4 +1,5 @@
 ﻿[basic/custom-scopes-placeholders] [INIT INFO] Fixture configuration updated
+[basic/custom-scopes-placeholders] [INIT INFO] Scenario 'custom-scopes-placeholders' specified but no services directory found at /App/scenario-overrides/services
 [basic/custom-scopes-placeholders] [INFO] ### Request: Instances.PostSimplified - User: ServiceOwner/405003309, AuthLevel: 3, AuthMethod: maskinporten
 [basic/custom-scopes-placeholders] [INFO] IInstantiationValidator.Validate
 [basic/custom-scopes-placeholders] [INFO] IProcessTaskStart.Start

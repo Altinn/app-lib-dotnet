@@ -17,6 +17,7 @@ internal class NetsPaymentProcessor : IPaymentProcessor
     private readonly NetsPaymentSettings _settings;
     private readonly GeneralSettings _generalSettings;
     private readonly INetsClient _netsClient;
+    private readonly INetsWebhookSecretProvider _webhookSecretProvider;
 
     /// <summary>
     /// Amounts are specified in the lowest monetary unit for the given currency, without punctuation marks. For example: 100,00 NOK is specified as 10000 and 9.99 USD is specified as 999.
@@ -30,12 +31,14 @@ internal class NetsPaymentProcessor : IPaymentProcessor
     public NetsPaymentProcessor(
         INetsClient netsClient,
         IOptions<NetsPaymentSettings> settings,
-        IOptions<GeneralSettings> generalSettings
+        IOptions<GeneralSettings> generalSettings,
+        INetsWebhookSecretProvider webhookSecretProvider
     )
     {
         _netsClient = netsClient;
         _settings = settings.Value;
         _generalSettings = generalSettings.Value;
+        _webhookSecretProvider = webhookSecretProvider;
     }
 
     /// <inheritdoc />
@@ -54,12 +57,7 @@ internal class NetsPaymentProcessor : IPaymentProcessor
                 "Payer is missing in orderDetails. MerchantHandlesConsumerData is set to true. Payer must be provided."
             );
         }
-        if (string.IsNullOrEmpty(_settings.WebhookCallbackKey))
-        {
-            throw new PaymentException(
-                "WebhookCallbackKey is not configured in NetsPaymentSettings. It must be set to a secure random value."
-            );
-        }
+        string webhookSecret = _webhookSecretProvider.GetSigningSecret();
 
         var payment = new NetsCreatePayment()
         {
@@ -101,7 +99,7 @@ internal class NetsPaymentProcessor : IPaymentProcessor
                 [
                     new NetsWebHook()
                     {
-                        Authorization = _settings.WebhookCallbackKey,
+                        Authorization = webhookSecret,
                         Url = $"{baseUrl}instances/{instance.Id}/payment/nets-webhook-listener",
                         EventName = "payment.checkout.completed",
                     },
