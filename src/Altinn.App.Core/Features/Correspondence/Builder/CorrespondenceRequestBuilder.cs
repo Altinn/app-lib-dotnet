@@ -13,7 +13,6 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     private string? _sendersReference;
     private CorrespondenceContent? _content;
     private List<CorrespondenceAttachment>? _contentAttachments;
-    private DateTimeOffset? _allowSystemDeleteAfter;
     private DateTimeOffset? _dueDateTime;
     private List<OrganisationOrPersonIdentifier>? _recipients;
     private DateTimeOffset? _requestedPublishTime;
@@ -24,6 +23,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     private CorrespondenceNotification? _notification;
     private bool? _ignoreReservation;
     private bool? _isConfirmationNeeded;
+    private bool? _isConfidential;
     private List<Guid>? _existingAttachments;
 
     private CorrespondenceRequestBuilder() { }
@@ -106,14 +106,6 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
         BuilderUtils.NotNullOrEmpty(recipients, "Recipients cannot be empty");
         _recipients ??= [];
         _recipients.AddRange(recipients);
-        return this;
-    }
-
-    /// <inheritdoc/>
-    public ICorrespondenceRequestBuilder WithAllowSystemDeleteAfter(DateTimeOffset allowSystemDeleteAfter)
-    {
-        BuilderUtils.NotNullOrEmpty(allowSystemDeleteAfter, "AllowSystemDeleteAfter cannot be empty");
-        _allowSystemDeleteAfter = allowSystemDeleteAfter;
         return this;
     }
 
@@ -308,6 +300,13 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
+    public ICorrespondenceRequestBuilder WithIsConfidential(bool isConfidential)
+    {
+        _isConfidential = isConfidential;
+        return this;
+    }
+
+    /// <inheritdoc/>
     public CorrespondenceRequest Build()
     {
         BuilderUtils.NotNullOrEmpty(_resourceId);
@@ -322,7 +321,6 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
             Sender = _sender.Value,
             SendersReference = _sendersReference,
             Content = _content with { Attachments = _contentAttachments },
-            AllowSystemDeleteAfter = _allowSystemDeleteAfter,
             DueDateTime = _dueDateTime,
             Recipients = _recipients,
             RequestedPublishTime = _requestedPublishTime,
@@ -334,6 +332,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
             IgnoreReservation = _ignoreReservation,
             ExistingAttachments = _existingAttachments,
             IsConfirmationNeeded = _isConfirmationNeeded,
+            IsConfidential = _isConfidential,
         };
     }
 }

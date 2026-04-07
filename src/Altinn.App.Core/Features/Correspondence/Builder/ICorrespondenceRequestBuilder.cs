@@ -146,12 +146,6 @@ public interface ICorrespondenceRequestBuilder
         ICorrespondenceRequestBuilderContent
 {
     /// <summary>
-    /// Sets the date and time when the correspondence can be deleted from the system.
-    /// </summary>
-    /// <param name="allowSystemDeleteAfter">The point in time when the correspondence may be safely deleted</param>
-    ICorrespondenceRequestBuilder WithAllowSystemDeleteAfter(DateTimeOffset allowSystemDeleteAfter);
-
-    /// <summary>
     /// Sets due date and time for the correspondence.
     /// </summary>
     /// <param name="dueDateTime">The point in time when the correspondence is due</param>
@@ -251,6 +245,12 @@ public interface ICorrespondenceRequestBuilder
     /// </summary>
     /// <param name="isConfirmationNeeded">A boolean value indicating if confirmation is needed or not</param>
     ICorrespondenceRequestBuilder WithIsConfirmationNeeded(bool isConfirmationNeeded);
+
+    /// <summary>
+    /// Sets whether the correspondence is confidential.
+    /// </summary>
+    /// <param name="isConfidential">A boolean value indicating if the correspondence is confidential or not</param>
+    ICorrespondenceRequestBuilder WithIsConfidential(bool isConfidential);
 
     /// <summary>
     /// <p>Adds an existing attachment reference to the correspondence.</p>

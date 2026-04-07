@@ -18,7 +18,6 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     private CorrespondenceNotificationChannel? _notificationChannel;
     private CorrespondenceNotificationChannel? _reminderNotificationChannel;
     private string? _sendersReference;
-    private DateTimeOffset? _requestedSendTime;
     private CorrespondenceNotificationRecipient? _recipientOverride;
 
     [Obsolete]
@@ -116,13 +115,6 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilder WithRequestedSendTime(DateTimeOffset? requestedSendTime)
-    {
-        _requestedSendTime = requestedSendTime;
-        return this;
-    }
-
-    /// <inheritdoc/>
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder
     )
@@ -181,7 +173,6 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
             NotificationChannel = _notificationChannel,
             ReminderNotificationChannel = _reminderNotificationChannel,
             SendersReference = _sendersReference,
-            RequestedSendTime = _requestedSendTime,
             CustomRecipient = _recipientOverride,
         };
     }

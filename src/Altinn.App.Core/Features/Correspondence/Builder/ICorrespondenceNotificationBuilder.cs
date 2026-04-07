@@ -91,12 +91,6 @@ public interface ICorrespondenceNotificationBuilder : ICorrespondenceNotificatio
     ICorrespondenceNotificationBuilder WithSendersReference(string? sendersReference);
 
     /// <summary>
-    /// Sets the requested send time for the correspondence notification.
-    /// </summary>
-    /// <param name="requestedSendTime">The requested send time</param>
-    ICorrespondenceNotificationBuilder WithRequestedSendTime(DateTimeOffset? requestedSendTime);
-
-    /// <summary>
     /// Sets the recipient override for the correspondence notification.
     /// </summary>
     /// <param name="recipientOverride">The recipient override</param>
