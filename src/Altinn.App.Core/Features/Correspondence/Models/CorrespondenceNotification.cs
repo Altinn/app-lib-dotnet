@@ -81,6 +81,12 @@ public sealed record CorrespondenceNotification : MultipartCorrespondenceItem
     public string? SendersReference { get; init; }
 
     /// <summary>
+    /// The date and time for when the notification should be sent.
+    /// </summary>
+    [Obsolete("RequestedSendTime is no longer supported by the Correspondence API.")]
+    public DateTimeOffset? RequestedSendTime { get; init; }
+
+    /// <summary>
     /// A list of recipients for the notification. If not set, the notification will be sent to the recipient of the Correspondence
     /// </summary>
     public CorrespondenceNotificationRecipient? CustomRecipient { get; init; }

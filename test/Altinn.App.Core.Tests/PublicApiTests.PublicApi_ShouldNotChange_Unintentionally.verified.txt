@@ -477,6 +477,8 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderEmailSubject(string? reminderEmailSubject) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderNotificationChannel(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationChannel? reminderNotificationChannel) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderSmsBody(string? reminderSmsBody) { }
+        [System.Obsolete("RequestedSendTime is no longer supported by the Correspondence API.")]
+        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRequestedSendTime(System.DateTimeOffset? requestedSendTime) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithSendReminder(bool? sendReminder) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithSendersReference(string? sendersReference) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithSmsBody(string? smsBody) { }
@@ -515,6 +517,8 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     public class CorrespondenceRequestBuilder : Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderContent, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderRecipients, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderResourceId, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSender, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSendersReference
     {
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceRequest Build() { }
+        [System.Obsolete("AllowSystemDeleteAfter is no longer supported by the Correspondence API.")]
+        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAllowSystemDeleteAfter(System.DateTimeOffset allowSystemDeleteAfter) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder builder) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment attachment) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachments(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment> attachments) { }
@@ -606,6 +610,8 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderEmailSubject(string? reminderEmailSubject);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderNotificationChannel(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationChannel? reminderNotificationChannel);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderSmsBody(string? reminderSmsBody);
+        [System.Obsolete("RequestedSendTime is no longer supported by the Correspondence API.")]
+        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRequestedSendTime(System.DateTimeOffset? requestedSendTime);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithSendReminder(bool? sendReminder);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithSendersReference(string? sendersReference);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithSmsBody(string? smsBody);
@@ -646,6 +652,8 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     public interface ICorrespondenceRequestBuilder : Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderContent, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderRecipients, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderResourceId, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSender, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSendersReference
     {
         Altinn.App.Core.Features.Correspondence.Models.CorrespondenceRequest Build();
+        [System.Obsolete("AllowSystemDeleteAfter is no longer supported by the Correspondence API.")]
+        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAllowSystemDeleteAfter(System.DateTimeOffset allowSystemDeleteAfter);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder builder);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment attachment);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachments(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment> attachments);
@@ -862,6 +870,8 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationChannel? ReminderNotificationChannel { get; init; }
         [System.ComponentModel.DataAnnotations.StringLength(2144, MinimumLength=0)]
         public string? ReminderSmsBody { get; init; }
+        [System.Obsolete("RequestedSendTime is no longer supported by the Correspondence API.")]
+        public System.DateTimeOffset? RequestedSendTime { get; init; }
         public bool? SendReminder { get; init; }
         public string? SendersReference { get; init; }
         [System.ComponentModel.DataAnnotations.StringLength(2144, MinimumLength=0)]
@@ -904,6 +914,10 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationSummaryResponse? NotificationStatusDetails { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("processingStatus")]
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationStatusSummaryResponse? ProcessingStatus { get; init; }
+        [System.Obsolete("RequestedSendTime is no longer returned by the Correspondence API and will be rem" +
+            "oved in a future version.")]
+        [System.Text.Json.Serialization.JsonPropertyName("requestedSendTime")]
+        public System.DateTimeOffset? RequestedSendTime { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("resourceId")]
         public string? ResourceId { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("sendersReference")]
@@ -1009,6 +1023,8 @@ namespace Altinn.App.Core.Features.Correspondence.Models
     public sealed class CorrespondenceRequest : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceRequest>
     {
         public CorrespondenceRequest() { }
+        [System.Obsolete("AllowSystemDeleteAfter is no longer supported by the Correspondence API.")]
+        public System.DateTimeOffset? AllowSystemDeleteAfter { get; init; }
         public required Altinn.App.Core.Features.Correspondence.Models.CorrespondenceContent Content { get; init; }
         public System.DateTimeOffset? DueDateTime { get; init; }
         public System.Collections.Generic.IReadOnlyList<System.Guid>? ExistingAttachments { get; init; }
@@ -1065,6 +1081,10 @@ namespace Altinn.App.Core.Features.Correspondence.Models
     public sealed class GetCorrespondenceStatusResponse : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.GetCorrespondenceStatusResponse>
     {
         public GetCorrespondenceStatusResponse() { }
+        [System.Obsolete("AllowSystemDeleteAfter is no longer returned by the Correspondence API and will b" +
+            "e removed in a future version.")]
+        [System.Text.Json.Serialization.JsonPropertyName("allowSystemDeleteAfter")]
+        public System.DateTimeOffset? AllowSystemDeleteAfter { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("content")]
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceContentResponse? Content { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("correspondenceId")]

@@ -20,6 +20,15 @@ public sealed record CorrespondenceNotificationOrderResponse
     public string? SendersReference { get; set; }
 
     /// <summary>
+    /// The requested send time of the notification.
+    /// </summary>
+    [Obsolete(
+        "RequestedSendTime is no longer returned by the Correspondence API and will be removed in a future version."
+    )]
+    [JsonPropertyName("requestedSendTime")]
+    public DateTimeOffset? RequestedSendTime { get; set; }
+
+    /// <summary>
     /// The short name of the creator of the notification order.
     /// </summary>
     [JsonPropertyName("creator")]

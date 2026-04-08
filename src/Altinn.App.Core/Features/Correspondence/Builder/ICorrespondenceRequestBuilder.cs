@@ -152,6 +152,13 @@ public interface ICorrespondenceRequestBuilder
     ICorrespondenceRequestBuilder WithDueDateTime(DateTimeOffset dueDateTime);
 
     /// <summary>
+    /// Sets when Altinn can remove the correspondence from its database.
+    /// </summary>
+    /// <param name="allowSystemDeleteAfter">The point in time when the correspondence can be deleted</param>
+    [Obsolete("AllowSystemDeleteAfter is no longer supported by the Correspondence API.")]
+    ICorrespondenceRequestBuilder WithAllowSystemDeleteAfter(DateTimeOffset allowSystemDeleteAfter);
+
+    /// <summary>
     /// Sets the requested publish time for the correspondence.
     /// </summary>
     /// <param name="requestedPublishTime">The point in time when the correspondence should be published</param>

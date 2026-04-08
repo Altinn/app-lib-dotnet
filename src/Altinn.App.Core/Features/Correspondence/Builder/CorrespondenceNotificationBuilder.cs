@@ -18,6 +18,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     private CorrespondenceNotificationChannel? _notificationChannel;
     private CorrespondenceNotificationChannel? _reminderNotificationChannel;
     private string? _sendersReference;
+    private DateTimeOffset? _requestedSendTime;
     private CorrespondenceNotificationRecipient? _recipientOverride;
 
     [Obsolete]
@@ -111,6 +112,14 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     public ICorrespondenceNotificationBuilder WithSendersReference(string? sendersReference)
     {
         _sendersReference = sendersReference;
+        return this;
+    }
+
+    /// <inheritdoc/>
+    [Obsolete("RequestedSendTime is no longer supported by the Correspondence API.")]
+    public ICorrespondenceNotificationBuilder WithRequestedSendTime(DateTimeOffset? requestedSendTime)
+    {
+        _requestedSendTime = requestedSendTime;
         return this;
     }
 

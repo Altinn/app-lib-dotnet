@@ -249,6 +249,12 @@ public sealed record CorrespondenceRequest : MultipartCorrespondenceItem
     public DateTimeOffset? RequestedPublishTime { get; init; }
 
     /// <summary>
+    /// When can Altinn remove the correspondence from its database?
+    /// </summary>
+    [Obsolete("AllowSystemDeleteAfter is no longer supported by the Correspondence API.")]
+    public DateTimeOffset? AllowSystemDeleteAfter { get; init; }
+
+    /// <summary>
     /// When must the recipient respond by?
     /// </summary>
     public DateTimeOffset? DueDateTime { get; init; }
