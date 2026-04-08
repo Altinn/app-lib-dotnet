@@ -914,8 +914,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationSummaryResponse? NotificationStatusDetails { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("processingStatus")]
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationStatusSummaryResponse? ProcessingStatus { get; init; }
-        [System.Obsolete("RequestedSendTime is no longer returned by the Correspondence API and will be rem" +
-            "oved in a future version.")]
+        [System.Obsolete("RequestedSendTime is no longer returned by the Correspondence API.")]
         [System.Text.Json.Serialization.JsonPropertyName("requestedSendTime")]
         public System.DateTimeOffset? RequestedSendTime { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("resourceId")]
@@ -1081,8 +1080,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
     public sealed class GetCorrespondenceStatusResponse : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.GetCorrespondenceStatusResponse>
     {
         public GetCorrespondenceStatusResponse() { }
-        [System.Obsolete("AllowSystemDeleteAfter is no longer returned by the Correspondence API and will b" +
-            "e removed in a future version.")]
+        [System.Obsolete("AllowSystemDeleteAfter is no longer returned by the Correspondence API.")]
         [System.Text.Json.Serialization.JsonPropertyName("allowSystemDeleteAfter")]
         public System.DateTimeOffset? AllowSystemDeleteAfter { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("content")]

@@ -22,9 +22,7 @@ public sealed record CorrespondenceNotificationOrderResponse
     /// <summary>
     /// The requested send time of the notification.
     /// </summary>
-    [Obsolete(
-        "RequestedSendTime is no longer returned by the Correspondence API and will be removed in a future version."
-    )]
+    [Obsolete("RequestedSendTime is no longer returned by the Correspondence API.")]
     [JsonPropertyName("requestedSendTime")]
     public DateTimeOffset? RequestedSendTime { get; set; }
 

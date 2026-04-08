@@ -14,7 +14,6 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     private CorrespondenceContent? _content;
     private List<CorrespondenceAttachment>? _contentAttachments;
     private DateTimeOffset? _dueDateTime;
-    private DateTimeOffset? _allowSystemDeleteAfter;
     private List<OrganisationOrPersonIdentifier>? _recipients;
     private DateTimeOffset? _requestedPublishTime;
     private string? _messageSender;
@@ -167,7 +166,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     [Obsolete("AllowSystemDeleteAfter is no longer supported by the Correspondence API.")]
     public ICorrespondenceRequestBuilder WithAllowSystemDeleteAfter(DateTimeOffset allowSystemDeleteAfter)
     {
-        _allowSystemDeleteAfter = allowSystemDeleteAfter;
+        // Intentional no-op: AllowSystemDeleteAfter is no longer accepted by the Correspondence API.
         return this;
     }
 
