@@ -9,7 +9,7 @@ namespace Altinn.App.Core.Features.Payment.Processors.Nets;
 /// <summary>
 /// Provides rotating webhook secrets used as the shared secret for Nets payment webhook callbacks.
 /// The underlying rotating <see cref="AppCode"/> values are derived into Nets-compatible strings
-/// (Nets requires the webhook Authorization value to match <c>^[a-zA-Z0-9\-= ]*$</c> and be 8-64 chars long).
+/// (Nets requires the webhook Authorization value to be 8-64 alphanumeric characters).
 /// </summary>
 internal interface INetsWebhookSecretProvider
 {
@@ -19,9 +19,10 @@ internal interface INetsWebhookSecretProvider
     string GetSigningSecret();
 
     /// <summary>
-    /// Gets all currently valid webhook secrets to match against an incoming webhook callback.
+    /// Returns true if the provided <c>Authorization</c> header value matches any of the currently valid
+    /// webhook secrets in the rotation. The comparison is constant-time.
     /// </summary>
-    IReadOnlyList<string> GetValidationSecrets();
+    bool IsValidIncomingSecret(string? providedSecret);
 }
 
 /// <inheritdoc />
@@ -32,15 +33,21 @@ internal sealed class NetsWebhookSecretProvider(IOptionsMonitor<AppCodesSettings
         return DeriveWebhookSecret(GetCodes()[0]);
     }
 
-    public IReadOnlyList<string> GetValidationSecrets()
+    public bool IsValidIncomingSecret(string? providedSecret)
     {
+        var providedBytes = Encoding.UTF8.GetBytes(providedSecret ?? string.Empty);
         var codes = GetCodes();
-        var result = new string[codes.Count];
+        bool matched = false;
+        // Check every code without short-circuiting to keep timing constant.
         for (int i = 0; i < codes.Count; i++)
         {
-            result[i] = DeriveWebhookSecret(codes[i]);
+            var expectedBytes = Encoding.UTF8.GetBytes(DeriveWebhookSecret(codes[i]));
+            if (CryptographicOperations.FixedTimeEquals(providedBytes, expectedBytes))
+            {
+                matched = true;
+            }
         }
-        return result;
+        return matched;
     }
 
     private List<AppCode> GetCodes()

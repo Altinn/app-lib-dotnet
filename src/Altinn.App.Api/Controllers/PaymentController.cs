@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Payment;
@@ -155,20 +153,7 @@ public class PaymentController : ControllerBase
         [FromHeader(Name = "Authorization")] string authorizationHeader
     )
     {
-        IReadOnlyList<string> validSecrets = _netsWebhookSecretProvider.GetValidationSecrets();
-
-        var providedHeaderBytes = Encoding.UTF8.GetBytes(authorizationHeader ?? string.Empty);
-        bool headersEqual = false;
-        foreach (var secret in validSecrets)
-        {
-            // Loop through all secrets without short-circuiting to keep timing constant.
-            var expectedBytes = Encoding.UTF8.GetBytes(secret);
-            if (CryptographicOperations.FixedTimeEquals(providedHeaderBytes, expectedBytes))
-            {
-                headersEqual = true;
-            }
-        }
-        if (!headersEqual)
+        if (!_netsWebhookSecretProvider.IsValidIncomingSecret(authorizationHeader))
         {
             _logger.LogWarning(
                 "Received Nets webhook callback with invalid authorization header. Ignoring the callback."
