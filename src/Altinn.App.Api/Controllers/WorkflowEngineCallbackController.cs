@@ -69,21 +69,34 @@ public class WorkflowEngineCallbackController : ControllerBase
 
         if (command is null)
         {
-            string commandNotFoundError = $"Workflow app command '{commandKey}' not found. Instance: {instanceId}.";
-            _logger.LogError(commandNotFoundError);
-            activity?.SetStatus(ActivityStatusCode.Error, commandNotFoundError);
-            return NonRetryableProblem("Command Not Found", commandNotFoundError, StatusCodes.Status404NotFound);
+            _logger.LogError(
+                "Workflow app command '{CommandKey}' not found. Instance: {InstanceId}.",
+                commandKey,
+                instanceId
+            );
+            activity?.SetStatus(ActivityStatusCode.Error, "Command not found");
+            return NonRetryableProblem(
+                "Command Not Found",
+                $"Workflow app command not found.",
+                StatusCodes.Status404NotFound
+            );
         }
 
         // Restore instance + form data from the opaque state blob.
         // State must always be provided — every workflow is enqueued with a captured state blob.
         if (payload.State is null)
         {
-            string missingStateError =
-                $"State blob is missing from callback payload. CommandKey: {commandKey}, Instance: {instanceId}.";
-            _logger.LogError(missingStateError);
-            activity?.SetStatus(ActivityStatusCode.Error, missingStateError);
-            return NonRetryableProblem("Missing State", missingStateError, StatusCodes.Status422UnprocessableEntity);
+            _logger.LogError(
+                "State blob is missing from callback payload. CommandKey: {CommandKey}, Instance: {InstanceId}.",
+                commandKey,
+                instanceId
+            );
+            activity?.SetStatus(ActivityStatusCode.Error, "Missing state blob");
+            return NonRetryableProblem(
+                "Missing State",
+                "State blob is missing from callback payload.",
+                StatusCodes.Status422UnprocessableEntity
+            );
         }
 
         InstanceDataUnitOfWork instanceDataUnitOfWork = await _instanceStateService.RestoreState(
@@ -107,14 +120,20 @@ public class WorkflowEngineCallbackController : ControllerBase
         //TODO: Consider rewriting IInstanceDataMutator so that we can construct one that doesn't allow abandonment in this scenario. Don't think it makes sense when the process engine is the caller.
         if (instanceDataUnitOfWork.HasAbandonIssues)
         {
-            string message =
-                $"Data abandonment detected during callback. CommandKey: {commandKey}, Instance: {instanceId}, Task: {currentTaskId}";
+            _logger.LogError(
+                "Data abandonment detected during callback. CommandKey: {CommandKey}, Instance: {InstanceId}, Task: {TaskId}.",
+                commandKey,
+                instanceId,
+                currentTaskId
+            );
 
-            _logger.LogError(message, commandKey, instanceId, currentTaskId);
+            activity?.SetStatus(ActivityStatusCode.Error, "Data abandonment detected");
 
-            activity?.SetStatus(ActivityStatusCode.Error, message);
-
-            return NonRetryableProblem("Data Abandonment", message, StatusCodes.Status422UnprocessableEntity);
+            return NonRetryableProblem(
+                "Data Abandonment",
+                "Data abandonment detected during callback.",
+                StatusCodes.Status422UnprocessableEntity
+            );
         }
 
         switch (result)
