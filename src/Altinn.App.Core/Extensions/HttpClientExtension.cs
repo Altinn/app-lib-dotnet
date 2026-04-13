@@ -28,7 +28,9 @@ public static class HttpClientExtension
         CancellationToken cancellationToken = default
     )
     {
+#pragma warning disable S7044 // URLs are constructed from platform configuration, not user input
         using HttpRequestMessage request = new(HttpMethod.Post, requestUri);
+#pragma warning restore S7044
         request.Content = content;
 
         request.Headers.Authorization = new AuthenticationHeaderValue(
@@ -108,7 +110,9 @@ public static class HttpClientExtension
         CancellationToken cancellationToken = default
     )
     {
+#pragma warning disable S7044 // URLs are constructed from platform configuration, not user input
         using HttpRequestMessage request = new(HttpMethod.Get, requestUri);
+#pragma warning restore S7044
 
         request.Headers.Authorization = new AuthenticationHeaderValue(
             Constants.AuthorizationSchemes.Bearer,
