@@ -10,7 +10,7 @@ internal interface IWorkflowEngineCommand
 {
     string GetKey();
 
-    Task<ProcessEngineCommandResult> Execute(ProcessEngineCommandContext parameters);
+    Task<ProcessEngineCommandResult> Execute(ProcessEngineCommandContext context);
 }
 
 /// <summary>
@@ -23,5 +23,5 @@ internal interface IWorkflowEngineCommand
 internal interface IWorkflowEngineCommand<in TRequestPayload> : IWorkflowEngineCommand
     where TRequestPayload : CommandRequestPayload
 {
-    Task<ProcessEngineCommandResult> Execute(ProcessEngineCommandContext parameters, TRequestPayload payload);
+    Task<ProcessEngineCommandResult> Execute(ProcessEngineCommandContext context, TRequestPayload payload);
 }

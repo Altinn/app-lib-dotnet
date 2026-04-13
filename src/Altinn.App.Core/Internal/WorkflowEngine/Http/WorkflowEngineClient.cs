@@ -52,7 +52,10 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
 
         return await response.Content.ReadFromJsonAsync<WorkflowEnqueueResponse.Accepted>(
                 cancellationToken: cancellationToken
-            ) ?? throw new Exception("The expected workflow enqueue response was not found in the response content.");
+            )
+            ?? throw new InvalidOperationException(
+                "The expected workflow enqueue response was not found in the response content."
+            );
     }
 
     /// <inheritdoc />
@@ -77,7 +80,10 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         {
             return await response.Content.ReadFromJsonAsync<WorkflowStatusResponse>(
                     cancellationToken: cancellationToken
-                ) ?? throw new Exception("The expected workflow status was not found in the response content.");
+                )
+                ?? throw new InvalidOperationException(
+                    "The expected workflow status was not found in the response content."
+                );
         }
 
         return null;
@@ -133,7 +139,9 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadFromJsonAsync<CancelWorkflowResponse>(cancellationToken: cancellationToken)
-            ?? throw new Exception("The expected cancel workflow response was not found in the response content.");
+            ?? throw new InvalidOperationException(
+                "The expected cancel workflow response was not found in the response content."
+            );
     }
 
     private string GetWorkflowEngineEndpoint() => _platformSettings.ApiWorkflowEngineEndpoint.TrimEnd('/');

@@ -89,11 +89,11 @@ internal class ProcessEngine : IProcessEngine
     }
 
     /// <inheritdoc/>
-    public async Task<ProcessChangeResult> CreateInitialProcessState(ProcessStartRequest processStartRequest)
+    public async Task<ProcessChangeResult> CreateInitialProcessState(ProcessStartRequest request)
     {
-        using var activity = _telemetry?.StartProcessStartActivity(processStartRequest.Instance);
+        using var activity = _telemetry?.StartProcessStartActivity(request.Instance);
 
-        if (processStartRequest.Instance.Process != null)
+        if (request.Instance.Process != null)
         {
             var result = new ProcessChangeResult()
             {
@@ -109,7 +109,7 @@ internal class ProcessEngine : IProcessEngine
         try
         {
             validStartElement = ProcessHelper.GetValidStartEventOrError(
-                processStartRequest.StartEventId,
+                request.StartEventId,
                 _processReader.GetStartEventIds()
             );
         }
@@ -126,9 +126,9 @@ internal class ProcessEngine : IProcessEngine
         }
 
         // start process
-        ProcessStateChange? startChange = await ProcessStart(processStartRequest.Instance, validStartElement);
+        ProcessStateChange? startChange = await ProcessStart(request.Instance, validStartElement);
         InstanceEvent? startEvent = startChange?.Events?[0].CopyValues();
-        ProcessStateChange? nextChange = await MoveProcessStateToNextAndGenerateEvents(processStartRequest.Instance);
+        ProcessStateChange? nextChange = await MoveProcessStateToNextAndGenerateEvents(request.Instance);
         InstanceEvent? goToNextEvent = nextChange?.Events?[0].CopyValues();
         List<InstanceEvent> events = [];
         if (startEvent is not null)
@@ -460,7 +460,7 @@ internal class ProcessEngine : IProcessEngine
 
         if (cachedDataMutator.HasAbandonIssues)
         {
-            throw new Exception(
+            throw new InvalidOperationException(
                 "Abandon issues found in data elements. Abandon issues should be handled by the action handler."
             );
         }
@@ -641,7 +641,7 @@ internal class ProcessEngine : IProcessEngine
                 SystemUserName = null, // TODO: will get this name later when a lookup API is implemented or the name is passed in token
                 AuthenticationLevel = auth.AuthenticationLevel,
             },
-            _ => throw new Exception($"Unknown authentication context: {currentAuth.GetType().Name}"),
+            _ => throw new InvalidOperationException($"Unknown authentication context: {currentAuth.GetType().Name}"),
         };
     }
 
