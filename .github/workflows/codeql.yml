@@ -2,11 +2,11 @@ name: "CodeQL"
 
 on:
   push:
-    branches: 
+    branches:
       - "main"
       - "release/**"
   pull_request:
-    branches: 
+    branches:
       - "main"
       - "release/**"
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
     # We can remove if using an officially supported .NET version.
     # See https://github.com/github/codeql-action/issues/757#issuecomment-977546999
     - name: Setup .NET
-      uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602 # v5
+      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
       with:
         dotnet-version: |
           8.0.x
@@ -44,7 +44,7 @@ jobs:
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@bffd034ab1518ad839a542b8a7356e13a240e076 # v3
+      uses: github/codeql-action/init@5c8a8a642e79153f5d047b10ec1cba1d1cc65699 # v3.35.1
       with:
         languages: ${{ matrix.language }}
         queries: security-extended,security-and-quality
@@ -53,16 +53,16 @@ jobs:
         # Prefix the list here with "+" to use these queries and those in the config file.
         # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
 
-        
+
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
     - name: Autobuild
-      uses: github/codeql-action/autobuild@bffd034ab1518ad839a542b8a7356e13a240e076 # v3
+      uses: github/codeql-action/autobuild@5c8a8a642e79153f5d047b10ec1cba1d1cc65699 # v3.35.1
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
 
-    #   If the Autobuild fails above, remove it and uncomment the following three lines. 
+    #   If the Autobuild fails above, remove it and uncomment the following three lines.
     #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
 
     # - run: |
@@ -70,6 +70,6 @@ jobs:
     #   ./location_of_script_within_repo/buildscript.sh
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@bffd034ab1518ad839a542b8a7356e13a240e076 # v3
+      uses: github/codeql-action/analyze@5c8a8a642e79153f5d047b10ec1cba1d1cc65699 # v3.35.1
       with:
         category: "/language:${{matrix.language}}"
