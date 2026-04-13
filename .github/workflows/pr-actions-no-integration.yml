@@ -7,7 +7,7 @@ jobs:
   publish:
     name: Publish PR packages (skip integration tests)
     runs-on: ubuntu-latest
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '/publish-no-integration')
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/pack-experimental')
     env:
       DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: false
     steps:
