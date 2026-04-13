@@ -379,7 +379,7 @@ public sealed partial class AppFixture : IAsyncDisposable
             { "PlatformSettings__ApiPdf2Endpoint", $"http://{PdfServiceHostname}:{PdfServicePort}/pdf" },
             { "PlatformSettings__ApiNotificationEndpoint", $"{_localtestUrl}/notifications/api/v1/" },
             { "PlatformSettings__ApiCorrespondenceEndpoint", $"{_localtestUrl}/correspondence/api/v1/" },
-            { "PlatformSettings__ApiWorkflowEngineEndpoint", $"http://{WorkflowEngineHostname}:8080/api/v1/workflows" },
+            { "PlatformSettings__ApiWorkflowEngineEndpoint", $"http://{WorkflowEngineHostname}:8080/api/v1/" },
         };
     }
 

@@ -16,7 +16,6 @@ namespace Altinn.App.Api.Controllers;
 /// Controller for handling process engine callbacks.
 /// </summary>
 [ApiController]
-// [Authorize(AuthenticationSchemes = "X-Api-Key")]
 [AllowAnonymous]
 [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/workflow-engine-callbacks")]
 public class WorkflowEngineCallbackController : ControllerBase

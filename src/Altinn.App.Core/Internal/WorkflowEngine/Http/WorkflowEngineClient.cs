@@ -12,8 +12,6 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Http;
 /// </summary>
 internal sealed class WorkflowEngineClient : IWorkflowEngineClient
 {
-    private const string ApiKeyHeaderName = "X-Api-Key";
-
     private readonly HttpClient _httpClient;
     private readonly PlatformSettings _platformSettings;
     private readonly ILogger<WorkflowEngineClient> _logger;
@@ -35,10 +33,9 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         CancellationToken cancellationToken = default
     )
     {
-        string url = GetBaseUrl();
+        string url = $"{GetWorkflowEngineEndpoint()}/workflows";
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
         httpRequest.Content = JsonContent.Create(request);
-        httpRequest.Headers.Add(ApiKeyHeaderName, _platformSettings.WorkflowEngineApiKey);
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         if (!response.IsSuccessStatusCode)
@@ -64,9 +61,8 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         CancellationToken cancellationToken = default
     )
     {
-        string url = $"{GetBaseUrl()}/{workflowId}";
+        var url = $"{GetWorkflowEngineEndpoint()}/workflows/{workflowId}";
         using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
-        httpRequest.Headers.Add(ApiKeyHeaderName, _platformSettings.WorkflowEngineApiKey);
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
 
@@ -95,7 +91,7 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         CancellationToken cancellationToken = default
     )
     {
-        string url = $"{GetBaseUrl()}?namespace={Uri.EscapeDataString(ns)}";
+        var url = $"{GetWorkflowEngineEndpoint()}/workflows/?namespace={Uri.EscapeDataString(ns)}";
         if (correlationId.HasValue)
         {
             url += $"&correlationId={correlationId.Value}";
@@ -109,7 +105,6 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         }
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
-        httpRequest.Headers.Add(ApiKeyHeaderName, _platformSettings.WorkflowEngineApiKey);
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
 
@@ -131,9 +126,8 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         CancellationToken cancellationToken = default
     )
     {
-        string url = $"{GetBaseUrl()}/{workflowId}/cancel";
+        var url = $"{GetWorkflowEngineEndpoint()}/workflows/{workflowId}/cancel";
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
-        httpRequest.Headers.Add(ApiKeyHeaderName, _platformSettings.WorkflowEngineApiKey);
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -142,5 +136,5 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
             ?? throw new Exception("The expected cancel workflow response was not found in the response content.");
     }
 
-    private string GetBaseUrl() => _platformSettings.ApiWorkflowEngineEndpoint.TrimEnd('/');
+    private string GetWorkflowEngineEndpoint() => _platformSettings.ApiWorkflowEngineEndpoint.TrimEnd('/');
 }

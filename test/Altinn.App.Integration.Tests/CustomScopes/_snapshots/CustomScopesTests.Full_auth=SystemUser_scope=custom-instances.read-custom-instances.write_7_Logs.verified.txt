@@ -4,14 +4,14 @@
 [basic/custom-scopes] [INFO] IInstantiationProcessor.DataCreation
 [basic/custom-scopes] [INFO] IInstantiationProcessor.DataCreation
 fail: Altinn.App.Core.Infrastructure.Clients.Storage.DataClient[0]
-      Storing attachment for instance 501337/6eea00b5-1cbd-4f69-a1fe-da0319fb00c5 failed with status code Forbidden - content 
+      Storing attachment for instance 501337/a63b67f0-1a7d-4d47-a631-09e65ab76d76 failed with status code Forbidden - content 
 fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
       An unhandled exception has occurred while executing the request.
       Altinn.App.Core.Helpers.PlatformHttpException: 403 - Forbidden - 
-         at Altinn.App.Core.Infrastructure.Clients.Storage.DataClient.InsertBinaryData(String instanceId, String dataType, String contentType, String filename, Stream stream, String generatedFromTask, StorageAuthenticationMethod authenticationMethod, CancellationToken cancellationToken) in /_/src/Altinn.App.Core/Infrastructure/Clients/Storage/DataClient.cs:line 602
+         at Altinn.App.Core.Infrastructure.Clients.Storage.DataClient.InsertBinaryData(String instanceId, String dataType, String contentType, String filename, Stream stream, String generatedFromTask, StorageAuthenticationMethod authenticationMethod, CancellationToken cancellationToken) in /_/src/Altinn.App.Core/Infrastructure/Clients/Storage/DataClient.cs:line 623
          at Altinn.App.Core.Internal.Data.InstanceDataUnitOfWork.CreateDataElement(ConcurrentDictionary`2 createdDataElements, DataElementChange change) in /_/src/Altinn.App.Core/Internal/Data/InstanceDataUnitOfWork.cs:line 536
          at Altinn.App.Core.Internal.Data.InstanceDataUnitOfWork.UpdateInstanceData(DataElementChanges changes) in /_/src/Altinn.App.Core/Internal/Data/InstanceDataUnitOfWork.cs:line 623
-         at Altinn.App.Api.Controllers.WorkflowEngineCallbackController.ExecuteCommand(String org, String app, Int32 instanceOwnerPartyId, Guid instanceGuid, String commandKey, AppCallbackPayload payload, CancellationToken cancellationToken) in /_/src/Altinn.App.Api/Controllers/WorkflowEngineCallbackController.cs:line 120
+         at Altinn.App.Api.Controllers.WorkflowEngineCallbackController.ExecuteCommand(String org, String app, Int32 instanceOwnerPartyId, Guid instanceGuid, String commandKey, AppCallbackPayload payload, CancellationToken cancellationToken) in /_/src/Altinn.App.Api/Controllers/WorkflowEngineCallbackController.cs:line 124
          at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
          at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)
          at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)

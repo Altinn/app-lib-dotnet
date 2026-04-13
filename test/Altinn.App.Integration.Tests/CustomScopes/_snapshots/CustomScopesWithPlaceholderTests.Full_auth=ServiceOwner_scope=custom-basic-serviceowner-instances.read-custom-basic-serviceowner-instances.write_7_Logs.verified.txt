@@ -1,6 +1,62 @@
 ﻿[basic/custom-scopes-placeholders] [INIT INFO] Fixture configuration updated
 [basic/custom-scopes-placeholders] [INFO] ### Request: Instances.PostSimplified - User: ServiceOwner/405003309, AuthLevel: 3, AuthMethod: maskinporten
 [basic/custom-scopes-placeholders] [INFO] IInstantiationValidator.Validate
+[basic/custom-scopes-placeholders] [INFO] IInstantiationProcessor.DataCreation
+fail: Altinn.App.Core.Infrastructure.Clients.Storage.DataClient[0]
+      Storing attachment for instance 501337/a63b67f0-1a7d-4d47-a631-09e65ab76d76 failed with status code Forbidden - content 
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Altinn.App.Core.Helpers.PlatformHttpException: 403 - Forbidden - 
+         at Altinn.App.Core.Infrastructure.Clients.Storage.DataClient.InsertBinaryData(String instanceId, String dataType, String contentType, String filename, Stream stream, String generatedFromTask, StorageAuthenticationMethod authenticationMethod, CancellationToken cancellationToken) in /_/src/Altinn.App.Core/Infrastructure/Clients/Storage/DataClient.cs:line 623
+         at Altinn.App.Core.Internal.Data.InstanceDataUnitOfWork.CreateDataElement(ConcurrentDictionary`2 createdDataElements, DataElementChange change) in /_/src/Altinn.App.Core/Internal/Data/InstanceDataUnitOfWork.cs:line 536
+         at Altinn.App.Core.Internal.Data.InstanceDataUnitOfWork.UpdateInstanceData(DataElementChanges changes) in /_/src/Altinn.App.Core/Internal/Data/InstanceDataUnitOfWork.cs:line 623
+         at Altinn.App.Api.Controllers.WorkflowEngineCallbackController.ExecuteCommand(String org, String app, Int32 instanceOwnerPartyId, Guid instanceGuid, String commandKey, AppCallbackPayload payload, CancellationToken cancellationToken) in /_/src/Altinn.App.Api/Controllers/WorkflowEngineCallbackController.cs:line 124
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResourceFilter>g__Awaited|25_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResourceExecutedContextSealed context)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+         at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)
+         at Altinn.App.Api.Infrastructure.Middleware.ScopeAuthorizationMiddleware.InvokeAsync(HttpContext context) in /_/src/Altinn.App.Api/Infrastructure/Middleware/ScopeAuthorizationMiddleware.cs:line 125
+         at Altinn.App.Api.Infrastructure.Middleware.TelemetryEnrichingMiddleware.InvokeAsync(HttpContext context) in /_/src/Altinn.App.Api/Infrastructure/Middleware/TelemetryEnrichingMiddleware.cs:line 92
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
 [basic/custom-scopes-placeholders] [INFO] IProcessTaskStart.Start
 [basic/custom-scopes-placeholders] [INFO] IInstantiationProcessor.DataCreation
 [basic/custom-scopes-placeholders] [INFO] ### Response: Instances.PostSimplified - CreatedResult, StatusCode: 201
+[basic/custom-scopes-placeholders] [INFO] IInstantiationProcessor.DataCreation
+fail: Altinn.App.Core.Infrastructure.Clients.Storage.DataClient[0]
+      Storing attachment for instance 501337/71ef61df-8552-4be7-a3c2-74f0cb0c2610 failed with status code Forbidden - content 
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Altinn.App.Core.Helpers.PlatformHttpException: 403 - Forbidden - 
+         at Altinn.App.Core.Infrastructure.Clients.Storage.DataClient.InsertBinaryData(String instanceId, String dataType, String contentType, String filename, Stream stream, String generatedFromTask, StorageAuthenticationMethod authenticationMethod, CancellationToken cancellationToken) in /_/src/Altinn.App.Core/Infrastructure/Clients/Storage/DataClient.cs:line 623
+         at Altinn.App.Core.Internal.Data.InstanceDataUnitOfWork.CreateDataElement(ConcurrentDictionary`2 createdDataElements, DataElementChange change) in /_/src/Altinn.App.Core/Internal/Data/InstanceDataUnitOfWork.cs:line 536
+         at Altinn.App.Core.Internal.Data.InstanceDataUnitOfWork.UpdateInstanceData(DataElementChanges changes) in /_/src/Altinn.App.Core/Internal/Data/InstanceDataUnitOfWork.cs:line 623
+         at Altinn.App.Api.Controllers.WorkflowEngineCallbackController.ExecuteCommand(String org, String app, Int32 instanceOwnerPartyId, Guid instanceGuid, String commandKey, AppCallbackPayload payload, CancellationToken cancellationToken) in /_/src/Altinn.App.Api/Controllers/WorkflowEngineCallbackController.cs:line 124
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResourceFilter>g__Awaited|25_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResourceExecutedContextSealed context)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+         at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)
+         at Altinn.App.Api.Infrastructure.Middleware.ScopeAuthorizationMiddleware.InvokeAsync(HttpContext context) in /_/src/Altinn.App.Api/Infrastructure/Middleware/ScopeAuthorizationMiddleware.cs:line 125
+         at Altinn.App.Api.Infrastructure.Middleware.TelemetryEnrichingMiddleware.InvokeAsync(HttpContext context) in /_/src/Altinn.App.Api/Infrastructure/Middleware/TelemetryEnrichingMiddleware.cs:line 92
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
