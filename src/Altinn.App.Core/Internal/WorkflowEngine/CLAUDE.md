@@ -6,7 +6,7 @@ App-lib integration with the async Workflow Engine service. The engine runs as a
 
 The Workflow Engine service (external, .NET, PostgreSQL-backed) orchestrates process transitions. This integration layer:
 
-1. **Outbound**: `ProcessNextRequestFactory` builds a `WorkflowEnqueueRequest` (containing `WorkflowRequest` with command sequence + context + state blob) and `WorkflowEngineClient` POSTs it to the engine's enqueue endpoint (`POST {ApiWorkflowEngineEndpoint}`). Context (`AppWorkflowContext`) carries actor, lock token, org/app, and instance identification. `Namespace` = `{org}/{app}` (isolation boundary), `CorrelationId` = `instanceGuid` (for querying all workflows for an instance).
+1. **Outbound**: `ProcessNextRequestFactory` builds a `WorkflowEnqueueBundle` (containing `WorkflowEnqueueRequest` body + metadata) and `WorkflowEngineClient` POSTs it to the engine's enqueue endpoint (`POST {ApiWorkflowEngineEndpoint}/{namespace}/workflows`). Namespace is sent in the URL path, idempotency key and correlation ID are sent via HTTP headers (`Idempotency-Key`, `Correlation-Id`). Context (`AppWorkflowContext`) carries actor, lock token, org/app, and instance identification. `Namespace` = `{org}/{app}` (isolation boundary), `CorrelationId` = `instanceGuid` (for querying all workflows for an instance).
 2. **Inbound**: The engine calls back to `WorkflowEngineCallbackController` for each command, one at a time, sequentially
 3. **Per-callback lifecycle**: Controller restores `InstanceDataUnitOfWork` from the opaque state blob, resolves the `IWorkflowEngineCommand` by key, executes it, commits data changes on success, captures updated state, and returns it to the engine
 
@@ -85,7 +85,7 @@ WorkflowEngine/
 │   ├── IWorkflowEngineClient.cs             - EnqueueWorkflow() and GetWorkflowStatus()
 │   └── WorkflowEngineClient.cs              - HTTP impl with X-Api-Key auth
 ├── Models/
-│   ├── WorkflowEnqueueRequest.cs            - Batch request (namespace, correlationId, context, list of WorkflowRequest)
+│   ├── WorkflowEnqueueRequest.cs            - Batch request body (labels, context, list of WorkflowRequest)
 │   ├── WorkflowRequest.cs                   - Single workflow (operationId, steps, state, dependsOn)
 │   ├── WorkflowEnqueueResponse.cs           - Response: Accepted (with WorkflowResult[]) or Rejected
 │   ├── StepRequest.cs                       - Single step (operationId + command + retryStrategy + metadata)
@@ -193,9 +193,11 @@ The engine service (separate repo at `altinn-studio/src/Runtime/workflow-engine`
 - Commands use `CommandDefinition` with `type: "app"` and `data: AppCommandData { commandKey, payload }`
 
 ### URL Patterns
-- Enqueue: `POST {ApiWorkflowEngineEndpoint}` (base URL, no path segments)
-- Status: `GET {ApiWorkflowEngineEndpoint}/{workflowId}`
-- List active: `GET {ApiWorkflowEngineEndpoint}?namespace={ns}&correlationId={correlationId}`
+- Enqueue: `POST {ApiWorkflowEngineEndpoint}/{namespace}/workflows` with `Idempotency-Key` header (required) and `Correlation-Id` header (optional)
+- Status: `GET {ApiWorkflowEngineEndpoint}/{namespace}/workflows/{workflowId}`
+- List active: `GET {ApiWorkflowEngineEndpoint}/{namespace}/workflows?correlationId={correlationId}` — returns `PaginatedResponse<WorkflowStatusResponse>`
+- Cancel: `POST {ApiWorkflowEngineEndpoint}/{namespace}/workflows/{workflowId}/cancel`
+- Resume: `POST {ApiWorkflowEngineEndpoint}/{namespace}/workflows/{workflowId}/resume?cascade={bool}`
 
 ## State Passthrough
 

@@ -12,6 +12,9 @@ namespace Altinn.App.Core.Internal.WorkflowEngine.Http;
 /// </summary>
 internal sealed class WorkflowEngineClient : IWorkflowEngineClient
 {
+    private const string IdempotencyKeyHeader = "Idempotency-Key";
+    private const string CorrelationIdHeader = "Correlation-Id";
+
     private readonly HttpClient _httpClient;
     private readonly PlatformSettings _platformSettings;
     private readonly ILogger<WorkflowEngineClient> _logger;
@@ -29,13 +32,21 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
 
     /// <inheritdoc />
     public async Task<WorkflowEnqueueResponse.Accepted> EnqueueWorkflows(
+        string ns,
+        string idempotencyKey,
+        Guid? correlationId,
         WorkflowEnqueueRequest request,
         CancellationToken cancellationToken = default
     )
     {
-        string url = $"{GetWorkflowEngineEndpoint()}/workflows";
+        string url = $"{GetWorkflowEngineEndpoint()}/{Uri.EscapeDataString(ns)}/workflows";
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
         httpRequest.Content = JsonContent.Create(request);
+        httpRequest.Headers.Add(IdempotencyKeyHeader, idempotencyKey);
+        if (correlationId.HasValue)
+        {
+            httpRequest.Headers.Add(CorrelationIdHeader, correlationId.Value.ToString());
+        }
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         if (!response.IsSuccessStatusCode)
@@ -60,11 +71,12 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
 
     /// <inheritdoc />
     public async Task<WorkflowStatusResponse?> GetWorkflow(
+        string ns,
         Guid workflowId,
         CancellationToken cancellationToken = default
     )
     {
-        var url = $"{GetWorkflowEngineEndpoint()}/workflows/{workflowId}";
+        var url = $"{GetWorkflowEngineEndpoint()}/{Uri.EscapeDataString(ns)}/workflows/{workflowId}";
         using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
@@ -97,17 +109,24 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         CancellationToken cancellationToken = default
     )
     {
-        var url = $"{GetWorkflowEngineEndpoint()}/workflows/?namespace={Uri.EscapeDataString(ns)}";
+        var url = $"{GetWorkflowEngineEndpoint()}/{Uri.EscapeDataString(ns)}/workflows";
+        var queryParams = new List<string>();
+
         if (correlationId.HasValue)
         {
-            url += $"&correlationId={correlationId.Value}";
+            queryParams.Add($"correlationId={correlationId.Value}");
         }
         if (labels is not null)
         {
             foreach (var (key, value) in labels)
             {
-                url += $"&label={Uri.EscapeDataString(key)}:{Uri.EscapeDataString(value)}";
+                queryParams.Add($"label={Uri.EscapeDataString(key)}:{Uri.EscapeDataString(value)}");
             }
+        }
+
+        if (queryParams.Count > 0)
+        {
+            url += "?" + string.Join("&", queryParams);
         }
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
@@ -121,18 +140,21 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
 
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<IReadOnlyList<WorkflowStatusResponse>>(
-                cancellationToken: cancellationToken
-            ) ?? [];
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<WorkflowStatusResponse>>(
+            cancellationToken: cancellationToken
+        );
+
+        return paginated?.Data ?? [];
     }
 
     /// <inheritdoc />
     public async Task<CancelWorkflowResponse> CancelWorkflow(
+        string ns,
         Guid workflowId,
         CancellationToken cancellationToken = default
     )
     {
-        var url = $"{GetWorkflowEngineEndpoint()}/workflows/{workflowId}/cancel";
+        var url = $"{GetWorkflowEngineEndpoint()}/{Uri.EscapeDataString(ns)}/workflows/{workflowId}/cancel";
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
 
         HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
@@ -141,6 +163,31 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         return await response.Content.ReadFromJsonAsync<CancelWorkflowResponse>(cancellationToken: cancellationToken)
             ?? throw new InvalidOperationException(
                 "The expected cancel workflow response was not found in the response content."
+            );
+    }
+
+    /// <inheritdoc />
+    public async Task<ResumeWorkflowResponse> ResumeWorkflow(
+        string ns,
+        Guid workflowId,
+        bool cascade = false,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var url = $"{GetWorkflowEngineEndpoint()}/{Uri.EscapeDataString(ns)}/workflows/{workflowId}/resume";
+        if (cascade)
+        {
+            url += "?cascade=true";
+        }
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+
+        HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<ResumeWorkflowResponse>(cancellationToken: cancellationToken)
+            ?? throw new InvalidOperationException(
+                "The expected resume workflow response was not found in the response content."
             );
     }
 

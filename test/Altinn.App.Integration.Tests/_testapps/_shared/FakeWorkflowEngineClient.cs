@@ -33,6 +33,9 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
     }
 
     public async Task<WorkflowEnqueueResponse.Accepted> EnqueueWorkflows(
+        string ns,
+        string idempotencyKey,
+        Guid? correlationId,
         WorkflowEnqueueRequest request,
         CancellationToken cancellationToken = default
     )
@@ -118,7 +121,7 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
                 {
                     Ref = workflow.Ref,
                     DatabaseId = databaseId,
-                    Namespace = request.Namespace ?? "default",
+                    Namespace = ns,
                 }
             );
         }
@@ -126,7 +129,11 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
         return new WorkflowEnqueueResponse.Accepted { Workflows = workflowResults };
     }
 
-    public Task<WorkflowStatusResponse?> GetWorkflow(Guid workflowId, CancellationToken cancellationToken = default)
+    public Task<WorkflowStatusResponse?> GetWorkflow(
+        string ns,
+        Guid workflowId,
+        CancellationToken cancellationToken = default
+    )
     {
         return Task.FromResult<WorkflowStatusResponse?>(null);
     }
@@ -141,8 +148,22 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
         return Task.FromResult<IReadOnlyList<WorkflowStatusResponse>>([]);
     }
 
-    public Task<CancelWorkflowResponse> CancelWorkflow(Guid workflowId, CancellationToken cancellationToken = default)
+    public Task<CancelWorkflowResponse> CancelWorkflow(
+        string ns,
+        Guid workflowId,
+        CancellationToken cancellationToken = default
+    )
     {
         return Task.FromResult(new CancelWorkflowResponse(workflowId, DateTimeOffset.UtcNow, true));
+    }
+
+    public Task<ResumeWorkflowResponse> ResumeWorkflow(
+        string ns,
+        Guid workflowId,
+        bool cascade = false,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return Task.FromResult(new ResumeWorkflowResponse(workflowId, DateTimeOffset.UtcNow, []));
     }
 }

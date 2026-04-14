@@ -36,6 +36,9 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
 
     /// <inheritdoc />
     public async Task<WorkflowEnqueueResponse.Accepted> EnqueueWorkflows(
+        string ns,
+        string idempotencyKey,
+        Guid? correlationId,
         WorkflowEnqueueRequest request,
         CancellationToken cancellationToken = default
     )
@@ -157,7 +160,7 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
                 {
                     Ref = workflow.Ref,
                     DatabaseId = databaseId,
-                    Namespace = request.Namespace ?? "default",
+                    Namespace = ns,
                 }
             );
         }
@@ -166,7 +169,11 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
     }
 
     /// <inheritdoc />
-    public Task<WorkflowStatusResponse?> GetWorkflow(Guid workflowId, CancellationToken cancellationToken = default)
+    public Task<WorkflowStatusResponse?> GetWorkflow(
+        string ns,
+        Guid workflowId,
+        CancellationToken cancellationToken = default
+    )
     {
         // In synchronous test mode, jobs complete immediately, so there's never an active job
         return Task.FromResult<WorkflowStatusResponse?>(null);
@@ -185,10 +192,25 @@ internal sealed class FakeWorkflowEngineClient : IWorkflowEngineClient
     }
 
     /// <inheritdoc />
-    public Task<CancelWorkflowResponse> CancelWorkflow(Guid workflowId, CancellationToken cancellationToken = default)
+    public Task<CancelWorkflowResponse> CancelWorkflow(
+        string ns,
+        Guid workflowId,
+        CancellationToken cancellationToken = default
+    )
     {
         // In synchronous test mode, cancellation is a no-op
         return Task.FromResult(new CancelWorkflowResponse(workflowId, DateTimeOffset.UtcNow, true));
+    }
+
+    /// <inheritdoc />
+    public Task<ResumeWorkflowResponse> ResumeWorkflow(
+        string ns,
+        Guid workflowId,
+        bool cascade = false,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return Task.FromResult(new ResumeWorkflowResponse(workflowId, DateTimeOffset.UtcNow, []));
     }
 
     /// <summary>

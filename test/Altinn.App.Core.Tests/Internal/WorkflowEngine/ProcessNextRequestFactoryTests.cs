@@ -235,10 +235,10 @@ public class ProcessNextRequestFactoryTests
         };
     }
 
-    private static List<string> ExtractCommandKeys(WorkflowEnqueueRequest request)
+    private static List<string> ExtractCommandKeys(WorkflowEnqueueBundle bundle)
     {
-        return request
-            .Workflows[0]
+        return bundle
+            .Request.Workflows[0]
             .Steps.Select(s =>
             {
                 if (s.Command.Type != "app" || s.Command.Data is not { } data)
@@ -258,10 +258,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToTaskTransition();
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var keys = ExtractCommandKeys(request);
+        var keys = ExtractCommandKeys(bundle);
         var expected = new List<string>
         {
             // Task end commands
@@ -294,10 +294,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToEndTransition();
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var keys = ExtractCommandKeys(request);
+        var keys = ExtractCommandKeys(bundle);
         var expected = new List<string>
         {
             // Task end commands
@@ -329,10 +329,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart();
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var keys = ExtractCommandKeys(request);
+        var keys = ExtractCommandKeys(bundle);
 
         // No MutateProcessState because there is no task-end
         Assert.DoesNotContain(MutateProcessState.Key, keys);
@@ -362,10 +362,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskAbandonToNextTask();
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var keys = ExtractCommandKeys(request);
+        var keys = ExtractCommandKeys(bundle);
         var expected = new List<string>
         {
             // Abandon commands
@@ -398,10 +398,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart(altinnTaskType: "signing");
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var keys = ExtractCommandKeys(request);
+        var keys = ExtractCommandKeys(bundle);
         Assert.Contains(ExecuteServiceTask.Key, keys);
 
         // ExecuteServiceTask should be after MovedToAltinnEvent
@@ -419,10 +419,10 @@ public class ProcessNextRequestFactoryTests
         var prefill = new Dictionary<string, string> { ["key1"] = "value1" };
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}", prefill: prefill);
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}", prefill: prefill);
 
         // Assert
-        var steps = request.Workflows[0].Steps.ToList();
+        var steps = bundle.Request.Workflows[0].Steps.ToList();
         var commonInitStep = steps
             .Where(s => s.Command.Type == "app" && s.Command.Data is not null)
             .Select(s =>
@@ -447,12 +447,12 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToTaskTransition("Task_1", "Task_2");
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "state-blob");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "state-blob");
 
         // Assert
-        Assert.Equal("lock-token", request.IdempotencyKey);
-        Assert.Equal("ttd/test-app", request.Namespace);
-        var workflow = request.Workflows[0];
+        Assert.Equal("lock-token", bundle.IdempotencyKey);
+        Assert.Equal("ttd/test-app", bundle.Namespace);
+        var workflow = bundle.Request.Workflows[0];
         Assert.Equal("Process next: Task_1 -> Task_2", workflow.OperationId);
         Assert.Equal("state-blob", workflow.State);
     }
@@ -465,10 +465,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart("Task_1", startEvent: "StartEvent_1");
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var workflow = request.Workflows[0];
+        var workflow = bundle.Request.Workflows[0];
         Assert.Equal("Process next: StartEvent_1 -> Task_1", workflow.OperationId);
     }
 
@@ -480,10 +480,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToEndTransition("Task_1", "EndEvent_1");
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var workflow = request.Workflows[0];
+        var workflow = bundle.Request.Workflows[0];
         Assert.Equal("Process next: Task_1 -> EndEvent_1", workflow.OperationId);
     }
 
@@ -496,11 +496,11 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart();
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert - Actor is now in Context
-        Assert.NotNull(request.Context);
-        var context = JsonSerializer.Deserialize<AppWorkflowContext>(request.Context.Value);
+        Assert.NotNull(bundle.Request.Context);
+        var context = JsonSerializer.Deserialize<AppWorkflowContext>(bundle.Request.Context.Value);
         Assert.NotNull(context);
         Assert.Equal("42", context.Actor.UserIdOrOrgNumber);
     }
@@ -513,10 +513,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToTaskTransition();
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var keys = ExtractCommandKeys(request);
+        var keys = ExtractCommandKeys(bundle);
         Assert.DoesNotContain(MovedToAltinnEvent.Key, keys);
         Assert.DoesNotContain(CompletedAltinnEvent.Key, keys);
         Assert.DoesNotContain(InstanceCreatedAltinnEvent.Key, keys);
@@ -530,10 +530,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToEndTransition();
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var keys = ExtractCommandKeys(request);
+        var keys = ExtractCommandKeys(bundle);
         Assert.DoesNotContain(CompletedAltinnEvent.Key, keys);
         Assert.DoesNotContain(MovedToAltinnEvent.Key, keys);
         // Non-event post-commit commands should still be present
@@ -550,10 +550,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateInitialTaskStart();
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var keys = ExtractCommandKeys(request);
+        var keys = ExtractCommandKeys(bundle);
         Assert.DoesNotContain(MovedToAltinnEvent.Key, keys);
         Assert.DoesNotContain(InstanceCreatedAltinnEvent.Key, keys);
     }
@@ -566,10 +566,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToEndTransition();
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var keys = ExtractCommandKeys(request);
+        var keys = ExtractCommandKeys(bundle);
         Assert.DoesNotContain(DeleteDataElementsIfConfigured.Key, keys);
         Assert.DoesNotContain(DeleteInstanceIfConfigured.Key, keys);
         // Other process end commands should still be present
@@ -584,10 +584,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToEndTransition();
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var keys = ExtractCommandKeys(request);
+        var keys = ExtractCommandKeys(bundle);
         Assert.Contains(DeleteInstanceIfConfigured.Key, keys);
         Assert.DoesNotContain(DeleteDataElementsIfConfigured.Key, keys);
     }
@@ -600,10 +600,10 @@ public class ProcessNextRequestFactoryTests
         var stateChange = CreateTaskToEndTransition();
 
         // Act
-        var request = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
+        var bundle = await factory.Create(TestInstance, stateChange, "lock-token", "{}");
 
         // Assert
-        var keys = ExtractCommandKeys(request);
+        var keys = ExtractCommandKeys(bundle);
         Assert.Contains(DeleteDataElementsIfConfigured.Key, keys);
         Assert.DoesNotContain(DeleteInstanceIfConfigured.Key, keys);
     }

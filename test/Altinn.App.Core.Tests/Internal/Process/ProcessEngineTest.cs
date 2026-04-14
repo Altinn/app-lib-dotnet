@@ -163,8 +163,18 @@ public sealed class ProcessEngineTest
         var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
         WorkflowEnqueueRequest? capturedRequest = null;
         processEngineClientMock
-            .Setup(c => c.EnqueueWorkflows(It.IsAny<WorkflowEnqueueRequest>(), It.IsAny<CancellationToken>()))
-            .Callback<WorkflowEnqueueRequest, CancellationToken>((req, _) => capturedRequest = req)
+            .Setup(c =>
+                c.EnqueueWorkflows(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Guid?>(),
+                    It.IsAny<WorkflowEnqueueRequest>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Callback<string, string, Guid?, WorkflowEnqueueRequest, CancellationToken>(
+                (_, _, _, req, _) => capturedRequest = req
+            )
             .ReturnsAsync(
                 new WorkflowEnqueueResponse.Accepted
                 {
@@ -298,8 +308,18 @@ public sealed class ProcessEngineTest
         var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
         WorkflowEnqueueRequest? capturedRequest = null;
         processEngineClientMock
-            .Setup(c => c.EnqueueWorkflows(It.IsAny<WorkflowEnqueueRequest>(), It.IsAny<CancellationToken>()))
-            .Callback<WorkflowEnqueueRequest, CancellationToken>((req, _) => capturedRequest = req)
+            .Setup(c =>
+                c.EnqueueWorkflows(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Guid?>(),
+                    It.IsAny<WorkflowEnqueueRequest>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Callback<string, string, Guid?, WorkflowEnqueueRequest, CancellationToken>(
+                (_, _, _, req, _) => capturedRequest = req
+            )
             .ReturnsAsync(
                 new WorkflowEnqueueResponse.Accepted
                 {
@@ -427,8 +447,18 @@ public sealed class ProcessEngineTest
         var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
         WorkflowEnqueueRequest? capturedRequest = null;
         processEngineClientMock
-            .Setup(c => c.EnqueueWorkflows(It.IsAny<WorkflowEnqueueRequest>(), It.IsAny<CancellationToken>()))
-            .Callback<WorkflowEnqueueRequest, CancellationToken>((req, _) => capturedRequest = req)
+            .Setup(c =>
+                c.EnqueueWorkflows(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Guid?>(),
+                    It.IsAny<WorkflowEnqueueRequest>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Callback<string, string, Guid?, WorkflowEnqueueRequest, CancellationToken>(
+                (_, _, _, req, _) => capturedRequest = req
+            )
             .ReturnsAsync(
                 new WorkflowEnqueueResponse.Accepted
                 {
@@ -1349,7 +1379,15 @@ public sealed class ProcessEngineTest
 
             var processEngineClientMock = new Mock<IWorkflowEngineClient>(MockBehavior.Strict);
             processEngineClientMock
-                .Setup(c => c.EnqueueWorkflows(It.IsAny<WorkflowEnqueueRequest>(), It.IsAny<CancellationToken>()))
+                .Setup(c =>
+                    c.EnqueueWorkflows(
+                        It.IsAny<string>(),
+                        It.IsAny<string>(),
+                        It.IsAny<Guid?>(),
+                        It.IsAny<WorkflowEnqueueRequest>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
                 .ReturnsAsync(
                     new WorkflowEnqueueResponse.Accepted
                     {

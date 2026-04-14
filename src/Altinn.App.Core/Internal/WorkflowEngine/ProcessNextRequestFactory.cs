@@ -18,6 +18,17 @@ using Microsoft.Extensions.Options;
 namespace Altinn.App.Core.Internal.WorkflowEngine;
 
 /// <summary>
+/// Result from <see cref="ProcessNextRequestFactory.Create"/> containing both the request body
+/// and the metadata that must be sent via URL path and HTTP headers.
+/// </summary>
+internal sealed record WorkflowEnqueueBundle(
+    WorkflowEnqueueRequest Request,
+    string Namespace,
+    string IdempotencyKey,
+    Guid? CorrelationId
+);
+
+/// <summary>
 /// Factory for creating WorkflowEnqueueRequest objects from process state changes.
 /// Maps instance events to command sequences and assembles the complete request.
 /// </summary>
@@ -45,10 +56,11 @@ internal sealed class ProcessNextRequestFactory
     }
 
     /// <summary>
-    /// Creates a WorkflowEnqueueRequest from the process state change.
-    /// Maps each instance event to its corresponding command sequence.
+    /// Creates a WorkflowEnqueueBundle from the process state change.
+    /// The bundle contains the request body plus the metadata (namespace, idempotency key,
+    /// correlation ID) that must be sent via URL path and HTTP headers.
     /// </summary>
-    public async Task<WorkflowEnqueueRequest> Create(
+    public async Task<WorkflowEnqueueBundle> Create(
         Instance instance,
         ProcessStateChange processStateChange,
         string lockToken,
@@ -85,11 +97,11 @@ internal sealed class ProcessNextRequestFactory
             InstanceGuid = instanceId.InstanceGuid,
         };
 
-        return new WorkflowEnqueueRequest
+        string ns = $"{_appIdentifier.Org}/{_appIdentifier.App}";
+        Guid correlationId = instanceId.InstanceGuid;
+
+        var request = new WorkflowEnqueueRequest
         {
-            IdempotencyKey = idempotencyKey,
-            Namespace = $"{_appIdentifier.Org}/{_appIdentifier.App}",
-            CorrelationId = instanceId.InstanceGuid,
             Context = JsonSerializer.SerializeToElement(context),
             Workflows =
             [
@@ -102,6 +114,8 @@ internal sealed class ProcessNextRequestFactory
                 },
             ],
         };
+
+        return new WorkflowEnqueueBundle(request, ns, idempotencyKey, correlationId);
     }
 
     private async Task<List<StepRequest>> AssembleCommandSequence(

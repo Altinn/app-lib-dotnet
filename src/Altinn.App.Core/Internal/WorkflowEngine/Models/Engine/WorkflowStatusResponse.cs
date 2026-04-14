@@ -100,6 +100,13 @@ internal sealed record WorkflowStatusResponse
     public IReadOnlyDictionary<Guid, PersistentItemStatus>? Links { get; init; }
 
     /// <summary>
+    /// The initial state passed to the first step of the workflow.
+    /// </summary>
+    [JsonPropertyName("initialState")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? InitialState { get; init; }
+
+    /// <summary>
     /// Details about each step in the workflow.
     /// </summary>
     [JsonPropertyName("steps")]
@@ -166,6 +173,13 @@ internal sealed record StepStatusResponse
     /// </summary>
     [JsonPropertyName("retryCount")]
     public required int RetryCount { get; init; }
+
+    /// <summary>
+    /// The output state produced by this step, passed as input to the next step.
+    /// </summary>
+    [JsonPropertyName("stateOut")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? StateOut { get; init; }
 
     /// <summary>
     /// The retry strategy for this step.

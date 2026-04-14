@@ -26,7 +26,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProcessNextRequest = Altinn.App.Core.Models.Process.ProcessNextRequest;
-using WorkflowEnqueueRequest = Altinn.App.Core.Internal.WorkflowEngine.Models.Engine.WorkflowEnqueueRequest;
 
 namespace Altinn.App.Core.Internal.Process;
 
@@ -655,12 +654,13 @@ internal class ProcessEngine : IProcessEngine
         // Capture state BEFORE mutation — commands that run before SaveProcessStateToStorage
         // need to see the old process state, mirroring how they'd read it from Storage.
         string? currentTaskId = instance.Process?.CurrentTask?.ElementId;
-        var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
+        InstanceDataUnitOfWork unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
             instance,
             currentTaskId,
             language: null,
             StorageAuthenticationMethod.ServiceOwner()
         );
+
         string state = await _instanceStateService.CaptureState(unitOfWork);
 
         ProcessStateChange? processStateChange = await MoveProcessStateToNextAndGenerateEvents(instance, action);
@@ -718,7 +718,7 @@ internal class ProcessEngine : IProcessEngine
         CancellationToken ct = default
     )
     {
-        WorkflowEnqueueRequest enqueueRequest = await _processNextRequestFactory.Create(
+        WorkflowEnqueueBundle bundle = await _processNextRequestFactory.Create(
             instance,
             processStateChange,
             lockToken,
@@ -728,7 +728,15 @@ internal class ProcessEngine : IProcessEngine
             prefill: prefill,
             notification: notification
         );
-        WorkflowEnqueueResponse.Accepted response = await _workflowEngineClient.EnqueueWorkflows(enqueueRequest, ct);
+
+        WorkflowEnqueueResponse.Accepted response = await _workflowEngineClient.EnqueueWorkflows(
+            bundle.Namespace,
+            bundle.IdempotencyKey,
+            bundle.CorrelationId,
+            bundle.Request,
+            ct
+        );
+
         return response.Workflows[0].DatabaseId;
     }
 
