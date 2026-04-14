@@ -51,6 +51,7 @@ public class PaymentController : ControllerBase
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
+    /// <param name="taskId">Optional task ID to use instead of the current task. Useful for retrieving payment information for a completed payment task.</param>
     /// <returns>An object containing updated payment information</returns>
     [HttpGet]
     [ProducesResponseType(typeof(PaymentInformation), StatusCodes.Status200OK)]
@@ -60,23 +61,23 @@ public class PaymentController : ControllerBase
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromQuery] string? language = null
+        [FromQuery] string? language = null,
+        [FromQuery] string? taskId = null
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        if (instance.Process?.CurrentTask?.ElementId == null)
+        string? resolvedTaskId = taskId ?? instance.Process?.CurrentTask?.ElementId;
+        if (resolvedTaskId == null)
         {
-            return BadRequest("Instance has no current task");
+            return BadRequest("Instance has no current task and no taskId was provided");
         }
         AltinnPaymentConfiguration? paymentConfiguration = _processReader
-            .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
+            .GetAltinnTaskExtension(resolvedTaskId)
             ?.PaymentConfiguration;
 
         if (paymentConfiguration == null)
         {
-            return BadRequest(
-                $"Instance has no payment configuration for current task {instance.Process.CurrentTask.ElementId}"
-            );
+            return BadRequest($"Instance has no payment configuration for task {resolvedTaskId}");
         }
 
         var validPaymentConfiguration = paymentConfiguration.Validate();
@@ -84,7 +85,8 @@ public class PaymentController : ControllerBase
         PaymentInformation paymentInformation = await _paymentService.CheckAndStorePaymentStatus(
             instance,
             validPaymentConfiguration,
-            language
+            language,
+            overrideTaskId: taskId
         );
 
         return Ok(paymentInformation);

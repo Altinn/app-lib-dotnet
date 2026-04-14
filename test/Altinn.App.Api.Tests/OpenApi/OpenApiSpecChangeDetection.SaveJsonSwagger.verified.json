@@ -4101,6 +4101,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "taskId",
+            "in": "query",
+            "description": "Optional task ID to use instead of the current task. Useful for retrieving payment information for a completed payment task.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {

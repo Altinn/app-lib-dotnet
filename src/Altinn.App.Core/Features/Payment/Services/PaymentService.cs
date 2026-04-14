@@ -154,7 +154,8 @@ internal class PaymentService : IPaymentService
     public async Task<PaymentInformation> CheckAndStorePaymentStatus(
         Instance instance,
         ValidAltinnPaymentConfiguration paymentConfiguration,
-        string? language
+        string? language,
+        string? overrideTaskId = null
     )
     {
         _logger.LogInformation("Checking payment status for instance {InstanceId}.", instance.Id);
@@ -182,7 +183,7 @@ internal class PaymentService : IPaymentService
 
             return new PaymentInformation
             {
-                TaskId = instance.Process.CurrentTask.ElementId,
+                TaskId = overrideTaskId ?? instance.Process.CurrentTask.ElementId,
                 Status = PaymentStatus.Uninitialized,
                 OrderDetails = await orderDetailsCalculator.CalculateOrderDetails(instance, language),
             };
@@ -196,6 +197,17 @@ internal class PaymentService : IPaymentService
             _logger.LogInformation(
                 "Payment status is '{Skipped}' for instance {InstanceId}. Won't ask payment processor for status.",
                 PaymentStatus.Skipped.ToString(),
+                instance.Id
+            );
+
+            return paymentInformation;
+        }
+
+        if (paymentInformation.Status == PaymentStatus.Paid)
+        {
+            _logger.LogInformation(
+                "Payment status is '{Paid}' for instance {InstanceId}. Won't ask payment processor for status.",
+                PaymentStatus.Paid.ToString(),
                 instance.Id
             );
 
@@ -221,18 +233,31 @@ internal class PaymentService : IPaymentService
         paymentInformation.Status = paymentStatus;
         paymentInformation.PaymentDetails = updatedPaymentDetails;
 
-        _logger.LogInformation(
-            "Updated payment status is {Status} for instance {InstanceId}.",
-            paymentInformation.Status.ToString(),
-            instance.Id
-        );
+        // Skip persisting updated status when an explicit taskId was provided that differs from the current task
+        if (overrideTaskId is null || overrideTaskId == instance.Process?.CurrentTask?.ElementId)
+        {
+            _logger.LogInformation(
+                "Persisting updated payment status {Status} for instance {InstanceId}.",
+                paymentInformation.Status.ToString(),
+                instance.Id
+            );
 
-        await _dataService.UpdateJsonObject(
-            new InstanceIdentifier(instance),
-            dataTypeId,
-            dataElementId,
-            paymentInformation
-        );
+            await _dataService.UpdateJsonObject(
+                new InstanceIdentifier(instance),
+                dataTypeId,
+                dataElementId,
+                paymentInformation
+            );
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Payment status from processor is {Status} for instance {InstanceId}, but not persisting since task {OverrideTaskId} is not the current task.",
+                paymentInformation.Status.ToString(),
+                instance.Id,
+                overrideTaskId
+            );
+        }
 
         return paymentInformation;
     }

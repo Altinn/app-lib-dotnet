@@ -24,7 +24,8 @@ internal interface IPaymentService
     Task<PaymentInformation> CheckAndStorePaymentStatus(
         Instance instance,
         ValidAltinnPaymentConfiguration paymentConfiguration,
-        string? language
+        string? language,
+        string? overrideTaskId = null
     );
 
     /// <summary>
