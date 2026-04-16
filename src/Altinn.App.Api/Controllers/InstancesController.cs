@@ -1427,6 +1427,14 @@ public class InstancesController : ControllerBase
                 };
             }
 
+            if (
+                await _dataElementAccessChecker.GetCreateProblem(instance, dataType, _authenticationContext.Current) is
+                { } accessProblem
+            )
+            {
+                return accessProblem;
+            }
+
             if (dataType.AppLogic?.ClassRef != null)
             {
                 _logger.LogInformation("Storing part {partName}", part.Name);

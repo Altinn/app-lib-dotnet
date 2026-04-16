@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Models;
 using Altinn.App.Core.Constants;
+using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Validation;
@@ -27,6 +28,8 @@ public partial class DataTagsController : ControllerBase
     private readonly IDataClient _dataClient;
     private readonly IValidationService _validationService;
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
+    private readonly IDataElementAccessChecker _dataElementAccessChecker;
+    private readonly IAppMetadata _applicationMetadata;
 
     /// <summary>
     /// Initialize a new instance of <see cref="DataTagsController"/> with the given services.
@@ -46,6 +49,8 @@ public partial class DataTagsController : ControllerBase
         _dataClient = dataClient;
         _validationService = validationService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
+        _applicationMetadata = serviceProvider.GetRequiredService<IAppMetadata>();
     }
 
     /// <summary>
@@ -164,6 +169,24 @@ public partial class DataTagsController : ControllerBase
             );
         }
 
+        var applicationMetadata = await _applicationMetadata.GetApplicationMetadata();
+        var dataType = applicationMetadata.DataTypes.FirstOrDefault(m =>
+            m.Id.Equals(dataElement.DataType, StringComparison.Ordinal)
+        );
+        if (dataType is null)
+        {
+            return Problem(
+                title: "Data type not found",
+                detail: $"Unable to find data type {dataElement.DataType} for data element {dataGuid} based on the given parameters.",
+                statusCode: StatusCodes.Status500InternalServerError
+            );
+        }
+
+        if (await _dataElementAccessChecker.GetUpdateProblem(instance, dataType) is { } accessProblem)
+        {
+            return StatusCode(accessProblem.Status ?? StatusCodes.Status500InternalServerError, accessProblem);
+        }
+
         if (!dataElement.Tags.Contains(tag))
         {
             dataElement.Tags.Add(tag);
@@ -240,6 +263,24 @@ public partial class DataTagsController : ControllerBase
             );
         }
 
+        var applicationMetadata = await _applicationMetadata.GetApplicationMetadata();
+        var dataType = applicationMetadata.DataTypes.FirstOrDefault(m =>
+            m.Id.Equals(dataElement.DataType, StringComparison.Ordinal)
+        );
+        if (dataType is null)
+        {
+            return Problem(
+                title: "Data type not found",
+                detail: $"Unable to find data type {dataElement.DataType} for data element {dataGuid} based on the given parameters.",
+                statusCode: StatusCodes.Status500InternalServerError
+            );
+        }
+
+        if (await _dataElementAccessChecker.GetUpdateProblem(instance, dataType) is { } accessProblem)
+        {
+            return StatusCode(accessProblem.Status ?? StatusCodes.Status500InternalServerError, accessProblem);
+        }
+
         if (dataElement.Tags.Remove(tag))
         {
             await _dataClient.Update(instance, dataElement, authenticationMethod: null, CancellationToken.None);
@@ -314,6 +355,24 @@ public partial class DataTagsController : ControllerBase
                 detail: "Unable to find data element based on the given parameters.",
                 statusCode: StatusCodes.Status404NotFound
             );
+        }
+
+        var applicationMetadata = await _applicationMetadata.GetApplicationMetadata();
+        var dataType = applicationMetadata.DataTypes.FirstOrDefault(m =>
+            m.Id.Equals(dataElement.DataType, StringComparison.Ordinal)
+        );
+        if (dataType is null)
+        {
+            return Problem(
+                title: "Data type not found",
+                detail: $"Unable to find data type {dataElement.DataType} for data element {dataGuid} based on the given parameters.",
+                statusCode: StatusCodes.Status500InternalServerError
+            );
+        }
+
+        if (await _dataElementAccessChecker.GetUpdateProblem(instance, dataType) is { } accessProblem)
+        {
+            return StatusCode(accessProblem.Status ?? StatusCodes.Status500InternalServerError, accessProblem);
         }
 
         // Set dataElement tags to be the new tags

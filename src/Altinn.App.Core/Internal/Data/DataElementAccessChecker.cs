@@ -1,3 +1,4 @@
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
@@ -7,6 +8,7 @@ using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Core.Internal.Data;
 
@@ -21,19 +23,22 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
     private readonly IAuthorizationService _authorizationService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IAppMetadata _appMetadata;
+    private readonly IOptions<AppSettings> _appSettings;
     private readonly IAuthenticationContext _authenticationContext;
 
     public DataElementAccessChecker(
         IAuthorizationService authorizationService,
         IHttpContextAccessor httpContextAccessor,
         IAuthenticationContext authenticationContext,
-        IAppMetadata appMetadata
+        IAppMetadata appMetadata,
+        IOptions<AppSettings> appSettings
     )
     {
         _authorizationService = authorizationService;
         _httpContextAccessor = httpContextAccessor;
         _authenticationContext = authenticationContext;
         _appMetadata = appMetadata;
+        _appSettings = appSettings;
     }
 
     /// <inheritdoc />
@@ -105,6 +110,22 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
                 Detail = $"Data element of type {dataType.Id} cannot be modified",
                 Status = StatusCodes.Status403Forbidden,
             };
+        }
+
+        // TODO: v9 remove setting and make this check the default (along with making dataType.TaskId into a list)
+        if (_appSettings.Value.EnforceDataTypeTaskId && dataType.TaskId is { } expectedTaskId)
+        {
+            var currentTaskId = instance.Process.CurrentTask?.ElementId;
+            if (!expectedTaskId.Equals(currentTaskId, StringComparison.Ordinal))
+            {
+                return new ProblemDetails
+                {
+                    Title = "Forbidden",
+                    Detail =
+                        $"Data element of type {dataType.Id} can only be modified in {expectedTaskId} (current task {currentTaskId})",
+                    Status = StatusCodes.Status409Conflict,
+                };
+            }
         }
 
         if (await HasRequiredActionAuthorization(instance, dataType.ActionRequiredToWrite) is false)
