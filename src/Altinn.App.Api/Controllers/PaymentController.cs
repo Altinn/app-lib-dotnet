@@ -44,18 +44,18 @@ public class PaymentController : ControllerBase
     }
 
     /// <summary>
-    /// Get updated payment information for the instance. Will contact the payment processor to check the status of the payment. Current task must be a payment task. See payment related documentation.
+    /// Get updated payment information for the instance. Will contact the payment processor to check the status of the payment. Current task must be a payment task, or a payment task ID must be supplied via the <c>taskId</c> query parameter. See payment related documentation.
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
-    /// <param name="taskId">Optional task ID to use instead of the current task. Useful for retrieving payment information for a completed payment task.</param>
+    /// <param name="taskId">If payment information should be loaded for a different task than the current one. Useful for retrieving payment information for a completed payment task. Updates from the processor are not persisted when this is set.</param>
     /// <returns>An object containing updated payment information</returns>
     [HttpGet]
     [ProducesResponseType(typeof(PaymentInformation), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPaymentInformation(
         [FromRoute] string org,
         [FromRoute] string app,
@@ -66,30 +66,37 @@ public class PaymentController : ControllerBase
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        string? resolvedTaskId = taskId ?? instance.Process?.CurrentTask?.ElementId;
-        if (resolvedTaskId == null)
-        {
-            return BadRequest("Instance has no current task and no taskId was provided");
-        }
-        AltinnPaymentConfiguration? paymentConfiguration = _processReader
-            .GetAltinnTaskExtension(resolvedTaskId)
-            ?.PaymentConfiguration;
 
-        if (paymentConfiguration == null)
+        string? finalTaskId = taskId ?? instance.Process?.CurrentTask?.ElementId;
+        AltinnPaymentConfiguration? paymentConfiguration = finalTaskId is null
+            ? null
+            : _processReader.GetAltinnTaskExtension(finalTaskId)?.PaymentConfiguration;
+
+        if (finalTaskId is null || paymentConfiguration is null)
         {
-            return BadRequest($"Instance has no payment configuration for task {resolvedTaskId}");
+            return NotPaymentTask();
         }
 
         var validPaymentConfiguration = paymentConfiguration.Validate();
 
-        PaymentInformation paymentInformation = await _paymentService.CheckAndStorePaymentStatus(
-            instance,
-            validPaymentConfiguration,
-            language,
-            overrideTaskId: taskId
-        );
+        PaymentInformation paymentInformation = taskId is null
+            ? await _paymentService.CheckAndStorePaymentStatus(instance, validPaymentConfiguration, language)
+            : await _paymentService.CheckPaymentStatus(instance, validPaymentConfiguration, finalTaskId, language);
 
         return Ok(paymentInformation);
+    }
+
+    private static BadRequestObjectResult NotPaymentTask()
+    {
+        return new BadRequestObjectResult(
+            new ProblemDetails
+            {
+                Title = "Not a payment task",
+                Detail =
+                    "This endpoint is only callable while the current task is a payment task, or when the taskId query param is set to a payment task's ID.",
+                Status = StatusCodes.Status400BadRequest,
+            }
+        );
     }
 
     /// <summary>

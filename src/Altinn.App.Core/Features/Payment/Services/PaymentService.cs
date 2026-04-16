@@ -151,11 +151,34 @@ internal class PaymentService : IPaymentService
     }
 
     /// <inheritdoc/>
-    public async Task<PaymentInformation> CheckAndStorePaymentStatus(
+    public Task<PaymentInformation> CheckAndStorePaymentStatus(
         Instance instance,
         ValidAltinnPaymentConfiguration paymentConfiguration,
+        string? language
+    )
+    {
+        string taskId =
+            instance.Process?.CurrentTask?.ElementId ?? throw new PaymentException("Instance has no current task.");
+        return CheckPaymentStatusInternal(instance, paymentConfiguration, taskId, language, persistUpdates: true);
+    }
+
+    /// <inheritdoc/>
+    public Task<PaymentInformation> CheckPaymentStatus(
+        Instance instance,
+        ValidAltinnPaymentConfiguration paymentConfiguration,
+        string taskId,
+        string? language
+    )
+    {
+        return CheckPaymentStatusInternal(instance, paymentConfiguration, taskId, language, persistUpdates: false);
+    }
+
+    private async Task<PaymentInformation> CheckPaymentStatusInternal(
+        Instance instance,
+        ValidAltinnPaymentConfiguration paymentConfiguration,
+        string taskId,
         string? language,
-        string? overrideTaskId = null
+        bool persistUpdates
     )
     {
         _logger.LogInformation("Checking payment status for instance {InstanceId}.", instance.Id);
@@ -183,14 +206,11 @@ internal class PaymentService : IPaymentService
 
             return new PaymentInformation
             {
-                TaskId = overrideTaskId ?? instance.Process.CurrentTask.ElementId,
+                TaskId = taskId,
                 Status = PaymentStatus.Uninitialized,
                 OrderDetails = await orderDetailsCalculator.CalculateOrderDetails(instance, language),
             };
         }
-
-        decimal totalPriceIncVat = paymentInformation.OrderDetails.TotalPriceIncVat;
-        string paymentProcessorId = paymentInformation.OrderDetails.PaymentProcessorId;
 
         if (paymentInformation.Status == PaymentStatus.Skipped)
         {
@@ -203,16 +223,8 @@ internal class PaymentService : IPaymentService
             return paymentInformation;
         }
 
-        if (paymentInformation.Status == PaymentStatus.Paid)
-        {
-            _logger.LogInformation(
-                "Payment status is '{Paid}' for instance {InstanceId}. Won't ask payment processor for status.",
-                PaymentStatus.Paid.ToString(),
-                instance.Id
-            );
-
-            return paymentInformation;
-        }
+        decimal totalPriceIncVat = paymentInformation.OrderDetails.TotalPriceIncVat;
+        string paymentProcessorId = paymentInformation.OrderDetails.PaymentProcessorId;
 
         var paymentProcessors = _appImplementationFactory.GetAll<IPaymentProcessor>();
         IPaymentProcessor paymentProcessor =
@@ -233,29 +245,19 @@ internal class PaymentService : IPaymentService
         paymentInformation.Status = paymentStatus;
         paymentInformation.PaymentDetails = updatedPaymentDetails;
 
-        // Skip persisting updated status when an explicit taskId was provided that differs from the current task
-        if (overrideTaskId is null || overrideTaskId == instance.Process?.CurrentTask?.ElementId)
-        {
-            _logger.LogInformation(
-                "Persisting updated payment status {Status} for instance {InstanceId}.",
-                paymentInformation.Status.ToString(),
-                instance.Id
-            );
+        _logger.LogInformation(
+            "Updated payment status is {Status} for instance {InstanceId}.",
+            paymentInformation.Status.ToString(),
+            instance.Id
+        );
 
+        if (persistUpdates)
+        {
             await _dataService.UpdateJsonObject(
                 new InstanceIdentifier(instance),
                 dataTypeId,
                 dataElementId,
                 paymentInformation
-            );
-        }
-        else
-        {
-            _logger.LogInformation(
-                "Payment status from processor is {Status} for instance {InstanceId}, but not persisting since task {OverrideTaskId} is not the current task.",
-                paymentInformation.Status.ToString(),
-                instance.Id,
-                overrideTaskId
             );
         }
 

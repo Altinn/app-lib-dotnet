@@ -501,6 +501,46 @@ public sealed class PaymentServiceTests
     }
 
     [Fact]
+    public async Task CheckPaymentStatus_DoesNotPersistUpdatedStatus()
+    {
+        OrderDetails orderDetails = CreateOrderDetails();
+        ValidAltinnPaymentConfiguration paymentConfiguration = CreatePaymentConfiguration();
+        PaymentInformation paymentInformation = CreatePaymentInformation();
+
+        SetupPaymentProcessor(orderDetails);
+
+        _fixture
+            .Mock<IPaymentProcessor>()
+            .Setup(pp => pp.GetPaymentStatus(It.IsAny<Instance>(), It.IsAny<string>(), It.IsAny<decimal>(), Language))
+            .ReturnsAsync(
+                (PaymentStatus.Paid, new PaymentDetails { PaymentId = "paymentId", RedirectUrl = "redirect url" })
+            );
+
+        await using var sp = _fixture.BuildServiceProvider();
+
+        var dataService = sp.GetRequiredService<IDataService>();
+        await dataService.InsertJsonObject(new InstanceIdentifier(_instance), PaymentDataTypeId, paymentInformation);
+
+        var paymentService = sp.GetRequiredService<IPaymentService>();
+        PaymentInformation? result = await paymentService.CheckPaymentStatus(
+            _instance,
+            paymentConfiguration,
+            taskId: "Task_other",
+            Language
+        );
+
+        result.Should().NotBeNull();
+        result!.Status.Should().Be(PaymentStatus.Paid);
+
+        // Status on disk should be unchanged.
+        (_, PaymentInformation? stored) = await dataService.GetByType<PaymentInformation>(_instance, PaymentDataTypeId);
+        stored.Should().NotBeNull();
+        stored!.Status.Should().NotBe(PaymentStatus.Paid);
+
+        _fixture.VerifyMocks();
+    }
+
+    [Fact]
     public async Task CheckAndStorePaymentStatus_ShouldThrowPaymentException_WhenOrderDetailsCalculatorIsNull()
     {
         var paymentConfiguration = new AltinnPaymentConfiguration
