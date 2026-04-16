@@ -79,11 +79,75 @@ public class PaymentController : ControllerBase
 
         var validPaymentConfiguration = paymentConfiguration.Validate();
 
-        PaymentInformation paymentInformation = taskId is null
-            ? await _paymentService.CheckAndStorePaymentStatus(instance, validPaymentConfiguration, language)
-            : await _paymentService.CheckPaymentStatus(instance, validPaymentConfiguration, finalTaskId, language);
+        // Persist updates only when the requested task is still the instance's current task.
+        // After the webhook advances the process, the frontend may still poll with the (now historical) payment task id —
+        // we want to return its status without overwriting payment data that no longer belongs to the current task.
+        bool isCurrentTask = finalTaskId == instance.Process?.CurrentTask?.ElementId;
+
+        PaymentInformation paymentInformation;
+        if (isCurrentTask)
+        {
+            try
+            {
+                paymentInformation = await _paymentService.CheckAndStorePaymentStatus(
+                    instance,
+                    validPaymentConfiguration,
+                    language
+                );
+            }
+            catch (Exception ex)
+            {
+                // The persisting path can race with a concurrent webhook callback that advances the process past
+                // finalTaskId after our GetInstance above. Re-fetch to confirm; if the task has moved, fall back to
+                // a read-only result rather than surface a 5xx — the next poll will reconcile.
+                if (!await CurrentTaskMovedAwayFrom(app, org, instanceOwnerPartyId, instanceGuid, finalTaskId))
+                {
+                    throw;
+                }
+                _logger.LogInformation(
+                    ex,
+                    "Storing payment status failed because the process advanced past task {TaskId} during the request. Returning read-only status.",
+                    finalTaskId
+                );
+                paymentInformation = await _paymentService.CheckPaymentStatus(
+                    instance,
+                    validPaymentConfiguration,
+                    finalTaskId,
+                    language
+                );
+            }
+        }
+        else
+        {
+            paymentInformation = await _paymentService.CheckPaymentStatus(
+                instance,
+                validPaymentConfiguration,
+                finalTaskId,
+                language
+            );
+        }
 
         return Ok(paymentInformation);
+    }
+
+    private async Task<bool> CurrentTaskMovedAwayFrom(
+        string app,
+        string org,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        string expectedTaskId
+    )
+    {
+        try
+        {
+            Instance refreshed = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+            return refreshed.Process?.CurrentTask?.ElementId != expectedTaskId;
+        }
+        catch
+        {
+            // Can't verify — assume the original failure was unrelated and let it surface.
+            return false;
+        }
     }
 
     private static BadRequestObjectResult NotPaymentTask()

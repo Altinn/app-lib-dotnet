@@ -17,6 +17,7 @@ using Altinn.App.Tests.Common.Fixtures;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit.Abstractions;
@@ -470,6 +471,110 @@ public class PaymentControllerTests
         );
         var response = Assert.IsType<OkObjectResult>(result);
         Assert.Contains("No payment information stored yet for instance", response.Value?.ToString());
+        _services.VerifyMocks();
+    }
+
+    [Fact]
+    public async Task GetPaymentInformation_PersistFailsAfterProcessAdvanced_FallsBackToReadOnly()
+    {
+        SetupAltinnTaskExtensionMock(
+            "currentTask",
+            new AltinnTaskExtension
+            {
+                PaymentConfiguration = new()
+                {
+                    PaymentDataType = "paymentDataType",
+                    PaymentReceiptPdfDataType = "paymentPdfDataType",
+                },
+            },
+            Times.Once()
+        );
+
+        // Replace the real PaymentService with a mock that simulates the race: the persisting call throws,
+        // and at the same moment the underlying instance's process advances past the requested task.
+        _services.Services.RemoveAll<IPaymentService>();
+        var fallbackResult = new PaymentInformation
+        {
+            TaskId = "currentTask",
+            Status = PaymentStatus.Paid,
+            OrderDetails = _orderDetails,
+        };
+
+        _services
+            .Mock<IPaymentService>()
+            .Setup(s =>
+                s.CheckAndStorePaymentStatus(
+                    It.IsAny<Instance>(),
+                    It.IsAny<ValidAltinnPaymentConfiguration>(),
+                    It.IsAny<string?>()
+                )
+            )
+            .Callback(() =>
+            {
+                // Simulate a webhook callback advancing the process during our request.
+                _instance.Process.CurrentTask.ElementId = "Task_next";
+            })
+            .ThrowsAsync(new InvalidOperationException("Storage rejected payment write — task changed"));
+
+        _services
+            .Mock<IPaymentService>()
+            .Setup(s =>
+                s.CheckPaymentStatus(
+                    It.IsAny<Instance>(),
+                    It.IsAny<ValidAltinnPaymentConfiguration>(),
+                    "currentTask",
+                    It.IsAny<string?>()
+                )
+            )
+            .ReturnsAsync(fallbackResult);
+
+        await using var sp = _services.BuildServiceProvider();
+        var controller = sp.GetRequiredService<PaymentController>();
+
+        var result = await controller.GetPaymentInformation("org", "app", PartyId, _instanceGuid);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var info = Assert.IsType<PaymentInformation>(ok.Value);
+        Assert.Equal(PaymentStatus.Paid, info.Status);
+
+        _services.VerifyMocks();
+    }
+
+    [Fact]
+    public async Task GetPaymentInformation_PersistFailsButTaskUnchanged_PropagatesException()
+    {
+        SetupAltinnTaskExtensionMock(
+            "currentTask",
+            new AltinnTaskExtension
+            {
+                PaymentConfiguration = new()
+                {
+                    PaymentDataType = "paymentDataType",
+                    PaymentReceiptPdfDataType = "paymentPdfDataType",
+                },
+            },
+            Times.Once()
+        );
+
+        _services.Services.RemoveAll<IPaymentService>();
+        _services
+            .Mock<IPaymentService>()
+            .Setup(s =>
+                s.CheckAndStorePaymentStatus(
+                    It.IsAny<Instance>(),
+                    It.IsAny<ValidAltinnPaymentConfiguration>(),
+                    It.IsAny<string?>()
+                )
+            )
+            .ThrowsAsync(new InvalidOperationException("unrelated failure"));
+
+        await using var sp = _services.BuildServiceProvider();
+        var controller = sp.GetRequiredService<PaymentController>();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            controller.GetPaymentInformation("org", "app", PartyId, _instanceGuid)
+        );
+
         _services.VerifyMocks();
     }
 
