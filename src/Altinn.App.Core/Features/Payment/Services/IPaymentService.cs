@@ -20,10 +20,22 @@ internal interface IPaymentService
 
     /// <summary>
     /// Check updated payment information from payment provider and store the updated data.
+    /// Operates on the instance's current task.
     /// </summary>
     Task<PaymentInformation> CheckAndStorePaymentStatus(
         Instance instance,
         ValidAltinnPaymentConfiguration paymentConfiguration,
+        string? language
+    );
+
+    /// <summary>
+    /// Check updated payment information from the payment provider for the given task without persisting any changes.
+    /// Use when reading payment status for a task that is not the instance's current task.
+    /// </summary>
+    Task<PaymentInformation> CheckPaymentStatus(
+        Instance instance,
+        ValidAltinnPaymentConfiguration paymentConfiguration,
+        string taskId,
         string? language
     );
 

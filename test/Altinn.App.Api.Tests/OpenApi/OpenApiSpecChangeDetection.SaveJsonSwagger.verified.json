@@ -4054,7 +4054,7 @@
         "tags": [
           "Payment"
         ],
-        "summary": "Get updated payment information for the instance. Will contact the payment processor to check the status of the payment. Current task must be a payment task. See payment related documentation.",
+        "summary": "Get updated payment information for the instance. Will contact the payment processor to check the status of the payment. Current task must be a payment task, or a payment task ID must be supplied via the `taskId` query parameter. See payment related documentation.",
         "parameters": [
           {
             "name": "org",
@@ -4101,6 +4101,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "taskId",
+            "in": "query",
+            "description": "If payment information should be loaded for a different task than the current one. Useful for retrieving payment information for a completed payment task. Updates from the processor are not persisted when this is set.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4134,8 +4142,8 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
+          "400": {
+            "description": "Bad Request",
             "content": {
               "text/plain": {
                 "schema": {

@@ -44,50 +44,123 @@ public class PaymentController : ControllerBase
     }
 
     /// <summary>
-    /// Get updated payment information for the instance. Will contact the payment processor to check the status of the payment. Current task must be a payment task. See payment related documentation.
+    /// Get updated payment information for the instance. Will contact the payment processor to check the status of the payment. Current task must be a payment task, or a payment task ID must be supplied via the <c>taskId</c> query parameter. See payment related documentation.
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
     /// <param name="instanceOwnerPartyId">unique id of the party that this the owner of the instance</param>
     /// <param name="instanceGuid">unique id to identify the instance</param>
     /// <param name="language">The currently used language by the user (or null if not available)</param>
+    /// <param name="taskId">If payment information should be loaded for a different task than the current one. Useful for retrieving payment information for a completed payment task. Updates from the processor are not persisted when this is set.</param>
     /// <returns>An object containing updated payment information</returns>
     [HttpGet]
     [ProducesResponseType(typeof(PaymentInformation), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPaymentInformation(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
         [FromRoute] Guid instanceGuid,
-        [FromQuery] string? language = null
+        [FromQuery] string? language = null,
+        [FromQuery] string? taskId = null
     )
     {
         Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
-        if (instance.Process?.CurrentTask?.ElementId == null)
-        {
-            return BadRequest("Instance has no current task");
-        }
-        AltinnPaymentConfiguration? paymentConfiguration = _processReader
-            .GetAltinnTaskExtension(instance.Process.CurrentTask.ElementId)
-            ?.PaymentConfiguration;
 
-        if (paymentConfiguration == null)
+        string? finalTaskId = taskId ?? instance.Process?.CurrentTask?.ElementId;
+        AltinnPaymentConfiguration? paymentConfiguration = finalTaskId is null
+            ? null
+            : _processReader.GetAltinnTaskExtension(finalTaskId)?.PaymentConfiguration;
+
+        if (finalTaskId is null || paymentConfiguration is null)
         {
-            return BadRequest(
-                $"Instance has no payment configuration for current task {instance.Process.CurrentTask.ElementId}"
-            );
+            return NotPaymentTask();
         }
 
         var validPaymentConfiguration = paymentConfiguration.Validate();
 
-        PaymentInformation paymentInformation = await _paymentService.CheckAndStorePaymentStatus(
-            instance,
-            validPaymentConfiguration,
-            language
-        );
+        // Persist updates only when the requested task is still the instance's current task.
+        // After the webhook advances the process, the frontend may still poll with the (now historical) payment task id —
+        // we want to return its status without overwriting payment data that no longer belongs to the current task.
+        bool isCurrentTask = finalTaskId == instance.Process?.CurrentTask?.ElementId;
+
+        PaymentInformation paymentInformation;
+        if (isCurrentTask)
+        {
+            try
+            {
+                paymentInformation = await _paymentService.CheckAndStorePaymentStatus(
+                    instance,
+                    validPaymentConfiguration,
+                    language
+                );
+            }
+            catch (Exception ex)
+            {
+                // The persisting path can race with a concurrent webhook callback that advances the process past
+                // finalTaskId after our GetInstance above. Re-fetch to confirm; if the task has moved, fall back to
+                // a read-only result rather than surface a 5xx — the next poll will reconcile.
+                if (!await CurrentTaskMovedAwayFrom(app, org, instanceOwnerPartyId, instanceGuid, finalTaskId))
+                {
+                    throw;
+                }
+                _logger.LogInformation(
+                    ex,
+                    "Storing payment status failed because the process advanced past task {TaskId} during the request. Returning read-only status.",
+                    finalTaskId
+                );
+                paymentInformation = await _paymentService.CheckPaymentStatus(
+                    instance,
+                    validPaymentConfiguration,
+                    finalTaskId,
+                    language
+                );
+            }
+        }
+        else
+        {
+            paymentInformation = await _paymentService.CheckPaymentStatus(
+                instance,
+                validPaymentConfiguration,
+                finalTaskId,
+                language
+            );
+        }
 
         return Ok(paymentInformation);
+    }
+
+    private async Task<bool> CurrentTaskMovedAwayFrom(
+        string app,
+        string org,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        string expectedTaskId
+    )
+    {
+        try
+        {
+            Instance refreshed = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+            return refreshed.Process?.CurrentTask?.ElementId != expectedTaskId;
+        }
+        catch
+        {
+            // Can't verify — assume the original failure was unrelated and let it surface.
+            return false;
+        }
+    }
+
+    private static BadRequestObjectResult NotPaymentTask()
+    {
+        return new BadRequestObjectResult(
+            new ProblemDetails
+            {
+                Title = "Not a payment task",
+                Detail =
+                    "This endpoint is only callable while the current task is a payment task, or when the taskId query param is set to a payment task's ID.",
+                Status = StatusCodes.Status400BadRequest,
+            }
+        );
     }
 
     /// <summary>
