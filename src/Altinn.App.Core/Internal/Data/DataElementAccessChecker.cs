@@ -115,12 +115,12 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
         // TODO: v9 remove setting and make this check the default (along with making dataType.TaskId into a list)
         if (_appSettings.Value.EnforceDataTypeTaskId && dataType.TaskId is { } expectedTaskId)
         {
-            var currentTaskId = instance.Process.CurrentTask?.ElementId;
+            var currentTaskId = instance.Process?.CurrentTask?.ElementId;
             if (!expectedTaskId.Equals(currentTaskId, StringComparison.Ordinal))
             {
                 return new ProblemDetails
                 {
-                    Title = "Forbidden",
+                    Title = "Conflict with Current Task",
                     Detail =
                         $"Data element of type {dataType.Id} can only be modified in {expectedTaskId} (current task {currentTaskId})",
                     Status = StatusCodes.Status409Conflict,
@@ -190,13 +190,13 @@ internal class DataElementAccessChecker : IDataElementAccessChecker
         }
 
         // Verify that we don't exceed the max size
-        if (contentLength.HasValue && dataType.MaxSize > 0 && contentLength > dataType.MaxSize)
+        if (contentLength.HasValue && dataType.MaxSize > 0 && contentLength > (long)dataType.MaxSize * 1024 * 1024)
         {
             return new ProblemDetails
             {
                 Title = "Max Size Exceeded",
                 Detail =
-                    $"Cannot create data element of size {contentLength} which exceeds the max size of {dataType.MaxSize}",
+                    $"Cannot create data element of size {contentLength} which exceeds the max size of {dataType.MaxSize} for {dataType.Id}",
                 Status = StatusCodes.Status400BadRequest,
             };
         }

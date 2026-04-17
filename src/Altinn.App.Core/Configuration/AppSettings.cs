@@ -234,7 +234,7 @@ public class AppSettings
     public string RuntimeSecretsDirectory { get; set; } = DefaultRuntimeSecretsDirectory;
 
     /// <summary>
-    /// Enforce that a DataType (applicationmetadata.json) that specifies a taskId is only externaliy mutatable (using app apis) when the instance is in this task.
+    /// Enforce that a DataType (applicationmetadata.json) that specifies a taskId is only externally mutatable (using app apis) when the instance is in this task.
     /// This is a temporary setting to help identify components with incorrect data bindings, and will be removed in the next major version.
     /// </summary>
     public bool EnforceDataTypeTaskId { get; set; } = false;

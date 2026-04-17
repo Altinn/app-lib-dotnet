@@ -1428,7 +1428,12 @@ public class InstancesController : ControllerBase
             }
 
             if (
-                await _dataElementAccessChecker.GetCreateProblem(instance, dataType, _authenticationContext.Current) is
+                await _dataElementAccessChecker.GetCreateProblem(
+                    instance,
+                    dataType,
+                    _authenticationContext.Current,
+                    part.FileSize
+                ) is
                 { } accessProblem
             )
             {

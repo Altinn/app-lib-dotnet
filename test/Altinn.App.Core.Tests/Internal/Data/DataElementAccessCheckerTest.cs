@@ -417,7 +417,7 @@ public class DataElementAccessCheckerTest
             public DataElement DataElementB { get; }
             public ApplicationMetadata AppMetadata { get; }
 
-            public AppSettings AppSettings { get; } = new();
+            public AppSettings AppSettings { get; } = new() { EnforceDataTypeTaskId = true };
 
             public FixtureData()
             {
