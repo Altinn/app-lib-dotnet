@@ -250,15 +250,20 @@ public class DataElementAccessCheckerTest
         var instance = fixture.Data.DefaultInstance;
         var dataType = fixture.Data.DataTypeA;
 
-        dataType.MaxSize = 1024;
+        dataType.MaxSize = 1; // 1 MB
+        long contentLength = 2 * 1024 * 1024; // 2 MB
 
         // Act
         var createResult = await fixture.DataElementAccessChecker.GetCreateProblem(
             instance,
             dataType,
-            contentLength: 2048
+            contentLength: contentLength // 2 MB
         );
-        var canCreate = await fixture.DataElementAccessChecker.CanCreate(instance, dataType, contentLength: 2048);
+        var canCreate = await fixture.DataElementAccessChecker.CanCreate(
+            instance,
+            dataType,
+            contentLength: contentLength
+        );
 
         // Assert
         Assert.NotNull(createResult);

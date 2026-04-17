@@ -312,7 +312,14 @@ public partial class DataTagsController : ControllerBase
     > GetDataElementAndCheckAccess(string org, string app, int instanceOwnerPartyId, Guid instanceId, Guid dataId)
     {
         var dataIdString = dataId.ToString();
-        var instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceId);
+        var instance = await _instanceClient.GetInstance(
+            app,
+            org,
+            instanceOwnerPartyId,
+            instanceId,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
         var dataElement = instance.Data.FirstOrDefault(dt => dt.Id == dataIdString);
         if (dataElement is null)
         {
@@ -333,7 +340,7 @@ public partial class DataTagsController : ControllerBase
             {
                 Title = "Data type not found",
                 Detail =
-                    $"Unable to find data type \"{dataElement.DataType}\" in applicationmetadata for data element {dataIdString} based.",
+                    $"Unable to find data type \"{dataElement.DataType}\" in applicationmetadata for data element {dataIdString}.",
                 Status = StatusCodes.Status500InternalServerError,
             };
         }

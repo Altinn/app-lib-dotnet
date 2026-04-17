@@ -320,7 +320,7 @@ public class DataTagsControllerTests(WebApplicationFactory<Program> factory, ITe
         responseContent
             .Should()
             .Contain(
-                "he instance 500600/fad57e80-ec2f-4dee-90ac-400fa6d7720f doesn't have a data element with id '99999999-9999-9999-9999-999999999999"
+                "The instance 500600/fad57e80-ec2f-4dee-90ac-400fa6d7720f doesn't have a data element with id '99999999-9999-9999-9999-999999999999"
             );
     }
 
