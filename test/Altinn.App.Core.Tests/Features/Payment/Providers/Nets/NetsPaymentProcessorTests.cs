@@ -11,6 +11,8 @@ using Altinn.App.Tests.Common.Fixtures;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Moq;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.Features.Payment.Providers.Nets;
@@ -50,6 +52,9 @@ public class NetsPaymentProcessorTests
         );
         _fixture.Services.AddSingleton<INetsWebhookSecretProvider, NetsWebhookSecretProvider>();
         _fixture.Services.AddHttpClient<INetsClient, NetsClient>();
+        var hostEnv = new Mock<IHostEnvironment>();
+        hostEnv.Setup(e => e.EnvironmentName).Returns(Environments.Production);
+        _fixture.Services.AddSingleton(hostEnv.Object);
         _fixture.Services.AddScoped<NetsPaymentProcessor>();
     }
 
