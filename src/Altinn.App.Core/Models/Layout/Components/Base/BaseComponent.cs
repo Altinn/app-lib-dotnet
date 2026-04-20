@@ -106,7 +106,7 @@ public abstract class BaseComponent
         // The default return should match AppSettings.RemoveHiddenData,
         // but currently we only run removal when it is true, so we set it to true here
         bool defaultShouldRemove = true;
-        if (removeWhenHidden.ValueKind == JsonValueKind.Null)
+        if (removeWhenHidden.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
         {
             // ToBoolLoose returns false when the value is null, but we want to return the default value in that case, so we check for null before calling ToBoolLoose()
             return defaultShouldRemove;

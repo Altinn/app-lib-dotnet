@@ -3553,6 +3553,14 @@
           "hiddenNotRemove": {
             "type": "string",
             "nullable": true
+          },
+          "hiddenPage": {
+            "type": "string",
+            "nullable": true
+          },
+          "hiddenPageNotRemove": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
