@@ -46,7 +46,21 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           dotnet test solutions/All.sln -v m --no-restore --no-build --filter "Category!=Integration"
+      - name: Install studioctl
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          STUDIOCTL_HOME: ${{ runner.temp }}/studioctl-home
+          STUDIOCTL_INSTALL_DIR: ${{ runner.temp }}/studioctl-bin
+          STUDIOCTL_VERSION: v0.1.0-preview.6
+        run: |
+          mkdir -p "$STUDIOCTL_HOME" "$STUDIOCTL_INSTALL_DIR"
+          curl -fsSL https://altinn.studio/designer/api/v1/studioctl/install.sh -o "$RUNNER_TEMP/studioctl-install.sh"
+          sh "$RUNNER_TEMP/studioctl-install.sh" --version "$STUDIOCTL_VERSION"
+          echo "$STUDIOCTL_INSTALL_DIR" >> "$GITHUB_PATH"
+          "$STUDIOCTL_INSTALL_DIR/studioctl" --version | grep -Fx "studioctl $STUDIOCTL_VERSION"
       - name: Test (integration tests)
         if: matrix.os == 'ubuntu-latest'
+        env:
+          STUDIOCTL_HOME: ${{ runner.temp }}/studioctl-home
         run: |
           dotnet test solutions/All.sln --no-restore --no-build --logger "console;verbosity=detailed" --filter "Category=Integration"
