@@ -6,6 +6,7 @@ using Altinn.App.Core.Features.Payment.Models;
 using Altinn.App.Core.Features.Payment.Processors.Nets;
 using Altinn.App.Core.Features.Payment.Processors.Nets.Models;
 using Altinn.App.Core.Features.Payment.Services;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
@@ -33,11 +34,16 @@ public class PaymentController : ControllerBase
     /// <summary>
     /// Initializes a new instance of the <see cref="PaymentController"/> class.
     /// </summary>
-    public PaymentController(IServiceProvider serviceProvider)
+    public PaymentController(
+        IInstanceClient instanceClient,
+        IProcessReader processReader,
+        ILogger<PaymentController> logger,
+        IServiceProvider serviceProvider
+    )
     {
-        _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
-        _processReader = serviceProvider.GetRequiredService<IProcessReader>();
-        _logger = serviceProvider.GetRequiredService<ILogger<PaymentController>>();
+        _instanceClient = instanceClient;
+        _processReader = processReader;
+        _logger = logger;
         _netsWebhookSecretProvider = serviceProvider.GetRequiredService<INetsWebhookSecretProvider>();
         _paymentService = serviceProvider.GetRequiredService<IPaymentService>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
@@ -107,7 +113,7 @@ public class PaymentController : ControllerBase
                 _logger.LogInformation(
                     ex,
                     "Storing payment status failed because the process advanced past task {TaskId} during the request. Returning read-only status.",
-                    finalTaskId
+                    LogSanitizer.Sanitize(finalTaskId)
                 );
                 paymentInformation = await _paymentService.CheckPaymentStatus(
                     instance,

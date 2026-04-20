@@ -448,7 +448,7 @@ namespace Altinn.App.Api.Controllers
     [Microsoft.AspNetCore.Mvc.Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/payment")]
     public class PaymentController : Microsoft.AspNetCore.Mvc.ControllerBase
     {
-        public PaymentController(System.IServiceProvider serviceProvider) { }
+        public PaymentController(Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Altinn.App.Core.Internal.Process.IProcessReader processReader, Microsoft.Extensions.Logging.ILogger<Altinn.App.Api.Controllers.PaymentController> logger, System.IServiceProvider serviceProvider) { }
         [Microsoft.AspNetCore.Mvc.HttpGet("order-details")]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(404)]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Altinn.App.Core.Features.Payment.Models.OrderDetails), 200)]
