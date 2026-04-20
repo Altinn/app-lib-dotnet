@@ -47,6 +47,7 @@ public sealed partial class AppFixture : IAsyncDisposable
     private readonly string _effectiveApp;
     private readonly string _generatedAppDirectory;
     private readonly string _fixtureConfigurationPath;
+    private int _appLogLineOffset;
 
     public string App => _app;
     internal string EffectiveApp => _effectiveApp;
@@ -131,11 +132,14 @@ public sealed partial class AppFixture : IAsyncDisposable
             var appIdentity = AppIdentity.Create(originalAppId);
             var effectiveApp = $"{appIdentity.App}-f{fixtureInstance:0000}";
             var appId = $"{appIdentity.Org}/{effectiveApp}";
+            generatedAppDirectory = GetGeneratedAppDirectory(app, fixtureInstance);
+            studioctlEnvironmentLease = await StudioctlEnvironmentLease.Acquire(logger, cancellationToken);
+            await StudioctlAppProcess.StopByPathBestEffort(generatedAppDirectory, logger);
             generatedAppDirectory = await GenerateAppDirectory(
                 app,
                 scenario,
                 appId,
-                fixtureInstance,
+                generatedAppDirectory,
                 logger,
                 cancellationToken
             );
@@ -147,8 +151,6 @@ public sealed partial class AppFixture : IAsyncDisposable
                 fixtureInstance,
                 cancellationToken
             );
-
-            studioctlEnvironmentLease = await StudioctlEnvironmentLease.Acquire(logger, cancellationToken);
             appProcess = await StudioctlAppProcess.Start(
                 generatedAppDirectory,
                 fixtureConfigurationPath,
@@ -244,7 +246,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         // - Error logs (`fail:` prefix in the default M.E.L log format)
 
         var expectedPrefix = $"[{_currentFixtureInstance:00}/{_app}/{_scenario}";
-        var allLines = _appProcess.GetLogLines();
+        var allLines = _appProcess.GetLogLines(_appLogLineOffset);
 
         var data = new List<string>(allLines.Count);
         static bool IsStartOfLogMessage(
@@ -309,7 +311,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
     public string GetAppLogs()
     {
-        var allLines = _appProcess.GetLogLines();
+        var allLines = _appProcess.GetLogLines(_appLogLineOffset);
         var result = string.Join('\n', allLines);
         return result;
     }
@@ -333,6 +335,7 @@ public sealed partial class AppFixture : IAsyncDisposable
         Assert.True(_isClassFixture);
 
         _currentFixtureInstance = NextFixtureInstance();
+        _appLogLineOffset = _appProcess.GetLogLineCount();
 
         // Update logger with new test output helper and fixture instance
         if (output is not null && _logger is TestOutputLogger logger)
@@ -378,13 +381,12 @@ public sealed partial class AppFixture : IAsyncDisposable
         string name,
         string scenario,
         string appId,
-        long fixtureInstance,
+        string generatedDirectory,
         ILogger logger,
         CancellationToken cancellationToken
     )
     {
         var sourceDirectory = Path.GetFullPath(Path.Join(GetAppDir(name), ".."));
-        var generatedDirectory = Path.Join(_generatedAppsDirectory, $"{name}-f{fixtureInstance:0000}");
         DeleteDirectoryBestEffort(logger, generatedDirectory);
         Directory.CreateDirectory(generatedDirectory);
 
@@ -415,6 +417,9 @@ public sealed partial class AppFixture : IAsyncDisposable
 
         return generatedDirectory;
     }
+
+    private static string GetGeneratedAppDirectory(string name, long fixtureInstance) =>
+        Path.Join(_generatedAppsDirectory, $"{name}-f{fixtureInstance:0000}");
 
     private static async Task WriteFixtureConfiguration(
         string path,

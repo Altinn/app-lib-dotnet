@@ -47,7 +47,7 @@ for i in $(seq 1 $MAX_RUNS); do
         echo "✓ Test run $i completed successfully"
 
         if ! check_snapshot_diffs $i; then
-            echo "studioctl environment is left as-is for debugging."
+            echo "studioctl cleanup is managed by the test fixture; check test output and generated logs for debugging."
             exit 1
         fi
 
@@ -55,7 +55,7 @@ for i in $(seq 1 $MAX_RUNS); do
         echo
     else
         echo "❌ FAILURE: Test run $i failed!"
-        echo "studioctl environment is left as-is for debugging."
+        echo "studioctl cleanup is managed by the test fixture; check test output and generated logs for debugging."
         exit 1
     fi
 done

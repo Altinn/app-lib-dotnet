@@ -26,6 +26,8 @@ internal sealed class StudioctlEnvironmentLease : IAsyncDisposable
             {
                 try
                 {
+                    // This lease only avoids repeated env up/down when test classes overlap in parallel.
+                    // If classes run sequentially, the count falls back to zero between classes.
                     var status = await GetStatus(logger, cancellationToken);
                     if (!status.Running)
                     {
@@ -257,14 +259,50 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
         return ParseRunResult(logger, appDirectory, result.StdOut);
     }
 
-    public IReadOnlyList<string> GetLogLines()
+    public static async Task StopByPathBestEffort(string appDirectory, ILogger logger)
+    {
+        if (!Directory.Exists(appDirectory))
+            return;
+
+        try
+        {
+            await StopByPath(appDirectory, logger);
+        }
+        catch (Exception ex)
+        {
+            logger.LogInformation(ex, "No stale studioctl app stopped for {AppDirectory}", appDirectory);
+        }
+    }
+
+    private static async Task StopByPath(string appDirectory, ILogger logger)
+    {
+        await RunStudioctl(
+            appDirectory,
+            fixtureConfigurationPath: null,
+            nugetPackagesDirectory: null,
+            logger,
+            CancellationToken.None,
+            "app",
+            "stop",
+            "--path",
+            appDirectory,
+            "--json"
+        );
+    }
+
+    public IReadOnlyList<string> GetLogLines(int startLine = 0)
     {
         if (string.IsNullOrWhiteSpace(LogPath) || !File.Exists(LogPath))
             return [];
 
         try
         {
-            return File.ReadAllLines(LogPath);
+            var lines = File.ReadAllLines(LogPath);
+            if (startLine <= 0)
+                return lines;
+            if (startLine >= lines.Length)
+                return [];
+            return lines[startLine..];
         }
         catch (Exception ex)
         {
@@ -273,22 +311,13 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
         }
     }
 
+    public int GetLogLineCount() => GetLogLines().Count;
+
     public async ValueTask DisposeAsync()
     {
         try
         {
-            await RunStudioctl(
-                AppDirectory,
-                fixtureConfigurationPath: null,
-                nugetPackagesDirectory: null,
-                _logger,
-                CancellationToken.None,
-                "app",
-                "stop",
-                "--path",
-                AppDirectory,
-                "--json"
-            );
+            await StopByPath(AppDirectory, _logger);
             return;
         }
         catch (Exception ex)
@@ -336,6 +365,16 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
         return new StudioctlAppProcess(logger, appDirectory, result.ProcessId, uri, result.LogPath);
     }
 
+    private static void TryKill(System.Diagnostics.Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+                process.Kill(entireProcessTree: true);
+        }
+        catch { }
+    }
+
     private static async Task<ProcessResult> RunStudioctl(
         string workingDirectory,
         string? fixtureConfigurationPath,
@@ -362,11 +401,22 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
         if (!process.Start())
             throw new InvalidOperationException("Failed to start studioctl");
 
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
-        await process.WaitForExitAsync(cancellationToken);
-        var stdout = await stdoutTask;
-        var stderr = await stderrTask;
+        string stdout;
+        string stderr;
+        try
+        {
+            var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+            var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+            await process.WaitForExitAsync(cancellationToken);
+            stdout = await stdoutTask;
+            stderr = await stderrTask;
+        }
+        catch (OperationCanceledException)
+        {
+            TryKill(process);
+            await StopByPathBestEffort(workingDirectory, logger);
+            throw;
+        }
 
         if (!string.IsNullOrWhiteSpace(stdout))
             logger.LogInformation("studioctl stdout: {StdOut}", stdout.Trim());
