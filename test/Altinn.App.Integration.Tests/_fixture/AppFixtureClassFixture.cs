@@ -2,19 +2,29 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Integration.Tests;
 
-public sealed record AppFixtureScope(AppFixture Fixture) : IAsyncDisposable
+public sealed class AppFixtureScope(AppFixture fixture, SemaphoreSlim? testLock = null) : IAsyncDisposable
 {
+    public AppFixture Fixture { get; } = fixture;
+
     public ValueTask DisposeAsync()
     {
-        if (Fixture.TestErrored)
+        try
         {
-            // TestErrored is set to true for test/snapshot failures.
-            // When this happens we might not reach the stage of the test where
-            // we snapshot app logs. So we have additional code here
-            // to output container logs at the end so that test failures in CI for example
-            // is easier to debug.
-            Fixture.LogContainerLogs();
+            if (Fixture.TestErrored)
+            {
+                // TestErrored is set to true for test/snapshot failures.
+                // When this happens we might not reach the stage of the test where
+                // we snapshot app logs. So we have additional code here
+                // to output container logs at the end so that test failures in CI for example
+                // is easier to debug.
+                Fixture.LogContainerLogs();
+            }
         }
+        finally
+        {
+            testLock?.Release();
+        }
+
         return default;
     }
 }
@@ -26,6 +36,7 @@ public sealed record AppFixtureScope(AppFixture Fixture) : IAsyncDisposable
 /// </summary>
 public sealed class AppFixtureClassFixture : IAsyncLifetime
 {
+    private readonly SemaphoreSlim _testLock = new(1, 1);
     private string? _app;
     private string? _scenario;
     private AppFixture? _appFixture;
@@ -49,30 +60,39 @@ public sealed class AppFixtureClassFixture : IAsyncLifetime
         string scenario = "default"
     )
     {
-        // Create fixture on first test method call
-        if (_appFixture is null)
+        await _testLock.WaitAsync();
+        try
         {
-            _app = app;
-            _scenario = scenario;
-            _appFixture = await AppFixture.Create(output, _app, _scenario, isClassFixture: true);
+            // Create fixture on first test method call
+            if (_appFixture is null)
+            {
+                _app = app;
+                _scenario = scenario;
+                _appFixture = await AppFixture.Create(output, _app, _scenario, isClassFixture: true);
+            }
+            else
+            {
+                // Ensure app and scenario haven't changed between test methods
+                if (_app != app)
+                    throw new InvalidOperationException(
+                        $"Cannot change app from '{_app}' to '{app}' between test methods in the same class"
+                    );
+                if (_scenario != scenario)
+                    throw new InvalidOperationException(
+                        $"Cannot change scenario from '{_scenario}' to '{scenario}' between test methods in the same class"
+                    );
+
+                // Reset state between tests for proper isolation
+                await _appFixture.ResetBetweenTestsAsync(output);
+            }
+
+            return new AppFixtureScope(_appFixture, _testLock);
         }
-        else
+        catch
         {
-            // Ensure app and scenario haven't changed between test methods
-            if (_app != app)
-                throw new InvalidOperationException(
-                    $"Cannot change app from '{_app}' to '{app}' between test methods in the same class"
-                );
-            if (_scenario != scenario)
-                throw new InvalidOperationException(
-                    $"Cannot change scenario from '{_scenario}' to '{scenario}' between test methods in the same class"
-                );
-
-            // Reset state between tests for proper isolation
-            await _appFixture.ResetBetweenTestsAsync(output);
+            _testLock.Release();
+            throw;
         }
-
-        return new AppFixtureScope(_appFixture);
     }
 
     /// <summary>

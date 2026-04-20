@@ -66,6 +66,9 @@ internal sealed record Command(
                 var allOutput = new StringBuilder();
                 proc.OutputDataReceived += (_, args) =>
                 {
+                    if (args.Data is null)
+                        return;
+
                     Logger?.LogInformation("'{Command}' stdout: {Line}", cmd, args.Data);
                     lock (@lock)
                     {
@@ -75,6 +78,9 @@ internal sealed record Command(
                 };
                 proc.ErrorDataReceived += (_, args) =>
                 {
+                    if (args.Data is null)
+                        return;
+
                     Logger?.LogError("'{Command}' stderr: {Line}", cmd, args.Data);
                     lock (@lock)
                     {
@@ -94,6 +100,10 @@ internal sealed record Command(
                         CancellationToken.ThrowIfCancellationRequested();
                         exited = proc.WaitForExit(TimeSpan.FromSeconds(0.5));
                     } while (!exited);
+
+                    // WaitForExit() can hang indefinitely while draining redirected output from dotnet pack.
+                    // The command has exited at this point, so only give output handlers a bounded grace period.
+                    proc.WaitForExit(TimeSpan.FromSeconds(5));
 
                     if (ThrowOnNonZero && proc.ExitCode != 0)
                     {
@@ -124,11 +134,16 @@ internal sealed record Command(
                 {
                     try
                     {
-                        proc.Kill();
+                        proc.Kill(entireProcessTree: true);
                     }
                     catch { }
                     tcs.SetResult(
-                        new CommandResult(proc.ExitCode, stdout.ToString(), stderr.ToString(), allOutput.ToString())
+                        new CommandResult(
+                            proc.HasExited ? proc.ExitCode : null,
+                            stdout.ToString(),
+                            stderr.ToString(),
+                            allOutput.ToString()
+                        )
                     );
                     return;
                 }

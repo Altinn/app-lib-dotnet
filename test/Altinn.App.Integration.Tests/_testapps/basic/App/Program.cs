@@ -17,7 +17,7 @@ void RegisterCustomAppServices(IServiceCollection services, IConfiguration confi
     FixtureConfigurationService.Instance.Configure(services, config, env);
 }
 
-FixtureConfigurationService.Instance.Initialize(TimeSpan.FromSeconds(10));
+FixtureConfigurationService.Instance.Initialize();
 
 // ###########################################################################
 
