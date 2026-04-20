@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using TestApp.Shared;
 
@@ -36,13 +35,6 @@ TestingApis.CaptureServiceCollection(builder.Services);
 WebApplication app = builder.Build();
 
 Configure();
-
-// Setup cleanup for fixture configuration service
-var appLifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-appLifetime.ApplicationStopping.Register(() =>
-{
-    FixtureConfigurationService.Instance.Dispose();
-});
 
 app.Run();
 

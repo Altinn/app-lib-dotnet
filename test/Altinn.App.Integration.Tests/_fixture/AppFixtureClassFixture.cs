@@ -13,11 +13,8 @@ public sealed class AppFixtureScope(AppFixture fixture, SemaphoreSlim? testLock 
             if (Fixture.TestErrored)
             {
                 // TestErrored is set to true for test/snapshot failures.
-                // When this happens we might not reach the stage of the test where
-                // we snapshot app logs. So we have additional code here
-                // to output container logs at the end so that test failures in CI for example
-                // is easier to debug.
-                Fixture.LogContainerLogs();
+                // When this happens we might not reach the stage of the test where we snapshot app logs.
+                Fixture.LogAppLogs();
             }
         }
         finally
@@ -31,7 +28,7 @@ public sealed class AppFixtureScope(AppFixture fixture, SemaphoreSlim? testLock 
 
 /// <summary>
 /// xUnit class fixture wrapper for AppFixture to enable reuse across test methods in a class.
-/// This provides significant performance benefits by reusing the expensive Docker containers
+/// This provides significant performance benefits by reusing the running app process
 /// while maintaining proper test isolation through state reset.
 /// </summary>
 public sealed class AppFixtureClassFixture : IAsyncLifetime
@@ -41,15 +38,8 @@ public sealed class AppFixtureClassFixture : IAsyncLifetime
     private string? _scenario;
     private AppFixture? _appFixture;
 
-    /// <summary>
-    /// Initialize the expensive AppFixture once per test class
-    /// </summary>
-    public async Task InitializeAsync()
-    {
-        // We need to delay AppFixture.Create until we have ITestOutputHelper
-        // This will be called from Get method when the first test runs
-        await Task.CompletedTask;
-    }
+    // AppFixture needs the current test's ITestOutputHelper, so creation is delayed until Get.
+    public Task InitializeAsync() => Task.CompletedTask;
 
     /// <summary>
     /// Get the AppFixture for a test method, creating it if needed and resetting state
@@ -60,10 +50,10 @@ public sealed class AppFixtureClassFixture : IAsyncLifetime
         string scenario = "default"
     )
     {
+        // The reused app process has mutable fixture configuration, so tests sharing it must be serialized.
         await _testLock.WaitAsync();
         try
         {
-            // Create fixture on first test method call
             if (_appFixture is null)
             {
                 _app = app;
@@ -72,7 +62,7 @@ public sealed class AppFixtureClassFixture : IAsyncLifetime
             }
             else
             {
-                // Ensure app and scenario haven't changed between test methods
+                // Reusing the process only works for the app/scenario it was generated for.
                 if (_app != app)
                     throw new InvalidOperationException(
                         $"Cannot change app from '{_app}' to '{app}' between test methods in the same class"
@@ -82,7 +72,7 @@ public sealed class AppFixtureClassFixture : IAsyncLifetime
                         $"Cannot change scenario from '{_scenario}' to '{scenario}' between test methods in the same class"
                     );
 
-                // Reset state between tests for proper isolation
+                // The app process stays up; per-test state is reset by reloading fixture configuration.
                 await _appFixture.ResetBetweenTestsAsync(output);
             }
 
@@ -95,9 +85,6 @@ public sealed class AppFixtureClassFixture : IAsyncLifetime
         }
     }
 
-    /// <summary>
-    /// Dispose the AppFixture when the test class is done
-    /// </summary>
     public async Task DisposeAsync()
     {
         if (_appFixture is not null)

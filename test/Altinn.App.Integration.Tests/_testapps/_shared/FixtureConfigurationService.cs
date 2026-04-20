@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -16,7 +15,7 @@ using Microsoft.Extensions.DependencyModel;
 
 namespace TestApp.Shared;
 
-public sealed class FixtureConfigurationService : IDisposable
+public sealed class FixtureConfigurationService
 {
     private readonly object _lock = new();
     private string? _configPath;
@@ -51,11 +50,10 @@ public sealed class FixtureConfigurationService : IDisposable
 
     public void Configure(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
     {
-        // Check for scenario-specific services
         // Through "_scenarios" we can override/inject both configuration
         // and code that is specific to a test scenario.
-        // This allows us to run the same app container image with slightly different
-        // configurations and code which is more efficient than having to create and build a whole other app/image.
+        // This allows us to run the same generated app with slightly different
+        // configurations and code.
         var config = Config ?? throw new InvalidOperationException("Fixture configuration not initialized");
 
         services.AddTracingServices();
@@ -77,7 +75,7 @@ public sealed class FixtureConfigurationService : IDisposable
                     var compiledAssembly = CompileScenarioServices(csFiles);
                     if (compiledAssembly is not null)
                     {
-                        var serviceCount = RegisterServicesFromAssembly(services, compiledAssembly);
+                        RegisterServicesFromAssembly(services, compiledAssembly);
                     }
                     else
                     {
@@ -102,7 +100,6 @@ public sealed class FixtureConfigurationService : IDisposable
             }
 
             Config = config;
-            Environment.SetEnvironmentVariable("GeneralSettings__ExternalAppBaseUrl", config.ExternalAppBaseUrl);
             ConfigurationChanged?.Invoke();
         }
     }
@@ -182,6 +179,4 @@ public sealed class FixtureConfigurationService : IDisposable
         }
         return registeredCount;
     }
-
-    public void Dispose() { }
 }

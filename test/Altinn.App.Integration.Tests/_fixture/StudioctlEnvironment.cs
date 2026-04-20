@@ -79,6 +79,11 @@ internal sealed class StudioctlEnvironmentLease : IAsyncDisposable
         }
     }
 
+    public async Task<string> GetLogs(CancellationToken cancellationToken)
+    {
+        return await RunForOutput(_logger, cancellationToken, "env", "logs", "--follow=false");
+    }
+
     private static async Task<StudioctlStatus> GetStatus(ILogger logger, CancellationToken cancellationToken)
     {
         var result = await new Command(
@@ -102,6 +107,62 @@ internal sealed class StudioctlEnvironmentLease : IAsyncDisposable
             logger,
             CancellationToken: cancellationToken
         );
+    }
+
+    private static async Task<string> RunForOutput(
+        ILogger logger,
+        CancellationToken cancellationToken,
+        params string[] arguments
+    )
+    {
+        using var process = new System.Diagnostics.Process();
+        process.StartInfo.FileName = StudioctlCommand;
+        process.StartInfo.WorkingDirectory = ModuleInitializer.GetSolutionDirectory();
+        process.StartInfo.RedirectStandardOutput = true;
+        process.StartInfo.RedirectStandardError = true;
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.CreateNoWindow = true;
+        foreach (var argument in arguments)
+            process.StartInfo.ArgumentList.Add(argument);
+
+        if (!process.Start())
+            throw new InvalidOperationException("Failed to start studioctl");
+
+        string stdout;
+        string stderr;
+        try
+        {
+            var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+            var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+            await process.WaitForExitAsync(cancellationToken);
+            stdout = await stdoutTask;
+            stderr = await stderrTask;
+        }
+        catch (OperationCanceledException)
+        {
+            TryKill(process);
+            throw;
+        }
+
+        if (!string.IsNullOrWhiteSpace(stderr))
+            logger.LogError("studioctl {Arguments} stderr: {StdErr}", string.Join(' ', arguments), stderr.Trim());
+
+        if (process.ExitCode != 0)
+            throw new InvalidOperationException(
+                $"studioctl {string.Join(' ', arguments)} failed with exit code {process.ExitCode}.\nstdout:\n{stdout}\nstderr:\n{stderr}"
+            );
+
+        return stdout;
+    }
+
+    private static void TryKill(System.Diagnostics.Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+                process.Kill(entireProcessTree: true);
+        }
+        catch { }
     }
 
     private static async Task StopStartedResources(ILogger logger, bool throwOnFailure)
@@ -193,19 +254,13 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
             appDirectory
         );
 
-        return ParseRunResult(logger, appDirectory, result.StdOut, result.StdErr);
+        return ParseRunResult(logger, appDirectory, result.StdOut);
     }
 
     public IReadOnlyList<string> GetLogLines()
     {
-        var fileLogs = GetFileLogLines();
-        return fileLogs ?? [];
-    }
-
-    private IReadOnlyList<string>? GetFileLogLines()
-    {
         if (string.IsNullOrWhiteSpace(LogPath) || !File.Exists(LogPath))
-            return null;
+            return [];
 
         try
         {
@@ -214,7 +269,7 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to read app log {LogPath}", LogPath);
-            return null;
+            return [];
         }
     }
 
@@ -262,46 +317,15 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
         }
     }
 
-    private static StudioctlAppProcess ParseRunResult(ILogger logger, string appDirectory, string stdout, string stderr)
+    private static StudioctlAppProcess ParseRunResult(ILogger logger, string appDirectory, string stdout)
     {
-        int? processId = null;
-        Uri? baseUri = null;
-        string? logPath = null;
+        // The harness always starts apps with --json. Treat non-JSON output as a studioctl contract break.
+        var json = stdout.Trim();
+        if (!json.StartsWith('{'))
+            throw new InvalidOperationException($"Could not parse studioctl run JSON.\nstdout:\n{stdout}");
 
-        foreach (var rawLine in stdout.Split('\n'))
-        {
-            var line = rawLine.Trim();
-            if (line.StartsWith('{'))
-                return ParseJsonRunResult(logger, appDirectory, stdout);
-
-            if (line.StartsWith("Process:", StringComparison.OrdinalIgnoreCase))
-            {
-                if (int.TryParse(line["Process:".Length..].Trim(), out var parsedProcessId))
-                    processId = parsedProcessId;
-            }
-            else if (line.StartsWith("URL:", StringComparison.OrdinalIgnoreCase))
-            {
-                if (Uri.TryCreate(line["URL:".Length..].Trim(), UriKind.Absolute, out var parsedBaseUri))
-                    baseUri = parsedBaseUri;
-            }
-            else if (line.StartsWith("Log:", StringComparison.OrdinalIgnoreCase))
-            {
-                logPath = line["Log:".Length..].Trim();
-            }
-        }
-
-        if (processId is null || baseUri is null)
-            throw new InvalidOperationException(
-                $"Could not parse studioctl run output.\nstdout:\n{stdout}\nstderr:\n{stderr}"
-            );
-
-        return new StudioctlAppProcess(logger, appDirectory, processId.Value, baseUri, logPath);
-    }
-
-    private static StudioctlAppProcess ParseJsonRunResult(ILogger logger, string appDirectory, string stdout)
-    {
         var result =
-            System.Text.Json.JsonSerializer.Deserialize<RunJsonResult>(stdout)
+            System.Text.Json.JsonSerializer.Deserialize<RunJsonResult>(json)
             ?? throw new InvalidOperationException("studioctl run returned empty JSON");
         if (result.ProcessId <= 0)
             throw new InvalidOperationException("studioctl run JSON did not include a processId");
@@ -354,7 +378,7 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
                 $"studioctl failed with exit code {process.ExitCode}.\nstdout:\n{stdout}\nstderr:\n{stderr}"
             );
 
-        return new ProcessResult(stdout, stderr);
+        return new ProcessResult(stdout);
     }
 
     private sealed record RunJsonResult(
@@ -364,5 +388,5 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
         [property: JsonPropertyName("logPath")] string? LogPath
     );
 
-    private sealed record ProcessResult(string StdOut, string StdErr);
+    private sealed record ProcessResult(string StdOut);
 }

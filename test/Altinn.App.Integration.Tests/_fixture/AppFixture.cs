@@ -1,10 +1,7 @@
-using System.Buffers;
 using System.Diagnostics;
-using System.IO.Pipelines;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using DotNet.Testcontainers.Configurations;
 using Microsoft.Extensions.Logging;
 using TestApp.Shared;
 using Xunit.Abstractions;
@@ -70,8 +67,6 @@ public sealed partial class AppFixture : IAsyncDisposable
     public bool TestErrored { get; set; }
 
     public ushort? PdfHostPort => PdfServiceHostPort;
-    public ushort? LocaltestHostPort => StudioctlLocaltestHostPort;
-    public ushort? AppHostPort => (ushort?)_appProcess.BaseUri.Port;
 
     private AppFixture(
         ILogger logger,
@@ -121,8 +116,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         // but when running as a test-local fixture we need to use the ITestOutputHelper
         // to let xUnit capture and scope the output to the test itself.
         ILogger logger = isClassFixture
-            ? new FixtureLogger(fixtureInstance, app, scenario, false)
-            : new TestOutputLogger(output, fixtureInstance, app, scenario, false);
+            ? new FixtureLogger(fixtureInstance, app, scenario)
+            : new TestOutputLogger(output, fixtureInstance, app, scenario);
 
         logger.LogInformation("Creating fixture..");
 
@@ -136,7 +131,6 @@ public sealed partial class AppFixture : IAsyncDisposable
             var appIdentity = AppIdentity.Create(originalAppId);
             var effectiveApp = $"{appIdentity.App}-f{fixtureInstance:0000}";
             var appId = $"{appIdentity.Org}/{effectiveApp}";
-            var appPath = $"/{appIdentity.Org}/{effectiveApp}";
             generatedAppDirectory = await GenerateAppDirectory(
                 app,
                 scenario,
@@ -162,7 +156,8 @@ public sealed partial class AppFixture : IAsyncDisposable
                 logger,
                 cancellationToken
             );
-            await WaitForAppReady(appPath, appProcess, logger, cancellationToken);
+            // studioctl run performs readiness checks. This only catches an immediate post-start crash.
+            EnsureAppStillRunning(appProcess);
 
             logger.LogInformation("Fixture created in {ElapsedSeconds}s", timer.Elapsed.TotalSeconds.ToString("0.00"));
             return new AppFixture(
@@ -193,14 +188,8 @@ public sealed partial class AppFixture : IAsyncDisposable
         }
     }
 
-    private static async Task WaitForAppReady(
-        string appPath,
-        StudioctlAppProcess appProcess,
-        ILogger logger,
-        CancellationToken cancellationToken
-    )
+    private static void EnsureAppStillRunning(StudioctlAppProcess appProcess)
     {
-        await Task.CompletedTask;
         if (!appProcess.IsRunning())
             throw new InvalidOperationException(
                 $"App process exited after studioctl reported it ready.\n{GetAppLogs(appProcess)}"
@@ -250,7 +239,7 @@ public sealed partial class AppFixture : IAsyncDisposable
 
     public string GetSnapshotAppLogs()
     {
-        // Gets logs from the app container
+        // Gets logs from the app process
         // - Log messages from `SnapshotLogger` in the app
         // - Error logs (`fail:` prefix in the default M.E.L log format)
 
@@ -325,17 +314,15 @@ public sealed partial class AppFixture : IAsyncDisposable
         return result;
     }
 
+    public Task<string> GetLocaltestLogs(CancellationToken cancellationToken = default) =>
+        _studioctlEnvironmentLease.GetLogs(cancellationToken);
+
     private string ResolveAppEndpoint(string endpoint)
     {
         if (endpoint.StartsWith(OriginalAppPath, StringComparison.Ordinal))
             return AppPath + endpoint[OriginalAppPath.Length..];
 
         return endpoint;
-    }
-
-    public string GetLocaltestLogs()
-    {
-        return "Localtest is managed by studioctl. Use 'studioctl env logs --follow=false' for localtest logs.";
     }
 
     public async Task ResetBetweenTestsAsync(
@@ -372,10 +359,8 @@ public sealed partial class AppFixture : IAsyncDisposable
 
         await ReloadFixtureConfiguration(cancellationToken);
 
-        // Reset error state
         TestErrored = false;
 
-        // Recreate ScopedVerifier to reset index counter and test case state
         ScopedVerifier = new ScopedVerifier(this);
     }
 
@@ -440,13 +425,7 @@ public sealed partial class AppFixture : IAsyncDisposable
     )
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        var fixtureConfig = new FixtureConfiguration(
-            name,
-            scenario,
-            fixtureInstance,
-            ExternalAppPort: 0,
-            ExternalAppBaseUrl: $"http://local.altinn.cloud:{StudioctlLocaltestHostPort}/{{org}}/{{app}}/"
-        );
+        var fixtureConfig = new FixtureConfiguration(name, scenario, fixtureInstance);
 
         var configJson = JsonSerializer.Serialize(fixtureConfig, _jsonSerializerOptionsIndented);
         await File.WriteAllTextAsync(path, configJson, cancellationToken);
@@ -539,12 +518,9 @@ public sealed partial class AppFixture : IAsyncDisposable
         if (TestErrored && !_isClassFixture)
         {
             // TestErrored is set to true for test/snapshot failures.
-            // When this happens we might not reach the stage of the test where
-            // we snapshot app logs. So we have additional code here
-            // to output container logs at the end so that test failures in CI for example
-            // is easier to debug.
+            // When this happens we might not reach the stage of the test where we snapshot app logs.
             _logger.LogError("Test errored, logging app output");
-            LogContainerLogs();
+            LogAppLogs();
         }
 
         await _appProcess.DisposeAsync();
@@ -552,9 +528,9 @@ public sealed partial class AppFixture : IAsyncDisposable
         await _studioctlEnvironmentLease.DisposeAsync();
     }
 
-    internal void LogContainerLogs() => LogContainerLogs(_logger, _appProcess);
+    internal void LogAppLogs() => LogAppLogs(_logger, _appProcess);
 
-    private static void LogContainerLogs(ILogger logger, StudioctlAppProcess appProcess)
+    private static void LogAppLogs(ILogger logger, StudioctlAppProcess appProcess)
     {
         logger.LogError(
             "Localtest is managed by studioctl. Run 'studioctl env logs --follow=false' for localtest logs."
@@ -596,12 +572,6 @@ public sealed partial class AppFixture : IAsyncDisposable
     {
         var scenarioDirectory = Path.Join(_projectDirectory, $"_testapps/{name}/_scenarios/{scenario}");
         var info = new DirectoryInfo(scenarioDirectory);
-
-        // For "default" scenario, we don't expect a _scenarios directory to exist
-        if (scenario == "default")
-        {
-            return scenarioDirectory; // Return the path even if it doesn't exist
-        }
 
         if (!info.Exists)
         {
@@ -670,111 +640,6 @@ public sealed partial class AppFixture : IAsyncDisposable
             await using var source = File.OpenRead(file);
             await using var destination = File.Create(destFile);
             await source.CopyToAsync(destination, cancellationToken);
-        }
-    }
-
-    internal sealed class LogsConsumer : IOutputConsumer
-    {
-        // This is a rather complicated way to actually recombine stdout and stderr
-        // into a single stream. It seems like Testcontainers takes Docker.Dotnet's
-        // multiplexed stream and splits it into 2.
-        // We could use Docker.Dotnet directly but then we would probably get other issues to solve..
-        // NOTE: even though we try to read every line in the order they were printed, it seems thats
-        // not possible due to the way Testcontainers works. See the LogsConsumer test in the fixture tests.
-        private readonly Pipe _pipe;
-        private readonly SynchronizedWriteStream _writeStream;
-        private long _currentFixtureInstance;
-        private readonly Dictionary<long, List<string>> _lines = new(4);
-        private readonly object _lock = new();
-        private readonly ILogger _logger;
-        private readonly CancellationToken _cancellationToken;
-
-        public bool Enabled => true;
-
-        public Stream Stdout => _writeStream;
-
-        public Stream Stderr => _writeStream;
-
-        public LogsConsumer(ILogger logger, long fixtureInstance, CancellationToken cancellationToken)
-        {
-            _pipe = new();
-            _writeStream = new SynchronizedWriteStream(_pipe.Writer.AsStream());
-
-            _logger = logger;
-            _currentFixtureInstance = fixtureInstance;
-            _cancellationToken = cancellationToken;
-            _ = Task.Run(ReadLines);
-        }
-
-        public void SetCurrentFixtureInstance(long fixtureInstance) => _currentFixtureInstance = fixtureInstance;
-
-        public IReadOnlyList<string> GetLines(long? forFixtureInstance = null)
-        {
-            lock (_lock)
-            {
-                if (_lines.TryGetValue(forFixtureInstance ?? _currentFixtureInstance, out var lines))
-                    return lines.ToArray();
-            }
-            return Array.Empty<string>();
-        }
-
-        private async Task ReadLines()
-        {
-            var cancellationToken = _cancellationToken;
-            try
-            {
-                var reader = _pipe.Reader;
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    var result = await reader.ReadAsync(cancellationToken);
-                    if (result.IsCanceled)
-                        break;
-
-                    var buffer = result.Buffer;
-                    while (buffer.Length > 0)
-                    {
-                        var eol = buffer.PositionOf((byte)'\n');
-                        if (eol == null)
-                            break;
-
-                        var line = buffer.Slice(0, eol.Value);
-                        var lineStr = Encoding.UTF8.GetString(line.ToArray());
-                        var currentInstance = _currentFixtureInstance;
-                        lock (_lock)
-                        {
-                            if (!_lines.TryGetValue(currentInstance, out var lines))
-                                _lines[currentInstance] = lines = new List<string>(32);
-                            lines.Add(lineStr);
-                        }
-
-                        buffer = buffer.Slice(buffer.GetPosition(1, eol.Value));
-                    }
-
-                    reader.AdvanceTo(buffer.Start, buffer.End);
-
-                    if (result.IsCompleted)
-                        break;
-                }
-
-                await reader.CompleteAsync();
-            }
-            catch (OperationCanceledException)
-            {
-                // Ignore
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while reading logs");
-                Environment.FailFast("Fatal error in LogsConsumer", ex);
-            }
-
-            _logger.LogInformation("Log reading task is exiting");
-        }
-
-        public void Dispose()
-        {
-            _pipe.Writer.Complete();
-            _writeStream.Dispose();
         }
     }
 }
