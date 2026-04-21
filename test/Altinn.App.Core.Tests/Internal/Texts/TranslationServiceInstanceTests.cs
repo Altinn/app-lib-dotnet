@@ -107,7 +107,7 @@ public class TranslationServiceInstanceTests
         fixture
             .Mock<IAppResources>()
             .Setup(a => a.GetLayoutModelForTask(It.IsAny<string>()))
-            .Returns((LayoutModel?)null);
+            .Returns(null as LayoutModel);
 
         var dataAccessor = await provider.CreateInstanceDataUnitOfWork(
             new SkjemaModel() { Input1 = "test value" },
@@ -152,7 +152,7 @@ public class TranslationServiceInstanceTests
         fixture
             .Mock<IAppResources>()
             .Setup(a => a.GetLayoutModelForTask(It.IsAny<string>()))
-            .Returns((LayoutModel?)null);
+            .Returns(null as LayoutModel);
 
         var dataAccessor = await provider.CreateInstanceDataUnitOfWork(
             new SkjemaModel() { Input1 = "explicit type value" },

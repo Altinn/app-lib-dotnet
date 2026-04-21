@@ -149,7 +149,7 @@ public class PaymentController : ControllerBase
             Instance refreshed = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
             return refreshed.Process?.CurrentTask?.ElementId != expectedTaskId;
         }
-        catch
+        catch (Exception)
         {
             // Can't verify — assume the original failure was unrelated and let it surface.
             return false;
