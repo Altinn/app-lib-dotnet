@@ -133,7 +133,7 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
                     It.Is<int>(party => party == instanceIdentifier.InstanceOwnerPartyId),
                     It.Is<Guid>(guid => guid == instanceIdentifier.InstanceGuid),
                     It.Is<Guid>(id => id == Guid.Parse(signedElement.Id)),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -411,7 +411,7 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
                     It.Is<int>(party => party == instanceIdentifier.InstanceOwnerPartyId),
                     It.Is<Guid>(guid => guid == instanceIdentifier.InstanceGuid),
                     It.Is<Guid>(id => id == Guid.Parse(signedElement.Id)),
-                    It.IsAny<StorageAuthenticationMethod>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
