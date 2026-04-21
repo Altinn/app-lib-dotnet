@@ -109,42 +109,39 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
         CancellationToken cancellationToken = default
     )
     {
-        var url = $"{GetWorkflowEngineEndpoint()}/{Uri.EscapeDataString(ns)}/workflows";
-        var queryParams = new List<string>();
+        var workflows = new List<WorkflowStatusResponse>();
+        Guid? cursor = null;
 
-        if (correlationId.HasValue)
+        while (true)
         {
-            queryParams.Add($"correlationId={correlationId.Value}");
-        }
-        if (labels is not null)
-        {
-            foreach (var (key, value) in labels)
+            var url = BuildListActiveWorkflowsUrl(ns, correlationId, labels, cursor);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
+            using HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.NoContent)
             {
-                queryParams.Add($"label={Uri.EscapeDataString(key)}:{Uri.EscapeDataString(value)}");
+                return workflows;
             }
+
+            response.EnsureSuccessStatusCode();
+
+            var paginated =
+                await response.Content.ReadFromJsonAsync<PaginatedResponse<WorkflowStatusResponse>>(
+                    cancellationToken: cancellationToken
+                )
+                ?? throw new InvalidOperationException(
+                    "The expected workflow list page was not found in the response content."
+                );
+
+            workflows.AddRange(paginated.Data);
+
+            if (paginated.NextCursor is null)
+            {
+                return workflows;
+            }
+
+            cursor = paginated.NextCursor;
         }
-
-        if (queryParams.Count > 0)
-        {
-            url += "?" + string.Join("&", queryParams);
-        }
-
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
-
-        HttpResponseMessage response = await _httpClient.SendAsync(httpRequest, cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.NoContent)
-        {
-            return [];
-        }
-
-        response.EnsureSuccessStatusCode();
-
-        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<WorkflowStatusResponse>>(
-            cancellationToken: cancellationToken
-        );
-
-        return paginated?.Data ?? [];
     }
 
     /// <inheritdoc />
@@ -189,6 +186,40 @@ internal sealed class WorkflowEngineClient : IWorkflowEngineClient
             ?? throw new InvalidOperationException(
                 "The expected resume workflow response was not found in the response content."
             );
+    }
+
+    private string BuildListActiveWorkflowsUrl(
+        string ns,
+        Guid? correlationId,
+        Dictionary<string, string>? labels,
+        Guid? cursor
+    )
+    {
+        var url = $"{GetWorkflowEngineEndpoint()}/{Uri.EscapeDataString(ns)}/workflows";
+        var queryParams = new List<string>();
+
+        if (correlationId.HasValue)
+        {
+            queryParams.Add($"correlationId={correlationId.Value}");
+        }
+        if (labels is not null)
+        {
+            foreach (var (key, value) in labels)
+            {
+                queryParams.Add($"label={Uri.EscapeDataString(key)}:{Uri.EscapeDataString(value)}");
+            }
+        }
+        if (cursor.HasValue)
+        {
+            queryParams.Add($"cursor={cursor.Value}");
+        }
+
+        if (queryParams.Count > 0)
+        {
+            url += "?" + string.Join("&", queryParams);
+        }
+
+        return url;
     }
 
     private string GetWorkflowEngineEndpoint() => _platformSettings.ApiWorkflowEngineEndpoint.TrimEnd('/');
