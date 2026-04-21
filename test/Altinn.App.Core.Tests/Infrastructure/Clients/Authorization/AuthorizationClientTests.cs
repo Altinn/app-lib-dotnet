@@ -49,7 +49,7 @@ public class AuthorizationClientTests
             AppId = "tdd/test-app",
             Process = new ProcessState()
             {
-                CurrentTask = new ProcessElementInfo() { AltinnTaskType = "Data", ElementId = "Task_1" },
+                CurrentTask = new ProcessElementInfo() { AltinnTaskType = AltinnTaskTypes.Data, ElementId = "Task_1" },
                 EndEvent = "EndEvent_1",
             },
         };
@@ -95,7 +95,7 @@ public class AuthorizationClientTests
             AppId = "tdd/test-app",
             Process = new ProcessState()
             {
-                CurrentTask = new ProcessElementInfo() { AltinnTaskType = "Data", ElementId = "Task_1" },
+                CurrentTask = new ProcessElementInfo() { AltinnTaskType = AltinnTaskTypes.Data, ElementId = "Task_1" },
                 EndEvent = "EndEvent_1",
             },
         };

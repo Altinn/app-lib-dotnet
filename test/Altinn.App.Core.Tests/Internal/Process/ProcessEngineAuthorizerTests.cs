@@ -1,6 +1,7 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features.Process;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Process;
@@ -66,7 +67,7 @@ public class ProcessEngineAuthorizerTests
     public async Task AuthorizeProcessNext_WithSpecificAction_CallsAuthorizationService()
     {
         // Arrange
-        Instance instance = CreateInstance("task1", "data");
+        Instance instance = CreateInstance("task1", AltinnTaskTypes.Data);
 
         _authServiceMock
             .Setup(x =>
@@ -93,7 +94,7 @@ public class ProcessEngineAuthorizerTests
     public async Task AuthorizeProcessNext_WithNoAction_DataTask_ChecksWriteAction()
     {
         // Arrange
-        Instance instance = CreateInstance("task1", "data");
+        Instance instance = CreateInstance("task1", AltinnTaskTypes.Data);
 
         _authServiceMock
             .Setup(x =>
@@ -160,7 +161,7 @@ public class ProcessEngineAuthorizerTests
     public async Task AuthorizeProcessNext_WithNoAction_ConfirmationTask_ChecksConfirmAction()
     {
         // Arrange
-        Instance instance = CreateInstance("task1", "confirmation");
+        Instance instance = CreateInstance("task1", AltinnTaskTypes.Confirmation);
 
         _authServiceMock
             .Setup(x =>
@@ -227,7 +228,7 @@ public class ProcessEngineAuthorizerTests
     public async Task AuthorizeProcessNext_WithNoAuthorizedActions_ReturnsFalse()
     {
         // Arrange
-        Instance instance = CreateInstance("task1", "data");
+        Instance instance = CreateInstance("task1", AltinnTaskTypes.Data);
 
         _authServiceMock
             .Setup(x =>
@@ -252,7 +253,7 @@ public class ProcessEngineAuthorizerTests
     public async Task AuthorizeProcessNext_NoHttpContext_ThrowsAuthenticationContextException()
     {
         // Arrange
-        Instance instance = CreateInstance("task1", "data");
+        Instance instance = CreateInstance("task1", AltinnTaskTypes.Data);
         _httpContextAccessorMock.Setup(x => x.HttpContext).Returns((HttpContext?)null);
 
         // Act & Assert
@@ -260,14 +261,14 @@ public class ProcessEngineAuthorizerTests
     }
 
     [Theory]
-    [InlineData("data", new[] { "write" })]
-    [InlineData("feedback", new[] { "write" })]
+    [InlineData(AltinnTaskTypes.Data, new[] { "write" })]
+    [InlineData(AltinnTaskTypes.Feedback, new[] { "write" })]
     [InlineData("pdf", new[] { "write" })]
     [InlineData("eFormidling", new[] { "write" })]
     [InlineData("subformPdf", new[] { "write" })]
-    [InlineData("payment", new[] { "pay", "write" })]
-    [InlineData("confirmation", new[] { "confirm" })]
-    [InlineData("signing", new[] { "sign", "write" })]
+    [InlineData(AltinnTaskTypes.Payment, new[] { "pay", "write" })]
+    [InlineData(AltinnTaskTypes.Confirmation, new[] { "confirm" })]
+    [InlineData(AltinnTaskTypes.Signing, new[] { "sign", "write" })]
     [InlineData("customTask", new[] { "customTask" })]
     public void GetActionsThatAllowProcessNextForTaskType_ReturnsExpectedActions(
         string taskType,
