@@ -4637,6 +4637,7 @@ namespace Altinn.App.Core.Models.Expressions
         public static Altinn.App.Core.Models.Expressions.Expression False { get; }
         public static Altinn.App.Core.Models.Expressions.Expression Null { get; }
         public static Altinn.App.Core.Models.Expressions.Expression True { get; }
+        public static Altinn.App.Core.Models.Expressions.Expression Undefined { get; }
         public bool Equals(Altinn.App.Core.Models.Expressions.Expression other) { }
         public override bool Equals(object? obj) { }
         public override int GetHashCode() { }
