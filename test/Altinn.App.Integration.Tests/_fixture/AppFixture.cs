@@ -134,7 +134,6 @@ public sealed partial class AppFixture : IAsyncDisposable
             var appId = $"{appIdentity.Org}/{effectiveApp}";
             generatedAppDirectory = GetGeneratedAppDirectory(app, fixtureInstance);
             studioctlEnvironmentLease = await StudioctlEnvironmentLease.Acquire(logger, cancellationToken);
-            await StudioctlAppProcess.StopByPathBestEffort(generatedAppDirectory, logger);
             generatedAppDirectory = await GenerateAppDirectory(
                 app,
                 scenario,
