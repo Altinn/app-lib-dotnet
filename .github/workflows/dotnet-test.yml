@@ -25,11 +25,11 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: git config --system core.longpaths true
       - name: Setup .NET
-        uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602 # v5
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           dotnet-version: |
             8.0.x
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Tool restore
@@ -46,7 +46,21 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           dotnet test solutions/All.sln -v m --no-restore --no-build --filter "Category!=Integration"
+      - name: Install studioctl
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          STUDIOCTL_HOME: ${{ runner.temp }}/studioctl-home
+          STUDIOCTL_INSTALL_DIR: ${{ runner.temp }}/studioctl-bin
+          STUDIOCTL_VERSION: v0.1.0-preview.6
+        run: |
+          mkdir -p "$STUDIOCTL_HOME" "$STUDIOCTL_INSTALL_DIR"
+          curl -fsSL https://altinn.studio/designer/api/v1/studioctl/install.sh -o "$RUNNER_TEMP/studioctl-install.sh"
+          sh "$RUNNER_TEMP/studioctl-install.sh" --version "$STUDIOCTL_VERSION"
+          echo "$STUDIOCTL_INSTALL_DIR" >> "$GITHUB_PATH"
+          "$STUDIOCTL_INSTALL_DIR/studioctl" --version | grep -Fx "studioctl $STUDIOCTL_VERSION"
       - name: Test (integration tests)
         if: matrix.os == 'ubuntu-latest'
+        env:
+          STUDIOCTL_HOME: ${{ runner.temp }}/studioctl-home
         run: |
           dotnet test solutions/All.sln --no-restore --no-build --logger "console;verbosity=detailed" --filter "Category=Integration"
