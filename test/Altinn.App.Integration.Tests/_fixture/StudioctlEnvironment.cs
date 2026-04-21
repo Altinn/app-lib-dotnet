@@ -375,6 +375,7 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
 
         return new StudioctlAppProcess(logger, appDirectory, result.ProcessId, uri, result.LogPath);
     }
+
     private static void TryKill(System.Diagnostics.Process process)
     {
         try
