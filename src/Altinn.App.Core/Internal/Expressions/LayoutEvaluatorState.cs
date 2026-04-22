@@ -12,6 +12,7 @@ namespace Altinn.App.Core.Internal.Expressions;
 
 /// <summary>
 /// Collection class to hold all the shared state that is required for evaluating expressions in a layout.
+/// This will gradually be removed and replaced by IInstanceDataAccessor
 /// </summary>
 public class LayoutEvaluatorState
 {
@@ -22,7 +23,6 @@ public class LayoutEvaluatorState
     private readonly string? _language;
     private readonly TimeZoneInfo? _timeZone;
     private List<ComponentContext>? _rootContext;
-    private readonly IInstanceDataAccessor _dataAccessor;
     private readonly Dictionary<string, DataElementIdentifier> _dataIdsByType = [];
 
     /// <summary>
@@ -55,7 +55,7 @@ public class LayoutEvaluatorState
                 _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
             }
         }
-        _dataAccessor = dataAccessor;
+        DataAccessor = dataAccessor;
         _componentModel = componentModel;
         _translationService = translationService;
         _frontEndSettings = frontEndSettings;
@@ -69,6 +69,12 @@ public class LayoutEvaluatorState
     /// Get the Instance object that is referenced for evaluation.
     /// </summary>
     public Instance Instance { get; }
+
+    /// <summary>
+    /// Provides access to the instance data accessor, enabling operations and interactions
+    /// with the underlying instance data used in layout evaluation and bindings.
+    /// </summary>
+    public IInstanceDataAccessor DataAccessor { get; }
 
     /// <summary>
     /// Get a hierarchy of the different contexts in the component model (remember to iterate <see cref="ComponentContext.ChildContexts" />)
@@ -231,7 +237,7 @@ public class LayoutEvaluatorState
     )
     {
         var elementIdentifier = ResolveDataElementIdentifier(key, defaultDataElementIdentifier);
-        var model = await _dataAccessor.GetFormDataWrapper(elementIdentifier);
+        var model = await DataAccessor.GetFormDataWrapper(elementIdentifier);
         return model.Get(key.Field, indexes);
     }
 
@@ -240,7 +246,7 @@ public class LayoutEvaluatorState
     /// </summary>
     public async Task<DataReference[]> GetResolvedKeys(DataReference reference)
     {
-        var data = await _dataAccessor.GetFormDataWrapper(reference.DataElementIdentifier);
+        var data = await DataAccessor.GetFormDataWrapper(reference.DataElementIdentifier);
         return data.GetResolvedKeys(reference);
     }
 
@@ -249,7 +255,7 @@ public class LayoutEvaluatorState
     /// </summary>
     public async Task RemoveDataField(DataReference key, RowRemovalOption rowRemovalOption)
     {
-        var dataWrapper = await _dataAccessor.GetFormDataWrapper(key.DataElementIdentifier);
+        var dataWrapper = await DataAccessor.GetFormDataWrapper(key.DataElementIdentifier);
         dataWrapper.RemoveField(key.Field, rowRemovalOption);
     }
 
@@ -306,7 +312,7 @@ public class LayoutEvaluatorState
     public async Task<DataReference> AddInidicies(ModelBinding binding, ComponentContext context)
     {
         var dataElementId = ResolveDataElementIdentifier(binding, context.DataElementIdentifier);
-        var formDataWrapper = await _dataAccessor.GetFormDataWrapper(dataElementId);
+        var formDataWrapper = await DataAccessor.GetFormDataWrapper(dataElementId);
 
         var field =
             formDataWrapper.AddIndexToPath(binding.Field, context.RowIndices)
@@ -335,7 +341,7 @@ public class LayoutEvaluatorState
 
         if (defaultDataElementIdentifier.HasValue)
         {
-            var defaultDataType = _dataAccessor.GetDataType(defaultDataElementIdentifier.Value);
+            var defaultDataType = DataAccessor.GetDataType(defaultDataElementIdentifier.Value);
             if (defaultDataType.Id == key.DataType)
             {
                 return defaultDataElementIdentifier.Value;
@@ -349,7 +355,7 @@ public class LayoutEvaluatorState
         }
 
         // Raise the correct error
-        var requestedDataType = _dataAccessor.GetDataType(key.DataType);
+        var requestedDataType = DataAccessor.GetDataType(key.DataType);
         if (requestedDataType.AppLogic?.ClassRef is null)
         {
             throw new InvalidOperationException(
@@ -378,7 +384,7 @@ public class LayoutEvaluatorState
     )
     {
         var dataElementId = ResolveDataElementIdentifier(binding, dataElementIdentifier);
-        var formDataWrapper = await _dataAccessor.GetFormDataWrapper(dataElementId);
+        var formDataWrapper = await DataAccessor.GetFormDataWrapper(dataElementId);
         return new DataReference()
         {
             DataElementIdentifier = dataElementId,
@@ -416,7 +422,7 @@ public class LayoutEvaluatorState
     )
     {
         var dataElementId = ResolveDataElementIdentifier(groupBinding, defaultDataElementIdentifier);
-        var model = await _dataAccessor.GetFormDataWrapper(dataElementId);
+        var model = await DataAccessor.GetFormDataWrapper(dataElementId);
         return model.GetRowCount(groupBinding.Field, indexes);
     }
 
