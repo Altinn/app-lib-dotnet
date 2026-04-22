@@ -4,6 +4,7 @@ namespace Altinn.App.Core.Configuration
 {
     public class AppSettings
     {
+        public const string CALCULATION_CONFIG_FILENAME = "calculation.json";
         public const string JSON_SCHEMA_FILENAME = "schema.json";
         public const string VALIDATION_CONFIG_FILENAME = "validation.json";
         public AppSettings() { }
@@ -16,6 +17,7 @@ namespace Altinn.App.Core.Configuration
         [System.Obsolete("This is not used, and will be removed in the next major version")]
         public string BaseResourceFolderContainer { get; set; }
         public int CacheResourceLifeTimeInSeconds { get; set; }
+        public string CalculationConfigurationFileName { get; set; }
         public string ConfigurationFolder { get; set; }
         public string DefaultBootstrapUrl { get; set; }
         public bool DisableCsrfCheck { get; set; }
@@ -2370,6 +2372,7 @@ namespace Altinn.App.Core.Helpers.DataModel
         public object? GetModelData(string field, System.ReadOnlySpan<int> rowIndexes = default) { }
         public int? GetModelDataCount(string field, System.ReadOnlySpan<int> rowIndexes = default) { }
         public string[] GetResolvedKeys(string field) { }
+        public string[] GetResolvedKeys(string field, bool isCalculating) { }
         public void RemoveField(string field, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
     }
 }
@@ -2419,6 +2422,7 @@ namespace Altinn.App.Core.Implementation
         public Altinn.Platform.Storage.Interface.Models.Application GetApplication() { }
         public string? GetApplicationBPMNProcess() { }
         public string? GetApplicationXACMLPolicy() { }
+        public string? GetCalculationConfiguration(string dataTypeId) { }
         public string GetClassRefForLogicDataType(string dataType) { }
         public System.Threading.Tasks.Task<string?> GetFooter() { }
         [System.Obsolete("Use GetLayoutModelForTask instead")]
@@ -2982,6 +2986,7 @@ namespace Altinn.App.Core.Internal.App
         [System.Obsolete("GetApplication is scheduled for removal. Use Altinn.App.Core.Internal.App.IAppMet" +
             "adata.GetApplicationXACMLPolicy instead", false)]
         string? GetApplicationXACMLPolicy();
+        string? GetCalculationConfiguration(string dataTypeId);
         string GetClassRefForLogicDataType(string dataType);
         System.Threading.Tasks.Task<string?> GetFooter();
         [System.Obsolete("Use GetLayoutModelForTask instead", false)]
@@ -3228,6 +3233,7 @@ namespace Altinn.App.Core.Internal.Expressions
         [System.Obsolete("Use ComponentContext.IsHidden or ComponentContext.EvaluateExpression instead")]
         public static System.Threading.Tasks.Task<bool> EvaluateBooleanExpression(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.Expressions.ComponentContext context, string property, bool defaultReturn) { }
         public static System.Threading.Tasks.Task<object?> EvaluateExpression(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.Expressions.Expression expr, Altinn.App.Core.Models.Expressions.ComponentContext context, object?[]? positionalArguments = null) { }
+        public static System.Threading.Tasks.Task<Altinn.App.Core.Internal.Expressions.ExpressionValue> EvaluateExpressionToExpressionValue(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.Expressions.Expression expr, Altinn.App.Core.Models.Expressions.ComponentContext context, object?[]? positionalArguments = null) { }
     }
     public class ExpressionEvaluatorTypeErrorException : Altinn.App.Core.Exceptions.AltinnException
     {
@@ -3304,6 +3310,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public string GetLanguage() { }
         public System.Threading.Tasks.Task<object?> GetModelData(Altinn.App.Core.Models.Layout.ModelBinding key, Altinn.App.Core.Models.DataElementIdentifier? defaultDataElementIdentifier, int[]? indexes) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference[]> GetResolvedKeys(Altinn.App.Core.Models.Layout.DataReference reference) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Layout.DataReference[]> GetResolvedKeys(Altinn.App.Core.Models.Layout.DataReference reference, bool isCalculating) { }
         public System.TimeZoneInfo? GetTimeZone() { }
         public System.Threading.Tasks.Task RemoveDataField(Altinn.App.Core.Models.Layout.DataReference key, Altinn.App.Core.Helpers.RowRemovalOption rowRemovalOption) { }
         public System.Threading.Tasks.Task<string> TranslateText(string textKey, Altinn.App.Core.Models.Expressions.ComponentContext context) { }

@@ -54,6 +54,20 @@ public static partial class ExpressionEvaluator
     /// <summary>
     /// Evaluate a <see cref="Expression" /> from a given <see cref="LayoutEvaluatorState" /> in a <see cref="ComponentContext" />
     /// </summary>
+    public static async Task<ExpressionValue> EvaluateExpressionToExpressionValue(
+        LayoutEvaluatorState state,
+        Expression expr,
+        ComponentContext context,
+        object?[]? positionalArguments = null
+    )
+    {
+        var positionalArgumentUnions = positionalArguments?.Select(ExpressionValue.FromObject).ToArray();
+        return await EvaluateExpression_internal(state, expr, context, positionalArgumentUnions);
+    }
+
+    /// <summary>
+    /// Evaluate a <see cref="Expression" /> from a given <see cref="LayoutEvaluatorState" /> in a <see cref="ComponentContext" />
+    /// </summary>
     public static async Task<object?> EvaluateExpression(
         LayoutEvaluatorState state,
         Expression expr,

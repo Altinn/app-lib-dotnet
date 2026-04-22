@@ -123,13 +123,29 @@ public class DataModelWrapper
     /// </example>
     public string[] GetResolvedKeys(string field)
     {
+        return GetResolvedKeys(field, isCalculating: false);
+    }
+
+    /// <summary>
+    /// Get all valid indexed keys for the field, depending on the number of rows in repeating groups
+    /// </summary>
+    /// <example>
+    /// GetResolvedKeys("data.bedrifter.styre.medlemmer") =>
+    /// [
+    ///     "data.bedrifter[0].styre.medlemmer",
+    ///     "data.bedrifter[1].styre.medlemmer"
+    ///     ...
+    /// ]
+    /// </example>
+    public string[] GetResolvedKeys(string field, bool isCalculating)
+    {
         if (_dataModel is null)
         {
             return [];
         }
 
         var fieldParts = field.Split('.');
-        return GetResolvedKeysRecursive(fieldParts, _dataModel);
+        return GetResolvedKeysRecursive(fieldParts, _dataModel, _dataModel.GetType(), isCalculating: isCalculating);
     }
 
     private static string JoinFieldKeyParts(string? currentKey, string? key)
@@ -148,61 +164,111 @@ public class DataModelWrapper
 
     private static string[] GetResolvedKeysRecursive(
         string[] keyParts,
-        object currentModel,
+        object? currentModel,
+        Type currentType,
         int currentIndex = 0,
-        string currentKey = ""
+        string currentKey = "",
+        bool isCalculating = false
     )
     {
-        if (currentModel is null)
-        {
-            return [];
-        }
-
         if (currentIndex == keyParts.Length)
         {
             return [currentKey];
         }
 
         var (key, groupIndex) = ParseKeyPart(keyParts[currentIndex]);
-        var prop = Array.Find(currentModel.GetType().GetProperties(), p => IsPropertyWithJsonName(p, key));
-        var childModel = prop?.GetValue(currentModel);
-        if (childModel is null)
+        var lookupType = currentModel?.GetType() ?? currentType;
+        var prop = Array.Find(lookupType.GetProperties(), p => IsPropertyWithJsonName(p, key));
+        if (prop is null)
         {
             return [];
         }
 
-        if (childModel is not string && childModel is System.Collections.IEnumerable childModelList)
+        var childType = prop.PropertyType;
+        // Check if the property is a collection type (but not string)
+        if (childType != typeof(string) && childType.IsAssignableTo(typeof(System.Collections.IEnumerable)))
         {
-            // childModel is a list
-            if (groupIndex is null)
+            // For collections, we need the actual object to enumerate
+            var childModel = currentModel is not null ? prop.GetValue(currentModel) : null;
+            if (childModel is System.Collections.IEnumerable childModelList)
             {
+                // Get the element type of the collection
+                var elementType = childType.IsArray
+                    ? childType.GetElementType() ?? typeof(object)
+                    : childType.GetGenericArguments().FirstOrDefault() ?? typeof(object);
                 // Index not specified, recurse on all elements
-                int i = 0;
-                var resolvedKeys = new List<string>();
-                foreach (var child in childModelList)
+                if (groupIndex is null)
                 {
-                    var newResolvedKeys = GetResolvedKeysRecursive(
-                        keyParts,
-                        child,
-                        currentIndex + 1,
-                        JoinFieldKeyParts(currentKey, key + "[" + i + "]")
-                    );
-                    resolvedKeys.AddRange(newResolvedKeys);
-                    i++;
+                    int i = 0;
+                    var resolvedKeys = new List<string>();
+                    foreach (var child in childModelList)
+                    {
+                        if (child is null)
+                        {
+                            i++;
+                            continue;
+                        }
+                        var newResolvedKeys = GetResolvedKeysRecursive(
+                            keyParts,
+                            child,
+                            elementType,
+                            currentIndex + 1,
+                            JoinFieldKeyParts(currentKey, $"{key}[{i}]"),
+                            isCalculating
+                        );
+                        resolvedKeys.AddRange(newResolvedKeys);
+                        i++;
+                    }
+                    return resolvedKeys.ToArray();
                 }
-                return resolvedKeys.ToArray();
+                // Index specified, recurse on that element
+                var elementAt = GetElementAt(childModelList, groupIndex.Value);
+                if (elementAt is null)
+                {
+                    return [];
+                }
+                return GetResolvedKeysRecursive(
+                    keyParts,
+                    elementAt,
+                    elementType,
+                    currentIndex + 1,
+                    JoinFieldKeyParts(currentKey, $"{key}[{groupIndex}]"),
+                    isCalculating
+                );
             }
-            // Index specified, recurse on that element
-            return GetResolvedKeysRecursive(
-                keyParts,
-                childModel,
-                currentIndex + 1,
-                JoinFieldKeyParts(currentKey, key + "[" + groupIndex + "]")
-            );
+
+            if (isCalculating && currentIndex == keyParts.Length - 1)
+            {
+                return [JoinFieldKeyParts(currentKey, key)];
+            }
+            return [];
         }
 
-        // Otherwise, just recurse
-        return GetResolvedKeysRecursive(keyParts, childModel, currentIndex + 1, JoinFieldKeyParts(currentKey, key));
+        // For non-collection properties, we can work with just the type
+        // Get the child object for further traversal
+        var childValue = currentModel is not null ? prop.GetValue(currentModel) : null;
+        // If this is the last key part
+        if (currentIndex == keyParts.Length - 1)
+        {
+            // Return the key if value exists, or if calculating (to allow null fields during calculation)
+            return childValue is not null || isCalculating ? [JoinFieldKeyParts(currentKey, key)] : [];
+        }
+
+        // If child is null and we're not calculating, we can't continue
+        if (childValue is null && !isCalculating)
+        {
+            return [];
+        }
+
+        // Continue recursion using type information (childValue may be null if isCalculating=true)
+        return GetResolvedKeysRecursive(
+            keyParts,
+            childValue,
+            childType,
+            currentIndex + 1,
+            JoinFieldKeyParts(currentKey, key),
+            isCalculating
+        );
     }
 
     private static object? GetElementAt(System.Collections.IEnumerable enumerable, int index)
