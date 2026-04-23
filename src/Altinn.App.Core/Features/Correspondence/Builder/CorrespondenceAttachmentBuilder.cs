@@ -75,7 +75,11 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
 
         Stream data =
             _data
-            ?? (_dataAsBytes.HasValue ? new MemoryStream(_dataAsBytes.Value.ToArray()) : throw new InvalidOperationException("Data cannot be empty"));
+            ?? (
+                _dataAsBytes.HasValue
+                    ? new MemoryStream(_dataAsBytes.Value.ToArray())
+                    : throw new InvalidOperationException("Data cannot be empty")
+            );
 
         return new CorrespondenceAttachment
         {
