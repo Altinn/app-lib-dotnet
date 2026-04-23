@@ -44,12 +44,12 @@ public class FiksArkivHostTest
 
         // Act
         await fixture.FiksArkivHost.StartAsync(CancellationToken.None);
-        await WaitUntil(() => createdClients.Count == 1);
+        var createdClient = await createdClients.WaitForClient(1);
         await fixture.FiksArkivHost.StopAsync(CancellationToken.None);
 
         // Assert
-        Assert.Single(createdClients);
-        createdClients[0].Verify(x => x.DisposeAsync(), Times.Once);
+        Assert.Equal(1, createdClients.Count);
+        createdClient.Verify(x => x.DisposeAsync(), Times.Once);
         loggerMock.Verify(
             TestHelpers.MatchLogEntry(LogLevel.Information, "Fiks Arkiv Service stopping.", loggerMock.Object),
             Times.Once
@@ -79,15 +79,14 @@ public class FiksArkivHostTest
 
         // Act
         await fixture.FiksArkivHost.StartAsync(CancellationToken.None);
-        await WaitUntil(() => createdClients.Count == 1);
-        fakeTime.Advance(TimeSpan.FromMinutes(10));
-        await WaitUntil(() => createdClients.Count == 2);
+        var createdClient = await createdClients.WaitForClient(1);
+        await AdvanceTimeUntil(fakeTime, createdClients.WhenClientCreated(2), TimeSpan.FromMinutes(11));
 
         // Assert
         Assert.Equal(2, createdClients.Count);
         clientFactoryMock.Verify(x => x.CreateClient(It.IsAny<FiksIOConfiguration>()), Times.Exactly(2));
-        createdClients[0].Verify(x => x.IsOpenAsync(), Times.Once);
-        createdClients[0].Verify(x => x.DisposeAsync(), Times.Once);
+        createdClient.Verify(x => x.IsOpenAsync(), Times.Once);
+        createdClient.Verify(x => x.DisposeAsync(), Times.Once);
         loggerMock.Verify(
             TestHelpers.MatchLogEntry(LogLevel.Error, "FiksIO Client is unhealthy, reconnecting.", loggerMock.Object),
             Times.Once
@@ -398,10 +397,10 @@ public class FiksArkivHostTest
 
     private static (
         Mock<IFiksIOClientFactory> clientFactoryMock,
-        List<Mock<KS.Fiks.IO.Client.IFiksIOClient>> createdClients
+        CreatedClientTracker createdClients
     ) GetFixIOClientFactoryMock(Action<Mock<KS.Fiks.IO.Client.IFiksIOClient>>? creationCallback = null)
     {
-        var clients = new List<Mock<KS.Fiks.IO.Client.IFiksIOClient>>();
+        var clients = new CreatedClientTracker();
         var clientFactoryMock = new Mock<IFiksIOClientFactory>();
         clientFactoryMock
             .Setup(x => x.CreateClient(It.IsAny<KS.Fiks.IO.Client.Configuration.FiksIOConfiguration>()))
@@ -434,5 +433,58 @@ public class FiksArkivHostTest
 
             await Task.Delay(10);
         }
+    }
+
+    private static async Task AdvanceTimeUntil(FakeTimeProvider timeProvider, Task signal, TimeSpan maximumAdvance)
+    {
+        var step = TimeSpan.FromSeconds(1);
+        var remaining = maximumAdvance;
+
+        while (!signal.IsCompleted && remaining > TimeSpan.Zero)
+        {
+            var currentStep = remaining > step ? step : remaining;
+            timeProvider.Advance(currentStep);
+            remaining -= currentStep;
+            await Task.Yield();
+        }
+
+        await signal.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
+    private sealed class CreatedClientTracker
+    {
+        private readonly TaskCompletionSource<Mock<KS.Fiks.IO.Client.IFiksIOClient>> _firstClientCreated = new(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+        private readonly TaskCompletionSource<Mock<KS.Fiks.IO.Client.IFiksIOClient>> _secondClientCreated = new(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+        private int _count;
+
+        public int Count => Volatile.Read(ref _count);
+
+        public void Add(Mock<KS.Fiks.IO.Client.IFiksIOClient> client)
+        {
+            switch (Interlocked.Increment(ref _count))
+            {
+                case 1:
+                    _firstClientCreated.TrySetResult(client);
+                    break;
+                case 2:
+                    _secondClientCreated.TrySetResult(client);
+                    break;
+            }
+        }
+
+        public Task<Mock<KS.Fiks.IO.Client.IFiksIOClient>> WhenClientCreated(int clientNumber) =>
+            clientNumber switch
+            {
+                1 => _firstClientCreated.Task,
+                2 => _secondClientCreated.Task,
+                _ => throw new ArgumentOutOfRangeException(nameof(clientNumber)),
+            };
+
+        public Task<Mock<KS.Fiks.IO.Client.IFiksIOClient>> WaitForClient(int clientNumber, TimeSpan? timeout = null) =>
+            WhenClientCreated(clientNumber).WaitAsync(timeout ?? TimeSpan.FromSeconds(5));
     }
 }
