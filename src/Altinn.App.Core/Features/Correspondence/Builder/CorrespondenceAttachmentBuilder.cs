@@ -73,11 +73,15 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
         BuilderUtils.NotNullOrEmpty(_sendersReference);
         BuilderUtils.RequireAtLeastOneOf(_data, _dataAsBytes, "Data cannot be empty");
 
+        Stream data =
+            _data
+            ?? (_dataAsBytes.HasValue ? new MemoryStream(_dataAsBytes.Value.ToArray()) : throw new InvalidOperationException("Data cannot be empty"));
+
         return new CorrespondenceAttachment
         {
             Filename = _filename,
             SendersReference = _sendersReference,
-            Data = _data ?? new MemoryStream(_dataAsBytes.Value.ToArray()),
+            Data = data,
             IsEncrypted = _isEncrypted,
             DataLocationType = _dataLocationType,
         };
