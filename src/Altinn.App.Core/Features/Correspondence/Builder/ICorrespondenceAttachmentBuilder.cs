@@ -27,15 +27,18 @@ public interface ICorrespondenceAttachmentBuilderSendersReference
 }
 
 /// <summary>
-/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceAttachment.Data"/> step.
+/// Indicates that the <see cref="CorrespondenceAttachmentBuilder"/> instance is on the <see cref="CorrespondenceStreamedAttachment.Data"/> step.
 /// </summary>
 public interface ICorrespondenceAttachmentBuilderData
 {
     /// <summary>
-    /// Sets the data content of the attachment.
+    /// Sets the stream of the data content of the attachment.
+    /// Is more efficient if the attachment is large in size
+    /// The stream must be open (not disposed) until the correspondence is sent
+    /// The caller is responsible for disposing the stream after the correspondence has been sent
     /// </summary>
-    /// <param name="data">The data</param>
-    ICorrespondenceAttachmentBuilder WithData(ReadOnlyMemory<byte> data);
+    /// <param name="data">The data stream</param>
+    ICorrespondenceAttachmentBuilder WithData(Stream data);
 }
 
 /// <summary>

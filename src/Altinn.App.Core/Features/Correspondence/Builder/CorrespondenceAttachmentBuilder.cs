@@ -9,7 +9,7 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
 {
     private string? _filename;
     private string? _sendersReference;
-    private ReadOnlyMemory<byte>? _data;
+    private Stream? _data;
     private bool? _isEncrypted;
     private CorrespondenceDataLocationType _dataLocationType =
         CorrespondenceDataLocationType.ExistingCorrespondenceAttachment;
@@ -38,9 +38,8 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceAttachmentBuilder WithData(ReadOnlyMemory<byte> data)
+    public ICorrespondenceAttachmentBuilder WithData(Stream data)
     {
-        BuilderUtils.NotNullOrEmpty(data, "Data cannot be empty");
         _data = data;
         return this;
     }
@@ -70,7 +69,7 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
         {
             Filename = _filename,
             SendersReference = _sendersReference,
-            Data = _data.Value,
+            Data = _data,
             IsEncrypted = _isEncrypted,
             DataLocationType = _dataLocationType,
         };
