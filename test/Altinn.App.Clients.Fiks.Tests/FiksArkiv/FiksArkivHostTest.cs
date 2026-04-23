@@ -7,7 +7,6 @@ using Altinn.App.Clients.Fiks.FiksIO.Models;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Meldingstyper;
-using KS.Fiks.IO.Client.Configuration;
 using KS.Fiks.IO.Client.Models;
 using KS.Fiks.IO.Client.Send;
 using KS.Fiks.IO.Crypto.Models;
@@ -29,27 +28,33 @@ public class FiksArkivHostTest
     public async Task ExecuteAsync_StopsWhenCancellationRequested()
     {
         // Arrange
+        var messageListenerRegistered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var fiksIOClientMock = new Mock<IFiksIOClient>();
         var loggerMock = new Mock<ILogger<FiksArkivHost>>();
-        var (clientFactoryMock, createdClients) = GetFixIOClientFactoryMock();
-
-        await using var fixture = TestFixture.Create(
-            services =>
+        fiksIOClientMock
+            .Setup(x => x.OnMessageReceived(It.IsAny<MessageReceivedCallback>()))
+            .Returns(() =>
             {
-                services.AddFiksArkiv();
-                services.AddSingleton(loggerMock.Object);
-                services.AddSingleton(clientFactoryMock.Object);
-            },
-            mockFiksIOClientFactory: false
-        );
+                messageListenerRegistered.TrySetResult();
+                return Task.CompletedTask;
+            });
+        fiksIOClientMock.Setup(x => x.DisposeAsync()).Returns(ValueTask.CompletedTask);
+
+        await using var fixture = TestFixture.Create(services =>
+        {
+            services.AddFiksArkiv();
+            services.AddSingleton(fiksIOClientMock.Object);
+            services.AddSingleton(loggerMock.Object);
+        });
 
         // Act
         await fixture.FiksArkivHost.StartAsync(CancellationToken.None);
-        var createdClient = await createdClients.WaitForClient(1);
+        await messageListenerRegistered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await fixture.FiksArkivHost.StopAsync(CancellationToken.None);
 
         // Assert
-        Assert.Equal(1, createdClients.Count);
-        createdClient.Verify(x => x.DisposeAsync(), Times.Once);
+        fiksIOClientMock.Verify(x => x.OnMessageReceived(It.IsAny<MessageReceivedCallback>()), Times.Once);
+        fiksIOClientMock.Verify(x => x.DisposeAsync(), Times.Once);
         loggerMock.Verify(
             TestHelpers.MatchLogEntry(LogLevel.Information, "Fiks Arkiv Service stopping.", loggerMock.Object),
             Times.Once
@@ -60,33 +65,44 @@ public class FiksArkivHostTest
     public async Task ExecuteAsync_PerformsHealthCheck_ReconnectsWhenRequired()
     {
         // Arrange
+        var messageListenerRegistered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var reconnectCalled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var fiksIOClientMock = new Mock<IFiksIOClient>();
         var loggerMock = new Mock<ILogger<FiksArkivHost>>();
         var fakeTime = new FakeTimeProvider();
-        var (clientFactoryMock, createdClients) = GetFixIOClientFactoryMock(x =>
-            x.Setup(m => m.IsOpenAsync()).ReturnsAsync(false)
-        );
-
-        await using var fixture = TestFixture.Create(
-            services =>
+        fiksIOClientMock
+            .Setup(x => x.OnMessageReceived(It.IsAny<MessageReceivedCallback>()))
+            .Returns(() =>
             {
-                services.AddFiksArkiv();
-                services.AddSingleton(loggerMock.Object);
-                services.AddSingleton(clientFactoryMock.Object);
-                services.AddSingleton<TimeProvider>(fakeTime);
-            },
-            mockFiksIOClientFactory: false
-        );
+                messageListenerRegistered.TrySetResult();
+                return Task.CompletedTask;
+            });
+        fiksIOClientMock.Setup(x => x.IsHealthy()).ReturnsAsync(false);
+        fiksIOClientMock
+            .Setup(x => x.Reconnect())
+            .Returns(() =>
+            {
+                reconnectCalled.TrySetResult();
+                return Task.CompletedTask;
+            });
+        fiksIOClientMock.Setup(x => x.DisposeAsync()).Returns(ValueTask.CompletedTask);
+
+        await using var fixture = TestFixture.Create(services =>
+        {
+            services.AddFiksArkiv();
+            services.AddSingleton(fiksIOClientMock.Object);
+            services.AddSingleton(loggerMock.Object);
+            services.AddSingleton<TimeProvider>(fakeTime);
+        });
 
         // Act
         await fixture.FiksArkivHost.StartAsync(CancellationToken.None);
-        var createdClient = await createdClients.WaitForClient(1);
-        await AdvanceTimeUntil(fakeTime, createdClients.WhenClientCreated(2), TimeSpan.FromMinutes(11));
+        await messageListenerRegistered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await AdvanceTimeUntil(fakeTime, reconnectCalled.Task, TimeSpan.FromMinutes(11));
 
         // Assert
-        Assert.Equal(2, createdClients.Count);
-        clientFactoryMock.Verify(x => x.CreateClient(It.IsAny<FiksIOConfiguration>()), Times.Exactly(2));
-        createdClient.Verify(x => x.IsOpenAsync(), Times.Once);
-        createdClient.Verify(x => x.DisposeAsync(), Times.Once);
+        fiksIOClientMock.Verify(x => x.IsHealthy(), Times.Once);
+        fiksIOClientMock.Verify(x => x.Reconnect(), Times.Once);
         loggerMock.Verify(
             TestHelpers.MatchLogEntry(LogLevel.Error, "FiksIO Client is unhealthy, reconnecting.", loggerMock.Object),
             Times.Once
@@ -395,27 +411,6 @@ public class FiksArkivHostTest
         );
     }
 
-    private static (
-        Mock<IFiksIOClientFactory> clientFactoryMock,
-        CreatedClientTracker createdClients
-    ) GetFixIOClientFactoryMock(Action<Mock<KS.Fiks.IO.Client.IFiksIOClient>>? creationCallback = null)
-    {
-        var clients = new CreatedClientTracker();
-        var clientFactoryMock = new Mock<IFiksIOClientFactory>();
-        clientFactoryMock
-            .Setup(x => x.CreateClient(It.IsAny<KS.Fiks.IO.Client.Configuration.FiksIOConfiguration>()))
-            .ReturnsAsync(() =>
-            {
-                var clientMock = new Mock<KS.Fiks.IO.Client.IFiksIOClient>();
-                creationCallback?.Invoke(clientMock);
-                clients.Add(clientMock);
-
-                return clientMock.Object;
-            });
-
-        return (clientFactoryMock, clients);
-    }
-
     public enum MessageResponseType
     {
         Error,
@@ -449,42 +444,5 @@ public class FiksArkivHostTest
         }
 
         await signal.WaitAsync(TimeSpan.FromSeconds(5));
-    }
-
-    private sealed class CreatedClientTracker
-    {
-        private readonly TaskCompletionSource<Mock<KS.Fiks.IO.Client.IFiksIOClient>> _firstClientCreated = new(
-            TaskCreationOptions.RunContinuationsAsynchronously
-        );
-        private readonly TaskCompletionSource<Mock<KS.Fiks.IO.Client.IFiksIOClient>> _secondClientCreated = new(
-            TaskCreationOptions.RunContinuationsAsynchronously
-        );
-        private int _count;
-
-        public int Count => Volatile.Read(ref _count);
-
-        public void Add(Mock<KS.Fiks.IO.Client.IFiksIOClient> client)
-        {
-            switch (Interlocked.Increment(ref _count))
-            {
-                case 1:
-                    _firstClientCreated.TrySetResult(client);
-                    break;
-                case 2:
-                    _secondClientCreated.TrySetResult(client);
-                    break;
-            }
-        }
-
-        public Task<Mock<KS.Fiks.IO.Client.IFiksIOClient>> WhenClientCreated(int clientNumber) =>
-            clientNumber switch
-            {
-                1 => _firstClientCreated.Task,
-                2 => _secondClientCreated.Task,
-                _ => throw new ArgumentOutOfRangeException(nameof(clientNumber)),
-            };
-
-        public Task<Mock<KS.Fiks.IO.Client.IFiksIOClient>> WaitForClient(int clientNumber, TimeSpan? timeout = null) =>
-            WhenClientCreated(clientNumber).WaitAsync(timeout ?? TimeSpan.FromSeconds(5));
     }
 }
