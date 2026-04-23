@@ -31,29 +31,21 @@ public class FiksArkivHostTest
         // Arrange
         var loggerMock = new Mock<ILogger<FiksArkivHost>>();
         var (clientFactoryMock, createdClients) = GetFixIOClientFactoryMock();
-        using var cts = new CancellationTokenSource();
 
-        {
-            await using var fixture = TestFixture.Create(
-                services =>
-                {
-                    services.AddFiksArkiv();
-                    services.AddSingleton(loggerMock.Object);
-                    services.AddSingleton(clientFactoryMock.Object);
-                },
-                mockFiksIOClientFactory: false
-            );
-
-            // Act
-            await fixture.FiksArkivHost.StartAsync(cts.Token);
-            await WaitUntil(() => createdClients.Count == 1);
-            await cts.CancelAsync();
-        }
-
-        await WaitUntil(() =>
-            createdClients.Count == 1
-            && createdClients[0].Invocations.Any(x => x.Method.Name == nameof(IAsyncDisposable.DisposeAsync))
+        await using var fixture = TestFixture.Create(
+            services =>
+            {
+                services.AddFiksArkiv();
+                services.AddSingleton(loggerMock.Object);
+                services.AddSingleton(clientFactoryMock.Object);
+            },
+            mockFiksIOClientFactory: false
         );
+
+        // Act
+        await fixture.FiksArkivHost.StartAsync(CancellationToken.None);
+        await WaitUntil(() => createdClients.Count == 1);
+        await fixture.FiksArkivHost.StopAsync(CancellationToken.None);
 
         // Assert
         Assert.Single(createdClients);
