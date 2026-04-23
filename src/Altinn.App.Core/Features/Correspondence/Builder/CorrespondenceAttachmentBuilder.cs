@@ -77,7 +77,7 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
         {
             Filename = _filename,
             SendersReference = _sendersReference,
-            Data = _data ?? new MemoryStream(_dataAsBytes!.Value.ToArray()),
+            Data = _data ?? new MemoryStream(_dataAsBytes.Value.ToArray()),
             IsEncrypted = _isEncrypted,
             DataLocationType = _dataLocationType,
         };
