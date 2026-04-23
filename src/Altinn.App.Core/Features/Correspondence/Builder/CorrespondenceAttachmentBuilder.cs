@@ -10,6 +10,7 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
     private string? _filename;
     private string? _sendersReference;
     private Stream? _data;
+    private ReadOnlyMemory<byte>? _dataAsBytes;
     private bool? _isEncrypted;
     private CorrespondenceDataLocationType _dataLocationType =
         CorrespondenceDataLocationType.ExistingCorrespondenceAttachment;
@@ -45,6 +46,13 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
     }
 
     /// <inheritdoc/>
+    public ICorrespondenceAttachmentBuilder WithData(ReadOnlyMemory<byte> data)
+    {
+        _dataAsBytes = data;
+        return this;
+    }
+
+    /// <inheritdoc/>
     public ICorrespondenceAttachmentBuilder WithIsEncrypted(bool isEncrypted)
     {
         _isEncrypted = isEncrypted;
@@ -63,13 +71,13 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
     {
         BuilderUtils.NotNullOrEmpty(_filename);
         BuilderUtils.NotNullOrEmpty(_sendersReference);
-        BuilderUtils.NotNullOrEmpty(_data);
+        BuilderUtils.RequireAtLeastOneOf(_data, _dataAsBytes, "Data cannot be empty");
 
         return new CorrespondenceAttachment
         {
             Filename = _filename,
             SendersReference = _sendersReference,
-            Data = _data,
+            Data = _data ?? new MemoryStream(_dataAsBytes!.Value.ToArray()),
             IsEncrypted = _isEncrypted,
             DataLocationType = _dataLocationType,
         };
