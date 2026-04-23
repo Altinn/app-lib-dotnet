@@ -46,10 +46,14 @@ public class FiksArkivHostTest
 
             // Act
             await fixture.FiksArkivHost.StartAsync(cts.Token);
+            await WaitUntil(() => createdClients.Count == 1);
             await cts.CancelAsync();
         }
 
-        await Task.Delay(50); // TODO: hopes and prayers that scheduled continuations have now run
+        await WaitUntil(() =>
+            createdClients.Count == 1
+            && createdClients[0].Invocations.Any(x => x.Method.Name == nameof(IAsyncDisposable.DisposeAsync))
+        );
 
         // Assert
         Assert.Single(createdClients);
@@ -83,7 +87,9 @@ public class FiksArkivHostTest
 
         // Act
         await fixture.FiksArkivHost.StartAsync(CancellationToken.None);
+        await WaitUntil(() => createdClients.Count == 1);
         fakeTime.Advance(TimeSpan.FromMinutes(10));
+        await WaitUntil(() => createdClients.Count == 2);
 
         // Assert
         Assert.Equal(2, createdClients.Count);
@@ -330,6 +336,7 @@ public class FiksArkivHostTest
 
         // Act
         await fixture.FiksArkivHost.StartAsync(CancellationToken.None);
+        await WaitUntil(() => messageReceivedCallback is not null);
         await messageReceivedCallback!.Invoke(payload);
 
         // Assert
@@ -422,5 +429,18 @@ public class FiksArkivHostTest
     {
         Error,
         Success,
+    }
+
+    private static async Task WaitUntil(Func<bool> condition, TimeSpan? timeout = null)
+    {
+        var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(5));
+
+        while (!condition())
+        {
+            if (DateTime.UtcNow >= deadline)
+                throw new TimeoutException("Timed out waiting for the background service to reach the expected state.");
+
+            await Task.Delay(10);
+        }
     }
 }
