@@ -3,7 +3,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Represents the payload of an attachment to a correspondence.
 /// </summary>
-internal class AttachmentPayload
+internal sealed record AttachmentPayload
 {
     /// <summary>
     /// Gets or sets the Resource Id for the correspondence service
@@ -18,7 +18,7 @@ internal class AttachmentPayload
     /// <summary>
     /// A logical name for the file, which will be shown in the Altinn inbox
     /// </summary>
-    public required string? DisplayName { get; init; }
+    public string? DisplayName { get; init; }
 
     /// <summary>
     /// A reference value given to the attachment by the creator

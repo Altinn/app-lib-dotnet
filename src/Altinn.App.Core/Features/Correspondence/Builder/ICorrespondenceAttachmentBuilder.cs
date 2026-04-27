@@ -41,12 +41,10 @@ public interface ICorrespondenceAttachmentBuilderData
     ICorrespondenceAttachmentBuilder WithData(Stream data);
 
     /// <summary>
-    /// Sets the stream of the data content of the attachment.
-    /// Is more efficient if the attachment is large in size
-    /// The stream must be open (not disposed) until the correspondence is sent
-    /// The caller is responsible for disposing the stream after the correspondence has been sent
+    /// Sets the byte array of the data content of the attachment.
     /// </summary>
     /// <param name="data">The data</param>
+    [Obsolete("This method is inefficient for large attachments. Consider using WithData(Stream) instead.")]
     ICorrespondenceAttachmentBuilder WithData(ReadOnlyMemory<byte> data);
 }
 
