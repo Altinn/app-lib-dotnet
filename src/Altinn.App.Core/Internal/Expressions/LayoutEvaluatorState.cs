@@ -87,7 +87,7 @@ public class LayoutEvaluatorState
             {
                 throw new InvalidOperationException("Component model not loaded");
             }
-            _rootContext = await _componentModel.GenerateComponentContexts(this);
+            _rootContext = await _componentModel.GenerateComponentContexts(DataAccessor);
         }
         return _rootContext;
     }
@@ -412,7 +412,7 @@ public class LayoutEvaluatorState
     /// <returns>The translated text if a translation is available; otherwise, the original textKey.</returns>
     public async Task<string> TranslateText(string textKey, ComponentContext context)
     {
-        return await _translationService.TranslateTextKey(textKey, this, context) ?? textKey;
+        return await _translationService.TranslateTextKey(textKey, DataAccessor, context) ?? textKey;
     }
 
     internal async Task<int?> GetModelDataCount(

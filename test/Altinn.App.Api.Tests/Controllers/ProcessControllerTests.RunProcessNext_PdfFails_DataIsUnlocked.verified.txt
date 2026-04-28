@@ -11,7 +11,7 @@
       HasParent: true
     },
     {
-      Name: ApplicationMetadata.Service.GetLayoutSet,
+      Name: ApplicationMetadata.Service.GetLayoutModel,
       IdFormat: W3C,
       HasParent: true
     },
@@ -32,6 +32,31 @@
     },
     {
       Name: ApplicationMetadata.Service.GetLayoutSet,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: ApplicationMetadata.Service.GetLayoutSet,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: ApplicationMetadata.Service.GetLayoutSet,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: ApplicationMetadata.Service.GetLayoutSet,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: ApplicationMetadata.Service.GetLayoutSets,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: ApplicationMetadata.Service.GetLayoutSets,
       IdFormat: W3C,
       HasParent: true
     },
@@ -67,6 +92,16 @@
     },
     {
       Name: ApplicationMetadata.Service.GetLayoutSetsForTask,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: ApplicationMetadata.Service.GetLayoutSetsForTask,
+      IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: ApplicationMetadata.Service.GetLayoutSettingsForSet,
       IdFormat: W3C,
       HasParent: true
     },
