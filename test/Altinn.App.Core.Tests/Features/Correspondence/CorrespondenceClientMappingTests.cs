@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Extensions;
@@ -23,8 +24,15 @@ namespace Altinn.App.Core.Tests.Features.Correspondence;
 /// </summary>
 public class CorrespondenceClientMappingTests
 {
-    private static string? ReadBody(HttpContent? content) =>
-        content?.ReadAsStringAsync(CancellationToken.None).GetAwaiter().GetResult();
+    private static string? ReadBody(HttpContent? content)
+    {
+        if (content is null)
+        {
+            return null;
+        }
+        using var reader = new StreamReader(content.ReadAsStream());
+        return reader.ReadToEnd();
+    }
 
     [Fact]
     public async Task Send_WithAllOptionalFields_MapsCorrectlyToInitCorrespondenceJson()

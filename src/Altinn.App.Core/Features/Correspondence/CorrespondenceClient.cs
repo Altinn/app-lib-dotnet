@@ -157,45 +157,45 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
 
         const int maxConcurrentUploads = 4;
         using var sem = new SemaphoreSlim(maxConcurrentUploads);
-        var results = new (CorrespondenceAttachment Attachment, Guid Id)[attachments.Count];
-
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            return await Task.WhenAll(
-            attachments.Select(async(attachment, index) => 
-            {
-                var attachment = attachments[index];
-                try
+        return await Task.WhenAll(
+            attachments.Select(
+                async (attachment, _) =>
                 {
-                    var attachmentId = await InitializeAttachment(
-                        new InitializeAttachmentRequest
-                        {
-                            ResourceId = resourceId,
-                            FileName = attachment.Filename,
-                            IsEncrypted = attachment.IsEncrypted ?? false,
-                            SendersReference = attachment.SendersReference,
-                        },
-                        payload,
-                        linkedCts.Token
-                    );
+                    await sem.WaitAsync(linkedCts.Token);
+                    try
+                    {
+                        var attachmentId = await InitializeAttachment(
+                            new InitializeAttachmentRequest
+                            {
+                                ResourceId = resourceId,
+                                FileName = attachment.Filename,
+                                IsEncrypted = attachment.IsEncrypted ?? false,
+                                SendersReference = attachment.SendersReference,
+                            },
+                            payload,
+                            linkedCts.Token
+                        );
 
-                    await UploadAttachmentData(attachmentId, attachment.Data, payload, ct);
+                        await UploadAttachmentData(attachmentId, attachment.Data, payload, linkedCts.Token);
 
-                    await PollAttachmentUntilPublished(attachmentId, payload, ct);
+                        await PollAttachmentUntilPublished(attachmentId, payload, linkedCts.Token);
 
-                    return (attachment, attachmentId);
+                        return (attachment, attachmentId);
+                    }
+                    catch (Exception) when (!linkedCts.Token.IsCancellationRequested)
+                    {
+                        await linkedCts.CancelAsync();
+                        throw;
+                    }
+                    finally
+                    {
+                        sem.Release();
+                    }
                 }
-                catch (Exception ex) when (!ct.IsCancellationRequested)
-                {
-                    await linkedCts.CancelAsync();
-                    throw;
-                } 
-                finally
-                {
-                    sem.Release();
-                }
-            })
+            )
         );
-        }
+    }
 
     private async Task<Guid> InitializeAttachment(
         InitializeAttachmentRequest request,
