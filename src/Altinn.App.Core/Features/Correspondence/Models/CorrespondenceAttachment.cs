@@ -28,8 +28,9 @@ public sealed record CorrespondenceAttachment
 
     /// <summary>
     /// The data stream for the attachment content.
-    /// The stream must be open (not disposed) until the correspondence is sent.
-    /// The caller is responsible for disposing the stream after the correspondence has been sent.
+    /// The stream must be open (not disposed) when the correspondence is sent.
+    /// Ownership of the stream is transferred to the client upon sending: the client will dispose
+    /// the stream after the upload completes.
     /// </summary>
     public required Stream Data { get; init; }
 }

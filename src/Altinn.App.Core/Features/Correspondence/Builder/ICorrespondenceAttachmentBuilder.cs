@@ -33,9 +33,10 @@ public interface ICorrespondenceAttachmentBuilderData
 {
     /// <summary>
     /// Sets the stream of the data content of the attachment.
-    /// Is more efficient if the attachment is large in size
-    /// The stream must be open (not disposed) until the correspondence is sent
-    /// The caller is responsible for disposing the stream after the correspondence has been sent
+    /// Is more efficient if the attachment is large in size.
+    /// The stream must be open (not disposed) when the correspondence is sent.
+    /// Ownership of the stream is transferred to the client: the client will dispose the stream
+    /// after the upload completes.
     /// </summary>
     /// <param name="data">The data stream</param>
     ICorrespondenceAttachmentBuilder WithData(Stream data);
