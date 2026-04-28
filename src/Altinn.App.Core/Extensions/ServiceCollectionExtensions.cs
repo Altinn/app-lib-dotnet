@@ -325,6 +325,7 @@ public static class ServiceCollectionExtensions
             services.Configure<NetsPaymentSettings>(configurationSection);
             services.AddHttpClient<INetsClient, NetsClient>();
             services.AddTransient<IPaymentProcessor, NetsPaymentProcessor>();
+            services.TryAddSingleton<INetsWebhookSecretProvider, NetsWebhookSecretProvider>();
         }
     }
 
