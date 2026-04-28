@@ -444,6 +444,8 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     {
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment Build() { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.IO.Stream data) { }
+        [System.Obsolete("This method is inefficient for large attachments. Consider using WithData(Stream)" +
+            " instead.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.ReadOnlyMemory<byte> data) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithDataLocationType(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceDataLocationType dataLocationType) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderSendersReference WithFilename(string filename) { }

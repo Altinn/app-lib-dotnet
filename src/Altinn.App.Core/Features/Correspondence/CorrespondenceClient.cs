@@ -247,14 +247,6 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
 
             var overview = await GetAttachmentOverview(attachmentId, payload, cancellationToken);
 
-            _logger.LogDebug(
-                "Poll attempt {Attempt}/{MaxAttempts} for attachment {AttachmentId}: status={Status}",
-                attempt + 1,
-                maxAttempts,
-                attachmentId,
-                overview.Status
-            );
-
             switch (overview.Status)
             {
                 case CorrespondenceAttachmentStatusResponse.Published:
