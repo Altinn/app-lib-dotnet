@@ -46,6 +46,7 @@ public class CorrespondenceAttachmentBuilder : ICorrespondenceAttachmentBuilder
     }
 
     /// <inheritdoc/>
+    [Obsolete("This method is inefficient for large attachments. Consider using WithData(Stream) instead.")]
     public ICorrespondenceAttachmentBuilder WithData(ReadOnlyMemory<byte> data)
     {
         _dataAsBytes = data;
