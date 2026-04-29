@@ -220,4 +220,22 @@ public class AppSettings
     /// Improves instrumentation throughout the Altinn app libraries.
     /// </summary>
     public bool UseOpenTelemetry { get; set; }
+
+    /// <summary>
+    /// Use OpenTelemetry collector via OTLP exporter instead of Azure Monitor exporters.
+    /// </summary>
+    public bool UseOpenTelemetryCollector { get; set; }
+
+    internal const string DefaultRuntimeSecretsDirectory = "/mnt/app-secrets";
+
+    /// <summary>
+    /// Directory containing runtime secrets JSON files.
+    /// </summary>
+    public string RuntimeSecretsDirectory { get; set; } = DefaultRuntimeSecretsDirectory;
+
+    /// <summary>
+    /// Enforce that a DataType (applicationmetadata.json) that specifies a taskId is only externally mutatable (using app apis) when the instance is in this task.
+    /// This is a temporary setting to help identify components with incorrect data bindings, and will be removed in the next major version.
+    /// </summary>
+    public bool EnforceDataTypeTaskId { get; set; } = false;
 }

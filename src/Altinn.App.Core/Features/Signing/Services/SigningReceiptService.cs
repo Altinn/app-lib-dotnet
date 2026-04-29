@@ -208,7 +208,9 @@ internal sealed class SigningReceiptService(
                         await dataClient.GetDataBytes(
                             instanceIdentifier.InstanceOwnerPartyId,
                             instanceIdentifier.InstanceGuid,
-                            Guid.Parse(element.Id)
+                            Guid.Parse(element.Id),
+                            authenticationMethod: null,
+                            CancellationToken.None
                         )
                     )
                     .Build()

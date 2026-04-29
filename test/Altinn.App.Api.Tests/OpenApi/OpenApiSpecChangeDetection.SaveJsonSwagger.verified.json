@@ -4054,7 +4054,7 @@
         "tags": [
           "Payment"
         ],
-        "summary": "Get updated payment information for the instance. Will contact the payment processor to check the status of the payment. Current task must be a payment task. See payment related documentation.",
+        "summary": "Get updated payment information for the instance. Will contact the payment processor to check the status of the payment. Current task must be a payment task, or a payment task ID must be supplied via the `taskId` query parameter. See payment related documentation.",
         "parameters": [
           {
             "name": "org",
@@ -4101,6 +4101,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "taskId",
+            "in": "query",
+            "description": "If payment information should be loaded for a different task than the current one. Useful for retrieving payment information for a completed payment task. Updates from the processor are not persisted when this is set.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4134,8 +4142,8 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
+          "400": {
+            "description": "Bad Request",
             "content": {
               "text/plain": {
                 "schema": {
@@ -8107,6 +8115,62 @@
         },
         "additionalProperties": false
       },
+      "CustomEmail": {
+        "required": [
+          "body",
+          "subject"
+        ],
+        "type": "object",
+        "properties": {
+          "subject": {
+            "$ref": "#/components/schemas/CustomText"
+          },
+          "body": {
+            "$ref": "#/components/schemas/CustomText"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CustomSms": {
+        "required": [
+          "senderName",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "senderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "text": {
+            "$ref": "#/components/schemas/CustomText"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CustomText": {
+        "required": [
+          "en",
+          "nb",
+          "nn"
+        ],
+        "type": "object",
+        "properties": {
+          "nb": {
+            "type": "string",
+            "nullable": true
+          },
+          "nn": {
+            "type": "string",
+            "nullable": true
+          },
+          "en": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "DataElement": {
         "type": "object",
         "properties": {
@@ -8767,6 +8831,10 @@
           "username": {
             "type": "string",
             "nullable": true
+          },
+          "externalIdentifier": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8799,6 +8867,11 @@
           "username": {
             "type": "string",
             "description": "The username of the party. Null if the party is not self identified.",
+            "nullable": true
+          },
+          "externalIdentifier": {
+            "type": "string",
+            "description": "The external identifier of a self identified party. Null if the party is not self identified.",
             "nullable": true
           },
           "party": {
@@ -9024,10 +9097,69 @@
             "type": "string",
             "description": "Gets or sets the id of the instance to use as a source for the new instance.",
             "nullable": true
+          },
+          "notification": {
+            "$ref": "#/components/schemas/InstantiationNotification"
           }
         },
         "additionalProperties": false,
         "description": "Specialized model for instansiation of instances"
+      },
+      "InstantiationNotification": {
+        "type": "object",
+        "properties": {
+          "notificationChannel": {
+            "$ref": "#/components/schemas/NotificationChannel"
+          },
+          "allowSendingAfterWorkHours": {
+            "type": "boolean"
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          },
+          "requestedSendTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "customSms": {
+            "$ref": "#/components/schemas/CustomSms"
+          },
+          "customEmail": {
+            "$ref": "#/components/schemas/CustomEmail"
+          },
+          "reminders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InstantiationNotificationReminder"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InstantiationNotificationReminder": {
+        "type": "object",
+        "properties": {
+          "requestedSendTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "sendAfterDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "customSms": {
+            "$ref": "#/components/schemas/CustomSms"
+          },
+          "customEmail": {
+            "$ref": "#/components/schemas/CustomEmail"
+          }
+        },
+        "additionalProperties": false
       },
       "InstantiationValidationResult": {
         "type": "object",
@@ -9103,6 +9235,17 @@
               "$ref": "#/components/schemas/PatchOperation"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "JsonPointer": {
+        "type": "object",
+        "properties": {
+          "segmentCount": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -9198,6 +9341,17 @@
           }
         },
         "additionalProperties": false
+      },
+      "NotificationChannel": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "type": "integer",
+        "format": "int32"
       },
       "NotificationStatus": {
         "enum": [
@@ -9548,20 +9702,10 @@
             "$ref": "#/components/schemas/OperationType"
           },
           "from": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "nullable": true,
-            "readOnly": true
+            "$ref": "#/components/schemas/JsonPointer"
           },
           "path": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "nullable": true,
-            "readOnly": true
+            "$ref": "#/components/schemas/JsonPointer"
           },
           "value": {
             "$ref": "#/components/schemas/JsonNode"

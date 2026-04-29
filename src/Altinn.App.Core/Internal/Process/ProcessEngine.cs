@@ -1,11 +1,13 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Process.Elements;
 using Altinn.App.Core.Internal.Process.Elements.Base;
@@ -42,6 +44,7 @@ public class ProcessEngine : IProcessEngine
     private readonly ILogger<ProcessEngine> _logger;
     private readonly IValidationService _validationService;
     private readonly IInstanceClient _instanceClient;
+    private readonly IInstanceLocker _instanceLocker;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProcessEngine"/> class.
@@ -74,6 +77,7 @@ public class ProcessEngine : IProcessEngine
         _logger = logger;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
+        _instanceLocker = serviceProvider.GetRequiredService<IInstanceLocker>();
     }
 
     /// <inheritdoc/>
@@ -182,7 +186,7 @@ public class ProcessEngine : IProcessEngine
             // Fetch fresh instance on subsequent iterations
             if (!firstIteration)
             {
-                instance = await _instanceClient.GetInstance(instance);
+                instance = await _instanceClient.GetInstance(instance, ct: ct);
             }
 
             // Only use action and actionOnBehalfOf on first iteration
@@ -251,6 +255,8 @@ public class ProcessEngine : IProcessEngine
                     $"User is not authorized to perform process next. Task ID: {LogSanitizer.Sanitize(currentTaskId)}. Task type: {LogSanitizer.Sanitize(altinnTaskType)}. Action: {LogSanitizer.Sanitize(request.Action ?? "none")}.",
             };
         }
+
+        await _instanceLocker.LockAsync();
 
         _logger.LogDebug(
             "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",
@@ -785,15 +791,15 @@ public class ProcessEngine : IProcessEngine
     {
         switch (actionOrTaskType)
         {
-            case "data":
-            case "feedback":
-            case "pdf":
-            case "eFormidling":
-            case "fiksArkiv":
+            case AltinnTaskTypes.Data:
+            case AltinnTaskTypes.Feedback:
+            case AltinnTaskTypes.Pdf:
+            case AltinnTaskTypes.EFormidling:
+            case AltinnTaskTypes.FiksArkiv:
                 return "write";
-            case "confirmation":
+            case AltinnTaskTypes.Confirmation:
                 return "confirm";
-            case "signing":
+            case AltinnTaskTypes.Signing:
                 return "sign";
             default:
                 // Not any known task type, so assume it is an action type

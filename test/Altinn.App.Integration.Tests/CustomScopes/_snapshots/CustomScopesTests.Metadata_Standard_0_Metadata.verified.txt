@@ -338,6 +338,15 @@
         }
       },
       {
+        endpoint: GET {org}/{app}/api/v1/notification-webhook-listener/{instanceOwnerPartyId:int}/{instanceGuid:guid},
+        metadata: {
+          errorMessageTextResourceKeyUser: null,
+          errorMessageTextResourceKeyServiceOwner: null,
+          requiredScopesUsers: null,
+          requiredScopesServiceOwners: null
+        }
+      },
+      {
         endpoint: GET {org}/{app}/api/v1/parties,
         metadata: {
           errorMessageTextResourceKeyUser: null,
@@ -780,6 +789,15 @@
       },
       {
         endpoint: POST {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/pages/order,
+        metadata: {
+          errorMessageTextResourceKeyUser: null,
+          errorMessageTextResourceKeyServiceOwner: null,
+          requiredScopesUsers: null,
+          requiredScopesServiceOwners: null
+        }
+      },
+      {
+        endpoint: POST {org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/payment/nets-webhook-listener,
         metadata: {
           errorMessageTextResourceKeyUser: null,
           errorMessageTextResourceKeyServiceOwner: null,
