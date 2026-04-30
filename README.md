@@ -23,7 +23,7 @@ Documentation on how to develop Altinn apps can be found [here](https://docs.alt
 
 ## Architecture
 
-This template is built using .NET
+This template is. It simple is.
 
 The below diagram shows the different layers.
 
