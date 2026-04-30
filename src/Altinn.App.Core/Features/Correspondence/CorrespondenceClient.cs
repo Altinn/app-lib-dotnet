@@ -316,7 +316,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                 RequestedPublishTime = request.RequestedPublishTime,
                 DueDateTime = request.DueDateTime,
                 ExternalReferences = request.ExternalReferences,
-                PropertyList = request.PropertyList,
+                PropertyList = request.PropertyList ?? new Dictionary<string, string>(),
                 ReplyOptions = request.ReplyOptions,
                 Notification = request.Notification is null
                     ? null
