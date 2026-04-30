@@ -462,7 +462,6 @@ public sealed partial class AppFixture : IAsyncDisposable
             var relativePath = Path.GetRelativePath(sourceDirectory, directory);
             if (skip(relativePath))
                 continue;
-
             Directory.CreateDirectory(Path.Join(targetDirectory, relativePath));
         }
 
@@ -471,7 +470,6 @@ public sealed partial class AppFixture : IAsyncDisposable
             var relativePath = Path.GetRelativePath(sourceDirectory, file);
             if (skip(relativePath))
                 continue;
-
             var targetPath = Path.Join(targetDirectory, relativePath);
             Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
             File.Copy(file, targetPath, overwrite: true);
@@ -539,7 +537,6 @@ public sealed partial class AppFixture : IAsyncDisposable
             _logger.LogError("Test errored, logging app output");
             LogAppLogs();
         }
-
         await _appProcess.DisposeAsync();
         DeleteDirectoryBestEffort(_logger, _generatedAppDirectory);
         await _studioctlEnvironmentLease.DisposeAsync();
