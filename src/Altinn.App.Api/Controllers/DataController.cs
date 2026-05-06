@@ -508,7 +508,7 @@ public class DataController : ControllerBase
     }
 
     /// <summary>
-    ///  Updates an existing data element with new content.
+    /// Updates an existing data element with new content.
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>

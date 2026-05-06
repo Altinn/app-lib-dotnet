@@ -399,7 +399,7 @@ public class InstancesController : ControllerBase
 
         try
         {
-            var prefillProblem = await StorePrefillParts(instance, application, requestParts, language);
+            var prefillProblem = await StoreParts(instance, application, requestParts, language);
             if (prefillProblem is not null)
             {
                 await _instanceClient.DeleteInstance(
@@ -1244,30 +1244,6 @@ public class InstancesController : ControllerBase
                     CancellationToken.None
                 );
 
-                var dataType = application.DataTypes.Find(e => e.Id == de.DataType);
-                if (dataType is null)
-                {
-                    throw new ApplicationConfigException(
-                        $"Could not find data type {de.DataType} in application metadata"
-                    );
-                }
-
-                List<ValidationIssueWithSource>? fileValidationIssues;
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    binaryDataStream.CopyTo(ms);
-                    fileValidationIssues = await _fileService.RunFileAnalysisAndValidation(
-                        dataType,
-                        ms.ToArray(),
-                        de.Filename
-                    );
-                }
-
-                if (fileValidationIssues is not null)
-                {
-                    return fileValidationIssues;
-                }
-
                 await _dataClient.InsertBinaryData(
                     targetInstance.Id,
                     de.DataType,
@@ -1433,7 +1409,7 @@ public class InstancesController : ControllerBase
         }
     }
 
-    private async Task<ProblemDetails?> StorePrefillParts(
+    private async Task<ProblemDetails?> StoreParts(
         Instance instance,
         ApplicationMetadata appInfo,
         List<RequestPart> parts,
@@ -1479,9 +1455,10 @@ public class InstancesController : ControllerBase
                 return accessProblem;
             }
 
+            _logger.LogInformation("Storing part {partName}", part.Name);
+
             if (dataType.AppLogic?.ClassRef != null)
             {
-                _logger.LogInformation("Storing part {partName}", part.Name);
                 var deserializationResult = await _serializationService.DeserializeSingleFromStream(
                     new MemoryAsStream(part.Bytes),
                     part.ContentType,
@@ -1503,7 +1480,16 @@ public class InstancesController : ControllerBase
             }
             else
             {
-                _logger.LogInformation("Storing part {partName}", part.Name);
+                var fileValidationIssues = await _fileService.RunFileAnalysisAndValidation(
+                    dataType,
+                    part.Bytes,
+                    part.FileName
+                );
+
+                if (fileValidationIssues is not null)
+                {
+                    return new DataPostErrorResponse("File validation failed", fileValidationIssues);
+                }
                 dataMutator.AddBinaryDataElement(dataType.Id, part.ContentType, part.FileName, part.Bytes);
             }
         }
