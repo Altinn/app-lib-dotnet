@@ -2782,7 +2782,7 @@
         "tags": [
           "Instances"
         ],
-        "summary": "Simplified Instanciation with support for fieldprefill",
+        "summary": "Simplified instansiation with support for fieldprefill",
         "parameters": [
           {
             "name": "org",

@@ -19,6 +19,7 @@ using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
+using Altinn.App.Core.Internal.File;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
@@ -78,6 +79,7 @@ public class InstancesController : ControllerBase
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly IDataElementAccessChecker _dataElementAccessChecker;
+    private readonly IFileService _fileService;
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
     /// <summary>
@@ -102,7 +104,8 @@ public class InstancesController : ControllerBase
         InternalPatchService patchService,
         INotificationService notificationService,
         ITranslationService translationService,
-        IServiceProvider serviceProvider
+        IServiceProvider serviceProvider,
+        IFileService fileService
     )
     {
         _logger = logger;
@@ -124,6 +127,7 @@ public class InstancesController : ControllerBase
         _patchService = patchService;
         _notificationService = notificationService;
         _translationService = translationService;
+        _fileService = fileService;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
         _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
@@ -490,7 +494,7 @@ public class InstancesController : ControllerBase
     }
 
     /// <summary>
-    /// Simplified Instanciation with support for fieldprefill
+    /// Simplified instansiation with support for fieldprefill
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
@@ -866,7 +870,16 @@ public class InstancesController : ControllerBase
             CancellationToken.None
         );
 
-        await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
+        var fileValidationIssues = await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
+
+        if (fileValidationIssues is not null)
+        {
+            var dataPostErrorResponse = new DataPostErrorResponse("File validation failed", fileValidationIssues);
+            return StatusCode(
+                dataPostErrorResponse.Status ?? StatusCodes.Status500InternalServerError,
+                dataPostErrorResponse
+            );
+        }
 
         targetInstance = await _instanceClient.GetInstance(
             targetInstance,
@@ -1131,7 +1144,7 @@ public class InstancesController : ControllerBase
         instance.Status.ReadStatus = ReadStatus.Read;
     }
 
-    private async Task CopyDataFromSourceInstance(
+    private async Task<List<ValidationIssueWithSource>?> CopyDataFromSourceInstance(
         ApplicationMetadata application,
         Instance targetInstance,
         Instance sourceInstance
@@ -1200,7 +1213,7 @@ public class InstancesController : ControllerBase
 
         if (application.CopyInstanceSettings?.IncludeAttachments != true)
         {
-            return;
+            return null;
         }
 
         // Copy binary data elements (files/attachments)
@@ -1231,6 +1244,30 @@ public class InstancesController : ControllerBase
                     CancellationToken.None
                 );
 
+                var dataType = application.DataTypes.Find(e => e.Id == de.DataType);
+                if (dataType is null)
+                {
+                    throw new ApplicationConfigException(
+                        $"Could not find data type {de.DataType} in application metadata"
+                    );
+                }
+
+                List<ValidationIssueWithSource>? fileValidationIssues;
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    binaryDataStream.CopyTo(ms);
+                    fileValidationIssues = await _fileService.RunFileAnalysisAndValidation(
+                        dataType,
+                        ms.ToArray(),
+                        de.Filename
+                    );
+                }
+
+                if (fileValidationIssues is not null)
+                {
+                    return fileValidationIssues;
+                }
+
                 await _dataClient.InsertBinaryData(
                     targetInstance.Id,
                     de.DataType,
@@ -1243,6 +1280,8 @@ public class InstancesController : ControllerBase
                 );
             }
         }
+
+        return null;
     }
 
     private ActionResult ExceptionResponse(Exception exception, string message)
