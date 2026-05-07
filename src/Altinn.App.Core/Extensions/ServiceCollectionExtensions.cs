@@ -44,7 +44,7 @@ using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
-using Altinn.App.Core.Internal.File;
+using Altinn.App.Core.Internal.Files;
 using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;

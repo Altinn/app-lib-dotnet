@@ -15,7 +15,7 @@ using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
-using Altinn.App.Core.Internal.File;
+using Altinn.App.Core.Internal.Files;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Models;

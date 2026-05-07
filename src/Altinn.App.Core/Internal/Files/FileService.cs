@@ -5,7 +5,7 @@ using Altinn.App.Core.Internal.Validation;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 
-namespace Altinn.App.Core.Internal.File;
+namespace Altinn.App.Core.Internal.Files;
 
 /// <inheritdoc />
 public class FileService(IFileAnalysisService fileAnalyserService, IFileValidationService fileValidationService)
