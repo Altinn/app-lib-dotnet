@@ -9,12 +9,12 @@ namespace Altinn.App.Core.Internal.Files;
 public interface IFileService
 {
     /// <summary>
-    /// Rund file analysis and validation
+    /// Run file analysis and validation
     /// </summary>
     /// <param name="dataTypeFromMetadata">Data type found in application metadata</param>
     /// <param name="bytes">Byte data</param>
     /// <param name="fileName">File name</param>
-    /// <returns></returns>
+    /// <returns>Validation issues</returns>
     Task<List<ValidationIssueWithSource>?> RunFileAnalysisAndValidation(
         DataType dataTypeFromMetadata,
         byte[] bytes,

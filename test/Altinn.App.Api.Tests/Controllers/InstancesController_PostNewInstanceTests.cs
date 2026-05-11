@@ -162,8 +162,8 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(createResponseContent);
 
-        createResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest, createResponseContent);
-        createResponseContent.Should().Contain("Invalid filename");
+        Assert.Equal(HttpStatusCode.BadRequest, createResponse.StatusCode);
+        Assert.Equal("Invalid filename", createResponseContent);
     }
 
     [Fact]
@@ -203,43 +203,34 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
             content
         );
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
-        createResponse.StatusCode.Should().Be(HttpStatusCode.Created, createResponseContent);
-
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
         var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions)!;
 
         // Verify Data id
-        var instanceId = createResponseParsed.Id;
-        createResponseParsed.Data.Should().HaveCount(3, "We posted 3 data elements");
-        var dataGuid = createResponseParsed
-            .Data.Should()
-            .ContainSingle(d => d.DataType == "default", "we posted 1 default type")
-            .Which?.Id;
+        Assert.Equal(3, createResponseParsed.Data.Count);
 
         // Verify stored data
+        var instanceId = createResponseParsed.Id;
+        var dataGuid = createResponseParsed.Data.Single(x => x.DataType == "default").Id;
         var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
-        readDataElementResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, readDataElementResponse.StatusCode);
         var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
         var readDataElementResponseParsed = JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;
-        readDataElementResponseParsed.Melding!.Name.Should().Be(testName);
+        Assert.Equal(testName, readDataElementResponseParsed.Melding!.Name);
 
         // Verify specific file types
-        var specificFileType = createResponseParsed
-            .Data.Should()
-            .ContainSingle(d => d.DataType == "specificFileType")
-            .Which;
-        specificFileType.ContentType.Should().Be("image/png");
+        var specificFileType = createResponseParsed.Data.Single(d => d.DataType == "specificFileType");
+        Assert.Equal("image/png", specificFileType.ContentType);
         var pdfContent = await client.GetByteArrayAsync(
             $"/{org}/{app}/instances/{instanceId}/data/{specificFileType.Id}"
         );
-        pdfContent.Should().BeEquivalentTo(new byte[] { 1, 2, 5 });
+        Assert.Equal(new byte[] { 1, 2, 5 }, pdfContent);
 
         var pdfElement = createResponseParsed
-            .Data.Should()
-            .ContainSingle(d => d.ContentType == "application/pdf")
-            .Which;
-        pdfElement.DataType.Should().Be("9edd53de-f46f-40a1-bb4d-3efb93dc113d");
+            .Data.Single(d => d.ContentType == "application/pdf");
+        Assert.Equal("9edd53de-f46f-40a1-bb4d-3efb93dc113d", pdfElement.DataType);
         var pngContent = await client.GetByteArrayAsync($"/{org}/{app}/instances/{instanceId}/data/{pdfElement.Id}");
-        pngContent.Should().BeEquivalentTo(new byte[] { 1, 2, 4 });
+        Assert.Equal(new byte[] { 1, 2, 4 }, pngContent);
 
         TestData.DeleteInstanceAndData(org, app, instanceId);
     }
@@ -282,7 +273,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "permissive-app";
         int instanceOwnerPartyId = token.PartyId;
 
-        this.OverrideServicesForThisTest = (services) =>
+        OverrideServicesForThisTest = services =>
         {
             services.AddTelemetrySink(
                 additionalActivitySources: source => source.Name == "Microsoft.AspNetCore",
@@ -301,15 +292,15 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
             token.Token
         );
         var instanceId = createResponseParsed.Id;
-        createResponseParsed.Data.Should().HaveCount(1, "Create instance should create a data element");
-        var dataGuid = createResponseParsed.Data.First().Id;
+        Assert.Equal(1, createResponseParsed.Data.Count);
 
         // Verify stored data
+        var dataGuid = createResponseParsed.Data.First().Id;
         var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
-        readDataElementResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, readDataElementResponse.StatusCode);
         var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
         var readDataElementResponseParsed = JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;
-        readDataElementResponseParsed.Melding.Should().BeNull(); // No content yet
+        Assert.Null(readDataElementResponseParsed.Melding);
         TestData.DeleteInstanceAndData(org, app, instanceId);
 
         await Verify(await GetTelemetrySnapshot(numberOfActivities: 2, numberOfMetrics: 2))
