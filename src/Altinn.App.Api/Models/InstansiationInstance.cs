@@ -8,7 +8,7 @@ namespace Altinn.App.Api.Models;
 /// <summary>
 /// Specialized model for instantiation of instances
 /// </summary>
-public class InstantiationInstance
+public class InstansiationInstance
 {
     /// <summary>
     /// Gets or sets the instance owner information.

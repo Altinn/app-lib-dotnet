@@ -510,7 +510,7 @@ public class InstancesController : ControllerBase
     public async Task<ActionResult<InstanceResponse>> PostSimplified(
         [FromRoute] string org,
         [FromRoute] string app,
-        [FromBody] InstantiationInstance instantiationInstance,
+        [FromBody] InstansiationInstance instantiationInstance,
         [FromQuery] string? language = null
     )
     {
