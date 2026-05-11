@@ -487,4 +487,17 @@ public class LayoutEvaluatorState
     {
         return _componentModel?.DefaultDataType;
     }
+
+    internal LayoutEvaluatorState? WithDataAccessor(IInstanceDataAccessor dataAccessor)
+    {
+        return new LayoutEvaluatorState(
+            dataAccessor,
+            _componentModel,
+            _translationService,
+            _frontEndSettings,
+            _gatewayAction,
+            _language,
+            _timeZone
+        );
+    }
 }

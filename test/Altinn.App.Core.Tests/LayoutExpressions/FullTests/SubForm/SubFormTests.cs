@@ -345,7 +345,16 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
         using var serviceProvider = _services.BuildStrictServiceProvider();
 
         var validationService = serviceProvider.GetRequiredService<IValidationService>();
-        var dataAccessor = new InstanceDataAccessorFake(_instance, _applicationMetadata)
+        var layout = serviceProvider.GetRequiredService<IAppResources>().GetLayoutModelForTask(TaskId);
+        var dataAccessor = new InstanceDataAccessorFake(
+            _instance,
+            _applicationMetadata,
+            _translationServiceMock.Object,
+            layout,
+            new FrontEndSettings(),
+            null,
+            null
+        )
         {
             { _instance.Data[0], new MainFormModel("Name", "Address", "Phone", null) },
             { _instance.Data[1], new SubFormModel(null, null, null, null, false) },

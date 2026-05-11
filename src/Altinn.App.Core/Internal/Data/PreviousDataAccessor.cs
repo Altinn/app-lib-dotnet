@@ -100,9 +100,10 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
 
     public LayoutEvaluatorState? GetLayoutEvaluatorState()
     {
-        throw new NotImplementedException(
-            "GetLayoutEvaluatorState is not implemented in PreviousDataAccessor, because LayoutEvaluatorState will be deprecated."
-        );
+        var originalState = _dataAccessor.GetLayoutEvaluatorState();
+        if (originalState is null)
+            return null;
+        return originalState.WithDataAccessor(this);
     }
 
     public async Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)

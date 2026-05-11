@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components.Base;

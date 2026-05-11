@@ -186,7 +186,8 @@ public sealed class RepeatingGroupComponent : Base.ReferenceComponent
             );
         }
 
-        var rowCount = await state.GetModelDataCount(GroupModelBinding, defaultDataElementIdentifier, rowIndexes) ?? 0;
+        var formDataWrapper = await dataAccessor.GetFormDataWrapper(GroupModelBinding, defaultDataElementIdentifier);
+        int rowCount = formDataWrapper?.GetRowCount(GroupModelBinding.Field, rowIndexes ?? []) ?? 0;
 
         _repeatingGroupRowComponent ??= RepeatingGroupRowComponent.FromGroup(this);
 

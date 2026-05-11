@@ -47,7 +47,16 @@ public class ValidationServiceTests : IAsyncLifetime
             .ReturnsAsync(true);
         _hostEnvironmentMock.SetupGet(h => h.EnvironmentName).Returns(Environments.Development);
 
-        _instanceDataAccessor = new InstanceDataAccessorFake(_instance, _appMetadata, TaskId);
+        _instanceDataAccessor = new InstanceDataAccessorFake(
+            _instance,
+            _appMetadata,
+            _translationServiceMock.Object,
+            null!,
+            null!,
+            null!,
+            null,
+            TaskId
+        );
         _services.AddTransient<IValidationService, ValidationService>();
         _services.AddSingleton(_hostEnvironmentMock.Object);
         _services.AddTelemetrySink();

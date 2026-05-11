@@ -120,7 +120,8 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
         }
 
         // For group backed options, we create a child context for each item in the group
-        var numRows = await state.GetModelDataCount(groupBinding, defaultDataElementIdentifier, rowIndexes) ?? 0;
+        var formDataWrapper = await dataAccessor.GetFormDataWrapper(groupBinding, defaultDataElementIdentifier);
+        int numRows = formDataWrapper?.GetRowCount(groupBinding.Field, rowIndexes ?? []) ?? 0;
         var component = OptionsRowComponent.FromOptionsComponent(this);
         var childContexts = Enumerable
             .Range(0, numRows)
