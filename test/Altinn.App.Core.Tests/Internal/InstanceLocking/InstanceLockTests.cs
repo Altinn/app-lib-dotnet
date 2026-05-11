@@ -540,6 +540,91 @@ public sealed class InstanceLockTests
         Assert.Empty(fixture.Server.LogEntries);
     }
 
+    [Fact]
+    public async Task InitLock_WhenHandleAlreadyActive_ThrowsInvalidOperationException()
+    {
+        using var fixture = Fixture.Create();
+
+        var instanceLocker = fixture.ServiceProvider.GetRequiredService<InstanceLocker>();
+
+        await using var handle = instanceLocker.InitLock();
+
+        var exception = Assert.Throws<InvalidOperationException>(() => instanceLocker.InitLock());
+
+        Assert.Empty(fixture.Server.LogEntries);
+    }
+
+    [Fact]
+    public async Task InitLock_AfterDisposeWithoutLock_ReturnsNewHandle()
+    {
+        using var fixture = Fixture.Create();
+
+        var instanceLocker = fixture.ServiceProvider.GetRequiredService<InstanceLocker>();
+
+        await using (var handle = instanceLocker.InitLock())
+        {
+            // Never call Lock — just dispose
+        }
+
+        await using var newHandle = instanceLocker.InitLock();
+
+        Assert.NotNull(newHandle);
+        Assert.Empty(fixture.Server.LogEntries);
+    }
+
+    [Fact]
+    public async Task Lock_WhenAcquireFails_ReleasesActiveHandle()
+    {
+        using var fixture = Fixture.Create();
+
+        fixture
+            .Server.Given(fixture.GetAcquireLockRequestBuilder())
+            .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.Conflict));
+
+        var instanceLocker = fixture.ServiceProvider.GetRequiredService<InstanceLocker>();
+
+        await Assert.ThrowsAsync<PlatformHttpResponseSnapshotException>(instanceLocker.Lock);
+
+        await using var handle = instanceLocker.InitLock();
+
+        Assert.NotNull(handle);
+    }
+
+    [Fact]
+    public async Task Dispose_IsIdempotent()
+    {
+        using var fixture = Fixture.Create();
+
+        var lockId = Guid.NewGuid();
+        var lockToken = GenerateLockToken(lockId);
+
+        fixture
+            .Server.Given(fixture.GetAcquireLockRequestBuilder())
+            .RespondWith(
+                Response
+                    .Create()
+                    .WithStatusCode(HttpStatusCode.OK)
+                    .WithBodyAsJson(new InstanceLockResponse { LockToken = lockToken })
+            );
+
+        fixture
+            .Server.Given(fixture.GetReleaseLockRequestBuilder(lockToken))
+            .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK));
+
+        var instanceLocker = fixture.ServiceProvider.GetRequiredService<InstanceLocker>();
+
+        var handle = await instanceLocker.Lock();
+
+        await handle.DisposeAsync();
+        await handle.DisposeAsync();
+
+        var releaseRequests = fixture.Server.FindLogEntries(fixture.GetReleaseLockRequestBuilder(lockToken));
+        Assert.Single(releaseRequests);
+
+        await using var newHandle = instanceLocker.InitLock();
+        Assert.NotNull(newHandle);
+    }
+
     private string GenerateLockToken(Guid lockId)
     {
         return Convert.ToBase64String(lockId.ToByteArray());
