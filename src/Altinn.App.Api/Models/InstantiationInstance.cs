@@ -6,9 +6,9 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Api.Models;
 
 /// <summary>
-/// Specialized model for instansiation of instances
+/// Specialized model for instantiation of instances
 /// </summary>
-public class InstansiationInstance
+public class InstantiationInstance
 {
     /// <summary>
     /// Gets or sets the instance owner information.

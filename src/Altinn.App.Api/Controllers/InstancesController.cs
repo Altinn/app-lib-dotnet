@@ -494,11 +494,11 @@ public class InstancesController : ControllerBase
     }
 
     /// <summary>
-    /// Simplified instansiation with support for fieldprefill
+    /// Simplified instantiation with support for fieldprefill
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
-    /// <param name="instansiationInstance">instansiation information</param>
+    /// <param name="instantiationInstance">instantiation information</param>
     /// <param name="language">The currently active user language</param>
     /// <returns>The new instance</returns>
     [HttpPost("create")]
@@ -510,7 +510,7 @@ public class InstancesController : ControllerBase
     public async Task<ActionResult<InstanceResponse>> PostSimplified(
         [FromRoute] string org,
         [FromRoute] string app,
-        [FromBody] InstansiationInstance instansiationInstance,
+        [FromBody] InstantiationInstance instantiationInstance,
         [FromQuery] string? language = null
     )
     {
@@ -524,7 +524,7 @@ public class InstancesController : ControllerBase
             return BadRequest("The path parameter 'app' cannot be empty");
         }
 
-        bool isCopyRequest = !string.IsNullOrEmpty(instansiationInstance.SourceInstanceId);
+        bool isCopyRequest = !string.IsNullOrEmpty(instantiationInstance.SourceInstanceId);
 
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
         if (VerifyInstantiationPermissions(application, org, app, isCopy: isCopyRequest) is { } verificationResult)
@@ -539,7 +539,7 @@ public class InstancesController : ControllerBase
             );
         }
 
-        InstanceOwner? lookup = instansiationInstance.InstanceOwner;
+        InstanceOwner? lookup = instantiationInstance.InstanceOwner;
 
         if (
             lookup == null
@@ -560,9 +560,9 @@ public class InstancesController : ControllerBase
         Party party;
         try
         {
-            party = await LookupParty(instansiationInstance.InstanceOwner) ?? throw new Exception("Unknown party");
+            party = await LookupParty(instantiationInstance.InstanceOwner) ?? throw new Exception("Unknown party");
 
-            instansiationInstance.InstanceOwner = await InstantiationHelper.PartyToInstanceOwner(
+            instantiationInstance.InstanceOwner = await InstantiationHelper.PartyToInstanceOwner(
                 party,
                 _authenticationContext
             );
@@ -575,7 +575,7 @@ public class InstancesController : ControllerBase
                 {
                     _logger.LogWarning(
                         "Party lookup returned Unauthorized (401) for InstanceOwner={@InstanceOwner}",
-                        instansiationInstance.InstanceOwner
+                        instantiationInstance.InstanceOwner
                     );
                     return StatusCode(StatusCodes.Status403Forbidden);
                 }
@@ -587,7 +587,7 @@ public class InstancesController : ControllerBase
         if (
             isCopyRequest
             && party.PartyId.ToString(CultureInfo.InvariantCulture)
-                != instansiationInstance?.SourceInstanceId?.Split("/")[0]
+                != instantiationInstance?.SourceInstanceId?.Split("/")[0]
         )
         {
             return BadRequest("It is not possible to copy instances between instance owners.");
@@ -632,9 +632,9 @@ public class InstancesController : ControllerBase
 
         Instance instanceTemplate = new()
         {
-            InstanceOwner = instansiationInstance.InstanceOwner,
-            VisibleAfter = instansiationInstance.VisibleAfter,
-            DueBefore = instansiationInstance.DueBefore,
+            InstanceOwner = instantiationInstance.InstanceOwner,
+            VisibleAfter = instantiationInstance.VisibleAfter,
+            DueBefore = instantiationInstance.DueBefore,
             Org = application.Org,
         };
 
@@ -666,7 +666,7 @@ public class InstancesController : ControllerBase
             {
                 Instance = instanceTemplate,
                 User = User,
-                Prefill = instansiationInstance.Prefill,
+                Prefill = instantiationInstance.Prefill,
             };
 
             processResult = await _processEngine.GenerateProcessStartEvents(request);
@@ -676,7 +676,7 @@ public class InstancesController : ControllerBase
             if (isCopyRequest)
             {
                 string[] sourceSplit =
-                    instansiationInstance?.SourceInstanceId?.Split("/")
+                    instantiationInstance?.SourceInstanceId?.Split("/")
                     ?? throw new ArgumentException("SourceInstanceId is null or not in the correct format");
                 Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
 
@@ -721,7 +721,7 @@ public class InstancesController : ControllerBase
             instance = await _instanceClient.GetInstance(instance, authenticationMethod: null, CancellationToken.None);
             await _processEngine.HandleEventsAndUpdateStorage(
                 instance,
-                instansiationInstance.Prefill,
+                instantiationInstance.Prefill,
                 processResult.ProcessStateChange?.Events
             );
         }
@@ -735,7 +735,7 @@ public class InstancesController : ControllerBase
 
         await RegisterEvent("app.instance.created", instance);
 
-        if (instansiationInstance.Notification is not null)
+        if (instantiationInstance.Notification is not null)
         {
             try
             {
@@ -743,7 +743,7 @@ public class InstancesController : ControllerBase
                 await _notificationService.NotifyInstanceOwnerOnInstantiation(
                     instance,
                     party,
-                    instansiationInstance.Notification,
+                    instantiationInstance.Notification,
                     doNotCancelNotification
                 );
             }
