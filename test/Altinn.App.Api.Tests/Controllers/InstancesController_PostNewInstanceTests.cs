@@ -290,7 +290,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
             token.Token
         );
         var instanceId = createResponseParsed.Id;
-        Assert.Equal(1, createResponseParsed.Data.Count);
+        Assert.Single(createResponseParsed.Data);
 
         // Verify stored data
         var dataGuid = createResponseParsed.Data.First().Id;
@@ -396,7 +396,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var telemetrySnapshot = await GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 0);
 
         var activity = Assert.Single(
-            telemetrySnapshot.Activities,
+            telemetrySnapshot.Activities!,
             a => a.Name == "SerializationService.DeserializeXml"
         );
         var activityEvent = Assert.Single(activity.Events, e => e.Name == "exception");
