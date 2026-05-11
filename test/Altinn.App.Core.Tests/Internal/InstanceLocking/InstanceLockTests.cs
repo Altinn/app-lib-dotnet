@@ -410,13 +410,13 @@ public sealed class InstanceLockTests
     }
 
     [Fact]
-    public void Init_ReturnsHandle_WithoutMakingHttpCalls()
+    public async Task Init_ReturnsHandle_WithoutMakingHttpCalls()
     {
         using var fixture = Fixture.Create();
 
         var instanceLocker = fixture.ServiceProvider.GetRequiredService<InstanceLocker>();
 
-        var handle = instanceLocker.InitLock();
+        await using var handle = instanceLocker.InitLock();
 
         Assert.NotNull(handle);
         Assert.Empty(fixture.Server.LogEntries);
