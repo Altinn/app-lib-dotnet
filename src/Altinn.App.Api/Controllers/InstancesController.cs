@@ -870,6 +870,7 @@ public class InstancesController : ControllerBase
             CancellationToken.None
         );
 
+        await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
 
         targetInstance = await _instanceClient.GetInstance(
             targetInstance,
