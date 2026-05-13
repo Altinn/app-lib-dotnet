@@ -62,7 +62,11 @@ public interface IInstanceDataMutator : IInstanceDataAccessor
     /// <remarks>
     /// Saving to storage is not done until the instance is saved, so mutations to data might or might not be sent to storage.
     /// </remarks>
-    BinaryDataChange UpdateBinaryDataElement(DataElementIdentifier dataElementIdentifier, ReadOnlyMemory<byte> bytes);
+    BinaryDataChange UpdateBinaryDataElement(
+        DataElementIdentifier dataElementIdentifier,
+        string contentType,
+        ReadOnlyMemory<byte> bytes
+    );
 
     /// <summary>
     /// Remove a data element from the instance.

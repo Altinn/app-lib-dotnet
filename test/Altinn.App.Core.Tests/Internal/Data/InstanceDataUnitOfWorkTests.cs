@@ -18,7 +18,11 @@ public sealed class InstanceDataUnitOfWorkTests
 
         await using var setup = await BinaryDataUnitOfWorkSetup.Create(initialBytes);
 
-        BinaryDataChange updatedChange = setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, updatedBytes);
+        BinaryDataChange updatedChange = setup.DataMutator.UpdateBinaryDataElement(
+            setup.DataElement,
+            setup.DataElement.ContentType!,
+            updatedBytes
+        );
 
         ReadOnlyMemory<byte> currentBytes = await setup.DataMutator.GetBinaryData(setup.DataElement);
         Assert.True(currentBytes.Span.SequenceEqual(updatedBytes));
@@ -41,7 +45,7 @@ public sealed class InstanceDataUnitOfWorkTests
 
         await using var setup = await BinaryDataUnitOfWorkSetup.Create(initialBytes);
 
-        setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, updatedBytes);
+        setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, setup.DataElement.ContentType!, updatedBytes);
         DataElementChanges changes = setup.DataMutator.GetDataElementChanges(initializeAltinnRowId: false);
 
         await setup.DataMutator.UpdateInstanceData(changes);
@@ -59,7 +63,7 @@ public sealed class InstanceDataUnitOfWorkTests
 
         await using var setup = await BinaryDataUnitOfWorkSetup.Create(initialBytes);
 
-        setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, updatedBytes);
+        setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, setup.DataElement.ContentType!, updatedBytes);
         DataElementChanges changes = setup.DataMutator.GetDataElementChanges(initializeAltinnRowId: false);
 
         await setup.DataMutator.UpdateInstanceData(changes);
@@ -76,7 +80,7 @@ public sealed class InstanceDataUnitOfWorkTests
 
         await using var setup = await BinaryDataUnitOfWorkSetup.Create(initialBytes);
 
-        setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, updatedBytes);
+        setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, setup.DataElement.ContentType!, updatedBytes);
 
         ReadOnlyMemory<byte> previousBytes = await setup
             .DataMutator.GetPreviousDataAccessor()
@@ -93,7 +97,7 @@ public sealed class InstanceDataUnitOfWorkTests
 
         await using var setup = await BinaryDataUnitOfWorkSetup.Create(initialBytes);
 
-        setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, updatedBytes);
+        setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, setup.DataElement.ContentType!, updatedBytes);
         DataElementChanges changes = setup.DataMutator.GetDataElementChanges(initializeAltinnRowId: false);
 
         await setup.DataMutator.UpdateInstanceData(changes);
@@ -114,7 +118,7 @@ public sealed class InstanceDataUnitOfWorkTests
 
         await using var setup = await BinaryDataUnitOfWorkSetup.Create(initialBytes);
 
-        setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, updatedBytes);
+        setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, setup.DataElement.ContentType!, updatedBytes);
         setup.DataMutator.RemoveDataElement(setup.DataElement);
 
         DataElementChanges changes = setup.DataMutator.GetDataElementChanges(initializeAltinnRowId: false);
@@ -135,9 +139,23 @@ public sealed class InstanceDataUnitOfWorkTests
         setup.DataMutator.RemoveDataElement(setup.DataElement);
 
         InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
-            setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, updatedBytes)
+            setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, setup.DataElement.ContentType!, updatedBytes)
         );
         Assert.Contains("marked for deletion", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task UpdateBinaryDataElement_WhenContentTypeDoesNotMatch_Throws()
+    {
+        byte[] initialBytes = Encoding.UTF8.GetBytes("""{"status":"created"}""");
+        byte[] updatedBytes = Encoding.UTF8.GetBytes("""{"status":"paid"}""");
+
+        await using var setup = await BinaryDataUnitOfWorkSetup.Create(initialBytes);
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            setup.DataMutator.UpdateBinaryDataElement(setup.DataElement, "text/plain", updatedBytes)
+        );
+        Assert.Contains("cannot be updated", exception.Message, StringComparison.Ordinal);
     }
 
     private sealed class BinaryDataUnitOfWorkSetup : IAsyncDisposable

@@ -302,6 +302,7 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
     /// <inheritdoc />
     public BinaryDataChange UpdateBinaryDataElement(
         DataElementIdentifier dataElementIdentifier,
+        string contentType,
         ReadOnlyMemory<byte> bytes
     )
     {
@@ -319,10 +320,10 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 $"Data element with id {dataElementIdentifier.Id} is marked for deletion and cannot be updated"
             );
         }
-        if (dataElement.ContentType is not { } contentType)
+        if (dataElement.ContentType != contentType)
         {
             throw new InvalidOperationException(
-                $"Data element {dataElementIdentifier.Id} is missing Content-Type and cannot be updated"
+                $"Data element {dataElementIdentifier.Id} has Content-Type '{dataElement.ContentType}' and cannot be updated with '{contentType}'"
             );
         }
 
@@ -352,9 +353,9 @@ internal sealed class InstanceDataUnitOfWork : IInstanceDataMutator
                 $"Data element with id {dataElementIdentifier.Id} is already marked for deletion"
             );
         }
-        _changesForBinaryUpdate.TryRemove(dataElementIdentifier, out _);
         if (dataType.AppLogic?.ClassRef is null)
         {
+            _changesForBinaryUpdate.TryRemove(dataElementIdentifier, out _);
             _changesForDeletion.Add(
                 new BinaryDataChange(
                     type: ChangeType.Deleted,

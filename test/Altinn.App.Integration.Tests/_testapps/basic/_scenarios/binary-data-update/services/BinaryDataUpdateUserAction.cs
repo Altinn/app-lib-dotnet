@@ -41,6 +41,7 @@ internal sealed class BinaryDataUpdateUserAction : IUserAction
 
         context.DataMutator.UpdateBinaryDataElement(
             new DataElementIdentifier(dataElementId),
+            "text/plain",
             Encoding.UTF8.GetBytes(newContent)
         );
 
