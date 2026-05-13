@@ -181,8 +181,8 @@ public class DynamicClassBuilder
             translationService: translationService,
             layout: layout,
             frontEndSettings: frontEndSettings,
-            gatewayAction: null,
-            language: null
+            gatewayAction: gatewayAction,
+            language: language
         );
         foreach (var pair in dataModels)
         {

@@ -19,6 +19,7 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
     private readonly FrontEndSettings _frontEndSettings;
     private readonly ITranslationService _translationService;
     private readonly Telemetry? _telemetry;
+    private readonly Lazy<LayoutEvaluatorState?> _layoutEvaluatorState;
 
     private readonly ConcurrentDictionary<DataElementIdentifier, Task<IFormDataWrapper>> _previousDataCache = new();
 
@@ -37,6 +38,11 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
         _modelSerializationService = modelSerializationService;
         _frontEndSettings = frontEndSettings;
         _telemetry = telemetry;
+        _layoutEvaluatorState = new(() =>
+        {
+            var originalState = _dataAccessor.GetLayoutEvaluatorState();
+            return originalState?.WithDataAccessor(this);
+        });
     }
 
     public Instance Instance => _dataAccessor.Instance;
@@ -100,10 +106,7 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
 
     public LayoutEvaluatorState? GetLayoutEvaluatorState()
     {
-        var originalState = _dataAccessor.GetLayoutEvaluatorState();
-        if (originalState is null)
-            return null;
-        return originalState.WithDataAccessor(this);
+        return _layoutEvaluatorState.Value;
     }
 
     public async Task<ReadOnlyMemory<byte>> GetBinaryData(DataElementIdentifier dataElementIdentifier)
