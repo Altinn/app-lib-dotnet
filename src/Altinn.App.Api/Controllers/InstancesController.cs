@@ -870,16 +870,6 @@ public class InstancesController : ControllerBase
             CancellationToken.None
         );
 
-        var fileValidationIssues = await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
-
-        if (fileValidationIssues is not null)
-        {
-            var dataPostErrorResponse = new DataPostErrorResponse("File validation failed", fileValidationIssues);
-            return StatusCode(
-                dataPostErrorResponse.Status ?? StatusCodes.Status500InternalServerError,
-                dataPostErrorResponse
-            );
-        }
 
         targetInstance = await _instanceClient.GetInstance(
             targetInstance,
@@ -1144,7 +1134,7 @@ public class InstancesController : ControllerBase
         instance.Status.ReadStatus = ReadStatus.Read;
     }
 
-    private async Task<List<ValidationIssueWithSource>?> CopyDataFromSourceInstance(
+    private async Task CopyDataFromSourceInstance(
         ApplicationMetadata application,
         Instance targetInstance,
         Instance sourceInstance
@@ -1213,7 +1203,7 @@ public class InstancesController : ControllerBase
 
         if (application.CopyInstanceSettings?.IncludeAttachments != true)
         {
-            return null;
+            return;
         }
 
         // Copy binary data elements (files/attachments)
@@ -1256,8 +1246,6 @@ public class InstancesController : ControllerBase
                 );
             }
         }
-
-        return null;
     }
 
     private ActionResult ExceptionResponse(Exception exception, string message)
