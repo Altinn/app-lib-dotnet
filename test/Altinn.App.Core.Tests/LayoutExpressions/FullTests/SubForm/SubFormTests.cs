@@ -28,7 +28,7 @@ using DataType = Altinn.Platform.Storage.Interface.Models.DataType;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests.SubForm;
 
-public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
+public sealed class SubFormTests : IClassFixture<DataAnnotationsTestFixture>, IDisposable
 {
     private record MainFormModel(
         [Required] string? Name,
@@ -414,7 +414,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
 
     private static string Json([StringSyntax("json")] string json) => json;
 
-    ~SubFormTests()
+    public void Dispose()
     {
         _appResourcesMock?.Verify();
         _appMetadataMock?.Verify();
