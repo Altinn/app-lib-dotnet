@@ -37,11 +37,11 @@ public abstract class ReferenceComponent : BaseLayoutComponent
                 if (claimedComponents.TryGetValue(componentId, out var claimedComponent))
                 {
                     throw new ArgumentException(
-                        $"Attempted to claim child with id {componentId} to component {Id}, but it has already been claimed by {claimedComponent}."
+                        $"""Attempted to claim child with id "{componentId}" to component "{Id}", but it has already been claimed by "{claimedComponent}"."""
                     );
                 }
                 throw new ArgumentException(
-                    $"Attempted to claim child with id {componentId} to component {Id}, but the componentId does not exist"
+                    $"""Attempted to claim child with id "{componentId}" to component "{Id}", but the componentId does not exist"""
                 );
             }
 

@@ -98,7 +98,9 @@ public class InstanceDataAccessorFake : IInstanceDataAccessor, IEnumerable<KeyVa
 
     public Task<IFormDataWrapper> GetFormDataWrapper(DataElementIdentifier dataElementIdentifier)
     {
-        return Task.FromResult(FormDataWrapperFactory.Create(_dataById[dataElementIdentifier]));
+        var dataElement = GetDataElement(dataElementIdentifier);
+        var dataType = this.GetDataType(dataElementIdentifier);
+        return Task.FromResult(FormDataWrapperFactory.Create(_dataById[dataElementIdentifier], dataType, dataElement));
     }
 
     public IInstanceDataAccessor GetCleanAccessor(RowRemovalOption rowRemovalOption = RowRemovalOption.SetToNull)

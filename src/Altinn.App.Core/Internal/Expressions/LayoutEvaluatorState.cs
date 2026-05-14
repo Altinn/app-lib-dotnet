@@ -23,7 +23,6 @@ public class LayoutEvaluatorState
     private readonly string? _language;
     private readonly TimeZoneInfo? _timeZone;
     private List<ComponentContext>? _rootContext;
-    private readonly Dictionary<string, DataElementIdentifier> _dataIdsByType = [];
 
     /// <summary>
     /// Constructor for LayoutEvaluatorState. Usually called via <see cref="LayoutEvaluatorStateInitializer" /> that can be fetched from dependency injection.
@@ -45,16 +44,6 @@ public class LayoutEvaluatorState
         TimeZoneInfo? timeZone = null
     )
     {
-        // Precompute a map of data types to data element ids for all single-instance data types
-        // This is used to resolve data element ids when a specific data type is requested in a binding
-        foreach (var (dataType, dataElement) in dataAccessor.GetDataElements())
-        {
-            if (dataType is { MaxCount: 1, AppLogic.ClassRef: not null })
-            {
-                // There should never be duplicates because of MaxCount == 1, but just in case, we only want the first one
-                _dataIdsByType.TryAdd(dataElement.DataType, dataElement);
-            }
-        }
         DataAccessor = dataAccessor;
         _componentModel = componentModel;
         _translationService = translationService;
@@ -236,9 +225,8 @@ public class LayoutEvaluatorState
         int[]? indexes
     )
     {
-        var elementIdentifier = ResolveDataElementIdentifier(key, defaultDataElementIdentifier);
-        var model = await DataAccessor.GetFormDataWrapper(elementIdentifier);
-        return model.Get(key.Field, indexes);
+        var model = await DataAccessor.GetFormDataWrapper(key, defaultDataElementIdentifier);
+        return model?.Get(key.Field, indexes);
     }
 
     /// <summary>
@@ -311,64 +299,23 @@ public class LayoutEvaluatorState
     /// </example>
     public async Task<DataReference> AddInidicies(ModelBinding binding, ComponentContext context)
     {
-        var dataElementId = ResolveDataElementIdentifier(binding, context.DataElementIdentifier);
-        var formDataWrapper = await DataAccessor.GetFormDataWrapper(dataElementId);
+        var formDataWrapper =
+            await DataAccessor.GetFormDataWrapper(binding, context.DataElementIdentifier)
+            ?? throw new NullReferenceException($"No data element found for {binding.DataType} {binding.Field}");
+
+        if (formDataWrapper.DataElement == null)
+        {
+            throw new InvalidOperationException($"No data element found for {binding.DataType} {binding.Field}");
+        }
 
         var field =
             formDataWrapper.AddIndexToPath(binding.Field, context.RowIndices)
             ?? throw new InvalidOperationException(
                 $"Failed to add indexes to path {binding.Field} with indexes "
-                    + $"{(context.RowIndices is null ? "null" : string.Join(", ", context.RowIndices))} on {dataElementId}"
+                    + $"{(context.RowIndices is null ? "null" : string.Join(", ", context.RowIndices))} on {formDataWrapper.DataElement?.Id}"
             );
 
-        return new DataReference() { Field = field, DataElementIdentifier = dataElementId };
-    }
-
-    private DataElementIdentifier ResolveDataElementIdentifier(
-        ModelBinding key,
-        DataElementIdentifier? defaultDataElementIdentifier
-    )
-    {
-        // If the binding don't have a specific data type, use the default
-        if (key.DataType is null)
-        {
-            return defaultDataElementIdentifier
-                ?? throw new InvalidOperationException(
-                    "Cannot resolve data element identifier without a default or specific data type"
-                );
-        }
-        // If the data element has the same type as default, return it
-
-        if (defaultDataElementIdentifier.HasValue)
-        {
-            var defaultDataType = DataAccessor.GetDataType(defaultDataElementIdentifier.Value);
-            if (defaultDataType.Id == key.DataType)
-            {
-                return defaultDataElementIdentifier.Value;
-            }
-        }
-
-        // Return the correct element if the data type has a single element on the instance and MaxCount == 1
-        if (_dataIdsByType.TryGetValue(key.DataType, out var dataElementId))
-        {
-            return dataElementId;
-        }
-
-        // Raise the correct error
-        var requestedDataType = DataAccessor.GetDataType(key.DataType);
-        if (requestedDataType.AppLogic?.ClassRef is null)
-        {
-            throw new InvalidOperationException(
-                $"{key.DataType} has no classRef in applicationmetadata.json and can't be used as a data model in layouts"
-            );
-        }
-        if (requestedDataType.MaxCount != 1)
-        {
-            throw new InvalidOperationException(
-                $"{key.DataType} has maxCount different from 1 in applicationmetadata.json and must be part of a subform when used in layouts"
-            );
-        }
-        throw new InvalidOperationException($"Data element with type {key.DataType} not found on instance");
+        return new DataReference() { Field = field, DataElementIdentifier = formDataWrapper.DataElement };
     }
 
     /// <summary>
@@ -383,15 +330,22 @@ public class LayoutEvaluatorState
         int[]? indexes
     )
     {
-        var dataElementId = ResolveDataElementIdentifier(binding, dataElementIdentifier);
-        var formDataWrapper = await DataAccessor.GetFormDataWrapper(dataElementId);
+        var formDataWrapper =
+            await DataAccessor.GetFormDataWrapper(binding, dataElementIdentifier)
+            ?? throw new InvalidOperationException($"No data element found for {binding.DataType} {binding.Field}");
+
+        if (formDataWrapper.DataElement == null)
+        {
+            throw new InvalidOperationException($"No data element found for {binding.DataType} {binding.Field}");
+        }
+
         return new DataReference()
         {
-            DataElementIdentifier = dataElementId,
+            DataElementIdentifier = formDataWrapper.DataElement,
             Field =
                 formDataWrapper.AddIndexToPath(binding.Field, indexes)
                 ?? throw new InvalidOperationException(
-                    $"Failed to add indexes to path {binding.Field} with indexes {(indexes == null ? "null" : string.Join(", ", indexes))} on {dataElementId}"
+                    $"Failed to add indexes to path {binding.Field} with indexes {(indexes == null ? "null" : string.Join(", ", indexes))} on {formDataWrapper.DataElement?.Id}"
                 ),
         };
     }
@@ -421,9 +375,8 @@ public class LayoutEvaluatorState
         int[]? indexes
     )
     {
-        var dataElementId = ResolveDataElementIdentifier(groupBinding, defaultDataElementIdentifier);
-        var model = await DataAccessor.GetFormDataWrapper(dataElementId);
-        return model.GetRowCount(groupBinding.Field, indexes);
+        var model = await DataAccessor.GetFormDataWrapper(groupBinding, defaultDataElementIdentifier);
+        return model?.GetRowCount(groupBinding.Field, indexes);
     }
 
     // /// <summary>

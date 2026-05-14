@@ -37,11 +37,14 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
         string? Email
     );
 
+    private record RepeatingGroupModel(string? Name, int? Age);
+
     private record SubFormModel(
         [Required] string? Name,
         string? Address,
         [RegularExpression(@"^\+47\d+")] string? Phone,
         string? Email,
+        List<RepeatingGroupModel> Friends,
         bool? RequireEmail = false
     );
 
@@ -90,6 +93,7 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
                 Id = DefaultDataType,
                 TaskId = TaskId,
                 AppLogic = new ApplicationLogic() { ClassRef = _classRefMain },
+                MaxCount = 1,
             },
             new DataType()
             {
@@ -156,18 +160,25 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
             ParsePage(
                 SubLayoutId,
                 "SubPage",
-                """
+                $$"""
                 {
                 "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/layout/layout.schema.v1.json",
                 "data": {
                   "layout": [
                     {
+                      "id": "main-name",
+                      "type": "Input",
+                      "dataModelBindings": {
+                        "simpleBinding": {"dataType": "{{DefaultDataType}}", "field": "Name"}
+                      }
+                    },
+                    {
                       "id": "Name",
                       "type": "Input",
                       "dataModelBindings": {
                         "simpleBinding": {
-                          "field": "Name",
-                          "dataType": "subform"
+                          "field": "{{nameof(SubFormModel.Name)}}",
+                          "dataType": "{{SubformDataType}}"
                         }
                       },
                       "required": true
@@ -195,9 +206,35 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
                         "simpleBinding": "Email"
                       },
                       "required": ["dataModel", "RequireEmail"]
+                    },
+                    {
+                      "id": "Friends",
+                      "type": "RepeatingGroup",
+                      "dataModelBindings": {
+                        "group": {
+                          "dataModel": "{{SubformDataType}}",
+                          "field": "Friends"
+                        }
+                      },
+                      "children": ["friend-name", "friend-age"]
+                    },
+                    {
+                      "id": "friend-name",
+                      "type": "Input",
+                      "dataModelBindings": {
+                        "simpleBinding": "Friends.Name"
+                      }
+                    },
+                    {
+                      "id": "friend-age",
+                      "type": "Input",
+                      "dataModelBindings": {
+                        "simpleBinding": "Friends.Age"
+                      }
                     }
                   ]
-                }}
+                }
+                }
                 """
             ),
         ],
@@ -357,9 +394,9 @@ public class SubFormTests : IClassFixture<DataAnnotationsTestFixture>
         )
         {
             { _instance.Data[0], new MainFormModel("Name", "Address", "Phone", null) },
-            { _instance.Data[1], new SubFormModel(null, null, null, null, false) },
-            { _instance.Data[2], new SubFormModel("Name2", "Address2", "Phone2", null, true) },
-            { _instance.Data[3], new SubFormModel(null, null, null, null, null) },
+            { _instance.Data[1], new SubFormModel(null, null, null, null, [], false) },
+            { _instance.Data[2], new SubFormModel("Name2", "Address2", "Phone2", null, [], true) },
+            { _instance.Data[3], new SubFormModel(null, null, null, null, [new("Ola", 18)], null) },
         };
 
         var issues = await validationService.ValidateInstanceAtTask(dataAccessor, TaskId, null, null, null);

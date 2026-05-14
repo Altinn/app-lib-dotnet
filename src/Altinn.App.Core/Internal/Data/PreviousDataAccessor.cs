@@ -78,7 +78,9 @@ internal class PreviousDataAccessor : IInstanceDataAccessor
                     var binaryData = await _dataAccessor.GetBinaryData(id).ConfigureAwait(false);
 
                     return FormDataWrapperFactory.Create(
-                        _modelSerializationService.DeserializeFromStorage(binaryData.Span, dataType, dataElement)
+                        _modelSerializationService.DeserializeFromStorage(binaryData.Span, dataType, dataElement),
+                        dataType,
+                        dataElement
                     );
                 }
             )

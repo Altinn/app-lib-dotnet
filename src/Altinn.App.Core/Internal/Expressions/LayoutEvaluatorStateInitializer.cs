@@ -58,7 +58,7 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
             Instance instance,
             DataElement dataElement,
             ApplicationMetadata applicationMetadata,
-            object data,
+            IFormDataWrapper data,
             LayoutModel layouts,
             FrontEndSettings frontEndSettings,
             ITranslationService translationService,
@@ -76,7 +76,7 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
             _gatewayAction = gatewayAction;
             TaskId = taskId;
             Language = language;
-            _data = FormDataWrapperFactory.Create(data);
+            _data = data;
         }
 
         public Instance Instance { get; }
@@ -171,7 +171,11 @@ public class LayoutEvaluatorStateInitializer : ILayoutEvaluatorStateInitializer
             instance,
             dataElement,
             appMetadata,
-            data,
+            FormDataWrapperFactory.Create(
+                data,
+                appMetadata.DataTypes.Single(dt => dt.Id == dataElement.DataType),
+                dataElement
+            ),
             layouts,
             _frontEndSettings,
             _translationService,

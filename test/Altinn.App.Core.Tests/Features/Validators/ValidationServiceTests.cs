@@ -420,23 +420,23 @@ public class ValidationServiceTests : IAsyncLifetime
     public async Task GenericFormDataValidator_serviceModelIsString_CallsValidatorFunctionForIncremental()
     {
         var valueToValidate = "valueToValidate";
-        var defaultDataType = "default";
-        var dataTypeNoValidation = "dataTypeToNotValidate";
+        var dataTypeName = "default";
+        var dataTypeNoValidationName = "dataTypeToNotValidate";
         var taskId = "Task_1";
         _appMetadata.DataTypes.Add(
             new DataType
             {
-                Id = defaultDataType,
+                Id = dataTypeName,
                 TaskId = taskId,
                 AppLogic = new() { ClassRef = valueToValidate.GetType().FullName },
             }
         );
-        var dataElement = new DataElement { Id = Guid.NewGuid().ToString(), DataType = defaultDataType };
+        var dataElement = new DataElement { Id = Guid.NewGuid().ToString(), DataType = dataTypeName };
         _instanceDataAccessor.Add(dataElement, valueToValidate);
         var dataElementNoValidation = new DataElement()
         {
             Id = Guid.NewGuid().ToString(),
-            DataType = dataTypeNoValidation,
+            DataType = dataTypeNoValidationName,
         };
         _instanceDataAccessor.Add(dataElementNoValidation, "valueToNotValidate");
 
@@ -450,30 +450,41 @@ public class ValidationServiceTests : IAsyncLifetime
             },
         ];
 
+        var dataType = _instanceDataAccessor.GetDataType(dataElement);
+        var dataTypeNoValidation = _instanceDataAccessor.GetDataType(dataElementNoValidation);
+
         var changes = new DataElementChanges([
             new FormDataChange(
                 type: ChangeType.Updated,
                 dataElement: dataElement,
-                dataType: _instanceDataAccessor.GetDataType(dataElement),
+                dataType: dataType,
                 contentType: "text/plain",
-                currentFormDataWrapper: FormDataWrapperFactory.Create("currentValue"),
-                previousFormDataWrapper: FormDataWrapperFactory.Create("previousValue"),
+                currentFormDataWrapper: FormDataWrapperFactory.Create("currentValue", dataType, dataElement),
+                previousFormDataWrapper: FormDataWrapperFactory.Create("previousValue", dataType, dataElement),
                 currentBinaryData: null,
                 previousBinaryData: default
             ),
             new FormDataChange(
                 type: ChangeType.Updated,
                 dataElement: dataElementNoValidation,
-                dataType: _instanceDataAccessor.GetDataType(dataElement),
+                dataType: dataTypeNoValidation,
                 contentType: "text/plain",
-                currentFormDataWrapper: FormDataWrapperFactory.Create("currentValue"),
-                previousFormDataWrapper: FormDataWrapperFactory.Create("previousValue"),
+                currentFormDataWrapper: FormDataWrapperFactory.Create(
+                    "currentValue",
+                    dataTypeNoValidation,
+                    dataElementNoValidation
+                ),
+                previousFormDataWrapper: FormDataWrapperFactory.Create(
+                    "previousValue",
+                    dataTypeNoValidation,
+                    dataElementNoValidation
+                ),
                 currentBinaryData: null,
                 previousBinaryData: null
             ),
         ]);
 
-        var genericValidator = new GenericValidatorFake(defaultDataType, validatorIssues, hasRelevantChanges: true);
+        var genericValidator = new GenericValidatorFake(dataTypeName, validatorIssues, hasRelevantChanges: true);
         _services.AddSingleton<IFormDataValidator>(genericValidator);
 
         var validationService = _serviceProvider.Value.GetRequiredService<IValidationService>();

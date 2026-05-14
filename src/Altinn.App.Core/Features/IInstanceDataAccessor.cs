@@ -219,20 +219,30 @@ public static class IInstanceDataAccessorExtensions
     public static async Task<IFormDataWrapper?> GetFormDataWrapper(
         this IInstanceDataAccessor dataAccessor,
         ModelBinding modelBinding,
-        DataElementIdentifier defaultDataElementIdentifier
+        DataElementIdentifier? defaultDataElementIdentifier
     )
     {
         // Return default when data binding does not specify type
         if (modelBinding.DataType is null)
         {
-            return await dataAccessor.GetFormDataWrapper(defaultDataElementIdentifier);
+            if (!defaultDataElementIdentifier.HasValue)
+            {
+                throw new InvalidOperationException(
+                    $"DataModelBindings must either have DataType, or be in a context with a defaultDataElementIdentifier"
+                );
+            }
+            return await dataAccessor.GetFormDataWrapper(defaultDataElementIdentifier.Value);
         }
 
         // Return default when the specified type matches the default data element type
-        var defaultDataElement = dataAccessor.GetDataElement(defaultDataElementIdentifier);
-        if (defaultDataElement.DataType == modelBinding.DataType)
+        if (defaultDataElementIdentifier.HasValue)
         {
-            return await dataAccessor.GetFormDataWrapper(defaultDataElementIdentifier);
+            var defaultDataElement = dataAccessor.GetDataElement(defaultDataElementIdentifier.Value);
+
+            if (defaultDataElement.DataType == modelBinding.DataType)
+            {
+                return await dataAccessor.GetFormDataWrapper(defaultDataElementIdentifier.Value);
+            }
         }
 
         // Verify MaxCount == 1 for referenced types
@@ -247,9 +257,20 @@ public static class IInstanceDataAccessorExtensions
             return null;
         }
 
-        throw new InvalidOperationException(
-            $"Data type \"{dataType.Id}\" has a MaxCount of {dataType.MaxCount}, but only data types with MaxCount = 1 can be used in data bindings outside of subforms."
-        );
+        // Raise the correct error
+        if (dataType.AppLogic?.ClassRef is null)
+        {
+            throw new InvalidOperationException(
+                $"{dataType.Id} has no classRef in applicationmetadata.json and can't be used as a data model in layouts"
+            );
+        }
+        if (dataType.MaxCount != 1)
+        {
+            throw new InvalidOperationException(
+                $"{dataType.Id} has maxCount different from 1 in applicationmetadata.json and must be part of a subform when used in layouts"
+            );
+        }
+        throw new InvalidOperationException($"Data element with type {dataType.Id} not found on instance");
     }
 
     /// <summary>
