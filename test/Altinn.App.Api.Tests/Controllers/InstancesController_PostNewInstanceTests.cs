@@ -10,6 +10,7 @@ using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Pdf;
+using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using App.IntegrationTests.Mocks.Services;
 using FluentAssertions;
@@ -589,6 +590,89 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         {
             TestData.DeleteInstanceAndData(org, app, createResponseParsed.Id);
         }
+    }
+
+    [Fact]
+    public async Task CopyInstance_CopyInstanceValidator_Returns_Forbidden_When_Validation_Fails()
+    {
+        var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
+        using var pdfReturnStream = new MemoryStream();
+        pdfMock
+            .Setup(p => p.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pdfReturnStream);
+
+        var copyInstanceValidatorMock = new Mock<ICopyInstanceValidator>();
+        copyInstanceValidatorMock
+            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .ReturnsAsync(
+                new InstantiationValidationResult
+                {
+                    Valid = false,
+                    Message = "Copy validation failed for test purposes",
+                }
+            );
+
+        // Setup test data
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        OverrideServicesForThisTest = services =>
+        {
+            services.AddSingleton(pdfMock.Object);
+            services.AddSingleton(copyInstanceValidatorMock.Object);
+        };
+        HttpClient client = GetRootedClient(org, app);
+
+        string orgToken = TestAuthentication.GetServiceOwnerToken("405003309", org: "tdd");
+        string userToken = TestAuthentication.GetUserToken(1337, 501337);
+
+        // Create source instance
+        var (sourceInstance, _) = await InstancesControllerFixture.CreateInstanceSimplified(
+            org,
+            app,
+            instanceOwnerPartyId,
+            client,
+            orgToken
+        );
+        sourceInstance.Data.Should().HaveCount(1, "Create instance should create a data element");
+        var dataGuid = sourceInstance.Data.First().Id;
+        var patch = new JsonPatch(
+            PatchOperation.Replace(JsonPointer.Create("melding"), JsonNode.Parse("{\"name\": \"Ola Olsen\"}"))
+        );
+        await UpdateInstanceData(org, app, client, userToken, sourceInstance.Id, dataGuid, patch);
+        await CompleteInstance(org, app, client, userToken, sourceInstance.Id);
+
+        var sourceInstanceId = sourceInstance.Id;
+
+        // Attempt to copy instance with validation error
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            AuthorizationSchemes.Bearer,
+            userToken
+        );
+
+        var body = $$"""
+                {
+                    "prefill": {},
+                    "instanceOwner": {
+                        "partyId": "{{instanceOwnerPartyId}}"
+                    },
+                    "sourceInstanceId": "{{sourceInstanceId}}"
+                }
+            """;
+        using var content = new StringContent(body, Encoding.UTF8, "application/json");
+
+        // Create copy instance - should fail
+        var createResponse = await client.PostAsync($"{org}/{app}/instances/create", content);
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(createResponseContent);
+
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden, createResponseContent);
+        createResponseContent.Should().Contain("Copy validation failed for test purposes");
+
+        // Verify the validator was called
+        copyInstanceValidatorMock.Verify(v => v.Validate(It.IsAny<Instance>()), Times.Once);
+
+        TestData.DeleteInstanceAndData(org, app, sourceInstance.Id);
     }
 
     private async Task UpdateInstanceData(

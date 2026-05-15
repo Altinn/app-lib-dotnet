@@ -704,6 +704,11 @@ public class InstancesController : ControllerBase
                 validationResult = await copyInstanceValidator.Validate(source);
                 if (validationResult != null && !validationResult.Valid)
                 {
+                    _logger.LogWarning(
+                        "CopyInstanceValidator rejected instantiation for party {PartyId}: {@ValidationResult}",
+                        party.PartyId,
+                        validationResult
+                    );
                     await TranslateValidationResult(validationResult, language);
                     return StatusCode(StatusCodes.Status403Forbidden, validationResult);
                 }

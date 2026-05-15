@@ -96,6 +96,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
         if (verifyInstantiationProcessor)
             Mock<IInstantiationProcessor>().VerifyNoOtherCalls();
         Mock<IInstantiationValidator>().VerifyNoOtherCalls();
+        Mock<ICopyInstanceValidator>().VerifyNoOtherCalls();
         Mock<IPDP>().VerifyNoOtherCalls();
         Mock<IEventsClient>().VerifyNoOtherCalls();
         if (verifyPrefill)
