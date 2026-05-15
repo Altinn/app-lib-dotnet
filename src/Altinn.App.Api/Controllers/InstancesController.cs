@@ -699,6 +699,14 @@ public class InstancesController : ControllerBase
                 {
                     return BadRequest("It is not possible to copy an instance that isn't archived.");
                 }
+
+                var copyInstanceValidator = _appImplementationFactory.GetRequired<ICopyInstanceValidator>();
+                validationResult = await copyInstanceValidator.Validate(source);
+                if (validationResult != null && !validationResult.Valid)
+                {
+                    await TranslateValidationResult(validationResult, language);
+                    return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+                }
             }
 
             instance = await _instanceClient.CreateInstance(
@@ -802,9 +810,9 @@ public class InstancesController : ControllerBase
             return Forbid();
         }
 
-        ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
+        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
 
-        if (application.CopyInstanceSettings?.Enabled is null or false)
+        if (applicationMetadata.CopyInstanceSettings?.Enabled is null or false)
         {
             return BadRequest(
                 "Creating instance based on a copy from an archived instance is not enabled for this app."
@@ -854,6 +862,14 @@ public class InstancesController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
+        var copyInstanceValidator = _appImplementationFactory.GetRequired<ICopyInstanceValidator>();
+        validationResult = await copyInstanceValidator.Validate(sourceInstance);
+        if (validationResult != null && !validationResult.Valid)
+        {
+            await TranslateValidationResult(validationResult, language);
+            return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+        }
+
         ProcessStartRequest processStartRequest = new() { Instance = targetInstance, User = User };
 
         ProcessChangeResult startResult = await _processEngine.GenerateProcessStartEvents(processStartRequest);
@@ -866,7 +882,7 @@ public class InstancesController : ControllerBase
             CancellationToken.None
         );
 
-        await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
+        await CopyDataFromSourceInstance(applicationMetadata, targetInstance, sourceInstance);
 
         targetInstance = await _instanceClient.GetInstance(
             targetInstance,
@@ -1132,7 +1148,7 @@ public class InstancesController : ControllerBase
     }
 
     private async Task CopyDataFromSourceInstance(
-        ApplicationMetadata application,
+        ApplicationMetadata applicationMetadata,
         Instance targetInstance,
         Instance sourceInstance
     )
@@ -1142,14 +1158,14 @@ public class InstancesController : ControllerBase
         string[] sourceSplit = sourceInstance.Id.Split("/");
         Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
 
-        List<DataType> dts = application
+        List<DataType> dts = applicationMetadata
             .DataTypes.Where(dt => dt.AppLogic?.ClassRef != null)
             .Where(dt =>
                 dt.TaskId != null
                 && dt.TaskId.Equals(targetInstance.Process.CurrentTask.ElementId, StringComparison.Ordinal)
             )
             .ToList();
-        List<string> excludedDataTypes = application.CopyInstanceSettings.ExcludedDataTypes;
+        List<string> excludedDataTypes = applicationMetadata.CopyInstanceSettings.ExcludedDataTypes;
 
         foreach (DataElement de in sourceInstance.Data)
         {
@@ -1169,9 +1185,9 @@ public class InstancesController : ControllerBase
                     CancellationToken.None
                 );
 
-                if (application.CopyInstanceSettings.ExcludedDataFields != null)
+                if (applicationMetadata.CopyInstanceSettings.ExcludedDataFields != null)
                 {
-                    DataHelper.ResetDataFields(application.CopyInstanceSettings.ExcludedDataFields, data);
+                    DataHelper.ResetDataFields(applicationMetadata.CopyInstanceSettings.ExcludedDataFields, data);
                 }
 
                 await _prefillService.PrefillDataModel(
@@ -1193,12 +1209,17 @@ public class InstancesController : ControllerBase
                     CancellationToken.None
                 );
 
-                await UpdatePresentationTextsOnInstance(application.PresentationFields, targetInstance, dt.Id, data);
-                await UpdateDataValuesOnInstance(application.DataFields, targetInstance, dt.Id, data);
+                await UpdatePresentationTextsOnInstance(
+                    applicationMetadata.PresentationFields,
+                    targetInstance,
+                    dt.Id,
+                    data
+                );
+                await UpdateDataValuesOnInstance(applicationMetadata.DataFields, targetInstance, dt.Id, data);
             }
         }
 
-        if (application.CopyInstanceSettings?.IncludeAttachments != true)
+        if (applicationMetadata.CopyInstanceSettings?.IncludeAttachments != true)
         {
             return;
         }
@@ -1206,7 +1227,7 @@ public class InstancesController : ControllerBase
         // Copy binary data elements (files/attachments)
         // Error handling strategy: Continue processing other attachments even if individual ones fail
         // This ensures partial success rather than complete failure when some attachments cannot be copied
-        List<DataType> binaryDataTypes = application
+        List<DataType> binaryDataTypes = applicationMetadata
             .DataTypes.Where(dt => dt.AppLogic?.ClassRef == null)
             .Where(dt =>
                 dt.TaskId != null

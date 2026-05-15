@@ -189,7 +189,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "permissive-app";
         int instanceOwnerPartyId = token.PartyId;
 
-        this.OverrideServicesForThisTest = (services) =>
+        OverrideServicesForThisTest = (services) =>
         {
             services.AddTelemetrySink(
                 additionalActivitySources: source => source.Name == "Microsoft.AspNetCore",
@@ -367,7 +367,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string org = "tdd";
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
-        this.OverrideServicesForThisTest = services =>
+        OverrideServicesForThisTest = services =>
             services.AddSingleton(new AppMetadataMutationHook(app => app.DisallowUserInstantiation = true));
         HttpClient client = GetRootedClient(org, app);
         string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
@@ -495,7 +495,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string org = "tdd";
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
-        this.OverrideServicesForThisTest = services =>
+        OverrideServicesForThisTest = services =>
             services.AddSingleton(new AppMetadataMutationHook(app => app.DisallowUserInstantiation = true));
         HttpClient client = GetRootedClient(org, app);
         string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
@@ -531,7 +531,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string org = "tdd";
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
-        this.OverrideServicesForThisTest = services =>
+        OverrideServicesForThisTest = services =>
         {
             services.AddSingleton(pdfMock.Object);
             services.AddSingleton(new AppMetadataMutationHook(app => app.DisallowUserInstantiation = true));

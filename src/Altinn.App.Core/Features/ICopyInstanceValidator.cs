@@ -1,0 +1,29 @@
+﻿using Altinn.App.Core.Models.Validation;
+using Altinn.Platform.Storage.Interface.Models;
+
+namespace Altinn.App.Core.Features;
+
+/// <summary>
+/// ICopyInstanceValidator is designed to handle specific validation scenarioes that is just relevant while copying an instance
+/// </summary>
+[ImplementableByApps]
+public interface ICopyInstanceValidator
+{
+    /// <summary>
+    /// Run validations related to copying an instance
+    /// </summary>
+    /// <example>
+    /// if ([some condition])
+    /// {
+    ///   return await Task.FromResult(new InstantiationValidationResult
+    ///   {
+    ///       Valid = false,
+    ///       Message = "Some message"
+    ///   });
+    /// }
+    /// return null;
+    /// </example>
+    /// <param name="sourceInstance">The source instance that is copied from</param>
+    /// <returns>The validation result object (null if no errors)</returns>
+    public Task<InstantiationValidationResult?> Validate(Instance sourceInstance);
+}

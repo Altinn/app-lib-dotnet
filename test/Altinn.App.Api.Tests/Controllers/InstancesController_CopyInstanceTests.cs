@@ -437,6 +437,10 @@ public class InstancesController_CopyInstanceTests
             .Setup(v => v.Validate(It.IsAny<Instance>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
+            .Mock<ICopyInstanceValidator>()
+            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .ReturnsAsync(instantiationValidationResult);
+        fixture
             .Mock<IProcessEngine>()
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() =>
@@ -583,6 +587,10 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instance);
         fixture
             .Mock<IInstantiationValidator>()
+            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .ReturnsAsync(instantiationValidationResult);
+        fixture
+            .Mock<ICopyInstanceValidator>()
             .Setup(v => v.Validate(It.IsAny<Instance>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
@@ -811,6 +819,10 @@ public class InstancesController_CopyInstanceTests
             .Setup(v => v.Validate(It.IsAny<Instance>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
+            .Mock<ICopyInstanceValidator>()
+            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .ReturnsAsync(instantiationValidationResult);
+        fixture
             .Mock<IProcessEngine>()
             .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
             .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
@@ -1032,6 +1044,10 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instance);
         fixture
             .Mock<IInstantiationValidator>()
+            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .ReturnsAsync(instantiationValidationResult);
+        fixture
+            .Mock<ICopyInstanceValidator>()
             .Setup(v => v.Validate(It.IsAny<Instance>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
@@ -1263,6 +1279,10 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instance);
         fixture
             .Mock<IInstantiationValidator>()
+            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .ReturnsAsync(instantiationValidationResult);
+        fixture
+            .Mock<ICopyInstanceValidator>()
             .Setup(v => v.Validate(It.IsAny<Instance>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
