@@ -477,6 +477,157 @@ public class PdfServiceTests
         );
     }
 
+    [Fact]
+    public async Task GenerateAndStorePdf_WithDisplayFooter_HideAppNameInPdfTrue_FooterShouldNotContainAppName()
+    {
+        // Arrange
+        _appResources.Setup(s => s.GetLayoutSets()).Returns("""{"sets":[],"uiSettings":{"hideAppNameInPdf":true}}""");
+        _pdfGeneratorClient.Setup(s =>
+            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+        );
+        _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
+
+        var target = SetupPdfService(
+            pdfGeneratorClient: _pdfGeneratorClient,
+            generalSettingsOptions: _generalSettingsOptions,
+            pdfGeneratorSettingsOptions: Options.Create(new PdfGeneratorSettings { DisplayFooter = true })
+        );
+
+        Instance instance = new()
+        {
+            Id = $"509378/{Guid.NewGuid()}",
+            AppId = "digdir/not-really-an-app",
+            Org = "digdir",
+        };
+
+        // Act
+        await target.GenerateAndStorePdf(instance, "Task_1", CancellationToken.None);
+
+        // Assert
+        _pdfGeneratorClient.Verify(
+            s =>
+                s.GeneratePdf(
+                    It.IsAny<Uri>(),
+                    It.Is<string?>(footer => footer != null && !footer.Contains("not-really-an-app")),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task GenerateAndStorePdf_WithDisplayFooter_HideAppNameInPdfFalse_FooterShouldContainAppName()
+    {
+        // Arrange
+        _appResources.Setup(s => s.GetLayoutSets()).Returns("""{"sets":[],"uiSettings":{"hideAppNameInPdf":false}}""");
+        _pdfGeneratorClient.Setup(s =>
+            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+        );
+        _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
+
+        var target = SetupPdfService(
+            pdfGeneratorClient: _pdfGeneratorClient,
+            generalSettingsOptions: _generalSettingsOptions,
+            pdfGeneratorSettingsOptions: Options.Create(new PdfGeneratorSettings { DisplayFooter = true })
+        );
+
+        Instance instance = new()
+        {
+            Id = $"509378/{Guid.NewGuid()}",
+            AppId = "digdir/not-really-an-app",
+            Org = "digdir",
+        };
+
+        // Act
+        await target.GenerateAndStorePdf(instance, "Task_1", CancellationToken.None);
+
+        // Assert
+        _pdfGeneratorClient.Verify(
+            s =>
+                s.GeneratePdf(
+                    It.IsAny<Uri>(),
+                    It.Is<string?>(footer => footer != null && footer.Contains("not-really-an-app")),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task GenerateAndStorePdf_WithDisplayFooter_NoUiSettings_FooterShouldContainAppName()
+    {
+        // Arrange - GetLayoutSets returns null by default, app name shown
+        _pdfGeneratorClient.Setup(s =>
+            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+        );
+        _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
+
+        var target = SetupPdfService(
+            pdfGeneratorClient: _pdfGeneratorClient,
+            generalSettingsOptions: _generalSettingsOptions,
+            pdfGeneratorSettingsOptions: Options.Create(new PdfGeneratorSettings { DisplayFooter = true })
+        );
+
+        Instance instance = new()
+        {
+            Id = $"509378/{Guid.NewGuid()}",
+            AppId = "digdir/not-really-an-app",
+            Org = "digdir",
+        };
+
+        // Act
+        await target.GenerateAndStorePdf(instance, "Task_1", CancellationToken.None);
+
+        // Assert
+        _pdfGeneratorClient.Verify(
+            s =>
+                s.GeneratePdf(
+                    It.IsAny<Uri>(),
+                    It.Is<string?>(footer => footer != null && footer.Contains("not-really-an-app")),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task GenerateAndStorePdf_WithDisplayFooter_MalformedLayoutSets_ShouldStillGeneratePdfWithAppName()
+    {
+        // Arrange
+        _appResources.Setup(s => s.GetLayoutSets()).Returns("{invalid json");
+        _pdfGeneratorClient.Setup(s =>
+            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+        );
+        _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
+
+        var target = SetupPdfService(
+            pdfGeneratorClient: _pdfGeneratorClient,
+            generalSettingsOptions: _generalSettingsOptions,
+            pdfGeneratorSettingsOptions: Options.Create(new PdfGeneratorSettings { DisplayFooter = true })
+        );
+
+        Instance instance = new()
+        {
+            Id = $"509378/{Guid.NewGuid()}",
+            AppId = "digdir/not-really-an-app",
+            Org = "digdir",
+        };
+
+        // Act - should not throw despite malformed JSON
+        await target.GenerateAndStorePdf(instance, "Task_1", CancellationToken.None);
+
+        // Assert - PDF generated with app name visible (fail closed)
+        _pdfGeneratorClient.Verify(
+            s =>
+                s.GeneratePdf(
+                    It.IsAny<Uri>(),
+                    It.Is<string?>(footer => footer != null && footer.Contains("not-really-an-app")),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
     private PdfService SetupPdfService(
         Mock<IAppResources>? appResources = null,
         Mock<IDataClient>? dataClient = null,
