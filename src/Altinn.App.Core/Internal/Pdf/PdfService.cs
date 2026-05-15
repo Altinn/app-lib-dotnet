@@ -406,45 +406,56 @@ public class PdfService : IPdfService
         if (string.IsNullOrEmpty(layoutSetsString))
             return false;
 
-        using var jsonDoc = JsonDocument.Parse(layoutSetsString);
-        var root = jsonDoc.RootElement;
-
-        if (
-            !root.TryGetProperty("uiSettings", out var uiSettingsElement)
-            || !uiSettingsElement.TryGetProperty("hideAppNameInPdf", out var hideAppNameElement)
-        )
-            return false;
-
-        if (hideAppNameElement.ValueKind == JsonValueKind.True)
-            return true;
-        if (hideAppNameElement.ValueKind == JsonValueKind.False)
-            return false;
-
-        if (_instanceDataUnitOfWorkInitializer is null)
+        try
         {
-            _logger.LogWarning(
-                "Cannot evaluate hideAppNameInPdf expression: InstanceDataUnitOfWorkInitializer is not available"
+            using var jsonDoc = JsonDocument.Parse(
+                layoutSetsString,
+                new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip }
             );
+            var root = jsonDoc.RootElement;
+
+            if (
+                !root.TryGetProperty("uiSettings", out var uiSettingsElement)
+                || !uiSettingsElement.TryGetProperty("hideAppNameInPdf", out var hideAppNameElement)
+            )
+                return false;
+
+            if (hideAppNameElement.ValueKind == JsonValueKind.True)
+                return true;
+            if (hideAppNameElement.ValueKind == JsonValueKind.False)
+                return false;
+
+            if (_instanceDataUnitOfWorkInitializer is null)
+            {
+                _logger.LogWarning(
+                    "Cannot evaluate hideAppNameInPdf expression: InstanceDataUnitOfWorkInitializer is not available"
+                );
+                return false;
+            }
+
+            var expression = hideAppNameElement.Deserialize<Expression>(_jsonSerializerOptions);
+            var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
+            var state = await _layoutStateInit.Init(dataAccessor, taskId, language: language);
+
+            var layoutSet = _resources.GetLayoutSetForTask(taskId);
+            DataElementIdentifier? dataElement = layoutSet?.DataType is { } dataType
+                ? instance.Data?.Find(d => d.DataType == dataType)
+                : null;
+
+            var componentContext = new ComponentContext(
+                state,
+                component: null,
+                rowIndices: null,
+                dataElementIdentifier: dataElement
+            );
+            var result = await ExpressionEvaluator.EvaluateExpression(state, expression, componentContext);
+            return result is true;
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e, "Failed to evaluate hideAppNameInPdf, defaulting to showing app name");
             return false;
         }
-
-        var expression = hideAppNameElement.Deserialize<Expression>(_jsonSerializerOptions);
-        var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
-        var state = await _layoutStateInit.Init(dataAccessor, taskId, language: language);
-
-        var layoutSet = _resources.GetLayoutSetForTask(taskId);
-        DataElementIdentifier? dataElement = layoutSet?.DataType is { } dataType
-            ? instance.Data.Find(d => d.DataType == dataType)
-            : null;
-
-        var componentContext = new ComponentContext(
-            state,
-            component: null,
-            rowIndices: null,
-            dataElementIdentifier: dataElement
-        );
-        var result = await ExpressionEvaluator.EvaluateExpression(state, expression, componentContext);
-        return result is true;
     }
 
     private static List<KeyValuePair<string, string>> CreateAutoPdfTaskIdsQueryParams(
