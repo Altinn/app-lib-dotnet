@@ -6,6 +6,7 @@ using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
@@ -31,6 +32,7 @@ public class PdfControllerTests
     private readonly string _taskId = "Task_1";
 
     private readonly Mock<IAppResources> _appResources = new();
+    private readonly Mock<ILayoutEvaluatorStateInitializer> _layoutStateInit = new();
     private readonly Mock<IDataClient> _dataClient = new();
     private readonly IOptions<PlatformSettings> _platformSettingsOptions = Options.Create<PlatformSettings>(new() { });
     private readonly Mock<IInstanceClient> _instanceClient = new();
@@ -89,7 +91,9 @@ public class PdfControllerTests
             generalSettingsOptions,
             _logger.Object,
             _authenticationContext.Object,
-            _translationService.Object
+            _translationService.Object,
+            _appResources.Object,
+            _layoutStateInit.Object
         );
         return pdfService;
     }

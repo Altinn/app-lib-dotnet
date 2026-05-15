@@ -6,6 +6,7 @@ using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
@@ -33,6 +34,7 @@ public class PdfServiceTests
     private const string HostName = "at22.altinn.cloud";
 
     private readonly Mock<IAppResources> _appResources = new();
+    private readonly Mock<ILayoutEvaluatorStateInitializer> _layoutStateInit = new();
     private readonly Mock<IDataClient> _dataClient = new();
     private readonly Mock<IHttpContextAccessor> _httpContextAccessor = new();
     private readonly Mock<IPdfGeneratorClient> _pdfGeneratorClient = new();
@@ -533,6 +535,8 @@ public class PdfServiceTests
                 appResources?.Object ?? _appResources.Object,
                 FakeLoggerXunit.Get<TranslationService>(_outputHelper)
             ),
+            appResources?.Object ?? _appResources.Object,
+            _layoutStateInit.Object,
             mockServiceProvider.Object,
             telemetrySink?.Object
         );
