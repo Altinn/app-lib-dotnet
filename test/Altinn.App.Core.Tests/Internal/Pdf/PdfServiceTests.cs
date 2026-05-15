@@ -480,7 +480,7 @@ public class PdfServiceTests
     [Fact]
     public async Task GenerateAndStorePdf_WithDisplayFooter_HideAppNameInPdfExpression_EvaluatesToTrue_FooterShouldNotContainAppName()
     {
-        // Arrange - expression ["equals","a","a"] always evaluates to true (hide app name)
+        // Arrange
         _appResources
             .Setup(s => s.GetLayoutSets())
             .Returns("""{"sets":[],"uiSettings":{"hideAppNameInPdf":["equals","a","a"]}}""");
@@ -523,7 +523,7 @@ public class PdfServiceTests
         // Act
         await target.GenerateAndStorePdf(instance, "Task_1", CancellationToken.None);
 
-        // Assert - _layoutStateInit was invoked and expression result hides app name
+        // Assert
         _layoutStateInit.Verify(
             s =>
                 s.Init(
