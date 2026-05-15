@@ -478,6 +478,74 @@ public class PdfServiceTests
     }
 
     [Fact]
+    public async Task GenerateAndStorePdf_WithDisplayFooter_HideAppNameInPdfExpression_EvaluatesToTrue_FooterShouldNotContainAppName()
+    {
+        // Arrange - expression ["equals","a","a"] always evaluates to true (hide app name)
+        _appResources
+            .Setup(s => s.GetLayoutSets())
+            .Returns("""{"sets":[],"uiSettings":{"hideAppNameInPdf":["equals","a","a"]}}""");
+
+        var realStateInit = new LayoutEvaluatorStateInitializer(
+            _appResources.Object,
+            new TranslationService(
+                new AppIdentifier("digdir", "not-really-an-app"),
+                _appResources.Object,
+                FakeLoggerXunit.Get<TranslationService>(_outputHelper)
+            ),
+            Mock.Of<IAppMetadata>(),
+            Options.Create(new FrontEndSettings())
+        );
+        _layoutStateInit
+            .Setup(s =>
+                s.Init(It.IsAny<IInstanceDataAccessor>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>())
+            )
+            .Returns<IInstanceDataAccessor, string?, string?, string?>(realStateInit.Init);
+
+        _pdfGeneratorClient.Setup(s =>
+            s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
+        );
+        _generalSettingsOptions.Value.ExternalAppBaseUrl = "https://{org}.apps.{hostName}/{org}/{app}";
+
+        var target = SetupPdfService(
+            pdfGeneratorClient: _pdfGeneratorClient,
+            generalSettingsOptions: _generalSettingsOptions,
+            pdfGeneratorSettingsOptions: Options.Create(new PdfGeneratorSettings { DisplayFooter = true })
+        );
+
+        Instance instance = new()
+        {
+            Id = $"509378/{Guid.NewGuid()}",
+            AppId = "digdir/not-really-an-app",
+            Org = "digdir",
+            Data = [],
+        };
+
+        // Act
+        await target.GenerateAndStorePdf(instance, "Task_1", CancellationToken.None);
+
+        // Assert - _layoutStateInit was invoked and expression result hides app name
+        _layoutStateInit.Verify(
+            s =>
+                s.Init(
+                    It.IsAny<IInstanceDataAccessor>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>()
+                ),
+            Times.Once
+        );
+        _pdfGeneratorClient.Verify(
+            s =>
+                s.GeneratePdf(
+                    It.IsAny<Uri>(),
+                    It.Is<string?>(footer => footer != null && !footer.Contains("not-really-an-app")),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
     public async Task GenerateAndStorePdf_WithDisplayFooter_HideAppNameInPdfTrue_FooterShouldNotContainAppName()
     {
         // Arrange
