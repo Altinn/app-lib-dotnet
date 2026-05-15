@@ -1,17 +1,16 @@
-#nullable disable
-using Altinn.App.Core.Features.Validation;
+﻿using Altinn.App.Core.Features.Validation;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 
 namespace Altinn.App.Core.Tests.Features.Validators;
 
-public class NullInstantiationValidatorTests
+public class NullCopyInstanceValidatorTests
 {
     [Fact]
-    public async Task NullInstantiationTest_Validation_returns_null()
+    public async Task NullCopyInstanceTest_Validation_returns_null()
     {
         // Arrange
-        var nullInstantiation = new NullInstantiationValidator();
+        var nullInstantiation = new NullCopyInstanceValidator();
 
         // Act
         var result = await nullInstantiation.Validate(new Instance());

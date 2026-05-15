@@ -122,6 +122,7 @@ internal sealed record InstancesControllerFixture(IServiceProvider ServiceProvid
         services.AddSingleton(new Mock<IAppModel>(MockBehavior.Strict).Object);
         services.AddSingleton(new Mock<IInstantiationProcessor>(MockBehavior.Loose).Object);
         services.AddSingleton(new Mock<IInstantiationValidator>(MockBehavior.Strict).Object);
+        services.AddSingleton(new Mock<ICopyInstanceValidator>(MockBehavior.Strict).Object);
         services.AddSingleton(new Mock<IPDP>(MockBehavior.Strict).Object);
         services.AddSingleton(new Mock<IEventsClient>(MockBehavior.Strict).Object);
         services.AddSingleton(new Mock<IPrefill>(MockBehavior.Loose).Object);
