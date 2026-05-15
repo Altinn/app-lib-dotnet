@@ -451,7 +451,12 @@ public class PdfService : IPdfService
             var result = await ExpressionEvaluator.EvaluateExpression(state, expression, componentContext);
             return result is true;
         }
-        catch (Exception e)
+        catch (JsonException e)
+        {
+            _logger.LogWarning(e, "Failed to evaluate hideAppNameInPdf, defaulting to showing app name");
+            return false;
+        }
+        catch (InvalidOperationException e)
         {
             _logger.LogWarning(e, "Failed to evaluate hideAppNameInPdf, defaulting to showing app name");
             return false;
