@@ -7,7 +7,7 @@ namespace Altinn.App.Core.Features.Options.Altinn2Provider;
 /// <summary>
 /// Implementation of a IAppOptionsProviders for the old altinn2 apis
 /// </summary>
-public class Altinn2CodeListProvider : IAppOptionsProvider
+internal class Altinn2CodeListProvider : IAppOptionsProvider
 {
     /// <summary>
     /// Mapping function to get from the altinn2 model to altinn 3 option
