@@ -402,27 +402,27 @@ public class PdfService : IPdfService
 
     private async Task<bool> GetHideAppNameInPdf(Instance instance, string taskId, string? language)
     {
-        string? layoutSetsString = _resources.GetLayoutSets();
-        if (string.IsNullOrEmpty(layoutSetsString))
+        string? layoutSets = _resources.GetLayoutSets();
+        if (string.IsNullOrEmpty(layoutSets))
             return false;
 
         try
         {
             using var jsonDoc = JsonDocument.Parse(
-                layoutSetsString,
+                layoutSets,
                 new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip }
             );
             var root = jsonDoc.RootElement;
 
             if (
-                !root.TryGetProperty("uiSettings", out var uiSettingsElement)
-                || !uiSettingsElement.TryGetProperty("hideAppNameInPdf", out var hideAppNameElement)
+                !root.TryGetProperty("uiSettings", out var uiSettings)
+                || !uiSettings.TryGetProperty("hideAppNameInPdf", out var hideAppName)
             )
                 return false;
 
-            if (hideAppNameElement.ValueKind == JsonValueKind.True)
+            if (hideAppName.ValueKind == JsonValueKind.True)
                 return true;
-            if (hideAppNameElement.ValueKind == JsonValueKind.False)
+            if (hideAppName.ValueKind == JsonValueKind.False)
                 return false;
 
             if (_instanceDataUnitOfWorkInitializer is null)
@@ -433,7 +433,7 @@ public class PdfService : IPdfService
                 return false;
             }
 
-            var expression = hideAppNameElement.Deserialize<Expression>(_jsonSerializerOptions);
+            var expression = hideAppName.Deserialize<Expression>(_jsonSerializerOptions);
             var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
             var state = await _layoutStateInit.Init(dataAccessor, taskId, language: language);
 

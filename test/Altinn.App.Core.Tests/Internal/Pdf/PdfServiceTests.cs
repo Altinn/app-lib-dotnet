@@ -624,7 +624,7 @@ public class PdfServiceTests
     [Fact]
     public async Task GenerateAndStorePdf_WithDisplayFooter_NoUiSettings_FooterShouldContainAppName()
     {
-        // Arrange - GetLayoutSets returns null by default, app name shown
+        // Arrange
         _pdfGeneratorClient.Setup(s =>
             s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
         );
@@ -681,10 +681,10 @@ public class PdfServiceTests
             Org = "digdir",
         };
 
-        // Act - should not throw despite malformed JSON
+        // Act
         await target.GenerateAndStorePdf(instance, "Task_1", CancellationToken.None);
 
-        // Assert - PDF generated with app name visible (fail closed)
+        // Assert
         _pdfGeneratorClient.Verify(
             s =>
                 s.GeneratePdf(
