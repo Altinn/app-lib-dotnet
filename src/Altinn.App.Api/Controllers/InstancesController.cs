@@ -863,6 +863,11 @@ public class InstancesController : ControllerBase
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(targetInstance);
         if (validationResult != null && !validationResult.Valid)
         {
+            _logger.LogWarning(
+                "InstantiationValidator rejected instantiation for party {PartyId}: {@ValidationResult}",
+                instanceOwnerPartyId,
+                validationResult
+            );
             await TranslateValidationResult(validationResult, language);
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
@@ -871,6 +876,11 @@ public class InstancesController : ControllerBase
         validationResult = await copyInstanceValidator.Validate(sourceInstance);
         if (validationResult != null && !validationResult.Valid)
         {
+            _logger.LogWarning(
+                "CopyInstanceValidator rejected instantiation for party {PartyId}: {@ValidationResult}",
+                instanceOwnerPartyId,
+                validationResult
+            );
             await TranslateValidationResult(validationResult, language);
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
@@ -1214,12 +1224,7 @@ public class InstancesController : ControllerBase
                     CancellationToken.None
                 );
 
-                await UpdatePresentationTextsOnInstance(
-                    application.PresentationFields,
-                    targetInstance,
-                    dt.Id,
-                    data
-                );
+                await UpdatePresentationTextsOnInstance(application.PresentationFields, targetInstance, dt.Id, data);
                 await UpdateDataValuesOnInstance(application.DataFields, targetInstance, dt.Id, data);
             }
         }
