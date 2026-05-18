@@ -997,7 +997,7 @@ public static partial class ExpressionEvaluator
     /// <param name="a">First operand</param>
     /// <param name="b">Second operand</param>
     /// <param name="operation">Function that performs the arithmetic operation on two decimals</param>
-    /// <returns>Result of the operation as double, or null if any operand is null</returns>
+    /// <returns>Result of the operation as double</returns>
     private static double PerformArithmetic(double? a, double? b, Func<decimal, decimal, decimal> operation)
     {
         double aDouble = a ?? 0;
