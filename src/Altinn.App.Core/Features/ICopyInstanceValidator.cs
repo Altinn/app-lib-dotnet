@@ -4,7 +4,7 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Core.Features;
 
 /// <summary>
-/// ICopyInstanceValidator is designed to handle specific validation scenarioes that is just relevant while copying an instance
+/// ICopyInstanceValidator is designed to handle specific validation scenarios that is just relevant while copying an instance
 /// </summary>
 [ImplementableByApps]
 public interface ICopyInstanceValidator
