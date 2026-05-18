@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Validation;
 
 /// <summary>
 /// Default implementation of the ICopyInstanceValidator interface.
-/// This implementation does not do any thing to the data
+/// This implementation does not do anything to the data
 /// </summary>
 public class NullCopyInstanceValidator : ICopyInstanceValidator
 {

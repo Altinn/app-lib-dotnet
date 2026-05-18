@@ -583,7 +583,7 @@ public class InstancesController : ControllerBase
         if (
             isCopyRequest
             && party.PartyId.ToString(CultureInfo.InvariantCulture)
-                != instansiationInstance?.SourceInstanceId?.Split("/")[0]
+                != instansiationInstance.SourceInstanceId?.Split("/")[0]
         )
         {
             return BadRequest("It is not possible to copy instances between instance owners.");
@@ -672,7 +672,7 @@ public class InstancesController : ControllerBase
             if (isCopyRequest)
             {
                 string[] sourceSplit =
-                    instansiationInstance?.SourceInstanceId?.Split("/")
+                    instansiationInstance.SourceInstanceId?.Split("/")
                     ?? throw new ArgumentException("SourceInstanceId is null or not in the correct format");
                 Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
 
@@ -815,9 +815,9 @@ public class InstancesController : ControllerBase
             return Forbid();
         }
 
-        ApplicationMetadata applicationMetadata = await _appMetadata.GetApplicationMetadata();
+        ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
 
-        if (applicationMetadata.CopyInstanceSettings?.Enabled is null or false)
+        if (application.CopyInstanceSettings?.Enabled is null or false)
         {
             return BadRequest(
                 "Creating instance based on a copy from an archived instance is not enabled for this app."
@@ -887,7 +887,7 @@ public class InstancesController : ControllerBase
             CancellationToken.None
         );
 
-        await CopyDataFromSourceInstance(applicationMetadata, targetInstance, sourceInstance);
+        await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
 
         targetInstance = await _instanceClient.GetInstance(
             targetInstance,
@@ -1153,7 +1153,7 @@ public class InstancesController : ControllerBase
     }
 
     private async Task CopyDataFromSourceInstance(
-        ApplicationMetadata applicationMetadata,
+        ApplicationMetadata application,
         Instance targetInstance,
         Instance sourceInstance
     )
@@ -1163,14 +1163,14 @@ public class InstancesController : ControllerBase
         string[] sourceSplit = sourceInstance.Id.Split("/");
         Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
 
-        List<DataType> dts = applicationMetadata
+        List<DataType> dts = application
             .DataTypes.Where(dt => dt.AppLogic?.ClassRef != null)
             .Where(dt =>
                 dt.TaskId != null
                 && dt.TaskId.Equals(targetInstance.Process.CurrentTask.ElementId, StringComparison.Ordinal)
             )
             .ToList();
-        List<string> excludedDataTypes = applicationMetadata.CopyInstanceSettings.ExcludedDataTypes;
+        List<string> excludedDataTypes = application.CopyInstanceSettings.ExcludedDataTypes;
 
         foreach (DataElement de in sourceInstance.Data)
         {
@@ -1190,9 +1190,9 @@ public class InstancesController : ControllerBase
                     CancellationToken.None
                 );
 
-                if (applicationMetadata.CopyInstanceSettings.ExcludedDataFields != null)
+                if (application.CopyInstanceSettings.ExcludedDataFields != null)
                 {
-                    DataHelper.ResetDataFields(applicationMetadata.CopyInstanceSettings.ExcludedDataFields, data);
+                    DataHelper.ResetDataFields(application.CopyInstanceSettings.ExcludedDataFields, data);
                 }
 
                 await _prefillService.PrefillDataModel(
@@ -1215,16 +1215,16 @@ public class InstancesController : ControllerBase
                 );
 
                 await UpdatePresentationTextsOnInstance(
-                    applicationMetadata.PresentationFields,
+                    application.PresentationFields,
                     targetInstance,
                     dt.Id,
                     data
                 );
-                await UpdateDataValuesOnInstance(applicationMetadata.DataFields, targetInstance, dt.Id, data);
+                await UpdateDataValuesOnInstance(application.DataFields, targetInstance, dt.Id, data);
             }
         }
 
-        if (applicationMetadata.CopyInstanceSettings?.IncludeAttachments != true)
+        if (application.CopyInstanceSettings?.IncludeAttachments != true)
         {
             return;
         }
@@ -1232,7 +1232,7 @@ public class InstancesController : ControllerBase
         // Copy binary data elements (files/attachments)
         // Error handling strategy: Continue processing other attachments even if individual ones fail
         // This ensures partial success rather than complete failure when some attachments cannot be copied
-        List<DataType> binaryDataTypes = applicationMetadata
+        List<DataType> binaryDataTypes = application
             .DataTypes.Where(dt => dt.AppLogic?.ClassRef == null)
             .Where(dt =>
                 dt.TaskId != null
