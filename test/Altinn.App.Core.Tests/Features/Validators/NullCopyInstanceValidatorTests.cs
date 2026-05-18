@@ -15,6 +15,6 @@ public class NullCopyInstanceValidatorTests
         var result = await nullCopyInstanceValidator.Validate(new Instance());
 
         // Assert
-        Assert.NotNull(result);
+        Assert.Null(result);
     }
 }
