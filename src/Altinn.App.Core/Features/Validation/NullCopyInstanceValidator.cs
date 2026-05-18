@@ -10,8 +10,8 @@ namespace Altinn.App.Core.Features.Validation;
 public class NullCopyInstanceValidator : ICopyInstanceValidator
 {
     /// <inheritdoc />
-    public async Task<InstantiationValidationResult?> Validate(Instance sourceInstance)
+    public Task<InstantiationValidationResult?> Validate(Instance sourceInstance)
     {
-        return await Task.FromResult((InstantiationValidationResult?)null);
+        return Task.FromResult((InstantiationValidationResult?)null);
     }
 }

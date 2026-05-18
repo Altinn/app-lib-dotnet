@@ -451,13 +451,14 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         OutputHelper.WriteLine(responseContent);
         response.Should().HaveStatusCode(HttpStatusCode.Created);
         var instance = JsonSerializer.Deserialize<Instance>(responseContent, JsonSerializerOptions)!;
-        instance.Should().NotBeNull();
-        instance.Id.Should().NotBeNullOrEmpty();
-        instance.Status.Should().NotBeNull();
-        instance.Status.ReadStatus.Should().Be(ReadStatus.UpdatedSinceLastReview);
-        instance.Status.Substatus.Should().NotBeNull();
-        instance.Status.Substatus!.Label.Should().Be("min label");
-        instance.Status.Substatus!.Description.Should().Be("min beskrivelse");
+        Assert.NotNull(instance);
+        Assert.NotNull(instance.Id);
+        Assert.NotEmpty(instance.Id);
+        Assert.NotNull(instance.Status);
+        Assert.Equal(ReadStatus.UpdatedSinceLastReview, instance.Status.ReadStatus);
+        Assert.NotNull(instance.Status.Substatus);
+        Assert.Equal("min label", instance.Status.Substatus!.Label);
+        Assert.Equal("min beskrivelse", instance.Status.Substatus!.Description);
 
         TestData.DeleteInstanceAndData(org, app, instance.Id);
     }
@@ -480,11 +481,12 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
             $"{org}/{app}/instances?instanceOwnerPartyId={instanceOwnerPartyId}",
             content
         );
-        response.Should().HaveStatusCode(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var responseContent = await response.Content.ReadAsStringAsync();
         var instance = JsonSerializer.Deserialize<Instance>(responseContent, JsonSerializerOptions);
-        instance.Should().NotBeNull();
-        instance!.Id.Should().NotBeNullOrEmpty();
+        Assert.NotNull(instance);
+        Assert.NotNull(instance.Id);
+        Assert.NotEmpty(instance.Id);
 
         TestData.DeleteInstanceAndData(org, app, instance.Id);
     }
@@ -515,8 +517,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 
         // Create instance
         var createResponse = await client.PostAsync($"{org}/{app}/instances/create", content);
-        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
-        createResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden, createResponseContent);
+        Assert.Equal(HttpStatusCode.Forbidden, createResponse.StatusCode);
     }
 
     [Fact]
@@ -581,7 +582,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         // Create copy instance
         var createResponse = await client.PostAsync($"{org}/{app}/instances/create", content);
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
-        createResponse.StatusCode.Should().Be(HttpStatusCode.Created, createResponseContent);
+        Assert.Equal(HttpStatusCode.Created,createResponse.StatusCode);
 
         TestData.DeleteInstanceAndData(org, app, sourceInstance.Id);
 
@@ -666,8 +667,8 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(createResponseContent);
 
-        createResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden, createResponseContent);
-        createResponseContent.Should().Contain("Copy validation failed for test purposes");
+        Assert.Equal(HttpStatusCode.Forbidden, createResponse.StatusCode);
+        Assert.Contains("Copy validation failed for test purposes", createResponseContent);
 
         // Verify the validator was called
         copyInstanceValidatorMock.Verify(v => v.Validate(It.IsAny<Instance>()), Times.Once);
@@ -697,7 +698,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
             $"/{org}/{app}/instances/{instanceId}/data/{dataGuid}",
             updateDataElementContent
         );
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     private async Task CompleteInstance(string org, string app, HttpClient client, string token, string instanceId)
@@ -707,6 +708,6 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         using var nextResponse = await client.PutAsync($"{org}/{app}/instances/{instanceId}/process/next", null);
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(nextResponseContent);
-        nextResponse.Should().HaveStatusCode(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, nextResponse.StatusCode);
     }
 }
