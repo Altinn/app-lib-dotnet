@@ -305,10 +305,10 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 
         var telemetrySnapshot = await GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 0);
 
-        var activity = Assert.Single(
-            telemetrySnapshot.Activities,
-            a => a.Name == "SerializationService.DeserializeXml"
+        var activity = telemetrySnapshot.Activities?.SingleOrDefault(a =>
+            a.Name == "SerializationService.DeserializeXml"
         );
+        Assert.NotNull(activity);
         var exceptionEvent = Assert.Single(activity.Events, e => e.Name == "exception");
         var exceptionTypeTag = Assert.Single(exceptionEvent.Tags, t => t.Key == "exception.type");
         Assert.Equal("System.InvalidOperationException", exceptionTypeTag.Value);
