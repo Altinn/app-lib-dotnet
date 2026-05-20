@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Internal.Files;
 /// <summary>
 /// File service
 /// </summary>
-public interface IFileService
+internal interface IFileService
 {
     /// <summary>
     /// Run file analysis and validation

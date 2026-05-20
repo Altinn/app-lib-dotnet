@@ -8,7 +8,7 @@ using Altinn.Platform.Storage.Interface.Models;
 namespace Altinn.App.Core.Internal.Files;
 
 /// <inheritdoc />
-public class FileService(IFileAnalysisService fileAnalyserService, IFileValidationService fileValidationService)
+internal class FileService(IFileAnalysisService fileAnalyserService, IFileValidationService fileValidationService)
     : IFileService
 {
     /// <inheritdoc />

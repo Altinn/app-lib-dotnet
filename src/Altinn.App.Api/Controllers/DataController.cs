@@ -70,8 +70,7 @@ public class DataController : ControllerBase
         InternalPatchService patchService,
         ModelSerializationService modelDeserializer,
         IAuthenticationContext authenticationContext,
-        IServiceProvider serviceProvider,
-        IFileService fileService
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
@@ -86,7 +85,7 @@ public class DataController : ControllerBase
         _modelDeserializer = modelDeserializer;
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
-        _fileService = fileService;
+        _fileService = serviceProvider.GetRequiredService<IFileService>();
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
         _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }

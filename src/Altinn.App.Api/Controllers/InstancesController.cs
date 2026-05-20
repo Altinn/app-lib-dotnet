@@ -104,8 +104,7 @@ public class InstancesController : ControllerBase
         InternalPatchService patchService,
         INotificationService notificationService,
         ITranslationService translationService,
-        IServiceProvider serviceProvider,
-        IFileService fileService
+        IServiceProvider serviceProvider
     )
     {
         _logger = logger;
@@ -127,7 +126,7 @@ public class InstancesController : ControllerBase
         _patchService = patchService;
         _notificationService = notificationService;
         _translationService = translationService;
-        _fileService = fileService;
+        _fileService = serviceProvider.GetRequiredService<IFileService>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
         _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();

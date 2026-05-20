@@ -3313,18 +3313,6 @@ namespace Altinn.App.Core.Internal.Expressions
         public System.Threading.Tasks.Task<Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState> Init(Altinn.Platform.Storage.Interface.Models.Instance instance, object data, string? layoutSetId, string? gatewayAction = null) { }
     }
 }
-namespace Altinn.App.Core.Internal.Files
-{
-    public class FileService : Altinn.App.Core.Internal.Files.IFileService
-    {
-        public FileService(Altinn.App.Core.Features.FileAnalyzis.IFileAnalysisService fileAnalyserService, Altinn.App.Core.Internal.Validation.IFileValidationService fileValidationService) { }
-        public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssueWithSource>?> RunFileAnalysisAndValidation(Altinn.Platform.Storage.Interface.Models.DataType dataTypeFromMetadata, byte[] bytes, string? fileName) { }
-    }
-    public interface IFileService
-    {
-        System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssueWithSource>?> RunFileAnalysisAndValidation(Altinn.Platform.Storage.Interface.Models.DataType dataTypeFromMetadata, byte[] bytes, string? fileName);
-    }
-}
 namespace Altinn.App.Core.Internal.Instances
 {
     public interface IInstanceClient
