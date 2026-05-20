@@ -1174,7 +1174,7 @@ namespace Altinn.App.Core.Features
     }
     public interface ICopyInstanceValidator
     {
-        System.Threading.Tasks.Task<Altinn.App.Core.Models.Validation.InstantiationValidationResult?> Validate(Altinn.Platform.Storage.Interface.Models.Instance sourceInstance);
+        System.Threading.Tasks.Task<Altinn.App.Core.Models.Validation.InstantiationValidationResult?> Validate(Altinn.App.Core.Features.IInstanceDataAccessor sourceInstanceDataAccessor);
     }
     public interface IDataElementValidator
     {
@@ -2200,11 +2200,6 @@ namespace Altinn.App.Core.Features.Validation
                 "Success",
                 "Errors"})]
         System.Threading.Tasks.Task<System.ValueTuple<bool, System.Collections.Generic.IEnumerable<Altinn.App.Core.Models.Validation.ValidationIssue>>> Validate(Altinn.Platform.Storage.Interface.Models.DataType dataType, System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.FileAnalysis.FileAnalysisResult> fileAnalysisResults);
-    }
-    public class NullCopyInstanceValidator : Altinn.App.Core.Features.ICopyInstanceValidator
-    {
-        public NullCopyInstanceValidator() { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Validation.InstantiationValidationResult?> Validate(Altinn.Platform.Storage.Interface.Models.Instance sourceInstance) { }
     }
     public class NullInstantiationValidator : Altinn.App.Core.Features.IInstantiationValidator
     {

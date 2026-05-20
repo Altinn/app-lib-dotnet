@@ -700,9 +700,12 @@ public class InstancesController : ControllerBase
                     return BadRequest("It is not possible to copy an instance that isn't archived.");
                 }
 
-                var copyInstanceValidator = _appImplementationFactory.GetRequired<ICopyInstanceValidator>();
+                var copyInstanceValidator = _appImplementationFactory.Get<ICopyInstanceValidator>();
                 var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(source, null, null);
-                validationResult = await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork);
+                validationResult =
+                    copyInstanceValidator != null
+                        ? await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork)
+                        : null;
                 if (validationResult != null && !validationResult.Valid)
                 {
                     _logger.LogWarning(
@@ -873,9 +876,10 @@ public class InstancesController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
-        var copyInstanceValidator = _appImplementationFactory.GetRequired<ICopyInstanceValidator>();
+        var copyInstanceValidator = _appImplementationFactory.Get<ICopyInstanceValidator>();
         var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(sourceInstance, null, null);
-        validationResult = await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork);
+        validationResult =
+            copyInstanceValidator != null ? await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork) : null;
         if (validationResult != null && !validationResult.Valid)
         {
             _logger.LogWarning(
