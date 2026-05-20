@@ -23,7 +23,7 @@ public interface ICopyInstanceValidator
     /// }
     /// return null;
     /// </example>
-    /// <param name="sourceInstance">The source instance that is copied from</param>
+    /// <param name="sourceInstanceDataAccessor">The instance data accessor of the source copied from</param>
     /// <returns>The validation result object (null if no errors)</returns>
-    public Task<InstantiationValidationResult?> Validate(Instance sourceInstance);
+    public Task<InstantiationValidationResult?> Validate(IInstanceDataAccessor sourceInstanceDataAccessor);
 }

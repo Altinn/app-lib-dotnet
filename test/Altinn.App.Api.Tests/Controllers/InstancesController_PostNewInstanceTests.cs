@@ -595,7 +595,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 
         var copyInstanceValidatorMock = new Mock<ICopyInstanceValidator>();
         copyInstanceValidatorMock
-            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .Setup(v => v.Validate(It.IsAny<IInstanceDataAccessor>()))
             .ReturnsAsync(
                 new InstantiationValidationResult
                 {
@@ -662,7 +662,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         Assert.Contains("Copy validation failed for test purposes", createResponseContent);
 
         // Verify the validator was called
-        copyInstanceValidatorMock.Verify(v => v.Validate(It.IsAny<Instance>()), Times.Once);
+        copyInstanceValidatorMock.Verify(v => v.Validate(It.IsAny<IInstanceDataAccessor>()), Times.Once);
 
         TestData.DeleteInstanceAndData(org, app, sourceInstance.Id);
     }

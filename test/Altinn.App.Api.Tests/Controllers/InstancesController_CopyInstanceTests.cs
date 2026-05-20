@@ -407,7 +407,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<ICopyInstanceValidator>()
-            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .Setup(v => v.Validate(It.IsAny<IInstanceDataAccessor>()))
             .ReturnsAsync(copyInstanceValidationResult);
 
         // Act
@@ -508,7 +508,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<ICopyInstanceValidator>()
-            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .Setup(v => v.Validate(It.IsAny<IInstanceDataAccessor>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
@@ -661,7 +661,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<ICopyInstanceValidator>()
-            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .Setup(v => v.Validate(It.IsAny<IInstanceDataAccessor>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
@@ -890,7 +890,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<ICopyInstanceValidator>()
-            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .Setup(v => v.Validate(It.IsAny<IInstanceDataAccessor>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
@@ -1118,7 +1118,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<ICopyInstanceValidator>()
-            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .Setup(v => v.Validate(It.IsAny<IInstanceDataAccessor>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()
@@ -1353,7 +1353,7 @@ public class InstancesController_CopyInstanceTests
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<ICopyInstanceValidator>()
-            .Setup(v => v.Validate(It.IsAny<Instance>()))
+            .Setup(v => v.Validate(It.IsAny<IInstanceDataAccessor>()))
             .ReturnsAsync(instantiationValidationResult);
         fixture
             .Mock<IProcessEngine>()

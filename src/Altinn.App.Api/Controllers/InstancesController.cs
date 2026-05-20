@@ -701,7 +701,8 @@ public class InstancesController : ControllerBase
                 }
 
                 var copyInstanceValidator = _appImplementationFactory.GetRequired<ICopyInstanceValidator>();
-                validationResult = await copyInstanceValidator.Validate(source);
+                var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(source, null, null);
+                validationResult = await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork);
                 if (validationResult != null && !validationResult.Valid)
                 {
                     _logger.LogWarning(
@@ -873,7 +874,8 @@ public class InstancesController : ControllerBase
         }
 
         var copyInstanceValidator = _appImplementationFactory.GetRequired<ICopyInstanceValidator>();
-        validationResult = await copyInstanceValidator.Validate(sourceInstance);
+        var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(sourceInstance, null, null);
+        validationResult = await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork);
         if (validationResult != null && !validationResult.Valid)
         {
             _logger.LogWarning(

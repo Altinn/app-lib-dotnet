@@ -1,5 +1,4 @@
 using Altinn.App.Core.Models.Validation;
-using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features.Validation;
 
@@ -10,7 +9,7 @@ namespace Altinn.App.Core.Features.Validation;
 public class NullCopyInstanceValidator : ICopyInstanceValidator
 {
     /// <inheritdoc />
-    public Task<InstantiationValidationResult?> Validate(Instance sourceInstance)
+    public Task<InstantiationValidationResult?> Validate(IInstanceDataAccessor sourceInstanceDataAccessor)
     {
         return Task.FromResult((InstantiationValidationResult?)null);
     }
