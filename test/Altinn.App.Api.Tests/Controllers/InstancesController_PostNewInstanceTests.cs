@@ -9,6 +9,8 @@ using Altinn.App.Api.Tests.Data;
 using Altinn.App.Api.Tests.Data.apps.tdd.contributer_restriction.models;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.FileAnalysis;
+using Altinn.App.Core.Features.Validation;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Models.Validation;
 using Altinn.Platform.Storage.Interface.Models;
@@ -74,6 +76,96 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
     }
 
     [Fact]
+    public async Task PostNewInstanceWithContent_ValidFilename_Succeeds()
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        string filename = "validfile.png";
+
+        OverrideServicesForThisTest = services =>
+        {
+            services.AddTransient<IFileAnalyser, FilenameAnalyserStub>();
+            services.AddTransient<IFileValidator, FilenameValidatorStub>();
+        };
+
+        HttpClient client = GetRootedClient(org, app);
+        string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
+
+        // Create instance data with valid filename
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent([1, 2, 5]);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+        {
+            Name = "\"specificFileType\"",
+            FileName = $"\"{filename}\"",
+        };
+        content.Add(fileContent);
+
+        // Create instance
+        var createResponse = await client.PostAsync(
+            $"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}",
+            content
+        );
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(createResponseContent);
+
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+        var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions)!;
+        var instanceId = createResponseParsed.Id;
+
+        // Verify the file data element was created - filename validation passed
+        var dataElement = Assert.Single(createResponseParsed.Data, d => d.DataType == "specificFileType");
+        Assert.Equal("image/png", dataElement.ContentType);
+
+        TestData.DeleteInstanceAndData(org, app, instanceId);
+    }
+
+    [Fact]
+    public async Task PostNewInstanceWithContent_InvalidFilename_Fails()
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        string filename = "malicious.exe";
+
+        OverrideServicesForThisTest = services =>
+        {
+            services.AddTransient<IFileAnalyser, FilenameAnalyserStub>();
+            services.AddTransient<IFileValidator, FilenameValidatorStub>();
+        };
+
+        HttpClient client = GetRootedClient(org, app);
+        string token = TestAuthentication.GetUserToken(userId: 1337, partyId: instanceOwnerPartyId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AuthorizationSchemes.Bearer, token);
+
+        // Create instance data with filename that has disallowed extension
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent([1, 2, 5]);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+        {
+            Name = "\"specificFileType\"",
+            FileName = $"\"{filename}\"",
+        };
+        content.Add(fileContent);
+
+        // Create instance
+        var createResponse = await client.PostAsync(
+            $"{org}/{app}/instances/?instanceOwnerPartyId={instanceOwnerPartyId}",
+            content
+        );
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        OutputHelper.WriteLine(createResponseContent);
+
+        Assert.Equal(HttpStatusCode.BadRequest, createResponse.StatusCode);
+        Assert.Contains("Invalid filename", createResponseContent);
+    }
+
+    [Fact]
     public async Task PostNewInstanceWithContent_EnsureDataIsPresent()
     {
         // Setup test data
@@ -111,16 +203,14 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         );
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
-
         var createResponseParsed = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions)!;
 
         // Verify Data id
-        var instanceId = createResponseParsed.Id;
         Assert.Equal(3, createResponseParsed.Data.Count);
-        var defaultDataElement = Assert.Single(createResponseParsed.Data, d => d.DataType == "default");
-        var dataGuid = defaultDataElement.Id;
 
         // Verify stored data
+        var instanceId = createResponseParsed.Id;
+        var dataGuid = createResponseParsed.Data.Single(x => x.DataType == "default").Id;
         var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
         Assert.Equal(HttpStatusCode.OK, readDataElementResponse.StatusCode);
         var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
@@ -128,14 +218,14 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         Assert.Equal(testName, readDataElementResponseParsed.Melding!.Name);
 
         // Verify specific file types
-        var specificFileType = Assert.Single(createResponseParsed.Data, d => d.DataType == "specificFileType");
+        var specificFileType = createResponseParsed.Data.Single(d => d.DataType == "specificFileType");
         Assert.Equal("image/png", specificFileType.ContentType);
         var pdfContent = await client.GetByteArrayAsync(
             $"/{org}/{app}/instances/{instanceId}/data/{specificFileType.Id}"
         );
         Assert.Equal(new byte[] { 1, 2, 5 }, pdfContent);
 
-        var pdfElement = Assert.Single(createResponseParsed.Data, d => d.ContentType == "application/pdf");
+        var pdfElement = createResponseParsed.Data.Single(d => d.ContentType == "application/pdf");
         Assert.Equal("9edd53de-f46f-40a1-bb4d-3efb93dc113d", pdfElement.DataType);
         var pngContent = await client.GetByteArrayAsync($"/{org}/{app}/instances/{instanceId}/data/{pdfElement.Id}");
         Assert.Equal(new byte[] { 1, 2, 4 }, pngContent);
@@ -181,7 +271,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "permissive-app";
         int instanceOwnerPartyId = token.PartyId;
 
-        OverrideServicesForThisTest = (services) =>
+        OverrideServicesForThisTest = services =>
         {
             services.AddTelemetrySink(
                 additionalActivitySources: source => source.Name == "Microsoft.AspNetCore",
@@ -201,14 +291,14 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         );
         var instanceId = createResponseParsed.Id;
         Assert.Single(createResponseParsed.Data);
-        var dataGuid = createResponseParsed.Data.First().Id;
 
         // Verify stored data
+        var dataGuid = createResponseParsed.Data.First().Id;
         var readDataElementResponse = await client.GetAsync($"/{org}/{app}/instances/{instanceId}/data/{dataGuid}");
         Assert.Equal(HttpStatusCode.OK, readDataElementResponse.StatusCode);
         var readDataElementResponseContent = await readDataElementResponse.Content.ReadAsStringAsync();
         var readDataElementResponseParsed = JsonSerializer.Deserialize<Skjema>(readDataElementResponseContent)!;
-        Assert.Null(readDataElementResponseParsed.Melding); // No content yet
+        Assert.Null(readDataElementResponseParsed.Melding);
         TestData.DeleteInstanceAndData(org, app, instanceId);
 
         await Verify(await GetTelemetrySnapshot(numberOfActivities: 2, numberOfMetrics: 2))
@@ -305,13 +395,13 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 
         var telemetrySnapshot = await GetTelemetrySnapshot(numberOfActivities: 1, numberOfMetrics: 0);
 
-        var activity = telemetrySnapshot.Activities?.SingleOrDefault(a =>
-            a.Name == "SerializationService.DeserializeXml"
+        var activity = Assert.Single(
+            telemetrySnapshot.Activities!,
+            a => a.Name == "SerializationService.DeserializeXml"
         );
-        Assert.NotNull(activity);
-        var exceptionEvent = Assert.Single(activity.Events, e => e.Name == "exception");
-        var exceptionTypeTag = Assert.Single(exceptionEvent.Tags, t => t.Key == "exception.type");
-        Assert.Equal("System.InvalidOperationException", exceptionTypeTag.Value);
+        var activityEvent = Assert.Single(activity.Events, e => e.Name == "exception");
+        var tag = Assert.Single(activityEvent.Tags, t => t.Key == "exception.type");
+        Assert.Equal("System.InvalidOperationException", tag.Value);
     }
 
     [Fact]
@@ -443,7 +533,6 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var instance = JsonSerializer.Deserialize<Instance>(responseContent, JsonSerializerOptions)!;
         Assert.NotNull(instance);
-        Assert.NotNull(instance.Id);
         Assert.NotEmpty(instance.Id);
         Assert.NotNull(instance.Status);
         Assert.Equal(ReadStatus.UpdatedSinceLastReview, instance.Status.ReadStatus);
@@ -700,5 +789,63 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var nextResponseContent = await nextResponse.Content.ReadAsStringAsync();
         OutputHelper.WriteLine(nextResponseContent);
         Assert.Equal(HttpStatusCode.OK, nextResponse.StatusCode);
+    }
+}
+
+public class FilenameAnalyserStub : IFileAnalyser
+{
+    public string Id { get; private set; } = "mimeTypeAnalyser";
+
+    public Task<FileAnalysisResult> Analyse(Stream stream, string? filename = null)
+    {
+        return Task.FromResult(
+            new FileAnalysisResult(Id)
+            {
+                MimeType = "image/png",
+                Filename = filename,
+                Extensions = new List<string>() { "png" },
+            }
+        );
+    }
+}
+
+public class FilenameValidatorStub : IFileValidator
+{
+    public string Id { get; private set; } = "mimeTypeValidator";
+
+    public Task<(bool Success, IEnumerable<ValidationIssue> Errors)> Validate(
+        DataType dataType,
+        IEnumerable<FileAnalysisResult> fileAnalysisResults
+    )
+    {
+        List<ValidationIssue> errors = new();
+
+        var fileAnalysisResult = fileAnalysisResults.FirstOrDefault();
+        var filename = fileAnalysisResult?.Filename;
+
+        if (string.IsNullOrEmpty(filename))
+        {
+            return Task.FromResult((true, (IEnumerable<ValidationIssue>)errors));
+        }
+
+        // Check for disallowed file extensions (simulating filename validation)
+        string[] disallowedExtensions = [".exe", ".bat", ".sh", ".cmd", ".ps1"];
+        string extension = Path.GetExtension(filename).ToLowerInvariant();
+
+        if (disallowedExtensions.Contains(extension))
+        {
+            ValidationIssue error = new()
+            {
+                Source = ValidationIssueSources.File,
+                Code = ValidationIssueCodes.DataElementCodes.InvalidFileNameFormat,
+                Severity = ValidationIssueSeverity.Error,
+                Description = $"Invalid filename: '{filename}' has a disallowed extension '{extension}'.",
+            };
+
+            errors.Add(error);
+            return Task.FromResult((false, (IEnumerable<ValidationIssue>)errors));
+        }
+
+        return Task.FromResult((true, (IEnumerable<ValidationIssue>)errors));
     }
 }
