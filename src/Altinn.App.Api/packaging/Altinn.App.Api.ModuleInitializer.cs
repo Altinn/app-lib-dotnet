@@ -10,9 +10,14 @@ internal static class AltinnAppApiModuleInitializer
 #pragma warning restore CA2255
     internal static void Initialize()
     {
-        typeof(Altinn.App.Api.Extensions.ServiceCollectionExtensions)
-            .Assembly.GetType("Altinn.App.Api.Infrastructure.Telemetry.AppRequestRootPropagation", throwOnError: true)!
-            .GetMethod("Install", BindingFlags.NonPublic | BindingFlags.Static)!
-            .Invoke(null, null);
+        var propagationType = typeof(Altinn.App.Api.Extensions.ServiceCollectionExtensions).Assembly.GetType(
+            "Altinn.App.Api.Infrastructure.Telemetry.AppRequestRootPropagation",
+            throwOnError: true
+        )!;
+        var installMethod =
+            propagationType.GetMethod("Install", BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new System.MissingMethodException(propagationType.FullName, "Install");
+
+        installMethod.Invoke(null, null);
     }
 }

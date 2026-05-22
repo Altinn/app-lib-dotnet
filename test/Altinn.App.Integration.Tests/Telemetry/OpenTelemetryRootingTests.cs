@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 namespace Altinn.App.Integration.Tests.Telemetry;
 
 [Trait("Category", "Integration")]
-public class OpenTelemetryRootingTests(ITestOutputHelper _output)
+public sealed class OpenTelemetryRootingTests(ITestOutputHelper _output)
 {
     private const string IncomingTraceId = "ac256066b49c4cb79dc4b83b9616f73c";
     private const string IncomingParentSpanId = "cca043edb2398eb2";

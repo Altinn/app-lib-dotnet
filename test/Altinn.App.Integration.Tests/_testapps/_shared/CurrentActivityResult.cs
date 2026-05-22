@@ -1,6 +1,6 @@
 namespace TestApp.Shared;
 
-public sealed class CurrentActivityResult
+internal sealed class CurrentActivityResult
 {
     public string? TraceId { get; set; }
     public string? SpanId { get; set; }

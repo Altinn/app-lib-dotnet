@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Trace;
 
-public static class OpenTelemetrySamplerConfiguration
+internal static class OpenTelemetrySamplerConfiguration
 {
     public static void RegisterServices(IServiceCollection services)
     {
