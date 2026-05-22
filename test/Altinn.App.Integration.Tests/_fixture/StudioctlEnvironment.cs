@@ -202,6 +202,11 @@ internal sealed class StudioctlEnvironmentLease : IAsyncDisposable
 internal sealed class StudioctlAppProcess : IAsyncDisposable
 {
     private static readonly TimeSpan _stopTimeout = TimeSpan.FromSeconds(10);
+    private static readonly HashSet<string> _reservedEnvironmentVariables = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "AppFixture__ConfigurationPath",
+        "NUGET_PACKAGES",
+    };
 
     private readonly ILogger _logger;
 
@@ -426,7 +431,7 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
         {
             foreach (var (key, value) in environmentVariables)
             {
-                if (key is "AppFixture__ConfigurationPath" or "NUGET_PACKAGES")
+                if (_reservedEnvironmentVariables.Contains(key))
                     throw new InvalidOperationException($"Environment variable '{key}' is reserved by the fixture.");
 
                 process.StartInfo.Environment[key] = value;

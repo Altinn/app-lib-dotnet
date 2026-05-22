@@ -46,7 +46,6 @@
     <!-- These MSBuild props are applied to the app when they reference the Altinn.App.Api package. Used for <AdditionalFile /> inclusions etc. -->
     <Compile Remove="packaging/Altinn.App.Api.ModuleInitializer.cs" />
     <None Include="packaging/Altinn.App.Api.props" Pack="true" PackagePath="build/" Visible="true" Condition="'$(MinVerVersionOverride)'==''" />
-    <None Include="packaging/Altinn.App.Api.props" Pack="true" PackagePath="buildTransitive/" Visible="true" Condition="'$(MinVerVersionOverride)'==''" />
     <None Include="packaging/Altinn.App.Api.targets" Pack="true" PackagePath="buildTransitive/" Visible="true" Condition="'$(MinVerVersionOverride)'==''" />
     <None Include="packaging/Altinn.App.Api.ModuleInitializer.cs" Pack="true" PackagePath="buildTransitive/" Visible="true" Condition="'$(MinVerVersionOverride)'==''" />
     <!--
@@ -54,7 +53,6 @@
       The props file name must match the package ID for the package it is included in.
      -->
     <None Include="packaging/Altinn.App.Api.Experimental.props" Pack="true" PackagePath="build/" Visible="true" Condition="'$(MinVerVersionOverride)'!=''" />
-    <None Include="packaging/Altinn.App.Api.Experimental.props" Pack="true" PackagePath="buildTransitive/" Visible="true" Condition="'$(MinVerVersionOverride)'!=''" />
     <None Include="packaging/Altinn.App.Api.targets" Pack="true" PackagePath="buildTransitive/Altinn.App.Api.Experimental.targets" Visible="true" Condition="'$(MinVerVersionOverride)'!=''" />
     <None Include="packaging/Altinn.App.Api.ModuleInitializer.cs" Pack="true" PackagePath="buildTransitive/" Visible="true" Condition="'$(MinVerVersionOverride)'!=''" />
   </ItemGroup>
