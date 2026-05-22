@@ -300,9 +300,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 .ReturnsAsync(instanceOwnerParty);
             configResolverMock
                 .Setup(x => x.GetCaseFileClassifications(It.IsAny<Authenticated>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(
-                    (IReadOnlyList<Klassifikasjon>)[instanceOwnerClassification, .. additionalClassifications ?? []]
-                );
+                .ReturnsAsync([instanceOwnerClassification, .. additionalClassifications ?? []]);
 
             var payloadGenerator = new FiksArkivDefaultPayloadGenerator(
                 appMetadataMock.Object,
