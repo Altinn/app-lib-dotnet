@@ -193,7 +193,11 @@ public static class TestingApis
                     var service =
                         serviceProvider.GetRequiredService<Altinn.App.Api.Infrastructure.Middleware.ScopeAuthorizationService>();
                     var metadata = service
-                        .Metadata.Where(endpoint => endpoint.Endpoint != "POST /test/fixture-configuration/reload")
+                        .Metadata.Where(endpoint =>
+                            endpoint.Endpoint
+                                is not "POST /test/fixture-configuration/reload"
+                                    and not "GET /{org}/{app}/api/testing/telemetry/current-activity"
+                        )
                         .ToArray();
 
                     return Results.Ok(new { hasDefinedCustomScopes = service.HasDefinedCustomScopes, metadata });
