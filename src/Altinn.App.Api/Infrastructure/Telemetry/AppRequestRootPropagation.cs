@@ -1,24 +1,16 @@
-using System.ComponentModel;
 using System.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Context.Propagation;
 
 namespace Altinn.App.Api.Infrastructure.Telemetry;
 
-/// <summary>
-/// Installs and enables request trace propagation rules for Altinn apps.
-/// </summary>
-[EditorBrowsable(EditorBrowsableState.Never)]
-public static class AppRequestRootPropagation
+internal static class AppRequestRootPropagation
 {
     private const string PdfHeaderName = "X-Altinn-IsPdf";
     private static readonly object _lock = new();
     private static volatile bool _rootAppRequests;
 
-    /// <summary>
-    /// Installs the propagation wrappers. This should run before <c>WebApplication.CreateBuilder</c>.
-    /// </summary>
-    public static void Install()
+    internal static void Install()
     {
         lock (_lock)
         {
@@ -38,10 +30,7 @@ public static class AppRequestRootPropagation
         }
     }
 
-    /// <summary>
-    /// Enables root request traces for apps that have opted into OpenTelemetry.
-    /// </summary>
-    public static void Enable()
+    internal static void Enable()
     {
         Install();
         _rootAppRequests = true;

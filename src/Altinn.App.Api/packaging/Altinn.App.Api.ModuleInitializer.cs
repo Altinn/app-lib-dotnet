@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Altinn.App.Api.Generated;
@@ -9,6 +10,9 @@ internal static class AltinnAppApiModuleInitializer
 #pragma warning restore CA2255
     internal static void Initialize()
     {
-        Altinn.App.Api.Infrastructure.Telemetry.AppRequestRootPropagation.Install();
+        typeof(Altinn.App.Api.Extensions.ServiceCollectionExtensions)
+            .Assembly.GetType("Altinn.App.Api.Infrastructure.Telemetry.AppRequestRootPropagation", throwOnError: true)!
+            .GetMethod("Install", BindingFlags.NonPublic | BindingFlags.Static)!
+            .Invoke(null, null);
     }
 }
