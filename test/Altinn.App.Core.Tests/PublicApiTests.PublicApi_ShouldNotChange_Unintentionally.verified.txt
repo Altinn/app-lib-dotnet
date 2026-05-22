@@ -23,6 +23,7 @@ namespace Altinn.App.Core.Configuration
         public bool DisableCsrfCheck { get; set; }
         public string EFormidlingSender { get; set; }
         public bool EnableEFormidling { get; set; }
+        public bool EnforceDataTypeTaskId { get; set; }
         public bool ExpressionValidation { get; set; }
         public string FooterFileName { get; set; }
         public string FormLayoutJSONFileName { get; set; }
@@ -445,6 +446,9 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     public class CorrespondenceAttachmentBuilder : Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderData, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderFilename, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderSendersReference
     {
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment Build() { }
+        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.IO.Stream data) { }
+        [System.Obsolete("This method is inefficient for large attachments. Consider using WithData(Stream)" +
+            " instead.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.ReadOnlyMemory<byte> data) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithDataLocationType(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceDataLocationType dataLocationType) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilderSendersReference WithFilename(string filename) { }
@@ -479,6 +483,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderEmailSubject(string? reminderEmailSubject) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderNotificationChannel(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationChannel? reminderNotificationChannel) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderSmsBody(string? reminderSmsBody) { }
+        [System.Obsolete("RequestedSendTime is no longer supported by the Correspondence API.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRequestedSendTime(System.DateTimeOffset? requestedSendTime) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithSendReminder(bool? sendReminder) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithSendersReference(string? sendersReference) { }
@@ -518,6 +523,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     public class CorrespondenceRequestBuilder : Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderContent, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderRecipients, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderResourceId, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSender, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSendersReference
     {
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceRequest Build() { }
+        [System.Obsolete("AllowSystemDeleteAfter is no longer supported by the Correspondence API.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAllowSystemDeleteAfter(System.DateTimeOffset allowSystemDeleteAfter) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder builder) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment attachment) { }
@@ -533,6 +539,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithExternalReference(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceReferenceType type, string value) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithExternalReferences(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceExternalReference> externalReferences) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithIgnoreReservation(bool ignoreReservation) { }
+        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithIsConfidential(bool isConfidential) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithIsConfirmationNeeded(bool isConfirmationNeeded) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithMessageSender(string messageSender) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithNotification(Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder builder) { }
@@ -563,6 +570,9 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     }
     public interface ICorrespondenceAttachmentBuilderData
     {
+        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.IO.Stream data);
+        [System.Obsolete("This method is inefficient for large attachments. Consider using WithData(Stream)" +
+            " instead.")]
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder WithData(System.ReadOnlyMemory<byte> data);
     }
     public interface ICorrespondenceAttachmentBuilderFilename
@@ -609,6 +619,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderEmailSubject(string? reminderEmailSubject);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderNotificationChannel(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationChannel? reminderNotificationChannel);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderSmsBody(string? reminderSmsBody);
+        [System.Obsolete("RequestedSendTime is no longer supported by the Correspondence API.")]
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRequestedSendTime(System.DateTimeOffset? requestedSendTime);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithSendReminder(bool? sendReminder);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithSendersReference(string? sendersReference);
@@ -650,6 +661,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     public interface ICorrespondenceRequestBuilder : Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderContent, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderRecipients, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderResourceId, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSender, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSendersReference
     {
         Altinn.App.Core.Features.Correspondence.Models.CorrespondenceRequest Build();
+        [System.Obsolete("AllowSystemDeleteAfter is no longer supported by the Correspondence API.")]
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAllowSystemDeleteAfter(System.DateTimeOffset allowSystemDeleteAfter);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceAttachmentBuilder builder);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithAttachment(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment attachment);
@@ -661,6 +673,7 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithExternalReference(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceReferenceType type, string value);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithExternalReferences(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceExternalReference> externalReferences);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithIgnoreReservation(bool ignoreReservation);
+        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithIsConfidential(bool isConfidential);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithIsConfirmationNeeded(bool isConfirmationNeeded);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithMessageSender(string messageSender);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithNotification(Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder builder);
@@ -738,10 +751,10 @@ namespace Altinn.App.Core.Features.Correspondence
 }
 namespace Altinn.App.Core.Features.Correspondence.Models
 {
-    public sealed class CorrespondenceAttachment : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>
+    public sealed class CorrespondenceAttachment : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>
     {
         public CorrespondenceAttachment() { }
-        public required System.ReadOnlyMemory<byte> Data { get; init; }
+        public required System.IO.Stream Data { get; init; }
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceDataLocationType DataLocationType { get; init; }
         public required string Filename { get; init; }
         public bool? IsEncrypted { get; init; }
@@ -788,10 +801,10 @@ namespace Altinn.App.Core.Features.Correspondence.Models
     {
         Maskinporten = 0,
     }
-    public sealed class CorrespondenceContent : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceContent>
+    public sealed class CorrespondenceContent : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceContent>
     {
         public CorrespondenceContent() { }
-        public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>? Attachments { get; init; }
+        public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceAttachment>? Attachments { get; set; }
         public required string Body { get; init; }
         public required Altinn.App.Core.Models.LanguageCode<Altinn.App.Core.Models.Iso6391> Language { get; init; }
         public required string Summary { get; init; }
@@ -838,7 +851,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         [System.Text.Json.Serialization.JsonPropertyName("status")]
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceStatus Status { get; init; }
     }
-    public sealed class CorrespondenceExternalReference : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceListItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceExternalReference>
+    public sealed class CorrespondenceExternalReference : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceExternalReference>
     {
         public CorrespondenceExternalReference() { }
         [System.Text.Json.Serialization.JsonPropertyName("referenceType")]
@@ -846,7 +859,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         [System.Text.Json.Serialization.JsonPropertyName("referenceValue")]
         public required string ReferenceValue { get; init; }
     }
-    public sealed class CorrespondenceNotification : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotification>
+    public sealed class CorrespondenceNotification : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotification>
     {
         public CorrespondenceNotification() { }
         [System.Obsolete("This property is deprecated and will be removed in a future version. Use CustomRe" +
@@ -866,6 +879,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationChannel? ReminderNotificationChannel { get; init; }
         [System.ComponentModel.DataAnnotations.StringLength(2144, MinimumLength=0)]
         public string? ReminderSmsBody { get; init; }
+        [System.Obsolete("RequestedSendTime is no longer supported by the Correspondence API.")]
         public System.DateTimeOffset? RequestedSendTime { get; init; }
         public bool? SendReminder { get; init; }
         public string? SendersReference { get; init; }
@@ -909,14 +923,15 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationSummaryResponse? NotificationStatusDetails { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("processingStatus")]
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationStatusSummaryResponse? ProcessingStatus { get; init; }
+        [System.Obsolete("RequestedSendTime is no longer returned by the Correspondence API.")]
         [System.Text.Json.Serialization.JsonPropertyName("requestedSendTime")]
-        public System.DateTimeOffset RequestedSendTime { get; set; }
+        public System.DateTimeOffset? RequestedSendTime { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("resourceId")]
         public string? ResourceId { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("sendersReference")]
         public string? SendersReference { get; set; }
     }
-    public sealed class CorrespondenceNotificationRecipient : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceListItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient>
+    public sealed class CorrespondenceNotificationRecipient : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient>
     {
         public CorrespondenceNotificationRecipient() { }
         public string? EmailAddress { get; init; }
@@ -943,7 +958,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
     }
     [System.Obsolete("This model is deprecated and will be removed in a future version. Use Corresponde" +
         "nceNotificationRecipient instead.")]
-    public sealed class CorrespondenceNotificationRecipientWrapper : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceListItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipientWrapper>
+    public sealed class CorrespondenceNotificationRecipientWrapper : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipientWrapper>
     {
         public CorrespondenceNotificationRecipientWrapper() { }
         public required System.Collections.Generic.List<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient> CorrespondenceNotificationRecipients { get; init; }
@@ -1005,7 +1020,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         DialogportenDialogId = 3,
         DialogportenProcessId = 4,
     }
-    public sealed class CorrespondenceReplyOption : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceListItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceReplyOption>
+    public sealed class CorrespondenceReplyOption : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceReplyOption>
     {
         public CorrespondenceReplyOption() { }
         [System.Text.Json.Serialization.JsonPropertyName("linkText")]
@@ -1013,15 +1028,17 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         [System.Text.Json.Serialization.JsonPropertyName("linkURL")]
         public required string LinkUrl { get; init; }
     }
-    public sealed class CorrespondenceRequest : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceRequest>
+    public sealed class CorrespondenceRequest : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceRequest>
     {
         public CorrespondenceRequest() { }
-        public required System.DateTimeOffset? AllowSystemDeleteAfter { get; init; }
+        [System.Obsolete("AllowSystemDeleteAfter is no longer supported by the Correspondence API.")]
+        public System.DateTimeOffset? AllowSystemDeleteAfter { get; init; }
         public required Altinn.App.Core.Features.Correspondence.Models.CorrespondenceContent Content { get; init; }
         public System.DateTimeOffset? DueDateTime { get; init; }
         public System.Collections.Generic.IReadOnlyList<System.Guid>? ExistingAttachments { get; init; }
         public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceExternalReference>? ExternalReferences { get; init; }
         public bool? IgnoreReservation { get; init; }
+        public bool? IsConfidential { get; init; }
         public bool? IsConfirmationNeeded { get; init; }
         public string? MessageSender { get; init; }
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotification? Notification { get; init; }
@@ -1072,6 +1089,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
     public sealed class GetCorrespondenceStatusResponse : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.GetCorrespondenceStatusResponse>
     {
         public GetCorrespondenceStatusResponse() { }
+        [System.Obsolete("AllowSystemDeleteAfter is no longer returned by the Correspondence API.")]
         [System.Text.Json.Serialization.JsonPropertyName("allowSystemDeleteAfter")]
         public System.DateTimeOffset? AllowSystemDeleteAfter { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("content")]
@@ -1086,6 +1104,8 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceExternalReference>? ExternalReferences { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("ignoreReservation")]
         public bool? IgnoreReservation { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("isConfidential")]
+        public bool IsConfidential { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("isConfirmationNeeded")]
         public bool IsConfirmationNeeded { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("markedUnread")]
@@ -1118,14 +1138,6 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public required System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceStatusEventResponse> StatusHistory { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("statusText")]
         public string? StatusText { get; init; }
-    }
-    public abstract class MultipartCorrespondenceItem : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem>
-    {
-        protected MultipartCorrespondenceItem() { }
-    }
-    public abstract class MultipartCorrespondenceListItem : Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceItem, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.MultipartCorrespondenceListItem>
-    {
-        protected MultipartCorrespondenceListItem() { }
     }
     public sealed class SendCorrespondencePayload : Altinn.App.Core.Features.Correspondence.Models.CorrespondencePayloadBase, System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.SendCorrespondencePayload>
     {
@@ -1266,6 +1278,7 @@ namespace Altinn.App.Core.Features
         Altinn.App.Core.Models.FormDataChange AddFormDataElement(Altinn.Platform.Storage.Interface.Models.DataType dataType, object model);
         Altinn.App.Core.Models.FormDataChange AddFormDataElement(string dataTypeId, object model);
         void RemoveDataElement(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
+        Altinn.App.Core.Models.BinaryDataChange UpdateBinaryDataElement(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier, string contentType, System.ReadOnlyMemory<byte> bytes);
     }
     [System.Obsolete("Use ITaskValidator, IDataElementValidator or IFormDataValidator instead")]
     public interface IInstanceValidator
@@ -1657,6 +1670,13 @@ namespace Altinn.App.Core.Features.Notifications
         System.Threading.Tasks.Task NotifyInstanceOwnerOnInstantiation(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Register.Models.Party party, Altinn.App.Core.Models.Notifications.Future.InstantiationNotification instantiationNotification, System.Threading.CancellationToken ct);
     }
 }
+namespace Altinn.App.Core.Features.Notifications.SecretProvider
+{
+    public interface INotificationConditionCodeValidator
+    {
+        System.Threading.Tasks.Task<bool> ValidateCode(string? code, System.Guid instanceGuid, Altinn.App.Core.Features.Telemetry? telemetry = null);
+    }
+}
 namespace Altinn.App.Core.Features.Notifications.Texts
 {
     public static class ReplacementTokens
@@ -1672,18 +1692,6 @@ namespace Altinn.App.Core.Features.Notifications.Texts
 }
 namespace Altinn.App.Core.Features.Options.Altinn2Provider
 {
-    public class Altinn2CodeListProvider : Altinn.App.Core.Features.IAppOptionsProvider
-    {
-        public Altinn2CodeListProvider(Microsoft.Extensions.Caching.Memory.IMemoryCache cache, Altinn.App.Core.Features.Options.Altinn2Provider.Altinn2MetadataApiClient client, string id, System.Func<Altinn.App.Core.Features.Options.Altinn2Provider.MetadataCodeListCodes, Altinn.App.Core.Models.AppOption> transform, System.Func<Altinn.App.Core.Features.Options.Altinn2Provider.MetadataCodeListCodes, bool>? filter, string? metadataApiId = null, int? codeListVersion = default) { }
-        public string Id { get; }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions> GetAppOptionsAsync(string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs) { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn2Provider.MetadataCodelistResponse> GetRawAltinn2CodelistAsync(string? language) { }
-    }
-    public class Altinn2MetadataApiClient
-    {
-        public Altinn2MetadataApiClient(System.Net.Http.HttpClient client) { }
-        public System.Threading.Tasks.Task<Altinn.App.Core.Features.Options.Altinn2Provider.MetadataCodelistResponse> GetAltinn2Codelist(string id, string langCode, int? version = default) { }
-    }
     public class MetadataCodeListCodes
     {
         public MetadataCodeListCodes() { }
@@ -1952,6 +1960,29 @@ namespace Altinn.App.Core.Features.Payment.Processors
         System.Threading.Tasks.Task<System.ValueTuple<Altinn.App.Core.Features.Payment.Models.PaymentStatus, Altinn.App.Core.Features.Payment.Models.PaymentDetails>> GetPaymentStatus(Altinn.Platform.Storage.Interface.Models.Instance instance, string paymentId, decimal expectedTotalIncVat, string? language);
         System.Threading.Tasks.Task<Altinn.App.Core.Features.Payment.Models.PaymentDetails> StartPayment(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Features.Payment.Models.OrderDetails orderDetails, string? language);
         System.Threading.Tasks.Task<bool> TerminatePayment(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Features.Payment.Models.PaymentInformation paymentInformation);
+    }
+}
+namespace Altinn.App.Core.Features.Payment.Processors.Nets.Models
+{
+    public sealed class NetsCompleteWebhookPayload
+    {
+        public NetsCompleteWebhookPayload() { }
+        [System.Text.Json.Serialization.JsonPropertyName("data")]
+        public required Altinn.App.Core.Features.Payment.Processors.Nets.Models.NetsCompleteWebhookPayloadData Data { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("event")]
+        public required string EventName { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public required string Id { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("merchantId")]
+        public required int MerchantId { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("timestamp")]
+        public required System.DateTimeOffset Timestamp { get; set; }
+    }
+    public sealed class NetsCompleteWebhookPayloadData
+    {
+        public NetsCompleteWebhookPayloadData() { }
+        [System.Text.Json.Serialization.JsonPropertyName("paymentId")]
+        public required string PaymentId { get; set; }
     }
 }
 namespace Altinn.App.Core.Features.Payment.Processors.Nets
@@ -3034,43 +3065,82 @@ namespace Altinn.App.Core.Internal.Data
     {
         [System.Obsolete("Use method DeleteData with delayed=false instead.", true)]
         System.Threading.Tasks.Task<bool> DeleteBinaryData(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataGuid);
+        System.Threading.Tasks.Task<bool> DeleteData(int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataGuid, bool delay);
         System.Threading.Tasks.Task<bool> DeleteData(int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataGuid, bool delay, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
         [System.Obsolete("Use the overload without org and app parameters")]
+        System.Threading.Tasks.Task<bool> DeleteData(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataGuid, bool delay);
+        [System.Obsolete("Use the overload without org and app parameters")]
         System.Threading.Tasks.Task<bool> DeleteData(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataGuid, bool delay, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<System.IO.Stream> GetBinaryData(int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataId);
         System.Threading.Tasks.Task<System.IO.Stream> GetBinaryData(int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
         [System.Obsolete("Org and App parameters are not used, use the overload without these parameters")]
+        System.Threading.Tasks.Task<System.IO.Stream> GetBinaryData(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataId);
+        [System.Obsolete("Org and App parameters are not used, use the overload without these parameters")]
         System.Threading.Tasks.Task<System.IO.Stream> GetBinaryData(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.AttachmentList>> GetBinaryDataList(int instanceOwnerPartyId, System.Guid instanceGuid);
         System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.AttachmentList>> GetBinaryDataList(int instanceOwnerPartyId, System.Guid instanceGuid, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
         [System.Obsolete("Org and App parameters are not used, use the overload without these parameters")]
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.AttachmentList>> GetBinaryDataList(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid);
+        [System.Obsolete("Org and App parameters are not used, use the overload without these parameters")]
         System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.AttachmentList>> GetBinaryDataList(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<System.IO.Stream> GetBinaryDataStream(int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataId);
         System.Threading.Tasks.Task<System.IO.Stream> GetBinaryDataStream(int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.TimeSpan? timeout = default, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<byte[]> GetDataBytes(int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataId);
         System.Threading.Tasks.Task<byte[]> GetDataBytes(int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
         [System.Obsolete("Org and App parameters are not used, use the overload without these parameters")]
+        System.Threading.Tasks.Task<byte[]> GetDataBytes(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataId);
+        [System.Obsolete("Org and App parameters are not used, use the overload without these parameters")]
         System.Threading.Tasks.Task<byte[]> GetDataBytes(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<object> GetFormData(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataElement dataElement);
         System.Threading.Tasks.Task<object> GetFormData(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataElement dataElement, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
         [System.Obsolete("Use the overload with Instance parameter instead")]
+        System.Threading.Tasks.Task<object> GetFormData(System.Guid instanceGuid, System.Type type, string org, string app, int instanceOwnerPartyId, System.Guid dataId);
+        [System.Obsolete("Use the overload with Instance parameter instead")]
         System.Threading.Tasks.Task<object> GetFormData(System.Guid instanceGuid, System.Type type, string org, string app, int instanceOwnerPartyId, System.Guid dataId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string? filename, System.IO.Stream stream);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string? filename, System.IO.Stream stream, string? generatedFromTask);
+        [System.Obsolete("The overload that takes a HttpRequest is deprecated, use the overload that takes " +
+            "a Stream instead")]
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertBinaryData(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, string dataType, Microsoft.AspNetCore.Http.HttpRequest request);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertBinaryData(string instanceId, string dataType, string contentType, string? filename, System.IO.Stream stream, string? generatedFromTask = null, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
         [System.Obsolete("The overload that takes a HttpRequest is deprecated, use the overload that takes " +
             "a Stream instead")]
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertBinaryData(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, string dataType, Microsoft.AspNetCore.Http.HttpRequest request, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertFormData(Altinn.Platform.Storage.Interface.Models.Instance instance, string dataTypeId, object dataToSerialize);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertFormData(Altinn.Platform.Storage.Interface.Models.Instance instance, string dataTypeId, object dataToSerialize, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
+        [System.Obsolete("Use the overload without Type parameter")]
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertFormData<T>(Altinn.Platform.Storage.Interface.Models.Instance instance, string dataTypeString, T dataToSerialize, System.Type type)
+            where T :  notnull;
         [System.Obsolete("Use the overload without Type parameter")]
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertFormData<T>(Altinn.Platform.Storage.Interface.Models.Instance instance, string dataTypeString, T dataToSerialize, System.Type type, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default)
             where T :  notnull;
         [System.Obsolete("Use InsertFormData with Instance parameter instead")]
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertFormData<T>(T dataToSerialize, System.Guid instanceGuid, System.Type type, string org, string app, int instanceOwnerPartyId, string dataType)
+            where T :  notnull;
+        [System.Obsolete("Use InsertFormData with Instance parameter instead")]
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertFormData<T>(T dataToSerialize, System.Guid instanceGuid, System.Type type, string org, string app, int instanceOwnerPartyId, string dataType, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default)
             where T :  notnull;
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> LockDataElement(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, System.Guid dataGuid);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> LockDataElement(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, System.Guid dataGuid, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UnlockDataElement(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, System.Guid dataGuid);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UnlockDataElement(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, System.Guid dataGuid, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> Update(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataElement dataElement);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> Update(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataElement dataElement, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateBinaryData(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string? contentType, string? filename, System.Guid dataGuid, System.IO.Stream stream);
+        [System.Obsolete("Deprecated please use UpdateBinaryData(InstanceIdentifier, string, string, Guid, " +
+            "Stream) instead", false)]
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateBinaryData(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataGuid, Microsoft.AspNetCore.Http.HttpRequest request);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateBinaryData(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string? contentType, string? filename, System.Guid dataGuid, System.IO.Stream stream, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
         [System.Obsolete("Deprecated please use UpdateBinaryData(InstanceIdentifier, string, string, Guid, " +
             "Stream) instead", false)]
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateBinaryData(string org, string app, int instanceOwnerPartyId, System.Guid instanceGuid, System.Guid dataGuid, Microsoft.AspNetCore.Http.HttpRequest request, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
         [System.Obsolete("Use the UpdateFormData method with Instance parameter instead")]
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateData<T>(T dataToSerialize, System.Guid instanceGuid, System.Type type, string org, string app, int instanceOwnerPartyId, System.Guid dataId)
+            where T :  notnull;
+        [System.Obsolete("Use the UpdateFormData method with Instance parameter instead")]
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateData<T>(T dataToSerialize, System.Guid instanceGuid, System.Type type, string org, string app, int instanceOwnerPartyId, System.Guid dataId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default)
             where T :  notnull;
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateFormData(Altinn.Platform.Storage.Interface.Models.Instance instance, object dataToSerialize, Altinn.Platform.Storage.Interface.Models.DataElement dataElement);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateFormData(Altinn.Platform.Storage.Interface.Models.Instance instance, object dataToSerialize, Altinn.Platform.Storage.Interface.Models.DataElement dataElement, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default);
     }
     public static class IDataClientExtensions
@@ -3079,14 +3149,14 @@ namespace Altinn.App.Core.Internal.Data
     }
     public interface IDataService
     {
-        System.Threading.Tasks.Task<bool> DeleteById(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, System.Guid dataElementId);
-        System.Threading.Tasks.Task<T> GetById<T>(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Guid dataElementId);
+        System.Threading.Tasks.Task<bool> DeleteById(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, System.Guid dataElementId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<T> GetById<T>(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Guid dataElementId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
         [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
                 "dataElementId",
                 "model"})]
-        System.Threading.Tasks.Task<System.ValueTuple<System.Guid, T?>> GetByType<T>(Altinn.Platform.Storage.Interface.Models.Instance instance, string dataTypeId);
-        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertJsonObject(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string dataTypeId, object data);
-        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateJsonObject(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string dataTypeId, System.Guid dataElementId, object data);
+        System.Threading.Tasks.Task<System.ValueTuple<System.Guid, T?>> GetByType<T>(Altinn.Platform.Storage.Interface.Models.Instance instance, string dataTypeId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> InsertJsonObject(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string dataTypeId, object data, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> UpdateJsonObject(Altinn.App.Core.Models.InstanceIdentifier instanceIdentifier, string dataTypeId, System.Guid dataElementId, object data, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
     }
     public interface IFormDataWrapper
     {
@@ -3214,6 +3284,10 @@ namespace Altinn.App.Core.Internal.Expressions
         public int CountDataElements(string dataTypeId) { }
         [System.Obsolete("You need to get a context, not a component", true)]
         public void GetComponent(string pageName, string componentId) { }
+        public System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext?> GetComponentContext(string componentId, Altinn.App.Core.Models.Expressions.ComponentContext relativeContext) { }
+        [System.Obsolete("A context is not uniquely identified by componentId and rowIndexes, use GetCompon" +
+            "entContext(string, ComponentContext) instead so that we get subform data element" +
+            " as well.")]
         public System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext?> GetComponentContext(string? pageName, string componentId, int[]? rowIndexes = null) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Expressions.ComponentContext>> GetComponentContexts() { }
         public Altinn.Platform.Storage.Interface.Models.DataType? GetDefaultDataType() { }
@@ -3239,19 +3313,33 @@ namespace Altinn.App.Core.Internal.Instances
 {
     public interface IInstanceClient
     {
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> AddCompleteConfirmation(int instanceOwnerPartyId, System.Guid instanceGuid);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> AddCompleteConfirmation(int instanceOwnerPartyId, System.Guid instanceGuid, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> CreateInstance(string org, string app, Altinn.Platform.Storage.Interface.Models.Instance instanceTemplate);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> CreateInstance(string org, string app, Altinn.Platform.Storage.Interface.Models.Instance instanceTemplate, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> DeleteInstance(int instanceOwnerPartyId, System.Guid instanceGuid, bool hard);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> DeleteInstance(int instanceOwnerPartyId, System.Guid instanceGuid, bool hard, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> GetInstance(Altinn.Platform.Storage.Interface.Models.Instance instance);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> GetInstance(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> GetInstance(string app, string org, int instanceOwnerPartyId, System.Guid instanceId);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> GetInstance(string app, string org, int instanceOwnerPartyId, System.Guid instanceId, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.Instance>> GetInstances(System.Collections.Generic.Dictionary<string, Microsoft.Extensions.Primitives.StringValues> queryParams);
         System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.Instance>> GetInstances(System.Collections.Generic.Dictionary<string, Microsoft.Extensions.Primitives.StringValues> queryParams, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateDataValue(Altinn.Platform.Storage.Interface.Models.Instance instance, string key, string? value);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateDataValue(Altinn.Platform.Storage.Interface.Models.Instance instance, string key, string? value, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateDataValues(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string?> dataValues);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateDataValues(int instanceOwnerPartyId, System.Guid instanceGuid, Altinn.Platform.Storage.Interface.Models.DataValues dataValues);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateDataValues(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.Dictionary<string, string?> dataValues, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateDataValues(int instanceOwnerPartyId, System.Guid instanceGuid, Altinn.Platform.Storage.Interface.Models.DataValues dataValues, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdatePresentationTexts(int instanceOwnerPartyId, System.Guid instanceGuid, Altinn.Platform.Storage.Interface.Models.PresentationTexts presentationTexts);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdatePresentationTexts(int instanceOwnerPartyId, System.Guid instanceGuid, Altinn.Platform.Storage.Interface.Models.PresentationTexts presentationTexts, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateProcess(Altinn.Platform.Storage.Interface.Models.Instance instance);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateProcess(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateProcessAndEvents(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent> events);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateProcessAndEvents(Altinn.Platform.Storage.Interface.Models.Instance instance, System.Collections.Generic.List<Altinn.Platform.Storage.Interface.Models.InstanceEvent> events, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateReadStatus(int instanceOwnerPartyId, System.Guid instanceGuid, string readStatus);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateReadStatus(int instanceOwnerPartyId, System.Guid instanceGuid, string readStatus, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
+        System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateSubstatus(int instanceOwnerPartyId, System.Guid instanceGuid, Altinn.Platform.Storage.Interface.Models.Substatus substatus);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Instance> UpdateSubstatus(int instanceOwnerPartyId, System.Guid instanceGuid, Altinn.Platform.Storage.Interface.Models.Substatus substatus, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken ct = default);
     }
     public interface IInstanceEventClient
@@ -4566,6 +4654,7 @@ namespace Altinn.App.Core.Models.Expressions
         public static Altinn.App.Core.Models.Expressions.Expression False { get; }
         public static Altinn.App.Core.Models.Expressions.Expression Null { get; }
         public static Altinn.App.Core.Models.Expressions.Expression True { get; }
+        public static Altinn.App.Core.Models.Expressions.Expression Undefined { get; }
         public bool Equals(Altinn.App.Core.Models.Expressions.Expression other) { }
         public override bool Equals(object? obj) { }
         public override int GetHashCode() { }

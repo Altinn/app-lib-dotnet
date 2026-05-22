@@ -205,10 +205,14 @@ internal sealed class SigningReceiptService(
                     .WithFilename(filename)
                     .WithSendersReference(element.Id)
                     .WithData(
-                        await dataClient.GetDataBytes(
-                            instanceIdentifier.InstanceOwnerPartyId,
-                            instanceIdentifier.InstanceGuid,
-                            Guid.Parse(element.Id)
+                        new MemoryStream(
+                            await dataClient.GetDataBytes(
+                                instanceIdentifier.InstanceOwnerPartyId,
+                                instanceIdentifier.InstanceGuid,
+                                Guid.Parse(element.Id),
+                                authenticationMethod: null,
+                                CancellationToken.None
+                            )
                         )
                     )
                     .Build()

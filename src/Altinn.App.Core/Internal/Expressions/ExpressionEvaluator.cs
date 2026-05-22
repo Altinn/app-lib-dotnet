@@ -274,7 +274,7 @@ public static partial class ExpressionEvaluator
             throw new ArgumentException("The component expression requires a component context");
         }
 
-        var targetContext = await state.GetComponentContext(context.Component?.PageId, componentId, context.RowIndices);
+        var targetContext = await state.GetComponentContext(componentId, relativeContext: context);
 
         if (targetContext is null)
         {
@@ -824,7 +824,7 @@ public static partial class ExpressionEvaluator
         return !PrepareBooleanArg(args[0]);
     }
 
-    private static (double?, double?) PrepareNumericArgs(ExpressionValue[] args)
+    private static (double?, double?) PrepareTwoNumericArgs(ExpressionValue[] args)
     {
         if (args.Length != 2)
         {
@@ -849,6 +849,13 @@ public static partial class ExpressionEvaluator
 
             _ => null,
         };
+    }
+
+    private static double?[] PrepareNumericArgs(ExpressionValue[] args)
+    {
+        if (args.Length == 0)
+            throw new ExpressionEvaluatorTypeErrorException("Invalid number of args");
+        return args.Select(PrepareNumericArg).ToArray();
     }
 
     private static ExpressionValue IfImpl(ExpressionValue[] args)
@@ -898,7 +905,7 @@ public static partial class ExpressionEvaluator
 
     private static bool LessThan(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareTwoNumericArgs(args);
 
         if (a is null || b is null)
         {
@@ -907,33 +914,33 @@ public static partial class ExpressionEvaluator
         return a < b; // Actual implementation
     }
 
-    private static double? Plus(ExpressionValue[] args)
+    private static double Plus(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
-        return PerformArithmetic(a, b, (x, y) => x + y);
+        double?[] numbers = PrepareNumericArgs(args);
+        return PerformArithmeticWithReducer(numbers, (x, y) => x + y);
     }
 
-    private static double? Minus(ExpressionValue[] args)
+    private static double Minus(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareTwoNumericArgs(args);
         return PerformArithmetic(a, b, (x, y) => x - y);
     }
 
-    private static double? Multiply(ExpressionValue[] args)
+    private static double Multiply(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
-        return PerformArithmetic(a, b, (x, y) => x * y);
+        double?[] numbers = PrepareNumericArgs(args);
+        return PerformArithmeticWithReducer(numbers, (x, y) => x * y);
     }
 
-    private static double? Divide(ExpressionValue[] args)
+    private static double Divide(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareTwoNumericArgs(args);
         return PerformArithmetic(a, b, (x, y) => x / y);
     }
 
     private static bool LessThanEq(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareTwoNumericArgs(args);
 
         if (a is null || b is null)
         {
@@ -944,7 +951,7 @@ public static partial class ExpressionEvaluator
 
     private static bool GreaterThan(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareTwoNumericArgs(args);
 
         if (a is null || b is null)
         {
@@ -955,7 +962,7 @@ public static partial class ExpressionEvaluator
 
     private static bool GreaterThanEq(ExpressionValue[] args)
     {
-        var (a, b) = PrepareNumericArgs(args);
+        var (a, b) = PrepareTwoNumericArgs(args);
 
         if (a is null || b is null)
         {
@@ -1011,30 +1018,44 @@ public static partial class ExpressionEvaluator
     /// <param name="a">First operand</param>
     /// <param name="b">Second operand</param>
     /// <param name="operation">Function that performs the arithmetic operation on two decimals</param>
-    /// <returns>Result of the operation as double, or null if any operand is null</returns>
-    private static double? PerformArithmetic(double? a, double? b, Func<decimal, decimal, decimal> operation)
+    /// <returns>Result of the operation as double</returns>
+    private static double PerformArithmetic(double? a, double? b, Func<decimal, decimal, decimal> operation)
     {
-        if (a.HasValue is false || b.HasValue is false)
-        {
-            return null;
-        }
+        double aDouble = a ?? 0;
+        double bDouble = b ?? 0;
 
         try
         {
-            var aDecimal = (decimal)a.Value;
-            var bDecimal = (decimal)b.Value;
+            var aDecimal = (decimal)aDouble;
+            var bDecimal = (decimal)bDouble;
             var result = operation(aDecimal, bDecimal);
             return (double)result;
         }
         catch (OverflowException)
         {
             throw new ExpressionEvaluatorTypeErrorException(
-                $"Arithmetic overflow: {a.Value} and {b.Value} or operation on them exceeds the supported range"
+                $"Arithmetic overflow: {aDouble} and {bDouble} or operation on them exceeds the supported range"
             );
         }
         catch (DivideByZeroException)
         {
             throw new ExpressionEvaluatorTypeErrorException("The second argument is 0, cannot divide by 0");
+        }
+    }
+
+    private static double PerformArithmeticWithReducer(double?[] operands, Func<decimal, decimal, decimal> operation)
+    {
+        double[] numbers = operands.Select(o => o ?? 0).ToArray();
+        try
+        {
+            decimal[] decimalNumbers = numbers.Select(n => (decimal)n).ToArray();
+            return (double)decimalNumbers.Aggregate(operation);
+        }
+        catch (OverflowException)
+        {
+            throw new ExpressionEvaluatorTypeErrorException(
+                $"Arithmetic overflow: One of the operands or the result of the operation exceeds the supported range"
+            );
         }
     }
 

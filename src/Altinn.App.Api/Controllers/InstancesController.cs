@@ -19,6 +19,7 @@ using Altinn.App.Core.Helpers.Serialization;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
+using Altinn.App.Core.Internal.Files;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Prefill;
 using Altinn.App.Core.Internal.Process;
@@ -78,6 +79,7 @@ public class InstancesController : ControllerBase
     private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
     private readonly IAuthenticationContext _authenticationContext;
     private readonly IDataElementAccessChecker _dataElementAccessChecker;
+    private readonly IFileService _fileService;
     private const long RequestSizeLimit = 2000 * 1024 * 1024;
 
     /// <summary>
@@ -124,6 +126,7 @@ public class InstancesController : ControllerBase
         _patchService = patchService;
         _notificationService = notificationService;
         _translationService = translationService;
+        _fileService = serviceProvider.GetRequiredService<IFileService>();
         _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
         _authenticationContext = authenticationContext;
         _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
@@ -377,7 +380,13 @@ public class InstancesController : ControllerBase
             change = result.ProcessStateChange;
 
             // create the instance
-            instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
+            instance = await _instanceClient.CreateInstance(
+                org,
+                app,
+                instanceTemplate,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
         }
         catch (Exception exception)
         {
@@ -389,13 +398,15 @@ public class InstancesController : ControllerBase
 
         try
         {
-            var prefillProblem = await StorePrefillParts(instance, application, requestParts, language);
+            var prefillProblem = await StoreParts(instance, application, requestParts, language);
             if (prefillProblem is not null)
             {
                 await _instanceClient.DeleteInstance(
                     int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
                     Guid.Parse(instance.Id.Split("/")[1]),
-                    hard: true
+                    hard: true,
+                    authenticationMethod: null,
+                    CancellationToken.None
                 );
                 return StatusCode(prefillProblem.Status ?? 500, prefillProblem);
             }
@@ -405,7 +416,9 @@ public class InstancesController : ControllerBase
                 app,
                 org,
                 int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
-                Guid.Parse(instance.Id.Split("/")[1])
+                Guid.Parse(instance.Id.Split("/")[1]),
+                authenticationMethod: null,
+                CancellationToken.None
             );
 
             // notify app and store events
@@ -480,11 +493,11 @@ public class InstancesController : ControllerBase
     }
 
     /// <summary>
-    /// Simplified Instanciation with support for fieldprefill
+    /// Simplified instantiation with support for fieldprefill
     /// </summary>
     /// <param name="org">unique identifier of the organisation responsible for the app</param>
     /// <param name="app">application identifier which is unique within an organisation</param>
-    /// <param name="instansiationInstance">instansiation information</param>
+    /// <param name="instansiationInstance">instantiation information</param>
     /// <param name="language">The currently active user language</param>
     /// <returns>The new instance</returns>
     [HttpPost("create")]
@@ -668,7 +681,14 @@ public class InstancesController : ControllerBase
 
                 try
                 {
-                    source = await _instanceClient.GetInstance(app, org, party.PartyId, sourceInstanceGuid);
+                    source = await _instanceClient.GetInstance(
+                        app,
+                        org,
+                        party.PartyId,
+                        sourceInstanceGuid,
+                        authenticationMethod: null,
+                        CancellationToken.None
+                    );
                 }
                 catch (PlatformHttpException exception)
                 {
@@ -684,14 +704,20 @@ public class InstancesController : ControllerBase
                 }
             }
 
-            instance = await _instanceClient.CreateInstance(org, app, instanceTemplate);
+            instance = await _instanceClient.CreateInstance(
+                org,
+                app,
+                instanceTemplate,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
 
             if (isCopyRequest && source is not null)
             {
                 await CopyDataFromSourceInstance(application, instance, source);
             }
 
-            instance = await _instanceClient.GetInstance(instance);
+            instance = await _instanceClient.GetInstance(instance, authenticationMethod: null, CancellationToken.None);
             await _processEngine.HandleEventsAndUpdateStorage(
                 instance,
                 instansiationInstance.Prefill,
@@ -835,11 +861,21 @@ public class InstancesController : ControllerBase
 
         ProcessChangeResult startResult = await _processEngine.GenerateProcessStartEvents(processStartRequest);
 
-        targetInstance = await _instanceClient.CreateInstance(org, app, targetInstance);
+        targetInstance = await _instanceClient.CreateInstance(
+            org,
+            app,
+            targetInstance,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
 
         await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
 
-        targetInstance = await _instanceClient.GetInstance(targetInstance);
+        targetInstance = await _instanceClient.GetInstance(
+            targetInstance,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
 
         await _processEngine.HandleEventsAndUpdateStorage(targetInstance, null, startResult.ProcessStateChange?.Events);
 
@@ -872,7 +908,12 @@ public class InstancesController : ControllerBase
     {
         try
         {
-            Instance instance = await _instanceClient.AddCompleteConfirmation(instanceOwnerPartyId, instanceGuid);
+            Instance instance = await _instanceClient.AddCompleteConfirmation(
+                instanceOwnerPartyId,
+                instanceGuid,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
             SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
 
             return Ok(instance);
@@ -915,7 +956,14 @@ public class InstancesController : ControllerBase
             );
         }
 
-        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        Instance instance = await _instanceClient.GetInstance(
+            app,
+            org,
+            instanceOwnerPartyId,
+            instanceGuid,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
 
         string? orgClaim = User.GetOrg();
         if (!instance.Org.Equals(orgClaim, StringComparison.OrdinalIgnoreCase))
@@ -928,7 +976,9 @@ public class InstancesController : ControllerBase
             Instance updatedInstance = await _instanceClient.UpdateSubstatus(
                 instanceOwnerPartyId,
                 instanceGuid,
-                substatus
+                substatus,
+                authenticationMethod: null,
+                CancellationToken.None
             );
             SelfLinkHelper.SetInstanceAppSelfLinks(instance, Request);
 
@@ -964,7 +1014,13 @@ public class InstancesController : ControllerBase
     {
         try
         {
-            Instance deletedInstance = await _instanceClient.DeleteInstance(instanceOwnerPartyId, instanceGuid, hard);
+            Instance deletedInstance = await _instanceClient.DeleteInstance(
+                instanceOwnerPartyId,
+                instanceGuid,
+                hard,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
             SelfLinkHelper.SetInstanceAppSelfLinks(deletedInstance, Request);
 
             return Ok(deletedInstance);
@@ -1000,7 +1056,11 @@ public class InstancesController : ControllerBase
             { "status.isSoftDeleted", "false" },
         };
 
-        List<Instance> activeInstances = await _instanceClient.GetInstances(queryParams);
+        List<Instance> activeInstances = await _instanceClient.GetInstances(
+            queryParams,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
 
         if (activeInstances.Count == 0)
         {
@@ -1038,7 +1098,14 @@ public class InstancesController : ControllerBase
     {
         try
         {
-            return await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+            return await _instanceClient.GetInstance(
+                app,
+                org,
+                instanceOwnerPartyId,
+                instanceGuid,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
         }
         catch (PlatformHttpException platformHttpException)
         {
@@ -1098,7 +1165,12 @@ public class InstancesController : ControllerBase
             {
                 DataType dt = dts.First(dt => dt.Id.Equals(de.DataType, StringComparison.Ordinal));
 
-                object data = await _dataClient.GetFormData(sourceInstance, de);
+                object data = await _dataClient.GetFormData(
+                    sourceInstance,
+                    de,
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
 
                 if (application.CopyInstanceSettings.ExcludedDataFields != null)
                 {
@@ -1116,7 +1188,13 @@ public class InstancesController : ControllerBase
 
                 ObjectUtils.InitializeAltinnRowId(data);
 
-                await _dataClient.InsertFormData(targetInstance, dt.Id, data);
+                await _dataClient.InsertFormData(
+                    targetInstance,
+                    dt.Id,
+                    data,
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
 
                 await UpdatePresentationTextsOnInstance(application.PresentationFields, targetInstance, dt.Id, data);
                 await UpdateDataValuesOnInstance(application.DataFields, targetInstance, dt.Id, data);
@@ -1151,7 +1229,9 @@ public class InstancesController : ControllerBase
                 using var binaryDataStream = await _dataClient.GetBinaryData(
                     instanceOwnerPartyId,
                     sourceInstanceGuid,
-                    Guid.Parse(de.Id)
+                    Guid.Parse(de.Id),
+                    authenticationMethod: null,
+                    CancellationToken.None
                 );
 
                 await _dataClient.InsertBinaryData(
@@ -1159,7 +1239,10 @@ public class InstancesController : ControllerBase
                     de.DataType,
                     de.ContentType,
                     de.Filename,
-                    binaryDataStream
+                    binaryDataStream,
+                    generatedFromTask: null,
+                    authenticationMethod: null,
+                    CancellationToken.None
                 );
             }
         }
@@ -1314,7 +1397,7 @@ public class InstancesController : ControllerBase
         }
     }
 
-    private async Task<ProblemDetails?> StorePrefillParts(
+    private async Task<ProblemDetails?> StoreParts(
         Instance instance,
         ApplicationMetadata appInfo,
         List<RequestPart> parts,
@@ -1347,9 +1430,23 @@ public class InstancesController : ControllerBase
                 };
             }
 
+            if (
+                await _dataElementAccessChecker.GetCreateProblem(
+                    instance,
+                    dataType,
+                    _authenticationContext.Current,
+                    part.FileSize
+                ) is
+                { } accessProblem
+            )
+            {
+                return accessProblem;
+            }
+
+            _logger.LogInformation("Storing part {partName}", part.Name);
+
             if (dataType.AppLogic?.ClassRef != null)
             {
-                _logger.LogInformation("Storing part {partName}", part.Name);
                 var deserializationResult = await _serializationService.DeserializeSingleFromStream(
                     new MemoryAsStream(part.Bytes),
                     part.ContentType,
@@ -1371,7 +1468,16 @@ public class InstancesController : ControllerBase
             }
             else
             {
-                _logger.LogInformation("Storing part {partName}", part.Name);
+                var fileValidationIssues = await _fileService.RunFileAnalysisAndValidation(
+                    dataType,
+                    part.Bytes,
+                    part.FileName
+                );
+
+                if (fileValidationIssues is not null)
+                {
+                    return new DataPostErrorResponse("File validation failed", fileValidationIssues);
+                }
                 dataMutator.AddBinaryDataElement(dataType.Id, part.ContentType, part.FileName, part.Bytes);
             }
         }
@@ -1502,7 +1608,9 @@ public class InstancesController : ControllerBase
             await _instanceClient.UpdatePresentationTexts(
                 int.Parse(instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
                 Guid.Parse(instance.Id.Split("/")[1]),
-                new PresentationTexts { Texts = updatedValues }
+                new PresentationTexts { Texts = updatedValues },
+                authenticationMethod: null,
+                CancellationToken.None
             );
         }
     }
@@ -1521,7 +1629,9 @@ public class InstancesController : ControllerBase
             await _instanceClient.UpdateDataValues(
                 int.Parse(instance.Id.Split("/")[0], CultureInfo.InvariantCulture),
                 Guid.Parse(instance.Id.Split("/")[1]),
-                new DataValues { Values = updatedValues }
+                new DataValues { Values = updatedValues },
+                authenticationMethod: null,
+                CancellationToken.None
             );
         }
     }

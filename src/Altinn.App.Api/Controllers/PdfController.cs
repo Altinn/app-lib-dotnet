@@ -73,7 +73,14 @@ public class PdfController : ControllerBase
         [FromRoute] Guid instanceGuid
     )
     {
-        var instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        var instance = await _instanceClient.GetInstance(
+            app,
+            org,
+            instanceOwnerPartyId,
+            instanceGuid,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
         string? taskId = instance.Process?.CurrentTask?.ElementId;
         if (instance == null || taskId == null)
         {
@@ -100,7 +107,14 @@ public class PdfController : ControllerBase
         [FromRoute] Guid dataGuid
     )
     {
-        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid);
+        Instance instance = await _instanceClient.GetInstance(
+            app,
+            org,
+            instanceOwnerPartyId,
+            instanceGuid,
+            authenticationMethod: null,
+            CancellationToken.None
+        );
         if (instance == null)
         {
             return NotFound("Did not find instance");

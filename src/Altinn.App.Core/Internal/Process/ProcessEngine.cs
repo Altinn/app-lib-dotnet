@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Action;
@@ -161,6 +162,8 @@ public class ProcessEngine : IProcessEngine
         bool firstIteration = true;
         int iterationCount = 0;
 
+        await using var instanceLock = _instanceLocker.InitLock();
+
         do
         {
             if (iterationCount >= MaxNextIterationsAllowed)
@@ -198,7 +201,7 @@ public class ProcessEngine : IProcessEngine
                 Language = request.Language,
             };
 
-            result = await ProcessNext(processNextRequest, ct);
+            result = await ProcessNext(processNextRequest, instanceLock, ct);
 
             if (!result.Success)
             {
@@ -225,7 +228,11 @@ public class ProcessEngine : IProcessEngine
     /// <summary>
     /// Internal method that performs a single process next operation without automatic service task handling.
     /// </summary>
-    private async Task<ProcessChangeResult> ProcessNext(ProcessNextRequest request, CancellationToken ct = default)
+    private async Task<ProcessChangeResult> ProcessNext(
+        ProcessNextRequest request,
+        IInstanceLock instanceLock,
+        CancellationToken ct = default
+    )
     {
         Instance instance = request.Instance;
 
@@ -255,14 +262,14 @@ public class ProcessEngine : IProcessEngine
             };
         }
 
-        await _instanceLocker.LockAsync();
-
         _logger.LogDebug(
             "User successfully authorized to perform process next. Task ID: {CurrentTaskId}. Task type: {AltinnTaskType}. Action: {ProcessNextAction}.",
             LogSanitizer.Sanitize(currentTaskId),
             LogSanitizer.Sanitize(altinnTaskType),
             LogSanitizer.Sanitize(request.Action ?? "none")
         );
+
+        await instanceLock.Lock();
 
         string checkedAction = request.Action ?? ConvertTaskTypeToAction(altinnTaskType);
         bool isServiceTask = false;
@@ -790,15 +797,15 @@ public class ProcessEngine : IProcessEngine
     {
         switch (actionOrTaskType)
         {
-            case "data":
-            case "feedback":
-            case "pdf":
-            case "eFormidling":
-            case "fiksArkiv":
+            case AltinnTaskTypes.Data:
+            case AltinnTaskTypes.Feedback:
+            case AltinnTaskTypes.Pdf:
+            case AltinnTaskTypes.EFormidling:
+            case AltinnTaskTypes.FiksArkiv:
                 return "write";
-            case "confirmation":
+            case AltinnTaskTypes.Confirmation:
                 return "confirm";
-            case "signing":
+            case AltinnTaskTypes.Signing:
                 return "sign";
             default:
                 // Not any known task type, so assume it is an action type

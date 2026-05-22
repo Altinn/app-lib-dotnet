@@ -89,18 +89,21 @@ We have Architecture Decision Records in the `/doc/adr/` folder.
 - **Snapshot testing** for OpenAPI docs and telemetry output
 - **Manual testing** requires localtest environment integration
 - All telemetry changes are considered **breaking changes**
-- **Integration tests** use Docker Testcontainers for isolated, reproducible environments:
+- **Integration tests** use studioctl with generated app folders for isolated, reproducible environments:
   - **AppFixture pattern** - Central orchestrator managing test lifecycle with feature-specific operations
   - **Snapshot testing** - Verify both HTTP response and response body content with port/data normalization
-  - **Test apps** - Complete Altinn apps in `_testapps/{app}/` with config, models, UI, and Dockerfile
+  - **Test apps** - Complete Altinn apps in `_testapps/{app}/` with config, models, and UI
   - **Scenario-based testing** - Override config and inject custom services via `_testapps/{app}/_scenarios/{scenario}/` folders
-  - **Container orchestration** - Isolated networks, dynamic ports, health checks for parallel execution
+  - **studioctl orchestration** - Shared localtest environment, generated app ids, and process-mode app runs
   - Follow existing `AppFixture.{Feature}.cs` pattern for new API operations (see `InstancesOperations`)
 
 ### Versioning
 - Uses **semantic versioning** with MinVer
 - Avoid breaking changes (we plan to release major versions yearly. Some breaking changes can be done inbetween but must be manually verified)
 - PR titles become release notes
+- Normal interfaces in Altinn.App.Core must be binary compatible within a major version so that users can have local packages that still work (never remove a method)
+- Interfaces marked with the `ImplementableByApps` attribute must not change.
+
 
 ### Platform Integrations
 The libraries integrate with:

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications;
+using Altinn.App.Core.Features.Notifications.SecretProvider;
 using Altinn.App.Core.Internal.AltinnCdn;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Language;
@@ -24,10 +25,12 @@ public class NotificationServiceTests
     private readonly Mock<IAltinnPartyClient> _partyClientMock = new();
     private readonly Mock<IAppMetadata> _appMetadataMock = new();
     private readonly Mock<ILogger<NotificationService>> _logger = new();
+    private readonly Mock<INotificationConditionTokenGenerator> _tokenGenerator = new();
 
     private NotificationService CreateSut() =>
         new(
             _orderClientMock.Object,
+            _tokenGenerator.Object,
             _profileClientMock.Object,
             _cdnClientMock.Object,
             _appMetadataMock.Object,
@@ -306,6 +309,9 @@ public class NotificationServiceTests
     public void CreateNotificationOrderRequest_OrgOwner_SetsResourceId()
     {
         var instance = CreateTestInstance(appId: "ttd/my-app", orgNumber: "123456789");
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
@@ -314,7 +320,7 @@ public class NotificationServiceTests
             instanceOwnerName: "Firma AS",
             serviceOwnerName: null,
             instantiationNotification: DefaultNotification(),
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientOrganization?.ResourceId);
@@ -324,6 +330,9 @@ public class NotificationServiceTests
     public void CreateNotificationOrderRequest_PersonOwner_SetsResourceId()
     {
         var instance = CreateTestInstance(appId: "ttd/my-app", personNumber: "01010112345");
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
@@ -332,7 +341,7 @@ public class NotificationServiceTests
             instanceOwnerName: "Ola Nordmann",
             serviceOwnerName: null,
             instantiationNotification: DefaultNotification(),
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientPerson?.ResourceId);
@@ -342,6 +351,9 @@ public class NotificationServiceTests
     public void CreateNotificationOrderRequest_ExternalIdentifierOwner_SetsResourceId()
     {
         var instance = CreateTestInstance(appId: "ttd/my-app", externalIdentifier: "ext-user-42");
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.En,
@@ -350,7 +362,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: DefaultNotification(),
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         Assert.Equal("urn:altinn:resource:app_ttd_my-app", result.Recipient.RecipientExternalIdentity?.ResourceId);
@@ -360,6 +372,9 @@ public class NotificationServiceTests
     public void CreateNotificationOrderRequest_NoOwnerIdentifier_Throws()
     {
         var instance = CreateTestInstance(appId: "ttd/my-app");
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         Assert.Throws<InvalidOperationException>(() =>
             NotificationService.CreateNotificationOrderRequest(
@@ -369,7 +384,7 @@ public class NotificationServiceTests
                 instanceOwnerName: null,
                 serviceOwnerName: null,
                 instantiationNotification: DefaultNotification(),
-                callBackBaseUrl: null
+                conditionEndpoint: conditionEndpoint
             )
         );
     }
@@ -384,6 +399,10 @@ public class NotificationServiceTests
         var instance = CreateTestInstance(appId: "ttd/my-app", personNumber: "01010112345");
         var before = DateTime.Now.AddMinutes(5);
 
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
+
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
             instance: instance,
@@ -391,41 +410,13 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: DefaultNotification(), // RequestedSendTime is null
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         var after = DateTime.Now.AddMinutes(5);
 
-        Assert.Null(result.ConditionEndpoint);
+        Assert.Equal(conditionEndpoint, result.ConditionEndpoint);
         Assert.InRange(result.RequestedSendTime, before, after);
-    }
-
-    [Fact]
-    public void CreateNotificationOrderRequest_WithRequestedSendTime_UsesItAndSetsConditionEndpoint()
-    {
-        var instance = CreateTestInstance(appId: "ttd/my-app", personNumber: "01010112345");
-        var scheduledTime = DateTime.UtcNow.AddDays(1);
-        var notification = new InstantiationNotification
-        {
-            NotificationChannel = NotificationChannel.Email,
-            RequestedSendTime = scheduledTime,
-        };
-
-        var result = NotificationService.CreateNotificationOrderRequest(
-            language: LanguageConst.Nb,
-            instance: instance,
-            applicationMetadata: null,
-            instanceOwnerName: null,
-            serviceOwnerName: null,
-            instantiationNotification: notification,
-            callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
-        );
-
-        Assert.Equal(scheduledTime, result.RequestedSendTime);
-        Assert.Equal(
-            "https://ttd.apps.tt02.altinn.no/ttd/my-app/api/v1/notification-webhook-listener/1337/abc-123",
-            result.ConditionEndpoint?.ToString()
-        );
     }
 
     #endregion
@@ -436,6 +427,9 @@ public class NotificationServiceTests
     public void BuildReminders_NullReminders_ReturnsNull()
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
         var notification = NotificationWithReminders(null);
 
         var result = NotificationService.CreateNotificationOrderRequest(
@@ -445,7 +439,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         Assert.Null(result.Reminders);
@@ -457,6 +451,9 @@ public class NotificationServiceTests
         var instance = CreateTestInstance(orgNumber: "123456789");
         List<InstantiationNotificationReminder> remindersEmpty = [];
         var notification = NotificationWithReminders(remindersEmpty);
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
@@ -465,7 +462,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         Assert.Null(result.Reminders);
@@ -475,6 +472,9 @@ public class NotificationServiceTests
     public void BuildReminders_TwoReminders_ReturnsBothReminders()
     {
         var instance = CreateTestInstance(orgNumber: "123456789");
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
         List<InstantiationNotificationReminder> reminders =
         [
             new InstantiationNotificationReminder { SendAfterDays = 3 },
@@ -490,7 +490,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         Assert.Equal(2, result.Reminders?.Count);
@@ -507,6 +507,9 @@ public class NotificationServiceTests
             new InstantiationNotificationReminder { SendAfterDays = 5, RequestedSendTime = sendTime },
         ];
         var notification = NotificationWithReminders(reminders);
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
@@ -515,7 +518,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         var reminder = Assert.Single(result.Reminders!);
@@ -541,36 +544,11 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
+            conditionEndpoint: new Uri("https://ttd.apps.tt02.altinn.no/ttd/my-app")
         );
 
         var reminder = Assert.Single(result.Reminders!);
         Assert.Equal(result.ConditionEndpoint, reminder.ConditionEndpoint);
-    }
-
-    [Fact]
-    public void BuildReminders_WithoutRequestedSendTime_ConditionEndpointIsNullOnReminders()
-    {
-        var instance = CreateTestInstance(orgNumber: "123456789");
-
-        List<InstantiationNotificationReminder> reminders =
-        [
-            new InstantiationNotificationReminder { SendAfterDays = 3 },
-        ];
-        var notification = NotificationWithReminders(reminders);
-
-        var result = NotificationService.CreateNotificationOrderRequest(
-            language: LanguageConst.Nb,
-            instance: instance,
-            applicationMetadata: null,
-            instanceOwnerName: null,
-            serviceOwnerName: null,
-            instantiationNotification: notification,
-            callBackBaseUrl: "https://ttd.apps.tt02.altinn.no/ttd/my-app"
-        );
-
-        var reminder = Assert.Single(result.Reminders!);
-        Assert.Null(reminder.ConditionEndpoint);
     }
 
     // --- Recipient type preservation ---
@@ -581,6 +559,9 @@ public class NotificationServiceTests
         var instance = CreateTestInstance(orgNumber: "123456789");
         List<InstantiationNotificationReminder> reminders = [new InstantiationNotificationReminder()];
         var notification = NotificationWithReminders(reminders);
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
@@ -589,7 +570,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         var reminder = Assert.Single(result.Reminders!);
@@ -604,6 +585,9 @@ public class NotificationServiceTests
 
         List<InstantiationNotificationReminder> reminders = [new InstantiationNotificationReminder()];
         var notification = NotificationWithReminders(reminders);
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
@@ -612,7 +596,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         var reminder = Assert.Single(result.Reminders!);
@@ -627,6 +611,9 @@ public class NotificationServiceTests
 
         List<InstantiationNotificationReminder> reminders = [new InstantiationNotificationReminder()];
         var notification = NotificationWithReminders(reminders);
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.En,
@@ -635,7 +622,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         var reminder = Assert.Single(result.Reminders!);
@@ -682,6 +669,9 @@ public class NotificationServiceTests
             },
             Reminders = [new InstantiationNotificationReminder()], // no custom overrides
         };
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
@@ -690,7 +680,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
@@ -730,6 +720,9 @@ public class NotificationServiceTests
             ],
         };
 
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
             instance: instance,
@@ -737,7 +730,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
@@ -769,6 +762,9 @@ public class NotificationServiceTests
                 },
             ],
         };
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
@@ -777,7 +773,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
@@ -817,6 +813,9 @@ public class NotificationServiceTests
                 },
             ],
         };
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: language,
@@ -825,7 +824,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         var reminderOrg = Assert.Single(result.Reminders!).Recipient.RecipientOrganization!;
@@ -879,6 +878,9 @@ public class NotificationServiceTests
                 },
             ],
         };
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
@@ -887,7 +889,7 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         Assert.Equal(2, result.Reminders!.Count);
@@ -913,6 +915,9 @@ public class NotificationServiceTests
             NotificationChannel = NotificationChannel.EmailAndSms,
             AllowSendingAfterWorkHours = allowSendingAfterWorkHours,
         };
+        var conditionEndpoint = new Uri(
+            "https://ttd.apps.tt02.altinn.no/api/v1/notification-webhook-listener/1337/some-guid?code=token"
+        );
 
         var result = NotificationService.CreateNotificationOrderRequest(
             language: LanguageConst.Nb,
@@ -921,11 +926,61 @@ public class NotificationServiceTests
             instanceOwnerName: null,
             serviceOwnerName: null,
             instantiationNotification: notification,
-            callBackBaseUrl: null
+            conditionEndpoint: conditionEndpoint
         );
 
         var org = result.Recipient.RecipientOrganization!;
         Assert.Equal(expectedPolicy, org.SmsSettings?.SendingTimePolicy);
+    }
+
+    #endregion
+
+    #region Callback uri
+
+    [Fact]
+    public void CallbackUrlWithAuth_IncludesOrgAppAndInstanceInPath()
+    {
+        // Arrange
+        var instance = new Instance
+        {
+            Id = "53440291/772f4e79-c494-4848-a74b-1b786d334069",
+            AppId = "ttd/my-app",
+            Org = "ttd",
+        };
+        var baseUrl = "https://ttd.apps.tt02.altinn.no/ttd/my-app";
+
+        var expectedInstanceGuid = Guid.Parse("772f4e79-c494-4848-a74b-1b786d334069");
+
+        _ = _tokenGenerator
+            .Setup(x =>
+                x.GenerateToken(
+                    expectedInstanceGuid,
+                    It.IsAny<Core.Features.Telemetry?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns("test-token");
+
+        // Act
+        var result = CreateSut().CallbackUrlWithAuth(instance, baseUrl);
+
+        // Assert
+        Assert.Equal("https", result.Scheme);
+        Assert.Equal("ttd.apps.tt02.altinn.no", result.Host);
+        Assert.Equal(
+            "/ttd/my-app/api/v1/notification-webhook-listener/53440291/772f4e79-c494-4848-a74b-1b786d334069",
+            result.AbsolutePath
+        );
+        Assert.Contains("code=test-token", result.Query);
+        _tokenGenerator.Verify(
+            x =>
+                x.GenerateToken(
+                    expectedInstanceGuid,
+                    It.IsAny<Core.Features.Telemetry?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     #endregion

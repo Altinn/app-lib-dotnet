@@ -11,6 +11,7 @@ using Altinn.App.Core.Features.Notifications;
 using Altinn.App.Core.Features.Notifications.Cancellation;
 using Altinn.App.Core.Features.Notifications.Email;
 using Altinn.App.Core.Features.Notifications.Future;
+using Altinn.App.Core.Features.Notifications.SecretProvider;
 using Altinn.App.Core.Features.Notifications.Sms;
 using Altinn.App.Core.Features.Options;
 using Altinn.App.Core.Features.Options.Altinn3LibraryCodeList;
@@ -33,6 +34,7 @@ using Altinn.App.Core.Infrastructure.Clients.KeyVault;
 using Altinn.App.Core.Infrastructure.Clients.Pdf;
 using Altinn.App.Core.Infrastructure.Clients.Profile;
 using Altinn.App.Core.Infrastructure.Clients.Register;
+using Altinn.App.Core.Infrastructure.Clients.Secrets;
 using Altinn.App.Core.Infrastructure.Clients.Storage;
 using Altinn.App.Core.Internal;
 using Altinn.App.Core.Internal.AltinnCdn;
@@ -42,6 +44,7 @@ using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Files;
 using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
@@ -100,6 +103,7 @@ public static class ServiceCollectionExtensions
         services.Configure<GeneralSettings>(configuration.GetSection("GeneralSettings"));
         services.Configure<PlatformSettings>(configuration.GetSection("PlatformSettings"));
         services.Configure<CacheSettings>(configuration.GetSection("CacheSettings"));
+        services.Configure<AppCodesSettings>(configuration.GetSection("AppCodes"));
 
         AddApplicationIdentifier(services);
 
@@ -119,7 +123,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IText, TextClient>();
 #pragma warning restore CS0618 // Type or member is obsolete
         services.AddHttpClient<IProcessClient, ProcessClient>();
-        services.AddHttpClient<InstanceLockClient>();
+        services.AddSingleton<InstanceLockClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
         services.AddHttpClient<IAccessManagementClient, AccessManagementClient>();
 
@@ -202,6 +206,7 @@ public static class ServiceCollectionExtensions
         services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
         services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
         services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
+        services.AddTransient<IFileService, FileService>();
 
         services.AddRuntimeEnvironment();
         if (env.IsDevelopment())
@@ -287,6 +292,9 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<INotificationOrderClient, NotificationOrderClient>();
         services.TryAddTransient<INotificationService, NotificationService>();
         services.TryAddTransient<ICancelInstantiationNotification, SendOnProcessNotEnded>();
+        services.TryAddSingleton<INotificationConditionSecretProvider, NotificationConditionSecretProvider>();
+        services.TryAddSingleton<INotificationConditionTokenGenerator, NotificationConditionTokenGenerator>();
+        services.TryAddSingleton<INotificationConditionCodeValidator, NotificationConditionCodeValidator>();
     }
 
     private static void AddPdfServices(IServiceCollection services)
@@ -321,6 +329,7 @@ public static class ServiceCollectionExtensions
             services.Configure<NetsPaymentSettings>(configurationSection);
             services.AddHttpClient<INetsClient, NetsClient>();
             services.AddTransient<IPaymentProcessor, NetsPaymentProcessor>();
+            services.TryAddSingleton<INetsWebhookSecretProvider, NetsWebhookSecretProvider>();
         }
     }
 
@@ -378,7 +387,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
         services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
 
-        services.AddScoped<IInstanceLocker, InstanceLocker>();
+        services.AddSingleton<IInstanceLocker, InstanceLocker>();
 
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();

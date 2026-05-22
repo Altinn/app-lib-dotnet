@@ -27,10 +27,10 @@ public sealed class UniqueSignatureAuthorizerTests : IDisposable
 
     public UniqueSignatureAuthorizerTests()
     {
-        _processReaderMock = new Mock<IProcessReader>();
-        _instanceClientMock = new Mock<IInstanceClient>();
-        _dataClientMock = new Mock<IDataClient>();
-        _appMetadataMock = new Mock<IAppMetadata>();
+        _processReaderMock = new Mock<IProcessReader>(MockBehavior.Strict);
+        _instanceClientMock = new Mock<IInstanceClient>(MockBehavior.Strict);
+        _dataClientMock = new Mock<IDataClient>(MockBehavior.Strict);
+        _appMetadataMock = new Mock<IAppMetadata>(MockBehavior.Strict);
     }
 
     [Fact]
