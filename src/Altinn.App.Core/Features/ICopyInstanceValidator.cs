@@ -1,5 +1,4 @@
 ﻿using Altinn.App.Core.Models.Validation;
-using Altinn.Platform.Storage.Interface.Models;
 
 namespace Altinn.App.Core.Features;
 
@@ -15,11 +14,11 @@ public interface ICopyInstanceValidator
     /// <example>
     /// if ([some condition])
     /// {
-    ///   return await Task.FromResult(new InstantiationValidationResult
+    ///   return new InstantiationValidationResult
     ///   {
     ///       Valid = false,
     ///       Message = "Some message"
-    ///   });
+    ///   };
     /// }
     /// return null;
     /// </example>

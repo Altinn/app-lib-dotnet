@@ -15,11 +15,11 @@ public interface IInstantiationValidator
     /// <example>
     /// if ([some condition])
     /// {
-    ///   return await Task.FromResult(new InstantiationValidationResult
+    ///   return new InstantiationValidationResult
     ///   {
     ///       Valid = false,
     ///       Message = "Some message"
-    ///   });
+    ///   };
     /// }
     /// return null;
     /// </example>
