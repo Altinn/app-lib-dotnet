@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Altinn.App.Api.Controllers;
 using Altinn.App.Api.Controllers.Attributes;
 using Altinn.App.Api.Controllers.Conventions;
@@ -27,8 +26,6 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
-using OpenTelemetry;
-using OpenTelemetry.Context.Propagation;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -226,13 +223,7 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<TelemetryInitialization>();
         services.AddSingleton<Telemetry>();
 
-        // This bit of code makes ASP.NET Core spans always root.
-        // Depending on infrastructure used and how the application is exposed/called,
-        // it might be a good idea to be in control of the root span (and therefore the size, baggage etch)
-        // Taken from: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/issues/1773
-        _ = Sdk.SuppressInstrumentation; // Just to trigger static constructor. The static constructor in Sdk initializes Propagators.DefaultTextMapPropagator which we depend on below
-        Sdk.SetDefaultTextMapPropagator(new OtelPropagator(Propagators.DefaultTextMapPropagator));
-        DistributedContextPropagator.Current = new AspNetCorePropagator();
+        AppRequestRootPropagation.Enable();
 
         var appInsightsConnectionString = GetAppInsightsConnectionStringForOtel(config, env);
         var useOpenTelemetryCollector = config.GetValue<bool?>("AppSettings:UseOpenTelemetryCollector");
@@ -366,79 +357,6 @@ public static class ServiceCollectionExtensions
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// PDF generation works by using a headless browser to render the frontend of an app instance.
-    /// To make  debugging PDF generation failures easier, we want requests originating from the PDF generator to be
-    /// contained in the root trace (process/next) as children. The frontend will set this header when making requests to the app backend in PDF mode.
-    /// </summary>
-    /// <param name="headers">Request headers attached to the span</param>
-    /// <returns></returns>
-    private static bool IsPdfGeneratorRequest(IHeaderDictionary headers) => headers.ContainsKey("X-Altinn-IsPdf");
-
-    internal sealed class OtelPropagator : TextMapPropagator
-    {
-        private readonly TextMapPropagator _inner;
-
-        public OtelPropagator(TextMapPropagator inner) => _inner = inner;
-
-        public override ISet<string>? Fields => _inner.Fields;
-
-        public override PropagationContext Extract<T>(
-            PropagationContext context,
-            T carrier,
-            Func<T, string, IEnumerable<string>?> getter
-        )
-        {
-            if (carrier is HttpRequest req && !IsPdfGeneratorRequest(req.Headers))
-                return default;
-
-            return _inner.Extract(context, carrier, getter);
-        }
-
-        public override void Inject<T>(PropagationContext context, T carrier, Action<T, string, string> setter) =>
-            _inner.Inject(context, carrier, setter);
-    }
-
-    internal sealed class AspNetCorePropagator : DistributedContextPropagator
-    {
-        private readonly DistributedContextPropagator _inner;
-
-        public AspNetCorePropagator() => _inner = CreateDefaultPropagator();
-
-        public override IReadOnlyCollection<string> Fields => _inner.Fields;
-
-        public override IEnumerable<KeyValuePair<string, string?>>? ExtractBaggage(
-            object? carrier,
-            PropagatorGetterCallback? getter
-        )
-        {
-            if (carrier is IHeaderDictionary headers && !IsPdfGeneratorRequest(headers))
-                return null;
-
-            return _inner.ExtractBaggage(carrier, getter);
-        }
-
-        public override void ExtractTraceIdAndState(
-            object? carrier,
-            PropagatorGetterCallback? getter,
-            out string? traceId,
-            out string? traceState
-        )
-        {
-            if (carrier is IHeaderDictionary headers && !IsPdfGeneratorRequest(headers))
-            {
-                traceId = null;
-                traceState = null;
-                return;
-            }
-
-            _inner.ExtractTraceIdAndState(carrier, getter, out traceId, out traceState);
-        }
-
-        public override void Inject(Activity? activity, object? carrier, PropagatorSetterCallback? setter) =>
-            _inner.Inject(activity, carrier, setter);
     }
 
     private static void AddAuthorizationPolicies(IServiceCollection services)
