@@ -701,20 +701,24 @@ public class InstancesController : ControllerBase
                 }
 
                 var copyInstanceValidator = _appImplementationFactory.Get<ICopyInstanceValidator>();
-                var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(source, null, null);
-                validationResult =
-                    copyInstanceValidator != null
-                        ? await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork)
-                        : null;
-                if (validationResult != null && !validationResult.Valid)
+                if (copyInstanceValidator is not null)
                 {
-                    _logger.LogWarning(
-                        "CopyInstanceValidator rejected instantiation for party {PartyId}: {@ValidationResult}",
-                        party.PartyId,
-                        validationResult
+                    var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
+                        source,
+                        null,
+                        null
                     );
-                    await TranslateValidationResult(validationResult, language);
-                    return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+                    validationResult = await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork);
+                    if (validationResult != null && !validationResult.Valid)
+                    {
+                        _logger.LogWarning(
+                            "CopyInstanceValidator rejected instantiation for party {PartyId}: {@ValidationResult}",
+                            party.PartyId,
+                            validationResult
+                        );
+                        await TranslateValidationResult(validationResult, language);
+                        return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+                    }
                 }
             }
 
@@ -877,18 +881,24 @@ public class InstancesController : ControllerBase
         }
 
         var copyInstanceValidator = _appImplementationFactory.Get<ICopyInstanceValidator>();
-        var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(sourceInstance, null, null);
-        validationResult =
-            copyInstanceValidator != null ? await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork) : null;
-        if (validationResult != null && !validationResult.Valid)
+        if (copyInstanceValidator is not null)
         {
-            _logger.LogWarning(
-                "CopyInstanceValidator rejected instantiation for party {PartyId}: {@ValidationResult}",
-                instanceOwnerPartyId,
-                validationResult
+            var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
+                sourceInstance,
+                null,
+                null
             );
-            await TranslateValidationResult(validationResult, language);
-            return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+            validationResult = await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork);
+            if (validationResult != null && !validationResult.Valid)
+            {
+                _logger.LogWarning(
+                    "CopyInstanceValidator rejected instantiation for party {PartyId}: {@ValidationResult}",
+                    instanceOwnerPartyId,
+                    validationResult
+                );
+                await TranslateValidationResult(validationResult, language);
+                return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+            }
         }
 
         ProcessStartRequest processStartRequest = new() { Instance = targetInstance, User = User };
