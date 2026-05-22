@@ -1,4 +1,5 @@
 using Altinn.App.Clients.Fiks.Exceptions;
+using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -6,6 +7,71 @@ namespace Altinn.App.Clients.Fiks.Tests.FiksArkiv.Models;
 
 public class FiksArkivSettingsTest
 {
+    [Theory]
+    [InlineData("sys", "cls", "title", null, null)]
+    [InlineData("sys", "cls", "title", true, null)]
+    [InlineData("sys", "cls", "title", false, null)]
+    [InlineData("", "cls", "title", null, "SystemId configuration is required")]
+    [InlineData("   ", "cls", "title", null, "SystemId configuration is required")]
+    [InlineData("sys", "", "title", null, "ClassificationId configuration is required")]
+    [InlineData("sys", "cls", "", null, "Title configuration is required")]
+    public void FiksArkivClassification_ValidatesCorrectly(
+        string systemId,
+        string classificationId,
+        string title,
+        bool? isRestricted,
+        string? expectedErrorMessage
+    )
+    {
+        // Arrange
+        var classification = new FiksArkivClassification
+        {
+            SystemId = systemId,
+            ClassificationId = classificationId,
+            Title = title,
+            IsRestricted = isRestricted,
+        };
+
+        // Act
+        var ex = Record.Exception(() => classification.Validate("TestSetting"));
+
+        // Assert
+        if (expectedErrorMessage is null)
+        {
+            Assert.Null(ex);
+            return;
+        }
+
+        Assert.NotNull(ex);
+        Assert.IsType<FiksArkivConfigurationException>(ex);
+        Assert.Contains(expectedErrorMessage, ex.Message);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void FiksArkivClassification_ToKlassifikasjon_MapsAllFields(bool? isRestricted)
+    {
+        // Arrange
+        var classification = new FiksArkivClassification
+        {
+            SystemId = "system-1",
+            ClassificationId = "class-1",
+            Title = "The Title",
+            IsRestricted = isRestricted,
+        };
+
+        // Act
+        var result = classification.ToKlassifikasjon();
+
+        // Assert
+        Assert.Equal("system-1", result.KlassifikasjonssystemID);
+        Assert.Equal("class-1", result.KlasseID);
+        Assert.Equal("The Title", result.Tittel);
+        Assert.Equal(isRestricted, result.ErSkjermet);
+    }
+
     [Theory]
     [InlineData("datatype1", "customfile.xml", null, "customfile.xml")]
     [InlineData("datatype2", null, ".pdf", "datatype2.pdf")]
@@ -46,6 +112,32 @@ public class FiksArkivSettingsTest
         var ex = Record.Exception(() =>
             settings.Validate("TestSetting", dataTypeIds.Select(x => new DataType { Id = x }).ToList(), requireFilename)
         );
+
+        // Assert
+        if (expectedErrorMessage is null)
+        {
+            Assert.Null(ex);
+            return;
+        }
+
+        Assert.NotNull(ex);
+        Assert.IsType<FiksArkivConfigurationException>(ex);
+        Assert.Contains(expectedErrorMessage, ex.Message);
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("PDF/A", null)]
+    [InlineData("anything goes verbatim", null)]
+    [InlineData("", "FormatCode cannot be empty or whitespace")]
+    [InlineData("   ", "FormatCode cannot be empty or whitespace")]
+    public void FiksArkivDataTypeSettings_ValidatesFormatCode(string? formatCode, string? expectedErrorMessage)
+    {
+        // Arrange
+        var settings = new FiksArkivDataTypeSettings { DataType = "valid-datatype", FormatCode = formatCode };
+
+        // Act
+        var ex = Record.Exception(() => settings.Validate("TestSetting", [new DataType { Id = "valid-datatype" }]));
 
         // Assert
         if (expectedErrorMessage is null)

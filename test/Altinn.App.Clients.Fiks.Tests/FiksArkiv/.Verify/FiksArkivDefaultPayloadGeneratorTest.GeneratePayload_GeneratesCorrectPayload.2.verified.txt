@@ -48,8 +48,8 @@
       <dokumentobjekt>
         <systemID label="Altinn Studio">f41af07b-47c3-4d3a-9a34-1baa0f575101</systemID>
         <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">P</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Produksjonsformat</beskrivelse>
+          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
+          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
         </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">XML</kode>
@@ -76,8 +76,8 @@
       <dokumentobjekt>
         <systemID label="Altinn Studio">f41af07b-47c3-4d3a-9a34-1baa0f575101</systemID>
         <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">P</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Produksjonsformat</beskrivelse>
+          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
+          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
         </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">PDF</kode>
@@ -104,8 +104,8 @@
       <dokumentobjekt>
         <systemID label="Altinn Studio">f41af07b-47c3-4d3a-9a34-1baa0f575101</systemID>
         <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">P</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Produksjonsformat</beskrivelse>
+          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
+          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
         </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">PDF</kode>
@@ -132,8 +132,8 @@
       <dokumentobjekt>
         <systemID label="Altinn Studio">f41af07b-47c3-4d3a-9a34-1baa0f575101</systemID>
         <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">P</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Produksjonsformat</beskrivelse>
+          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
+          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
         </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">DOCX</kode>
@@ -160,8 +160,8 @@
       <dokumentobjekt>
         <systemID label="Altinn Studio">f41af07b-47c3-4d3a-9a34-1baa0f575101</systemID>
         <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">P</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Produksjonsformat</beskrivelse>
+          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
+          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
         </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">JPG</kode>

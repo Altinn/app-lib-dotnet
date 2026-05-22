@@ -29,16 +29,19 @@ public class FiksArkivDefaultPayloadGeneratorTest
     private static readonly Guid _fiksIOSenderAccount = Guid.Parse("f41af07b-47c3-4d3a-9a34-1baa0f575101");
     private static readonly DateTimeOffset _now = DateTimeOffset.Parse("2025-10-24T09:58:00.000000Z");
 
-    private static readonly Instance _defaultInstance = Factories.Instance(
-        "12345/88d9baf8-2f9f-4e66-9a2f-7d345e60ed90",
-        [
-            Factories.DataElement("model", null, "application/xml"),
-            Factories.DataElement("ref-data-as-pdf", null, "application/pdf"),
-            Factories.DataElement("something-uploaded", "receipt2.pdf", null),
-            Factories.DataElement("something-uploaded", "letter.docx", null),
-            Factories.DataElement("something-uploaded", "drawing_1a.jpg", null),
-        ]
-    );
+    // Built fresh per test invocation because the production code mutates DataElement.Filename;
+    // reusing a static instance leaks state across test cases.
+    private static Instance NewDefaultInstance() =>
+        Factories.Instance(
+            "12345/88d9baf8-2f9f-4e66-9a2f-7d345e60ed90",
+            [
+                Factories.DataElement("model", null, "application/xml"),
+                Factories.DataElement("ref-data-as-pdf", null, "application/pdf"),
+                Factories.DataElement("something-uploaded", "receipt2.pdf", null),
+                Factories.DataElement("something-uploaded", "letter.docx", null),
+                Factories.DataElement("something-uploaded", "drawing_1a.jpg", null),
+            ]
+        );
 
     private static class Auth
     {
@@ -130,6 +133,27 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 ),
                 instanceOwnerClassification: Factories.InstanceOwnerClassification(Auth.Org)
             ),
+            TestCase.Create(
+                testIdentifier: "5",
+                fiksArkivMessageType: FiksArkivConstants.MessageTypes.CreateArchiveRecord,
+                expectedAttachmentFilenames: ["Form.pdf", "ref-data-as-pdf.pdf"],
+                primaryDocumentSettings: Factories.DocumentSettings("model", "Form.pdf", formatCode: "PDF/A"),
+                attachmentSettings: [Factories.DocumentSettings("ref-data-as-pdf")],
+                archiveDocumentMetadata: null,
+                recipientParty: Factories.RecipientParty("recipient-id", "Recipient Name"),
+                instanceOwnerParty: null,
+                instanceOwnerClassification: Factories.InstanceOwnerClassification(Auth.User),
+                additionalClassifications:
+                [
+                    Factories.ConfiguredClassification("custom-system", "custom-class", "Custom Classification"),
+                    Factories.ConfiguredClassification(
+                        "custom-system-2",
+                        "custom-class-2",
+                        "Restricted Classification",
+                        isRestricted: true
+                    ),
+                ]
+            ),
         ];
 
     [Theory]
@@ -141,7 +165,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
 
         // Act
         var result = await fixture.GeneratePayload(
-            _defaultInstance,
+            NewDefaultInstance(),
             FiksArkivConstants.MessageTypes.CreateArchiveRecord
         );
 
@@ -189,6 +213,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
             Korrespondansepart recipientParty,
             Korrespondansepart? instanceOwnerParty,
             Klassifikasjon instanceOwnerClassification,
+            IReadOnlyList<Klassifikasjon>? additionalClassifications = null,
             string applicationTitle = "Test app",
             string appId = "ttd/test-app"
         )
@@ -201,6 +226,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     recipientParty,
                     instanceOwnerParty,
                     instanceOwnerClassification,
+                    additionalClassifications,
                     applicationTitle,
                     appId
                 ),
@@ -242,6 +268,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
             Korrespondansepart recipientParty,
             Korrespondansepart? instanceOwnerParty,
             Klassifikasjon instanceOwnerClassification,
+            IReadOnlyList<Klassifikasjon>? additionalClassifications = null,
             string applicationTitle = "Test app",
             string appId = "ttd/test-app"
         )
@@ -272,8 +299,10 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 .Setup(x => x.GetInstanceOwnerParty(It.IsAny<Instance>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(instanceOwnerParty);
             configResolverMock
-                .Setup(x => x.GetInstanceOwnerClassification(It.IsAny<Authenticated>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(instanceOwnerClassification);
+                .Setup(x => x.GetCaseFileClassifications(It.IsAny<Authenticated>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(
+                    (IReadOnlyList<Klassifikasjon>)[instanceOwnerClassification, .. additionalClassifications ?? []]
+                );
 
             var payloadGenerator = new FiksArkivDefaultPayloadGenerator(
                 appMetadataMock.Object,
@@ -325,8 +354,31 @@ public class FiksArkivDefaultPayloadGeneratorTest
 
         public static FiksArkivRecipient Recipient() => new(Guid.NewGuid(), "-", "-", "-");
 
-        public static FiksArkivDataTypeSettings DocumentSettings(string dataType, string? filename = null) =>
-            new() { DataType = dataType, Filename = filename };
+        public static FiksArkivDataTypeSettings DocumentSettings(
+            string dataType,
+            string? filename = null,
+            string? formatCode = null
+        ) =>
+            new()
+            {
+                DataType = dataType,
+                Filename = filename,
+                FormatCode = formatCode,
+            };
+
+        public static Klassifikasjon ConfiguredClassification(
+            string systemId,
+            string classificationId,
+            string title,
+            bool? isRestricted = null
+        ) =>
+            new FiksArkivClassification
+            {
+                SystemId = systemId,
+                ClassificationId = classificationId,
+                Title = title,
+                IsRestricted = isRestricted,
+            }.ToKlassifikasjon();
 
         public static FiksArkivDocumentMetadata Metadata(
             string? systemId,

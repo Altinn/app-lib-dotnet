@@ -212,23 +212,16 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         );
 
     /// <inheritdoc />
-    public async Task<Klassifikasjon> GetInstanceOwnerClassification(
+    public async Task<IReadOnlyList<Klassifikasjon>> GetCaseFileClassifications(
         Authenticated auth,
         CancellationToken cancellationToken = default
     )
     {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        return auth switch
-        {
-            Authenticated.User user => await KlassifikasjonFactory.CreateUser(user), // Note: Doesn't accept cancellation token.. yet
-            Authenticated.SystemUser systemUser => KlassifikasjonFactory.CreateSystemUser(systemUser),
-            Authenticated.ServiceOwner serviceOwner => KlassifikasjonFactory.CreateServiceOwner(serviceOwner),
-            Authenticated.Org org => KlassifikasjonFactory.CreateOrganization(org),
-            _ => throw new FiksArkivException(
-                $"Could not determine submitter details from authentication context: {auth}"
-            ),
-        };
+        return
+        [
+            await GetInstanceOwnerClassification(auth, cancellationToken: cancellationToken),
+            .. _fiksArkivSettings.Metadata?.CaseFileClassifications?.Select(x => x.ToKlassifikasjon()) ?? [],
+        ];
     }
 
     /// <inheritdoc />
@@ -298,6 +291,25 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
     {
         var unitOfWork = await _instanceDataUnitOfWorkInitializer.Init(instance, null, null);
         return await _layoutStateInitializer.Init(unitOfWork, null);
+    }
+
+    private static async Task<Klassifikasjon> GetInstanceOwnerClassification(
+        Authenticated auth,
+        CancellationToken cancellationToken = default
+    )
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return auth switch
+        {
+            Authenticated.User user => await KlassifikasjonFactory.CreateUser(user), // Note: Doesn't accept cancellation token.. yet
+            Authenticated.SystemUser systemUser => KlassifikasjonFactory.CreateSystemUser(systemUser),
+            Authenticated.ServiceOwner serviceOwner => KlassifikasjonFactory.CreateServiceOwner(serviceOwner),
+            Authenticated.Org org => KlassifikasjonFactory.CreateOrganization(org),
+            _ => throw new FiksArkivException(
+                $"Could not determine submitter details from authentication context: {auth}"
+            ),
+        };
     }
 
     private static async Task<T?> GetBindableConfigValue<T>(

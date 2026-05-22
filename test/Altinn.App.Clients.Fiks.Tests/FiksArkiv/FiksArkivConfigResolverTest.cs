@@ -455,7 +455,7 @@ public class FiksArkivConfigResolverTest
     [InlineData(typeof(Authenticated.SystemUser))]
     [InlineData(typeof(Authenticated.ServiceOwner))]
     [InlineData(typeof(Authenticated.Org))]
-    public async Task GetInstanceOwnerClassification_ReturnsExpectedValue_ForKnownAuthenticationTypes(Type authType)
+    public async Task GetCaseFileClassifications_ReturnsOwnerClassification_ForKnownAuthenticationTypes(Type authType)
     {
         // Arrange
         Authenticated auth = authType switch
@@ -469,20 +469,24 @@ public class FiksArkivConfigResolverTest
             _ => throw new NotSupportedException(),
         };
 
-        await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
+        await using var fixture = TestFixture.Create(
+            services => services.AddFiksArkiv(),
+            useDefaultFiksArkivSettings: false
+        );
 
         // Act
-        var result = await fixture.FiksArkivConfigResolver.GetInstanceOwnerClassification(auth);
+        var result = await fixture.FiksArkivConfigResolver.GetCaseFileClassifications(auth);
 
         // Assert
         Assert.NotNull(result);
-        var serialized = result.SerializeXml(indent: true);
+        Assert.Single(result);
+        var serialized = result[0].SerializeXml(indent: true);
         var xml = Encoding.UTF8.GetString(serialized.Span);
         await Verify(xml).UseDefaultSettings(authType.Name.Split("+").Last());
     }
 
     [Fact]
-    public async Task GetInstanceOwnerClassification_ThrowsException_ForUnknownAuthenticationTypes()
+    public async Task GetCaseFileClassifications_ThrowsException_ForUnknownAuthenticationTypes()
     {
         // Arrange
         var auth = TestAuthentication.GetNoneAuthentication();
@@ -490,8 +494,75 @@ public class FiksArkivConfigResolverTest
 
         // Act
         await Assert.ThrowsAsync<FiksArkivException>(() =>
-            fixture.FiksArkivConfigResolver.GetInstanceOwnerClassification(auth)
+            fixture.FiksArkivConfigResolver.GetCaseFileClassifications(auth)
         );
+    }
+
+    [Fact]
+    public async Task GetCaseFileClassifications_AppendsConfiguredClassifications_AfterOwnerClassification()
+    {
+        // Arrange
+        var fiksArkivSettingsOverride = new FiksArkivSettings
+        {
+            Metadata = new FiksArkivMetadataSettings
+            {
+                CaseFileClassifications =
+                [
+                    new FiksArkivClassification
+                    {
+                        SystemId = "configured-system-1",
+                        ClassificationId = "configured-class-1",
+                        Title = "Configured 1",
+                    },
+                    new FiksArkivClassification
+                    {
+                        SystemId = "configured-system-2",
+                        ClassificationId = "configured-class-2",
+                        Title = "Configured 2",
+                        IsRestricted = true,
+                    },
+                ],
+            },
+        };
+        await using var fixture = TestFixture.Create(
+            services => services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings"),
+            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)],
+            useDefaultFiksArkivSettings: false
+        );
+
+        // Act
+        var result = await fixture.FiksArkivConfigResolver.GetCaseFileClassifications(
+            TestAuthentication.GetServiceOwnerAuthentication()
+        );
+
+        // Assert
+        Assert.Equal(3, result.Count);
+        Assert.Equal("configured-system-1", result[1].KlassifikasjonssystemID);
+        Assert.Equal("configured-class-1", result[1].KlasseID);
+        Assert.Equal("Configured 1", result[1].Tittel);
+        Assert.Null(result[1].ErSkjermet);
+        Assert.Equal("configured-system-2", result[2].KlassifikasjonssystemID);
+        Assert.Equal("configured-class-2", result[2].KlasseID);
+        Assert.Equal("Configured 2", result[2].Tittel);
+        Assert.True(result[2].ErSkjermet);
+    }
+
+    [Fact]
+    public async Task GetCaseFileClassifications_ReturnsOwnerOnly_WhenNoConfiguredClassifications()
+    {
+        // Arrange
+        await using var fixture = TestFixture.Create(
+            services => services.AddFiksArkiv(),
+            useDefaultFiksArkivSettings: false
+        );
+
+        // Act
+        var result = await fixture.FiksArkivConfigResolver.GetCaseFileClassifications(
+            TestAuthentication.GetServiceOwnerAuthentication()
+        );
+
+        // Assert
+        Assert.Single(result);
     }
 
     // csharpier-ignore-start

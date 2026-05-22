@@ -123,6 +123,13 @@ public sealed record FiksArkivMetadataSettings
     public FiksArkivBindableValue<string>? CaseFileTitle { get; set; }
 
     /// <summary>
+    /// Optional classifications (klassifikasjon) to attach to the generated saksmappe (case file) element in the arkivmelding.xml.
+    /// These are appended in order after the implicit instance-owner classification.
+    /// </summary>
+    [JsonPropertyName("caseFileClassifications")]
+    public IReadOnlyList<FiksArkivClassification>? CaseFileClassifications { get; set; }
+
+    /// <summary>
     /// The title to use for the generated journalpost (journal entry) element in the arkivmelding.xml.
     /// If no title is provided, the value will default to the application title as defined in applicationmetadata.json.
     /// </summary>
@@ -141,6 +148,11 @@ public sealed record FiksArkivMetadataSettings
         CaseFileId?.Validate($"{propertyName}.{nameof(CaseFileId)}", dataTypes, appModelResolver);
         CaseFileTitle?.Validate($"{propertyName}.{nameof(CaseFileTitle)}", dataTypes, appModelResolver);
         JournalEntryTitle?.Validate($"{propertyName}.{nameof(JournalEntryTitle)}", dataTypes, appModelResolver);
+
+        foreach (var classification in CaseFileClassifications ?? [])
+        {
+            classification.Validate($"{propertyName}.{nameof(CaseFileClassifications)}");
+        }
     }
 }
 
@@ -412,6 +424,13 @@ public sealed record FiksArkivDataTypeSettings
     public string? Filename { get; set; }
 
     /// <summary>
+    /// Optional override for the document format code (e.g. <c>PDF/A</c>) recorded in the arkivmelding.xml
+    /// (<c>dokumentobjekt.format.kode</c>). If not specified, the dotless file extension is used.
+    /// </summary>
+    [JsonPropertyName("formatCode")]
+    public string? FormatCode { get; set; }
+
+    /// <summary>
     /// Internal validation based on the requirements of <see cref="FiksArkivDefaultPayloadGenerator"/>
     /// </summary>
     internal void Validate(string propertyName, IReadOnlyList<DataType> dataTypes, bool requireFilename = false)
@@ -429,6 +448,11 @@ public sealed record FiksArkivDataTypeSettings
             throw new FiksArkivConfigurationException(
                 $"{propertyName}.{nameof(Filename)} configuration is required, but missing."
             );
+
+        if (FormatCode is not null && string.IsNullOrWhiteSpace(FormatCode))
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(FormatCode)} cannot be empty or whitespace if specified."
+            );
     }
 
     /// <summary>
@@ -436,4 +460,54 @@ public sealed record FiksArkivDataTypeSettings
     /// </summary>
     public string GetFilenameOrDefault(string defaultExtension = "xml") =>
         !string.IsNullOrWhiteSpace(Filename) ? Filename : $"{DataType}.{defaultExtension.TrimStart('.')}";
+}
+
+/// <summary>
+/// Represents a single classification (klassifikasjon) entry attached to the saksmappe (case file)
+/// in the generated arkivmelding.xml.
+/// </summary>
+public sealed record FiksArkivClassification
+{
+    /// <summary>
+    /// The identifier of the classification system this entry belongs to (klassifikasjonssystemID).
+    /// </summary>
+    [JsonPropertyName("systemId")]
+    public required string SystemId { get; set; }
+
+    /// <summary>
+    /// The identifier of the class within the classification system (klasseID).
+    /// </summary>
+    [JsonPropertyName("classificationId")]
+    public required string ClassificationId { get; set; }
+
+    /// <summary>
+    /// A human-readable title for the classification entry (tittel).
+    /// </summary>
+    [JsonPropertyName("title")]
+    public required string Title { get; set; }
+
+    /// <summary>
+    /// Optional flag indicating that the classification is restricted (erSkjermet).
+    /// Leave <c>null</c> to omit the property from the resulting XML.
+    /// </summary>
+    [JsonPropertyName("isRestricted")]
+    public bool? IsRestricted { get; set; }
+
+    internal void Validate(string propertyName)
+    {
+        if (string.IsNullOrWhiteSpace(SystemId))
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(SystemId)} configuration is required, but missing."
+            );
+
+        if (string.IsNullOrWhiteSpace(ClassificationId))
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(ClassificationId)} configuration is required, but missing."
+            );
+
+        if (string.IsNullOrWhiteSpace(Title))
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(Title)} configuration is required, but missing."
+            );
+    }
 }
