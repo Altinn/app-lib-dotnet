@@ -425,7 +425,12 @@ internal sealed class StudioctlAppProcess : IAsyncDisposable
         if (environmentVariables is not null)
         {
             foreach (var (key, value) in environmentVariables)
+            {
+                if (key is "AppFixture__ConfigurationPath" or "NUGET_PACKAGES")
+                    throw new InvalidOperationException($"Environment variable '{key}' is reserved by the fixture.");
+
                 process.StartInfo.Environment[key] = value;
+            }
         }
         foreach (var argument in arguments)
             process.StartInfo.ArgumentList.Add(argument);
