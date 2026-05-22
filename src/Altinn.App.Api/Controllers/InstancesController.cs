@@ -709,7 +709,7 @@ public class InstancesController : ControllerBase
                     var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
                         source,
                         null,
-                        null
+                        language
                     );
                     validationResult = await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork);
                     if (validationResult != null && !validationResult.Valid)
@@ -889,7 +889,7 @@ public class InstancesController : ControllerBase
             var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
                 sourceInstance,
                 null,
-                null
+                language
             );
             validationResult = await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork);
             if (validationResult != null && !validationResult.Valid)
