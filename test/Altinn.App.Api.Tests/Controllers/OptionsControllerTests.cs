@@ -11,6 +11,7 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
+[Collection("Contributer restriction shared instance")]
 public class OptionsControllerTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
     public OptionsControllerTests(ITestOutputHelper outputHelper, WebApplicationFactory<Program> factory)

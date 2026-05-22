@@ -14,6 +14,7 @@ using Xunit.Abstractions;
 
 namespace Altinn.App.Api.Tests.Controllers;
 
+[Collection("Contributer restriction shared instance")]
 public class DataController_LayoutEvaluatorTests : ApiTestBase, IClassFixture<WebApplicationFactory<Program>>
 {
     public DataController_LayoutEvaluatorTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
