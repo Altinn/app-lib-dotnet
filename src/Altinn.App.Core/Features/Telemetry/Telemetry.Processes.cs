@@ -126,7 +126,7 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity($"{Prefix}.GenerateChangeEvent");
         activity?.SetInstanceId(instance);
-        activity?.SetTag("process.event.type", eventType);
+        activity?.SetTag(InternalLabels.ProcessEventType, eventType);
         return activity;
     }
 
@@ -152,7 +152,7 @@ partial class Telemetry
     {
         var activity = ActivitySource.StartActivity("ProcessNavigator.GetNextTask");
         activity?.SetInstanceId(instance);
-        activity?.SetTag("process.current.element", currentElement);
+        activity?.SetTag(InternalLabels.ProcessCurrentElement, currentElement);
         activity?.SetTag(InternalLabels.ProcessAction, action);
         return activity;
     }
