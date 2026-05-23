@@ -14,7 +14,6 @@ using KS.Fiks.Arkiv.Models.V1.Kodelister;
 using KS.Fiks.Arkiv.Models.V1.Metadatakatalog;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Kode = KS.Fiks.Arkiv.Models.V1.Kodelister.Kode;
 
 namespace Altinn.App.Clients.Fiks.FiksArkiv;
@@ -27,7 +26,6 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
     private readonly ILogger<FiksArkivDefaultPayloadGenerator> _logger;
     private readonly IHostEnvironment _hostEnvironment;
     private readonly IFiksArkivConfigResolver _fiksArkivConfigResolver;
-    private readonly FiksIOSettings _fiksIOSettings;
     private readonly TimeProvider _timeProvider;
 
     private bool _indentXmlSerialization => !_hostEnvironment.IsProduction();
@@ -39,7 +37,6 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         ILogger<FiksArkivDefaultPayloadGenerator> logger,
         IHostEnvironment hostEnvironment,
         IFiksArkivConfigResolver fiksArkivConfigResolver,
-        IOptions<FiksIOSettings> fiksIOSettings,
         TimeProvider? timeProvider = null
     )
     {
@@ -49,7 +46,6 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         _logger = logger;
         _hostEnvironment = hostEnvironment;
         _fiksArkivConfigResolver = fiksArkivConfigResolver;
-        _fiksIOSettings = fiksIOSettings.Value;
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -102,7 +98,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         {
             Journalaar = _timeProvider.GetLocalNow().Year,
             DokumentetsDato = _timeProvider.GetLocalNow().DateTime,
-            SendtDato = _timeProvider.GetLocalNow().DateTime,
+            SendtDato = _timeProvider.GetLocalNow().LocalDateTime,
             Tittel = documentMetadata?.JournalEntryTitle ?? defaultDocumentTitle,
             OffentligTittel = documentMetadata?.JournalEntryTitle ?? defaultDocumentTitle,
             OpprettetAv = documentCreator,
@@ -261,17 +257,12 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
                 KodeProperty = documentClassification.Verdi,
                 Beskrivelse = documentClassification.Beskrivelse,
             },
-            OpprettetDato = _timeProvider.GetLocalNow().DateTime,
+            OpprettetDato = _timeProvider.GetLocalNow().LocalDateTime,
         };
 
         metadata.Dokumentobjekt.Add(
             new Dokumentobjekt
             {
-                SystemID = new SystemID
-                {
-                    Value = _fiksIOSettings.AccountId.ToString(),
-                    Label = FiksArkivConstants.AltinnSystemId,
-                },
                 Filnavn = payloadWrapper.Payload.Filename,
                 ReferanseDokumentfil = payloadWrapper.Payload.Filename,
                 Format = payloadWrapper.GetFileFormat(),

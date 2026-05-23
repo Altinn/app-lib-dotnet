@@ -15,7 +15,6 @@ using Altinn.Platform.Storage.Interface.Models;
 using KS.Fiks.Arkiv.Models.V1.Arkivering.Arkivmelding;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 
@@ -26,7 +25,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
     //Example Instance ID = "12345/88d9baf8-2f9f-4e66-9a2f-7d345e60ed90"
 
     private static readonly XsdValidator _xsdValidator = new();
-    private static readonly Guid _fiksIOSenderAccount = Guid.Parse("f41af07b-47c3-4d3a-9a34-1baa0f575101");
     private static readonly DateTimeOffset _now = DateTimeOffset.Parse("2025-10-24T09:58:00.000000Z");
 
     // Built fresh per test invocation because the production code mutates DataElement.Filename;
@@ -309,7 +307,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 loggerMock.Object,
                 Mock.Of<IHostEnvironment>(x => x.EnvironmentName == Environments.Development),
                 configResolverMock.Object,
-                Options.Create(Factories.FiksIOSettings(_fiksIOSenderAccount)),
                 fakeTime
             );
 
@@ -338,15 +335,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
 
     private static class Factories
     {
-        public static FiksIOSettings FiksIOSettings(Guid accountId) =>
-            new()
-            {
-                AccountId = accountId,
-                IntegrationId = Guid.Empty,
-                IntegrationPassword = "-",
-                AccountPrivateKeyBase64 = "-",
-            };
-
         public static Instance Instance(string id, IEnumerable<DataElement> dataElements) =>
             new() { Id = id, Data = [.. dataElements] };
 

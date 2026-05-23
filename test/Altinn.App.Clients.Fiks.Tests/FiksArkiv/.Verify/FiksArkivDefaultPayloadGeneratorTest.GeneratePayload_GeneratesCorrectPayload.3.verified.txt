@@ -6,7 +6,7 @@
     <tittel>Test app</tittel>
     <offentligTittel>Test app</offentligTittel>
     <klassifikasjon>
-      <klassifikasjonssystemID>Organisasjonsnummer</klassifikasjonssystemID>
+      <klassifikasjonssystemID>ORGNR</klassifikasjonssystemID>
       <klasseID>405003309</klasseID>
       <tittel>tdd</tittel>
     </klassifikasjon>
@@ -39,13 +39,12 @@
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Dokumentet er ferdigstilt</beskrivelse>
       </dokumentstatus>
       <tittel>Form.xml</tittel>
-      <opprettetDato>2025-10-24T09:58:00</opprettetDato>
+      <opprettetDato>2025-10-24T11:58:00+02:00</opprettetDato>
       <tilknyttetRegistreringSom>
         <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">H</kode>
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Hoveddokument</beskrivelse>
       </tilknyttetRegistreringSom>
       <dokumentobjekt>
-        <systemID label="Altinn Studio">f41af07b-47c3-4d3a-9a34-1baa0f575101</systemID>
         <variantformat>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
           <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
@@ -97,6 +96,6 @@
       <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Journalført</beskrivelse>
     </journalstatus>
     <dokumentetsDato>2025-10-24</dokumentetsDato>
-    <sendtDato>2025-10-24T09:58:00</sendtDato>
+    <sendtDato>2025-10-24T11:58:00+02:00</sendtDato>
   </registrering>
 </arkivmelding>

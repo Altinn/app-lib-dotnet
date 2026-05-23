@@ -25,6 +25,7 @@ internal static class KlassifikasjonFactory
                     .Party.SSN.ToString(CultureInfo.InvariantCulture)
                     .EnsureNotNullOrEmpty("Classification.Id"),
                 Tittel = userProfile.Party.Name.EnsureNotEmpty("Classification.Title"),
+                ErSkjermet = true,
             }
             : new Klassifikasjon
             {
