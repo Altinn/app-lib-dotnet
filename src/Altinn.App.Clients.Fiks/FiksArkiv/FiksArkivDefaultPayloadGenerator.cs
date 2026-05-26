@@ -63,6 +63,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
                 $"Unsupported message type: {messageType}. {nameof(FiksArkivDefaultPayloadGenerator)} can only handle {FiksArkivConstants.MessageTypes.CreateArchiveRecord} requests."
             );
 
+        var now = _timeProvider.GetLocalNow();
         var appMetadata = await _appMetadata.GetApplicationMetadata();
         var documentCreator = appMetadata.AppIdentifier.Org;
         var archiveDocuments = await GetArchiveDocuments(instance, cancellationToken);
@@ -80,8 +81,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
             Tittel = documentMetadata?.CaseFileTitle ?? defaultDocumentTitle,
             OffentligTittel = documentMetadata?.CaseFileTitle ?? defaultDocumentTitle,
             AdministrativEnhet = new AdministrativEnhet { Navn = documentCreator },
-            Saksaar = _timeProvider.GetLocalNow().Year,
-            Saksdato = _timeProvider.GetLocalNow().DateTime,
+            Saksaar = now.Year,
+            Saksdato = now.DateTime,
             ReferanseEksternNoekkel = new EksternNoekkel
             {
                 Fagsystem = appMetadata.AppIdentifier.ToString(),
@@ -96,9 +97,9 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
 
         var journalEntry = new Journalpost
         {
-            Journalaar = _timeProvider.GetLocalNow().Year,
-            DokumentetsDato = _timeProvider.GetLocalNow().DateTime,
-            SendtDato = _timeProvider.GetLocalNow().LocalDateTime,
+            Journalaar = now.Year,
+            DokumentetsDato = now.DateTime,
+            SendtDato = now.LocalDateTime,
             Tittel = documentMetadata?.JournalEntryTitle ?? defaultDocumentTitle,
             OffentligTittel = documentMetadata?.JournalEntryTitle ?? defaultDocumentTitle,
             OpprettetAv = documentCreator,
@@ -130,12 +131,12 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         }
 
         // Main form data file
-        journalEntry.Dokumentbeskrivelse.Add(GetDocumentDescription(archiveDocuments.PrimaryDocument));
+        journalEntry.Dokumentbeskrivelse.Add(GetDocumentDescription(archiveDocuments.PrimaryDocument, now));
 
         // Attachments
         foreach (var attachment in archiveDocuments.AttachmentDocuments)
         {
-            journalEntry.Dokumentbeskrivelse.Add(GetDocumentDescription(attachment));
+            journalEntry.Dokumentbeskrivelse.Add(GetDocumentDescription(attachment, now));
         }
 
         // Archive record
@@ -232,7 +233,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         );
     }
 
-    private Dokumentbeskrivelse GetDocumentDescription(MessagePayloadWrapper payloadWrapper)
+    private static Dokumentbeskrivelse GetDocumentDescription(MessagePayloadWrapper payloadWrapper, DateTimeOffset now)
     {
         var documentClassification =
             payloadWrapper.FileTypeCode == DokumenttypeKoder.Dokument
@@ -257,7 +258,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
                 KodeProperty = documentClassification.Verdi,
                 Beskrivelse = documentClassification.Beskrivelse,
             },
-            OpprettetDato = _timeProvider.GetLocalNow().LocalDateTime,
+            OpprettetDato = now.LocalDateTime,
         };
 
         metadata.Dokumentobjekt.Add(
