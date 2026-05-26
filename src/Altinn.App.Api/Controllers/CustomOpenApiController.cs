@@ -116,7 +116,6 @@ public class CustomOpenApiController : Controller
                 },
                 Parameters = Snippets.CommonParameters,
             },
-            Security = [new OpenApiSecurityRequirement() { [Snippets.AltinnTokenSecuritySchemeReference] = [] }],
             Servers =
             [
                 new OpenApiServer() { Url = $"http://local.altinn.cloud", Description = "Local development server" },
@@ -132,6 +131,16 @@ public class CustomOpenApiController : Controller
                 },
             ],
         };
+
+        // OpenApiSecuritySchemeReference needs the host document to resolve its name when serialized
+        // as the key of an OpenApiSecurityRequirement; otherwise the requirement renders as "{}".
+        document.Security ??= [];
+        document.Security.Add(
+            new OpenApiSecurityRequirement()
+            {
+                [new OpenApiSecuritySchemeReference(Snippets.AltinnTokenSecuritySchemeId, document)] = [],
+            }
+        );
 
         AddCommonRoutes(document, appMetadata);
 
