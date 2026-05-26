@@ -1313,7 +1313,7 @@ public class CustomOpenApiController : Controller
 /// <summary>
 /// Common parts from the schema generator
 /// </summary>
-public static class Snippets
+file static class Snippets
 {
     /// <summary>
     /// Schema for the POST endpoint for creating a new instance
@@ -1605,7 +1605,7 @@ public static class Snippets
 /// <summary>
 /// Visitor that modifies the schema after it has been generated
 /// </summary>
-public class SchemaPostVisitor : OpenApiVisitorBase
+file class SchemaPostVisitor : OpenApiVisitorBase
 {
     /// <inheritdoc />
     public override void Visit(IOpenApiSchema schema)
