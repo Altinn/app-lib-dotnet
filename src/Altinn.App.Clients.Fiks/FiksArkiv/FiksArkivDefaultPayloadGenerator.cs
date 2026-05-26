@@ -82,7 +82,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
             OffentligTittel = documentMetadata?.CaseFileTitle ?? defaultDocumentTitle,
             AdministrativEnhet = new AdministrativEnhet { Navn = documentCreator },
             Saksaar = now.Year,
-            Saksdato = now.DateTime,
+            Saksdato = now.UtcDateTime,
             ReferanseEksternNoekkel = new EksternNoekkel
             {
                 Fagsystem = appMetadata.AppIdentifier.ToString(),
@@ -98,8 +98,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         var journalEntry = new Journalpost
         {
             Journalaar = now.Year,
-            DokumentetsDato = now.DateTime,
-            SendtDato = now.LocalDateTime,
+            DokumentetsDato = now.UtcDateTime,
+            SendtDato = now.UtcDateTime,
             Tittel = documentMetadata?.JournalEntryTitle ?? defaultDocumentTitle,
             OffentligTittel = documentMetadata?.JournalEntryTitle ?? defaultDocumentTitle,
             OpprettetAv = documentCreator,
@@ -258,7 +258,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
                 KodeProperty = documentClassification.Verdi,
                 Beskrivelse = documentClassification.Beskrivelse,
             },
-            OpprettetDato = now.LocalDateTime,
+            OpprettetDato = now.UtcDateTime,
         };
 
         metadata.Dokumentobjekt.Add(

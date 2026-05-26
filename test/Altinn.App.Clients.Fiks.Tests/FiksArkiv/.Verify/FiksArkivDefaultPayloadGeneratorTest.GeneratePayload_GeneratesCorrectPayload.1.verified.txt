@@ -40,7 +40,7 @@
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Dokumentet er ferdigstilt</beskrivelse>
       </dokumentstatus>
       <tittel>model.xml</tittel>
-      <opprettetDato>2025-10-24T11:58:00+02:00</opprettetDato>
+      <opprettetDato>2025-10-24T09:58:00Z</opprettetDato>
       <tilknyttetRegistreringSom>
         <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">H</kode>
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Hoveddokument</beskrivelse>
@@ -67,7 +67,7 @@
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Dokumentet er ferdigstilt</beskrivelse>
       </dokumentstatus>
       <tittel>ref-data-as-pdf.pdf</tittel>
-      <opprettetDato>2025-10-24T11:58:00+02:00</opprettetDato>
+      <opprettetDato>2025-10-24T09:58:00Z</opprettetDato>
       <tilknyttetRegistreringSom>
         <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">V</kode>
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Vedlegg</beskrivelse>
@@ -108,6 +108,6 @@
       <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Journalført</beskrivelse>
     </journalstatus>
     <dokumentetsDato>2025-10-24</dokumentetsDato>
-    <sendtDato>2025-10-24T11:58:00+02:00</sendtDato>
+    <sendtDato>2025-10-24T09:58:00Z</sendtDato>
   </registrering>
 </arkivmelding>
