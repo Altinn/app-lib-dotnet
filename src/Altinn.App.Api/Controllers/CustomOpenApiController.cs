@@ -1231,7 +1231,11 @@ public class CustomOpenApiController : Controller
                                 {
                                     ["application/octet-stream"] = new OpenApiMediaType()
                                     {
-                                        Schema = new OpenApiSchema() { Format = "binary" },
+                                        Schema = new OpenApiSchema()
+                                        {
+                                            Type = JsonSchemaType.String,
+                                            Format = "binary",
+                                        },
                                     },
                                 },
                             },
