@@ -34,7 +34,6 @@ public class PdfServiceTests
     private const string HostName = "at22.altinn.cloud";
 
     private readonly Mock<IAppResources> _appResources = new();
-    private readonly Mock<ILayoutEvaluatorStateInitializer> _layoutStateInit = new();
     private readonly Mock<IDataClient> _dataClient = new();
     private readonly Mock<IHttpContextAccessor> _httpContextAccessor = new();
     private readonly Mock<IPdfGeneratorClient> _pdfGeneratorClient = new();
@@ -485,22 +484,6 @@ public class PdfServiceTests
             .Setup(s => s.GetLayoutSets())
             .Returns("""{"sets":[],"uiSettings":{"hideAppNameInPdf":["equals","a","a"]}}""");
 
-        var realStateInit = new LayoutEvaluatorStateInitializer(
-            _appResources.Object,
-            new TranslationService(
-                new AppIdentifier("digdir", "not-really-an-app"),
-                _appResources.Object,
-                FakeLoggerXunit.Get<TranslationService>(_outputHelper)
-            ),
-            Mock.Of<IAppMetadata>(),
-            Options.Create(new FrontEndSettings())
-        );
-        _layoutStateInit
-            .Setup(s =>
-                s.Init(It.IsAny<IInstanceDataAccessor>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>())
-            )
-            .Returns<IInstanceDataAccessor, string?, string?, string?>(realStateInit.Init);
-
         _pdfGeneratorClient.Setup(s =>
             s.GeneratePdf(It.IsAny<Uri>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())
         );
@@ -523,17 +506,6 @@ public class PdfServiceTests
         // Act
         await target.GenerateAndStorePdf(instance, "Task_1", CancellationToken.None);
 
-        // Assert
-        _layoutStateInit.Verify(
-            s =>
-                s.Init(
-                    It.IsAny<IInstanceDataAccessor>(),
-                    It.IsAny<string?>(),
-                    It.IsAny<string?>(),
-                    It.IsAny<string?>()
-                ),
-            Times.Once
-        );
         _pdfGeneratorClient.Verify(
             s =>
                 s.GeneratePdf(
@@ -755,7 +727,6 @@ public class PdfServiceTests
                 FakeLoggerXunit.Get<TranslationService>(_outputHelper)
             ),
             appResources?.Object ?? _appResources.Object,
-            _layoutStateInit.Object,
             mockServiceProvider.Object,
             telemetrySink?.Object
         );

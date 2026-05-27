@@ -32,7 +32,6 @@ public class PdfControllerTests
     private readonly string _taskId = "Task_1";
 
     private readonly Mock<IAppResources> _appResources = new();
-    private readonly Mock<ILayoutEvaluatorStateInitializer> _layoutStateInit = new();
     private readonly Mock<IDataClient> _dataClient = new();
     private readonly IOptions<PlatformSettings> _platformSettingsOptions = Options.Create<PlatformSettings>(new() { });
     private readonly Mock<IInstanceClient> _instanceClient = new();
@@ -92,8 +91,7 @@ public class PdfControllerTests
             _logger.Object,
             _authenticationContext.Object,
             _translationService.Object,
-            _appResources.Object,
-            _layoutStateInit.Object
+            _appResources.Object
         );
         return pdfService;
     }

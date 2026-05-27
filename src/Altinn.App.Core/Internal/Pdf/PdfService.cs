@@ -6,6 +6,7 @@ using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Helpers.Extensions;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
@@ -40,7 +41,6 @@ public class PdfService : IPdfService
     private readonly ITranslationService _translationService;
     private readonly GeneralSettings _generalSettings;
     private readonly IAppResources _resources;
-    private readonly ILayoutEvaluatorStateInitializer _layoutStateInit;
     private readonly InstanceDataUnitOfWorkInitializer? _instanceDataUnitOfWorkInitializer;
     private readonly Telemetry? _telemetry;
     internal const string PdfElementType = "ref-data-as-pdf";
@@ -59,7 +59,6 @@ public class PdfService : IPdfService
         IAuthenticationContext authenticationContext,
         ITranslationService translationService,
         IAppResources resources,
-        ILayoutEvaluatorStateInitializer layoutStateInit,
         IServiceProvider? serviceProvider = null,
         Telemetry? telemetry = null
     )
@@ -73,7 +72,6 @@ public class PdfService : IPdfService
         _authenticationContext = authenticationContext;
         _translationService = translationService;
         _resources = resources;
-        _layoutStateInit = layoutStateInit;
         _instanceDataUnitOfWorkInitializer = serviceProvider?.GetService<InstanceDataUnitOfWorkInitializer>();
         _telemetry = telemetry;
     }
@@ -434,7 +432,7 @@ public class PdfService : IPdfService
 
             var expression = hideAppName.Deserialize<Expression>(_jsonSerializerOptions);
             var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, language);
-            var state = await _layoutStateInit.Init(dataAccessor, taskId, language: language);
+            var state = dataAccessor.GetLayoutEvaluatorState();
 
             var layoutSet = _resources.GetLayoutSetForTask(taskId);
             DataElementIdentifier? dataElement = layoutSet?.DataType is { } dataType
@@ -442,7 +440,7 @@ public class PdfService : IPdfService
                 : null;
 
             var componentContext = new ComponentContext(
-                state,
+                dataAccessor,
                 component: null,
                 rowIndices: null,
                 dataElementIdentifier: dataElement
