@@ -1,11 +1,13 @@
 using System.Text.Json;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
+using Moq;
 using Xunit.Abstractions;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.CommonTests;
@@ -67,17 +69,18 @@ public class TestBackendExclusiveFunctions
         var dataType = new DataType() { Id = "default" };
         var layout = new LayoutSetComponent(test.Layouts!, "layout", dataType);
         var componentModel = new LayoutModel([layout], null);
-        var state = new LayoutEvaluatorState(
-            DynamicClassBuilder.DataAccessorFromJsonDocument(
-                test.Instance,
-                test.DataModel ?? JsonDocument.Parse("{}").RootElement
-            ),
+        var translationService = new Mock<ITranslationService>(MockBehavior.Strict);
+        var dataAccessor = DynamicClassBuilder.DataAccessorFromJsonDocument(
+            test.Instance,
+            translationService: translationService.Object,
             componentModel,
-            null!,
             test.FrontEndSettings ?? new(),
+            test.DataModel ?? JsonDocument.Parse("{}").RootElement,
             test.GatewayAction,
             test.ProfileSettings?.Language
         );
+        var state = dataAccessor.GetLayoutEvaluatorState();
+        Assert.NotNull(state);
 
         if (test.ExpectsFailure is not null)
         {
