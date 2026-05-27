@@ -318,7 +318,6 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     public CorrespondenceRequest Build()
     {
         BuilderUtils.NotNullOrEmpty(_resourceId);
-        BuilderUtils.NotNullOrEmpty(_sender);
         BuilderUtils.NotNullOrEmpty(_sendersReference);
         BuilderUtils.NotNullOrEmpty(_content);
         BuilderUtils.NotNullOrEmpty(_recipients);
@@ -326,7 +325,6 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
         return new CorrespondenceRequest
         {
             ResourceId = _resourceId,
-            Sender = _sender.Value,
             SendersReference = _sendersReference,
             Content = _content with { Attachments = _contentAttachments },
             DueDateTime = _dueDateTime,

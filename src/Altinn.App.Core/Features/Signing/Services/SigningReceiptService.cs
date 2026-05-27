@@ -72,7 +72,6 @@ internal sealed class SigningReceiptService(
                 CorrespondenceRequestBuilder
                     .Create()
                     .WithResourceId(resource)
-                    .WithSender(senderOrgNumber)
                     .WithSendersReference(instanceIdentifier.ToString())
                     .WithRecipient(recipient)
                     .WithContent(content)
@@ -205,14 +204,13 @@ internal sealed class SigningReceiptService(
                     .WithFilename(filename)
                     .WithSendersReference(element.Id)
                     .WithData(
-                        new MemoryStream(
-                            await dataClient.GetDataBytes(
-                                instanceIdentifier.InstanceOwnerPartyId,
-                                instanceIdentifier.InstanceGuid,
-                                Guid.Parse(element.Id),
-                                authenticationMethod: null,
-                                CancellationToken.None
-                            )
+                        await dataClient.GetBinaryDataStream(
+                            instanceIdentifier.InstanceOwnerPartyId,
+                            instanceIdentifier.InstanceGuid,
+                            Guid.Parse(element.Id),
+                            authenticationMethod: null,
+                            timeout: null,
+                            CancellationToken.None
                         )
                     )
                     .Build()

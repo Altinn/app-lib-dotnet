@@ -40,7 +40,7 @@ public class CorrespondenceBuilderTests
         // Assert
         correspondence.Should().NotBeNull();
         correspondence.ResourceId.Should().Be("resource-id");
-        correspondence.Sender.Should().Be(sender);
+        // correspondence.Sender.Should().Be(sender); Builder mapping removed, sender is now determined from resource registry
         correspondence.SendersReference.Should().Be("sender-reference");
         correspondence.Recipients.Should().BeEquivalentTo(recipients);
         correspondence.Content.Title.Should().Be(contentTitle);
@@ -244,7 +244,7 @@ public class CorrespondenceBuilderTests
         Assert.NotNull(correspondence.ReplyOptions);
 
         correspondence.ResourceId.Should().Be(data.resourceId);
-        correspondence.Sender.Should().Be(data.sender);
+        // correspondence.Sender.Should().Be(data.sender); Builder mapping removed, sender is now determined from resource registry
         correspondence.SendersReference.Should().Be(data.sendersReference);
         correspondence.Recipients.Should().BeEquivalentTo([data.recipient]);
         correspondence.DueDateTime.Should().Be(data.dueDateTime);
@@ -395,7 +395,7 @@ public class CorrespondenceBuilderTests
         Assert.NotNull(correspondence.Notification);
 
         correspondence.ResourceId.Should().Be("resourceId-2");
-        correspondence.Sender.Should().Be(TestHelpers.GetOrganisationNumber(2));
+        // correspondence.Sender.Should().Be(TestHelpers.GetOrganisationNumber(2)); Builder mapping removed, sender is now determined from resource registry
         correspondence.SendersReference.Should().Be("sender-reference-2");
         correspondence.DueDateTime.Should().BeSameDateAs(DateTimeOffset.UtcNow.AddDays(2));
         correspondence.Recipients.Should().HaveCount(7);

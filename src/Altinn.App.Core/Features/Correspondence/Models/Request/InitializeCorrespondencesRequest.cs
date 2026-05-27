@@ -43,7 +43,10 @@ internal sealed record CorrespondenceDetailsRequest
     /// The sending organisation in URN format (e.g. <c>urn:altinn:organization:identifier-no:123456789</c>).
     /// </summary>
     [JsonPropertyName("sender")]
-    public required string Sender { get; init; }
+    [Obsolete(
+        "This property is deprecated. The sender is now automatically determined from the Resource Registry based on the resourceId."
+    )]
+    public string? Sender { get; init; }
 
     /// <summary>
     /// A reference value given to the message by the creator.
