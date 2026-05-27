@@ -1172,6 +1172,10 @@ namespace Altinn.App.Core.Features
         string Id { get; }
         System.Threading.Tasks.Task<Altinn.App.Core.Models.AppOptions> GetAppOptionsAsync(string? language, System.Collections.Generic.Dictionary<string, string> keyValuePairs);
     }
+    public interface ICopyInstanceValidator
+    {
+        System.Threading.Tasks.Task<Altinn.App.Core.Models.Validation.InstantiationValidationResult?> Validate(Altinn.App.Core.Features.IInstanceDataAccessor sourceInstanceDataAccessor);
+    }
     public interface IDataElementValidator
     {
         string DataType { get; }
@@ -3883,7 +3887,7 @@ namespace Altinn.App.Core.Internal.Process
     }
     public class ProcessNavigator : Altinn.App.Core.Internal.Process.IProcessNavigator
     {
-        public ProcessNavigator(Altinn.App.Core.Internal.Process.IProcessReader processReader, Altinn.App.Core.Internal.Process.ExclusiveGatewayFactory gatewayFactory, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessNavigator> logger, System.IServiceProvider serviceProvider) { }
+        public ProcessNavigator(Altinn.App.Core.Internal.Process.IProcessReader processReader, Altinn.App.Core.Internal.Process.ExclusiveGatewayFactory gatewayFactory, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Process.ProcessNavigator> logger, System.IServiceProvider serviceProvider, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
         public System.Threading.Tasks.Task<Altinn.App.Core.Internal.Process.Elements.Base.ProcessElement?> GetNextTask(Altinn.Platform.Storage.Interface.Models.Instance instance, string currentElement, string? action) { }
     }
     public class ProcessReader : Altinn.App.Core.Internal.Process.IProcessReader
