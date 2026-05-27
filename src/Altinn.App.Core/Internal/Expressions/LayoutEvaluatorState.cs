@@ -305,7 +305,9 @@ public class LayoutEvaluatorState
 
         if (formDataWrapper.DataElement == null)
         {
-            throw new InvalidOperationException($"No data element found for {binding.DataType} {binding.Field}");
+            throw new InvalidOperationException(
+                $"The form data wrapper for {binding.DataType} {binding.Field} was resolved with a null data element, this should not happen"
+            );
         }
 
         var field =
@@ -332,11 +334,13 @@ public class LayoutEvaluatorState
     {
         var formDataWrapper =
             await DataAccessor.GetFormDataWrapper(binding, dataElementIdentifier)
-            ?? throw new InvalidOperationException($"No data element found for {binding.DataType} {binding.Field}");
+            ?? throw new NullReferenceException($"No data element found for {binding.DataType} {binding.Field}");
 
         if (formDataWrapper.DataElement == null)
         {
-            throw new InvalidOperationException($"No data element found for {binding.DataType} {binding.Field}");
+            throw new InvalidOperationException(
+                $"The form data wrapper for {binding.DataType} {binding.Field} was resolved with a null data element, this should not happen"
+            );
         }
 
         return new DataReference()
