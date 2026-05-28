@@ -19,7 +19,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     // double is a value type where nullable takes extra space, and we only read it when it should be set
     private readonly double _numberValue = 0;
 
-    // private readonly Dictionary<string, ExpressionValue>? _objectValue = null;
+    private readonly Dictionary<string, ExpressionValue>? _objectValue = null;
     private readonly ExpressionValue[]? _arrayValue = null;
 
     /// <summary>
@@ -84,11 +84,12 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         _stringValue = value;
     }
 
-    // private ExpressionValue(Dictionary<string, ExpressionValue>? value)
-    // {
-    //     _valueKind = value is null ? JsonValueKind.Null : JsonValueKind.Object;
-    //     _objectValue = value;
-    // }
+    /// <summary>Constructor for object value</summary>
+    public ExpressionValue(Dictionary<string, ExpressionValue> value)
+    {
+        ValueKind = JsonValueKind.Object;
+        _objectValue = value;
+    }
 
     /// <summary>Constructor for array value</summary>
     public ExpressionValue(ExpressionValue[] value)
@@ -112,10 +113,10 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// </summary>
     public static implicit operator ExpressionValue(string? value) => new(value);
 
-    // /// <summary>
-    // /// Convert a Dictionary to ExpressionValue
-    // /// </summary>
-    // public static implicit operator ExpressionValue(Dictionary<string, ExpressionValue>? value) => new(value);
+    /// <summary>
+    /// Convert a Dictionary to ExpressionValue
+    /// </summary>
+    public static implicit operator ExpressionValue(Dictionary<string, ExpressionValue> value) => new(value);
 
     /// <summary>
     /// Convert an array to ExpressionValue
@@ -174,8 +175,16 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                     '"'
                 ) // Trim quotes to match the string representation
             ,
+            IDictionary<string, object> dictionaryValue => dictionaryValue.ToDictionary(
+                entry => entry.Key,
+                entry => FromObject(entry.Value)
+            ),
             IEnumerable enumerableValue => enumerableValue.Cast<object>().Select(FromObject).ToArray(),
             JsonElement jsonElement => FromObject(JsonElementToObject(jsonElement)),
+            _ when value.GetType().BaseType?.Name == "Object" => value
+                .GetType()
+                .GetProperties()
+                .ToDictionary(prop => prop.Name, prop => FromObject(prop.GetValue(value))),
             _ => Null,
         };
     }
@@ -188,6 +197,9 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.String => jsonElement.GetString(),
             JsonValueKind.Number => jsonElement.GetDouble(),
             JsonValueKind.Array => jsonElement.EnumerateArray().Select(JsonElementToObject).ToArray(),
+            JsonValueKind.Object => jsonElement
+                .EnumerateObject()
+                .ToDictionary(prop => prop.Name, prop => JsonElementToObject(prop.Value)),
             _ => null,
         };
 
@@ -204,7 +216,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.False => false,
             JsonValueKind.String => String,
             JsonValueKind.Number => Number,
-            // JsonValueKind.Object => Object,
+            JsonValueKind.Object => Dictionary,
             JsonValueKind.Array => Array,
             _ => throw new InvalidOperationException("Invalid value kind"),
         };
@@ -251,14 +263,15 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             ),
         };
 
-    // public Dictionary<string, ExpressionValue> Object =>
-    //     _valueKind switch
-    //     {
-    //         JsonValueKind.Object => _objectValue ?? throw new UnreachableException($"{this} is not an object"),
-    //         _ => throw new InvalidCastException(
-    //            $"The .Object property can't be used on an expression value that represent a {_valueKind}"
-    //        ),
-    //     };
+    /// <summary>Get the value as an object (or throw if it isn't an object ValueKind)</summary>
+    public Dictionary<string, ExpressionValue> Dictionary =>
+        ValueKind switch
+        {
+            JsonValueKind.Object => _objectValue ?? throw new UnreachableException($"{this} is not an object"),
+            _ => throw new InvalidCastException(
+                $"The .Object property can't be used on an expression value that represent a {ValueKind}"
+            ),
+        };
 
     /// <summary>Get the value as an array (or throw if it isn't an array ValueKind)</summary>
     public ExpressionValue[] Array =>
@@ -636,7 +649,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
             JsonTokenType.String => reader.GetString(),
             JsonTokenType.Number => reader.GetDouble(),
             JsonTokenType.Null => ExpressionValue.Null,
-            // JsonTokenType.StartObject => ReadObject(ref reader),
+            JsonTokenType.StartObject => ReadObject(ref reader, options),
             JsonTokenType.StartArray => ReadArray(ref reader, options),
             _ => throw new JsonException(),
         };
@@ -654,10 +667,17 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
         return new ExpressionValue(values);
     }
 
-    // private ExpressionValue ReadObject(ref Utf8JsonReader reader)
-    // {
-    //     throw new NotImplementedException();
-    // }
+    private static ExpressionValue ReadObject(ref Utf8JsonReader reader, JsonSerializerOptions options)
+    {
+        if (reader.TokenType != JsonTokenType.StartObject)
+        {
+            throw new JsonException("Expected StartObject token.");
+        }
+        var values =
+            JsonSerializer.Deserialize<Dictionary<string, ExpressionValue>>(ref reader, options)
+            ?? throw new JsonException("Expected EndObject token.");
+        return new ExpressionValue(values);
+    }
 
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, ExpressionValue value, JsonSerializerOptions options)
@@ -680,9 +700,9 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
             case JsonValueKind.Number:
                 writer.WriteNumberValue(value.Number);
                 break;
-            // case JsonValueKind.Object:
-            //     JsonSerializer.Serialize(writer, value.Object, options);
-            //     break;
+            case JsonValueKind.Object:
+                JsonSerializer.Serialize(writer, value.Dictionary, options);
+                break;
             case JsonValueKind.Array:
                 JsonSerializer.Serialize(writer, value.Array, options);
                 break;

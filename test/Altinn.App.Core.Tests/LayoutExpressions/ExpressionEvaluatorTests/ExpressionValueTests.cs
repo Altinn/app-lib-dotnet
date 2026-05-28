@@ -162,7 +162,12 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
     [InlineData("[]")]
     [InlineData("[1,2,3]")]
     [InlineData("[[[1,2],[3,4]],[[5,6],[7,8]]]")]
-    [InlineData("[1,\"test\",true,null,[]]")]
+    [InlineData("[1,\"test\",true,null,[],{}]")]
+    [InlineData("{}")]
+    [InlineData("{\"a\":1,\"b\":\"test\",\"c\":true,\"d\":null,\"e\":[]}")]
+    [InlineData("{\"a\":{\"b\":1}}")]
+    [InlineData("{\"a\":[1,2,3]}")]
+    [InlineData("[{\"a\":1},{\"b\":2}]")]
     public void TestJsonParsing(string json)
     {
         ExpressionValue value = JsonSerializer.Deserialize<ExpressionValue>(json);
@@ -181,6 +186,7 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
         Assert.Throws<InvalidCastException>(() => undefinedValue.Number);
         Assert.Throws<InvalidCastException>(() => undefinedValue.String);
         Assert.Throws<InvalidCastException>(() => undefinedValue.Array);
+        Assert.Throws<InvalidCastException>(() => undefinedValue.Dictionary);
 
         Assert.Equal("null", JsonSerializer.Serialize(undefinedValue));
         Assert.Throws<NotImplementedException>(() => undefinedValue.GetHashCode());
@@ -198,21 +204,7 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
         Assert.Throws<InvalidCastException>(() => _ = nullValue.Number);
         Assert.Throws<InvalidCastException>(() => _ = nullValue.String);
         Assert.Throws<InvalidCastException>(() => _ = nullValue.Array);
-    }
-
-    [Fact]
-    public void TestObjectsFail()
-    {
-        // This is probably temporary
-        Assert.Throws<JsonException>(() =>
-        {
-            JsonSerializer.Deserialize<ExpressionValue>("{\"key\": \"value\"}");
-        });
-
-        Assert.Throws<JsonException>(() =>
-        {
-            JsonSerializer.Deserialize<ExpressionValue>("{\"key\": 123}");
-        });
+        Assert.Throws<InvalidCastException>(() => _ = nullValue.Dictionary);
     }
 
     [Fact]
