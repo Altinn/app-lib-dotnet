@@ -272,15 +272,17 @@ public static partial class ExpressionEvaluator
             );
             throw new ArgumentException($"Unable to find component with identifier {componentId}{rowIndexInfo}");
         }
-
+        if (targetContext.Component == null)
+        {
+            throw new ArgumentException("Could not find component");
+        }
         if (targetContext.HasChildContexts)
         {
-            throw new NotImplementedException("Component lookup for components that are groups is not implemented");
+            return await EvaluateGroupBinding(targetContext.Component.DataModelBindings, context, state);
         }
-
-        if (targetContext.Component?.DataModelBindings.TryGetValue("simpleBinding", out var binding) != true)
+        if (targetContext.Component.DataModelBindings.TryGetValue("simpleBinding", out var binding) != true)
         {
-            throw new ArgumentException("component lookup requires the target component to have a simpleBinding");
+            return await MapBindingsToDataModel(targetContext.Component.DataModelBindings, context, state);
         }
         if (await targetContext.IsHidden(evaluateRemoveWhenHidden: false))
         {
@@ -288,6 +290,38 @@ public static partial class ExpressionEvaluator
         }
 
         return await DataModel(binding, context.DataElementIdentifier, context.RowIndices, state);
+    }
+
+    private static async Task<ExpressionValue> EvaluateGroupBinding(
+        IReadOnlyDictionary<string, ModelBinding> bindings,
+        ComponentContext context,
+        LayoutEvaluatorState state
+    )
+    {
+        if (!bindings.TryGetValue("group", out var binding))
+        {
+            throw new UnreachableException("Group component is missing a group binding");
+        }
+        return await DataModel(binding, context.DataElementIdentifier, context.RowIndices, state);
+    }
+
+    private static async Task<ExpressionValue> MapBindingsToDataModel(
+        IReadOnlyDictionary<string, ModelBinding> bindings,
+        ComponentContext context,
+        LayoutEvaluatorState state
+    )
+    {
+        var tasks = bindings.Select(async binding => new
+        {
+            binding.Key,
+            Value = await DataModel(binding.Value, context.DataElementIdentifier, context.RowIndices, state),
+        });
+        var entries = await Task.WhenAll(tasks);
+        Dictionary<string, JsonNode?> dictionary = entries.ToDictionary(
+            x => x.Key,
+            x => JsonSerializer.SerializeToNode(x.Value)
+        );
+        return new JsonObject(dictionary);
     }
 
     private static int CountDataElements(ExpressionValue[] args, LayoutEvaluatorState state)
