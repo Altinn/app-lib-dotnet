@@ -425,7 +425,8 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
             dataElementSignatures,
             appMetadata,
             context,
-            dataClientMock.Object
+            dataClientMock.Object,
+            CancellationToken.None
         );
 
         // Assert

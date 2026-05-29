@@ -64,7 +64,8 @@ internal sealed class SigningReceiptService(
             dataElementSignatures,
             applicationMetadata,
             context,
-            _dataClient
+            _dataClient,
+            ct
         );
 
         return await _correspondenceClient.Send(
@@ -188,7 +189,8 @@ internal sealed class SigningReceiptService(
         IEnumerable<DataElementSignature> dataElementSignatures,
         ApplicationMetadata appMetadata,
         UserActionContext context,
-        IDataClient dataClient
+        IDataClient dataClient,
+        CancellationToken cancellationToken
     )
     {
         List<CorrespondenceAttachment> attachments = [];
@@ -209,8 +211,8 @@ internal sealed class SigningReceiptService(
                             instanceIdentifier.InstanceGuid,
                             Guid.Parse(element.Id),
                             authenticationMethod: null,
-                            timeout: null,
-                            CancellationToken.None
+                            timeout: TimeSpan.FromHours(1),
+                            cancellationToken
                         )
                     )
                     .Build()
