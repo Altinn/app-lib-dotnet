@@ -41,6 +41,9 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
+    [Obsolete(
+        "This method is deprecated. The sender is now automatically determined from the Resource Registry based on the resourceId."
+    )]
     public ICorrespondenceRequestBuilderSendersReference WithSender(OrganisationNumber sender)
     {
         // Intentional no-op: sender is now automatically determined from the Resource Registry.
@@ -48,6 +51,9 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
+    [Obsolete(
+        "This method is deprecated. The sender is now automatically determined from the Resource Registry based on the resourceId."
+    )]
     public ICorrespondenceRequestBuilderSendersReference WithSender(string sender)
     {
         // Intentional no-op: sender is now automatically determined from the Resource Registry.
