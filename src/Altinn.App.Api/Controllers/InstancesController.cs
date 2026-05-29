@@ -964,7 +964,7 @@ public class InstancesController : ControllerBase
             {
                 _logger.LogError(
                     deleteException,
-                    "Failed to delete instance {InstanceId} after unsuccessful copy. Manual cleanup might be required.",
+                    "Failed to delete instance {InstanceId} during cleanup after an unsuccessful operation. Manual cleanup might be required.",
                     targetInstance.Id
                 );
             }
