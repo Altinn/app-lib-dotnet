@@ -9,7 +9,6 @@ namespace Altinn.App.Core.Features.Correspondence.Builder;
 public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
 {
     private string? _resourceId;
-    private OrganisationNumber? _sender;
     private string? _sendersReference;
     private CorrespondenceContent? _content;
     private List<CorrespondenceAttachment>? _contentAttachments;
@@ -44,16 +43,14 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilderSendersReference WithSender(OrganisationNumber sender)
     {
-        BuilderUtils.NotNullOrEmpty(sender, "Sender cannot be empty");
-        _sender = sender;
+        // Intentional no-op: sender is now automatically determined from the Resource Registry.
         return this;
     }
 
     /// <inheritdoc/>
     public ICorrespondenceRequestBuilderSendersReference WithSender(string sender)
     {
-        BuilderUtils.NotNullOrEmpty(sender, "Sender cannot be empty");
-        _sender = OrganisationNumber.Parse(sender);
+        // Intentional no-op: sender is now automatically determined from the Resource Registry.
         return this;
     }
 
