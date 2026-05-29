@@ -479,7 +479,7 @@ public class CorrespondenceBuilderTests
         var baseBuilder = CorrespondenceRequestBuilder
             .Create()
             .WithResourceId("resourceId-1")
-            .WithSender(TestHelpers.GetOrganisationNumber(1))
+            .WithSender(TestHelpers.GetOrganisationNumber(1)) // WithSender is a no-op, so this won't throw even with invalid input
             .WithSendersReference("sender-reference-1")
             .WithRecipient(TestHelpers.GetOrganisationNumber(1))
             .WithContent(
@@ -494,13 +494,9 @@ public class CorrespondenceBuilderTests
         // Act
         var act1 = () =>
         {
-            baseBuilder.WithSender("123456789");
-        };
-        var act2 = () =>
-        {
             baseBuilder.WithRecipient("123456789");
         };
-        var act3 = () =>
+        var act2 = () =>
         {
             CorrespondenceContentBuilder.Create().WithLanguage("nope");
         };
@@ -508,6 +504,5 @@ public class CorrespondenceBuilderTests
         // Assert
         act1.Should().Throw<FormatException>();
         act2.Should().Throw<FormatException>();
-        act3.Should().Throw<FormatException>();
     }
 }
