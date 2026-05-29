@@ -126,6 +126,7 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
         instanceDataMutatorMock.Setup(x => x.Instance).Returns(instance);
         UserActionContext context = new(instanceDataMutatorMock.Object, 123456);
 
+        using var dataStream = new MemoryStream([1, 2, 3]);
         var dataClientMock = new Mock<IDataClient>();
         dataClientMock
             .Setup(x =>
@@ -138,7 +139,7 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(new MemoryStream([1, 2, 3]));
+            .ReturnsAsync(dataStream);
 
         SigningReceiptService service = SetupService(
             correspondenceClientMockOverride: correspondenceClientMock,
@@ -405,6 +406,7 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
 
         ApplicationMetadata appMetadata = new("org/app");
 
+        using var dataStream = new MemoryStream([1, 2, 3]);
         var dataClientMock = new Mock<IDataClient>();
         dataClientMock
             .Setup(x =>
@@ -417,7 +419,7 @@ public class SigningReceiptServiceTests(ITestOutputHelper output)
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(new MemoryStream([1, 2, 3]));
+            .ReturnsAsync(dataStream);
 
         // Act
         IEnumerable<CorrespondenceAttachment> attachments = await SigningReceiptService.GetCorrespondenceAttachments(
