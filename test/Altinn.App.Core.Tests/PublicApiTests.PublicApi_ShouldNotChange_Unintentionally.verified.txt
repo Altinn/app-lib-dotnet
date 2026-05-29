@@ -555,7 +555,11 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithReplyOptions(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceReplyOption> replyOptions) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithRequestedPublishTime(System.DateTimeOffset requestedPublishTime) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSender WithResourceId(string resourceId) { }
+        [System.Obsolete("This method is deprecated. The sender is now automatically determined from the Re" +
+            "source Registry based on the resourceId.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSendersReference WithSender(Altinn.App.Core.Models.OrganisationNumber sender) { }
+        [System.Obsolete("This method is deprecated. The sender is now automatically determined from the Re" +
+            "source Registry based on the resourceId.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSendersReference WithSender(string sender) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderRecipients WithSendersReference(string sendersReference) { }
         public static Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderResourceId Create() { }
