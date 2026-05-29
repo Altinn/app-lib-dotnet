@@ -99,7 +99,11 @@ public class DataClientTests
             platformRequest,
             expectedUri,
             HttpMethod.Post,
+#if NET8_0
             "\"a cats story.pdf\"",
+#else
+            "a cats story.pdf",
+#endif
             "application/pdf",
             expectedAuth: testCase?.ExpectedToken
         );
@@ -156,7 +160,11 @@ public class DataClientTests
             platformRequest,
             expectedUri,
             HttpMethod.Post,
+#if NET8_0
             "\"a cats story.pdf\"",
+#else
+            "a cats story.pdf",
+#endif
             "application/pdf",
             expectedAuth: testCase?.ExpectedToken
         );
