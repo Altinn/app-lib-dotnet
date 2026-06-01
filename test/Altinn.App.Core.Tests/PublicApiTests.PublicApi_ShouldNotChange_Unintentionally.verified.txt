@@ -3233,9 +3233,9 @@ namespace Altinn.App.Core.Internal.Expressions
     public readonly struct ExpressionValue : System.IEquatable<Altinn.App.Core.Internal.Expressions.ExpressionValue>
     {
         public ExpressionValue() { }
-        public ExpressionValue(Altinn.App.Core.Internal.Expressions.ExpressionValue[] value) { }
         public ExpressionValue(System.Collections.Generic.Dictionary<string, Altinn.App.Core.Internal.Expressions.ExpressionValue> value) { }
-        public Altinn.App.Core.Internal.Expressions.ExpressionValue[] Array { get; }
+        public ExpressionValue(System.Text.Json.Nodes.JsonArray value) { }
+        public System.Text.Json.Nodes.JsonArray Array { get; }
         public bool Bool { get; }
         public System.Collections.Generic.Dictionary<string, Altinn.App.Core.Internal.Expressions.ExpressionValue> Dictionary { get; }
         public double Number { get; }
@@ -3256,7 +3256,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public bool TryDeserialize(System.Type type, out object? result) { }
         public bool TryDeserialize<T>(out T? result) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue FromObject(object? value) { }
-        public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(Altinn.App.Core.Internal.Expressions.ExpressionValue[] value) { }
+        public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(System.Text.Json.Nodes.JsonArray value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(System.Collections.Generic.Dictionary<string, Altinn.App.Core.Internal.Expressions.ExpressionValue> value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(bool? value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(double? value) { }
