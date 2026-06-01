@@ -1,4 +1,7 @@
-﻿namespace Altinn.App.Core.Internal.Expressions;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
+
+namespace Altinn.App.Core.Internal.Expressions;
 
 internal class ObjectFunctionEvaluator
 {
@@ -6,13 +9,14 @@ internal class ObjectFunctionEvaluator
 
     public ObjectFunctionEvaluator(ExpressionValue[] args) => _args = args;
 
-    public Dictionary<string, ExpressionValue> Evaluate()
+    public JsonObject Evaluate()
     {
         AssertEvenNumberOfArguments();
         string[] keys = ExtractKeys();
         AssertKeysAreUnique(keys);
-        ExpressionValue[] values = ExtractValues();
-        return keys.Zip(values, (k, v) => new { k, v }).ToDictionary(x => x.k, x => x.v);
+        JsonNode?[] values = ExtractValues();
+        Dictionary<string, JsonNode?> keyValuePairs = DictionaryFromKeysAndValues(keys, values);
+        return new JsonObject(keyValuePairs);
     }
 
     private void AssertEvenNumberOfArguments()
@@ -45,5 +49,9 @@ internal class ObjectFunctionEvaluator
         }
     }
 
-    private ExpressionValue[] ExtractValues() => _args.Where((_, index) => index % 2 == 1).ToArray();
+    private JsonNode?[] ExtractValues() =>
+        _args.Where((_, index) => index % 2 == 1).Select(v => JsonSerializer.SerializeToNode(v)).ToArray();
+
+    private static Dictionary<string, JsonNode?> DictionaryFromKeysAndValues(string[] keys, JsonNode?[] values) =>
+        keys.Zip(values, (k, v) => new { k, v }).ToDictionary(x => x.k, x => x.v);
 }

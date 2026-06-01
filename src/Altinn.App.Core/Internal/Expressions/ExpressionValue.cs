@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Numerics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -19,7 +20,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     // double is a value type where nullable takes extra space, and we only read it when it should be set
     private readonly double _numberValue = 0;
 
-    private readonly Dictionary<string, ExpressionValue>? _objectValue = null;
+    private readonly JsonObject? _objectValue = null;
     private readonly JsonArray? _arrayValue = null;
 
     /// <summary>
@@ -85,7 +86,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     }
 
     /// <summary>Constructor for object value</summary>
-    public ExpressionValue(Dictionary<string, ExpressionValue> value)
+    public ExpressionValue(JsonObject value)
     {
         ValueKind = JsonValueKind.Object;
         _objectValue = value;
@@ -116,7 +117,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// <summary>
     /// Convert a Dictionary to ExpressionValue
     /// </summary>
-    public static implicit operator ExpressionValue(Dictionary<string, ExpressionValue> value) => new(value);
+    public static implicit operator ExpressionValue(JsonObject value) => new(value);
 
     /// <summary>
     /// Convert an array to ExpressionValue
@@ -175,43 +176,23 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                     '"'
                 ) // Trim quotes to match the string representation
             ,
-            JsonArray jsonArrayValue => jsonArrayValue,
-            IDictionary<string, object> dictionaryValue => dictionaryValue.ToDictionary(
-                entry => entry.Key,
-                entry => FromObject(entry.Value)
-            ),
-            JsonElement jsonElement => FromObject(JsonElementToObject(jsonElement)),
-            _ when value.GetType().BaseType?.Name == "Object" => value
-                .GetType()
-                .GetProperties()
-                .ToDictionary(prop => prop.Name, prop => FromObject(prop.GetValue(value))),
-            _ => ToJsonArrayOrNull(value),
+            BigInteger => Null,
+            JsonObject jsonObject => jsonObject,
+            JsonArray jsonArray => jsonArray,
+            _ => ToJsonNodeOrNull(value),
         };
     }
 
-    private static ExpressionValue ToJsonArrayOrNull(object? value)
+    private static ExpressionValue ToJsonNodeOrNull(object? value)
     {
         var node = JsonSerializer.SerializeToNode(value);
         return node switch
         {
             JsonArray jsonArray => jsonArray,
+            JsonObject jsonObject => jsonObject,
             _ => Null,
         };
     }
-
-    private static object? JsonElementToObject(JsonElement jsonElement) =>
-        jsonElement.ValueKind switch
-        {
-            JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            JsonValueKind.String => jsonElement.GetString(),
-            JsonValueKind.Number => jsonElement.GetDouble(),
-            JsonValueKind.Array => jsonElement.EnumerateArray().Select(JsonElementToObject).ToArray(),
-            JsonValueKind.Object => jsonElement
-                .EnumerateObject()
-                .ToDictionary(prop => prop.Name, prop => JsonElementToObject(prop.Value)),
-            _ => null,
-        };
 
     /// <summary>
     /// Convert the value to the relevant CLR type
@@ -274,7 +255,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         };
 
     /// <summary>Get the value as an object (or throw if it isn't an object ValueKind)</summary>
-    public Dictionary<string, ExpressionValue> Dictionary =>
+    public JsonObject Dictionary =>
         ValueKind switch
         {
             JsonValueKind.Object => _objectValue ?? throw new UnreachableException($"{this} is not an object"),
@@ -305,8 +286,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.False => "false",
             JsonValueKind.String => JsonSerializer.Serialize(String, _unsafeSerializerOptionsForSerializingDates),
             JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
-            // JsonValueKind.Object => JsonSerializer.Serialize(Object),
-            // JsonValueKind.Array => JsonSerializer.Serialize(Array),
+            JsonValueKind.Object => JsonSerializer.Serialize(Dictionary),
+            JsonValueKind.Array => JsonSerializer.Serialize(Array),
             _ => throw new InvalidOperationException($"Invalid value kind {ValueKind}"),
         };
 
@@ -355,8 +336,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 { } sValue => sValue,
             },
             JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
-            // JsonValueKind.Object => JsonSerializer.Serialize(Object),
-            // JsonValueKind.Array => JsonSerializer.Serialize(Array),
+            JsonValueKind.Object => JsonSerializer.Serialize(Dictionary),
+            JsonValueKind.Array => JsonSerializer.Serialize(Array),
             _ => throw new NotImplementedException($"ToStringForEquals not implemented for {ValueKind}"),
         };
 
@@ -684,7 +665,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
             throw new JsonException("Expected StartObject token.");
         }
         var values =
-            JsonSerializer.Deserialize<Dictionary<string, ExpressionValue>>(ref reader, options)
+            JsonSerializer.Deserialize<JsonObject>(ref reader, options)
             ?? throw new JsonException("Expected EndObject token.");
         return new ExpressionValue(values);
     }
