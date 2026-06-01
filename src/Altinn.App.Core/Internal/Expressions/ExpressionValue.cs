@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Altinn.App.Core.Internal.Expressions;
@@ -20,7 +21,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     private readonly double _numberValue = 0;
 
     // private readonly Dictionary<string, ExpressionValue>? _objectValue = null;
-    private readonly ExpressionValue[]? _arrayValue = null;
+    private readonly JsonArray? _arrayValue = null;
 
     /// <summary>
     /// Constructor for NULL value (structs require a public parameterless constructor)
@@ -91,7 +92,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     // }
 
     /// <summary>Constructor for array value</summary>
-    public ExpressionValue(ExpressionValue[] value)
+    public ExpressionValue(JsonArray value)
     {
         ValueKind = JsonValueKind.Array;
         _arrayValue = value;
@@ -120,7 +121,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// <summary>
     /// Convert an array to ExpressionValue
     /// </summary>
-    public static implicit operator ExpressionValue(ExpressionValue[] value) => new(value);
+    public static implicit operator ExpressionValue(JsonArray value) => new(value);
 
     /// <summary>
     /// Convert any of the supported CLR types to an expressionTypeUnion
@@ -174,8 +175,17 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                     '"'
                 ) // Trim quotes to match the string representation
             ,
-            IEnumerable enumerableValue => enumerableValue.Cast<object>().Select(FromObject).ToArray(),
-            JsonElement jsonElement => FromObject(JsonElementToObject(jsonElement)),
+            JsonArray jsonArrayValue => jsonArrayValue,
+            _ => ToJsonArrayOrNull(value),
+        };
+    }
+
+    private static ExpressionValue ToJsonArrayOrNull(object? value)
+    {
+        var node = JsonSerializer.SerializeToNode(value);
+        return node switch
+        {
+            JsonArray jsonArray => jsonArray,
             _ => Null,
         };
     }
@@ -261,7 +271,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     //     };
 
     /// <summary>Get the value as an array (or throw if it isn't an array ValueKind)</summary>
-    public ExpressionValue[] Array =>
+    public JsonArray Array =>
         ValueKind switch
         {
             JsonValueKind.Array => _arrayValue ?? throw new UnreachableException($"{this} is not an array"),
@@ -649,7 +659,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
             throw new JsonException("Expected StartArray token.");
         }
         var values =
-            JsonSerializer.Deserialize<ExpressionValue[]>(ref reader, options)
+            JsonSerializer.Deserialize<JsonArray>(ref reader, options)
             ?? throw new JsonException("Expected EndArray token.");
         return new ExpressionValue(values);
     }

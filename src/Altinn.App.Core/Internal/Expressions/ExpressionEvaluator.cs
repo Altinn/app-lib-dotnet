@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
@@ -998,9 +999,9 @@ public static partial class ExpressionEvaluator
         return positionalArguments[index.Value];
     }
 
-    private static ExpressionValue[] List(ExpressionValue[] args)
+    private static JsonArray List(ExpressionValue[] args)
     {
-        return args;
+        return new JsonArray(args.Select(a => JsonSerializer.SerializeToNode(a)).ToArray());
     }
 
     /// <summary>
