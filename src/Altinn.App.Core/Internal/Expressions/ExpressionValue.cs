@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Encodings.Web;
@@ -189,17 +188,6 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             _ => Null,
         };
     }
-
-    private static object? JsonElementToObject(JsonElement jsonElement) =>
-        jsonElement.ValueKind switch
-        {
-            JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            JsonValueKind.String => jsonElement.GetString(),
-            JsonValueKind.Number => jsonElement.GetDouble(),
-            JsonValueKind.Array => jsonElement.EnumerateArray().Select(JsonElementToObject).ToArray(),
-            _ => null,
-        };
 
     /// <summary>
     /// Convert the value to the relevant CLR type
