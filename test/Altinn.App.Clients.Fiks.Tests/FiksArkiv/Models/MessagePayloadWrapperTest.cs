@@ -81,7 +81,7 @@ public class MessagePayloadWrapperTest
             new FiksIOMessagePayload("document.pdf", Stream.Null),
             _dummyCode,
             FileFormat: null,
-            FileVariant: new FiksArkivDocumentVariant { Code = "P", Description = description }
+            FileVariant: new FiksArkivCode { Code = "P", Description = description }
         );
 
         var result = wrapper.GetFileVariant();
@@ -98,7 +98,7 @@ public class MessagePayloadWrapperTest
             new FiksIOMessagePayload("document.pdf", Stream.Null),
             _dummyCode,
             FileFormat: null,
-            FileVariant: new FiksArkivDocumentVariant { Code = "A", Description = "Arkivformat" }
+            FileVariant: new FiksArkivCode { Code = "A", Description = "Arkivformat" }
         );
 
         var result = wrapper.GetFileVariant();

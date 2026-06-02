@@ -167,7 +167,7 @@ public class FiksArkivSettingsTest
         var settings = new FiksArkivDataTypeSettings
         {
             DataType = "valid-datatype",
-            Variant = code is null ? null : new FiksArkivDocumentVariant { Code = code },
+            Variant = code is null ? null : new FiksArkivCode { Code = code },
         };
 
         // Act

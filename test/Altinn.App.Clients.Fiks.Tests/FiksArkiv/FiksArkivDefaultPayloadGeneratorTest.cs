@@ -139,7 +139,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     "model",
                     "Form.pdf",
                     formatCode: "PDF/A",
-                    variant: new FiksArkivDocumentVariant { Code = "A", Description = "Arkivformat" }
+                    variant: new FiksArkivCode { Code = "A", Description = "Arkivformat" }
                 ),
                 attachmentSettings: [Factories.DocumentSettings("ref-data-as-pdf")],
                 archiveDocumentMetadata: null,
@@ -349,7 +349,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
             string dataType,
             string? filename = null,
             string? formatCode = null,
-            FiksArkivDocumentVariant? variant = null
+            FiksArkivCode? variant = null
         ) =>
             new()
             {

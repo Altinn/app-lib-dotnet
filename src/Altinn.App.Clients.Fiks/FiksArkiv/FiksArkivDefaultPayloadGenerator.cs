@@ -211,7 +211,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         string? filename,
         Kode fileTypeCode,
         FiksArkivDocumentFormat? fileFormat,
-        FiksArkivDocumentVariant? fileVariant,
+        FiksArkivCode? fileVariant,
         InstanceIdentifier instanceId,
         CancellationToken cancellationToken = default
     )
