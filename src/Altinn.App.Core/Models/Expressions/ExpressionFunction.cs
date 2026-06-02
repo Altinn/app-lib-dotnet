@@ -75,12 +75,12 @@ public enum ExpressionFunction
     lowerCase,
 
     /// <summary>
-    ///  Capitalize the first letter of a string
+    /// Capitalize the first letter of a string
     /// </summary>
     upperCaseFirst,
 
     /// <summary>
-    ///  Lowercase the first letter of a string
+    /// Lowercase the first letter of a string
     /// </summary>
     lowerCaseFirst,
 
@@ -228,4 +228,9 @@ public enum ExpressionFunction
 
     /// <summary>Create a list from the arguments.</summary>
     list,
+
+    /// <summary>
+    /// Adding numbers. Must be numeric values in one or multiple lists
+    /// </summary>
+    sum,
 }

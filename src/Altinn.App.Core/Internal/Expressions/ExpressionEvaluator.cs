@@ -133,6 +133,7 @@ public static partial class ExpressionEvaluator
             ExpressionFunction.multiply => Multiply(args),
             ExpressionFunction.divide => Divide(args),
             ExpressionFunction.list => List(args),
+            ExpressionFunction.sum => Sum(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
@@ -839,11 +840,39 @@ public static partial class ExpressionEvaluator
         };
     }
 
+    private static double? PrepareNumericArg(JsonNode? arg)
+    {
+        if (arg is null)
+        {
+            return null;
+        }
+
+        return arg.GetValueKind() switch
+        {
+            JsonValueKind.True or JsonValueKind.False or JsonValueKind.Array or JsonValueKind.Object =>
+                throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {arg}"),
+            JsonValueKind.String => ParseNumber(arg.GetValue<string>(), throwException: true),
+            JsonValueKind.Number => arg.GetValue<double>(),
+
+            _ => null,
+        };
+    }
+
     private static double?[] PrepareNumericArgs(ExpressionValue[] args)
     {
         if (args.Length == 0)
             throw new ExpressionEvaluatorTypeErrorException("Invalid number of args");
         return args.Select(PrepareNumericArg).ToArray();
+    }
+
+    private static double?[] PrepareNumericArgs(JsonArray array)
+    {
+        if (array.Count == 0)
+        {
+            throw new ExpressionEvaluatorTypeErrorException("Invalid number of args");
+        }
+
+        return array.Select(PrepareNumericArg).ToArray();
     }
 
     private static ExpressionValue IfImpl(ExpressionValue[] args)
@@ -1002,6 +1031,18 @@ public static partial class ExpressionEvaluator
     private static JsonArray List(ExpressionValue[] args)
     {
         return new JsonArray(args.Select(a => JsonSerializer.SerializeToNode(a)).ToArray());
+    }
+
+    private static double? Sum(ExpressionValue[] args)
+    {
+        if (args.Any(x => x.ValueKind != JsonValueKind.Array))
+        {
+            throw new ExpressionEvaluatorTypeErrorException("Expected only array arguments");
+        }
+
+        var concatinatedList = args.SelectMany(x => PrepareNumericArgs(x.Array)).ToArray();
+
+        return PerformArithmeticWithReducer(concatinatedList, (x, y) => x + y);
     }
 
     /// <summary>
