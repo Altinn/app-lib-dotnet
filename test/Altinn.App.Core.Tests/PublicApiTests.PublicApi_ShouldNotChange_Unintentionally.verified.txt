@@ -3255,6 +3255,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public string? ToStringForText() { }
         public bool TryDeserialize(System.Type type, out object? result) { }
         public bool TryDeserialize<T>(out T? result) { }
+        public static Altinn.App.Core.Internal.Expressions.ExpressionValue FromJsonElement(System.Text.Json.JsonElement element) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue FromObject(object? value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(System.Text.Json.Nodes.JsonArray value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(System.Text.Json.Nodes.JsonObject value) { }
@@ -4725,6 +4726,7 @@ namespace Altinn.App.Core.Models.Expressions
         divide = 40,
         list = 41,
         @object = 42,
+        jmespath = 43,
     }
 }
 namespace Altinn.App.Core.Models.Layout.Components.Base

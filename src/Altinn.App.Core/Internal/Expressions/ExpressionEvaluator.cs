@@ -134,6 +134,7 @@ public static partial class ExpressionEvaluator
             ExpressionFunction.divide => Divide(args),
             ExpressionFunction.list => List(args),
             ExpressionFunction.@object => Object(args),
+            ExpressionFunction.jmespath => Jmespath(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
@@ -1008,6 +1009,11 @@ public static partial class ExpressionEvaluator
     private static JsonObject Object(ExpressionValue[] args)
     {
         return new ObjectFunctionEvaluator(args).Evaluate();
+    }
+
+    private static ExpressionValue Jmespath(ExpressionValue[] args)
+    {
+        return new JmespathFunctionEvaluator(args).Evaluate();
     }
 
     /// <summary>

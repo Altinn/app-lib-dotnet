@@ -194,6 +194,23 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         };
     }
 
+    /// <summary>Convert a JsonElement to ExpressionValue.</summary>
+    public static ExpressionValue FromJsonElement(JsonElement element)
+    {
+        return element.ValueKind switch
+        {
+            JsonValueKind.Null => Null,
+            JsonValueKind.Undefined => Undefined,
+            JsonValueKind.True => True,
+            JsonValueKind.False => False,
+            JsonValueKind.String => element.GetString() ?? Null.String,
+            JsonValueKind.Number => element.GetDouble(),
+            JsonValueKind.Object => element.Deserialize<JsonObject>() ?? Null.Dictionary,
+            JsonValueKind.Array => element.Deserialize<JsonArray>() ?? Null.Array,
+            _ => throw new InvalidOperationException($"Invalid JsonElement with ValueKind {element.ValueKind}"),
+        };
+    }
+
     /// <summary>
     /// Convert the value to the relevant CLR type
     /// </summary>
