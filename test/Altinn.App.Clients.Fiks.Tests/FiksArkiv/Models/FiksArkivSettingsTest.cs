@@ -129,12 +129,46 @@ public class FiksArkivSettingsTest
     [InlineData(null, null)]
     [InlineData("PDF/A", null)]
     [InlineData("anything goes verbatim", null)]
-    [InlineData("", "FormatCode cannot be empty or whitespace")]
-    [InlineData("   ", "FormatCode cannot be empty or whitespace")]
-    public void FiksArkivDataTypeSettings_ValidatesFormatCode(string? formatCode, string? expectedErrorMessage)
+    [InlineData("", "Format.Code cannot be empty or contain only whitespace")]
+    [InlineData("   ", "Format.Code cannot be empty or contain only whitespace")]
+    public void FiksArkivDataTypeSettings_ValidatesDocumentFormat(string? code, string? expectedErrorMessage)
     {
         // Arrange
-        var settings = new FiksArkivDataTypeSettings { DataType = "valid-datatype", FormatCode = formatCode };
+        var settings = new FiksArkivDataTypeSettings
+        {
+            DataType = "valid-datatype",
+            Format = code is null ? null : new FiksArkivDocumentFormat { Code = code },
+        };
+
+        // Act
+        var ex = Record.Exception(() => settings.Validate("TestSetting", [new DataType { Id = "valid-datatype" }]));
+
+        // Assert
+        if (expectedErrorMessage is null)
+        {
+            Assert.Null(ex);
+            return;
+        }
+
+        Assert.NotNull(ex);
+        Assert.IsType<FiksArkivConfigurationException>(ex);
+        Assert.Contains(expectedErrorMessage, ex.Message);
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("P", null)]
+    [InlineData("A", null)]
+    [InlineData("", "Variant.Code cannot be empty or contain only whitespace")]
+    [InlineData("   ", "Variant.Code cannot be empty or contain only whitespace")]
+    public void FiksArkivDataTypeSettings_ValidatesDocumentVariant(string? code, string? expectedErrorMessage)
+    {
+        // Arrange
+        var settings = new FiksArkivDataTypeSettings
+        {
+            DataType = "valid-datatype",
+            Variant = code is null ? null : new FiksArkivDocumentVariant { Code = code },
+        };
 
         // Act
         var ex = Record.Exception(() => settings.Validate("TestSetting", [new DataType { Id = "valid-datatype" }]));

@@ -13,7 +13,8 @@ public class ListExtensionsTests
             .Select(filename => new MessagePayloadWrapper(
                 new FiksIOMessagePayload(filename, Stream.Null),
                 new Kode(".", string.Empty),
-                FileFormatCode: null
+                FileFormat: null,
+                FileVariant: null
             ))
             .ToList();
     }

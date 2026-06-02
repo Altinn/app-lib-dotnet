@@ -127,9 +127,17 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv.Models
         public required string DataType { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("filename")]
         public string? Filename { get; set; }
-        [System.Text.Json.Serialization.JsonPropertyName("formatCode")]
-        public string? FormatCode { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("format")]
+        public Altinn.App.Clients.Fiks.FiksArkiv.Models.FiksArkivDocumentFormat? Format { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("variant")]
+        public Altinn.App.Clients.Fiks.FiksArkiv.Models.FiksArkivDocumentVariant? Variant { get; set; }
         public string GetFilenameOrDefault(string defaultExtension = "xml") { }
+    }
+    public sealed class FiksArkivDocumentFormat : System.IEquatable<Altinn.App.Clients.Fiks.FiksArkiv.Models.FiksArkivDocumentFormat>
+    {
+        public FiksArkivDocumentFormat() { }
+        [System.Text.Json.Serialization.JsonPropertyName("code")]
+        public required string Code { get; set; }
     }
     public sealed class FiksArkivDocumentMetadata : System.IEquatable<Altinn.App.Clients.Fiks.FiksArkiv.Models.FiksArkivDocumentMetadata>
     {
@@ -147,6 +155,14 @@ namespace Altinn.App.Clients.Fiks.FiksArkiv.Models
         public System.Collections.Generic.IReadOnlyList<Altinn.App.Clients.Fiks.FiksArkiv.Models.FiksArkivDataTypeSettings>? Attachments { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("primaryDocument")]
         public required Altinn.App.Clients.Fiks.FiksArkiv.Models.FiksArkivDataTypeSettings PrimaryDocument { get; set; }
+    }
+    public sealed class FiksArkivDocumentVariant : System.IEquatable<Altinn.App.Clients.Fiks.FiksArkiv.Models.FiksArkivDocumentVariant>
+    {
+        public FiksArkivDocumentVariant() { }
+        [System.Text.Json.Serialization.JsonPropertyName("code")]
+        public required string Code { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        public string? Description { get; set; }
     }
     public sealed class FiksArkivErrorHandlingSettings : System.IEquatable<Altinn.App.Clients.Fiks.FiksArkiv.Models.FiksArkivErrorHandlingSettings>
     {

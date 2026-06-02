@@ -5,23 +5,6 @@
   <mappe xsi:type="saksmappe">
     <tittel>Test app</tittel>
     <offentligTittel>Test app</offentligTittel>
-    <klassifikasjon>
-      <klassifikasjonssystemID>PNR</klassifikasjonssystemID>
-      <klasseID>12345678901</klasseID>
-      <tittel>Test Testesen</tittel>
-      <erSkjermet>true</erSkjermet>
-    </klassifikasjon>
-    <klassifikasjon>
-      <klassifikasjonssystemID>custom-system</klassifikasjonssystemID>
-      <klasseID>custom-class</klasseID>
-      <tittel>Custom Classification</tittel>
-    </klassifikasjon>
-    <klassifikasjon>
-      <klassifikasjonssystemID>custom-system-2</klassifikasjonssystemID>
-      <klasseID>custom-class-2</klasseID>
-      <tittel>Restricted Classification</tittel>
-      <erSkjermet>true</erSkjermet>
-    </klassifikasjon>
     <referanseEksternNoekkel>
       <fagsystem xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">ttd/test-app</fagsystem>
       <noekkel xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">12345/88d9baf8-2f9f-4e66-9a2f-7d345e60ed90</noekkel>
@@ -84,10 +67,6 @@
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Vedlegg</beskrivelse>
       </tilknyttetRegistreringSom>
       <dokumentobjekt>
-        <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
-        </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">PDF</kode>
         </format>

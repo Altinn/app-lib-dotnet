@@ -6,11 +6,6 @@
   <mappe xsi:type="saksmappe">
     <tittel>Custom Case File Title</tittel>
     <offentligTittel>Custom Case File Title</offentligTittel>
-    <klassifikasjon>
-      <klassifikasjonssystemID>AltinnSystembrukerId</klassifikasjonssystemID>
-      <klasseID>f58fe166-bc22-4899-beb7-c3e8e3332f43</klasseID>
-      <tittel>310702641</tittel>
-    </klassifikasjon>
     <referanseEksternNoekkel>
       <fagsystem xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">ttd/test-app</fagsystem>
       <noekkel xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">custom-case-file-id</noekkel>
@@ -46,10 +41,6 @@
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Hoveddokument</beskrivelse>
       </tilknyttetRegistreringSom>
       <dokumentobjekt>
-        <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
-        </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">XML</kode>
         </format>
@@ -73,10 +64,6 @@
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Vedlegg</beskrivelse>
       </tilknyttetRegistreringSom>
       <dokumentobjekt>
-        <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
-        </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">PDF</kode>
         </format>
@@ -100,10 +87,6 @@
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Vedlegg</beskrivelse>
       </tilknyttetRegistreringSom>
       <dokumentobjekt>
-        <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
-        </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">PDF</kode>
         </format>
@@ -127,10 +110,6 @@
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Vedlegg</beskrivelse>
       </tilknyttetRegistreringSom>
       <dokumentobjekt>
-        <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
-        </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">DOCX</kode>
         </format>
@@ -154,10 +133,6 @@
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Vedlegg</beskrivelse>
       </tilknyttetRegistreringSom>
       <dokumentobjekt>
-        <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
-        </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">JPG</kode>
         </format>

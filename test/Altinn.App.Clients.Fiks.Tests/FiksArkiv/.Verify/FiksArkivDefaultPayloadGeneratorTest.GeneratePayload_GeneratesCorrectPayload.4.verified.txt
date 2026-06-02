@@ -5,10 +5,6 @@
   <mappe xsi:type="saksmappe">
     <tittel>Custom Case File Title</tittel>
     <offentligTittel>Custom Case File Title</offentligTittel>
-    <klassifikasjon>
-      <klassifikasjonssystemID>ORGNR</klassifikasjonssystemID>
-      <klasseID>405003309</klasseID>
-    </klassifikasjon>
     <referanseEksternNoekkel>
       <fagsystem xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">ttd/test-app</fagsystem>
       <noekkel xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">12345/88d9baf8-2f9f-4e66-9a2f-7d345e60ed90</noekkel>
@@ -44,10 +40,6 @@
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Hoveddokument</beskrivelse>
       </tilknyttetRegistreringSom>
       <dokumentobjekt>
-        <variantformat>
-          <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">A</kode>
-          <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Arkivformat</beskrivelse>
-        </variantformat>
         <format>
           <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">XML</kode>
         </format>

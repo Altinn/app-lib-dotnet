@@ -424,11 +424,18 @@ public sealed record FiksArkivDataTypeSettings
     public string? Filename { get; set; }
 
     /// <summary>
-    /// Optional override for the document format code (e.g. <c>PDF/A</c>) recorded in the arkivmelding.xml
+    /// Optional override for the document format (e.g. <c>PDF/A</c>) recorded in the arkivmelding.xml
     /// (<c>dokumentobjekt.format.kode</c>). If not specified, the dotless file extension is used.
     /// </summary>
-    [JsonPropertyName("formatCode")]
-    public string? FormatCode { get; set; }
+    [JsonPropertyName("format")]
+    public FiksArkivDocumentFormat? Format { get; set; }
+
+    /// <summary>
+    /// Optional variant descriptor for the document. E.g. "P/Produksjonsformat" or "A/Arkivformat".
+    /// If not specified, the variant information is omitted from the arkivmelding.xml.
+    /// </summary>
+    [JsonPropertyName("variant")]
+    public FiksArkivDocumentVariant? Variant { get; set; }
 
     /// <summary>
     /// Internal validation based on the requirements of <see cref="FiksArkivDefaultPayloadGenerator"/>
@@ -449,10 +456,8 @@ public sealed record FiksArkivDataTypeSettings
                 $"{propertyName}.{nameof(Filename)} configuration is required, but missing."
             );
 
-        if (FormatCode is not null && string.IsNullOrWhiteSpace(FormatCode))
-            throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(FormatCode)} cannot be empty or whitespace if specified."
-            );
+        Format?.Validate($"{propertyName}.{nameof(Format)}");
+        Variant?.Validate($"{propertyName}.{nameof(Variant)}");
     }
 
     /// <summary>
@@ -460,6 +465,52 @@ public sealed record FiksArkivDataTypeSettings
     /// </summary>
     public string GetFilenameOrDefault(string defaultExtension = "xml") =>
         !string.IsNullOrWhiteSpace(Filename) ? Filename : $"{DataType}.{defaultExtension.TrimStart('.')}";
+}
+
+/// <summary>
+/// Represents the format descriptor for a given document
+/// </summary>
+public sealed record FiksArkivDocumentFormat
+{
+    /// <summary>
+    /// The format code, e.g. "PDF/A" or "DOCX".
+    /// </summary>
+    [JsonPropertyName("code")]
+    public required string Code { get; set; }
+
+    internal void Validate(string propertyName)
+    {
+        if (string.IsNullOrWhiteSpace(Code))
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(Code)} cannot be empty or contain only whitespace. If you wish to omit this item, remove the {propertyName} configuration entry entirely."
+            );
+    }
+}
+
+/// <summary>
+/// Represents the variant descriptor for a given document
+/// </summary>
+public sealed record FiksArkivDocumentVariant
+{
+    /// <summary>
+    /// The variant code, e.g. "P" or "A".
+    /// </summary>
+    [JsonPropertyName("code")]
+    public required string Code { get; set; }
+
+    /// <summary>
+    /// An optional description of the document variant, e.g. "Produksjonsformat" or "Arkivformat".
+    /// </summary>
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    internal void Validate(string propertyName)
+    {
+        if (string.IsNullOrWhiteSpace(Code))
+            throw new FiksArkivConfigurationException(
+                $"{propertyName}.{nameof(Code)} cannot be empty or contain only whitespace. If you wish to omit this item, remove the {propertyName} configuration entry entirely."
+            );
+    }
 }
 
 /// <summary>

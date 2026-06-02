@@ -3,6 +3,7 @@ using Altinn.App.Core.Infrastructure.Clients.Secrets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 public class NotificationConditionTokenGeneratorTests
@@ -54,6 +55,31 @@ public class NotificationConditionTokenGeneratorTests
     {
         using var fixture = CreateFixture(withTelemetry: false);
         Assert.NotNull(fixture.Generator);
+    }
+
+    [Fact]
+    public async Task GenerateToken_WithFixedClock_ProducesDeterministicJwt()
+    {
+        var instanceGuid = new Guid("11111111-2222-3333-4444-555555555555");
+        var fixedTime = new DateTimeOffset(2026, 1, 15, 12, 0, 0, TimeSpan.Zero);
+        var timeProvider = new FakeTimeProvider(fixedTime);
+
+        _secretProviderMock
+            .Setup(x => x.GetSigningSecret())
+            .Returns(
+                new AppCode
+                {
+                    Id = "test-id",
+                    Code = "test-secret-that-is-long-enough-for-hmac",
+                    IssuedAt = fixedTime,
+                    ExpiresAt = fixedTime.AddDays(62),
+                }
+            );
+
+        var generator = new NotificationConditionTokenGenerator(_secretProviderMock.Object, timeProvider);
+        var token = generator.GenerateToken(instanceGuid);
+
+        await Verify(token);
     }
 
     private readonly record struct Fixture(

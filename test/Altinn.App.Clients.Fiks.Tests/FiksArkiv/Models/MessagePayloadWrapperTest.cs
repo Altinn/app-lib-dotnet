@@ -17,7 +17,8 @@ public class MessagePayloadWrapperTest
         var wrapper = new MessagePayloadWrapper(
             new FiksIOMessagePayload("document.pdf", Stream.Null),
             _dummyCode,
-            FileFormatCode: formatCode
+            FileFormat: new FiksArkivDocumentFormat { Code = formatCode },
+            FileVariant: null
         );
 
         var result = wrapper.GetFileFormat();
@@ -25,16 +26,14 @@ public class MessagePayloadWrapperTest
         Assert.Equal(formatCode, result.KodeProperty);
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void GetFileFormat_FallsBackToFileExtension_WhenFormatCodeIsMissing(string? formatCode)
+    [Fact]
+    public void GetFileFormat_FallsBackToFileExtension_WhenFormatIsMissing()
     {
         var wrapper = new MessagePayloadWrapper(
             new FiksIOMessagePayload("report.pdf", Stream.Null),
             _dummyCode,
-            FileFormatCode: formatCode
+            FileFormat: null,
+            FileVariant: null
         );
 
         var result = wrapper.GetFileFormat();
@@ -48,11 +47,64 @@ public class MessagePayloadWrapperTest
         var wrapper = new MessagePayloadWrapper(
             new FiksIOMessagePayload("extensionless", Stream.Null),
             _dummyCode,
-            FileFormatCode: null
+            FileFormat: null,
+            FileVariant: null
         );
 
         var result = wrapper.GetFileFormat();
 
         Assert.Equal("EXTENSIONLESS", result.KodeProperty);
+    }
+
+    [Fact]
+    public void GetFileVariant_ReturnsNull_WhenVariantIsMissing()
+    {
+        var wrapper = new MessagePayloadWrapper(
+            new FiksIOMessagePayload("document.pdf", Stream.Null),
+            _dummyCode,
+            FileFormat: null,
+            FileVariant: null
+        );
+
+        var result = wrapper.GetFileVariant();
+
+        Assert.Null(result);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void GetFileVariant_OmitsDescription_WhenDescriptionIsMissing(string? description)
+    {
+        var wrapper = new MessagePayloadWrapper(
+            new FiksIOMessagePayload("document.pdf", Stream.Null),
+            _dummyCode,
+            FileFormat: null,
+            FileVariant: new FiksArkivDocumentVariant { Code = "P", Description = description }
+        );
+
+        var result = wrapper.GetFileVariant();
+
+        Assert.NotNull(result);
+        Assert.Equal("P", result.KodeProperty);
+        Assert.Null(result.Beskrivelse);
+    }
+
+    [Fact]
+    public void GetFileVariant_MapsCodeAndDescription_WhenProvided()
+    {
+        var wrapper = new MessagePayloadWrapper(
+            new FiksIOMessagePayload("document.pdf", Stream.Null),
+            _dummyCode,
+            FileFormat: null,
+            FileVariant: new FiksArkivDocumentVariant { Code = "A", Description = "Arkivformat" }
+        );
+
+        var result = wrapper.GetFileVariant();
+
+        Assert.NotNull(result);
+        Assert.Equal("A", result.KodeProperty);
+        Assert.Equal("Arkivformat", result.Beskrivelse);
     }
 }

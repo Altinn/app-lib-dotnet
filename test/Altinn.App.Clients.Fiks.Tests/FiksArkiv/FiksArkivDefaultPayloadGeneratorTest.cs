@@ -135,7 +135,12 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 testIdentifier: "5",
                 fiksArkivMessageType: FiksArkivConstants.MessageTypes.CreateArchiveRecord,
                 expectedAttachmentFilenames: ["Form.pdf", "ref-data-as-pdf.pdf"],
-                primaryDocumentSettings: Factories.DocumentSettings("model", "Form.pdf", formatCode: "PDF/A"),
+                primaryDocumentSettings: Factories.DocumentSettings(
+                    "model",
+                    "Form.pdf",
+                    formatCode: "PDF/A",
+                    variant: new FiksArkivDocumentVariant { Code = "A", Description = "Arkivformat" }
+                ),
                 attachmentSettings: [Factories.DocumentSettings("ref-data-as-pdf")],
                 archiveDocumentMetadata: null,
                 recipientParty: Factories.RecipientParty("recipient-id", "Recipient Name"),
@@ -343,13 +348,15 @@ public class FiksArkivDefaultPayloadGeneratorTest
         public static FiksArkivDataTypeSettings DocumentSettings(
             string dataType,
             string? filename = null,
-            string? formatCode = null
+            string? formatCode = null,
+            FiksArkivDocumentVariant? variant = null
         ) =>
             new()
             {
                 DataType = dataType,
                 Filename = filename,
-                FormatCode = formatCode,
+                Format = formatCode is null ? null : new FiksArkivDocumentFormat { Code = formatCode },
+                Variant = variant,
             };
 
         public static Klassifikasjon ConfiguredClassification(

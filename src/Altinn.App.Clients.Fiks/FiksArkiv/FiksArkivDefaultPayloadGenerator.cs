@@ -90,10 +90,10 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
             },
         };
 
-        foreach (var classification in caseFileClassifications)
-        {
-            caseFile.Klassifikasjon.Add(classification);
-        }
+        // foreach (var classification in caseFileClassifications)
+        // {
+        //     caseFile.Klassifikasjon.Add(classification);
+        // }
 
         var journalEntry = new Journalpost
         {
@@ -170,7 +170,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
             primaryDataElement,
             primaryDocumentSettings.Filename,
             DokumenttypeKoder.Dokument,
-            primaryDocumentSettings.FormatCode,
+            primaryDocumentSettings.Format,
+            primaryDocumentSettings.Variant,
             instanceId,
             cancellationToken
         );
@@ -192,7 +193,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
                             x,
                             attachmentSetting.Filename,
                             DokumenttypeKoder.Vedlegg,
-                            attachmentSetting.FormatCode,
+                            attachmentSetting.Format,
+                            attachmentSetting.Variant,
                             instanceId,
                             cancellationToken
                         )
@@ -208,7 +210,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         DataElement dataElement,
         string? filename,
         Kode fileTypeCode,
-        string? fileFormatCode,
+        FiksArkivDocumentFormat? fileFormat,
+        FiksArkivDocumentVariant? fileVariant,
         InstanceIdentifier instanceId,
         CancellationToken cancellationToken = default
     )
@@ -229,7 +232,8 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
                 )
             ),
             fileTypeCode,
-            fileFormatCode
+            fileFormat,
+            fileVariant
         );
     }
 
@@ -267,11 +271,12 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
                 Filnavn = payloadWrapper.Payload.Filename,
                 ReferanseDokumentfil = payloadWrapper.Payload.Filename,
                 Format = payloadWrapper.GetFileFormat(),
-                Variantformat = new Variantformat
-                {
-                    KodeProperty = VariantformatKoder.Arkivformat.Verdi,
-                    Beskrivelse = VariantformatKoder.Arkivformat.Beskrivelse,
-                },
+                Variantformat = payloadWrapper.GetFileVariant(),
+                // Variantformat = new Variantformat
+                // {
+                //     KodeProperty = VariantformatKoder.Arkivformat.Verdi,
+                //     Beskrivelse = VariantformatKoder.Arkivformat.Beskrivelse,
+                // },
             }
         );
 
