@@ -17,7 +17,7 @@ public class MessagePayloadWrapperTest
         var wrapper = new MessagePayloadWrapper(
             new FiksIOMessagePayload("document.pdf", Stream.Null),
             _dummyCode,
-            FileFormat: new FiksArkivDocumentFormat { Code = formatCode },
+            FileFormat: new FiksArkivCode { Code = formatCode },
             FileVariant: null
         );
 

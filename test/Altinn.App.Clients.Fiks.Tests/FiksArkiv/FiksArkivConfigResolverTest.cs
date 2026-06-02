@@ -455,7 +455,7 @@ public class FiksArkivConfigResolverTest
     [InlineData(typeof(Authenticated.SystemUser))]
     [InlineData(typeof(Authenticated.ServiceOwner))]
     [InlineData(typeof(Authenticated.Org))]
-    public async Task GetCaseFileClassifications_ReturnsOwnerClassification_ForKnownAuthenticationTypes(Type authType)
+    public async Task GetCaseFileClassifications_ResolvesInstanceOwnerSource_ForKnownAuthenticationTypes(Type authType)
     {
         // Arrange
         Authenticated auth = authType switch
@@ -469,8 +469,19 @@ public class FiksArkivConfigResolverTest
             _ => throw new NotSupportedException(),
         };
 
+        var fiksArkivSettingsOverride = new FiksArkivSettings
+        {
+            Metadata = new FiksArkivMetadataSettings
+            {
+                CaseFileClassifications =
+                [
+                    new FiksArkivClassification { Source = FiksArkivClassificationSource.InstanceOwner },
+                ],
+            },
+        };
         await using var fixture = TestFixture.Create(
-            services => services.AddFiksArkiv(),
+            services => services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings"),
+            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)],
             useDefaultFiksArkivSettings: false
         );
 
@@ -490,7 +501,21 @@ public class FiksArkivConfigResolverTest
     {
         // Arrange
         var auth = TestAuthentication.GetNoneAuthentication();
-        await using var fixture = TestFixture.Create(services => services.AddFiksArkiv());
+        var fiksArkivSettingsOverride = new FiksArkivSettings
+        {
+            Metadata = new FiksArkivMetadataSettings
+            {
+                CaseFileClassifications =
+                [
+                    new FiksArkivClassification { Source = FiksArkivClassificationSource.InstanceOwner },
+                ],
+            },
+        };
+        await using var fixture = TestFixture.Create(
+            services => services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings"),
+            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)],
+            useDefaultFiksArkivSettings: false
+        );
 
         // Act
         await Assert.ThrowsAsync<FiksArkivException>(() =>
@@ -499,7 +524,7 @@ public class FiksArkivConfigResolverTest
     }
 
     [Fact]
-    public async Task GetCaseFileClassifications_AppendsConfiguredClassifications_AfterOwnerClassification()
+    public async Task GetCaseFileClassifications_ResolvesEntriesInConfiguredOrder()
     {
         // Arrange
         var fiksArkivSettingsOverride = new FiksArkivSettings
@@ -508,6 +533,7 @@ public class FiksArkivConfigResolverTest
             {
                 CaseFileClassifications =
                 [
+                    new FiksArkivClassification { Source = FiksArkivClassificationSource.InstanceOwner },
                     new FiksArkivClassification
                     {
                         SystemId = "configured-system-1",
@@ -537,6 +563,8 @@ public class FiksArkivConfigResolverTest
 
         // Assert
         Assert.Equal(3, result.Count);
+        // [0] is the resolved instance owner (service owner => organization number).
+        Assert.Equal("ORGNR", result[0].KlassifikasjonssystemID);
         Assert.Equal("configured-system-1", result[1].KlassifikasjonssystemID);
         Assert.Equal("configured-class-1", result[1].KlasseID);
         Assert.Equal("Configured 1", result[1].Tittel);
@@ -548,7 +576,42 @@ public class FiksArkivConfigResolverTest
     }
 
     [Fact]
-    public async Task GetCaseFileClassifications_ReturnsOwnerOnly_WhenNoConfiguredClassifications()
+    public async Task GetCaseFileClassifications_OmitsInstanceOwner_WhenSourceNotConfigured()
+    {
+        // Arrange
+        var fiksArkivSettingsOverride = new FiksArkivSettings
+        {
+            Metadata = new FiksArkivMetadataSettings
+            {
+                CaseFileClassifications =
+                [
+                    new FiksArkivClassification
+                    {
+                        SystemId = "configured-system-1",
+                        ClassificationId = "configured-class-1",
+                        Title = "Configured 1",
+                    },
+                ],
+            },
+        };
+        await using var fixture = TestFixture.Create(
+            services => services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings"),
+            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)],
+            useDefaultFiksArkivSettings: false
+        );
+
+        // Act
+        var result = await fixture.FiksArkivConfigResolver.GetCaseFileClassifications(
+            TestAuthentication.GetServiceOwnerAuthentication()
+        );
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("configured-system-1", result[0].KlassifikasjonssystemID);
+    }
+
+    [Fact]
+    public async Task GetCaseFileClassifications_ReturnsEmpty_WhenNoClassificationsConfigured()
     {
         // Arrange
         await using var fixture = TestFixture.Create(
@@ -562,7 +625,7 @@ public class FiksArkivConfigResolverTest
         );
 
         // Assert
-        Assert.Single(result);
+        Assert.Empty(result);
     }
 
     // csharpier-ignore-start

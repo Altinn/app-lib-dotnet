@@ -217,11 +217,27 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         CancellationToken cancellationToken = default
     )
     {
-        return
-        [
-            await GetInstanceOwnerClassification(auth, cancellationToken: cancellationToken),
-            .. _fiksArkivSettings.Metadata?.CaseFileClassifications?.Select(x => x.ToKlassifikasjon()) ?? [],
-        ];
+        var entries = _fiksArkivSettings.Metadata?.CaseFileClassifications;
+        if (entries is null || entries.Count == 0)
+            return [];
+
+        var result = new List<Klassifikasjon>(entries.Count);
+        foreach (var entry in entries)
+        {
+            result.Add(
+                entry.Source switch
+                {
+                    FiksArkivClassificationSource.InstanceOwner => await GetInstanceOwnerClassification(
+                        auth,
+                        cancellationToken: cancellationToken
+                    ),
+                    null => entry.ToKlassifikasjon(),
+                    _ => throw new FiksArkivException($"Unsupported classification source: {entry.Source}"),
+                }
+            );
+        }
+
+        return result;
     }
 
     /// <inheritdoc />

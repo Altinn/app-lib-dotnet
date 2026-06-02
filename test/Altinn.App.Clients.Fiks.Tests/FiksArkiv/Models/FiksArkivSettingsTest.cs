@@ -1,7 +1,9 @@
+using System.Text;
 using Altinn.App.Clients.Fiks.Exceptions;
 using Altinn.App.Clients.Fiks.Extensions;
 using Altinn.App.Clients.Fiks.FiksArkiv.Models;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace Altinn.App.Clients.Fiks.Tests.FiksArkiv.Models;
 
@@ -45,6 +47,116 @@ public class FiksArkivSettingsTest
         Assert.NotNull(ex);
         Assert.IsType<FiksArkivConfigurationException>(ex);
         Assert.Contains(expectedErrorMessage, ex.Message);
+    }
+
+    [Fact]
+    public void FiksArkivClassification_WithSource_ValidatesWithoutExplicitFields()
+    {
+        // Arrange
+        var classification = new FiksArkivClassification { Source = FiksArkivClassificationSource.InstanceOwner };
+
+        // Act
+        var ex = Record.Exception(() => classification.Validate("TestSetting"));
+
+        // Assert
+        Assert.Null(ex);
+    }
+
+    [Theory]
+    [InlineData("InstanceOwner")]
+    [InlineData("instanceowner")] // config binder is case-insensitive
+    public void FiksArkivClassification_Source_BindsFromConfigurationString(string sourceValue)
+    {
+        // Arrange: bind via the same configuration binder used by .BindConfiguration() in production,
+        // proving the documented string form (not just the System.Text.Json numeric form) round-trips.
+        var json = $$"""
+            {
+                "FiksArkivSettings": {
+                    "metadata": {
+                        "caseFileClassifications": [
+                            { "source": "{{sourceValue}}" }
+                        ]
+                    }
+                }
+            }
+            """;
+        var configuration = new ConfigurationBuilder()
+            .AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(json)))
+            .Build();
+
+        // Act
+        var settings = configuration.GetSection("FiksArkivSettings").Get<FiksArkivSettings>();
+
+        // Assert
+        var classification = Assert.Single(settings!.Metadata!.CaseFileClassifications!);
+        Assert.Equal(FiksArkivClassificationSource.InstanceOwner, classification.Source);
+        Assert.Null(classification.SystemId);
+        Assert.Null(classification.ClassificationId);
+        Assert.Null(classification.Title);
+    }
+
+    [Fact]
+    public void FiksArkivClassification_ExplicitFields_BindFromConfiguration()
+    {
+        // Arrange
+        var json = """
+            {
+                "FiksArkivSettings": {
+                    "metadata": {
+                        "caseFileClassifications": [
+                            {
+                                "systemId": "custom-system",
+                                "classificationId": "custom-class",
+                                "title": "Custom Title",
+                                "isRestricted": true
+                            }
+                        ]
+                    }
+                }
+            }
+            """;
+        var configuration = new ConfigurationBuilder()
+            .AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(json)))
+            .Build();
+
+        // Act
+        var settings = configuration.GetSection("FiksArkivSettings").Get<FiksArkivSettings>();
+
+        // Assert
+        var classification = Assert.Single(settings!.Metadata!.CaseFileClassifications!);
+        Assert.Null(classification.Source);
+        Assert.Equal("custom-system", classification.SystemId);
+        Assert.Equal("custom-class", classification.ClassificationId);
+        Assert.Equal("Custom Title", classification.Title);
+        Assert.True(classification.IsRestricted);
+    }
+
+    [Theory]
+    [InlineData("sys", null, null)]
+    [InlineData(null, "cls", null)]
+    [InlineData(null, null, "title")]
+    public void FiksArkivClassification_WithSourceAndExplicitFields_Throws(
+        string? systemId,
+        string? classificationId,
+        string? title
+    )
+    {
+        // Arrange
+        var classification = new FiksArkivClassification
+        {
+            Source = FiksArkivClassificationSource.InstanceOwner,
+            SystemId = systemId,
+            ClassificationId = classificationId,
+            Title = title,
+        };
+
+        // Act
+        var ex = Record.Exception(() => classification.Validate("TestSetting"));
+
+        // Assert
+        Assert.NotNull(ex);
+        Assert.IsType<FiksArkivConfigurationException>(ex);
+        Assert.Contains("Source cannot be combined with", ex.Message);
     }
 
     [Theory]
@@ -137,7 +249,7 @@ public class FiksArkivSettingsTest
         var settings = new FiksArkivDataTypeSettings
         {
             DataType = "valid-datatype",
-            Format = code is null ? null : new FiksArkivDocumentFormat { Code = code },
+            Format = code is null ? null : new FiksArkivCode { Code = code },
         };
 
         // Act

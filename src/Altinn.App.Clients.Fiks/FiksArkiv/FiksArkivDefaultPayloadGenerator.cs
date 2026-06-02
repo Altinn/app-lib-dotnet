@@ -90,10 +90,10 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
             },
         };
 
-        // foreach (var classification in caseFileClassifications)
-        // {
-        //     caseFile.Klassifikasjon.Add(classification);
-        // }
+        foreach (var classification in caseFileClassifications)
+        {
+            caseFile.Klassifikasjon.Add(classification);
+        }
 
         var journalEntry = new Journalpost
         {
@@ -210,7 +210,7 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         DataElement dataElement,
         string? filename,
         Kode fileTypeCode,
-        FiksArkivDocumentFormat? fileFormat,
+        FiksArkivCode? fileFormat,
         FiksArkivCode? fileVariant,
         InstanceIdentifier instanceId,
         CancellationToken cancellationToken = default

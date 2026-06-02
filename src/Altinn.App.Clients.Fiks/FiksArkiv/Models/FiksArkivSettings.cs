@@ -124,7 +124,10 @@ public sealed record FiksArkivMetadataSettings
 
     /// <summary>
     /// Optional classifications (klassifikasjon) to attach to the generated saksmappe (case file) element in the arkivmelding.xml.
-    /// These are appended in order after the implicit instance-owner classification.
+    /// Entries are emitted in the order listed. Each entry is either a built-in dynamic
+    /// <see cref="FiksArkivClassification.Source"/> (e.g. the instance owner identity) or an explicitly
+    /// configured system/class/title. The instance owner classification is no longer added implicitly;
+    /// add an entry with <see cref="FiksArkivClassificationSource.InstanceOwner"/> to include it.
     /// </summary>
     [JsonPropertyName("caseFileClassifications")]
     public IReadOnlyList<FiksArkivClassification>? CaseFileClassifications { get; set; }
@@ -500,35 +503,56 @@ public sealed record FiksArkivCode
 public sealed record FiksArkivClassification
 {
     /// <summary>
+    /// Opt-in to a built-in, library-resolved dynamic classification (e.g. the instance owner identity).
+    /// When set, the system/class/title are resolved at shipment time and the explicit
+    /// <see cref="SystemId"/>/<see cref="ClassificationId"/>/<see cref="Title"/> fields must be left unset.
+    /// </summary>
+    [JsonPropertyName("source")]
+    public FiksArkivClassificationSource? Source { get; set; }
+
+    /// <summary>
     /// The identifier of the classification system this entry belongs to (klassifikasjonssystemID).
+    /// Required for an explicit entry; omit when <see cref="Source"/> is set.
     /// </summary>
     [JsonPropertyName("systemId")]
-    public required string SystemId { get; set; }
+    public string? SystemId { get; set; }
 
     /// <summary>
     /// The identifier of the class within the classification system (klasseID).
+    /// Required for an explicit entry; omit when <see cref="Source"/> is set.
     /// </summary>
     [JsonPropertyName("classificationId")]
-    public required string ClassificationId { get; set; }
+    public string? ClassificationId { get; set; }
 
     /// <summary>
     /// A human-readable title for the classification entry (tittel).
+    /// Required for an explicit entry; omit when <see cref="Source"/> is set.
     /// </summary>
     [JsonPropertyName("title")]
-    public required string Title { get; set; }
+    public string? Title { get; set; }
 
     /// <summary>
     /// Optional flag indicating that the classification is restricted (erSkjermet).
-    /// Leave <c>null</c> to omit the property from the resulting XML.
+    /// Leave <c>null</c> to omit the property from the resulting XML. Ignored when <see cref="Source"/> is set.
     /// </summary>
     [JsonPropertyName("isRestricted")]
     public bool? IsRestricted { get; set; }
 
     internal void Validate(string propertyName)
     {
+        if (Source is not null)
+        {
+            if (SystemId is not null || ClassificationId is not null || Title is not null)
+                throw new FiksArkivConfigurationException(
+                    $"{propertyName}.{nameof(Source)} cannot be combined with {nameof(SystemId)}, {nameof(ClassificationId)} or {nameof(Title)}. A source-based classification is fully resolved by the library."
+                );
+
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(SystemId))
             throw new FiksArkivConfigurationException(
-                $"{propertyName}.{nameof(SystemId)} configuration is required, but missing."
+                $"{propertyName}.{nameof(SystemId)} configuration is required, but missing. Did you mean to set {nameof(Source)}?"
             );
 
         if (string.IsNullOrWhiteSpace(ClassificationId))
@@ -541,4 +565,16 @@ public sealed record FiksArkivClassification
                 $"{propertyName}.{nameof(Title)} configuration is required, but missing."
             );
     }
+}
+
+/// <summary>
+/// Built-in, library-resolved dynamic classification sources for a <see cref="FiksArkivClassification"/>.
+/// </summary>
+public enum FiksArkivClassificationSource
+{
+    /// <summary>
+    /// The instance owner identity (national identity number, organization number, system user id, etc.),
+    /// derived from the authentication context at shipment time.
+    /// </summary>
+    InstanceOwner,
 }

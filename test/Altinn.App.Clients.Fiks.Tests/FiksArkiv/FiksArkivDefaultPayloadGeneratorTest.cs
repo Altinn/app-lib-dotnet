@@ -355,7 +355,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
             {
                 DataType = dataType,
                 Filename = filename,
-                Format = formatCode is null ? null : new FiksArkivDocumentFormat { Code = formatCode },
+                Format = formatCode is null ? null : new FiksArkivCode { Code = formatCode },
                 Variant = variant,
             };
 
