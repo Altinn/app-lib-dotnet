@@ -7,7 +7,7 @@
       "expects": 0.6
     },
     {
-      "name": "Should add the numbers in the array together",
+      "name": "Should add the negative numbers in the array together",
       "expression": ["sum", ["list", -4, -0.2, -0.1]],
       "expects": -4.3
     },
@@ -42,7 +42,7 @@
       "expects": 35.5
     },
     {
-      "name": "Should sum negative and positive numbers in array",
+      "name": "Should sum negative and positive integers in array",
       "expression": ["sum", ["list", 50, -30, 20, -10]],
       "expects": 30
     },
@@ -72,21 +72,6 @@
       "expects": 30
     },
     {
-      "name": "Should sum multiple arrays",
-      "expression": ["sum", ["list", 1, 2, 3], ["list", 4, 5, 6]],
-      "expects": 21
-    },
-    {
-      "name": "Should sum multiple arrays with nulls",
-      "expression": ["sum", ["list", 1, null, 3], ["list", null, 5, 6]],
-      "expects": 15
-    },
-    {
-      "name": "Should sum mixed arrays and nulls",
-      "expression": ["sum", ["list", 10, 20], ["list", null, null], ["list", 30, 40]],
-      "expects": 100
-    },
-    {
       "name": "Should return 0 for single array with all nulls",
       "expression": ["sum", ["list", null, null]],
       "expects": 0
@@ -94,7 +79,7 @@
     {
       "name": "Should return 0 for empty array",
       "expression": ["sum", ["list"]],
-      "expectsFailure": "Invalid"
+      "expects": 0
     },
     {
       "name": "Should fail with invalid string in array",
@@ -109,12 +94,12 @@
     {
       "name": "Should fail when no arguments are provided",
       "expression": ["sum"],
-      "expectsFailure": "Sequence contains no elements"
+      "expectsFailure": "Expected a list as the only argument"
     },
     {
       "name": "Should fail when non-array argument is provided",
       "expression": ["sum", 10],
-      "expectsFailure": "Expected only array arguments"
+      "expectsFailure": "Expected a list as the only argument"
     },
     {
       "name": "Should sum single element array",

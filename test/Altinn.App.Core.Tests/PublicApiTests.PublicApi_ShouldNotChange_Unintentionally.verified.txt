@@ -4721,6 +4721,7 @@ namespace Altinn.App.Core.Models.Expressions
         multiply = 39,
         divide = 40,
         list = 41,
+        sum = 42,
     }
 }
 namespace Altinn.App.Core.Models.Layout.Components.Base

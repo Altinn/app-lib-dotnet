@@ -842,18 +842,12 @@ public static partial class ExpressionEvaluator
 
     private static double? PrepareNumericArg(JsonNode? arg)
     {
-        if (arg is null)
-        {
-            return null;
-        }
-
-        return arg.GetValueKind() switch
+        return arg?.GetValueKind() switch
         {
             JsonValueKind.True or JsonValueKind.False or JsonValueKind.Array or JsonValueKind.Object =>
                 throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {arg}"),
             JsonValueKind.String => ParseNumber(arg.GetValue<string>(), throwException: true),
             JsonValueKind.Number => arg.GetValue<double>(),
-
             _ => null,
         };
     }
@@ -863,16 +857,6 @@ public static partial class ExpressionEvaluator
         if (args.Length == 0)
             throw new ExpressionEvaluatorTypeErrorException("Invalid number of args");
         return args.Select(PrepareNumericArg).ToArray();
-    }
-
-    private static double?[] PrepareNumericArgs(JsonArray array)
-    {
-        if (array.Count == 0)
-        {
-            throw new ExpressionEvaluatorTypeErrorException("Invalid number of args");
-        }
-
-        return array.Select(PrepareNumericArg).ToArray();
     }
 
     private static ExpressionValue IfImpl(ExpressionValue[] args)
@@ -1035,14 +1019,15 @@ public static partial class ExpressionEvaluator
 
     private static double? Sum(ExpressionValue[] args)
     {
-        if (args.Any(x => x.ValueKind != JsonValueKind.Array))
+        var expressionValue = args.SingleOrDefault();
+        if (expressionValue.ValueKind != JsonValueKind.Array)
         {
-            throw new ExpressionEvaluatorTypeErrorException("Expected only array arguments");
+            throw new ExpressionEvaluatorTypeErrorException("Expected a list as the only argument");
         }
 
-        var concatinatedList = args.SelectMany(x => PrepareNumericArgs(x.Array)).ToArray();
+        var doubles = expressionValue.Array.Select(PrepareNumericArg).ToArray();
 
-        return PerformArithmeticWithReducer(concatinatedList, (x, y) => x + y);
+        return doubles.Length != 0 ? PerformArithmeticWithReducer(doubles, (x, y) => x + y) : 0;
     }
 
     /// <summary>
