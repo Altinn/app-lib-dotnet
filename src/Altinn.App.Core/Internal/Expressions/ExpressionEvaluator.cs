@@ -1026,7 +1026,6 @@ public static partial class ExpressionEvaluator
         }
 
         var doubles = expressionValue.Array.Select(PrepareNumericArg).ToArray();
-
         return doubles.Length != 0 ? PerformArithmeticWithReducer(doubles, (x, y) => x + y) : 0;
     }
 
