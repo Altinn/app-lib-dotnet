@@ -228,4 +228,9 @@ public enum ExpressionFunction
 
     /// <summary>Create a list from the arguments.</summary>
     list,
+
+    /// <summary>
+    /// Calculate the average. Must be numeric values in a list.
+    /// </summary>
+    average,
 }
