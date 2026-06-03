@@ -62,10 +62,10 @@
       </korrespondanseparttype>
       <korrespondansepartNavn>Recipient Name</korrespondansepartNavn>
       <organisasjonid>123456789</organisasjonid>
-      <deresReferanse>Ref-001</deresReferanse>
+      <deresReferanse>https://ttd.apps.the-hostname/ttd/test-app/instances/12345/88d9baf8-2f9f-4e66-9a2f-7d345e60ed90</deresReferanse>
     </korrespondansepart>
     <korrespondansepart>
-      <korrespondansepartID>altinn-party-id</korrespondansepartID>
+      <korrespondansepartID>12345</korrespondansepartID>
       <korrespondanseparttype>
         <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">EA</kode>
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Avsender</beskrivelse>
