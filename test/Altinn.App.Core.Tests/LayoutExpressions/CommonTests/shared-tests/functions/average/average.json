@@ -17,7 +17,7 @@
       "expects": 0
     },
     {
-      "name": "Should calculate average of all numbers that are not null in the array",
+      "name": "Should calculate average of all numbers and nulls in the array",
       "expression": ["average", ["list", 4.3, null, 3.1]],
       "expects": 2.466666666666667
     },
