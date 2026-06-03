@@ -133,6 +133,7 @@ public static partial class ExpressionEvaluator
             ExpressionFunction.multiply => Multiply(args),
             ExpressionFunction.divide => Divide(args),
             ExpressionFunction.list => List(args),
+            ExpressionFunction.average => Average(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
@@ -839,6 +840,18 @@ public static partial class ExpressionEvaluator
         };
     }
 
+    private static double? PrepareNumericArg(JsonNode? arg)
+    {
+        return arg?.GetValueKind() switch
+        {
+            JsonValueKind.True or JsonValueKind.False or JsonValueKind.Array or JsonValueKind.Object =>
+                throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {arg}"),
+            JsonValueKind.String => ParseNumber(arg.GetValue<string>(), throwException: true),
+            JsonValueKind.Number => arg.GetValue<double>(),
+            _ => null,
+        };
+    }
+
     private static double?[] PrepareNumericArgs(ExpressionValue[] args)
     {
         if (args.Length == 0)
@@ -905,7 +918,7 @@ public static partial class ExpressionEvaluator
     private static double Plus(ExpressionValue[] args)
     {
         double?[] numbers = PrepareNumericArgs(args);
-        return PerformArithmeticWithReducer(numbers, (x, y) => x + y);
+        return (double)PerformArithmeticWithReducer(numbers, (x, y) => x + y);
     }
 
     private static double Minus(ExpressionValue[] args)
@@ -917,7 +930,7 @@ public static partial class ExpressionEvaluator
     private static double Multiply(ExpressionValue[] args)
     {
         double?[] numbers = PrepareNumericArgs(args);
-        return PerformArithmeticWithReducer(numbers, (x, y) => x * y);
+        return (double)PerformArithmeticWithReducer(numbers, (x, y) => x * y);
     }
 
     private static double Divide(ExpressionValue[] args)
@@ -1004,6 +1017,23 @@ public static partial class ExpressionEvaluator
         return new JsonArray(args.Select(a => JsonSerializer.SerializeToNode(a)).ToArray());
     }
 
+    private static double? Average(ExpressionValue[] args)
+    {
+        var expressionValue = args.FirstOrDefault();
+        if (args.Length != 1 || expressionValue.ValueKind != JsonValueKind.Array)
+        {
+            throw new ExpressionEvaluatorTypeErrorException("Expected a list as the only argument");
+        }
+        if (expressionValue.Array.Count == 0)
+        {
+            return 0;
+        }
+
+        var doubles = expressionValue.Array.Select(PrepareNumericArg).ToArray();
+        var aggregatedSum = PerformArithmeticWithReducer(doubles, (x, y) => x + y);
+        return (double)(aggregatedSum / doubles.Length);
+    }
+
     /// <summary>
     /// Performs arithmetic operation using decimal precision to avoid floating point precision issues.
     /// Converts doubles to decimal, performs the operation, and converts back to double.
@@ -1036,13 +1066,13 @@ public static partial class ExpressionEvaluator
         }
     }
 
-    private static double PerformArithmeticWithReducer(double?[] operands, Func<decimal, decimal, decimal> operation)
+    private static decimal PerformArithmeticWithReducer(double?[] operands, Func<decimal, decimal, decimal> operation)
     {
         double[] numbers = operands.Select(o => o ?? 0).ToArray();
         try
         {
             decimal[] decimalNumbers = numbers.Select(n => (decimal)n).ToArray();
-            return (double)decimalNumbers.Aggregate(operation);
+            return decimalNumbers.Aggregate(operation);
         }
         catch (OverflowException)
         {
