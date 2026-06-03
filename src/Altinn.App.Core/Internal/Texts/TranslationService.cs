@@ -336,14 +336,15 @@ internal sealed class TranslationService : ITranslationService
                         LanguageConst.Nn => "Eit felt bryt reglane sette av XSD. Melding: {0}",
                         _ => "A field is in violation of the rules set by the XSD schema. Message: {0}",
                     },
-                    Variables = [
+                    Variables =
+                    [
                         new TextResourceVariable()
                         {
                             DataSource = "customTextParameters",
                             Key = "message",
-                            DefaultValue = ""
-                        }
-                    ]
+                            DefaultValue = "",
+                        },
+                    ],
                 };
         }
 
