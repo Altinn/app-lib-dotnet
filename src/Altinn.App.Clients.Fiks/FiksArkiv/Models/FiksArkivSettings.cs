@@ -427,15 +427,15 @@ public sealed record FiksArkivDataTypeSettings
     public string? Filename { get; set; }
 
     /// <summary>
-    /// Optional override for the document format (e.g. <c>PDF/A</c>) recorded in the arkivmelding.xml
-    /// (<c>dokumentobjekt.format.kode</c>). If not specified, the dotless file extension is used.
+    /// Optional override for the document format (<c>dokumentobjekt.format</c>), e.g. <c>PDF/A</c>.
+    /// If not specified, the dotless file extension is used.
     /// </summary>
     [JsonPropertyName("format")]
     public FiksArkivCode? Format { get; set; }
 
     /// <summary>
-    /// Optional variant descriptor for the document. E.g. "P/Produksjonsformat" or "A/Arkivformat".
-    /// If not specified, the variant information is omitted from the arkivmelding.xml.
+    /// Optional variant descriptor for the document (<c>dokumentobjekt.variantformat</c>), e.g. "P/Produksjonsformat" or "A/Arkivformat".
+    /// If not specified, the variant information is omitted.
     /// </summary>
     [JsonPropertyName("variant")]
     public FiksArkivCode? Variant { get; set; }
@@ -471,7 +471,7 @@ public sealed record FiksArkivDataTypeSettings
 }
 
 /// <summary>
-/// Represents a code + description for a given document
+/// Represents a code + description, analogous to <c>KS.Fiks.Arkiv.Models.V1.Metadatakatalog.Kode</c>
 /// </summary>
 public sealed record FiksArkivCode
 {
@@ -497,8 +497,7 @@ public sealed record FiksArkivCode
 }
 
 /// <summary>
-/// Represents a single classification (klassifikasjon) entry attached to the saksmappe (case file)
-/// in the generated arkivmelding.xml.
+/// Represents a single classification (klassifikasjon) entry attached to the saksmappe (case file).
 /// </summary>
 public sealed record FiksArkivClassification
 {
@@ -575,8 +574,7 @@ public sealed record FiksArkivClassification
 public enum FiksArkivClassificationSource
 {
     /// <summary>
-    /// The instance owner identity (national identity number, organization number, system user id, etc.),
-    /// derived from the authentication context at shipment time.
+    /// The instance owner identity derived from the authentication context at execution time.
     /// </summary>
     InstanceOwner,
 }
