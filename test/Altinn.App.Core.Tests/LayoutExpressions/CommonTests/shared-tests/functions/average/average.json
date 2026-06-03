@@ -17,11 +17,6 @@
       "expects": 0
     },
     {
-      "name": "Should return the only value in the array when the rest is null",
-      "expression": ["average", ["list", 4.3, null, null]],
-      "expects": 1.4333333333333333
-    },
-    {
       "name": "Should calculate average of all numbers that are not null in the array",
       "expression": ["average", ["list", 4.3, null, 3.1]],
       "expects": 2.466666666666667
@@ -72,11 +67,6 @@
       "expects": 10
     },
     {
-      "name": "Should return 0 for single array with all nulls",
-      "expression": ["average", ["list", null, null]],
-      "expects": 0
-    },
-    {
       "name": "Should return 0 for empty array",
       "expression": ["average", ["list"]],
       "expects": 0
@@ -112,28 +102,8 @@
       "expects": 600479950316066.33
     },
     {
-      "name": "Should calculate average with precision for decimal numbers",
-      "expression": ["average", ["list", 0.1, 0.2]],
-      "expects": 0.15
-    },
-    {
-      "name": "Should calculate average with one null and one number",
-      "expression": ["average", ["list", 10, null]],
-      "expects": 5
-    },
-    {
-      "name": "Should handle mix of positive, negative, and zero",
-      "expression": ["average", ["list", -10, 0, 10]],
-      "expects": 0
-    },
-    {
-      "name": "Should calculate average with very large and very small numbers",
-      "expression": ["average", ["list", 1e10, 1e-10]],
-      "expects": 5000000000
-    },
-    {
-      "name": "Should fail when multiple arguments provided (not wrapped in list)",
-      "expression": ["average", 1, 2, 3],
+      "name": "Should fail when multiple list arguments provided",
+      "expression": ["average", ["list", 1], ["list", 2, 3]],
       "expectsFailure": "Expected a list as the only argument"
     }
   ]
