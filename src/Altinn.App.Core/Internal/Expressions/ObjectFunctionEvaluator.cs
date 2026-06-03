@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Altinn.App.Core.Internal.Expressions;
 
-internal class ObjectFunctionEvaluator
+internal sealed class ObjectFunctionEvaluator
 {
     private readonly ExpressionValue[] _args;
 
