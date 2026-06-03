@@ -20,7 +20,7 @@ public class XsdValidator : IValidator
     private readonly ModelSerializationService _modelSerializationService;
 
     /// <summary>
-    /// Constructor for the expression validator
+    /// Constructor for the XSD validator
     /// </summary>
     public XsdValidator(
         ILogger<XsdValidator> logger,
@@ -41,7 +41,7 @@ public class XsdValidator : IValidator
     public string TaskId => "*";
 
     /// <summary>
-    /// Only run for tasks that specifies a layout set
+    /// Only run for tasks that has data elements with ClassRef and is likely to have an XSD schema to validate against.
     /// </summary>
     public bool ShouldRunForTask(string taskId) =>
         _appMetadata
@@ -61,7 +61,7 @@ public class XsdValidator : IValidator
         IInstanceDataAccessor dataAccessor,
         string taskId,
         DataElementChanges changes
-    ) => Task.FromResult(true);
+    ) => Task.FromResult(false);
 
     /// <inheritdoc />
     public async Task<List<ValidationIssue>> Validate(
@@ -86,12 +86,24 @@ public class XsdValidator : IValidator
             ObjectUtils.RemoveAltinnRowId(formData);
 
             var serializedFormData = _modelSerializationService.SerializeToXml(formData);
-            var parsedSchema = new XmlSchemaSet();
-            using (var xsdReader = XmlReader.Create(new StringReader(schema)))
+            var parsedSchema = new XmlSchemaSet { XmlResolver = null };
+            var xsdReaderSettings = new XmlReaderSettings
+            {
+                DtdProcessing = DtdProcessing.Prohibit,
+                XmlResolver = null,
+            };
+
+            using (var xsdReader = XmlReader.Create(new StringReader(schema), xsdReaderSettings))
             {
                 parsedSchema.Add(null, xsdReader);
             }
-            var settings = new XmlReaderSettings { ValidationType = ValidationType.Schema, Schemas = parsedSchema };
+            var settings = new XmlReaderSettings
+            {
+                ValidationType = ValidationType.Schema,
+                Schemas = parsedSchema,
+                DtdProcessing = DtdProcessing.Prohibit,
+                XmlResolver = null,
+            };
             settings.ValidationEventHandler += (sender, e) =>
             {
                 validationIssues.Add(
@@ -110,9 +122,29 @@ public class XsdValidator : IValidator
                 );
             };
 
-            using var xmlStream = new MemoryStream(serializedFormData.ToArray(), writable: false);
-            using var reader = XmlReader.Create(xmlStream, settings);
-            while (reader.Read()) { }
+            try
+            {
+                var xmlStream = new MemoryAsStream(serializedFormData);
+                using var reader = XmlReader.Create(xmlStream, settings);
+                while (reader.Read()) { }
+            }
+            catch (XmlException ex)
+            {
+                validationIssues.Add(
+                    new ValidationIssue()
+                    {
+                        Code = "Xsd",
+                        CustomTextKey = "backend.xsd_validation",
+                        DataElementId = dataElement.Id,
+                        Severity = ValidationIssueSeverity.Error,
+                        CustomTextParameters = new Dictionary<string, string>()
+                        {
+                            { "schema", dataType.Id },
+                            { "message", ex.Message },
+                        },
+                    }
+                );
+            }
         }
 
         return validationIssues;
