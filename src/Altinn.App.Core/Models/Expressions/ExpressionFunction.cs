@@ -230,7 +230,7 @@ public enum ExpressionFunction
     list,
 
     /// <summary>
-    /// Adding numbers. Must be numeric values in one or multiple lists
+    /// Adding numbers. Must be numeric values in a list.
     /// </summary>
     sum,
 }

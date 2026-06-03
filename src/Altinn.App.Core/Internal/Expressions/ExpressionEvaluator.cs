@@ -918,7 +918,7 @@ public static partial class ExpressionEvaluator
     private static double Plus(ExpressionValue[] args)
     {
         double?[] numbers = PrepareNumericArgs(args);
-        return PerformArithmeticWithReducer(numbers, (x, y) => x + y);
+        return (double)PerformArithmeticWithReducer(numbers, (x, y) => x + y);
     }
 
     private static double Minus(ExpressionValue[] args)
@@ -930,7 +930,7 @@ public static partial class ExpressionEvaluator
     private static double Multiply(ExpressionValue[] args)
     {
         double?[] numbers = PrepareNumericArgs(args);
-        return PerformArithmeticWithReducer(numbers, (x, y) => x * y);
+        return (double)PerformArithmeticWithReducer(numbers, (x, y) => x * y);
     }
 
     private static double Divide(ExpressionValue[] args)
@@ -1019,14 +1019,14 @@ public static partial class ExpressionEvaluator
 
     private static double? Sum(ExpressionValue[] args)
     {
-        var expressionValue = args.SingleOrDefault();
-        if (expressionValue.ValueKind != JsonValueKind.Array)
+        var expressionValue = args.FirstOrDefault();
+        if (args.Length != 1 && expressionValue.ValueKind != JsonValueKind.Array)
         {
             throw new ExpressionEvaluatorTypeErrorException("Expected a list as the only argument");
         }
 
         var doubles = expressionValue.Array.Select(PrepareNumericArg).ToArray();
-        return doubles.Length != 0 ? PerformArithmeticWithReducer(doubles, (x, y) => x + y) : 0;
+        return doubles.Length != 0 ? (double)PerformArithmeticWithReducer(doubles, (x, y) => x + y) : 0;
     }
 
     /// <summary>
@@ -1061,13 +1061,13 @@ public static partial class ExpressionEvaluator
         }
     }
 
-    private static double PerformArithmeticWithReducer(double?[] operands, Func<decimal, decimal, decimal> operation)
+    private static decimal PerformArithmeticWithReducer(double?[] operands, Func<decimal, decimal, decimal> operation)
     {
         double[] numbers = operands.Select(o => o ?? 0).ToArray();
         try
         {
             decimal[] decimalNumbers = numbers.Select(n => (decimal)n).ToArray();
-            return (double)decimalNumbers.Aggregate(operation);
+            return decimalNumbers.Aggregate(operation);
         }
         catch (OverflowException)
         {

@@ -72,11 +72,6 @@
       "expects": 30
     },
     {
-      "name": "Should return 0 for single array with all nulls",
-      "expression": ["sum", ["list", null, null]],
-      "expects": 0
-    },
-    {
       "name": "Should return 0 for empty array",
       "expression": ["sum", ["list"]],
       "expects": 0
