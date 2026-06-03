@@ -80,9 +80,7 @@ public class FiksArkivSettingsTest
                 }
             }
             """;
-        var configuration = new ConfigurationBuilder()
-            .AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(json)))
-            .Build();
+        var configuration = BuildConfiguration(json);
 
         // Act
         var settings = configuration.GetSection("FiksArkivSettings").Get<FiksArkivSettings>();
@@ -115,9 +113,7 @@ public class FiksArkivSettingsTest
                 }
             }
             """;
-        var configuration = new ConfigurationBuilder()
-            .AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(json)))
-            .Build();
+        var configuration = BuildConfiguration(json);
 
         // Act
         var settings = configuration.GetSection("FiksArkivSettings").Get<FiksArkivSettings>();
@@ -295,5 +291,11 @@ public class FiksArkivSettingsTest
         Assert.NotNull(ex);
         Assert.IsType<FiksArkivConfigurationException>(ex);
         Assert.Contains(expectedErrorMessage, ex.Message);
+    }
+
+    private static IConfiguration BuildConfiguration(string json)
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+        return new ConfigurationBuilder().AddJsonStream(stream).Build();
     }
 }
