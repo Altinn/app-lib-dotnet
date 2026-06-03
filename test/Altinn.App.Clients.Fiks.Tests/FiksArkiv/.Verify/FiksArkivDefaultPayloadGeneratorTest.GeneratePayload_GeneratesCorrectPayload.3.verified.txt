@@ -65,13 +65,13 @@
       <deresReferanse>https://ttd.apps.the-hostname/ttd/test-app/instances/12345/88d9baf8-2f9f-4e66-9a2f-7d345e60ed90</deresReferanse>
     </korrespondansepart>
     <korrespondansepart>
-      <korrespondansepartID>12345</korrespondansepartID>
+      <korrespondansepartID>5001337</korrespondansepartID>
       <korrespondanseparttype>
         <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">EA</kode>
         <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Avsender</beskrivelse>
       </korrespondanseparttype>
-      <korrespondansepartNavn>Instance Owner Person Name</korrespondansepartNavn>
-      <personid>national-id-no</personid>
+      <korrespondansepartNavn>Test AS</korrespondansepartNavn>
+      <organisasjonid>405003309</organisasjonid>
       <postadresse>Street 1</postadresse>
       <postnummer>0123</postnummer>
       <poststed>City</poststed>

@@ -9,7 +9,6 @@
       <klassifikasjonssystemID>PNR</klassifikasjonssystemID>
       <klasseID>12345678901</klasseID>
       <tittel>Test Testesen</tittel>
-      <erSkjermet>true</erSkjermet>
     </klassifikasjon>
     <klassifikasjon>
       <klassifikasjonssystemID>custom-system</klassifikasjonssystemID>
@@ -101,6 +100,20 @@
       </korrespondanseparttype>
       <korrespondansepartNavn>Recipient Name</korrespondansepartNavn>
       <deresReferanse>https://ttd.apps.the-hostname/ttd/test-app/instances/12345/88d9baf8-2f9f-4e66-9a2f-7d345e60ed90</deresReferanse>
+    </korrespondansepart>
+    <korrespondansepart>
+      <korrespondansepartID>501337</korrespondansepartID>
+      <korrespondanseparttype>
+        <kode xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">EA</kode>
+        <beskrivelse xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Avsender</beskrivelse>
+      </korrespondanseparttype>
+      <korrespondansepartNavn>Test Testesen</korrespondansepartNavn>
+      <personid>12345678901</personid>
+      <postadresse>Street 1</postadresse>
+      <postnummer>0123</postnummer>
+      <poststed>City</poststed>
+      <telefonnummer>phone-no</telefonnummer>
+      <telefonnummer>mobile-no</telefonnummer>
     </korrespondansepart>
     <referanseEksternNoekkel>
       <fagsystem xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">ttd/test-app</fagsystem>

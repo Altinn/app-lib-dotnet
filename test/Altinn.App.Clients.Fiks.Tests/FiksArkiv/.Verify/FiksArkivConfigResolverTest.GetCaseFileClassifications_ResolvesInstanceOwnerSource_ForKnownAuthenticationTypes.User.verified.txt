@@ -3,5 +3,4 @@
   <klassifikasjonssystemID>PNR</klassifikasjonssystemID>
   <klasseID>12345678901</klasseID>
   <tittel>Test Testesen</tittel>
-  <erSkjermet>true</erSkjermet>
 </klassifikasjon>

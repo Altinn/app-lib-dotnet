@@ -48,6 +48,9 @@ public class FiksArkivDefaultPayloadGeneratorTest
         public static readonly Authenticated SystemUser = TestAuthentication.GetSystemUserAuthentication();
         public static readonly Authenticated ServiceOwner = TestAuthentication.GetServiceOwnerAuthentication();
         public static readonly Authenticated Org = TestAuthentication.GetOrgAuthentication();
+
+        // No authenticated identity => no associated party => the instance owner party resolves to null.
+        public static readonly Authenticated None = TestAuthentication.GetNoneAuthentication();
     }
 
     public static IEnumerable<object[]> TestCases =>
@@ -67,7 +70,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     },
                 },
                 Auth: AuthTypes.User,
-                InstanceOwnerParty: null,
                 Recipient: Factories.Recipient("recipient-id", "Recipient Name"),
                 ExpectedAttachmentFilenames: ["model.xml", "ref-data-as-pdf.pdf"]
             ),
@@ -95,7 +97,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     },
                 },
                 Auth: AuthTypes.SystemUser,
-                InstanceOwnerParty: null,
                 Recipient: Factories.Recipient("recipient-id", "Recipient Name"),
                 ExpectedAttachmentFilenames: ["Form.xml", "Form.pdf", "receipt2.pdf", "letter.docx", "drawing_1a.jpg"]
             ),
@@ -114,15 +115,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     },
                 },
                 Auth: AuthTypes.ServiceOwner,
-                InstanceOwnerParty: Factories.PersonParty(
-                    name: "Instance Owner Person Name",
-                    nationalIdentityNumber: "national-id-no",
-                    phoneNumber: "phone-no",
-                    mobileNumber: "mobile-no",
-                    address: "Street 1",
-                    postcode: "0123",
-                    city: "City"
-                ),
                 Recipient: Factories.Recipient("recipient-id", "Recipient Name", "123456789"),
                 ExpectedAttachmentFilenames: ["Form.xml"]
             ),
@@ -144,15 +136,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     },
                 },
                 Auth: AuthTypes.Org,
-                InstanceOwnerParty: Factories.OrgParty(
-                    name: "Instance Owner Org Name",
-                    organizationNumber: "org-number",
-                    phoneNumber: "duplicate-phone-no",
-                    mobileNumber: "duplicate-mobile-no",
-                    address: "Street 1",
-                    postcode: null,
-                    city: "City"
-                ),
                 Recipient: Factories.Recipient("recipient-id", "Recipient Name"),
                 ExpectedAttachmentFilenames: ["Form.xml"]
             ),
@@ -190,7 +173,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     },
                 },
                 Auth: AuthTypes.User,
-                InstanceOwnerParty: null,
                 Recipient: Factories.Recipient("recipient-id", "Recipient Name"),
                 ExpectedAttachmentFilenames: ["Form.pdf", "ref-data-as-pdf.pdf"]
             ),
@@ -203,8 +185,9 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 {
                     Documents = new FiksArkivDocumentSettings { PrimaryDocument = Factories.DocumentSettings("model") },
                 },
-                Auth: AuthTypes.User,
-                InstanceOwnerParty: null,
+                // Authenticated.None resolves no instance owner party, asserting the generator omits the Avsender
+                // korrespondansepart and still produces a schema-valid arkivmelding.
+                Auth: AuthTypes.None,
                 Recipient: Factories.Recipient("recipient-id", "Recipient Name"),
                 ExpectedAttachmentFilenames: ["model.xml"]
             ),
@@ -260,15 +243,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                     },
                 },
                 Auth: AuthTypes.ServiceOwner,
-                InstanceOwnerParty: Factories.PersonParty(
-                    name: "Instance Owner Person Name",
-                    nationalIdentityNumber: "national-id-no",
-                    phoneNumber: "phone-no",
-                    mobileNumber: "mobile-no",
-                    address: "Street 1",
-                    postcode: "0123",
-                    city: "City"
-                ),
                 Recipient: Factories.Recipient("recipient-id", "Recipient Name", "123456789"),
                 ExpectedAttachmentFilenames:
                 [
@@ -354,7 +328,12 @@ public class FiksArkivDefaultPayloadGeneratorTest
             .TranslationServiceMock.Setup(x => x.TranslateTextKey("appName", LanguageConst.Nb, null))
             .ReturnsAsync("Test app");
         fixture.AuthenticationContextMock.SetupGet(x => x.Current).Returns(testCase.Auth);
-        fixture.PartyClientMock.Setup(x => x.GetParty(It.IsAny<int>())).ReturnsAsync(testCase.InstanceOwnerParty);
+        // The instance owner party is resolved from the same authenticated identity that drives the classification,
+        // so the submitter and the instance owner stay consistent instead of being hand-rolled per case. An
+        // Authenticated.None identity has no party, modelling an unresolved instance owner (no Avsender emitted).
+        fixture
+            .PartyClientMock.Setup(x => x.GetParty(It.IsAny<int>()))
+            .Returns(() => ResolveInstanceOwnerParty(testCase.Auth));
         fixture
             .DataClientMock.Setup(x =>
                 x.GetDataBytes(
@@ -370,11 +349,72 @@ public class FiksArkivDefaultPayloadGeneratorTest
         return fixture;
     }
 
+    // Each authenticated identity carries its own associated party (see TestAuthentication), so we reuse that
+    // rather than constructing a separate instance owner party that could drift from the auth context.
+    // Authenticated.None has no party and resolves to null, modelling an instance owner that cannot be resolved.
+    private static async Task<Party?> ResolveInstanceOwnerParty(Authenticated auth)
+    {
+        Party? authParty = auth switch
+        {
+            Authenticated.User user => await user.LookupSelectedParty(),
+            Authenticated.Org org => (await org.LoadDetails()).Party,
+            Authenticated.ServiceOwner serviceOwner => (await serviceOwner.LoadDetails()).Party,
+            Authenticated.SystemUser systemUser => (await systemUser.LoadDetails()).Party,
+            Authenticated.None => null,
+            _ => throw new InvalidOperationException($"Unsupported authentication type: {auth.GetType().Name}"),
+        };
+
+        return authParty is null ? null : WithRegisterContactInfo(authParty);
+    }
+
+    // The lightweight auth party (TestAuthentication) only carries flat identity fields, whereas a real register
+    // lookup (IAltinnPartyClient.GetParty) returns the nested Person/Organisation + contact details that
+    // GetInstanceOwnerParty renders. Project the auth identity onto a fully-populated register party so the
+    // generated korrespondansepart keeps its personid/organisasjonid and contact information.
+    private static Party WithRegisterContactInfo(Party authParty)
+    {
+        var party = new Party
+        {
+            PartyId = authParty.PartyId,
+            PartyUuid = authParty.PartyUuid,
+            PartyTypeName = authParty.PartyTypeName,
+            Name = authParty.Name,
+            OrgNumber = authParty.OrgNumber,
+            SSN = authParty.SSN,
+        };
+
+        if (!string.IsNullOrEmpty(authParty.SSN))
+        {
+            party.Person = new Person
+            {
+                SSN = authParty.SSN,
+                TelephoneNumber = "phone-no",
+                MobileNumber = "mobile-no",
+                MailingAddress = "Street 1",
+                MailingPostalCode = "0123",
+                MailingPostalCity = "City",
+            };
+        }
+        else if (!string.IsNullOrEmpty(authParty.OrgNumber))
+        {
+            party.Organization = new Organization
+            {
+                OrgNumber = authParty.OrgNumber,
+                TelephoneNumber = "phone-no",
+                MobileNumber = "mobile-no",
+                MailingAddress = "Street 1",
+                MailingPostalCode = "0123",
+                MailingPostalCity = "City",
+            };
+        }
+
+        return party;
+    }
+
     internal sealed record TestCase(
         string TestIdentifier,
         FiksArkivSettings Settings,
         Authenticated Auth,
-        Party? InstanceOwnerParty,
         FiksArkivRecipient Recipient,
         IEnumerable<string> ExpectedAttachmentFilenames
     )
@@ -418,54 +458,6 @@ public class FiksArkivDefaultPayloadGeneratorTest
                 ClassificationId = classificationId,
                 Title = title,
                 IsRestricted = isRestricted,
-            };
-
-        public static Party PersonParty(
-            string name,
-            string nationalIdentityNumber,
-            string? phoneNumber,
-            string? mobileNumber,
-            string? address,
-            string? postcode,
-            string? city
-        ) =>
-            new()
-            {
-                PartyId = 12345,
-                Name = name,
-                Person = new Person
-                {
-                    SSN = nationalIdentityNumber,
-                    TelephoneNumber = phoneNumber,
-                    MobileNumber = mobileNumber,
-                    MailingAddress = address,
-                    MailingPostalCode = postcode,
-                    MailingPostalCity = city,
-                },
-            };
-
-        public static Party OrgParty(
-            string name,
-            string organizationNumber,
-            string? phoneNumber,
-            string? mobileNumber,
-            string? address,
-            string? postcode,
-            string? city
-        ) =>
-            new()
-            {
-                PartyId = 12345,
-                Name = name,
-                Organization = new Organization
-                {
-                    OrgNumber = organizationNumber,
-                    TelephoneNumber = phoneNumber,
-                    MobileNumber = mobileNumber,
-                    MailingAddress = address,
-                    MailingPostalCode = postcode,
-                    MailingPostalCity = city,
-                },
             };
 
         public static DataElement DataElement(string dataType, string? filename, string? contentType) =>

@@ -272,11 +272,6 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
                 ReferanseDokumentfil = payloadWrapper.Payload.Filename,
                 Format = payloadWrapper.GetFileFormat(),
                 Variantformat = payloadWrapper.GetFileVariant(),
-                // Variantformat = new Variantformat
-                // {
-                //     KodeProperty = VariantformatKoder.Arkivformat.Verdi,
-                //     Beskrivelse = VariantformatKoder.Arkivformat.Beskrivelse,
-                // },
             }
         );
 
