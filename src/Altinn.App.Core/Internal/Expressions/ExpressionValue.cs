@@ -203,10 +203,10 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.Undefined => Undefined,
             JsonValueKind.True => True,
             JsonValueKind.False => False,
-            JsonValueKind.String => element.GetString() ?? Null.String,
+            JsonValueKind.String => element.GetString(),
             JsonValueKind.Number => element.GetDouble(),
-            JsonValueKind.Object => element.Deserialize<JsonObject>() ?? Null.Dictionary,
-            JsonValueKind.Array => element.Deserialize<JsonArray>() ?? Null.Array,
+            JsonValueKind.Object => element.Deserialize<JsonObject>() ?? Null,
+            JsonValueKind.Array => element.Deserialize<JsonArray>() ?? Null,
             _ => throw new InvalidOperationException($"Invalid JsonElement with ValueKind {element.ValueKind}"),
         };
     }

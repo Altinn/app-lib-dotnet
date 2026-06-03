@@ -3,7 +3,7 @@ using DevLab.JmesPath;
 
 namespace Altinn.App.Core.Internal.Expressions;
 
-internal class JmespathFunctionEvaluator
+internal sealed class JmespathFunctionEvaluator
 {
     private readonly ExpressionValue[] _args;
 
@@ -17,7 +17,7 @@ internal class JmespathFunctionEvaluator
         }
         if (_args[1].ValueKind != JsonValueKind.String)
         {
-            throw new ExpressionEvaluatorTypeErrorException($"Expected argument to be string, got {_args[0]}");
+            throw new ExpressionEvaluatorTypeErrorException($"Expected argument to be string, got {_args[1]}");
         }
         return Implementation(_args[0], _args[1].String);
     }
