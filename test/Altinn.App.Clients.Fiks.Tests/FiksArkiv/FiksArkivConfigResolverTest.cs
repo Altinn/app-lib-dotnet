@@ -610,6 +610,48 @@ public class FiksArkivConfigResolverTest
         Assert.Equal("configured-system-1", result[0].KlassifikasjonssystemID);
     }
 
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    [InlineData(null, null)]
+    public async Task GetCaseFileClassifications_HonorsIsRestricted_ForInstanceOwnerSource(
+        bool? isRestricted,
+        bool? expectedErSkjermet
+    )
+    {
+        // Arrange: a source-resolved classification (resolves to an organization number for a service owner)
+        // should still honor the configured restriction flag, regardless of the resolved party type.
+        var fiksArkivSettingsOverride = new FiksArkivSettings
+        {
+            Metadata = new FiksArkivMetadataSettings
+            {
+                CaseFileClassifications =
+                [
+                    new FiksArkivClassification
+                    {
+                        Source = FiksArkivClassificationSource.InstanceOwner,
+                        IsRestricted = isRestricted,
+                    },
+                ],
+            },
+        };
+        await using var fixture = TestFixture.Create(
+            services => services.AddFiksArkiv().WithFiksArkivConfig("CustomFiksArkivSettings"),
+            [("CustomFiksArkivSettings", fiksArkivSettingsOverride)],
+            useDefaultFiksArkivSettings: false
+        );
+
+        // Act
+        var result = await fixture.FiksArkivConfigResolver.GetCaseFileClassifications(
+            TestAuthentication.GetServiceOwnerAuthentication()
+        );
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("ORGNR", result[0].KlassifikasjonssystemID);
+        Assert.Equal(expectedErSkjermet, result[0].ErSkjermet);
+    }
+
     [Fact]
     public async Task GetCaseFileClassifications_ReturnsEmpty_WhenNoClassificationsConfigured()
     {

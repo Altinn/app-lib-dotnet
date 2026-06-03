@@ -506,6 +506,7 @@ public sealed record FiksArkivClassification
     /// Opt-in to a built-in, library-resolved dynamic classification (e.g. the instance owner identity).
     /// When set, the system/class/title are resolved at shipment time and the explicit
     /// <see cref="SystemId"/>/<see cref="ClassificationId"/>/<see cref="Title"/> fields must be left unset.
+    /// The optional <see cref="IsRestricted"/> flag is still honored.
     /// </summary>
     [JsonPropertyName("source")]
     public FiksArkivClassificationSource? Source { get; set; }
@@ -533,7 +534,8 @@ public sealed record FiksArkivClassification
 
     /// <summary>
     /// Optional flag indicating that the classification is restricted (erSkjermet).
-    /// Leave <c>null</c> to omit the property from the resulting XML. Ignored when <see cref="Source"/> is set.
+    /// Leave <c>null</c> to omit the property from the resulting XML. Applies to both explicitly configured
+    /// and <see cref="Source"/>-resolved classifications.
     /// </summary>
     [JsonPropertyName("isRestricted")]
     public bool? IsRestricted { get; set; }

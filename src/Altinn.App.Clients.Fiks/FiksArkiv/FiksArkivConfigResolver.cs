@@ -224,17 +224,20 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
         var result = new List<Klassifikasjon>(entries.Count);
         foreach (var entry in entries)
         {
-            result.Add(
-                entry.Source switch
-                {
-                    FiksArkivClassificationSource.InstanceOwner => await GetInstanceOwnerClassification(
-                        auth,
-                        cancellationToken: cancellationToken
-                    ),
-                    null => entry.ToKlassifikasjon(),
-                    _ => throw new FiksArkivException($"Unsupported classification source: {entry.Source}"),
-                }
-            );
+            var classification = entry.Source switch
+            {
+                FiksArkivClassificationSource.InstanceOwner => await GetInstanceOwnerClassification(
+                    auth,
+                    cancellationToken: cancellationToken
+                ),
+                null => entry.ToKlassifikasjon(),
+                _ => throw new FiksArkivException($"Unsupported classification source: {entry.Source}"),
+            };
+
+            // Forward the IsRestricted value from config
+            classification.ErSkjermet = entry.IsRestricted;
+
+            result.Add(classification);
         }
 
         return result;
@@ -318,7 +321,7 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
 
         return auth switch
         {
-            Authenticated.User user => await KlassifikasjonFactory.CreateUser(user), // Note: Doesn't accept cancellation token.. yet
+            Authenticated.User user => await KlassifikasjonFactory.CreateUser(user),
             Authenticated.SystemUser systemUser => KlassifikasjonFactory.CreateSystemUser(systemUser),
             Authenticated.ServiceOwner serviceOwner => KlassifikasjonFactory.CreateServiceOwner(serviceOwner),
             Authenticated.Org org => KlassifikasjonFactory.CreateOrganization(org),
