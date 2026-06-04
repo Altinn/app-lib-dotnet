@@ -12,7 +12,7 @@ namespace Altinn.App.Core.Features.Validation.Default;
 /// <summary>
 /// Validates form data against the XSD schema for the data model, if it exists
 /// </summary>
-public class XsdValidator : IValidator
+internal sealed class XsdValidator : IValidator
 {
     private readonly ILogger<XsdValidator> _logger;
     private readonly IAppResources _appResourceService;
@@ -109,6 +109,7 @@ public class XsdValidator : IValidator
                 Schemas = parsedSchema,
                 DtdProcessing = DtdProcessing.Prohibit,
                 XmlResolver = null,
+                CloseInput = true,
             };
             settings.ValidationEventHandler += (sender, e) =>
             {
