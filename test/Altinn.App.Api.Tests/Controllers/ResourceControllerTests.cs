@@ -10,13 +10,13 @@ public class ResourceControllerTests : ApiTestBase, IClassFixture<WebApplication
 
     private const string Org = "tdd";
     private const string App = "contributer-restriction";
-    private const string DefaultDataTypeId = "Skjema";
+    private const string DefaultModelName = "Skjema";
 
     [Fact]
     public async Task GetModelJsonSchema_ReturnsOk()
     {
         var client = GetRootedClient(Org, App);
-        using var response = await client.GetAsync($"/{Org}/{App}/api/jsonschema/{DefaultDataTypeId}");
+        using var response = await client.GetAsync($"/{Org}/{App}/api/jsonschema/{DefaultModelName}");
         response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
         Assert.NotNull(content);
@@ -24,12 +24,12 @@ public class ResourceControllerTests : ApiTestBase, IClassFixture<WebApplication
     }
 
     [Fact]
-    public async Task GetModelJsonSchema_InvalidDataTypeId_ReturnsNotFound()
+    public async Task GetModelJsonSchema_InvalidModelName_ReturnsNotFound()
     {
         var client = GetRootedClient(Org, App);
         await Assert.ThrowsAsync<FileNotFoundException>(async () =>
         {
-            using var response = await client.GetAsync($"/{Org}/{App}/api/jsonschema/InvalidDataTypeId");
+            using var response = await client.GetAsync($"/{Org}/{App}/api/jsonschema/InvalidModelName");
             // TODO: Should probably return 404 NotFound instead of throwing FileNotFoundException,
             // but adding test for current behaviour.
             // Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
@@ -40,7 +40,7 @@ public class ResourceControllerTests : ApiTestBase, IClassFixture<WebApplication
     public async Task GetXmlSchema_ReturnsOk()
     {
         var client = GetRootedClient(Org, App);
-        using var response = await client.GetAsync($"/{Org}/{App}/api/xsdschema/{DefaultDataTypeId}");
+        using var response = await client.GetAsync($"/{Org}/{App}/api/xsdschema/{DefaultModelName}");
         response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
         Assert.NotNull(content);
@@ -48,10 +48,10 @@ public class ResourceControllerTests : ApiTestBase, IClassFixture<WebApplication
     }
 
     [Fact]
-    public async Task GetXmlSchema_InvalidDataTypeId_ReturnsNotFound()
+    public async Task GetXmlSchema_InvalidModelName_ReturnsNotFound()
     {
         var client = GetRootedClient(Org, App);
-        using var response = await client.GetAsync($"/{Org}/{App}/api/xsdschema/InvalidDataTypeId");
+        using var response = await client.GetAsync($"/{Org}/{App}/api/xsdschema/InvalidModelName");
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
     }
 }

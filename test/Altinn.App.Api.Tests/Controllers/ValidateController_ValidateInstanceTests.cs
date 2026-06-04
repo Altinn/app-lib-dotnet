@@ -153,7 +153,12 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
             DataGuid,
             new Skjema()
             {
-                Melding = new() { Name = "Name is required in layout", MissingFromXsd = "This will error" },
+                Melding = new()
+                {
+                    Name = "Name is required in layout",
+                    NestedList = [new() { AltinnRowId = Guid.NewGuid(), Key = "key" }],
+                    MissingFromXsd = "This will error",
+                },
             }
         );
 

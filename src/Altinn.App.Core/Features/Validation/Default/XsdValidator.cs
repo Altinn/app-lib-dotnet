@@ -87,10 +87,11 @@ public class XsdValidator : IValidator
                 );
                 continue;
             }
-            var formData = await dataAccessor.GetFormData(dataElement);
-            ObjectUtils.RemoveAltinnRowId(formData);
+            var formData = await dataAccessor.GetFormDataWrapper(dataElement);
+            var formDataCopy = formData.Copy();
+            formDataCopy.RemoveAltinnRowIds();
 
-            var serializedFormData = _modelSerializationService.SerializeToXml(formData);
+            var serializedFormData = _modelSerializationService.SerializeToXml(formDataCopy.BackingData<object>());
             var parsedSchema = new XmlSchemaSet { XmlResolver = null };
             var xsdReaderSettings = new XmlReaderSettings
             {

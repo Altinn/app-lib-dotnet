@@ -20,7 +20,7 @@
       <xs:element name="random" type="xs:string" minOccurs="0" maxOccurs="1"/>
       <xs:element name="tags" type="xs:string" minOccurs="0" maxOccurs="1"/>
       <xs:element name="simple_list" type="ValuesListType" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="nested_list" type="NestedType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="nested_list" type="NestedListType" minOccurs="0" maxOccurs="1"/>
       <xs:element name="toggle" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
       <xs:element name="tag-with-attribute" type="TagWithAttributeType" minOccurs="0" maxOccurs="1" nillable="true"/>
       <xs:element name="hidden" type="xs:string" minOccurs="0" maxOccurs="1"/>
@@ -62,7 +62,13 @@
       <xs:element name="doubleValue" type="xs:decimal" minOccurs="0" maxOccurs="1"/>
       <xs:element name="intValue" type="xs:decimal" minOccurs="0" maxOccurs="1"/>
     </xs:sequence>
-    <xs:attribute name="altinnRowId" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- NestedList Type -->
+  <xs:complexType name="NestedListType">
+    <xs:sequence>
+      <xs:element name="nested_list_item" type="NestedType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
   </xs:complexType>
 
   <!-- Nested Type -->
@@ -71,7 +77,6 @@
       <xs:element name="key" type="xs:string" minOccurs="0" maxOccurs="1"/>
       <xs:element name="values" type="SimpleKeyvaluesType" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
-    <xs:attribute name="altinnRowId" type="xs:string" use="optional"/>
   </xs:complexType>
 
 </xs:schema>

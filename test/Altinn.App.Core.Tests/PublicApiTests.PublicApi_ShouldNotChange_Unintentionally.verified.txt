@@ -2454,7 +2454,7 @@ namespace Altinn.App.Core.Implementation
         public byte[] GetText(string org, string app, string textResource) { }
         public System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.TextResource?> GetTexts(string org, string app, string language) { }
         public string? GetValidationConfiguration(string dataTypeId) { }
-        public string? GetXsdSchema(string dataTypeId) { }
+        public string? GetXsdSchema(string modelId) { }
     }
     public class DefaultAppEvents : Altinn.App.Core.Internal.App.IAppEvents
     {
@@ -3018,7 +3018,7 @@ namespace Altinn.App.Core.Internal.App
         byte[] GetText(string org, string app, string textResource);
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.TextResource?> GetTexts(string org, string app, string language);
         string? GetValidationConfiguration(string dataTypeId);
-        string? GetXsdSchema(string dataTypeId);
+        string? GetXsdSchema(string modelId);
     }
     public interface IApplicationClient
     {
@@ -3169,6 +3169,18 @@ namespace Altinn.App.Core.Internal.Data
     public static class IDataClientExtensions
     {
         public static System.Threading.Tasks.Task<T> GetFormData<T>(this Altinn.App.Core.Internal.Data.IDataClient dataClient, Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataElement dataElement, Altinn.App.Core.Features.StorageAuthenticationMethod? authenticationMethod = null, System.Threading.CancellationToken cancellationToken = default) { }
+    }
+    public interface IDataElementAccessChecker
+    {
+        System.Threading.Tasks.Task<bool> CanCreate(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataType dataType, Altinn.App.Core.Features.Auth.Authenticated? auth = null, long? contentLength = default);
+        System.Threading.Tasks.Task<bool> CanDelete(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataType dataType, System.Guid dataElementId, Altinn.App.Core.Features.Auth.Authenticated? auth = null);
+        System.Threading.Tasks.Task<bool> CanRead(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataType dataType);
+        System.Threading.Tasks.Task<bool> CanUpdate(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataType dataType, Altinn.App.Core.Features.Auth.Authenticated? auth = null);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ProblemDetails?> GetCreateProblem(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataType dataType, Altinn.App.Core.Features.Auth.Authenticated? auth = null, long? contentLength = default);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ProblemDetails?> GetDeleteProblem(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataType dataType, System.Guid dataElementId, Altinn.App.Core.Features.Auth.Authenticated? auth = null);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ProblemDetails?> GetReaderProblem(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataElement dataElement);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ProblemDetails?> GetReaderProblem(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataType dataType);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ProblemDetails?> GetUpdateProblem(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataType dataType, Altinn.App.Core.Features.Auth.Authenticated? auth = null);
     }
     public interface IDataService
     {
