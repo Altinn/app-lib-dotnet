@@ -2188,16 +2188,6 @@ namespace Altinn.App.Core.Features.Validation.Default
         public bool ShouldRunForTask(string taskId) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssue>> Validate(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, string taskId, string? language) { }
     }
-    public class XsdValidator : Altinn.App.Core.Features.IValidator
-    {
-        public XsdValidator(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Features.Validation.Default.XsdValidator> logger, Altinn.App.Core.Internal.App.IAppResources appResourceService, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, Altinn.App.Core.Helpers.Serialization.ModelSerializationService modelSerializationService) { }
-        public bool NoIncrementalValidation { get; }
-        public string TaskId { get; }
-        public string ValidationSource { get; }
-        public System.Threading.Tasks.Task<bool> HasRelevantChanges(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, string taskId, Altinn.App.Core.Models.DataElementChanges changes) { }
-        public bool ShouldRunForTask(string taskId) { }
-        public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssue>> Validate(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, string taskId, string? language) { }
-    }
 }
 namespace Altinn.App.Core.Features.Validation
 {
