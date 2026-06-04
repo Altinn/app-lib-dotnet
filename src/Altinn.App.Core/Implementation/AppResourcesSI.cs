@@ -525,10 +525,10 @@ public class AppResourcesSI : IAppResources
     }
 
     /// <inheritdoc />
-    public string? GetXsdSchema(string dataTypeId)
+    public string? GetXsdSchema(string modelId)
     {
         string legalPath = Path.Join(_settings.AppBasePath, _settings.ModelsFolder);
-        string filename = Path.Join(legalPath, $"{dataTypeId}.xsd");
+        string filename = Path.Join(legalPath, $"{modelId}.xsd");
         PathHelper.EnsureLegalPath(legalPath, filename);
 
         string? filedata = null;

@@ -81,6 +81,11 @@ public class Dummy
     [JsonProperty("hiddenPageNotRemove")]
     [JsonPropertyName("hiddenPageNotRemove")]
     public string? HiddenPageNotRemove { get; set; }
+
+    [XmlElement("missing-from-xsd", IsNullable = true, Order = 13)]
+    [JsonProperty("missing-from-xsd")]
+    [JsonPropertyName("missing-from-xsd")]
+    public string? MissingFromXsd { get; set; }
 }
 
 public class TagWithAttribute
