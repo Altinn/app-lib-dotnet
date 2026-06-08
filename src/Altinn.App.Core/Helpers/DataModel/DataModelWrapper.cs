@@ -123,29 +123,13 @@ public class DataModelWrapper
     /// </example>
     public string[] GetResolvedKeys(string field)
     {
-        return GetResolvedKeys(field, isCalculating: false);
-    }
-
-    /// <summary>
-    /// Get all valid indexed keys for the field, depending on the number of rows in repeating groups
-    /// </summary>
-    /// <example>
-    /// GetResolvedKeys("data.bedrifter.styre.medlemmer") =>
-    /// [
-    ///     "data.bedrifter[0].styre.medlemmer",
-    ///     "data.bedrifter[1].styre.medlemmer"
-    ///     ...
-    /// ]
-    /// </example>
-    public string[] GetResolvedKeys(string field, bool isCalculating)
-    {
         if (_dataModel is null)
         {
             return [];
         }
 
         var fieldParts = field.Split('.');
-        return GetResolvedKeysRecursive(fieldParts, _dataModel, _dataModel.GetType(), isCalculating: isCalculating);
+        return GetResolvedKeysRecursive(fieldParts, _dataModel, _dataModel.GetType());
     }
 
     private static string JoinFieldKeyParts(string? currentKey, string? key)
@@ -167,8 +151,7 @@ public class DataModelWrapper
         object? currentModel,
         Type currentType,
         int currentIndex = 0,
-        string currentKey = "",
-        bool isCalculating = false
+        string currentKey = ""
     )
     {
         if (currentIndex == keyParts.Length)
@@ -213,8 +196,7 @@ public class DataModelWrapper
                             child,
                             elementType,
                             currentIndex + 1,
-                            JoinFieldKeyParts(currentKey, $"{key}[{i}]"),
-                            isCalculating
+                            JoinFieldKeyParts(currentKey, $"{key}[{i}]")
                         );
                         resolvedKeys.AddRange(newResolvedKeys);
                         i++;
@@ -232,12 +214,11 @@ public class DataModelWrapper
                     elementAt,
                     elementType,
                     currentIndex + 1,
-                    JoinFieldKeyParts(currentKey, $"{key}[{groupIndex}]"),
-                    isCalculating
+                    JoinFieldKeyParts(currentKey, $"{key}[{groupIndex}]")
                 );
             }
 
-            if (isCalculating && currentIndex == keyParts.Length - 1)
+            if (currentIndex == keyParts.Length - 1)
             {
                 return [JoinFieldKeyParts(currentKey, key)];
             }
@@ -250,24 +231,17 @@ public class DataModelWrapper
         // If this is the last key part
         if (currentIndex == keyParts.Length - 1)
         {
-            // Return the key if value exists, or if calculating (to allow null fields during calculation)
-            return childValue is not null || isCalculating ? [JoinFieldKeyParts(currentKey, key)] : [];
+            // Return the key if value exists
+            return [JoinFieldKeyParts(currentKey, key)];
         }
 
-        // If child is null and we're not calculating, we can't continue
-        if (childValue is null && !isCalculating)
-        {
-            return [];
-        }
-
-        // Continue recursion using type information (childValue may be null if isCalculating=true)
+        // Continue recursion using type information
         return GetResolvedKeysRecursive(
             keyParts,
             childValue,
             childType,
             currentIndex + 1,
-            JoinFieldKeyParts(currentKey, key),
-            isCalculating
+            JoinFieldKeyParts(currentKey, key)
         );
     }
 
