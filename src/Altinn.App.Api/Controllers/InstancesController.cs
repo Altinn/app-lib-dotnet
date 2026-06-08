@@ -401,13 +401,7 @@ public class InstancesController : ControllerBase
             var prefillProblem = await StoreParts(instance, application, requestParts, language);
             if (prefillProblem is not null)
             {
-                await _instanceClient.DeleteInstance(
-                    int.Parse(instance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
-                    Guid.Parse(instance.Id.Split("/")[1]),
-                    hard: true,
-                    authenticationMethod: null,
-                    CancellationToken.None
-                );
+                await TryDeleteInstance(instance);
                 return StatusCode(prefillProblem.Status ?? 500, prefillProblem);
             }
 
@@ -427,6 +421,7 @@ public class InstancesController : ControllerBase
         }
         catch (Exception exception)
         {
+            await TryDeleteInstance(instance);
             return ExceptionResponse(
                 exception,
                 $"Instantiation of data elements failed for instance {instance.Id} for party {instanceTemplate.InstanceOwner?.PartyId}"
@@ -586,7 +581,7 @@ public class InstancesController : ControllerBase
         if (
             isCopyRequest
             && party.PartyId.ToString(CultureInfo.InvariantCulture)
-                != instansiationInstance?.SourceInstanceId?.Split("/")[0]
+                != instansiationInstance.SourceInstanceId?.Split("/")[0]
         )
         {
             return BadRequest("It is not possible to copy instances between instance owners.");
@@ -654,7 +649,7 @@ public class InstancesController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
         }
 
-        Instance instance;
+        Instance? instance = null;
         ProcessChangeResult processResult;
         try
         {
@@ -675,7 +670,7 @@ public class InstancesController : ControllerBase
             if (isCopyRequest)
             {
                 string[] sourceSplit =
-                    instansiationInstance?.SourceInstanceId?.Split("/")
+                    instansiationInstance.SourceInstanceId?.Split("/")
                     ?? throw new ArgumentException("SourceInstanceId is null or not in the correct format");
                 Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
 
@@ -702,6 +697,27 @@ public class InstancesController : ControllerBase
                 {
                     return BadRequest("It is not possible to copy an instance that isn't archived.");
                 }
+
+                var copyInstanceValidator = _appImplementationFactory.Get<ICopyInstanceValidator>();
+                if (copyInstanceValidator is not null)
+                {
+                    var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
+                        source,
+                        null,
+                        language
+                    );
+                    validationResult = await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork);
+                    if (validationResult != null && !validationResult.Valid)
+                    {
+                        _logger.LogWarning(
+                            "CopyInstanceValidator rejected instantiation for party {PartyId}: {@ValidationResult}",
+                            party.PartyId,
+                            validationResult
+                        );
+                        await TranslateValidationResult(validationResult, language);
+                        return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+                    }
+                }
             }
 
             instance = await _instanceClient.CreateInstance(
@@ -726,6 +742,8 @@ public class InstancesController : ControllerBase
         }
         catch (Exception exception)
         {
+            await TryDeleteInstance(instance);
+
             return ExceptionResponse(
                 exception,
                 $"Instantiation of appId {org}/{app} failed for party {instanceTemplate.InstanceOwner?.PartyId}"
@@ -853,37 +871,104 @@ public class InstancesController : ControllerBase
         InstantiationValidationResult? validationResult = await instantiationValidator.Validate(targetInstance);
         if (validationResult != null && !validationResult.Valid)
         {
+            _logger.LogWarning(
+                "InstantiationValidator rejected instantiation for party {PartyId}: {@ValidationResult}",
+                instanceOwnerPartyId,
+                validationResult
+            );
             await TranslateValidationResult(validationResult, language);
             return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+        }
+
+        var copyInstanceValidator = _appImplementationFactory.Get<ICopyInstanceValidator>();
+        if (copyInstanceValidator is not null)
+        {
+            var sourceInstanceDataUnitOfWork = await _instanceDataUnitOfWorkInitializer.Init(
+                sourceInstance,
+                null,
+                language
+            );
+            validationResult = await copyInstanceValidator.Validate(sourceInstanceDataUnitOfWork);
+            if (validationResult != null && !validationResult.Valid)
+            {
+                _logger.LogWarning(
+                    "CopyInstanceValidator rejected instantiation for party {PartyId}: {@ValidationResult}",
+                    instanceOwnerPartyId,
+                    validationResult
+                );
+                await TranslateValidationResult(validationResult, language);
+                return StatusCode(StatusCodes.Status403Forbidden, validationResult);
+            }
         }
 
         ProcessStartRequest processStartRequest = new() { Instance = targetInstance, User = User };
 
         ProcessChangeResult startResult = await _processEngine.GenerateProcessStartEvents(processStartRequest);
 
-        targetInstance = await _instanceClient.CreateInstance(
-            org,
-            app,
-            targetInstance,
-            authenticationMethod: null,
-            CancellationToken.None
-        );
+        try
+        {
+            targetInstance = await _instanceClient.CreateInstance(
+                org,
+                app,
+                targetInstance,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
 
-        await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
+            await CopyDataFromSourceInstance(application, targetInstance, sourceInstance);
 
-        targetInstance = await _instanceClient.GetInstance(
-            targetInstance,
-            authenticationMethod: null,
-            CancellationToken.None
-        );
+            targetInstance = await _instanceClient.GetInstance(
+                targetInstance,
+                authenticationMethod: null,
+                CancellationToken.None
+            );
 
-        await _processEngine.HandleEventsAndUpdateStorage(targetInstance, null, startResult.ProcessStateChange?.Events);
+            await _processEngine.HandleEventsAndUpdateStorage(
+                targetInstance,
+                null,
+                startResult.ProcessStateChange?.Events
+            );
 
-        await RegisterEvent("app.instance.created", targetInstance);
+            await RegisterEvent("app.instance.created", targetInstance);
 
-        string url = SelfLinkHelper.BuildFrontendSelfLink(targetInstance, Request);
+            string url = SelfLinkHelper.BuildFrontendSelfLink(targetInstance, Request);
 
-        return Redirect(url);
+            return Redirect(url);
+        }
+        catch (Exception exception)
+        {
+            await TryDeleteInstance(targetInstance);
+
+            return ExceptionResponse(
+                exception,
+                $"Copying instance {instanceOwnerPartyId}/{instanceGuid} failed for party {targetInstance?.InstanceOwner?.PartyId}"
+            );
+        }
+    }
+
+    private async Task TryDeleteInstance(Instance? targetInstance)
+    {
+        if (targetInstance?.Id is not null)
+        {
+            try
+            {
+                await _instanceClient.DeleteInstance(
+                    int.Parse(targetInstance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
+                    Guid.Parse(targetInstance.Id.Split("/")[1]),
+                    hard: true,
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
+            }
+            catch (Exception deleteException)
+            {
+                _logger.LogError(
+                    deleteException,
+                    "Failed to delete instance {InstanceId} during cleanup after an unsuccessful operation. Manual cleanup might be required.",
+                    targetInstance.Id
+                );
+            }
+        }
     }
 
     /// <summary>

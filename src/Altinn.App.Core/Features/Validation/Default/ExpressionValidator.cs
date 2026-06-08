@@ -145,7 +145,7 @@ public class ExpressionValidator : IValidator
                     continue;
                 }
                 var context = new ComponentContext(
-                    evaluatorState,
+                    dataAccessor,
                     component: null,
                     rowIndices: ExpressionHelper.GetRowIndices(resolvedField.Field),
                     dataElementIdentifier: resolvedField.DataElementIdentifier
