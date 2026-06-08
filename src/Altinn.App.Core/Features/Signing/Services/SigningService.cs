@@ -230,6 +230,30 @@ internal sealed class SigningService(
         RemoveSigneeState(instanceDataMutator, signatureConfiguration.SigneeStatesDataTypeId);
         RemoveAllSignatures(instanceDataMutator, signatureConfiguration.SignatureDataType);
 
+        await RevokeDelegatedSigneeRights(instanceDataMutator, signatureConfiguration, taskId, ct);
+    }
+
+    /// <inheritdoc />
+    public async Task RevokeSigneeRightsOnTaskEnd(
+        IInstanceDataMutator instanceDataMutator,
+        AltinnSignatureConfiguration signatureConfiguration,
+        CancellationToken ct = default
+    )
+    {
+        string taskId = instanceDataMutator.Instance.Process.CurrentTask.ElementId;
+
+        using var activity = telemetry?.StartRevokeSigneeRightsOnTaskEndActivity(taskId);
+
+        await RevokeDelegatedSigneeRights(instanceDataMutator, signatureConfiguration, taskId, ct);
+    }
+
+    private async Task RevokeDelegatedSigneeRights(
+        IInstanceDataMutator instanceDataMutator,
+        AltinnSignatureConfiguration signatureConfiguration,
+        string taskId,
+        CancellationToken ct
+    )
+    {
         List<SigneeContext> signeeContexts = await GetSigneeContexts(
             instanceDataMutator,
             signatureConfiguration,
