@@ -25,7 +25,6 @@ public class ExpressionValidator : IValidator
 
     private readonly ILogger<ExpressionValidator> _logger;
     private readonly IAppResources _appResourceService;
-    private readonly ILayoutEvaluatorStateInitializer _layoutEvaluatorStateInitializer;
     private readonly IAppMetadata _appMetadata;
     private readonly IDataElementAccessChecker _dataElementAccessChecker;
 
@@ -35,14 +34,12 @@ public class ExpressionValidator : IValidator
     public ExpressionValidator(
         ILogger<ExpressionValidator> logger,
         IAppResources appResourceService,
-        ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer,
         IAppMetadata appMetadata,
         IServiceProvider serviceProvider
     )
     {
         _logger = logger;
         _appResourceService = appResourceService;
-        _layoutEvaluatorStateInitializer = layoutEvaluatorStateInitializer;
         _appMetadata = appMetadata;
         _dataElementAccessChecker = serviceProvider.GetRequiredService<IDataElementAccessChecker>();
     }
@@ -113,14 +110,8 @@ public class ExpressionValidator : IValidator
         string? language
     )
     {
-        var evaluatorState = await _layoutEvaluatorStateInitializer.Init(
-            dataAccessor,
-            taskId,
-            gatewayAction: null,
-            language
-        );
         var hiddenFields = await LayoutEvaluator.GetHiddenFieldsForRemoval(
-            evaluatorState,
+            dataAccessor.GetLayoutEvaluatorState(),
             evaluateRemoveWhenHidden: false
         );
 
@@ -130,9 +121,11 @@ public class ExpressionValidator : IValidator
 
         foreach (var (baseField, validations) in expressionValidations)
         {
-            var resolvedFields = await evaluatorState.GetResolvedKeys(
-                new DataReference() { Field = baseField, DataElementIdentifier = dataElementIdentifier }
-            );
+            var resolvedFields = await dataAccessor
+                .GetLayoutEvaluatorState()
+                .GetResolvedKeys(
+                    new DataReference() { Field = baseField, DataElementIdentifier = dataElementIdentifier }
+                );
             foreach (var resolvedField in resolvedFields)
             {
                 if (
@@ -150,11 +143,11 @@ public class ExpressionValidator : IValidator
                     rowIndices: ExpressionHelper.GetRowIndices(resolvedField.Field),
                     dataElementIdentifier: resolvedField.DataElementIdentifier
                 );
-                var positionalArguments = new object[] { resolvedField.Field };
+                var positionalArguments = new ExpressionValue[] { resolvedField.Field };
                 foreach (var validation in validations)
                 {
                     await RunValidation(
-                        evaluatorState,
+                        dataAccessor,
                         validationIssues,
                         resolvedField,
                         context,
@@ -169,27 +162,27 @@ public class ExpressionValidator : IValidator
     }
 
     private async Task RunValidation(
-        LayoutEvaluatorState evaluatorState,
+        IInstanceDataAccessor dataAccessor,
         List<ValidationIssue> validationIssues,
         DataReference resolvedField,
         ComponentContext context,
-        object[] positionalArguments,
+        ExpressionValue[] positionalArguments,
         ExpressionValidation validation
     )
     {
         try
         {
-            var validationResult = await ExpressionEvaluator.EvaluateExpression(
-                evaluatorState,
+            var validationResult = await ExpressionEvaluator.EvaluateExpressionToExpressionValue(
+                dataAccessor,
                 validation.Condition,
                 context,
                 positionalArguments
             );
-            switch (validationResult)
+            switch (validationResult.ValueKind)
             {
-                case true:
-                    var message = await ExpressionEvaluator.EvaluateExpression(
-                        evaluatorState,
+                case JsonValueKind.True:
+                    var message = await ExpressionEvaluator.EvaluateExpressionToExpressionValue(
+                        dataAccessor,
                         validation.Message,
                         context,
                         positionalArguments
@@ -200,13 +193,13 @@ public class ExpressionValidator : IValidator
                         Field = resolvedField.Field,
                         DataElementId = resolvedField.DataElementIdentifier.Id,
                         Severity = validation.Severity ?? ValidationIssueSeverity.Error,
-                        CustomTextKey = message as string ?? "",
-                        Code = message as string ?? "",
+                        Code = message.ToStringForText(),
+                        CustomTextKey = message.ToStringForText(),
                     };
                     validationIssues.Add(validationIssue);
 
                     break;
-                case false:
+                case JsonValueKind.False:
                     break;
                 default:
                     throw new ArgumentException(
