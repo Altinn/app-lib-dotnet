@@ -172,6 +172,11 @@ public class ExpressionValidator : IValidator
     {
         try
         {
+            var wrapper = await dataAccessor.GetFormDataWrapper(resolvedField.DataElementIdentifier);
+            if (wrapper.Get(resolvedField.Field) == null)
+            {
+                return; // Assume that the required validator will catch empty fields.
+            }
             var validationResult = await ExpressionEvaluator.EvaluateExpressionToExpressionValue(
                 dataAccessor,
                 validation.Condition,

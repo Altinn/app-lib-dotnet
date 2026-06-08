@@ -239,15 +239,6 @@ public class LayoutEvaluatorState
     }
 
     /// <summary>
-    /// Get all the resolved keys (including all possible indexes) from a data model key
-    /// </summary>
-    public async Task<DataReference[]> GetResolvedKeys(DataReference reference, bool isCalculating)
-    {
-        var data = await DataAccessor.GetFormDataWrapper(reference.DataElementIdentifier);
-        return data.GetResolvedKeys(reference, isCalculating);
-    }
-
-    /// <summary>
     /// Set the value of a field to null.
     /// </summary>
     public async Task RemoveDataField(DataReference key, RowRemovalOption rowRemovalOption)

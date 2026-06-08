@@ -69,8 +69,7 @@ internal sealed class DataModelFieldCalculator
             var resolvedFields = await dataAccessor
                 .GetLayoutEvaluatorState()
                 .GetResolvedKeys(
-                    new DataReference() { Field = baseField, DataElementIdentifier = dataElementIdentifier },
-                    true
+                    new DataReference() { Field = baseField, DataElementIdentifier = dataElementIdentifier }
                 );
             foreach (var resolvedField in resolvedFields)
             {
