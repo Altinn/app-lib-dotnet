@@ -243,7 +243,7 @@ public class LayoutEvaluatorState
     /// </summary>
     public async Task<DataReference[]> GetResolvedKeys(DataReference reference, bool isCalculating)
     {
-        var data = await _dataAccessor.GetFormDataWrapper(reference.DataElementIdentifier);
+        var data = await DataAccessor.GetFormDataWrapper(reference.DataElementIdentifier);
         return data.GetResolvedKeys(reference, isCalculating);
     }
 

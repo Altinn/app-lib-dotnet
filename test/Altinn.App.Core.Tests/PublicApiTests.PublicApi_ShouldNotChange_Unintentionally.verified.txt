@@ -3237,7 +3237,7 @@ namespace Altinn.App.Core.Internal.Expressions
         [System.Obsolete("Use ComponentContext.IsHidden or ComponentContext.EvaluateExpression instead")]
         public static System.Threading.Tasks.Task<bool> EvaluateBooleanExpression(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.Expressions.ComponentContext context, string property, bool defaultReturn) { }
         public static System.Threading.Tasks.Task<object?> EvaluateExpression(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.Expressions.Expression expr, Altinn.App.Core.Models.Expressions.ComponentContext context, object?[]? positionalArguments = null) { }
-        public static System.Threading.Tasks.Task<Altinn.App.Core.Internal.Expressions.ExpressionValue> EvaluateExpressionToExpressionValue(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.Expressions.Expression expr, Altinn.App.Core.Models.Expressions.ComponentContext context, object?[]? positionalArguments = null) { }
+        public static System.Threading.Tasks.Task<Altinn.App.Core.Internal.Expressions.ExpressionValue> EvaluateExpressionToExpressionValue(Altinn.App.Core.Features.IInstanceDataAccessor state, Altinn.App.Core.Models.Expressions.Expression expr, Altinn.App.Core.Models.Expressions.ComponentContext context, Altinn.App.Core.Internal.Expressions.ExpressionValue[]? positionalArguments = null) { }
     }
     public class ExpressionEvaluatorTypeErrorException : Altinn.App.Core.Exceptions.AltinnException
     {
