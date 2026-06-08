@@ -49,7 +49,7 @@ internal sealed class DataModelFieldCalculator
             var calculationConfig = _appResourceService.GetCalculationConfiguration(dataType.Id);
             if (!string.IsNullOrEmpty(calculationConfig))
             {
-                await CalculateFormData(dataAccessor, dataElement, taskId, calculationConfig);
+                await CalculateFormData(dataAccessor, dataElement, calculationConfig);
             }
         }
     }
@@ -57,14 +57,9 @@ internal sealed class DataModelFieldCalculator
     internal async Task CalculateFormData(
         IInstanceDataAccessor dataAccessor,
         DataElement dataElement,
-        string taskId,
         string rawCalculationConfig
     )
     {
-        var hiddenFields = await LayoutEvaluator.GetHiddenFieldsForRemoval(
-            dataAccessor.GetLayoutEvaluatorState(),
-            evaluateRemoveWhenHidden: false
-        );
         DataElementIdentifier dataElementIdentifier = dataElement;
         var dataModelFieldCalculations = ParseDataModelFieldCalculationConfig(rawCalculationConfig);
         var formDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement);
@@ -79,16 +74,6 @@ internal sealed class DataModelFieldCalculator
                 );
             foreach (var resolvedField in resolvedFields)
             {
-                if (
-                    hiddenFields.Exists(d =>
-                        d.DataElementIdentifier == resolvedField.DataElementIdentifier
-                        && IsSameOrDescendantField(resolvedField.Field, d.Field)
-                    )
-                )
-                {
-                    continue;
-                }
-
                 var context = new ComponentContext(
                     dataAccessor,
                     component: null,
@@ -98,10 +83,10 @@ internal sealed class DataModelFieldCalculator
                 var positionalArguments = new ExpressionValue[] { resolvedField.Field };
 
                 await RunCalculation(
-                    formDataWrapper,
                     dataAccessor,
-                    resolvedField,
                     context,
+                    formDataWrapper,
+                    resolvedField,
                     positionalArguments,
                     calculation
                 );
@@ -110,10 +95,10 @@ internal sealed class DataModelFieldCalculator
     }
 
     private async Task RunCalculation(
-        IFormDataWrapper formDataWrapper,
         IInstanceDataAccessor dataAccessor,
-        DataReference resolvedField,
         ComponentContext context,
+        IFormDataWrapper formDataWrapper,
+        DataReference resolvedField,
         ExpressionValue[] positionalArguments,
         DataModelFieldCalculation calculation
     )

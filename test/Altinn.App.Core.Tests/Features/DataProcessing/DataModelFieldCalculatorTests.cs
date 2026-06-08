@@ -99,7 +99,6 @@ public sealed class DataModelFieldCalculatorTests
             _dataModelFieldCalculator.CalculateFormData(
                 _instanceDataAccessor,
                 _dataElement,
-                "Task_1",
                 JsonSerializer.Serialize(testCase.CalculationConfig)
             )
         );
@@ -154,7 +153,6 @@ public sealed class DataModelFieldCalculatorTests
         await _dataModelFieldCalculator.CalculateFormData(
             _instanceDataAccessor,
             _dataElement,
-            "Task_1",
             JsonSerializer.Serialize(testCase.CalculationConfig)
         );
 
