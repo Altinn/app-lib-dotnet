@@ -10,35 +10,13 @@ namespace Altinn.App.Core.Features.Validation;
 /// Simple wrapper for validation of form data that does the type checking for you.
 /// </summary>
 /// <typeparam name="TModel">The type of the model this class will validate</typeparam>
-// TODO: Consider marking this as obsolete and use the new GenericFormDataValidator2 instead
-//[Obsolete("Use GenericFormDataValidator2 instead")]
-public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
+public abstract class GenericFormDataValidator2<TModel> : IFormDataValidator
 {
-    /// <summary>
-    /// Constructor to force the DataType to be set.
-    /// </summary>
-    /// <param name="dataType">The data type this validator should run on</param>
-    protected GenericFormDataValidator(string dataType)
-    {
-        DataType = dataType;
-    }
-
-    /// <inheritdoc />
-    public string DataType { get; private init; }
-
-    // Add virtual members so that inheriting classes can override them if needed.
-    // Default implementations from the interface are not virtual, so we need to copy them here.
-    /// <inheritdoc/>
-    public virtual string ValidationSource => $"{GetType().FullName}-{DataType}";
-
-    /// <inheritdoc/>
-    public virtual bool NoIncrementalValidation => false;
-
-    /// <inheritdoc />
-    public virtual bool ShouldRunAfterRemovingHiddenData => false;
-
     // ReSharper disable once StaticMemberInGenericType
     private static readonly AsyncLocal<List<ValidationIssue>> _validationIssues = new();
+
+    /// <inheritdoc />
+    public abstract string DataType { get; }
 
     /// <summary>
     /// Default implementation that calls the same method with TModel arguments.
@@ -70,14 +48,14 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
     /// <param name="severity">The severity for the issue (default Error)</param>
     /// <param name="description">Optional description if you want to provide a user friendly message that don't rely on the translation system</param>
     /// <param name="code">optional short code for the type of issue</param>
-    /// <param name="customTextParameters">Dictionary of parameters to replace after looking up the translation.</param>
+    /// <param name="customTextParams">List of parameters to replace after looking up the translation. Zero indexed {0}</param>
     protected void CreateValidationIssue<T>(
         Expression<Func<TModel, T>> selector,
         string textKey,
         ValidationIssueSeverity severity = ValidationIssueSeverity.Error,
         string? description = null,
         string? code = null,
-        Dictionary<string, string>? customTextParameters = null
+        List<string>? customTextParams = null
     )
     {
         Debug.Assert(_validationIssues.Value is not null);
@@ -85,11 +63,11 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
             new ValidationIssue
             {
                 Field = LinqExpressionHelpers.GetJsonPath(selector),
-                Description = description,
-                Code = code,
+                Description = description ?? textKey,
+                Code = code ?? textKey,
                 CustomTextKey = textKey,
-                CustomTextParameters = customTextParameters,
-                Severity = severity,
+                CustomTextParams = customTextParams,
+                Severity = severity
             }
         );
     }
