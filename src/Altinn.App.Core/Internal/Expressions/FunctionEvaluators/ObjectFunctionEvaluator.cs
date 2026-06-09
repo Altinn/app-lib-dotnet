@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Altinn.App.Core.Internal.Expressions;
+namespace Altinn.App.Core.Internal.Expressions.FunctionEvaluators;
 
 internal sealed class ObjectFunctionEvaluator
 {
