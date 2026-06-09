@@ -19,10 +19,10 @@ internal sealed class JmespathFunctionEvaluator
         {
             throw new ExpressionEvaluatorTypeErrorException($"Expected argument to be string, got {_args[1]}");
         }
-        return Implementation(_args[0], _args[1].String);
+        return EvaluateWithValidArguments(_args[0], _args[1].String);
     }
 
-    private static ExpressionValue Implementation(ExpressionValue data, string query)
+    private static ExpressionValue EvaluateWithValidArguments(ExpressionValue data, string query)
     {
         JsonElement resultAsJsonElement = VerifyAndRunQuery(data, query);
         return ExpressionValue.FromJsonElement(resultAsJsonElement);
