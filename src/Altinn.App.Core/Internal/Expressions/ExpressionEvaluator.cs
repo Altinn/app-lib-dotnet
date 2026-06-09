@@ -53,7 +53,7 @@ public static partial class ExpressionEvaluator
     }
 
     /// <summary>
-    /// Evaluate a <see cref="Expression" /> from a given <see cref="LayoutEvaluatorState" /> in a <see cref="ComponentContext" />
+    /// Evaluate a <see cref="Expression" /> from a given <see cref="IInstanceDataAccessor" /> in a <see cref="ComponentContext" />
     /// </summary>
     public static async Task<ExpressionValue> EvaluateExpressionToExpressionValue(
         IInstanceDataAccessor state,
