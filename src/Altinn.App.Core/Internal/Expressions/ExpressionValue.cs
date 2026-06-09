@@ -194,7 +194,9 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         };
     }
 
-    /// <summary>Convert a JsonElement to ExpressionValue.</summary>
+    /// <summary>
+    /// Convert a JsonElement to ExpressionValue.
+    /// </summary>
     public static ExpressionValue FromJsonElement(JsonElement element)
     {
         return element.ValueKind switch
