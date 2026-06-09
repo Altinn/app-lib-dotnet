@@ -24,17 +24,17 @@ internal sealed class JmespathFunctionEvaluator
 
     private static ExpressionValue Implementation(ExpressionValue data, string query)
     {
-        string resultAsString = VerifyAndRunQuery(data, query);
-        JsonElement result = JsonSerializer.Deserialize<JsonElement>(resultAsString);
-        return ExpressionValue.FromJsonElement(result);
+        JsonElement resultAsJsonElement = VerifyAndRunQuery(data, query);
+        return ExpressionValue.FromJsonElement(resultAsJsonElement);
     }
 
-    private static string VerifyAndRunQuery(ExpressionValue data, string query)
+    private static JsonElement VerifyAndRunQuery(ExpressionValue data, string query)
     {
         JmesPath jmesPath = new();
         try
         {
-            return jmesPath.Transform(data.ToString(), query);
+            string resultAsString = jmesPath.Transform(data.ToString(), query);
+            return JsonSerializer.Deserialize<JsonElement>(resultAsString);
         }
         catch (Exception exception)
         {
