@@ -231,7 +231,7 @@ public class DataModelWrapper
         // If this is the last key part
         if (currentIndex == keyParts.Length - 1)
         {
-            // Return the key if value exists
+            // Return the key (even if the value is null)
             return [JoinFieldKeyParts(currentKey, key)];
         }
 

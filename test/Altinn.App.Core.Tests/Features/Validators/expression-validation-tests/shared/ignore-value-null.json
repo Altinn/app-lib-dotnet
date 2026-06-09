@@ -6,7 +6,7 @@
     "validations": {
       "personer.navn": [
         {
-          "message": "Always ivalid rule",
+          "message": "Always invalid rule",
           "severity": "error",
           "condition": true
         }
