@@ -256,7 +256,9 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             ),
         };
 
-    /// <summary>Get the value as an object (or throw if it isn't an object ValueKind)</summary>
+    /// <summary>
+    /// Get the value as an object (or throw if it isn't an object ValueKind)
+    /// </summary>
     public JsonObject Dictionary =>
         ValueKind switch
         {
