@@ -33,13 +33,15 @@ internal sealed class ObjectFunctionEvaluator
     {
         try
         {
-            return _args.Where((_, index) => index % 2 == 0).Select(v => v.String).ToArray();
+            return ExtractEvenIndexedArguments().Select(v => v.String).ToArray();
         }
         catch (InvalidCastException)
         {
             throw new ExpressionEvaluatorTypeErrorException("Object keys must be strings.");
         }
     }
+
+    private ExpressionValue[] ExtractEvenIndexedArguments() => _args.Where((_, index) => index % 2 == 0).ToArray();
 
     private static void AssertKeysAreUnique(string[] keys)
     {
@@ -50,7 +52,9 @@ internal sealed class ObjectFunctionEvaluator
     }
 
     private JsonNode?[] ExtractValues() =>
-        _args.Where((_, index) => index % 2 == 1).Select(v => JsonSerializer.SerializeToNode(v)).ToArray();
+        ExtractOddIndexedArguments().Select(v => JsonSerializer.SerializeToNode(v)).ToArray();
+
+    private ExpressionValue[] ExtractOddIndexedArguments() => _args.Where((_, index) => index % 2 == 1).ToArray();
 
     private static Dictionary<string, JsonNode?> DictionaryFromKeysAndValues(string[] keys, JsonNode?[] values) =>
         keys.Zip(values, (k, v) => new { k, v }).ToDictionary(x => x.k, x => x.v);
