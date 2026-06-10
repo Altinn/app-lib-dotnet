@@ -85,7 +85,9 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         _stringValue = value;
     }
 
-    /// <summary>Constructor for object value</summary>
+    /// <summary>
+    /// Constructor for object value
+    /// </summary>
     public ExpressionValue(JsonObject value)
     {
         ValueKind = JsonValueKind.Object;
